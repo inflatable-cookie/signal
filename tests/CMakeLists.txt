@@ -13,7 +13,8 @@ add_executable(signal-tests
 )
 
 target_link_libraries(signal-tests PRIVATE
-    Catch2::Catch2
+    signal-core
+    Catch2::Catch2WithMain
 )
 
 target_include_directories(signal-tests PRIVATE
