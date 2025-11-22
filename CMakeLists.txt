@@ -8,6 +8,40 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(SIGNAL_BUILD_TESTS "Build Signal tests" ON)
 
+# Fetch nlohmann/json
+include(FetchContent)
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+# Fetch standalone Asio (header-only)
+FetchContent_Declare(
+    asio
+    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+    GIT_TAG asio-1-28-0
+)
+FetchContent_MakeAvailable(asio)
+
+# Create an interface target for standalone Asio
+if(NOT TARGET asio::asio)
+    add_library(asio_standalone INTERFACE)
+    add_library(asio::asio ALIAS asio_standalone)
+    target_include_directories(asio_standalone INTERFACE ${asio_SOURCE_DIR}/asio/include)
+    target_compile_definitions(asio_standalone INTERFACE ASIO_STANDALONE)
+    # Link with system libraries that Asio needs
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(asio_standalone INTERFACE pthread)
+    endif()
+    if(APPLE)
+        # macOS needs system libraries for networking
+        find_library(CF_LIBRARY CoreFoundation REQUIRED)
+        target_link_libraries(asio_standalone INTERFACE ${CF_LIBRARY})
+    endif()
+endif()
+
 add_subdirectory(src)
 
 if(SIGNAL_BUILD_TESTS)

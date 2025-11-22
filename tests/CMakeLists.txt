@@ -10,6 +10,7 @@ FetchContent_MakeAvailable(Catch2)
 add_executable(signal-tests
     test_envelope.cpp
     test_router.cpp
+    test_ipc_envelope_codec.cpp
 )
 
 target_link_libraries(signal-tests PRIVATE
