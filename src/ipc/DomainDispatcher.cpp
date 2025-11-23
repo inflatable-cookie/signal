@@ -1,3 +1,13 @@
+/// DomainDispatcher - Routes IPC envelopes to domain handlers
+///
+/// Thread: IPC thread (Asio handler context)
+/// Ownership: Local to SignalApp::run() (created in run method)
+/// Communication:
+///   - Receives envelopes from TcpClientSession handlers
+///   - Dispatches to domain handlers synchronously
+///   - Domain handlers update EngineHost/TransportState directly
+///   - Sends events back to Pulse via TcpClientSession
+
 #include "ipc/DomainDispatcher.hpp"
 #include "ipc/IpcEnvelopeCodec.hpp"
 #include "ipc/IpcEnvelope.hpp"
@@ -48,10 +58,12 @@ void DomainDispatcher::handleEngineDomain(
     old_env.priority = priorityToString(env.priority);
     old_env.payload = env.payload.dump();
 
-    // Dispatch to router
+    // Dispatch to router (this will call EngineDomain::handle which updates EngineHost)
     router_->dispatch(old_env);
 
     // Send engine.state event after processing commands
+    // Note: For shutdown command, we emit a final state event but don't stop the process
+    // The process should be stopped by Pulse or via SIGINT/SIGTERM
     if (env.kind == IpcKind::Command && env.domain == "engine") {
         IpcEnvelope stateEvent;
         stateEvent.version = 1;
@@ -84,20 +96,88 @@ void DomainDispatcher::handleEngineDomain(
         // Get current engine state and create payload
         // Pulse expects "lifecycle" field matching: "stopped", "starting", "running", "error"
         std::string lifecycle = "stopped";
+        std::optional<std::string> lastError;
         if (engineHost_) {
-            if (engineHost_->state() == EngineHost::State::Running) {
-                lifecycle = "running";
-            } else if (env.name == "start") {
+            switch (engineHost_->state()) {
+            case EngineHost::State::Stopped:
+                lifecycle = "stopped";
+                break;
+            case EngineHost::State::Starting:
                 lifecycle = "starting";
+                break;
+            case EngineHost::State::Running:
+                lifecycle = "running";
+                break;
+            case EngineHost::State::Error:
+                lifecycle = "error";
+                lastError = engineHost_->lastError();
+                break;
             }
         }
 
         nlohmann::json payload;
         payload["lifecycle"] = lifecycle;
+        if (lastError.has_value()) {
+            payload["lastError"] = lastError.value();
+        } else {
+            payload["lastError"] = nullptr;
+        }
 
         stateEvent.payload = payload;
 
         session->send(stateEvent);
+    } else if (env.kind == IpcKind::Command && env.name == "heartbeat") {
+        // Respond to heartbeat with current state
+        IpcEnvelope heartbeatEvent;
+        heartbeatEvent.version = 1;
+        heartbeatEvent.id = "engine-heartbeat-" + env.id;
+        heartbeatEvent.correlationId = env.id;
+        heartbeatEvent.timestamp = currentTimestamp();
+        heartbeatEvent.origin = IpcOrigin::Signal;
+
+        switch (env.origin) {
+        case IpcOrigin::Aura:
+            heartbeatEvent.target = IpcTarget::Aura;
+            break;
+        case IpcOrigin::Pulse:
+            heartbeatEvent.target = IpcTarget::Pulse;
+            break;
+        case IpcOrigin::Signal:
+            heartbeatEvent.target = IpcTarget::Signal;
+            break;
+        case IpcOrigin::Composer:
+            heartbeatEvent.target = IpcTarget::Composer;
+            break;
+        }
+
+        heartbeatEvent.domain = "engine";
+        heartbeatEvent.kind = IpcKind::Event;
+        heartbeatEvent.name = "heartbeat";
+        heartbeatEvent.priority = env.priority;
+
+        std::string lifecycle = "stopped";
+        if (engineHost_) {
+            switch (engineHost_->state()) {
+            case EngineHost::State::Stopped:
+                lifecycle = "stopped";
+                break;
+            case EngineHost::State::Starting:
+                lifecycle = "starting";
+                break;
+            case EngineHost::State::Running:
+                lifecycle = "running";
+                break;
+            case EngineHost::State::Error:
+                lifecycle = "error";
+                break;
+            }
+        }
+
+        nlohmann::json payload;
+        payload["lifecycle"] = lifecycle;
+        heartbeatEvent.payload = payload;
+
+        session->send(heartbeatEvent);
     }
 }
 
@@ -121,36 +201,60 @@ void DomainDispatcher::handleTransportDomain(
 
     router_->dispatch(old_env);
 
-    // Echo back acknowledgement if this was a command
-    if (env.kind == IpcKind::Command) {
-        IpcEnvelope reply;
-        reply.version = 1;
-        reply.id = "reply-" + env.id;
-        reply.correlationId = env.id;
-        reply.timestamp = currentTimestamp();
-        reply.origin = IpcOrigin::Signal;
-        // Convert origin to target for reply
+    // Send transport.state event after processing commands
+    if (env.kind == IpcKind::Command && env.domain == "transport") {
+        IpcEnvelope stateEvent;
+        stateEvent.version = 1;
+        stateEvent.id = "transport-state-" + env.id;
+        stateEvent.correlationId = env.id;
+        stateEvent.timestamp = currentTimestamp();
+        stateEvent.origin = IpcOrigin::Signal;
+
         switch (env.origin) {
         case IpcOrigin::Aura:
-            reply.target = IpcTarget::Aura;
+            stateEvent.target = IpcTarget::Aura;
             break;
         case IpcOrigin::Pulse:
-            reply.target = IpcTarget::Pulse;
+            stateEvent.target = IpcTarget::Pulse;
             break;
         case IpcOrigin::Signal:
-            reply.target = IpcTarget::Signal;
+            stateEvent.target = IpcTarget::Signal;
             break;
         case IpcOrigin::Composer:
-            reply.target = IpcTarget::Composer;
+            stateEvent.target = IpcTarget::Composer;
             break;
         }
-        reply.domain = env.domain;
-        reply.kind = IpcKind::Event;
-        reply.name = env.name;
-        reply.priority = env.priority;
-        reply.payload = nlohmann::json::object();
 
-        session->send(reply);
+        stateEvent.domain = "transport";
+        stateEvent.kind = IpcKind::Event;
+        stateEvent.name = "state";
+        stateEvent.priority = env.priority;
+
+        // Get current transport state and create payload
+        nlohmann::json payload;
+        if (engineHost_) {
+            const auto& transport = engineHost_->transport();
+            payload["isPlaying"] = transport.isPlaying;
+            payload["positionBeats"] = transport.positionSeconds * 120.0 / 60.0; // Convert to beats (assume 120 BPM)
+            payload["loopEnabled"] = transport.loopEnabled;
+            if (transport.loopRegion.has_value()) {
+                nlohmann::json loopRegion;
+                loopRegion["startBeats"] = transport.loopRegion->startSeconds * 120.0 / 60.0;
+                loopRegion["endBeats"] = transport.loopRegion->endSeconds * 120.0 / 60.0;
+                payload["loopRegion"] = loopRegion;
+            } else {
+                payload["loopRegion"] = nullptr;
+            }
+        } else {
+            payload["isPlaying"] = false;
+            payload["positionBeats"] = 0.0;
+            payload["loopEnabled"] = false;
+            payload["loopRegion"] = nullptr;
+        }
+
+        stateEvent.payload = payload;
+
+        session->send(stateEvent);
     }
 }
 

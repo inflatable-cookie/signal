@@ -2,12 +2,17 @@
 #include "ipc/Router.hpp"
 #include "ipc/TcpServer.hpp"
 #include "ipc/DomainDispatcher.hpp"
+#include "ipc/IpcEnvelope.hpp"
 #include "core/EngineHost.hpp"
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
 #include <asio/io_context.hpp>
+#include <asio/steady_timer.hpp>
 #include <asio/signal_set.hpp>
+#include <atomic>
+#include <chrono>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <signal.h>
 #include <thread>
@@ -71,13 +76,40 @@ int SignalApp::run() {
 
     // Set up signal handling for graceful shutdown
     asio::signal_set signals(io, SIGINT, SIGTERM);
+    std::atomic<bool> shuttingDown{false};
+
     signals.async_wait(
-        [&server, &io](std::error_code /*ec*/, int /*signo*/) {
+        [&server, &io, this, &shuttingDown](std::error_code /*ec*/, int /*signo*/) {
             std::cout << "[SignalApp] Shutdown signal received" << std::endl;
+            shuttingDown.store(true);
+            if (_engineHost) {
+                _engineHost->shutdown();
+            }
             server.stop();
             io.stop();
         }
     );
+
+    // Set up diagnostics timer (emit every second)
+    asio::steady_timer diagnosticsTimer(io);
+    std::function<void()> scheduleDiagnostics;
+    scheduleDiagnostics = [&diagnosticsTimer, &server, this, &shuttingDown, &scheduleDiagnostics]() {
+        diagnosticsTimer.expires_after(std::chrono::seconds(1));
+        diagnosticsTimer.async_wait(
+            [&server, this, &shuttingDown, &scheduleDiagnostics](std::error_code ec) {
+                if (ec || shuttingDown.load()) {
+                    return;
+                }
+
+                // Send diagnostics event to all connected clients
+                server.broadcastDiagnostics(_engineHost.get());
+
+                // Schedule next diagnostics
+                scheduleDiagnostics();
+            }
+        );
+    };
+    scheduleDiagnostics();
 
     // Start server
     server.start();

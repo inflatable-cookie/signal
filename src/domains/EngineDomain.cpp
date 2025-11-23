@@ -12,6 +12,11 @@ void EngineDomain::handle(const Envelope& env) {
         return;
     }
 
+    if (!_engineHost) {
+        std::cerr << "[EngineDomain] EngineHost is null" << std::endl;
+        return;
+    }
+
     if (env.name == "start") {
         _engineHost->start();
     } else if (env.name == "stop") {
@@ -19,8 +24,11 @@ void EngineDomain::handle(const Envelope& env) {
     } else if (env.name == "reset") {
         _engineHost->reset();
     } else if (env.name == "shutdown") {
-        // TODO: Set shutdown flag
         std::cout << "[EngineDomain] Shutdown requested" << std::endl;
+        _engineHost->shutdown();
+    } else if (env.name == "heartbeat") {
+        // Heartbeat command received - handled by DomainDispatcher to emit event
+        std::cout << "[EngineDomain] Heartbeat command received" << std::endl;
     } else {
         std::cout << "[EngineDomain] Unknown command: " << env.name << std::endl;
     }

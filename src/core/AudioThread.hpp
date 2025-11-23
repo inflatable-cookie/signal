@@ -1,5 +1,15 @@
 #pragma once
 
+/// AudioThread - Real-time audio processing thread
+///
+/// Thread: Dedicated high-priority audio thread
+/// Ownership: Owned by EngineHost
+/// Communication:
+///   - Started/stopped by EngineHost (main thread)
+///   - Reads state via atomic flags (_shouldStop, _running)
+///   - Must NEVER: block, allocate, perform I/O, or hold locks
+///   - All communication with other threads must be lock-free
+
 #include <atomic>
 #include <functional>
 #include <thread>

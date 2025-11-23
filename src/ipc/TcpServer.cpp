@@ -1,3 +1,13 @@
+/// TcpServer - IPC server for receiving envelopes from Pulse
+///
+/// Thread: IPC thread (Asio io_context worker threads)
+/// Ownership: Owned by SignalApp::run() (local to run method)
+/// Communication:
+///   - Accepts TCP connections from Pulse
+///   - Creates TcpClientSession for each connection
+///   - Envelope handlers run in Asio handler context (IPC thread)
+///   - Domain handlers update EngineHost/TransportState synchronously
+
 #include "ipc/TcpServer.hpp"
 #include <asio/bind_executor.hpp>
 #include <asio/ip/tcp.hpp>
