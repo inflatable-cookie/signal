@@ -1,7 +1,10 @@
 #include "core/EngineHost.hpp"
+#include "core/AudioThread.hpp"
 #include <iostream>
+#include <memory>
 
 EngineHost::EngineHost() : _state(State::Stopped) {
+    _audioThread = std::make_unique<AudioThread>();
     std::cout << "[EngineHost] Created" << std::endl;
 }
 
@@ -19,6 +22,7 @@ void EngineHost::start() {
     }
 
     _state = State::Running;
+    _audioThread->start();
     std::cout << "[EngineHost] Started" << std::endl;
 }
 
@@ -29,6 +33,7 @@ void EngineHost::stop() {
     }
 
     _state = State::Stopped;
+    _audioThread->stop();
     std::cout << "[EngineHost] Stopped" << std::endl;
 }
 

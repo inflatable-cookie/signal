@@ -2,12 +2,16 @@
 #include "ipc/IpcEnvelopeCodec.hpp"
 #include "ipc/IpcEnvelope.hpp"
 #include "ipc/Envelope.hpp"
+#include "core/EngineHost.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
 
 namespace loophole::signal::ipc {
 
-DomainDispatcher::DomainDispatcher(IpcRouter* router) : router_(router) {
+DomainDispatcher::DomainDispatcher(IpcRouter* router, EngineHost* engineHost)
+    : router_(router)
+    , engineHost_(engineHost)
+{
 }
 
 void DomainDispatcher::handleEnvelope(
@@ -47,36 +51,53 @@ void DomainDispatcher::handleEngineDomain(
     // Dispatch to router
     router_->dispatch(old_env);
 
-    // For now, echo back an acknowledgement if this was a command
-    if (env.kind == IpcKind::Command) {
-        IpcEnvelope reply;
-        reply.version = 1;
-        reply.id = "reply-" + env.id;
-        reply.correlationId = env.id;
-        reply.timestamp = currentTimestamp();
-        reply.origin = IpcOrigin::Signal;
-        // Convert origin to target for reply
+    // Send engine.state event after processing commands
+    if (env.kind == IpcKind::Command && env.domain == "engine") {
+        IpcEnvelope stateEvent;
+        stateEvent.version = 1;
+        stateEvent.id = "engine-state-" + env.id;
+        stateEvent.correlationId = env.id;
+        stateEvent.timestamp = currentTimestamp();
+        stateEvent.origin = IpcOrigin::Signal;
+
+        // Convert origin to target for event
         switch (env.origin) {
         case IpcOrigin::Aura:
-            reply.target = IpcTarget::Aura;
+            stateEvent.target = IpcTarget::Aura;
             break;
         case IpcOrigin::Pulse:
-            reply.target = IpcTarget::Pulse;
+            stateEvent.target = IpcTarget::Pulse;
             break;
         case IpcOrigin::Signal:
-            reply.target = IpcTarget::Signal;
+            stateEvent.target = IpcTarget::Signal;
             break;
         case IpcOrigin::Composer:
-            reply.target = IpcTarget::Composer;
+            stateEvent.target = IpcTarget::Composer;
             break;
         }
-        reply.domain = env.domain;
-        reply.kind = IpcKind::Event;
-        reply.name = env.name; // Event name matches command name per spec
-        reply.priority = env.priority;
-        reply.payload = nlohmann::json::object();
 
-        session->send(reply);
+        stateEvent.domain = "engine";
+        stateEvent.kind = IpcKind::Event;
+        stateEvent.name = "state";
+        stateEvent.priority = env.priority;
+
+        // Get current engine state and create payload
+        // Pulse expects "lifecycle" field matching: "stopped", "starting", "running", "error"
+        std::string lifecycle = "stopped";
+        if (engineHost_) {
+            if (engineHost_->state() == EngineHost::State::Running) {
+                lifecycle = "running";
+            } else if (env.name == "start") {
+                lifecycle = "starting";
+            }
+        }
+
+        nlohmann::json payload;
+        payload["lifecycle"] = lifecycle;
+
+        stateEvent.payload = payload;
+
+        session->send(stateEvent);
     }
 }
 

@@ -37,7 +37,7 @@ int SignalApp::run() {
 
     // Get host/port from environment or use defaults
     std::string host = "127.0.0.1";
-    uint16_t port = 8787;
+    uint16_t port = 7888;
 
     const char* host_env = std::getenv("SIGNAL_HOST");
     if (host_env != nullptr) {
@@ -49,13 +49,13 @@ int SignalApp::run() {
         try {
             port = static_cast<uint16_t>(std::stoi(port_env));
         } catch (const std::exception& e) {
-            std::cerr << "[SignalApp] Invalid SIGNAL_PORT, using default 8787" << std::endl;
+            std::cerr << "[SignalApp] Invalid SIGNAL_PORT, using default 7888" << std::endl;
         }
     }
 
     // Create IO context and server
     asio::io_context io;
-    loophole::signal::ipc::DomainDispatcher dispatcher(_router.get());
+    loophole::signal::ipc::DomainDispatcher dispatcher(_router.get(), _engineHost.get());
 
     loophole::signal::ipc::TcpServer server(
         io,

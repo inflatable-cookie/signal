@@ -109,20 +109,24 @@ Later milestones will add more domains:
 
 ### P1 — Real IPC & Control Loop
 
-- Implement actual IPC transport (most likely TCP) with newline-delimited JSON lines, matching Pulse.
+- Implement actual IPC transport (TCP on port 7888) with newline-delimited JSON lines, matching Pulse.
 - Add configuration for:
-  - port,
-  - host,
+  - port (default: 7888),
+  - host (default: 127.0.0.1),
   - logging verbosity.
 - Implement `engine` and `transport` domain command handling with in-memory state and events back to Pulse.
+- Send `engine.state` events on lifecycle changes.
+- Send periodic `engine.diagnostics` events with CPU load and xrun count.
 
-### P2 — Audio Engine Integration (Outline only)
+### P2 — Audio Engine Integration (Minimal Skeleton)
 
 - Introduce the real-time audio engine skeleton:
-  - audio device abstraction,
-  - processing graph skeleton,
-  - timebase & clock.
+  - Minimal audio thread that runs independently.
+  - Audio callback generates silence or optional test tone.
+  - Thread-safe state communication between control and audio threads.
+  - High-priority audio thread with proper CPU affinity.
 - Wire `engine` and `transport` commands into the engine host.
+- Audio thread reacts to engine.start/stop by toggling audio generation.
 
 ### P3+ — Plugins, Hardware I/O, Advanced Domains
 

@@ -2,6 +2,7 @@
 add_library(signal-core STATIC
     core/SignalApp.cpp
     core/EngineHost.cpp
+    core/AudioThread.cpp
     ipc/Envelope.cpp
     ipc/IpcEnvelope.cpp
     ipc/IpcEnvelopeCodec.cpp

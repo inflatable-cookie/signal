@@ -140,6 +140,29 @@ Signal must adhere to real-time rules defined in Chorus:
 
 All JSON parsing and IPC handling must happen on non-real-time threads.
 
+### 6.1 Audio Thread Rules
+
+- The audio callback runs in a dedicated high-priority thread.
+- The audio callback must never block, allocate, or perform I/O.
+- Use lock-free data structures for communication between control and audio threads.
+- State changes from IPC commands should be communicated via atomic flags or lock-free queues.
+
+### 6.2 CPU Affinity
+
+- Audio thread should ideally run on a dedicated CPU core (when available).
+- Set audio thread priority to maximum (platform-specific).
+- Keep control/IPC threads on separate cores to avoid audio thread interruptions.
+
+### 6.3 Adding Future DSP Nodes
+
+When adding DSP nodes to the audio graph:
+
+- Pre-allocate all buffers at graph construction time.
+- Never allocate in the audio callback.
+- Use fixed-size buffers (no dynamic resizing).
+- Validate all parameters before entering the audio thread.
+- Keep node processing deterministic and bounded.
+
 ---
 
 ## 7. AI / Cursor Expectations

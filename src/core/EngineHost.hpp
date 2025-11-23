@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+
+class AudioThread;
+
 class EngineHost {
 public:
     enum class State {
@@ -18,5 +22,6 @@ public:
 
 private:
     State _state;
+    std::unique_ptr<AudioThread> _audioThread;
 };
 

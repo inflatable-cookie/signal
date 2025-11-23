@@ -5,12 +5,14 @@
 #include "ipc/Router.hpp"
 #include <memory>
 
+class EngineHost;
+
 namespace loophole::signal::ipc {
 
 /// Central dispatcher that routes envelopes to domain handlers and can send replies
 class DomainDispatcher {
 public:
-    explicit DomainDispatcher(IpcRouter* router);
+    DomainDispatcher(IpcRouter* router, EngineHost* engineHost);
 
     void handleEnvelope(
         const IpcEnvelope& env,
@@ -34,6 +36,7 @@ private:
     );
 
     IpcRouter* router_;
+    EngineHost* engineHost_;
 };
 
 } // namespace loophole::signal::ipc
