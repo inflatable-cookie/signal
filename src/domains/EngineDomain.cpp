@@ -29,6 +29,14 @@ void EngineDomain::handle(const Envelope& env) {
     } else if (env.name == "heartbeat") {
         // Heartbeat command received - handled by DomainDispatcher to emit event
         std::cout << "[EngineDomain] Heartbeat command received" << std::endl;
+    } else if (env.name == "scheduleSession") {
+        // Handle schedule session command
+        // For now, just log - full implementation will schedule clips for playback
+        std::cout << "[EngineDomain] scheduleSession command received (scheduling not yet fully implemented)" << std::endl;
+        // TODO: Parse schedule payload and apply to engine
+        // - Clear existing schedule
+        // - Create playback objects for each scheduled clip
+        // - Map clips to channels/tracks
     } else {
         std::cout << "[EngineDomain] Unknown command: " << env.name << std::endl;
     }
