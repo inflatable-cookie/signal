@@ -7,6 +7,7 @@
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
 #include "domains/MeteringDomain.hpp"
+#include "domains/MixerDomain.hpp"
 #include <asio/io_context.hpp>
 #include <asio/steady_timer.hpp>
 #include <asio/signal_set.hpp>
@@ -31,8 +32,11 @@ SignalApp::SignalApp() {
     auto transportDomain = std::make_shared<TransportDomain>(_engineHost.get());
     _router->registerHandler("transport", transportDomain);
 
-    auto meteringDomain = std::make_shared<MeteringDomain>(&_engineHost->metering(), _engineHost.get());
-    _router->registerHandler("metering", meteringDomain);
+            auto meteringDomain = std::make_shared<MeteringDomain>(&_engineHost->metering(), _engineHost.get());
+            _router->registerHandler("metering", meteringDomain);
+
+            auto mixerDomain = std::make_shared<MixerDomain>(_engineHost.get());
+            _router->registerHandler("mixer", mixerDomain);
 
     std::cout << "[SignalApp] Initialised" << std::endl;
 }

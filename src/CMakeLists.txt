@@ -4,6 +4,7 @@ add_library(signal-core STATIC
     core/EngineHost.cpp
     core/AudioThread.cpp
     core/MeteringService.cpp
+    core/MixerService.cpp
     ipc/Envelope.cpp
     ipc/IpcEnvelope.cpp
     ipc/IpcEnvelopeCodec.cpp
@@ -14,6 +15,7 @@ add_library(signal-core STATIC
     domains/EngineDomain.cpp
     domains/TransportDomain.cpp
     domains/MeteringDomain.cpp
+    domains/MixerDomain.cpp
 )
 
 target_include_directories(signal-core PUBLIC

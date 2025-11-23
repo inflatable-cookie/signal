@@ -1,6 +1,7 @@
 #include "core/EngineHost.hpp"
 #include "core/AudioThread.hpp"
 #include "core/MeteringService.hpp"
+#include "core/MixerService.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -14,6 +15,7 @@ EngineHost::EngineHost()
 {
     _audioThread = std::make_unique<AudioThread>();
     _meteringService = std::make_unique<MeteringService>();
+    _mixerService = std::make_unique<MixerService>();
     std::cout << "[EngineHost] Created" << std::endl;
 }
 
@@ -134,5 +136,13 @@ MeteringService& EngineHost::metering() {
 
 const MeteringService& EngineHost::metering() const {
     return *_meteringService;
+}
+
+MixerService& EngineHost::mixer() {
+    return *_mixerService;
+}
+
+const MixerService& EngineHost::mixer() const {
+    return *_mixerService;
 }
 
