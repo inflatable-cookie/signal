@@ -17,6 +17,7 @@
 class AudioThread;
 class MeteringService;
 class MixerService;
+class AutomationService;
 
 class EngineHost {
 public:
@@ -57,12 +58,16 @@ public:
     MixerService& mixer();
     const MixerService& mixer() const;
 
+    AutomationService& automation();
+    const AutomationService& automation() const;
+
 private:
     State _state;
     std::optional<std::string> _lastError;
     std::unique_ptr<AudioThread> _audioThread;
     std::unique_ptr<MeteringService> _meteringService;
     std::unique_ptr<MixerService> _mixerService;
+    std::unique_ptr<AutomationService> _automationService;
     TransportState _transportState;
     bool _shuttingDown;
 
