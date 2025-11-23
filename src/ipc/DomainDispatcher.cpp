@@ -28,9 +28,6 @@ void DomainDispatcher::handleEnvelope(
     const IpcEnvelope& env,
     const std::shared_ptr<TcpClientSession>& session
 ) {
-    std::cout << "[DomainDispatcher] Received envelope: " << env.domain << "." << env.name
-              << " (kind: " << kindToString(env.kind) << ")" << std::endl;
-
     if (env.domain == "engine") {
         handleEngineDomain(env, session);
     } else if (env.domain == "transport") {

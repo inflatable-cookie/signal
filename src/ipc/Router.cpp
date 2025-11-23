@@ -17,9 +17,6 @@ void IpcRouter::dispatch(const Envelope& env) const {
         return;
     }
 
-    std::cout << "[IpcRouter] Dispatching to domain: " << env.domain
-              << ", name: " << env.name << std::endl;
-
     for (const auto& handler : it->second) {
         handler->handle(env);
     }
