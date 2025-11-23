@@ -90,11 +90,11 @@ int SignalApp::run() {
         }
     );
 
-    // Set up diagnostics timer (emit every second)
+    // Set up diagnostics timer (emit every 5 seconds)
     asio::steady_timer diagnosticsTimer(io);
     std::function<void()> scheduleDiagnostics;
     scheduleDiagnostics = [&diagnosticsTimer, &server, this, &shuttingDown, &scheduleDiagnostics]() {
-        diagnosticsTimer.expires_after(std::chrono::seconds(1));
+        diagnosticsTimer.expires_after(std::chrono::seconds(5));
         diagnosticsTimer.async_wait(
             [&server, this, &shuttingDown, &scheduleDiagnostics](std::error_code ec) {
                 if (ec || shuttingDown.load()) {
