@@ -147,6 +147,16 @@ int SignalApp::run() {
     };
     scheduleMetering();
 
+    // Set up callback to send initial engine state when a client connects
+    server.setClientConnectedCallback(
+        [&server, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
+            if (_engineHost) {
+                std::cout << "[SignalApp] Client connected, sending initial engine state..." << std::endl;
+                server.sendEngineState(_engineHost.get(), session);
+            }
+        }
+    );
+
     // Start server
     server.start();
 

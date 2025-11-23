@@ -64,6 +64,11 @@ void TcpServer::doAccept() {
                 }
 
                 session->start();
+
+                // Call client connected callback if set
+                if (clientConnectedCallback_) {
+                    clientConnectedCallback_(session);
+                }
             } else {
                 std::cerr << "[TcpServer] Accept error: " << ec.message() << std::endl;
             }
@@ -92,6 +97,10 @@ void TcpServer::stop() {
         acceptor_.close();
         std::cout << "[TcpServer] Server stopped" << std::endl;
     }
+}
+
+void TcpServer::setClientConnectedCallback(ClientConnectedCallback callback) {
+    clientConnectedCallback_ = std::move(callback);
 }
 
 } // namespace loophole::signal::ipc

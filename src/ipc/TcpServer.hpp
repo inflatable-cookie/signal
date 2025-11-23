@@ -6,6 +6,7 @@
 #include <asio/ip/tcp.hpp>
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -28,6 +29,11 @@ public:
 
     void start();
     void stop();
+
+    // Set callback to be called when a client connects
+    // The callback receives the newly connected session
+    using ClientConnectedCallback = std::function<void(const std::shared_ptr<TcpClientSession>&)>;
+    void setClientConnectedCallback(ClientConnectedCallback callback);
 
     // Broadcast metering update event to all connected clients
     template<typename MeteringServiceType>
@@ -90,6 +96,59 @@ public:
                 session->send(meteringEvent);
             }
         }
+    }
+
+    // Send current engine state to a specific client session
+    template<typename EngineHostType>
+    void sendEngineState(EngineHostType* engineHost, const std::shared_ptr<TcpClientSession>& session) {
+        if (!engineHost || !session) {
+            return;
+        }
+
+        // Create engine.state event
+        IpcEnvelope stateEvent;
+        stateEvent.version = 1;
+        stateEvent.id = "engine-state-initial-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        stateEvent.correlationId = std::nullopt;
+        stateEvent.timestamp = currentTimestamp();
+        stateEvent.origin = IpcOrigin::Signal;
+        stateEvent.target = IpcTarget::Pulse;
+        stateEvent.domain = "engine";
+        stateEvent.kind = IpcKind::Event;
+        stateEvent.name = "state";
+        stateEvent.priority = IpcPriority::Normal;
+
+        // Get current engine state
+        std::string lifecycle = "stopped";
+        std::optional<std::string> lastError;
+        switch (engineHost->state()) {
+        case EngineHostType::State::Stopped:
+            lifecycle = "stopped";
+            break;
+        case EngineHostType::State::Starting:
+            lifecycle = "starting";
+            break;
+        case EngineHostType::State::Running:
+            lifecycle = "running";
+            break;
+        case EngineHostType::State::Error:
+            lifecycle = "error";
+            lastError = engineHost->lastError();
+            break;
+        }
+
+        nlohmann::json payload;
+        payload["lifecycle"] = lifecycle;
+        if (lastError.has_value()) {
+            payload["lastError"] = lastError.value();
+        } else {
+            payload["lastError"] = nullptr;
+        }
+
+        stateEvent.payload = payload;
+
+        session->send(stateEvent);
     }
 
     // Broadcast diagnostics event to all connected clients
@@ -176,6 +235,7 @@ private:
     EnvelopeHandler handler_;
     std::mutex clientsMutex_;
     std::vector<std::weak_ptr<TcpClientSession>> clients_;
+    ClientConnectedCallback clientConnectedCallback_;
 };
 
 } // namespace loophole::signal::ipc
