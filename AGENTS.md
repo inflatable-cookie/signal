@@ -8,6 +8,14 @@ quick hacks or speculative abstraction.
 
 ---
 
+## Important: Significant Changes Require Reports
+
+Any **significant** change made to the repository must include an accompanying changelog entry. The changelog entry must follow the project convention: create a new file in `docs/reports/` named `<YYYY-MM-DD-HHMMSS>-<file-name>.md` describing the change.
+
+**Old report files must never be modified.** Existing files in `docs/reports/` are historical artefacts and should be left unchanged.
+
+---
+
 ## 1. Purpose of Signal
 
 Signal is the **real-time audio engine** for Loophole:
