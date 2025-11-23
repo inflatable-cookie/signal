@@ -29,6 +29,69 @@ public:
     void start();
     void stop();
 
+    // Broadcast metering update event to all connected clients
+    template<typename MeteringServiceType>
+    void broadcastMetering(MeteringServiceType* meteringService) {
+        std::lock_guard<std::mutex> lock(clientsMutex_);
+
+        // Remove expired weak pointers
+        clients_.erase(
+            std::remove_if(
+                clients_.begin(),
+                clients_.end(),
+                [](const std::weak_ptr<TcpClientSession>& wp) {
+                    return wp.expired();
+                }
+            ),
+            clients_.end()
+        );
+
+        if (!meteringService) {
+            return;
+        }
+
+        // Get metering snapshot
+        auto snapshot = meteringService->snapshotAll();
+        if (snapshot.empty()) {
+            return; // No channels to meter
+        }
+
+        // Create metering update envelope
+        IpcEnvelope meteringEvent;
+        meteringEvent.version = 1;
+        meteringEvent.id = "metering-update-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        meteringEvent.correlationId = std::nullopt;
+        meteringEvent.timestamp = currentTimestamp();
+        meteringEvent.origin = IpcOrigin::Signal;
+        meteringEvent.target = IpcTarget::Pulse;
+        meteringEvent.domain = "metering";
+        meteringEvent.kind = IpcKind::Event;
+        meteringEvent.name = "update";
+        meteringEvent.priority = IpcPriority::Normal;
+
+        // Build payload with channel metering data
+        nlohmann::json payload;
+        nlohmann::json channels = nlohmann::json::array();
+        for (const auto& metering : snapshot) {
+            nlohmann::json channel;
+            channel["channelId"] = metering.channelId;
+            channel["peak"] = metering.peak;
+            channel["rms"] = metering.rms;
+            channel["timestamp"] = metering.timestamp;
+            channels.push_back(channel);
+        }
+        payload["channels"] = channels;
+        meteringEvent.payload = payload;
+
+        // Send to all active clients
+        for (auto& weak_session : clients_) {
+            if (auto session = weak_session.lock()) {
+                session->send(meteringEvent);
+            }
+        }
+    }
+
     // Broadcast diagnostics event to all connected clients
     template<typename EngineHostType>
     void broadcastDiagnostics(EngineHostType* engineHost) {

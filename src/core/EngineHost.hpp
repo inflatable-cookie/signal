@@ -15,6 +15,7 @@
 #include <string>
 
 class AudioThread;
+class MeteringService;
 
 class EngineHost {
 public:
@@ -47,10 +48,15 @@ public:
     double getSampleRate() const;
     size_t getBlockSize() const;
 
+    // Metering
+    MeteringService& metering();
+    const MeteringService& metering() const;
+
 private:
     State _state;
     std::optional<std::string> _lastError;
     std::unique_ptr<AudioThread> _audioThread;
+    std::unique_ptr<MeteringService> _meteringService;
     TransportState _transportState;
     bool _shuttingDown;
 

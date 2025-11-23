@@ -1,8 +1,11 @@
 #include "core/EngineHost.hpp"
 #include "core/AudioThread.hpp"
+#include "core/MeteringService.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
+#include <chrono>
+#include <cmath>
 
 EngineHost::EngineHost()
     : _state(State::Stopped)
@@ -10,6 +13,7 @@ EngineHost::EngineHost()
     , _shuttingDown(false)
 {
     _audioThread = std::make_unique<AudioThread>();
+    _meteringService = std::make_unique<MeteringService>();
     std::cout << "[EngineHost] Created" << std::endl;
 }
 
@@ -38,6 +42,9 @@ void EngineHost::start() {
 
     _state = State::Starting;
     clearError();
+
+    // Wire up metering service to audio thread
+    _audioThread->setMeteringService(_meteringService.get());
 
     _audioThread->start();
 
@@ -119,5 +126,13 @@ double EngineHost::getSampleRate() const {
 
 size_t EngineHost::getBlockSize() const {
     return BLOCK_SIZE;
+}
+
+MeteringService& EngineHost::metering() {
+    return *_meteringService;
+}
+
+const MeteringService& EngineHost::metering() const {
+    return *_meteringService;
 }
 

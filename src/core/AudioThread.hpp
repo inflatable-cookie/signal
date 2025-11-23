@@ -13,6 +13,11 @@
 #include <atomic>
 #include <functional>
 #include <thread>
+#include <string>
+#include <vector>
+
+// Forward declaration
+class MeteringService;
 
 /// Minimal audio thread for Signal skeleton
 class AudioThread {
@@ -27,14 +32,19 @@ public:
     bool isRunning() const noexcept;
 
     void setCallback(AudioCallback callback);
+    void setMeteringService(MeteringService* meteringService);
+    void setActiveChannels(const std::vector<std::string>& channelIds);
 
 private:
     void audioLoop();
+    void updateMetering(float* buffer, size_t numFrames, int numChannels);
 
     std::atomic<bool> _running;
     std::atomic<bool> _shouldStop;
     std::thread _thread;
     AudioCallback _callback;
+    MeteringService* _meteringService;
+    std::vector<std::string> _activeChannels;
     static constexpr size_t BUFFER_SIZE = 256;
     static constexpr int NUM_CHANNELS = 2;
     static constexpr double SAMPLE_RATE = 44100.0;

@@ -6,6 +6,7 @@
 #include "core/EngineHost.hpp"
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
+#include "domains/MeteringDomain.hpp"
 #include <asio/io_context.hpp>
 #include <asio/steady_timer.hpp>
 #include <asio/signal_set.hpp>
@@ -29,6 +30,9 @@ SignalApp::SignalApp() {
 
     auto transportDomain = std::make_shared<TransportDomain>(_engineHost.get());
     _router->registerHandler("transport", transportDomain);
+
+    auto meteringDomain = std::make_shared<MeteringDomain>(&_engineHost->metering(), _engineHost.get());
+    _router->registerHandler("metering", meteringDomain);
 
     std::cout << "[SignalApp] Initialised" << std::endl;
 }
@@ -110,6 +114,29 @@ int SignalApp::run() {
         );
     };
     scheduleDiagnostics();
+
+    // Set up metering timer (emit every 50ms, ~20 Hz for smooth UI updates)
+    asio::steady_timer meteringTimer(io);
+    std::function<void()> scheduleMetering;
+    scheduleMetering = [&meteringTimer, &server, this, &shuttingDown, &scheduleMetering]() {
+        meteringTimer.expires_after(std::chrono::milliseconds(50));
+        meteringTimer.async_wait(
+            [&server, this, &shuttingDown, &scheduleMetering](std::error_code ec) {
+                if (ec || shuttingDown.load()) {
+                    return;
+                }
+
+                // Only send metering when engine is running
+                if (_engineHost && _engineHost->state() == EngineHost::State::Running) {
+                    server.broadcastMetering(&_engineHost->metering());
+                }
+
+                // Schedule next metering update
+                scheduleMetering();
+            }
+        );
+    };
+    scheduleMetering();
 
     // Start server
     server.start();
