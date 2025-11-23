@@ -4,6 +4,7 @@
 #include "ipc/DomainDispatcher.hpp"
 #include "ipc/IpcEnvelope.hpp"
 #include "core/EngineHost.hpp"
+#include "core/MeteringService.hpp"
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
 #include "domains/MeteringDomain.hpp"

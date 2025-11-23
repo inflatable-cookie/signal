@@ -9,6 +9,7 @@
 ///   - Updates MixerService state
 ///   - Changes are applied in real-time by audio thread
 
+#include "ipc/Router.hpp"
 #include "ipc/Envelope.hpp"
 #include <memory>
 

@@ -1,5 +1,6 @@
 #include "domains/MixerDomain.hpp"
 #include "core/EngineHost.hpp"
+#include "core/MixerService.hpp"
 #include "ipc/Envelope.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -24,7 +25,7 @@ void MixerDomain::handle(const Envelope& env) {
             bool isSoloed = payload["isSoloed"];
             bool effectiveMuted = payload["effectiveMuted"];
 
-            _engineHost->mixerService().updateChannel(
+            _engineHost->mixer().updateChannel(
                 channelId,
                 gain,
                 isMuted,
