@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-24 00:32:10 UTC) [added] Implemented audio engine runtime behaviour: integrated clip scheduling with audio callback, applied mixer gain/mute/solo in DSP path, implemented automation curve evaluation and application, added loop region wrapping in transport, and wired all systems together in real-time-safe audio processing pipeline.
+
 (2025-11-23 23:28:41 UTC) [changed] Removed redundant DomainDispatcher and IpcRouter log messages, keeping only domain-specific logs to reduce log noise.
 
 (2025-11-23 22:38:15 UTC) [fixed] Signal now emits engine.state events to newly connected clients, ensuring Aura receives notification of the current engine state when Pulse connects.

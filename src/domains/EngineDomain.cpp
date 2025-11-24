@@ -1,7 +1,9 @@
 #include "domains/EngineDomain.hpp"
 #include "core/EngineHost.hpp"
+#include "core/ClipScheduler.hpp"
 #include "ipc/Envelope.hpp"
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 EngineDomain::EngineDomain(EngineHost* engineHost) : _engineHost(engineHost) {
 }
@@ -31,12 +33,34 @@ void EngineDomain::handle(const Envelope& env) {
         std::cout << "[EngineDomain] Heartbeat command received" << std::endl;
     } else if (env.name == "scheduleSession") {
         // Handle schedule session command
-        // For now, just log - full implementation will schedule clips for playback
-        std::cout << "[EngineDomain] scheduleSession command received (scheduling not yet fully implemented)" << std::endl;
-        // TODO: Parse schedule payload and apply to engine
-        // - Clear existing schedule
-        // - Create playback objects for each scheduled clip
-        // - Map clips to channels/tracks
+        try {
+            nlohmann::json payload = env.payload;
+            std::vector<ScheduledClip> clips;
+
+            if (payload.contains("clips") && payload["clips"].is_array()) {
+                for (const auto& clipJson : payload["clips"]) {
+                    ScheduledClip clip;
+                    clip.clipId = clipJson.value("clipId", "");
+                    clip.channelId = clipJson.value("channelId", "");
+                    clip.startBeats = clipJson.value("startBeats", 0.0);
+                    clip.durationBeats = clipJson.value("durationBeats", 0.0);
+                    clip.gainDb = clipJson.value("gainDb", 0.0);
+                    clip.muted = clipJson.value("muted", false);
+                    clips.push_back(clip);
+                }
+            }
+
+            // Get tempo from transport (default 120 BPM if not available)
+            double tempo = 120.0; // TODO: Get from transport state or session
+            double sampleRate = _engineHost->getSampleRate();
+
+            // Apply schedule to ClipScheduler
+            _engineHost->clipScheduler().setSchedule(clips, tempo, sampleRate);
+
+            std::cout << "[EngineDomain] Applied schedule: " << clips.size() << " clips" << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "[EngineDomain] Failed to parse scheduleSession payload: " << e.what() << std::endl;
+        }
     } else {
         std::cout << "[EngineDomain] Unknown command: " << env.name << std::endl;
     }
