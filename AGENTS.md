@@ -10,9 +10,21 @@ quick hacks or speculative abstraction.
 
 ## Important: Significant Changes Require Reports
 
-Any **significant** change made to the repository must include an accompanying changelog entry. The changelog entry must follow the project convention: create a new file in `docs/reports/` named `<YYYY-MM-DD-HHMMSS>-<file-name>.md` describing the change.
+Any **significant** change made to the repository must include an accompanying changelog entry. The changelog entry must follow the project convention: create a new file in the **Chorus repository** at `loophole-chorus/docs/reports/` named `<YYYY-MM-DD-HHMMSS>-<file-name>.md` describing the change.
 
 **Old report files must never be modified.** Existing files in `docs/reports/` are historical artefacts and should be left unchanged.
+
+## Important: Documentation Policy
+
+All long-lived documentation (specs, ADRs, guides, references, reports) should be stored in the **Chorus** repository under `docs/`. Docs within Signal should generally be minimal stubs pointing to Chorus, unless there is a very strong repo-local reason.
+
+When making significant changes or completing non-trivial tasks, write a **report** in the Chorus repo at:
+- `loophole-chorus/docs/reports/`
+
+Use the filename format:
+- `YYYY-MM-DD-HHMMSS-file-name.md`
+
+Do **not** modify the content of historical report files; always create a new report for new work.
 
 ---
 
@@ -120,7 +132,7 @@ if (isReady) {
 - `src/ipc` – envelope, codec, server/router, domain handler interfaces.
 - `src/domains/<name>` – per-domain handlers (`engine`, `transport`, etc).
 - `tests/` – C++ tests (unit + integration).
-- `docs/` – plans and architecture.
+- `docs/` – minimal local docs (most documentation is in Chorus).
 
 Keep modules small and focused. One major type per file.
 
@@ -181,6 +193,7 @@ When adding DSP nodes to the audio graph:
 - When updating IPC, keep Chorus, Signal, Pulse and Aura in sync.
 - Do **not** modify old report files (e.g. `docs/reports/*` or timestamped reports).
 - Always update `CHANGELOG.md` for significant changes.
+- Write reports in the Chorus repository, not in Signal's local `docs/reports/`.
 
 ---
 
