@@ -12,6 +12,7 @@
 #include "core/TransportState.hpp"
 #include "core/EngineRenderContext.hpp"
 #include "core/AudioBus.hpp"
+#include "core/GraphSnapshot.hpp"
 #include <atomic>
 #include <memory>
 #include <optional>
@@ -24,6 +25,7 @@ class MeteringService;
 class MixerService;
 class AutomationService;
 class StreamScheduler;
+class GraphEngine;
 
 class EngineHost {
 public:
@@ -81,6 +83,16 @@ public:
     StreamScheduler& streamScheduler();
     const StreamScheduler& streamScheduler() const;
 
+    // Graph engine
+    GraphEngine& graphEngine();
+    const GraphEngine& graphEngine() const;
+
+    // Load graph snapshot (called from IPC thread)
+    void loadGraphSnapshot(const GraphSnapshot& snapshot);
+
+    // Prepare engine (called on control thread)
+    void prepareEngine(int sampleRate, int maxBlockSize);
+
     // Playhead management (for transport control)
     uint64_t getPlayheadSamples() const noexcept;
     void setPlayheadSamples(uint64_t samples) noexcept;
@@ -101,6 +113,7 @@ private:
     std::unique_ptr<MixerService> _mixerService;
     std::unique_ptr<AutomationService> _automationService;
     std::unique_ptr<StreamScheduler> _streamScheduler;
+    std::unique_ptr<GraphEngine> _graphEngine;
 
     // Transport state (thread-safe snapshot swap)
     // Control thread: updates via transport() which creates new snapshot and swaps atomically

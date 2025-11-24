@@ -8,6 +8,8 @@ add_library(signal-core STATIC
     core/AutomationService.cpp
     core/StreamScheduler.cpp
     core/ScheduleData.cpp
+    core/GraphNode.cpp
+    core/GraphEngine.cpp
     backend/MiniaudioBackend.cpp
     ipc/Envelope.cpp
     ipc/IpcEnvelope.cpp

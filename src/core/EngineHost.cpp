@@ -7,6 +7,7 @@
 #include "core/MixerService.hpp"
 #include "core/AutomationService.hpp"
 #include "core/StreamScheduler.hpp"
+#include "core/GraphEngine.hpp"
 #include "core/EngineRenderContext.hpp"
 #include "core/AudioBus.hpp"
 #include <iostream>
@@ -29,6 +30,7 @@ EngineHost::EngineHost()
     _mixerService = std::make_unique<MixerService>();
     _automationService = std::make_unique<AutomationService>();
     _streamScheduler = std::make_unique<StreamScheduler>();
+    _graphEngine = std::make_unique<GraphEngine>();
 
     // Initialize transport state with default values
     _transportState = std::make_shared<TransportState>();
@@ -233,6 +235,25 @@ const StreamScheduler& EngineHost::streamScheduler() const {
     return *_streamScheduler;
 }
 
+GraphEngine& EngineHost::graphEngine() {
+    return *_graphEngine;
+}
+
+const GraphEngine& EngineHost::graphEngine() const {
+    return *_graphEngine;
+}
+
+void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
+    _graphEngine->loadGraphSnapshot(snapshot);
+    // Mark that prepareEngine should be called before next render
+    // For Phase 1, we'll call prepareEngine explicitly when needed
+}
+
+void EngineHost::prepareEngine(int sampleRate, int maxBlockSize) {
+    _graphEngine->prepareGraph(sampleRate, maxBlockSize);
+    // TODO: Also prepare plugins, allocate buffers, etc. in future phases
+}
+
 uint64_t EngineHost::getPlayheadSamples() const noexcept {
     return _playheadSamples.load(std::memory_order_acquire);
 }
@@ -366,11 +387,19 @@ void EngineHost::renderBlock(
     // Clear output buffer
     output.clear();
 
-    // TODO: Implement full audio pipeline via node graph:
+    // Process nodes in execution order (Phase 1: no-op processing)
+    const auto& executionOrder = _graphEngine->getExecutionOrder();
+    for (GraphNode* node : executionOrder) {
+        if (node) {
+            node->process(); // No-op for Phase 1
+        }
+    }
+
+    // TODO: Phase 2 - Attach Stream Inputs & Minimal Audio/MIDI Flow:
     // - Get active audio segments per stream from StreamScheduler
     // - Load audio data from assets (per streamId)
-    // - Feed streams into lane nodes (from GraphSnapshot)
-    // - Process through node graph (lane → fx → mixer → output)
+    // - Feed streams into lane nodes using getStreamBindings()
+    // - Process through node graph with real audio/MIDI buffers
     // - Apply automation per node/parameter
     // - Apply mixer gain/mute/solo per channel (channels are processing paths, not tracks)
     // - Loop handling
@@ -379,7 +408,7 @@ void EngineHost::renderBlock(
     // Architecture: Signal processes streams via node graph, not clips/channels.
     // Pulse compiles Tracks → Lanes → Streams and sends stream-based schedules.
 
-    // For now, produce silence or a simple test tone
+    // For now, produce silence (nodes are processed but don't generate audio yet)
     // Uncomment the test tone code below to verify audio output:
     /*
     const float testToneFreq = 440.0f; // A4
