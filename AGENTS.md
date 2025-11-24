@@ -24,6 +24,8 @@ When making significant changes or completing non-trivial tasks, write a **repor
 Use the filename format:
 - `YYYY-MM-DD-HHMMSS-file-name.md`
 
+**Important:** The timestamp `YYYY-MM-DD-HHMMSS` must be the **actual current date and time** (UTC) when creating the report, not a placeholder. Use a command like `date -u +"%Y-%m-%d-%H%M%S"` to generate the correct timestamp.
+
 Do **not** modify the content of historical report files; always create a new report for new work.
 
 ---
