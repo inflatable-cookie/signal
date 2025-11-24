@@ -20,6 +20,7 @@
 #include "core/NodeProcessContext.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/AudioAssetSource.hpp"
+#include "core/PluginHost.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -47,7 +48,7 @@ public:
 
     /// Load a graph snapshot (replaces entire graph)
     /// Called on control thread
-    void loadGraphSnapshot(const GraphSnapshot& snapshot);
+    void loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost = nullptr);
 
     /// Prepare graph for processing (called on control thread)
     /// Calls prepare() on all nodes in execution order
@@ -77,7 +78,7 @@ public:
 
 private:
     /// Node factory - creates appropriate node subclass based on NodeKind
-    std::unique_ptr<GraphNode> createNode(const NodeDesc& desc);
+    std::unique_ptr<GraphNode> createNode(const NodeDesc& desc, PluginHost* pluginHost);
 
     /// Compute execution order using topological sort (Kahn's algorithm)
     void computeExecutionOrder();
@@ -111,5 +112,8 @@ private:
 
     /// In-degree map for topological sort (nodeId -> number of incoming edges)
     std::unordered_map<NodeId, uint32_t> _inDegree;
+
+    /// Plugin host (for creating plugin instances)
+    PluginHost* _pluginHost;
 };
 

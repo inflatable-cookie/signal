@@ -13,11 +13,13 @@
 #include "core/EngineRenderContext.hpp"
 #include "core/AudioBus.hpp"
 #include "core/GraphSnapshot.hpp"
+#include "core/ParameterChange.hpp"
 #include <atomic>
 #include <memory>
 #include <optional>
 #include <string>
 #include <cstdint>
+#include <vector>
 
 class AudioThread;
 class AudioBackend;
@@ -27,6 +29,7 @@ class AutomationService;
 class StreamScheduler;
 class GraphEngine;
 class AudioAssetSource;
+class PluginHost;
 
 class EngineHost {
 public:
@@ -91,6 +94,9 @@ public:
     // Load graph snapshot (called from IPC thread)
     void loadGraphSnapshot(const GraphSnapshot& snapshot);
 
+    // Parameter changes (called from IPC thread)
+    void applyParameterChanges(const std::vector<ParameterChange>& changes);
+
     // Prepare engine (called on control thread)
     void prepareEngine(int sampleRate, int maxBlockSize);
 
@@ -116,6 +122,14 @@ private:
     std::unique_ptr<StreamScheduler> _streamScheduler;
     std::unique_ptr<GraphEngine> _graphEngine;
     std::unique_ptr<AudioAssetSource> _audioAssetSource; // Phase 3: Asset source for audio streaming
+    std::unique_ptr<PluginHost> _pluginHost; // Phase 4: Plugin host for creating plugin instances
+
+    // Parameter change queue (lock-free, double-buffered for real-time safety)
+    // Control thread: writes to _pendingParameterChanges
+    // Audio thread: reads from _activeParameterChanges at block start
+    std::vector<ParameterChange> _pendingParameterChanges;
+    std::vector<ParameterChange> _activeParameterChanges;
+    std::atomic<bool> _parameterChangesPending;
 
     // Transport state (thread-safe snapshot swap)
     // Control thread: updates via transport() which creates new snapshot and swaps atomically

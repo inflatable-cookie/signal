@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <cmath>
 
-GraphEngine::GraphEngine() {
+GraphEngine::GraphEngine() : _pluginHost(nullptr) {
     std::cout << "[GraphEngine] Created" << std::endl;
 }
 
@@ -16,9 +16,11 @@ GraphEngine::~GraphEngine() {
     std::cout << "[GraphEngine] Destroyed" << std::endl;
 }
 
-void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot) {
+void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost) {
     // Clear existing graph
     clear();
+
+    _pluginHost = pluginHost;
 
     std::cout << "[GraphEngine] Loading graph snapshot: " << snapshot.id
               << " (" << snapshot.nodes.size() << " nodes, "
@@ -26,7 +28,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot) {
 
     // Create nodes
     for (const auto& desc : snapshot.nodes) {
-        auto node = createNode(desc);
+        auto node = createNode(desc, pluginHost);
         if (node) {
             _nodes[desc.nodeId] = std::move(node);
         } else {
@@ -105,7 +107,7 @@ void GraphEngine::clear() {
     _inDegree.clear();
 }
 
-std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc) {
+std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginHost* pluginHost) {
     std::string trackId = desc.trackId.value_or("");
     std::string laneId = desc.laneId.value_or("");
     std::string pluginId = desc.pluginId.value_or("");
@@ -118,13 +120,13 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc) {
             return std::make_unique<AudioLaneNode>(desc.nodeId, trackId, laneId);
 
         case NodeKind::MidiFx:
-            return std::make_unique<MidiFxNode>(desc.nodeId, trackId, pluginId);
+            return std::make_unique<MidiFxNode>(desc.nodeId, trackId, desc, pluginHost);
 
         case NodeKind::Instrument:
-            return std::make_unique<InstrumentNode>(desc.nodeId, trackId, pluginId);
+            return std::make_unique<InstrumentNode>(desc.nodeId, trackId, desc, pluginHost);
 
         case NodeKind::AudioFx:
-            return std::make_unique<AudioFxNode>(desc.nodeId, trackId, pluginId);
+            return std::make_unique<AudioFxNode>(desc.nodeId, trackId, desc, pluginHost);
 
         case NodeKind::Send:
             return std::make_unique<SendNode>(desc.nodeId, trackId, pluginId); // Using pluginId as busId for now

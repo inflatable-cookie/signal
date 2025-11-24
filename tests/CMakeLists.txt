@@ -15,6 +15,7 @@ add_executable(signal-tests
     test_schedule_transport_thread_safety.cpp
     test_graph_runtime.cpp
     test_graph_runtime_phase3.cpp
+    test_plugin_hosting.cpp
 )
 
 target_link_libraries(signal-tests PRIVATE

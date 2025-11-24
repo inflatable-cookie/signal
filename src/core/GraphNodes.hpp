@@ -12,10 +12,14 @@
 #include "core/ScheduleData.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/AudioAssetSource.hpp"
+#include "core/PluginInstance.hpp"
+#include "core/PluginHost.hpp"
+#include "core/GraphSnapshot.hpp"
 #include <string>
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <iostream>
 
 /// MidiLaneNode - one per MIDI Lane
 /// Injects MIDI events from stream into graph
@@ -146,9 +150,10 @@ private:
 };
 
 /// MidiFxNode - MIDI effect plugins
-/// Phase 2: Pass-through MIDI
+/// Phase 4: Processes MIDI through plugin
 class MidiFxNode : public GraphNode {
 public:
+    // Legacy constructor (for backward compatibility)
     MidiFxNode(
         const NodeId& id,
         const std::string& trackId = "",
@@ -156,26 +161,72 @@ public:
     )
         : GraphNode(id, NodeKind::MidiFx, trackId)
         , _pluginId(pluginId)
+        , _plugin(nullptr)
     {
+    }
+
+    // Phase 4: Constructor with plugin descriptor
+    MidiFxNode(
+        const NodeId& id,
+        const std::string& trackId,
+        const NodeDesc& desc,
+        PluginHost* pluginHost
+    )
+        : GraphNode(id, NodeKind::MidiFx, trackId)
+        , _pluginId(desc.pluginId.value_or(""))
+        , _plugin(nullptr)
+    {
+        if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
+            // Build PluginDescriptor from NodeDesc
+            PluginDescriptor pluginDesc;
+            pluginDesc.format = desc.pluginFormat.value();
+            pluginDesc.id = desc.pluginId.value();
+            pluginDesc.name = desc.pluginId.value(); // Use ID as name for now
+            pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(0);
+            pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(0);
+            pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(1) > 0;
+            pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(1) > 0;
+
+            _plugin = pluginHost->createInstance(pluginDesc);
+            if (!_plugin) {
+                std::cerr << "[MidiFxNode] Failed to create plugin instance: " << pluginDesc.id << std::endl;
+            }
+        }
     }
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
-    void process(const NodeProcessContext& npc) override {
-        // Phase 3: Pass-through MIDI
-        io.midiOut.clear();
-        io.midiOut.append(io.midiIn);
-        // TODO: Phase 4 - Process through plugin
+    void prepare(int sampleRate, int maxBlockSize) override {
+        GraphNode::prepare(sampleRate, maxBlockSize);
+        if (_plugin) {
+            _plugin->prepare(static_cast<double>(sampleRate), maxBlockSize);
+            _plugin->reset();
+        }
     }
+
+    void process(const NodeProcessContext& npc) override {
+        if (_plugin) {
+            // Phase 4: Process through plugin
+            _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
+        } else {
+            // Fallback: Pass-through MIDI
+            io.midiOut.clear();
+            io.midiOut.append(io.midiIn);
+        }
+    }
+
+    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
 
 private:
     std::string _pluginId;
+    std::unique_ptr<PluginInstance> _plugin;
 };
 
 /// InstrumentNode - instruments (MIDI in → audio out)
-/// Phase 2: Pass-through audio, ignore MIDI
+/// Phase 4: Processes MIDI through instrument plugin
 class InstrumentNode : public GraphNode {
 public:
+    // Legacy constructor (for backward compatibility)
     InstrumentNode(
         const NodeId& id,
         const std::string& trackId = "",
@@ -183,25 +234,71 @@ public:
     )
         : GraphNode(id, NodeKind::Instrument, trackId)
         , _pluginId(pluginId)
+        , _plugin(nullptr)
     {
+    }
+
+    // Phase 4: Constructor with plugin descriptor
+    InstrumentNode(
+        const NodeId& id,
+        const std::string& trackId,
+        const NodeDesc& desc,
+        PluginHost* pluginHost
+    )
+        : GraphNode(id, NodeKind::Instrument, trackId)
+        , _pluginId(desc.pluginId.value_or(""))
+        , _plugin(nullptr)
+    {
+        if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
+            // Build PluginDescriptor from NodeDesc
+            PluginDescriptor pluginDesc;
+            pluginDesc.format = desc.pluginFormat.value();
+            pluginDesc.id = desc.pluginId.value();
+            pluginDesc.name = desc.pluginId.value(); // Use ID as name for now
+            pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(0);
+            pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(2); // Instruments typically have audio out
+            pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(1) > 0;
+            pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(0) > 0;
+
+            _plugin = pluginHost->createInstance(pluginDesc);
+            if (!_plugin) {
+                std::cerr << "[InstrumentNode] Failed to create plugin instance: " << pluginDesc.id << std::endl;
+            }
+        }
     }
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
-    void process(const NodeProcessContext& npc) override {
-        // Phase 3: Pass-through audio, ignore MIDI
-        io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 4 - Process MIDI through instrument plugin
+    void prepare(int sampleRate, int maxBlockSize) override {
+        GraphNode::prepare(sampleRate, maxBlockSize);
+        if (_plugin) {
+            _plugin->prepare(static_cast<double>(sampleRate), maxBlockSize);
+            _plugin->reset();
+        }
     }
+
+    void process(const NodeProcessContext& npc) override {
+        if (_plugin) {
+            // Phase 4: Process MIDI through instrument plugin
+            _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
+        } else {
+            // Fallback: Pass-through audio, ignore MIDI
+            io.audioOut.copyFrom(io.audioIn);
+        }
+    }
+
+    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
 
 private:
     std::string _pluginId;
+    std::unique_ptr<PluginInstance> _plugin;
 };
 
 /// AudioFxNode - audio effects
-/// Phase 2: Pass-through audio
+/// Phase 4: Processes audio through plugin
 class AudioFxNode : public GraphNode {
 public:
+    // Legacy constructor (for backward compatibility)
     AudioFxNode(
         const NodeId& id,
         const std::string& trackId = "",
@@ -209,19 +306,64 @@ public:
     )
         : GraphNode(id, NodeKind::AudioFx, trackId)
         , _pluginId(pluginId)
+        , _plugin(nullptr)
     {
+    }
+
+    // Phase 4: Constructor with plugin descriptor
+    AudioFxNode(
+        const NodeId& id,
+        const std::string& trackId,
+        const NodeDesc& desc,
+        PluginHost* pluginHost
+    )
+        : GraphNode(id, NodeKind::AudioFx, trackId)
+        , _pluginId(desc.pluginId.value_or(""))
+        , _plugin(nullptr)
+    {
+        if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
+            // Build PluginDescriptor from NodeDesc
+            PluginDescriptor pluginDesc;
+            pluginDesc.format = desc.pluginFormat.value();
+            pluginDesc.id = desc.pluginId.value();
+            pluginDesc.name = desc.pluginId.value(); // Use ID as name for now
+            pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(2);
+            pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(2);
+            pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(0) > 0;
+            pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(0) > 0;
+
+            _plugin = pluginHost->createInstance(pluginDesc);
+            if (!_plugin) {
+                std::cerr << "[AudioFxNode] Failed to create plugin instance: " << pluginDesc.id << std::endl;
+            }
+        }
     }
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
-    void process(const NodeProcessContext& npc) override {
-        // Phase 3: Pass-through audio
-        io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 4 - Process through plugin
+    void prepare(int sampleRate, int maxBlockSize) override {
+        GraphNode::prepare(sampleRate, maxBlockSize);
+        if (_plugin) {
+            _plugin->prepare(static_cast<double>(sampleRate), maxBlockSize);
+            _plugin->reset();
+        }
     }
+
+    void process(const NodeProcessContext& npc) override {
+        if (_plugin) {
+            // Phase 4: Process through plugin
+            _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
+        } else {
+            // Fallback: Pass-through audio
+            io.audioOut.copyFrom(io.audioIn);
+        }
+    }
+
+    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
 
 private:
     std::string _pluginId;
+    std::unique_ptr<PluginInstance> _plugin;
 };
 
 /// SendNode - sends to FX buses (ReceiveNodes)

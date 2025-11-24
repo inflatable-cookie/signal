@@ -11,6 +11,8 @@
 #include "core/EngineRenderContext.hpp"
 #include "core/AudioBus.hpp"
 #include "core/AudioAssetSource.hpp"
+#include "core/PluginHost.hpp"
+#include "core/GraphNodes.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -33,6 +35,8 @@ EngineHost::EngineHost()
     _streamScheduler = std::make_unique<StreamScheduler>();
     _graphEngine = std::make_unique<GraphEngine>();
     _audioAssetSource = std::make_unique<StubAudioAssetSource>(); // Phase 3: Use stub for now
+    _pluginHost = std::make_unique<PluginHost>(); // Phase 4: Plugin host
+    _parameterChangesPending.store(false, std::memory_order_release);
 
     // Initialize transport state with default values
     _transportState = std::make_shared<TransportState>();
@@ -264,6 +268,12 @@ void EngineHost::setPlayheadSamples(uint64_t samples) noexcept {
     _playheadSamples.store(samples, std::memory_order_release);
 }
 
+void EngineHost::applyParameterChanges(const std::vector<ParameterChange>& changes) {
+    // Called on control thread - queue changes for audio thread
+    _pendingParameterChanges.insert(_pendingParameterChanges.end(), changes.begin(), changes.end());
+    _parameterChangesPending.store(true, std::memory_order_release);
+}
+
 void EngineHost::setupAudioCallback() {
     _audioThread->setCallback([this](float* buffer, size_t numFrames, int numChannels) {
         this->audioCallback(buffer, numFrames, numChannels);
@@ -389,7 +399,40 @@ void EngineHost::renderBlock(
     // Clear output buffer
     output.clear();
 
-    // Process graph (Phase 3: real audio streaming, send/receive routing)
+    // Phase 4: Apply pending parameter changes (lock-free swap)
+    if (_parameterChangesPending.load(std::memory_order_acquire)) {
+        // Swap pending changes to active (control thread writes, audio thread reads)
+        _activeParameterChanges.clear();
+        _activeParameterChanges.swap(_pendingParameterChanges);
+        _parameterChangesPending.store(false, std::memory_order_release);
+
+        // Apply parameter changes to plugin nodes
+        for (const auto& change : _activeParameterChanges) {
+            GraphNode* node = _graphEngine->findNode(change.nodeId);
+            if (!node) {
+                continue;
+            }
+
+            // Check if node has a plugin
+            PluginInstance* plugin = nullptr;
+            if (node->getKind() == NodeKind::MidiFx) {
+                auto* midiFx = dynamic_cast<MidiFxNode*>(node);
+                if (midiFx) plugin = midiFx->getPlugin();
+            } else if (node->getKind() == NodeKind::Instrument) {
+                auto* instrument = dynamic_cast<InstrumentNode*>(node);
+                if (instrument) plugin = instrument->getPlugin();
+            } else if (node->getKind() == NodeKind::AudioFx) {
+                auto* audioFx = dynamic_cast<AudioFxNode*>(node);
+                if (audioFx) plugin = audioFx->getPlugin();
+            }
+
+            if (plugin) {
+                plugin->setParameterValue(change.paramId, change.normalisedValue);
+            }
+        }
+    }
+
+    // Process graph (Phase 4: real audio streaming, send/receive routing, plugin processing)
     _graphEngine->processGraph(ctx, _streamScheduler.get(), _audioAssetSource.get());
 
     // Copy device node output to EngineHost output buffer
