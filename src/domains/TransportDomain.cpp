@@ -21,17 +21,20 @@ void TransportDomain::handle(const Envelope& env) {
 
     auto& transport = _engineHost->transport();
 
+    double sampleRate = _engineHost->getSampleRate();
+    double tempo = transport.tempo; // Get tempo from transport state
+
     if (env.name == "play") {
         transport.isPlaying = true;
         // Update playhead from transport position (in case we seeked while stopped)
-        uint64_t playheadSamples = static_cast<uint64_t>(transport.positionSeconds * 44100.0);
+        uint64_t playheadSamples = static_cast<uint64_t>(transport.positionSeconds * sampleRate);
         _engineHost->setPlayheadSamples(playheadSamples);
         std::cout << "[TransportDomain] Play command received, playhead: " << playheadSamples << " samples" << std::endl;
     } else if (env.name == "stop") {
         transport.isPlaying = false;
         // Update transport position from playhead when stopping
         uint64_t playheadSamples = _engineHost->getPlayheadSamples();
-        transport.positionSeconds = static_cast<double>(playheadSamples) / 44100.0;
+        transport.positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
         std::cout << "[TransportDomain] Stop command received, position: " << transport.positionSeconds << "s" << std::endl;
     } else if (env.name == "seek") {
         try {
@@ -40,18 +43,18 @@ void TransportDomain::handle(const Envelope& env) {
             if (payload.contains("positionSamples")) {
                 // Direct sample position (preferred)
                 uint64_t samples = payload["positionSamples"].get<uint64_t>();
-                positionSeconds = static_cast<double>(samples) / 44100.0; // Use engine sample rate
+                positionSeconds = static_cast<double>(samples) / sampleRate; // Use engine sample rate
             } else if (payload.contains("seconds")) {
                 positionSeconds = payload["seconds"].get<double>();
             } else if (payload.contains("positionBeats")) {
-                // Convert beats to seconds (assume 120 BPM for now)
+                // Convert beats to seconds using real tempo
                 double beats = payload["positionBeats"].get<double>();
-                positionSeconds = beats * 60.0 / 120.0;
+                positionSeconds = (beats / tempo) * 60.0;
             }
             transport.positionSeconds = positionSeconds;
 
             // Update playhead in samples
-            uint64_t playheadSamples = static_cast<uint64_t>(positionSeconds * 44100.0);
+            uint64_t playheadSamples = static_cast<uint64_t>(positionSeconds * sampleRate);
             _engineHost->setPlayheadSamples(playheadSamples);
 
             std::cout << "[TransportDomain] Seek command received, position: "
@@ -79,19 +82,19 @@ void TransportDomain::handle(const Envelope& env) {
             if (payload.contains("startSamples") && payload.contains("endSamples")) {
                 uint64_t startSamples = payload["startSamples"].get<uint64_t>();
                 uint64_t endSamples = payload["endSamples"].get<uint64_t>();
-                region.startSeconds = static_cast<double>(startSamples) / 44100.0;
-                region.endSeconds = static_cast<double>(endSamples) / 44100.0;
+                region.startSeconds = static_cast<double>(startSamples) / sampleRate;
+                region.endSeconds = static_cast<double>(endSamples) / sampleRate;
                 hasRegion = true;
             } else if (payload.contains("startSeconds") && payload.contains("endSeconds")) {
                 region.startSeconds = payload["startSeconds"].get<double>();
                 region.endSeconds = payload["endSeconds"].get<double>();
                 hasRegion = true;
             } else if (payload.contains("startBeats") && payload.contains("endBeats")) {
-                // Convert beats to seconds (assume 120 BPM for now)
+                // Convert beats to seconds using real tempo
                 double startBeats = payload["startBeats"].get<double>();
                 double endBeats = payload["endBeats"].get<double>();
-                region.startSeconds = startBeats * 60.0 / 120.0;
-                region.endSeconds = endBeats * 60.0 / 120.0;
+                region.startSeconds = (startBeats / tempo) * 60.0;
+                region.endSeconds = (endBeats / tempo) * 60.0;
                 hasRegion = true;
             }
 
@@ -108,6 +111,16 @@ void TransportDomain::handle(const Envelope& env) {
             }
         } catch (const std::exception& e) {
             std::cerr << "[TransportDomain] Failed to parse setLoopRegion payload: " << e.what() << std::endl;
+        }
+    } else if (env.name == "setTempo") {
+        try {
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
+            if (payload.contains("tempo")) {
+                transport.tempo = payload["tempo"].get<double>();
+                std::cout << "[TransportDomain] Tempo set to: " << transport.tempo << " BPM" << std::endl;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[TransportDomain] Failed to parse setTempo payload: " << e.what() << std::endl;
         }
     } else {
         std::cout << "[TransportDomain] Unknown command: " << env.name << std::endl;

@@ -21,12 +21,14 @@ struct TransportState {
     double positionSeconds;
     bool loopEnabled;
     std::optional<LoopRegion> loopRegion;
+    double tempo; // Tempo in BPM
 
     TransportState()
         : isPlaying(false)
         , positionSeconds(0.0)
         , loopEnabled(false)
         , loopRegion(std::nullopt)
+        , tempo(120.0) // Default 120 BPM
     {
     }
 };

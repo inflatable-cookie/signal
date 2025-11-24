@@ -50,8 +50,8 @@ void EngineDomain::handle(const Envelope& env) {
                 }
             }
 
-            // Get tempo from transport (default 120 BPM if not available)
-            double tempo = 120.0; // TODO: Get from transport state or session
+            // Get tempo from transport state
+            double tempo = _engineHost->transport().tempo;
             double sampleRate = _engineHost->getSampleRate();
 
             // Apply schedule to ClipScheduler

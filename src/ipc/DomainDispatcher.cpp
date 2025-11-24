@@ -119,6 +119,11 @@ void DomainDispatcher::handleEngineDomain(
         } else {
             payload["lastError"] = nullptr;
         }
+        // Include sample rate and block size in state event
+        if (engineHost_) {
+            payload["sampleRate"] = engineHost_->getSampleRate();
+            payload["blockSize"] = engineHost_->getBlockSize();
+        }
 
         stateEvent.payload = payload;
 
@@ -232,12 +237,14 @@ void DomainDispatcher::handleTransportDomain(
         if (engineHost_) {
             const auto& transport = engineHost_->transport();
             payload["isPlaying"] = transport.isPlaying;
-            payload["positionBeats"] = transport.positionSeconds * 120.0 / 60.0; // Convert to beats (assume 120 BPM)
+            // Convert seconds to beats using real tempo
+            double tempo = transport.tempo;
+            payload["positionBeats"] = (transport.positionSeconds / 60.0) * tempo;
             payload["loopEnabled"] = transport.loopEnabled;
             if (transport.loopRegion.has_value()) {
                 nlohmann::json loopRegion;
-                loopRegion["startBeats"] = transport.loopRegion->startSeconds * 120.0 / 60.0;
-                loopRegion["endBeats"] = transport.loopRegion->endSeconds * 120.0 / 60.0;
+                loopRegion["startBeats"] = (transport.loopRegion->startSeconds / 60.0) * tempo;
+                loopRegion["endBeats"] = (transport.loopRegion->endSeconds / 60.0) * tempo;
                 payload["loopRegion"] = loopRegion;
             } else {
                 payload["loopRegion"] = nullptr;
