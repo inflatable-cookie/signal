@@ -35,6 +35,11 @@ private:
         const std::shared_ptr<TcpClientSession>& session
     );
 
+    void handleGenericDomain(
+        const IpcEnvelope& env,
+        const std::shared_ptr<TcpClientSession>& session
+    );
+
     IpcRouter* router_;
     EngineHost* engineHost_;
 };

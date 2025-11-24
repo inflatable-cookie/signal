@@ -33,7 +33,8 @@ void DomainDispatcher::handleEnvelope(
     } else if (env.domain == "transport") {
         handleTransportDomain(env, session);
     } else {
-        handleUnknownDomain(env, session);
+        // Route other domains (automation, mixer, metering, etc.) through the router
+        handleGenericDomain(env, session);
     }
 }
 
@@ -260,6 +261,28 @@ void DomainDispatcher::handleTransportDomain(
 
         session->send(stateEvent);
     }
+}
+
+void DomainDispatcher::handleGenericDomain(
+    const IpcEnvelope& env,
+    const std::shared_ptr<TcpClientSession>& session
+) {
+    // Convert new IpcEnvelope to old Envelope for existing router
+    Envelope old_env;
+    old_env.v = env.version;
+    old_env.id = env.id;
+    old_env.cid = env.correlationId.value_or("");
+    old_env.ts = env.timestamp;
+    old_env.origin = originToString(env.origin);
+    old_env.target = targetToString(env.target);
+    old_env.domain = env.domain;
+    old_env.kind = kindToString(env.kind);
+    old_env.name = env.name;
+    old_env.priority = priorityToString(env.priority);
+    old_env.payload = env.payload.dump();
+
+    // Dispatch to router (this will call the appropriate domain handler)
+    router_->dispatch(old_env);
 }
 
 void DomainDispatcher::handleUnknownDomain(

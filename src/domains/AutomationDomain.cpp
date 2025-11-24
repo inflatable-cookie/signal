@@ -18,7 +18,7 @@ void AutomationDomain::handle(const Envelope& env) {
 
     if (env.name == "setCurvesForSession") {
         try {
-            nlohmann::json payload = env.payload;
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
             std::vector<AutomationCurve> curves;
 
             if (payload.contains("curves") && payload["curves"].is_array()) {
@@ -49,7 +49,7 @@ void AutomationDomain::handle(const Envelope& env) {
         }
     } else if (env.name == "updateCurve") {
         try {
-            nlohmann::json payload = env.payload;
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
             AutomationCurve curve;
             curve.targetId = payload["targetId"];
             curve.parameter = payload["parameter"];
