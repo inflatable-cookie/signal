@@ -16,6 +16,8 @@
 
 #include "core/GraphNode.hpp"
 #include "core/GraphSnapshot.hpp"
+#include "core/EngineRenderContext.hpp"
+#include "core/StreamScheduler.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -64,6 +66,13 @@ public:
     /// Clear the graph (remove all nodes and connections)
     void clear();
 
+    /// Execute graph processing (called on audio thread)
+    /// - Clears all node buffers
+    /// - Injects stream data into lane nodes
+    /// - Routes connections (fan-in)
+    /// - Processes nodes in execution order
+    void processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler);
+
 private:
     /// Node factory - creates appropriate node subclass based on NodeKind
     std::unique_ptr<GraphNode> createNode(const NodeDesc& desc);
@@ -73,6 +82,15 @@ private:
 
     /// Build adjacency list for topological sort
     void buildAdjacencyList();
+
+    /// Clear all node buffers (called before processing)
+    void clearAllBuffers();
+
+    /// Inject stream data into lane nodes (called before processing)
+    void injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler);
+
+    /// Route connections (fan-in audio/MIDI from upstream nodes)
+    void routeConnections();
 
     /// Nodes keyed by ID
     std::unordered_map<NodeId, std::unique_ptr<GraphNode>> _nodes;

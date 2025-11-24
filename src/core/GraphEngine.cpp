@@ -1,8 +1,10 @@
 #include "core/GraphEngine.hpp"
 #include "core/GraphNodes.hpp"
+#include "core/StreamScheduler.hpp"
 #include <iostream>
 #include <queue>
 #include <algorithm>
+#include <cmath>
 
 GraphEngine::GraphEngine() {
     std::cout << "[GraphEngine] Created" << std::endl;
@@ -224,5 +226,98 @@ void GraphEngine::computeExecutionOrder() {
             }
         }
     }
+}
+
+void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler) {
+    // 1. Clear all node buffers
+    clearAllBuffers();
+
+    // 2. Inject stream data into lane nodes
+    if (scheduler) {
+        injectStreamData(ctx, scheduler);
+    }
+
+    // 3. Process nodes in execution order
+    // For each node, route connections from upstream nodes, then process
+    for (GraphNode* node : _executionOrder) {
+        if (!node) continue;
+
+        // Route connections from upstream nodes to this node (fan-in)
+        for (const auto& conn : _connections) {
+            if (conn.toNodeId == node->getId()) {
+                GraphNode* fromNode = findNode(conn.fromNodeId);
+                if (fromNode) {
+                    // Sum audio from upstream node
+                    node->io.audioIn.sumFrom(fromNode->io.audioOut);
+                    // Append MIDI from upstream node
+                    node->io.midiIn.append(fromNode->io.midiOut);
+                }
+            }
+        }
+
+        // Process node
+        node->process(ctx);
+    }
+}
+
+void GraphEngine::clearAllBuffers() {
+    for (auto& pair : _nodes) {
+        if (pair.second) {
+            // Clear input buffers (will be filled by routing/injection)
+            pair.second->io.audioIn.clear();
+            pair.second->io.midiIn.clear();
+            // Clear output buffers (will be filled by processing)
+            pair.second->io.audioOut.clear();
+            pair.second->io.midiOut.clear();
+        }
+    }
+}
+
+void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler) {
+    const ScheduleData* schedule = scheduler->getSchedule();
+    if (!schedule) {
+        return;
+    }
+
+    uint64_t blockStartSamples = ctx.playheadSamples;
+    uint64_t blockEndSamples = blockStartSamples + ctx.blockSize;
+
+    // Inject data for each stream binding
+    for (const auto& binding : _streamBindings) {
+        GraphNode* targetNode = findNode(binding.targetNodeId);
+        if (!targetNode) {
+            continue;
+        }
+
+        // Determine node type and inject accordingly
+        if (targetNode->getKind() == NodeKind::AudioLane) {
+            auto* audioLane = dynamic_cast<AudioLaneNode*>(targetNode);
+            if (audioLane) {
+                audioLane->setStreamId(binding.streamId);
+
+                // Get active audio segments for this stream
+                auto segments = scheduler->getActiveAudioSegments(binding.streamId, blockStartSamples);
+                for (const auto* segment : segments) {
+                    if (segment && segment->startSamples < blockEndSamples && segment->endSamples > blockStartSamples) {
+                        audioLane->injectAudioSegment(segment, blockStartSamples, ctx.blockSize);
+                    }
+                }
+            }
+        } else if (targetNode->getKind() == NodeKind::MidiLane) {
+            auto* midiLane = dynamic_cast<MidiLaneNode*>(targetNode);
+            if (midiLane) {
+                midiLane->setStreamId(binding.streamId);
+
+                // Get MIDI events for this stream in block range
+                auto events = scheduler->getMidiEventsInRange(binding.streamId, blockStartSamples, blockEndSamples);
+                midiLane->injectMidiEvents(events, blockStartSamples);
+            }
+        }
+    }
+}
+
+void GraphEngine::routeConnections() {
+    // This method is no longer used - routing happens inline in processGraph()
+    // Kept for potential future use or debugging
 }
 

@@ -6,11 +6,13 @@
 /// Ownership: Owned by GraphEngine
 ///
 /// This is the base interface for all nodes in the processing graph.
-/// For Phase 1, prepare() and process() are no-op; they will be implemented
-/// in future phases when DSP is added.
+/// Phase 2 adds internal buffers and stream injection support.
 
+#include "core/NodeBuffers.hpp"
+#include "core/EngineRenderContext.hpp"
 #include <string>
 #include <cstdint>
+#include <forward_list>
 
 /// Node kind - determines the type of processing node
 enum class NodeKind {
@@ -49,18 +51,28 @@ public:
     const std::string& getLaneId() const noexcept { return _laneId; }
 
     /// Prepare node for processing (called on control thread)
-    /// For Phase 1, this is no-op; will allocate buffers, load plugins, etc. in future phases
+    /// Allocates buffers based on node configuration
     virtual void prepare(int sampleRate, int maxBlockSize) {
-        (void)sampleRate;
-        (void)maxBlockSize;
-        // No-op for Phase 1
+        _sampleRate = sampleRate;
+        _maxBlockSize = maxBlockSize;
+        // Default: stereo audio buffers
+        io.audioIn.resize(2, maxBlockSize);
+        io.audioOut.resize(2, maxBlockSize);
     }
 
     /// Process audio/MIDI (called on audio thread)
-    /// For Phase 1, this is no-op; will process audio/MIDI buffers in future phases
-    virtual void process() {
-        // No-op for Phase 1
-    }
+    /// Must be implemented by subclasses
+    virtual void process(EngineRenderContext& ctx) = 0;
+
+    /// Node I/O buffers
+    struct NodeIO {
+        AudioBuffer audioIn;
+        AudioBuffer audioOut;
+        MidiBuffer midiIn;
+        MidiBuffer midiOut;
+    };
+
+    NodeIO io;
 
 protected:
     GraphNode(
@@ -75,6 +87,10 @@ protected:
         , _laneId(laneId)
     {
     }
+
+protected:
+    int _sampleRate = 44100;
+    int _maxBlockSize = 512;
 
 private:
     NodeId _id;

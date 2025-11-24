@@ -6,12 +6,17 @@
 /// Ownership: Owned by GraphEngine
 ///
 /// These are concrete node implementations for each node kind.
-/// For Phase 1, they are simple shells with no-op prepare/process.
+/// Phase 2 adds stream injection and pass-through processing.
 
 #include "core/GraphNode.hpp"
+#include "core/ScheduleData.hpp"
+#include "core/StreamScheduler.hpp"
 #include <string>
+#include <vector>
+#include <cmath>
 
 /// MidiLaneNode - one per MIDI Lane
+/// Injects MIDI events from stream into graph
 class MidiLaneNode : public GraphNode {
 public:
     MidiLaneNode(
@@ -20,11 +25,53 @@ public:
         const std::string& laneId = ""
     )
         : GraphNode(id, NodeKind::MidiLane, trackId, laneId)
+        , _streamId("") // Set by GraphEngine during stream injection
     {
     }
+
+    void setStreamId(const StreamId& streamId) {
+        _streamId = streamId;
+    }
+
+    const StreamId& getStreamId() const noexcept {
+        return _streamId;
+    }
+
+    void process(EngineRenderContext& ctx) override {
+        // Clear output
+        io.midiOut.clear();
+
+        // TODO: Phase 3 - Get MIDI events from StreamScheduler
+        // For Phase 2, we'll inject events externally via injectMidiEvents()
+    }
+
+    /// Inject MIDI events into this lane node (called by GraphEngine)
+    void injectMidiEvents(const std::vector<const MidiEventCompiled*>& events, uint64_t blockStartSamples) {
+        io.midiOut.clear();
+        for (const auto* event : events) {
+            if (event && event->streamId == _streamId) {
+                MidiMessage msg;
+                msg.status = event->status;
+                msg.data1 = event->data1;
+                msg.data2 = event->data2;
+                msg.channel = event->channel;
+                // Calculate sample offset within block
+                if (event->timeSamples >= blockStartSamples) {
+                    msg.sampleOffset = event->timeSamples - blockStartSamples;
+                } else {
+                    msg.sampleOffset = 0; // Event before block start
+                }
+                io.midiOut.addMessage(msg);
+            }
+        }
+    }
+
+private:
+    StreamId _streamId;
 };
 
 /// AudioLaneNode - one per Audio Lane
+/// Injects audio segments from stream into graph
 class AudioLaneNode : public GraphNode {
 public:
     AudioLaneNode(
@@ -33,11 +80,62 @@ public:
         const std::string& laneId = ""
     )
         : GraphNode(id, NodeKind::AudioLane, trackId, laneId)
+        , _streamId("") // Set by GraphEngine during stream injection
     {
     }
+
+    void setStreamId(const StreamId& streamId) {
+        _streamId = streamId;
+    }
+
+    const StreamId& getStreamId() const noexcept {
+        return _streamId;
+    }
+
+    void process(EngineRenderContext& ctx) override {
+        // Clear output
+        io.audioOut.clear();
+
+        // TODO: Phase 3 - Load audio from assets
+        // For Phase 2, we'll inject audio externally via injectAudioSegment()
+        // For now, output silence or test tone
+    }
+
+    /// Inject audio segment into this lane node (called by GraphEngine)
+    /// For Phase 2, this generates a test tone; Phase 3 will load real audio
+    void injectAudioSegment(
+        const AudioSegmentCompiled* segment,
+        uint64_t blockStartSamples,
+        int numFrames
+    ) {
+        if (!segment || segment->streamId != _streamId) {
+            return;
+        }
+
+        // For Phase 2: Generate test tone (440 Hz sine wave)
+        // Phase 3 will load real audio from assets
+        const float testToneFreq = 440.0f;
+        const float amplitude = 0.1f;
+        const float sampleRate = static_cast<float>(_sampleRate);
+
+        for (int frame = 0; frame < numFrames; ++frame) {
+            uint64_t globalSample = blockStartSamples + frame;
+            if (globalSample >= segment->startSamples && globalSample < segment->endSamples) {
+                float time = static_cast<float>(globalSample) / sampleRate;
+                float sample = amplitude * std::sin(2.0f * 3.14159265359f * testToneFreq * time);
+                // Write to both channels (stereo)
+                io.audioOut.setSample(frame, 0, sample);
+                io.audioOut.setSample(frame, 1, sample);
+            }
+        }
+    }
+
+private:
+    StreamId _streamId;
 };
 
 /// MidiFxNode - MIDI effect plugins
+/// Phase 2: Pass-through MIDI
 class MidiFxNode : public GraphNode {
 public:
     MidiFxNode(
@@ -52,11 +150,18 @@ public:
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through MIDI
+        io.midiOut = io.midiIn;
+        // TODO: Phase 4 - Process through plugin
+    }
+
 private:
     std::string _pluginId;
 };
 
 /// InstrumentNode - instruments (MIDI in → audio out)
+/// Phase 2: Pass-through audio, ignore MIDI
 class InstrumentNode : public GraphNode {
 public:
     InstrumentNode(
@@ -71,11 +176,18 @@ public:
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through audio, ignore MIDI
+        io.audioOut.copyFrom(io.audioIn);
+        // TODO: Phase 4 - Process MIDI through instrument plugin
+    }
+
 private:
     std::string _pluginId;
 };
 
 /// AudioFxNode - audio effects
+/// Phase 2: Pass-through audio
 class AudioFxNode : public GraphNode {
 public:
     AudioFxNode(
@@ -90,11 +202,18 @@ public:
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through audio
+        io.audioOut.copyFrom(io.audioIn);
+        // TODO: Phase 4 - Process through plugin
+    }
+
 private:
     std::string _pluginId;
 };
 
 /// SendNode - sends to FX buses
+/// Phase 2: Pass-through audio (forking to buses will come later)
 class SendNode : public GraphNode {
 public:
     SendNode(
@@ -109,11 +228,18 @@ public:
 
     const std::string& getBusId() const noexcept { return _busId; }
 
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through audio
+        // TODO: Phase 3 - Fork audio to bus
+        io.audioOut.copyFrom(io.audioIn);
+    }
+
 private:
     std::string _busId;
 };
 
 /// MixerChannelNode - final channel output into busses/master
+/// Phase 2: Pass-through or sum inputs
 class MixerChannelNode : public GraphNode {
 public:
     MixerChannelNode(
@@ -123,9 +249,16 @@ public:
         : GraphNode(id, NodeKind::MixerChannel, trackId)
     {
     }
+
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through (summing happens via connection routing)
+        io.audioOut.copyFrom(io.audioIn);
+        // TODO: Phase 3 - Apply gain/mute/solo
+    }
 };
 
 /// BusNode - receives from SendNodes (FX bus)
+/// Phase 2: Sum inputs (fan-in)
 class BusNode : public GraphNode {
 public:
     BusNode(
@@ -139,16 +272,29 @@ public:
 
     const std::string& getBusName() const noexcept { return _busName; }
 
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through (summing happens via connection routing)
+        io.audioOut.copyFrom(io.audioIn);
+        // TODO: Phase 3 - Apply bus processing
+    }
+
 private:
     std::string _busName;
 };
 
 /// MasterNode - master output
+/// Phase 2: Pass-through (writes to EngineHost output)
 class MasterNode : public GraphNode {
 public:
     MasterNode(const NodeId& id)
         : GraphNode(id, NodeKind::Master)
     {
+    }
+
+    void process(EngineRenderContext& ctx) override {
+        // Phase 2: Pass-through (output will be copied to EngineHost output buffer)
+        io.audioOut.copyFrom(io.audioIn);
+        // TODO: Phase 3 - Apply master processing, metering
     }
 };
 

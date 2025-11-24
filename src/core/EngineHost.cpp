@@ -387,11 +387,29 @@ void EngineHost::renderBlock(
     // Clear output buffer
     output.clear();
 
-    // Process nodes in execution order (Phase 1: no-op processing)
+    // Process graph (Phase 2: stream injection and pass-through)
+    _graphEngine->processGraph(ctx, _streamScheduler.get());
+
+    // Copy master node output to EngineHost output buffer
     const auto& executionOrder = _graphEngine->getExecutionOrder();
+    GraphNode* masterNode = nullptr;
     for (GraphNode* node : executionOrder) {
-        if (node) {
-            node->process(); // No-op for Phase 1
+        if (node && node->getKind() == NodeKind::Master) {
+            masterNode = node;
+            break;
+        }
+    }
+
+    if (masterNode) {
+        // Copy audio from master node to output bus
+        const int numChannels = std::min(masterNode->io.audioOut.numChannels(), output.numChannels());
+        const int numFrames = std::min(masterNode->io.audioOut.numFrames(), output.numFrames());
+
+        for (int ch = 0; ch < numChannels; ++ch) {
+            const float* src = masterNode->io.audioOut.getChannelData(ch);
+            for (int frame = 0; frame < numFrames; ++frame) {
+                output.setSample(frame, ch, src[frame]);
+            }
         }
     }
 
