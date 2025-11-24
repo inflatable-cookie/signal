@@ -23,7 +23,7 @@ enum class NodeKind {
     AudioFx,
     Send,
     MixerChannel,
-    Bus,
+    Receive,  // Receives from SendNodes (was Bus)
     Master
 };
 

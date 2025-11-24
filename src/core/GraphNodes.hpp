@@ -257,29 +257,29 @@ public:
     }
 };
 
-/// BusNode - receives from SendNodes (FX bus)
+/// ReceiveNode - receives from SendNodes (receive point for routed audio/MIDI)
 /// Phase 2: Sum inputs (fan-in)
-class BusNode : public GraphNode {
+class ReceiveNode : public GraphNode {
 public:
-    BusNode(
+    ReceiveNode(
         const NodeId& id,
-        const std::string& busName = ""
+        const std::string& receiveName = ""
     )
-        : GraphNode(id, NodeKind::Bus)
-        , _busName(busName)
+        : GraphNode(id, NodeKind::Receive)
+        , _receiveName(receiveName)
     {
     }
 
-    const std::string& getBusName() const noexcept { return _busName; }
+    const std::string& getReceiveName() const noexcept { return _receiveName; }
 
     void process(EngineRenderContext& ctx) override {
         // Phase 2: Pass-through (summing happens via connection routing)
         io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 3 - Apply bus processing
+        // TODO: Phase 3 - Apply receive processing
     }
 
 private:
-    std::string _busName;
+    std::string _receiveName;
 };
 
 /// MasterNode - master output

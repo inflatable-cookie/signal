@@ -131,8 +131,8 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc) {
         case NodeKind::MixerChannel:
             return std::make_unique<MixerChannelNode>(desc.nodeId, trackId);
 
-        case NodeKind::Bus:
-            return std::make_unique<BusNode>(desc.nodeId, pluginId); // Using pluginId as busName for now
+        case NodeKind::Receive:
+            return std::make_unique<ReceiveNode>(desc.nodeId, pluginId); // Using pluginId as receiveName for now
 
         case NodeKind::Master:
             return std::make_unique<MasterNode>(desc.nodeId);
