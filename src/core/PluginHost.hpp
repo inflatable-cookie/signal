@@ -6,14 +6,18 @@
 /// Ownership: Owned by EngineHost
 ///
 /// This class is responsible for creating PluginInstance objects from PluginDescriptors.
-/// In Phase 4, only CLAP is implemented; other formats return nullptr.
+/// Phase 5: Uses ClapRegistry for plugin discovery and creation.
 
 #include "core/PluginInstance.hpp"
 #include <memory>
 #include <string>
 
-// Forward declaration
-std::unique_ptr<PluginInstance> createClapInstance(const PluginDescriptor& desc);
+// Forward declarations
+class ClapRegistry;
+std::unique_ptr<PluginInstance> createClapInstance(
+    std::shared_ptr<class ClapPluginLibrary> library,
+    const struct clap_plugin_descriptor* clapDesc
+);
 
 class PluginHost {
 public:
@@ -30,7 +34,11 @@ public:
     /// @return true if format is supported, false otherwise
     virtual bool isFormatSupported(PluginFormat format) const;
 
+    /// Get the CLAP registry (for discovery)
+    ClapRegistry& getClapRegistry() { return *_clapRegistry; }
+    const ClapRegistry& getClapRegistry() const { return *_clapRegistry; }
+
 private:
-    // Future: plugin discovery, caching, etc.
+    std::unique_ptr<ClapRegistry> _clapRegistry;
 };
 

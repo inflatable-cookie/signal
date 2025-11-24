@@ -11,6 +11,8 @@ add_library(signal-core STATIC
     core/GraphNode.cpp
     core/GraphEngine.cpp
     core/PluginHost.cpp
+    clap/ClapPluginLibrary.cpp
+    clap/ClapRegistry.cpp
     clap/ClapPluginInstance.cpp
     backend/MiniaudioBackend.cpp
     ipc/Envelope.cpp
