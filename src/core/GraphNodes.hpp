@@ -11,9 +11,11 @@
 #include "core/GraphNode.hpp"
 #include "core/ScheduleData.hpp"
 #include "core/StreamScheduler.hpp"
+#include "core/AudioAssetSource.hpp"
 #include <string>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 /// MidiLaneNode - one per MIDI Lane
 /// Injects MIDI events from stream into graph
@@ -37,12 +39,10 @@ public:
         return _streamId;
     }
 
-    void process(EngineRenderContext& ctx) override {
-        // Clear output
-        io.midiOut.clear();
-
-        // TODO: Phase 3 - Get MIDI events from StreamScheduler
-        // For Phase 2, we'll inject events externally via injectMidiEvents()
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: MIDI events are injected via injectMidiEvents() before process() is called
+        // This node just passes through (or could apply lane-level processing in future)
+        // For now, MIDI is already in midiOut from injection
     }
 
     /// Inject MIDI events into this lane node (called by GraphEngine)
@@ -92,42 +92,53 @@ public:
         return _streamId;
     }
 
-    void process(EngineRenderContext& ctx) override {
-        // Clear output
-        io.audioOut.clear();
-
-        // TODO: Phase 3 - Load audio from assets
-        // For Phase 2, we'll inject audio externally via injectAudioSegment()
-        // For now, output silence or test tone
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Audio is injected via injectAudioSegment() before process() is called
+        // This node just passes through (or could apply lane-level processing in future)
+        // For now, audio is already in audioOut from injection
     }
 
     /// Inject audio segment into this lane node (called by GraphEngine)
-    /// For Phase 2, this generates a test tone; Phase 3 will load real audio
+    /// Phase 3: Loads real audio from AudioAssetSource
     void injectAudioSegment(
         const AudioSegmentCompiled* segment,
         uint64_t blockStartSamples,
-        int numFrames
+        int numFrames,
+        class AudioAssetSource* assetSource
     ) {
-        if (!segment || segment->streamId != _streamId) {
+        if (!segment || segment->streamId != _streamId || !assetSource) {
             return;
         }
 
-        // For Phase 2: Generate test tone (440 Hz sine wave)
-        // Phase 3 will load real audio from assets
-        const float testToneFreq = 440.0f;
-        const float amplitude = 0.1f;
-        const float sampleRate = static_cast<float>(_sampleRate);
+        // Clear output buffer (will be filled with audio segments)
+        io.audioOut.clear();
 
-        for (int frame = 0; frame < numFrames; ++frame) {
-            uint64_t globalSample = blockStartSamples + frame;
-            if (globalSample >= segment->startSamples && globalSample < segment->endSamples) {
-                float time = static_cast<float>(globalSample) / sampleRate;
-                float sample = amplitude * std::sin(2.0f * 3.14159265359f * testToneFreq * time);
-                // Write to both channels (stereo)
-                io.audioOut.setSample(frame, 0, sample);
-                io.audioOut.setSample(frame, 1, sample);
-            }
+        // Calculate intersection of segment with current block
+        uint64_t blockEndSamples = blockStartSamples + numFrames;
+        uint64_t segmentStart = std::max(segment->startSamples, blockStartSamples);
+        uint64_t segmentEnd = std::min(segment->endSamples, blockEndSamples);
+
+        if (segmentStart >= segmentEnd) {
+            return; // No intersection
         }
+
+        // Calculate frame offsets within block
+        int blockOffsetStart = static_cast<int>(segmentStart - blockStartSamples);
+        int framesToRead = static_cast<int>(segmentEnd - segmentStart);
+
+        // Calculate absolute sample position in asset
+        uint64_t assetStartSample = segment->assetStartSamples + (segmentStart - segment->startSamples);
+
+        // Read audio from asset source
+        int numChannels = io.audioOut.numChannels();
+        assetSource->readSamples(
+            segment->assetId,
+            assetStartSample,
+            framesToRead,
+            io.audioOut,
+            blockOffsetStart,
+            numChannels
+        );
     }
 
 private:
@@ -150,9 +161,10 @@ public:
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through MIDI
-        io.midiOut = io.midiIn;
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Pass-through MIDI
+        io.midiOut.clear();
+        io.midiOut.append(io.midiIn);
         // TODO: Phase 4 - Process through plugin
     }
 
@@ -176,8 +188,8 @@ public:
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through audio, ignore MIDI
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Pass-through audio, ignore MIDI
         io.audioOut.copyFrom(io.audioIn);
         // TODO: Phase 4 - Process MIDI through instrument plugin
     }
@@ -202,8 +214,8 @@ public:
 
     const std::string& getPluginId() const noexcept { return _pluginId; }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through audio
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Pass-through audio
         io.audioOut.copyFrom(io.audioIn);
         // TODO: Phase 4 - Process through plugin
     }
@@ -212,34 +224,44 @@ private:
     std::string _pluginId;
 };
 
-/// SendNode - sends to FX buses
-/// Phase 2: Pass-through audio (forking to buses will come later)
+/// SendNode - sends to FX buses (ReceiveNodes)
+/// Phase 3: Applies send level and outputs to connections
 class SendNode : public GraphNode {
 public:
     SendNode(
         const NodeId& id,
         const std::string& trackId = "",
-        const std::string& busId = ""
+        const std::string& receiveId = ""
     )
         : GraphNode(id, NodeKind::Send, trackId)
-        , _busId(busId)
+        , _receiveId(receiveId)
+        , _sendLevel(1.0f) // Default: unity gain
     {
     }
 
-    const std::string& getBusId() const noexcept { return _busId; }
+    const std::string& getReceiveId() const noexcept { return _receiveId; }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through audio
-        // TODO: Phase 3 - Fork audio to bus
+    /// Set send level (linear gain, 0.0 = off, 1.0 = unity)
+    void setSendLevel(float level) {
+        _sendLevel = level;
+    }
+
+    float getSendLevel() const noexcept { return _sendLevel; }
+
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Apply send level and output
+        // The send level is applied during connection routing in GraphEngine
+        // For now, just copy input to output (scaling happens in routing)
         io.audioOut.copyFrom(io.audioIn);
     }
 
 private:
-    std::string _busId;
+    std::string _receiveId; // Target ReceiveNode ID
+    float _sendLevel;       // Linear gain (0.0 to 1.0+)
 };
 
 /// MixerChannelNode - final channel output into busses/device
-/// Phase 2: Pass-through or sum inputs
+/// Phase 3: Applies gain and panning
 class MixerChannelNode : public GraphNode {
 public:
     MixerChannelNode(
@@ -247,14 +269,70 @@ public:
         const std::string& trackId = ""
     )
         : GraphNode(id, NodeKind::MixerChannel, trackId)
+        , _gainLinear(1.0f)  // Default: unity gain
+        , _pan(0.0f)         // Default: center pan
     {
     }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through (summing happens via connection routing)
-        io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 3 - Apply gain/mute/solo
+    /// Set gain (linear, 0.0 = off, 1.0 = unity)
+    void setGain(float gain) {
+        _gainLinear = gain;
     }
+
+    float getGain() const noexcept { return _gainLinear; }
+
+    /// Set pan (-1.0 = left, 0.0 = center, 1.0 = right)
+    /// Only used for stereo layouts
+    void setPan(float pan) {
+        _pan = pan;
+        // Clamp to [-1.0, 1.0]
+        if (_pan < -1.0f) _pan = -1.0f;
+        if (_pan > 1.0f) _pan = 1.0f;
+    }
+
+    float getPan() const noexcept { return _pan; }
+
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Apply gain and panning
+        int numChannels = io.audioOut.numChannels();
+        int numFrames = io.audioOut.numFrames();
+
+        if (numChannels == 1) {
+            // Mono: Apply gain only
+            for (int frame = 0; frame < numFrames; ++frame) {
+                float sample = io.audioIn.getSample(frame, 0) * _gainLinear;
+                io.audioOut.setSample(frame, 0, sample);
+            }
+        } else if (numChannels == 2) {
+            // Stereo: Apply gain and pan
+            // Simple linear pan: left = (1 - pan), right = (1 + pan)
+            // For pan = -1.0 (left): left = 2.0, right = 0.0
+            // For pan = 0.0 (center): left = 1.0, right = 1.0
+            // For pan = 1.0 (right): left = 0.0, right = 2.0
+            float leftGain = (1.0f - _pan) * _gainLinear;
+            float rightGain = (1.0f + _pan) * _gainLinear;
+
+            for (int frame = 0; frame < numFrames; ++frame) {
+                float inLeft = io.audioIn.getSample(frame, 0);
+                float inRight = (io.audioIn.numChannels() > 1) ? io.audioIn.getSample(frame, 1) : inLeft;
+
+                io.audioOut.setSample(frame, 0, inLeft * leftGain);
+                io.audioOut.setSample(frame, 1, inRight * rightGain);
+            }
+        } else {
+            // Multi-channel: Apply gain uniformly (no panning)
+            for (int ch = 0; ch < numChannels; ++ch) {
+                for (int frame = 0; frame < numFrames; ++frame) {
+                    float sample = io.audioIn.getSample(frame, ch) * _gainLinear;
+                    io.audioOut.setSample(frame, ch, sample);
+                }
+            }
+        }
+    }
+
+private:
+    float _gainLinear; // Linear gain (0.0 to 1.0+)
+    float _pan;        // Pan position (-1.0 = left, 0.0 = center, 1.0 = right)
 };
 
 /// ReceiveNode - receives from SendNodes (receive point for routed audio/MIDI)
@@ -272,10 +350,10 @@ public:
 
     const std::string& getReceiveName() const noexcept { return _receiveName; }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through (summing happens via connection routing)
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Pass-through (summing happens via connection routing)
         io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 3 - Apply receive processing
+        // TODO: Phase 4 - Apply receive processing (FX chain)
     }
 
 private:
@@ -295,10 +373,10 @@ public:
     {
     }
 
-    void process(EngineRenderContext& ctx) override {
-        // Phase 2: Pass-through (output will be copied to EngineHost output buffer)
+    void process(const NodeProcessContext& npc) override {
+        // Phase 3: Pass-through (output will be copied to EngineHost output buffer)
         io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 3 - Apply device processing, metering
+        // TODO: Phase 4 - Apply device processing, metering
     }
 };
 

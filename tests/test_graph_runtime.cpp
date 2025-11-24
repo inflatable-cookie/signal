@@ -5,6 +5,8 @@
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/EngineRenderContext.hpp"
+#include "core/NodeProcessContext.hpp"
+#include "core/AudioAssetSource.hpp"
 #include "core/AudioBus.hpp"
 #include <vector>
 #include <string>
@@ -316,7 +318,8 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     ctx.blockSize = 512;
     ctx.playheadSamples = 0;
 
-    engine.processGraph(ctx, &scheduler);
+    StubAudioAssetSource assetSource;
+    engine.processGraph(ctx, &scheduler, &assetSource);
 
     // Verify lane node received stream
     auto* lane = dynamic_cast<AudioLaneNode*>(engine.findNode("audio-lane-1"));
@@ -388,7 +391,11 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
     fx->io.audioIn.sumFrom(lane->io.audioOut);
 
     // Process FX node
-    fx->process(ctx);
+    NodeProcessContext npc;
+    npc.sampleRate = 44100;
+    npc.blockSize = 512;
+    npc.blockStartSample = 0;
+    fx->process(npc);
 
     // Verify FX received and passed through audio
     REQUIRE(fx->io.audioIn.getSample(0, 0) == 0.5f);
@@ -398,7 +405,7 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
     auto* device = engine.findNode("device");
     REQUIRE(device != nullptr);
     device->io.audioIn.sumFrom(fx->io.audioOut);
-    device->process(ctx);
+    device->process(npc);
 
     // Verify device received audio
     REQUIRE(device->io.audioIn.getSample(0, 0) == 0.5f);
@@ -476,7 +483,11 @@ TEST_CASE("GraphEngine - MIDI routing", "[graph][midi]") {
     REQUIRE(midiFx->io.midiIn.size() == 1);
 
     // Process FX (pass-through)
-    midiFx->process(ctx);
+    NodeProcessContext npc;
+    npc.sampleRate = 44100;
+    npc.blockSize = 512;
+    npc.blockStartSample = 0;
+    midiFx->process(npc);
     REQUIRE(midiFx->io.midiOut.size() == 1);
 
     // Route to instrument

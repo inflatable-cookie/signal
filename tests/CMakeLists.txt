@@ -14,6 +14,7 @@ add_executable(signal-tests
     test_audio_bus.cpp
     test_schedule_transport_thread_safety.cpp
     test_graph_runtime.cpp
+    test_graph_runtime_phase3.cpp
 )
 
 target_link_libraries(signal-tests PRIVATE

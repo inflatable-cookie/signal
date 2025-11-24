@@ -17,7 +17,9 @@
 #include "core/GraphNode.hpp"
 #include "core/GraphSnapshot.hpp"
 #include "core/EngineRenderContext.hpp"
+#include "core/NodeProcessContext.hpp"
 #include "core/StreamScheduler.hpp"
+#include "core/AudioAssetSource.hpp"
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -69,9 +71,9 @@ public:
     /// Execute graph processing (called on audio thread)
     /// - Clears all node buffers
     /// - Injects stream data into lane nodes
-    /// - Routes connections (fan-in)
+    /// - Routes connections (fan-in, with send levels)
     /// - Processes nodes in execution order
-    void processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler);
+    void processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource);
 
 private:
     /// Node factory - creates appropriate node subclass based on NodeKind
@@ -87,7 +89,7 @@ private:
     void clearAllBuffers();
 
     /// Inject stream data into lane nodes (called before processing)
-    void injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler);
+    void injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource);
 
     /// Route connections (fan-in audio/MIDI from upstream nodes)
     void routeConnections();

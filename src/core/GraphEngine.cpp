@@ -1,6 +1,7 @@
 #include "core/GraphEngine.hpp"
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
+#include "core/NodeProcessContext.hpp"
 #include <iostream>
 #include <queue>
 #include <algorithm>
@@ -228,16 +229,22 @@ void GraphEngine::computeExecutionOrder() {
     }
 }
 
-void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler) {
+void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource) {
     // 1. Clear all node buffers
     clearAllBuffers();
 
     // 2. Inject stream data into lane nodes
-    if (scheduler) {
-        injectStreamData(ctx, scheduler);
+    if (scheduler && assetSource) {
+        injectStreamData(ctx, scheduler, assetSource);
     }
 
-    // 3. Process nodes in execution order
+    // 3. Build NodeProcessContext for this block
+    NodeProcessContext npc;
+    npc.sampleRate = static_cast<int>(ctx.sampleRate);
+    npc.blockSize = ctx.blockSize;
+    npc.blockStartSample = ctx.playheadSamples;
+
+    // 4. Process nodes in execution order
     // For each node, route connections from upstream nodes, then process
     for (GraphNode* node : _executionOrder) {
         if (!node) continue;
@@ -247,16 +254,41 @@ void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* 
             if (conn.toNodeId == node->getId()) {
                 GraphNode* fromNode = findNode(conn.fromNodeId);
                 if (fromNode) {
-                    // Sum audio from upstream node
-                    node->io.audioIn.sumFrom(fromNode->io.audioOut);
+                    // Check if fromNode is a SendNode - apply send level
+                    if (fromNode->getKind() == NodeKind::Send) {
+                        auto* sendNode = dynamic_cast<SendNode*>(fromNode);
+                        if (sendNode) {
+                            float sendLevel = sendNode->getSendLevel();
+                            // Apply send level when summing
+                            // Create a temporary scaled buffer
+                            AudioBuffer scaledBuffer;
+                            scaledBuffer.resize(fromNode->io.audioOut.numChannels(), fromNode->io.audioOut.numFrames());
+                            scaledBuffer.copyFrom(fromNode->io.audioOut);
+                            // Scale by send level
+                            for (int ch = 0; ch < scaledBuffer.numChannels(); ++ch) {
+                                for (int frame = 0; frame < scaledBuffer.numFrames(); ++frame) {
+                                    float sample = scaledBuffer.getSample(frame, ch) * sendLevel;
+                                    scaledBuffer.setSample(frame, ch, sample);
+                                }
+                            }
+                            // Sum scaled audio into destination
+                            node->io.audioIn.sumFrom(scaledBuffer);
+                        } else {
+                            // Fallback: sum without scaling
+                            node->io.audioIn.sumFrom(fromNode->io.audioOut);
+                        }
+                    } else {
+                        // Normal connection: sum audio from upstream node
+                        node->io.audioIn.sumFrom(fromNode->io.audioOut);
+                    }
                     // Append MIDI from upstream node
                     node->io.midiIn.append(fromNode->io.midiOut);
                 }
             }
         }
 
-        // Process node
-        node->process(ctx);
+        // Process node with NodeProcessContext
+        node->process(npc);
     }
 }
 
@@ -273,9 +305,9 @@ void GraphEngine::clearAllBuffers() {
     }
 }
 
-void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler) {
+void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource) {
     const ScheduleData* schedule = scheduler->getSchedule();
-    if (!schedule) {
+    if (!schedule || !assetSource) {
         return;
     }
 
@@ -299,7 +331,8 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
                 auto segments = scheduler->getActiveAudioSegments(binding.streamId, blockStartSamples);
                 for (const auto* segment : segments) {
                     if (segment && segment->startSamples < blockEndSamples && segment->endSamples > blockStartSamples) {
-                        audioLane->injectAudioSegment(segment, blockStartSamples, ctx.blockSize);
+                        // Phase 3: Pass AudioAssetSource to injectAudioSegment
+                        audioLane->injectAudioSegment(segment, blockStartSamples, ctx.blockSize, assetSource);
                     }
                 }
             }

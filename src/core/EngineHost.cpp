@@ -10,6 +10,7 @@
 #include "core/GraphEngine.hpp"
 #include "core/EngineRenderContext.hpp"
 #include "core/AudioBus.hpp"
+#include "core/AudioAssetSource.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -31,6 +32,7 @@ EngineHost::EngineHost()
     _automationService = std::make_unique<AutomationService>();
     _streamScheduler = std::make_unique<StreamScheduler>();
     _graphEngine = std::make_unique<GraphEngine>();
+    _audioAssetSource = std::make_unique<StubAudioAssetSource>(); // Phase 3: Use stub for now
 
     // Initialize transport state with default values
     _transportState = std::make_shared<TransportState>();
@@ -387,8 +389,8 @@ void EngineHost::renderBlock(
     // Clear output buffer
     output.clear();
 
-    // Process graph (Phase 2: stream injection and pass-through)
-    _graphEngine->processGraph(ctx, _streamScheduler.get());
+    // Process graph (Phase 3: real audio streaming, send/receive routing)
+    _graphEngine->processGraph(ctx, _streamScheduler.get(), _audioAssetSource.get());
 
     // Copy device node output to EngineHost output buffer
     // TODO: Support multiple device nodes in future (e.g., different output devices, cue mixes)

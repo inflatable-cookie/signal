@@ -26,6 +26,7 @@ class MixerService;
 class AutomationService;
 class StreamScheduler;
 class GraphEngine;
+class AudioAssetSource;
 
 class EngineHost {
 public:
@@ -114,6 +115,7 @@ private:
     std::unique_ptr<AutomationService> _automationService;
     std::unique_ptr<StreamScheduler> _streamScheduler;
     std::unique_ptr<GraphEngine> _graphEngine;
+    std::unique_ptr<AudioAssetSource> _audioAssetSource; // Phase 3: Asset source for audio streaming
 
     // Transport state (thread-safe snapshot swap)
     // Control thread: updates via transport() which creates new snapshot and swaps atomically

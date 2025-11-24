@@ -10,6 +10,8 @@
 
 #include "core/NodeBuffers.hpp"
 #include "core/EngineRenderContext.hpp"
+#include "core/NodeProcessContext.hpp"
+#include "core/NodeAudioConfig.hpp"
 #include <string>
 #include <cstdint>
 #include <forward_list>
@@ -55,14 +57,23 @@ public:
     virtual void prepare(int sampleRate, int maxBlockSize) {
         _sampleRate = sampleRate;
         _maxBlockSize = maxBlockSize;
-        // Default: stereo audio buffers
-        io.audioIn.resize(2, maxBlockSize);
-        io.audioOut.resize(2, maxBlockSize);
+        // Use audio config for buffer sizing
+        io.audioIn.resize(_audioConfig.numInputChannels, maxBlockSize);
+        io.audioOut.resize(_audioConfig.numOutputChannels, maxBlockSize);
     }
 
     /// Process audio/MIDI (called on audio thread)
     /// Must be implemented by subclasses
-    virtual void process(EngineRenderContext& ctx) = 0;
+    /// Phase 3: Uses NodeProcessContext instead of EngineRenderContext
+    virtual void process(const NodeProcessContext& npc) = 0;
+
+    /// Get audio configuration
+    const NodeAudioConfig& getAudioConfig() const noexcept { return _audioConfig; }
+
+    /// Set audio configuration (called during prepare)
+    void setAudioConfig(const NodeAudioConfig& config) {
+        _audioConfig = config;
+    }
 
     /// Node I/O buffers
     struct NodeIO {
@@ -91,6 +102,7 @@ protected:
 protected:
     int _sampleRate = 44100;
     int _maxBlockSize = 512;
+    NodeAudioConfig _audioConfig; // Channel layout configuration
 
 private:
     NodeId _id;
