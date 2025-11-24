@@ -39,10 +39,10 @@ TEST_CASE("GraphEngine - Node creation", "[graph][node]") {
     fxNode.pluginId = "compressor-vst";
     snapshot.nodes.push_back(fxNode);
 
-    NodeDesc masterNode;
-    masterNode.nodeId = "master";
-    masterNode.kind = NodeKind::Master;
-    snapshot.nodes.push_back(masterNode);
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
 
     // Load snapshot
     engine.loadGraphSnapshot(snapshot);
@@ -51,13 +51,13 @@ TEST_CASE("GraphEngine - Node creation", "[graph][node]") {
     REQUIRE(engine.findNode("midi-lane-1") != nullptr);
     REQUIRE(engine.findNode("audio-lane-1") != nullptr);
     REQUIRE(engine.findNode("fx-1") != nullptr);
-    REQUIRE(engine.findNode("master") != nullptr);
+    REQUIRE(engine.findNode("device") != nullptr);
 
     // Verify node types
     REQUIRE(engine.findNode("midi-lane-1")->getKind() == NodeKind::MidiLane);
     REQUIRE(engine.findNode("audio-lane-1")->getKind() == NodeKind::AudioLane);
     REQUIRE(engine.findNode("fx-1")->getKind() == NodeKind::AudioFx);
-    REQUIRE(engine.findNode("master")->getKind() == NodeKind::Master);
+    REQUIRE(engine.findNode("device")->getKind() == NodeKind::Device);
 
     // Verify metadata
     REQUIRE(engine.findNode("midi-lane-1")->getTrackId() == "track-1");
@@ -81,10 +81,10 @@ TEST_CASE("GraphEngine - Connections and stream bindings", "[graph][connection]"
     fxNode.kind = NodeKind::AudioFx;
     snapshot.nodes.push_back(fxNode);
 
-    NodeDesc masterNode;
-    masterNode.nodeId = "master";
-    masterNode.kind = NodeKind::Master;
-    snapshot.nodes.push_back(masterNode);
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
 
     // Add stream binding (stream -> lane node)
     ConnectionDesc streamBinding;
@@ -101,13 +101,13 @@ TEST_CASE("GraphEngine - Connections and stream bindings", "[graph][connection]"
     nodeConn.toInputIndex = 0;
     snapshot.connections.push_back(nodeConn);
 
-    // Add another connection (fx -> master)
-    ConnectionDesc masterConn;
-    masterConn.fromNodeId = "fx-1";
-    masterConn.fromOutputIndex = 0;
-    masterConn.toNodeId = "master";
-    masterConn.toInputIndex = 0;
-    snapshot.connections.push_back(masterConn);
+    // Add another connection (fx -> device)
+    ConnectionDesc deviceConn;
+    deviceConn.fromNodeId = "fx-1";
+    deviceConn.fromOutputIndex = 0;
+    deviceConn.toNodeId = "device";
+    deviceConn.toInputIndex = 0;
+    snapshot.connections.push_back(deviceConn);
 
     // Load snapshot
     engine.loadGraphSnapshot(snapshot);
@@ -126,7 +126,7 @@ TEST_CASE("GraphEngine - Execution order (topological sort)", "[graph][execution
     GraphSnapshot snapshot;
     snapshot.id = "test-graph-3";
 
-    // Create a simple chain: lane -> fx -> master
+    // Create a simple chain: lane -> fx -> device
     NodeDesc laneNode;
     laneNode.nodeId = "lane-1";
     laneNode.kind = NodeKind::AudioLane;
@@ -137,12 +137,12 @@ TEST_CASE("GraphEngine - Execution order (topological sort)", "[graph][execution
     fxNode.kind = NodeKind::AudioFx;
     snapshot.nodes.push_back(fxNode);
 
-    NodeDesc masterNode;
-    masterNode.nodeId = "master";
-    masterNode.kind = NodeKind::Master;
-    snapshot.nodes.push_back(masterNode);
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
 
-    // Connect: lane -> fx -> master
+    // Connect: lane -> fx -> device
     ConnectionDesc conn1;
     conn1.fromNodeId = "lane-1";
     conn1.fromOutputIndex = 0;
@@ -153,7 +153,7 @@ TEST_CASE("GraphEngine - Execution order (topological sort)", "[graph][execution
     ConnectionDesc conn2;
     conn2.fromNodeId = "fx-1";
     conn2.fromOutputIndex = 0;
-    conn2.toNodeId = "master";
+    conn2.toNodeId = "device";
     conn2.toInputIndex = 0;
     snapshot.connections.push_back(conn2);
 
@@ -165,16 +165,16 @@ TEST_CASE("GraphEngine - Execution order (topological sort)", "[graph][execution
     REQUIRE(executionOrder.size() == 3);
 
     // Find positions
-    size_t lanePos = 0, fxPos = 0, masterPos = 0;
+    size_t lanePos = 0, fxPos = 0, devicePos = 0;
     for (size_t i = 0; i < executionOrder.size(); ++i) {
         if (executionOrder[i]->getId() == "lane-1") lanePos = i;
         if (executionOrder[i]->getId() == "fx-1") fxPos = i;
-        if (executionOrder[i]->getId() == "master") masterPos = i;
+        if (executionOrder[i]->getId() == "device") devicePos = i;
     }
 
-    // Lane should come before fx, fx should come before master
+    // Lane should come before fx, fx should come before device
     REQUIRE(lanePos < fxPos);
-    REQUIRE(fxPos < masterPos);
+    REQUIRE(fxPos < devicePos);
 }
 
 TEST_CASE("GraphEngine - Cycle detection", "[graph][cycle]") {
@@ -261,11 +261,11 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     laneNode.laneId = "lane-1";
     snapshot.nodes.push_back(laneNode);
 
-    // Create master node
-    NodeDesc masterNode;
-    masterNode.nodeId = "master";
-    masterNode.kind = NodeKind::Master;
-    snapshot.nodes.push_back(masterNode);
+    // Create device node
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
 
     // Stream binding: stream-1 -> audio-lane-1
     ConnectionDesc streamBinding;
@@ -274,11 +274,11 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     streamBinding.toInputIndex = 0;
     snapshot.connections.push_back(streamBinding);
 
-    // Connection: audio-lane-1 -> master
+    // Connection: audio-lane-1 -> device
     ConnectionDesc conn;
     conn.fromNodeId = "audio-lane-1";
     conn.fromOutputIndex = 0;
-    conn.toNodeId = "master";
+    conn.toNodeId = "device";
     conn.toInputIndex = 0;
     snapshot.connections.push_back(conn);
 
@@ -323,11 +323,11 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     REQUIRE(lane != nullptr);
     REQUIRE(lane->getStreamId() == "stream-1");
 
-    // Verify master node has output (pass-through from lane)
-    auto* master = dynamic_cast<MasterNode*>(engine.findNode("master"));
-    REQUIRE(master != nullptr);
-    // Master should have audio output (even if test tone)
-    REQUIRE(master->io.audioOut.numFrames() > 0);
+    // Verify device node has output (pass-through from lane)
+    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
+    REQUIRE(device != nullptr);
+    // Device should have audio output (even if test tone)
+    REQUIRE(device->io.audioOut.numFrames() > 0);
 }
 
 TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
@@ -336,7 +336,7 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
     GraphSnapshot snapshot;
     snapshot.id = "passthrough-test";
 
-    // Create chain: lane -> fx -> master
+    // Create chain: lane -> fx -> device
     NodeDesc laneNode;
     laneNode.nodeId = "lane-1";
     laneNode.kind = NodeKind::AudioLane;
@@ -347,10 +347,10 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
     fxNode.kind = NodeKind::AudioFx;
     snapshot.nodes.push_back(fxNode);
 
-    NodeDesc masterNode;
-    masterNode.nodeId = "master";
-    masterNode.kind = NodeKind::Master;
-    snapshot.nodes.push_back(masterNode);
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
 
     // Connections
     ConnectionDesc conn1;
@@ -360,7 +360,7 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
 
     ConnectionDesc conn2;
     conn2.fromNodeId = "fx-1";
-    conn2.toNodeId = "master";
+    conn2.toNodeId = "device";
     snapshot.connections.push_back(conn2);
 
     engine.loadGraphSnapshot(snapshot);
@@ -394,15 +394,15 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
     REQUIRE(fx->io.audioIn.getSample(0, 0) == 0.5f);
     REQUIRE(fx->io.audioOut.getSample(0, 0) == 0.5f);
 
-    // Route to master
-    auto* master = engine.findNode("master");
-    REQUIRE(master != nullptr);
-    master->io.audioIn.sumFrom(fx->io.audioOut);
-    master->process(ctx);
+    // Route to device
+    auto* device = engine.findNode("device");
+    REQUIRE(device != nullptr);
+    device->io.audioIn.sumFrom(fx->io.audioOut);
+    device->process(ctx);
 
-    // Verify master received audio
-    REQUIRE(master->io.audioIn.getSample(0, 0) == 0.5f);
-    REQUIRE(master->io.audioOut.getSample(0, 0) == 0.5f);
+    // Verify device received audio
+    REQUIRE(device->io.audioIn.getSample(0, 0) == 0.5f);
+    REQUIRE(device->io.audioOut.getSample(0, 0) == 0.5f);
 }
 
 TEST_CASE("GraphEngine - MIDI routing", "[graph][midi]") {
@@ -411,7 +411,7 @@ TEST_CASE("GraphEngine - MIDI routing", "[graph][midi]") {
     GraphSnapshot snapshot;
     snapshot.id = "midi-test";
 
-    // Create chain: midi-lane -> midi-fx -> instrument -> master
+    // Create chain: midi-lane -> midi-fx -> instrument -> device
     NodeDesc midiLaneNode;
     midiLaneNode.nodeId = "midi-lane-1";
     midiLaneNode.kind = NodeKind::MidiLane;
@@ -427,10 +427,10 @@ TEST_CASE("GraphEngine - MIDI routing", "[graph][midi]") {
     instrumentNode.kind = NodeKind::Instrument;
     snapshot.nodes.push_back(instrumentNode);
 
-    NodeDesc masterNode;
-    masterNode.nodeId = "master";
-    masterNode.kind = NodeKind::Master;
-    snapshot.nodes.push_back(masterNode);
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
 
     // Connections
     ConnectionDesc conn1;
@@ -445,7 +445,7 @@ TEST_CASE("GraphEngine - MIDI routing", "[graph][midi]") {
 
     ConnectionDesc conn3;
     conn3.fromNodeId = "instrument-1";
-    conn3.toNodeId = "master";
+    conn3.toNodeId = "device";
     snapshot.connections.push_back(conn3);
 
     engine.loadGraphSnapshot(snapshot);

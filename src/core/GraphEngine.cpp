@@ -134,8 +134,8 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc) {
         case NodeKind::Receive:
             return std::make_unique<ReceiveNode>(desc.nodeId, pluginId); // Using pluginId as receiveName for now
 
-        case NodeKind::Master:
-            return std::make_unique<MasterNode>(desc.nodeId);
+        case NodeKind::Device:
+            return std::make_unique<DeviceNode>(desc.nodeId);
 
         default:
             std::cerr << "[GraphEngine] Warning: Unknown node kind for node: " << desc.nodeId << std::endl;

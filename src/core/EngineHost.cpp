@@ -390,23 +390,24 @@ void EngineHost::renderBlock(
     // Process graph (Phase 2: stream injection and pass-through)
     _graphEngine->processGraph(ctx, _streamScheduler.get());
 
-    // Copy master node output to EngineHost output buffer
+    // Copy device node output to EngineHost output buffer
+    // TODO: Support multiple device nodes in future (e.g., different output devices, cue mixes)
     const auto& executionOrder = _graphEngine->getExecutionOrder();
-    GraphNode* masterNode = nullptr;
+    GraphNode* deviceNode = nullptr;
     for (GraphNode* node : executionOrder) {
-        if (node && node->getKind() == NodeKind::Master) {
-            masterNode = node;
-            break;
+        if (node && node->getKind() == NodeKind::Device) {
+            deviceNode = node;
+            break; // For now, use first device node (previously assumed single master)
         }
     }
 
-    if (masterNode) {
-        // Copy audio from master node to output bus
-        const int numChannels = std::min(masterNode->io.audioOut.numChannels(), output.numChannels());
-        const int numFrames = std::min(masterNode->io.audioOut.numFrames(), output.numFrames());
+    if (deviceNode) {
+        // Copy audio from device node to output bus
+        const int numChannels = std::min(deviceNode->io.audioOut.numChannels(), output.numChannels());
+        const int numFrames = std::min(deviceNode->io.audioOut.numFrames(), output.numFrames());
 
         for (int ch = 0; ch < numChannels; ++ch) {
-            const float* src = masterNode->io.audioOut.getChannelData(ch);
+            const float* src = deviceNode->io.audioOut.getChannelData(ch);
             for (int frame = 0; frame < numFrames; ++frame) {
                 output.setSample(frame, ch, src[frame]);
             }

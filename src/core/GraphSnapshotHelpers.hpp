@@ -13,8 +13,10 @@
 #include <optional>
 
 /// Convert string to NodeKind (for JSON parsing)
-/// Handles backward compatibility: "bus" → NodeKind::Receive
-/// TODO: Remove "bus" backward compatibility once Pulse switches to "receive"
+/// Handles backward compatibility:
+///   - "bus" → NodeKind::Receive
+///   - "master" → NodeKind::Device
+/// TODO: Remove backward compatibility once Pulse switches to new names
 inline std::optional<NodeKind> nodeKindFromString(const std::string& str) {
     if (str == "midi-lane") return NodeKind::MidiLane;
     if (str == "audio-lane") return NodeKind::AudioLane;
@@ -25,7 +27,8 @@ inline std::optional<NodeKind> nodeKindFromString(const std::string& str) {
     if (str == "mixer-channel") return NodeKind::MixerChannel;
     if (str == "receive") return NodeKind::Receive;
     if (str == "bus") return NodeKind::Receive; // Backward compatibility - TODO: remove once Pulse switches
-    if (str == "master") return NodeKind::Master;
+    if (str == "device") return NodeKind::Device;
+    if (str == "master") return NodeKind::Device; // Backward compatibility - TODO: remove once Pulse switches
     return std::nullopt;
 }
 
@@ -40,7 +43,7 @@ inline std::string nodeKindToString(NodeKind kind) {
         case NodeKind::Send: return "send";
         case NodeKind::MixerChannel: return "mixer-channel";
         case NodeKind::Receive: return "receive";
-        case NodeKind::Master: return "master";
+        case NodeKind::Device: return "device";
         default: return "unknown";
     }
 }

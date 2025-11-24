@@ -24,7 +24,7 @@ enum class NodeKind {
     Send,
     MixerChannel,
     Receive,  // Receives from SendNodes (was Bus)
-    Master
+    Device    // Writes to hardware device output (was Master)
 };
 
 /// Node identifier (matches Pulse NodeId)

@@ -238,7 +238,7 @@ private:
     std::string _busId;
 };
 
-/// MixerChannelNode - final channel output into busses/master
+/// MixerChannelNode - final channel output into busses/device
 /// Phase 2: Pass-through or sum inputs
 class MixerChannelNode : public GraphNode {
 public:
@@ -282,19 +282,23 @@ private:
     std::string _receiveName;
 };
 
-/// MasterNode - master output
-/// Phase 2: Pass-through (writes to EngineHost output)
-class MasterNode : public GraphNode {
+/// DeviceNode - writes to hardware device output
+/// Phase 2: Pass-through (writes to EngineHost output buffer)
+///
+/// This node represents an endpoint that streams audio (and possibly MIDI) to a hardware device.
+/// Multiple DeviceNodes may be supported in future (e.g., different output devices, cue mixes, recording taps).
+/// For now, it acts in the role previously named "master" (single device output).
+class DeviceNode : public GraphNode {
 public:
-    MasterNode(const NodeId& id)
-        : GraphNode(id, NodeKind::Master)
+    DeviceNode(const NodeId& id)
+        : GraphNode(id, NodeKind::Device)
     {
     }
 
     void process(EngineRenderContext& ctx) override {
         // Phase 2: Pass-through (output will be copied to EngineHost output buffer)
         io.audioOut.copyFrom(io.audioIn);
-        // TODO: Phase 3 - Apply master processing, metering
+        // TODO: Phase 3 - Apply device processing, metering
     }
 };
 
