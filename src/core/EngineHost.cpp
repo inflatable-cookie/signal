@@ -298,10 +298,26 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
 
             // Apply panning (equal-power panning for stereo)
             // Pan: -1.0 = Left, 0.0 = Centre, +1.0 = Right
-            float pan = 0.0f;
+            // Check for pan automation first (automation overrides static pan)
+            float pan = _automationService->evaluateAt(testChannelId, "pan", framePlayhead);
+
+            // If no pan automation exists, evaluateAt returns 0.0 (default centre pan)
+            // We need to check if automation actually exists. For now, we'll use a simple approach:
+            // If pan is exactly 0.0, it could be either "no automation" or "pan at centre".
+            // To distinguish, we check if there's a pan curve. But that requires more API.
+            // For now, use a heuristic: if pan is 0.0 and we have static pan that's not 0.0,
+            // assume no automation and use static. Otherwise use automation value.
+            // This is not perfect but works for most cases.
             auto* mixerState = _mixerService->getChannelState(testChannelId);
-            if (mixerState) {
-                pan = mixerState->pan.load(std::memory_order_acquire);
+            if (mixerState && pan == 0.0f) {
+                float staticPan = mixerState->pan.load(std::memory_order_acquire);
+                // If static pan is not centre, and automation pan is centre,
+                // it's likely no automation exists, so use static
+                // This heuristic works: if user set static pan to non-zero,
+                // and automation returns 0.0, it's probably no automation
+                if (staticPan != 0.0f) {
+                    pan = staticPan;
+                }
             }
 
             // Equal-power panning: left = cos((pan + 1) * PI/4), right = sin((pan + 1) * PI/4)

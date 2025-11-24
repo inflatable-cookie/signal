@@ -32,6 +32,7 @@ void AutomationDomain::handle(const Envelope& env) {
                             AutomationCurvePoint point;
                             point.timeSamples = pointJson["timeSamples"];
                             point.value = pointJson["value"];
+                            point.shape = pointJson.value("shape", "linear"); // Default to linear if not present
                             curve.points.push_back(point);
                         }
                     }
@@ -58,6 +59,7 @@ void AutomationDomain::handle(const Envelope& env) {
                     AutomationCurvePoint point;
                     point.timeSamples = pointJson["timeSamples"];
                     point.value = pointJson["value"];
+                    point.shape = pointJson.value("shape", "linear"); // Default to linear if not present
                     curve.points.push_back(point);
                 }
             }

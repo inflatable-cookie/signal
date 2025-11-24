@@ -15,10 +15,11 @@
 #include <string>
 #include <vector>
 
-/// Automation curve point (time in samples, value)
+/// Automation curve point (time in samples, value, interpolation shape)
 struct AutomationCurvePoint {
     uint64_t timeSamples;
     float value;
+    std::string shape; // "step", "linear", "easeIn", "easeOut", "sCurve"
 };
 
 /// Automation curve for a parameter
@@ -73,6 +74,9 @@ private:
 
     /// Evaluate a curve at a given sample position
     float evaluateCurve(const std::vector<AutomationCurvePoint>& points, uint64_t samplePosition) const;
+
+    /// Apply interpolation shape to t (0.0 to 1.0)
+    float applyInterpolationShape(float t, const std::string& shape) const;
 
     mutable std::mutex _mutex; // Protects _curves map structure
     std::unordered_map<std::string, std::unique_ptr<TargetAutomationState>> _curves;

@@ -111,10 +111,18 @@ float AutomationService::evaluateCurve(
         }
 
         if (p1.timeSamples < samplePosition && p2.timeSamples > samplePosition) {
-            // Linear interpolation
+            // Handle step shape: hold value until next point
+            if (p1.shape == "step") {
+                return p1.value;
+            }
+
+            // Calculate interpolation factor t (0.0 to 1.0)
             float t = static_cast<float>(samplePosition - p1.timeSamples) /
                       static_cast<float>(p2.timeSamples - p1.timeSamples);
-            return p1.value + (p2.value - p1.value) * t;
+
+            // Apply shape-based interpolation
+            float shapedT = applyInterpolationShape(t, p1.shape);
+            return p1.value + (p2.value - p1.value) * shapedT;
         }
     }
 
@@ -131,6 +139,35 @@ float AutomationService::evaluateCurve(
     return 1.0f; // Default
 }
 
+float AutomationService::applyInterpolationShape(float t, const std::string& shape) const {
+    // Clamp t to [0.0, 1.0]
+    t = std::max(0.0f, std::min(1.0f, t));
+
+    if (shape == "step") {
+        // Step: hold value until next point (return 0.0 to use start value)
+        return 0.0f;
+    } else if (shape == "linear") {
+        // Linear: straight line
+        return t;
+    } else if (shape == "easeIn") {
+        // Ease In: slower start, faster end (quadratic)
+        return t * t;
+    } else if (shape == "easeOut") {
+        // Ease Out: faster start, slower end (inverse quadratic)
+        return 1.0f - (1.0f - t) * (1.0f - t);
+    } else if (shape == "sCurve") {
+        // S-Curve: smooth both ends (cubic ease-in-out)
+        if (t < 0.5f) {
+            return 2.0f * t * t;
+        } else {
+            return 1.0f - 2.0f * (1.0f - t) * (1.0f - t);
+        }
+    }
+
+    // Default to linear if shape is unknown
+    return t;
+}
+
 float AutomationService::evaluateAt(
     const std::string& targetId,
     const std::string& parameter,
@@ -141,12 +178,20 @@ float AutomationService::evaluateAt(
     std::lock_guard<std::mutex> lock(_mutex);
     auto it = _curves.find(key);
     if (it == _curves.end()) {
-        return 1.0f; // No automation - default unity gain
+        // No automation - return default based on parameter type
+        if (parameter == "pan") {
+            return 0.0f; // Default centre pan
+        }
+        return 1.0f; // Default unity gain for other parameters
     }
 
     const TargetAutomationState* state = it->second.get();
     if (!state->hasCurve.load(std::memory_order_acquire)) {
-        return 1.0f;
+        // No curve - return default based on parameter type
+        if (parameter == "pan") {
+            return 0.0f; // Default centre pan
+        }
+        return 1.0f; // Default unity gain for other parameters
     }
 
     // Read points (with lock)
