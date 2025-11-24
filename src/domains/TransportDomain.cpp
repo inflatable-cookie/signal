@@ -29,12 +29,14 @@ void TransportDomain::handle(const Envelope& env) {
         // Update playhead from transport position (in case we seeked while stopped)
         uint64_t playheadSamples = static_cast<uint64_t>(transport.positionSeconds * sampleRate);
         _engineHost->setPlayheadSamples(playheadSamples);
+        _engineHost->commitTransportUpdate();  // Commit snapshot swap
         std::cout << "[TransportDomain] Play command received, playhead: " << playheadSamples << " samples" << std::endl;
     } else if (env.name == "stop") {
         transport.isPlaying = false;
         // Update transport position from playhead when stopping
         uint64_t playheadSamples = _engineHost->getPlayheadSamples();
         transport.positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
+        _engineHost->commitTransportUpdate();  // Commit snapshot swap
         std::cout << "[TransportDomain] Stop command received, position: " << transport.positionSeconds << "s" << std::endl;
     } else if (env.name == "seek") {
         try {
@@ -56,6 +58,7 @@ void TransportDomain::handle(const Envelope& env) {
             // Update playhead in samples
             uint64_t playheadSamples = static_cast<uint64_t>(positionSeconds * sampleRate);
             _engineHost->setPlayheadSamples(playheadSamples);
+            _engineHost->commitTransportUpdate();  // Commit snapshot swap
 
             std::cout << "[TransportDomain] Seek command received, position: "
                       << transport.positionSeconds << "s (" << playheadSamples << " samples)" << std::endl;
@@ -67,6 +70,7 @@ void TransportDomain::handle(const Envelope& env) {
             nlohmann::json payload = nlohmann::json::parse(env.payload);
             if (payload.contains("enabled")) {
                 transport.loopEnabled = payload["enabled"].get<bool>();
+                _engineHost->commitTransportUpdate();  // Commit snapshot swap
                 std::cout << "[TransportDomain] Loop enabled: " << transport.loopEnabled << std::endl;
             }
         } catch (const std::exception& e) {
@@ -100,12 +104,14 @@ void TransportDomain::handle(const Envelope& env) {
 
             if (hasRegion) {
                 transport.loopRegion = region;
+                _engineHost->commitTransportUpdate();  // Commit snapshot swap
                 std::cout << "[TransportDomain] Loop region set: " << region.startSeconds
                           << " - " << region.endSeconds << "s" << std::endl;
             } else {
                 // Clear loop region if enabled is false
                 if (payload.contains("enabled") && !payload["enabled"].get<bool>()) {
                     transport.loopRegion = std::nullopt;
+                    _engineHost->commitTransportUpdate();  // Commit snapshot swap
                     std::cout << "[TransportDomain] Loop region cleared" << std::endl;
                 }
             }
@@ -117,6 +123,7 @@ void TransportDomain::handle(const Envelope& env) {
             nlohmann::json payload = nlohmann::json::parse(env.payload);
             if (payload.contains("tempo")) {
                 transport.tempo = payload["tempo"].get<double>();
+                _engineHost->commitTransportUpdate();  // Commit snapshot swap
                 std::cout << "[TransportDomain] Tempo set to: " << transport.tempo << " BPM" << std::endl;
             }
         } catch (const std::exception& e) {

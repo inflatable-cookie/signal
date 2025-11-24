@@ -1,9 +1,14 @@
 #include "core/EngineHost.hpp"
 #include "core/AudioThread.hpp"
+#include "backend/AudioBackend.hpp"
+#include "backend/MiniaudioBackend.hpp"
+#include "backend/AudioBackendConfig.hpp"
 #include "core/MeteringService.hpp"
 #include "core/MixerService.hpp"
 #include "core/AutomationService.hpp"
 #include "core/ClipScheduler.hpp"
+#include "core/EngineRenderContext.hpp"
+#include "core/AudioBus.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -24,7 +29,13 @@ EngineHost::EngineHost()
     _mixerService = std::make_unique<MixerService>();
     _automationService = std::make_unique<AutomationService>();
     _clipScheduler = std::make_unique<ClipScheduler>();
-    setupAudioCallback();
+
+    // Initialize transport state with default values
+    _transportState = std::make_shared<TransportState>();
+    _activeTransport.store(_transportState.get(), std::memory_order_release);
+
+    setupAudioCallback();  // Legacy - for backward compatibility
+    setupAudioBackend();   // New backend-based approach
     std::cout << "[EngineHost] Created" << std::endl;
 }
 
@@ -54,12 +65,19 @@ void EngineHost::start() {
     _state = State::Starting;
     clearError();
 
-    // Wire up metering service to audio thread
-    _audioThread->setMeteringService(_meteringService.get());
+    // Start audio backend (preferred method)
+    if (_audioBackend) {
+        if (!_audioBackend->start()) {
+            setError("Failed to start audio backend");
+            return;
+        }
+    } else {
+        // Fallback to legacy AudioThread
+        _audioThread->setMeteringService(_meteringService.get());
+        _audioThread->start();
+    }
 
-    _audioThread->start();
-
-    // After audio thread starts successfully, transition to running
+    // After audio starts successfully, transition to running
     _state = State::Running;
     std::cout << "[EngineHost] Started" << std::endl;
 }
@@ -71,14 +89,25 @@ void EngineHost::stop() {
     }
 
     _state = State::Stopped;
-    _audioThread->stop();
+
+    if (_audioBackend) {
+        _audioBackend->stop();
+    } else {
+        _audioThread->stop();
+    }
+
     std::cout << "[EngineHost] Stopped" << std::endl;
 }
 
 void EngineHost::reset() {
     stop();
     clearError();
-    _transportState = TransportState();
+
+    // Reset transport state (create new snapshot)
+    _transportState = std::make_shared<TransportState>();
+    _activeTransport.store(_transportState.get(), std::memory_order_release);
+    _previousTransport.reset();
+
     _playheadSamples.store(0, std::memory_order_release);
     _clipScheduler->clearSchedule();
     std::cout << "[EngineHost] Reset" << std::endl;
@@ -116,11 +145,36 @@ void EngineHost::clearError() {
 }
 
 TransportState& EngineHost::transport() {
-    return _transportState;
+    // Return mutable reference for control thread updates
+    // Caller should call commitTransportUpdate() after making changes
+    return *_transportState;
 }
 
 const TransportState& EngineHost::transport() const {
-    return _transportState;
+    return *_transportState;
+}
+
+const TransportState* EngineHost::getTransportSnapshot() const {
+    // Read atomic pointer once (lock-free)
+    // Pointer remains valid until next swap (previous snapshot kept alive in _previousTransport)
+    return _activeTransport.load(std::memory_order_acquire);
+}
+
+// Helper method to commit transport updates (called after modifying transport())
+void EngineHost::commitTransportUpdate() {
+    // Create a new snapshot from current state (copy constructor)
+    // At this point, _transportState points to the object that was just modified
+    auto newSnapshot = std::make_shared<TransportState>(*_transportState);
+
+    // Keep previous snapshot alive until next swap (ensures audio thread safety)
+    _previousTransport = _transportState;
+
+    // Atomically swap pointer (old snapshot kept alive in _previousTransport)
+    _activeTransport.store(newSnapshot.get(), std::memory_order_release);
+
+    // Update our mutable state pointer (now points to the new snapshot)
+    // This ensures future calls to transport() return the new snapshot
+    _transportState = newSnapshot;
 }
 
 double EngineHost::getCpuLoad() const {
@@ -134,10 +188,16 @@ uint64_t EngineHost::getXruns() const {
 }
 
 double EngineHost::getSampleRate() const {
+    if (_audioBackend) {
+        return _audioBackend->getSampleRate();
+    }
     return SAMPLE_RATE;
 }
 
 size_t EngineHost::getBlockSize() const {
+    if (_audioBackend) {
+        return static_cast<size_t>(_audioBackend->getBufferSize());
+    }
     return BLOCK_SIZE;
 }
 
@@ -187,6 +247,35 @@ void EngineHost::setupAudioCallback() {
     });
 }
 
+void EngineHost::setupAudioBackend() {
+    // Create MiniaudioBackend (placeholder implementation)
+    _audioBackend = std::make_unique<MiniaudioBackend>();
+
+    // Configure backend
+    AudioBackendConfig config;
+    config.preferredSampleRate = SAMPLE_RATE;
+    config.preferredBufferSize = static_cast<int>(BLOCK_SIZE);
+    config.numInputChannels = 0;   // No input for now
+    config.numOutputChannels = 2;  // Stereo output
+
+    if (!_audioBackend->initialise(config)) {
+        std::cerr << "[EngineHost] Failed to initialise audio backend" << std::endl;
+        _audioBackend.reset();
+        return;
+    }
+
+    // Set render callback to call renderBlock
+    _audioBackend->setRenderCallback([this](
+        EngineRenderContext& ctx,
+        AudioBus& input,
+        AudioBus& output
+    ) {
+        this->renderBlock(ctx, input, output);
+    });
+
+    std::cout << "[EngineHost] Audio backend configured" << std::endl;
+}
+
 void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels) {
     // Clear buffer
     std::memset(buffer, 0, numFrames * numChannels * sizeof(float));
@@ -194,9 +283,9 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
     // Get current playhead position
     uint64_t currentPlayhead = _playheadSamples.load(std::memory_order_acquire);
 
-    // Check transport state (lock-free read)
-    const auto& transport = _transportState;
-    if (!transport.isPlaying) {
+    // Check transport state (lock-free read via snapshot)
+    const TransportState* transport = getTransportSnapshot();
+    if (!transport || !transport->isPlaying) {
         // Not playing - output silence, but still advance playhead for seek accuracy
         _playheadSamples.store(currentPlayhead + numFrames, std::memory_order_release);
         return;
@@ -205,8 +294,8 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
     // Handle loop wrapping
     uint64_t effectivePlayhead = currentPlayhead;
     bool wrapped = false;
-    if (transport.loopEnabled && transport.loopRegion.has_value()) {
-        const auto& loop = transport.loopRegion.value();
+    if (transport && transport->loopEnabled && transport->loopRegion.has_value()) {
+        const auto& loop = transport->loopRegion.value();
         uint64_t loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
         uint64_t loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
 
@@ -240,8 +329,8 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
         uint64_t framePlayhead = effectivePlayhead + frame;
 
         // Handle loop wrapping within the block
-        if (transport.loopEnabled && transport.loopRegion.has_value()) {
-            const auto& loop = transport.loopRegion.value();
+        if (transport && transport->loopEnabled && transport->loopRegion.has_value()) {
+            const auto& loop = transport->loopRegion.value();
             uint64_t loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
             uint64_t loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
             if (loopEndSamples > loopStartSamples && framePlayhead >= loopEndSamples) {
@@ -344,8 +433,8 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
     uint64_t newPlayhead = effectivePlayhead + numFrames;
 
     // Handle loop wrapping at block boundary
-    if (transport.loopEnabled && transport.loopRegion.has_value()) {
-        const auto& loop = transport.loopRegion.value();
+    if (transport && transport->loopEnabled && transport->loopRegion.has_value()) {
+        const auto& loop = transport->loopRegion.value();
         uint64_t loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
         uint64_t loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
         if (loopEndSamples > loopStartSamples && newPlayhead >= loopEndSamples) {
@@ -354,6 +443,52 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
         }
     }
 
+    _playheadSamples.store(newPlayhead, std::memory_order_release);
+}
+
+void EngineHost::renderBlock(
+    EngineRenderContext& ctx,
+    AudioBus& input,
+    AudioBus& output
+) {
+    // Real-time safety: No allocations, locks, or I/O in this function
+
+    // Read transport state snapshot once (lock-free)
+    // Pointer remains valid for the entire renderBlock (previous snapshot kept alive)
+    const TransportState* transport = getTransportSnapshot();
+
+    // Update context with current playhead
+    ctx.playheadSamples = _playheadSamples.load(std::memory_order_acquire);
+
+    // Clear output buffer
+    output.clear();
+
+    // TODO (Phase B-E): Implement full audio pipeline:
+    // - Schedule → clips (Phase B)
+    // - Mixer gain/mute/solo (Phase C)
+    // - Automation (volume & pan) (Phase D)
+    // - Loop handling (Phase E)
+    // - Metering (Phase E)
+
+    // For now, produce silence or a simple test tone
+    // Uncomment the test tone code below to verify audio output:
+    /*
+    const float testToneFreq = 440.0f; // A4
+    const float amplitude = 0.1f;
+    float* outData = output.data();
+    if (outData && output.numChannels() > 0) {
+        for (int frame = 0; frame < output.numFrames(); ++frame) {
+            float time = static_cast<float>(ctx.playheadSamples + frame) / static_cast<float>(ctx.sampleRate);
+            float sample = amplitude * std::sin(2.0f * M_PI * testToneFreq * time);
+            for (int ch = 0; ch < output.numChannels(); ++ch) {
+                output.setSample(frame, ch, sample);
+            }
+        }
+    }
+    */
+
+    // Update playhead for next block
+    uint64_t newPlayhead = ctx.playheadSamples + output.numFrames();
     _playheadSamples.store(newPlayhead, std::memory_order_release);
 }
 

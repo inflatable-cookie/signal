@@ -7,6 +7,7 @@ add_library(signal-core STATIC
     core/MixerService.cpp
     core/AutomationService.cpp
     core/ClipScheduler.cpp
+    backend/MiniaudioBackend.cpp
     ipc/Envelope.cpp
     ipc/IpcEnvelope.cpp
     ipc/IpcEnvelopeCodec.cpp

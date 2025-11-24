@@ -2,21 +2,26 @@
 
 /// ClipScheduler - Manages scheduled clip playback
 ///
-/// Thread: Control thread (main thread)
+/// Thread: Control thread (main thread) for updates, audio thread for reads
 /// Ownership: Owned by EngineHost
 /// Communication:
-///   - Updated by IPC thread (EngineDomain handlers)
-///   - Read by audio thread via lock-free snapshot
+///   - Updated by IPC thread (EngineDomain handlers) - builds new ScheduleData
+///   - Read by audio thread via lock-free atomic pointer (no locks)
 ///   - Provides playback state for audio thread
+///
+/// Thread Safety:
+///   - Control thread: builds new ScheduleData in build buffer, atomically swaps pointer
+///   - Audio thread: reads atomic pointer once per renderBlock, uses snapshot for entire block
+///   - No locks in audio thread path
 
+#include "core/ScheduleData.hpp"
 #include <atomic>
-#include <unordered_map>
-#include <mutex>
+#include <memory>
 #include <string>
 #include <vector>
 #include <cstdint>
 
-/// Scheduled clip information
+/// Scheduled clip information (input from IPC)
 struct ScheduledClip {
     std::string clipId;
     std::string channelId;
@@ -24,29 +29,6 @@ struct ScheduledClip {
     double durationBeats;
     float gainDb;
     bool muted;
-    uint64_t startSamples;  // Converted from beats
-    uint64_t endSamples;    // startSamples + durationSamples
-    uint64_t durationSamples;
-};
-
-/// Clip playback state (for audio thread)
-struct ClipPlaybackState {
-    std::string clipId;
-    std::string channelId;
-    std::atomic<bool> isActive;
-    std::atomic<uint64_t> currentSample;
-    std::atomic<uint64_t> endSample;
-    std::atomic<float> gainDb;
-    std::atomic<bool> muted;
-
-    ClipPlaybackState()
-        : isActive(false)
-        , currentSample(0)
-        , endSample(0)
-        , gainDb(0.0f)
-        , muted(false)
-    {
-    }
 };
 
 class ClipScheduler {
@@ -66,23 +48,35 @@ public:
     void clearSchedule();
 
     /// Get active clips for a channel at a given sample position
+    /// Thread-safe: reads atomic pointer (lock-free)
+    /// @param channelId Channel to query
+    /// @param samplePosition Current sample position
+    /// @return Vector of active clip playback states (pointers valid for current render block)
     std::vector<ClipPlaybackState*> getActiveClips(
         const std::string& channelId,
         uint64_t samplePosition
     ) const;
 
     /// Update playback state based on current sample position
+    /// Thread-safe: reads atomic pointer (lock-free)
+    /// @param samplePosition Current sample position
     void updatePlayback(uint64_t samplePosition);
 
     /// Convert beats to samples
     static uint64_t beatsToSamples(double beats, double tempo, double sampleRate);
 
 private:
-    mutable std::mutex _mutex;
-    std::unordered_map<std::string, std::unique_ptr<ClipPlaybackState>> _clips;
-    // Store start samples for each clip (for efficient lookup)
-    std::unordered_map<std::string, uint64_t> _clipStartSamples;
-    double _tempo;
-    double _sampleRate;
+    // Active schedule snapshot (read by audio thread, swapped by control thread)
+    // Using raw pointer with shared_ptr for lifetime management
+    std::atomic<const ScheduleData*> _activeSchedule;
+
+    // Empty schedule (used when clearing)
+    std::shared_ptr<ScheduleData> _emptySchedule;
+
+    // Current schedule (control thread only, used for building new schedules)
+    std::shared_ptr<ScheduleData> _currentSchedule;
+
+    // Keep previous schedule alive until next swap (ensures audio thread safety)
+    std::shared_ptr<ScheduleData> _previousSchedule;
 };
 
