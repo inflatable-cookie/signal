@@ -23,7 +23,7 @@ class AudioBackend;
 class MeteringService;
 class MixerService;
 class AutomationService;
-class ClipScheduler;
+class StreamScheduler;
 
 class EngineHost {
 public:
@@ -78,8 +78,8 @@ public:
     AutomationService& automation();
     const AutomationService& automation() const;
 
-    ClipScheduler& clipScheduler();
-    const ClipScheduler& clipScheduler() const;
+    StreamScheduler& streamScheduler();
+    const StreamScheduler& streamScheduler() const;
 
     // Playhead management (for transport control)
     uint64_t getPlayheadSamples() const noexcept;
@@ -100,7 +100,7 @@ private:
     std::unique_ptr<MeteringService> _meteringService;
     std::unique_ptr<MixerService> _mixerService;
     std::unique_ptr<AutomationService> _automationService;
-    std::unique_ptr<ClipScheduler> _clipScheduler;
+    std::unique_ptr<StreamScheduler> _streamScheduler;
 
     // Transport state (thread-safe snapshot swap)
     // Control thread: updates via transport() which creates new snapshot and swaps atomically

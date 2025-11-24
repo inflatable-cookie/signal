@@ -8,6 +8,11 @@
 ///   - Updated by IPC thread (MixerDomain handlers)
 ///   - Read by audio thread via lock-free atomic operations
 ///   - Provides snapshot API for IPC updates
+///
+/// Architecture note: Channels in Signal are processing paths (not tracks).
+/// A channel represents a processing path with nodes (lane → fx → mixer → output).
+/// Channel IDs come from Pulse's graph model and represent processing paths,
+/// not track-level concepts.
 
 #include <atomic>
 #include <unordered_map>

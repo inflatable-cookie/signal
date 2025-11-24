@@ -8,6 +8,12 @@
 ///   - Updated by IPC thread (AutomationDomain handlers)
 ///   - Read by audio thread via lock-free atomic operations
 ///   - Provides evaluation API for real-time automation
+///
+/// Architecture note: Automation targets can be:
+/// - Node parameters (nodeId:parameter)
+/// - Channel parameters (channelId:parameter)
+/// Targets come from Pulse's graph model and represent processing elements,
+/// not track-level concepts.
 
 #include <atomic>
 #include <unordered_map>
