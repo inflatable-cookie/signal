@@ -26,6 +26,7 @@ void MixerService::unregisterChannel(const std::string& channelId) {
 void MixerService::updateChannel(
     const std::string& channelId,
     float gain,
+    float pan,
     bool isMuted,
     bool isSoloed,
     bool effectiveMuted
@@ -35,6 +36,9 @@ void MixerService::updateChannel(
     if (it != _channels.end()) {
         ChannelMixerState* state = it->second.get();
         state->gain.store(gain, std::memory_order_release);
+        // Clamp pan to -1.0 to +1.0
+        float clampedPan = std::max(-1.0f, std::min(1.0f, pan));
+        state->pan.store(clampedPan, std::memory_order_release);
         state->isMuted.store(isMuted, std::memory_order_release);
         state->isSoloed.store(isSoloed, std::memory_order_release);
         state->effectiveMuted.store(effectiveMuted, std::memory_order_release);
@@ -43,6 +47,9 @@ void MixerService::updateChannel(
         _channels[channelId] = std::make_unique<ChannelMixerState>(channelId);
         ChannelMixerState* state = _channels[channelId].get();
         state->gain.store(gain, std::memory_order_release);
+        // Clamp pan to -1.0 to +1.0
+        float clampedPan = std::max(-1.0f, std::min(1.0f, pan));
+        state->pan.store(clampedPan, std::memory_order_release);
         state->isMuted.store(isMuted, std::memory_order_release);
         state->isSoloed.store(isSoloed, std::memory_order_release);
         state->effectiveMuted.store(effectiveMuted, std::memory_order_release);

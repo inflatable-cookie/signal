@@ -18,6 +18,7 @@
 struct ChannelMixerState {
     std::string channelId;
     std::atomic<float> gain;           // Linear gain (0.0 to 4.0)
+    std::atomic<float> pan;            // Pan position: -1.0 = Left, 0.0 = Centre, +1.0 = Right
     std::atomic<bool> isMuted;         // Explicit mute state
     std::atomic<bool> isSoloed;        // Solo state
     std::atomic<bool> effectiveMuted;  // Computed effective mute (considering solo)
@@ -25,6 +26,7 @@ struct ChannelMixerState {
     ChannelMixerState()
         : channelId("")
         , gain(1.0f)
+        , pan(0.0f)
         , isMuted(false)
         , isSoloed(false)
         , effectiveMuted(false)
@@ -34,6 +36,7 @@ struct ChannelMixerState {
     ChannelMixerState(const std::string& id)
         : channelId(id)
         , gain(1.0f)
+        , pan(0.0f)
         , isMuted(false)
         , isSoloed(false)
         , effectiveMuted(false)
@@ -56,6 +59,7 @@ public:
     void updateChannel(
         const std::string& channelId,
         float gain,
+        float pan,
         bool isMuted,
         bool isSoloed,
         bool effectiveMuted

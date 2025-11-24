@@ -296,8 +296,31 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
             float mixerGain = _mixerService->getEffectiveGain(testChannelId);
             channelSample *= mixerGain;
 
-            // Write to buffer (same sample to all output channels for now)
-            buffer[frame * numChannels + ch] = channelSample;
+            // Apply panning (equal-power panning for stereo)
+            // Pan: -1.0 = Left, 0.0 = Centre, +1.0 = Right
+            float pan = 0.0f;
+            auto* mixerState = _mixerService->getChannelState(testChannelId);
+            if (mixerState) {
+                pan = mixerState->pan.load(std::memory_order_acquire);
+            }
+
+            // Equal-power panning: left = cos((pan + 1) * PI/4), right = sin((pan + 1) * PI/4)
+            // This ensures constant power across the stereo field
+            float panAngle = (pan + 1.0f) * (M_PI / 4.0f);
+            float leftGain = std::cos(panAngle);
+            float rightGain = std::sin(panAngle);
+
+            // Write to buffer with panning applied
+            if (numChannels >= 2) {
+                // Stereo output: apply panning
+                buffer[frame * numChannels + 0] += channelSample * leftGain;  // Left
+                buffer[frame * numChannels + 1] += channelSample * rightGain; // Right
+            } else {
+                // Mono output: write same sample to all channels
+                for (int c = 0; c < numChannels; ++c) {
+                    buffer[frame * numChannels + c] += channelSample;
+                }
+            }
         }
     }
 

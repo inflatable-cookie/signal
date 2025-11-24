@@ -21,6 +21,7 @@ void MixerDomain::handle(const Envelope& env) {
             nlohmann::json payload = env.payload;
             std::string channelId = payload["channelId"];
             float gain = payload["gain"];
+            float pan = payload.value("pan", 0.0f); // Default to 0.0 if not present (backward compatibility)
             bool isMuted = payload["isMuted"];
             bool isSoloed = payload["isSoloed"];
             bool effectiveMuted = payload["effectiveMuted"];
@@ -28,6 +29,7 @@ void MixerDomain::handle(const Envelope& env) {
             _engineHost->mixer().updateChannel(
                 channelId,
                 gain,
+                pan,
                 isMuted,
                 isSoloed,
                 effectiveMuted
@@ -35,6 +37,7 @@ void MixerDomain::handle(const Envelope& env) {
 
             std::cout << "[MixerDomain] Updated channel " << channelId
                       << " gain=" << gain
+                      << " pan=" << pan
                       << " muted=" << isMuted
                       << " soloed=" << isSoloed
                       << " effectiveMuted=" << effectiveMuted << std::endl;
