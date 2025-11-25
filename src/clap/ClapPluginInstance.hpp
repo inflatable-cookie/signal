@@ -24,7 +24,7 @@ public:
     /// @param clapDesc CLAP plugin descriptor
     ClapPluginInstance(
         std::shared_ptr<ClapPluginLibrary> library,
-        const clap_plugin_descriptor* clapDesc
+        const clap_plugin_descriptor_t* clapDesc
     );
     ~ClapPluginInstance() override;
 
@@ -52,9 +52,9 @@ public:
 private:
     PluginDescriptor _descriptor;
     std::shared_ptr<ClapPluginLibrary> _library;
-    const clap_plugin_descriptor* _clapDesc;
-    const clap_plugin* _plugin;
-    clap_host _host;
+    const clap_plugin_descriptor_t* _clapDesc;
+    const clap_plugin_t* _plugin;
+    clap_host_t _host;
 
     double _sampleRate;
     int _maxBlockSize;
@@ -110,9 +110,8 @@ private:
 
     // CLAP MIDI event callbacks (static)
     static uint32_t inputEventsSize(const clap_input_events* events);
-    static const clap_event_header* inputEventsGet(const clap_input_events* events, uint32_t index);
-    static bool outputEventsPush(const clap_output_events* events, const clap_event_header* header);
-    static bool outputEventsTryPush(const clap_output_events* events, const clap_event_header* header);
+    static const clap_event_header_t* inputEventsGet(const clap_input_events* events, uint32_t index);
+    static bool outputEventsTryPush(const clap_output_events* events, const clap_event_header_t* header);
 
     // MIDI conversion helpers
     void convertMidiToClap(const MidiBuffer& midiIn);
@@ -122,5 +121,5 @@ private:
 /// Factory function for creating CLAP instances (called by PluginHost)
 std::unique_ptr<PluginInstance> createClapInstance(
     std::shared_ptr<ClapPluginLibrary> library,
-    const clap_plugin_descriptor* clapDesc
+    const clap_plugin_descriptor_t* clapDesc
 );

@@ -24,6 +24,12 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-25 09:09:00 UTC) [fixed] Implemented sigsetjmp/siglongjmp recovery mechanism to prevent Signal from crashing when loading problematic CLAP plugins - bus errors and segfaults during plugin loading now cause the plugin to be skipped rather than crashing Signal.
+
+(2025-11-25 09:03:30 UTC) [dev] Added signal handlers for SIGBUS and SIGSEGV to identify which plugin causes crashes, with global state tracking to report the problematic plugin path in crash messages.
+
+(2025-11-25 08:44:21 UTC) [dev] Added comprehensive logging throughout CLAP plugin loading process to help diagnose crashes, including detailed logging for each plugin file, path resolution, library loading steps, and error conditions with explicit flush() calls to ensure logs are visible before crashes.
+
 (2025-11-25 08:37:03 UTC) [fixed] Deferred CLAP plugin scanning until after Signal's IPC server starts, preventing crashes from problematic plugins from blocking Signal startup and allowing Pulse to connect even if plugin scanning fails.
 
 (2025-11-25 08:32:50 UTC) [fixed] Added error handling to prevent Signal from crashing when encountering problematic CLAP plugins during scanning, and added exception handling in main() and SignalApp initialization to provide better error reporting.

@@ -10,7 +10,7 @@
 
 ClapPluginInstance::ClapPluginInstance(
     std::shared_ptr<ClapPluginLibrary> library,
-    const clap_plugin_descriptor* clapDesc
+    const clap_plugin_descriptor_t* clapDesc
 )
     : _library(library)
     , _clapDesc(clapDesc)
@@ -36,7 +36,11 @@ ClapPluginInstance::ClapPluginInstance(
 
     // Initialize CLAP host structure
     _host.host_data = this;
-    _host.clap_version = CLAP_VERSION_STRING;
+    _host.clap_version = CLAP_VERSION; // clap_version_t struct
+    _host.name = "Loophole Signal";
+    _host.vendor = "Infinite Loop Audio";
+    _host.url = "https://github.com/infinite-loop-audio/loophole-signal";
+    _host.version = "0.1.0";
     _host.request_restart = hostRequestRestart;
     _host.request_process = hostRequestProcess;
     _host.request_callback = hostRequestCallback;
@@ -57,7 +61,7 @@ bool ClapPluginInstance::createPlugin() {
         return false;
     }
 
-    const clap_plugin_factory* factory = _library->getFactory();
+    const clap_plugin_factory_t* factory = _library->getFactory();
     if (!factory || !factory->create_plugin) {
         std::cerr << "[ClapPluginInstance] Factory does not provide create_plugin" << std::endl;
         return false;
@@ -191,7 +195,9 @@ void ClapPluginInstance::prepare(double sampleRate, int maxBlockSize) {
     _audioBuffers.inputBuffers[0].channel_count = numInputChannels;
     _audioBuffers.inputBuffers[0].latency = 0;
     _audioBuffers.inputBuffers[0].constant_mask = 0;
-    _audioBuffers.inputBuffers[0].data32 = _audioBuffers.inputChannels.data();
+    // CLAP SDK expects float** (non-const), but input buffers are logically const
+    // Safe to const_cast since plugin won't modify input data
+    _audioBuffers.inputBuffers[0].data32 = const_cast<float**>(reinterpret_cast<const float* const*>(_audioBuffers.inputChannels.data()));
     _audioBuffers.inputBuffers[0].data64 = nullptr;
 
     _audioBuffers.outputBuffers[0].channel_count = numOutputChannels;
@@ -209,7 +215,7 @@ void ClapPluginInstance::prepare(double sampleRate, int maxBlockSize) {
     _midiEvents.inputEvents.get = inputEventsGet;
 
     // Set up output events callbacks (using static functions)
-    _midiEvents.outputEvents.push = outputEventsPush;
+    // Official CLAP SDK only has try_push, not push
     _midiEvents.outputEvents.try_push = outputEventsTryPush;
 
     _prepared = true;
@@ -468,22 +474,15 @@ uint32_t ClapPluginInstance::inputEventsSize(const clap_input_events* events) {
     return static_cast<uint32_t>(midiEvents->events.size());
 }
 
-const clap_event_header* ClapPluginInstance::inputEventsGet(const clap_input_events* events, uint32_t index) {
+const clap_event_header_t* ClapPluginInstance::inputEventsGet(const clap_input_events* events, uint32_t index) {
     auto* midiEvents = static_cast<ClapMidiEvents*>(events->ctx);
     if (!midiEvents || index >= midiEvents->events.size()) {
         return nullptr;
     }
-    return reinterpret_cast<const clap_event_header*>(&midiEvents->events[index]);
+    return reinterpret_cast<const clap_event_header_t*>(&midiEvents->events[index]);
 }
 
-bool ClapPluginInstance::outputEventsPush(const clap_output_events* events, const clap_event_header* header) {
-    // For Phase 5, we'll collect output events but not process them yet
-    (void)events;
-    (void)header;
-    return true;
-}
-
-bool ClapPluginInstance::outputEventsTryPush(const clap_output_events* events, const clap_event_header* header) {
+bool ClapPluginInstance::outputEventsTryPush(const clap_output_events* events, const clap_event_header_t* header) {
     // For Phase 5, we'll collect output events but not process them yet
     (void)events;
     (void)header;
@@ -493,7 +492,7 @@ bool ClapPluginInstance::outputEventsTryPush(const clap_output_events* events, c
 // Factory function
 std::unique_ptr<PluginInstance> createClapInstance(
     std::shared_ptr<ClapPluginLibrary> library,
-    const clap_plugin_descriptor* clapDesc
+    const clap_plugin_descriptor_t* clapDesc
 ) {
     try {
         return std::make_unique<ClapPluginInstance>(library, clapDesc);

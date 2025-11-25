@@ -18,15 +18,26 @@ PluginHost::~PluginHost() {
 void PluginHost::scanPlugins() {
     // Phase 5: Scan for CLAP plugins after server starts
     // Wrap in try-catch to prevent crashes from bad plugins
+    std::cout << "[PluginHost] Starting plugin scan..." << std::endl;
+    std::cout.flush();
     try {
+        std::cout << "[PluginHost] Calling scanDefaultPaths()..." << std::endl;
+        std::cout.flush();
         _clapRegistry->scanDefaultPaths();
+        std::cout << "[PluginHost] scanDefaultPaths() completed" << std::endl;
+        std::cout.flush();
         std::cout << "[PluginHost] Plugin scanning complete (found " << _clapRegistry->listPlugins().size() << " CLAP plugins)" << std::endl;
+        std::cout.flush();
     } catch (const std::exception& e) {
-        std::cerr << "[PluginHost] Error during plugin scanning: " << e.what() << std::endl;
+        std::cerr << "[PluginHost] Exception during plugin scanning: " << e.what() << std::endl;
+        std::cerr.flush();
         std::cerr << "[PluginHost] Continuing with " << _clapRegistry->listPlugins().size() << " successfully loaded plugins" << std::endl;
+        std::cerr.flush();
     } catch (...) {
-        std::cerr << "[PluginHost] Unknown error during plugin scanning, continuing anyway" << std::endl;
+        std::cerr << "[PluginHost] Unknown exception during plugin scanning, continuing anyway" << std::endl;
+        std::cerr.flush();
         std::cerr << "[PluginHost] Continuing with " << _clapRegistry->listPlugins().size() << " successfully loaded plugins" << std::endl;
+        std::cerr.flush();
     }
 }
 

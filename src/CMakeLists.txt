@@ -12,6 +12,7 @@ add_library(signal-core STATIC
     core/GraphEngine.cpp
     core/RecordingCapture.cpp
     core/PluginHost.cpp
+    core/PluginCrashTracking.cpp
     clap/ClapPluginLibrary.cpp
     clap/ClapRegistry.cpp
     clap/ClapPluginInstance.cpp
@@ -42,6 +43,9 @@ target_link_libraries(signal-core PUBLIC
 # Standalone Asio doesn't provide a CMake target, so we handle it manually
 target_include_directories(signal-core PUBLIC ${asio_SOURCE_DIR}/asio/include)
 target_compile_definitions(signal-core PUBLIC ASIO_STANDALONE)
+
+# Add official CLAP SDK include directory
+target_include_directories(signal-core PUBLIC ${clap_SOURCE_DIR}/include)
 
 # Link system libraries that Asio needs
 if(UNIX AND NOT APPLE)

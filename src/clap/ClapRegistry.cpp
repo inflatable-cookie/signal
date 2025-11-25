@@ -14,13 +14,24 @@ ClapRegistry::~ClapRegistry() {
 
 void ClapRegistry::scanDefaultPaths() {
     std::vector<std::filesystem::path> paths = getDefaultSearchPaths();
+    std::cout << "[ClapRegistry] scanDefaultPaths() - found " << paths.size() << " paths to scan" << std::endl;
+    std::cout.flush();
 
     for (const auto& path : paths) {
         if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-            std::cout << "[ClapRegistry] Scanning: " << path << std::endl;
+            std::cout << "[ClapRegistry] Scanning directory: " << path << std::endl;
+            std::cout.flush();
             scanPath(path);
+            std::cout << "[ClapRegistry] Finished scanning: " << path << std::endl;
+            std::cout.flush();
+        } else {
+            std::cout << "[ClapRegistry] Skipping non-existent path: " << path << std::endl;
+            std::cout.flush();
         }
     }
+
+    std::cout << "[ClapRegistry] scanDefaultPaths() complete" << std::endl;
+    std::cout.flush();
 }
 
 void ClapRegistry::scanPath(const std::filesystem::path& path) {
@@ -51,9 +62,15 @@ void ClapRegistry::scanPath(const std::filesystem::path& path) {
 }
 
 void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
+    std::cout << "[ClapRegistry] scanDirectory() - scanning: " << dir << std::endl;
+    std::cout.flush();
     try {
+        size_t fileCount = 0;
         for (const auto& entry : std::filesystem::directory_iterator(dir)) {
             const auto& path = entry.path();
+            fileCount++;
+            std::cout << "[ClapRegistry] Processing entry " << fileCount << ": " << path << std::endl;
+            std::cout.flush();
 
             // Check for .clap bundle (macOS) or .so/.dylib files
             // ClapPluginLibrary now handles .clap bundle resolution internally
@@ -61,20 +78,32 @@ void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
             bool isClapFile = (ext == ".clap" || ext == ".so" || ext == ".dylib" || ext == ".dll");
 
             if (isClapFile) {
+                std::cout << "[ClapRegistry] Attempting to load plugin: " << path << std::endl;
+                std::cout.flush();
                 try {
                     auto library = std::make_shared<ClapPluginLibrary>(path);
                     if (library->isValid()) {
+                        std::cout << "[ClapRegistry] Successfully loaded plugin: " << path << std::endl;
+                        std::cout.flush();
                         // Register all plugins from this library
                         auto descriptors = library->getAllDescriptors();
+                        std::cout << "[ClapRegistry] Found " << descriptors.size() << " plugin(s) in " << path << std::endl;
+                        std::cout.flush();
                         for (const auto* clapDesc : descriptors) {
                             if (clapDesc) {
                                 registerPlugin(library, clapDesc);
                             }
                         }
+                    } else {
+                        std::cerr << "[ClapRegistry] Plugin loaded but invalid: " << path << std::endl;
+                        std::cerr.flush();
                     }
                 } catch (const std::exception& e) {
-                    // Silently skip invalid files
-                    std::cerr << "[ClapRegistry] Skipping invalid file: " << path << std::endl;
+                    std::cerr << "[ClapRegistry] Exception loading plugin " << path << ": " << e.what() << std::endl;
+                    std::cerr.flush();
+                } catch (...) {
+                    std::cerr << "[ClapRegistry] Unknown exception loading plugin: " << path << std::endl;
+                    std::cerr.flush();
                 }
             } else if (std::filesystem::is_directory(path)) {
                 // Recursively scan subdirectories (with depth limit)
@@ -88,7 +117,7 @@ void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
 
 void ClapRegistry::registerPlugin(
     std::shared_ptr<ClapPluginLibrary> library,
-    const clap_plugin_descriptor* clapDesc
+    const clap_plugin_descriptor_t* clapDesc
 ) {
     if (!clapDesc || !clapDesc->id) {
         return;

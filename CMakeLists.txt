@@ -25,6 +25,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(asio)
 
+# Fetch official CLAP SDK (header-only)
+FetchContent_Declare(
+    clap
+    GIT_REPOSITORY https://github.com/free-audio/clap.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(clap)
+
 # Create an interface target for standalone Asio
 if(NOT TARGET asio::asio)
     add_library(asio_standalone INTERFACE)

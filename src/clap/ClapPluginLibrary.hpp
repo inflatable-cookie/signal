@@ -32,20 +32,20 @@ public:
     bool isValid() const noexcept { return _valid; }
 
     /// Get the CLAP entry point (for initializing CLAP host)
-    const clap_plugin_entry* getEntry() const noexcept { return _entry; }
+    const clap_plugin_entry_t* getEntry() const noexcept { return _entry; }
 
     /// Get the CLAP plugin factory
     /// @return Factory pointer, or nullptr if not available
-    const clap_plugin_factory* getFactory() const noexcept { return _factory; }
+    const clap_plugin_factory_t* getFactory() const noexcept { return _factory; }
 
     /// Get plugin descriptor by ID
     /// @param pluginId CLAP plugin ID string
     /// @return Descriptor pointer, or nullptr if not found
-    const clap_plugin_descriptor* getDescriptor(const char* pluginId) const noexcept;
+    const clap_plugin_descriptor_t* getDescriptor(const char* pluginId) const noexcept;
 
     /// Get all plugin descriptors from this library
     /// @return Vector of descriptor pointers
-    std::vector<const clap_plugin_descriptor*> getAllDescriptors() const;
+    std::vector<const clap_plugin_descriptor_t*> getAllDescriptors() const;
 
     /// Get the library path
     const std::filesystem::path& getPath() const noexcept { return _path; }
@@ -53,8 +53,8 @@ public:
 private:
     std::filesystem::path _path;
     void* _handle; // Platform-specific library handle (dlopen/LoadLibrary)
-    const clap_plugin_entry* _entry;
-    const clap_plugin_factory* _factory;
+    const clap_plugin_entry_t* _entry;
+    const clap_plugin_factory_t* _factory;
     bool _valid;
 
     // Helper methods

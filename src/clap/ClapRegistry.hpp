@@ -51,7 +51,7 @@ private:
     struct Entry {
         PluginDescriptor desc;
         std::shared_ptr<ClapPluginLibrary> library;
-        const clap_plugin_descriptor* clapDesc;
+        const clap_plugin_descriptor_t* clapDesc;
     };
 
     std::vector<Entry> _entries;
@@ -61,7 +61,7 @@ private:
     void scanDirectory(const std::filesystem::path& dir);
     void registerPlugin(
         std::shared_ptr<ClapPluginLibrary> library,
-        const clap_plugin_descriptor* clapDesc
+        const clap_plugin_descriptor_t* clapDesc
     );
     std::vector<std::filesystem::path> getDefaultSearchPaths() const;
 };
