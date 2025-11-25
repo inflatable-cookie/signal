@@ -369,19 +369,33 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
         return;
     }
 
-    // Handle loop wrapping
+    // Handle loop wrapping (use sample-based loop region if available for efficiency)
     uint64_t effectivePlayhead = currentPlayhead;
     bool wrapped = false;
-    if (transport && transport->loopEnabled && transport->loopRegion.has_value()) {
-        const auto& loop = transport->loopRegion.value();
-        uint64_t loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
-        uint64_t loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
+    if (transport && transport->loopEnabled) {
+        uint64_t loopStartSamples = 0;
+        uint64_t loopEndSamples = 0;
+        bool hasLoop = false;
 
-        if (loopEndSamples > loopStartSamples) {
+        // Prefer sample-based loop region (more efficient)
+        if (transport->loopRegionSamples.has_value()) {
+            const auto& loop = transport->loopRegionSamples.value();
+            loopStartSamples = loop.startSamples;
+            loopEndSamples = loop.endSamples;
+            hasLoop = true;
+        } else if (transport->loopRegion.has_value()) {
+            // Fallback to seconds-based (convert to samples)
+            const auto& loop = transport->loopRegion.value();
+            loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
+            loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
+            hasLoop = true;
+        }
+
+        if (hasLoop && loopEndSamples > loopStartSamples) {
             if (currentPlayhead >= loopEndSamples) {
                 // Wrap to loop start
                 uint64_t loopLength = loopEndSamples - loopStartSamples;
-                effectivePlayhead = loopStartSamples + ((currentPlayhead - loopEndSamples) % loopLength);
+                effectivePlayhead = loopStartSamples + ((currentPlayhead - loopStartSamples) % loopLength);
                 wrapped = true;
             } else if (currentPlayhead < loopStartSamples) {
                 // Before loop start - clamp to loop start
@@ -413,14 +427,29 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
     // Advance playhead
     uint64_t newPlayhead = effectivePlayhead + numFrames;
 
-    // Handle loop wrapping at block boundary
-    if (transport && transport->loopEnabled && transport->loopRegion.has_value()) {
-        const auto& loop = transport->loopRegion.value();
-        uint64_t loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
-        uint64_t loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
-        if (loopEndSamples > loopStartSamples && newPlayhead >= loopEndSamples) {
+    // Handle loop wrapping at block boundary (use sample-based loop region if available)
+    if (transport && transport->loopEnabled) {
+        uint64_t loopStartSamples = 0;
+        uint64_t loopEndSamples = 0;
+        bool hasLoop = false;
+
+        // Prefer sample-based loop region (more efficient)
+        if (transport->loopRegionSamples.has_value()) {
+            const auto& loop = transport->loopRegionSamples.value();
+            loopStartSamples = loop.startSamples;
+            loopEndSamples = loop.endSamples;
+            hasLoop = true;
+        } else if (transport->loopRegion.has_value()) {
+            // Fallback to seconds-based (convert to samples)
+            const auto& loop = transport->loopRegion.value();
+            loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
+            loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
+            hasLoop = true;
+        }
+
+        if (hasLoop && loopEndSamples > loopStartSamples && newPlayhead >= loopEndSamples) {
             uint64_t loopLength = loopEndSamples - loopStartSamples;
-            newPlayhead = loopStartSamples + ((newPlayhead - loopEndSamples) % loopLength);
+            newPlayhead = loopStartSamples + ((newPlayhead - loopStartSamples) % loopLength);
         }
     }
 
@@ -440,6 +469,31 @@ void EngineHost::renderBlock(
 
     // Update context with current playhead
     ctx.playheadSamples = _playheadSamples.load(std::memory_order_acquire);
+
+    // Update transport/tempo info in context (Phase 8)
+    if (transport) {
+        ctx.tempo = transport->tempo;
+        ctx.isPlaying = transport->isPlaying;
+        ctx.loopEnabled = transport->loopEnabled;
+
+        // Convert loop region from samples/seconds to beats if available
+        // For Phase 8, use simple tempo conversion: beats = seconds * tempo / 60
+        if (transport->loopEnabled && transport->loopRegion.has_value()) {
+            const auto& loop = transport->loopRegion.value();
+            ctx.loopStartBeats = (loop.startSeconds * transport->tempo) / 60.0;
+            ctx.loopEndBeats = (loop.endSeconds * transport->tempo) / 60.0;
+        } else {
+            ctx.loopStartBeats = 0.0;
+            ctx.loopEndBeats = 0.0;
+        }
+    } else {
+        // Default values if transport not available
+        ctx.tempo = 120.0;
+        ctx.isPlaying = false;
+        ctx.loopEnabled = false;
+        ctx.loopStartBeats = 0.0;
+        ctx.loopEndBeats = 0.0;
+    }
 
     // Clear output buffer
     output.clear();

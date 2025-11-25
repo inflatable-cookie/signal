@@ -252,6 +252,13 @@ void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* 
     npc.blockSize = ctx.blockSize;
     npc.blockStartSample = ctx.playheadSamples;
 
+    // Copy transport/tempo info from render context (Phase 8)
+    npc.tempo = ctx.tempo;
+    npc.isPlaying = ctx.isPlaying;
+    npc.loopEnabled = ctx.loopEnabled;
+    npc.loopStartBeats = ctx.loopStartBeats;
+    npc.loopEndBeats = ctx.loopEndBeats;
+
     // 4. Process nodes in execution order
     // For each node, route connections from upstream nodes, then process
     for (GraphNode* node : _executionOrder) {

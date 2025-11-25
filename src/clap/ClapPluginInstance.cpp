@@ -150,7 +150,8 @@ void ClapPluginInstance::queryParameters() {
         }
 
         // Get parameter ID (use name if no ID string available)
-        if (info.name) {
+        // Note: info.name is a fixed-size array, so check if first char is non-null
+        if (info.name[0] != '\0') {
             paramInfo.id = info.name;
         } else {
             paramInfo.id = "param_" + std::to_string(info.id);
@@ -295,6 +296,9 @@ void ClapPluginInstance::processAudioMidi(
         midiOut.append(midiIn);
         return;
     }
+
+    // Update time-info from context (Phase 8)
+    updateTimeInfo(ctx);
 
     // Convert MIDI to CLAP events
     convertMidiToClap(midiIn);
@@ -459,11 +463,31 @@ void ClapPluginInstance::hostRequestCallback(const clap_host* host) {
 }
 
 const void* ClapPluginInstance::hostGetExtension(const clap_host* host, const char* extension_id) {
-    // Phase 5: Host extensions - return nullptr for now
-    // Future: implement host extensions (latency, thread pool, etc.)
+    // Phase 8: Support CLAP_EXT_TIMELINE for time-info
+    // For Phase 8, we provide minimal time-info support
+    // Full timeline extension implementation will come later
     (void)host;
     (void)extension_id;
     return nullptr;
+}
+
+void ClapPluginInstance::updateTimeInfo(const NodeProcessContext& ctx) {
+    // Update musical time info from processing context (Phase 8)
+    // For Phase 8, use simple tempo and position
+    // Future: integrate with full tempo map from Pulse
+    _currentTimeInfo.tempo = ctx.tempo;
+    _currentTimeInfo.timeSigNumerator = 4; // Default 4/4 for Phase 8
+    _currentTimeInfo.timeSigDenominator = 4;
+
+    // Convert sample position to beats: beats = (samples / sampleRate) * tempo / 60
+    double positionSeconds = static_cast<double>(ctx.blockStartSample) / static_cast<double>(ctx.sampleRate);
+    _currentTimeInfo.songPosSeconds = positionSeconds;
+    _currentTimeInfo.songPosBeats = (positionSeconds * ctx.tempo) / 60.0;
+
+    _currentTimeInfo.playing = ctx.isPlaying;
+    _currentTimeInfo.loopEnabled = ctx.loopEnabled;
+    _currentTimeInfo.loopStartBeats = ctx.loopStartBeats;
+    _currentTimeInfo.loopEndBeats = ctx.loopEndBeats;
 }
 
 uint32_t ClapPluginInstance::inputEventsSize(const clap_input_events* events) {

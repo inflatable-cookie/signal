@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-25 11:05:41 UTC) [added] Phase 8: Timebase & Transport Enhancements - Extended TransportState with sample-based loop regions, implemented loop wrapping in audio thread, added MusicalTimeInfo structure, and integrated transport/tempo info into NodeProcessContext for plugins.
+
 (2025-11-25 09:09:00 UTC) [fixed] Implemented sigsetjmp/siglongjmp recovery mechanism to prevent Signal from crashing when loading problematic CLAP plugins - bus errors and segfaults during plugin loading now cause the plugin to be skipped rather than crashing Signal.
 
 (2025-11-25 09:03:30 UTC) [dev] Added signal handlers for SIGBUS and SIGSEGV to identify which plugin causes crashes, with global state tracking to report the problematic plugin path in crash messages.

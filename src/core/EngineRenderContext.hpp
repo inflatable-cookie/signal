@@ -16,5 +16,12 @@ struct EngineRenderContext {
     // EngineHost will derive this from its internal playhead state
     // This field is informational and may be updated by EngineHost
     uint64_t playheadSamples;
+
+    // Transport/tempo information (Phase 8)
+    double tempo;              // Current tempo in BPM
+    bool isPlaying;            // Is transport playing?
+    bool loopEnabled;          // Is loop enabled?
+    double loopStartBeats;     // Loop start in beats (if enabled)
+    double loopEndBeats;       // Loop end in beats (if enabled)
 };
 

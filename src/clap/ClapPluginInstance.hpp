@@ -11,6 +11,7 @@
 
 #include "core/PluginInstance.hpp"
 #include "clap/ClapPluginLibrary.hpp"
+#include "clap/MusicalTimeInfo.hpp"
 #include "clap/clap.h"
 #include <string>
 #include <vector>
@@ -93,6 +94,10 @@ private:
         clap_output_events outputEvents;
     };
     ClapMidiEvents _midiEvents;
+
+    // Time-info support
+    MusicalTimeInfo _currentTimeInfo;
+    void updateTimeInfo(const NodeProcessContext& ctx);
 
     // Helper methods
     bool createPlugin();

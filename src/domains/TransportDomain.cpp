@@ -104,13 +104,22 @@ void TransportDomain::handle(const Envelope& env) {
 
             if (hasRegion) {
                 transport.loopRegion = region;
+
+                // Also store sample-based loop region for efficient audio thread access
+                LoopRegionSamples loopSamples;
+                loopSamples.startSamples = static_cast<uint64_t>(region.startSeconds * sampleRate);
+                loopSamples.endSamples = static_cast<uint64_t>(region.endSeconds * sampleRate);
+                transport.loopRegionSamples = loopSamples;
+
                 _engineHost->commitTransportUpdate();  // Commit snapshot swap
                 std::cout << "[TransportDomain] Loop region set: " << region.startSeconds
-                          << " - " << region.endSeconds << "s" << std::endl;
+                          << " - " << region.endSeconds << "s ("
+                          << loopSamples.startSamples << " - " << loopSamples.endSamples << " samples)" << std::endl;
             } else {
                 // Clear loop region if enabled is false
                 if (payload.contains("enabled") && !payload["enabled"].get<bool>()) {
                     transport.loopRegion = std::nullopt;
+                    transport.loopRegionSamples = std::nullopt;
                     _engineHost->commitTransportUpdate();  // Commit snapshot swap
                     std::cout << "[TransportDomain] Loop region cleared" << std::endl;
                 }
