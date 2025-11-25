@@ -10,6 +10,7 @@ add_library(signal-core STATIC
     core/ScheduleData.cpp
     core/GraphNode.cpp
     core/GraphEngine.cpp
+    core/RecordingCapture.cpp
     core/PluginHost.cpp
     clap/ClapPluginLibrary.cpp
     clap/ClapRegistry.cpp

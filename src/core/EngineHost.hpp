@@ -31,6 +31,7 @@ class StreamScheduler;
 class GraphEngine;
 class AudioAssetSource;
 class PluginHost;
+class RecordingSession;
 
 class EngineHost {
 public:
@@ -67,6 +68,10 @@ public:
     // Get current automation snapshot (for audio thread - lock-free)
     // Returns const pointer - caller must ensure it's not used after next swap
     const AutomationData* getAutomationSnapshot() const;
+
+    // Recording session access
+    RecordingSession& recordingSession();
+    const RecordingSession& recordingSession() const;
 
     // Commit transport state updates (creates new snapshot and swaps atomically)
     // Must be called after modifying transport() to make changes visible to audio thread
@@ -131,6 +136,7 @@ private:
     std::unique_ptr<GraphEngine> _graphEngine;
     std::unique_ptr<AudioAssetSource> _audioAssetSource; // Phase 3: Asset source for audio streaming
     std::unique_ptr<PluginHost> _pluginHost; // Phase 4: Plugin host for creating plugin instances
+    std::unique_ptr<RecordingSession> _recordingSession; // Phase 7: Recording capture session
 
     // Parameter change queue (lock-free, double-buffered for real-time safety)
     // Control thread: writes to _pendingParameterChanges

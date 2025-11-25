@@ -34,6 +34,10 @@ struct NodeDesc {
     std::optional<uint32_t> numAudioOutputs;
     std::optional<uint32_t> numMidiInputs;
     std::optional<uint32_t> numMidiOutputs;
+    // Input node fields (Phase 7)
+    std::optional<std::string> deviceId;      // For AudioInputNode
+    std::optional<int> inputChannelIndex;     // For AudioInputNode
+    std::optional<std::string> portId;        // For MidiInputNode
 };
 
 /// Connection descriptor (matches Pulse ConnectionDesc)

@@ -522,3 +522,89 @@ public:
     }
 };
 
+/// AudioInputNode - represents a hardware audio input stream
+/// Feeds live audio from the audio backend into the graph
+class AudioInputNode : public GraphNode {
+public:
+    AudioInputNode(
+        const NodeId& id,
+        const std::string& deviceId = "",
+        int inputChannelIndex = 0
+    )
+        : GraphNode(id, NodeKind::AudioInput)
+        , _deviceId(deviceId)
+        , _inputChannelIndex(inputChannelIndex)
+    {
+        // Audio input nodes typically have mono or stereo output
+        // Default to mono for Phase 7
+        NodeAudioConfig config;
+        config.layout = ChannelLayout::Mono;
+        config.numInputChannels = 0;  // No inputs (reads from backend)
+        config.numOutputChannels = 1; // Mono output
+        setAudioConfig(config);
+    }
+
+    const std::string& getDeviceId() const noexcept {
+        return _deviceId;
+    }
+
+    int getInputChannelIndex() const noexcept {
+        return _inputChannelIndex;
+    }
+
+    void process(const NodeProcessContext& npc) override {
+        // Audio is injected from backend input buffers before process() is called
+        // This node just passes through (could add input gain/trim in future)
+    }
+
+    /// Inject audio from backend input (called by EngineHost before graph processing)
+    void injectInputAudio(const float* inputData, int numChannels, int numFrames, int channelOffset) {
+        // Copy input channel data to output buffer
+        // For Phase 7, assume mono extraction from interleaved input
+        if (channelOffset < numChannels && io.audioOut.numChannels() > 0) {
+            for (int frame = 0; frame < numFrames && frame < io.audioOut.numFrames(); ++frame) {
+                int inputIndex = frame * numChannels + channelOffset;
+                io.audioOut.setSample(0, frame, inputData[inputIndex]);
+            }
+        }
+    }
+
+private:
+    std::string _deviceId;
+    int _inputChannelIndex;
+};
+
+/// MidiInputNode - represents a MIDI input source
+/// Feeds live MIDI from the MIDI backend into the graph
+class MidiInputNode : public GraphNode {
+public:
+    MidiInputNode(
+        const NodeId& id,
+        const std::string& portId = ""
+    )
+        : GraphNode(id, NodeKind::MidiInput)
+        , _portId(portId)
+    {
+    }
+
+    const std::string& getPortId() const noexcept {
+        return _portId;
+    }
+
+    void process(const NodeProcessContext& npc) override {
+        // MIDI is injected from backend input before process() is called
+        // This node just passes through
+    }
+
+    /// Inject MIDI from backend input (called by EngineHost before graph processing)
+    void injectInputMidi(const std::vector<MidiMessage>& messages) {
+        io.midiOut.clear();
+        for (const auto& msg : messages) {
+            io.midiOut.addMessage(msg);
+        }
+    }
+
+private:
+    std::string _portId;
+};
+

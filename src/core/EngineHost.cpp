@@ -14,6 +14,7 @@
 #include "core/PluginHost.hpp"
 #include "core/GraphNodes.hpp"
 #include "core/AutomationData.hpp"
+#include "core/RecordingCapture.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -37,6 +38,7 @@ EngineHost::EngineHost()
     _graphEngine = std::make_unique<GraphEngine>();
     _audioAssetSource = std::make_unique<StubAudioAssetSource>(); // Phase 3: Use stub for now
     _pluginHost = std::make_unique<PluginHost>(); // Phase 4: Plugin host
+    _recordingSession = std::make_unique<RecordingSession>(); // Phase 7: Recording session
     _parameterChangesPending.store(false, std::memory_order_release);
 
     // Initialize transport state with default values
@@ -194,6 +196,14 @@ const AutomationData* EngineHost::getAutomationSnapshot() const {
     // Read atomic pointer once (lock-free)
     // Pointer remains valid until next swap (previous snapshot kept alive in _previousAutomation)
     return _activeAutomation.load(std::memory_order_acquire);
+}
+
+RecordingSession& EngineHost::recordingSession() {
+    return *_recordingSession;
+}
+
+const RecordingSession& EngineHost::recordingSession() const {
+    return *_recordingSession;
 }
 
 void EngineHost::loadAutomationSnapshot(const AutomationData& snapshot) {
@@ -542,12 +552,106 @@ void EngineHost::renderBlock(
         }
     }
 
+    // Phase 7: Inject input data from backend into input nodes
+    const auto& executionOrder = _graphEngine->getExecutionOrder();
+    for (GraphNode* node : executionOrder) {
+        if (node && node->getKind() == NodeKind::AudioInput) {
+            auto* inputNode = dynamic_cast<AudioInputNode*>(node);
+            if (inputNode) {
+                // Extract channel from interleaved input buffer
+                int channelIndex = inputNode->getInputChannelIndex();
+                if (channelIndex < input.numChannels()) {
+                    inputNode->injectInputAudio(
+                        input.data(),
+                        input.numChannels(),
+                        input.numFrames(),
+                        channelIndex
+                    );
+                }
+            }
+        } else if (node && node->getKind() == NodeKind::MidiInput) {
+            // Phase 7: MIDI input injection (stub for now - no MIDI backend yet)
+            // TODO: Inject MIDI from backend when MIDI backend is implemented
+            auto* midiInputNode = dynamic_cast<MidiInputNode*>(node);
+            if (midiInputNode) {
+                // For Phase 7, MIDI input is empty (no backend yet)
+                std::vector<MidiMessage> emptyMidi;
+                midiInputNode->injectInputMidi(emptyMidi);
+            }
+        }
+    }
+
+    // Phase 7: Capture from input nodes if recording is active
+    if (_recordingSession->isRecording()) {
+        uint64_t blockStartSamples = ctx.playheadSamples;
+
+        for (GraphNode* node : executionOrder) {
+            if (node && node->getKind() == NodeKind::AudioInput) {
+                auto* inputNode = dynamic_cast<AudioInputNode*>(node);
+                if (inputNode) {
+                    std::string laneId = _recordingSession->getTargetLaneForInput(inputNode->getId());
+                    if (!laneId.empty() && _recordingSession->isLaneArmed(laneId)) {
+                        // Capture audio from this input node
+                        const auto& audioOut = inputNode->io.audioOut;
+                        if (audioOut.numChannels() > 0 && audioOut.numFrames() > 0) {
+                            RecordedAudioChunk chunk;
+                            chunk.laneId = laneId;
+                            chunk.numChannels = audioOut.numChannels();
+                            chunk.sampleRate = static_cast<int>(ctx.sampleRate);
+                            chunk.startSample = blockStartSamples;
+                            chunk.provisionalAssetId = "temp-" + inputNode->getId() + "-" + std::to_string(blockStartSamples);
+
+                            // Convert deinterleaved to interleaved
+                            int numFrames = audioOut.numFrames();
+                            chunk.interleaved.resize(chunk.numChannels * numFrames);
+                            for (int frame = 0; frame < numFrames; ++frame) {
+                                for (int ch = 0; ch < chunk.numChannels; ++ch) {
+                                    chunk.interleaved[frame * chunk.numChannels + ch] = audioOut.getSample(ch, frame);
+                                }
+                            }
+
+                            _recordingSession->captureAudioChunk(chunk);
+                        }
+                    }
+                }
+            } else if (node && node->getKind() == NodeKind::MidiInput) {
+                auto* midiInputNode = dynamic_cast<MidiInputNode*>(node);
+                if (midiInputNode) {
+                    std::string laneId = _recordingSession->getTargetLaneForInput(midiInputNode->getId());
+                    if (!laneId.empty() && _recordingSession->isLaneArmed(laneId)) {
+                        // Capture MIDI from this input node
+                        const auto& midiOut = midiInputNode->io.midiOut;
+                        if (midiOut.size() > 0) {
+                            RecordedMidiChunk chunk;
+                            chunk.laneId = laneId;
+                            chunk.startSample = blockStartSamples;
+
+                            // Convert MidiBuffer to RecordedMidiEvent
+                            const auto& messages = midiOut.getMessages();
+                            for (const auto& msg : messages) {
+                                RecordedMidiEvent event;
+                                event.timeSamples = blockStartSamples + msg.sampleOffset;
+                                event.status = msg.status;
+                                event.data1 = msg.data1;
+                                event.data2 = msg.data2;
+                                event.channel = msg.channel;
+                                chunk.events.push_back(event);
+                            }
+
+                            _recordingSession->captureMidiChunk(chunk);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Process graph (Phase 4: real audio streaming, send/receive routing, plugin processing)
     _graphEngine->processGraph(ctx, _streamScheduler.get(), _audioAssetSource.get());
 
     // Copy device node output to EngineHost output buffer
     // TODO: Support multiple device nodes in future (e.g., different output devices, cue mixes)
-    const auto& executionOrder = _graphEngine->getExecutionOrder();
+    // Reuse executionOrder from above
     GraphNode* deviceNode = nullptr;
     for (GraphNode* node : executionOrder) {
         if (node && node->getKind() == NodeKind::Device) {

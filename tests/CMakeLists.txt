@@ -17,6 +17,7 @@ add_executable(signal-tests
     test_graph_runtime_phase3.cpp
     test_plugin_hosting.cpp
     test_automation.cpp
+    test_recording.cpp
 )
 
 target_link_libraries(signal-tests PRIVATE

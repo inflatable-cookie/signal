@@ -1,0 +1,102 @@
+#include "core/RecordingCapture.hpp"
+#include <iostream>
+#include <algorithm>
+
+RecordingSession::RecordingSession()
+    : _isRecording(false)
+    , _recordingStartSample(0)
+    , _audioChunkQueue(CAPTURE_QUEUE_SIZE)
+    , _midiChunkQueue(CAPTURE_QUEUE_SIZE)
+{
+    std::cout << "[RecordingSession] Created" << std::endl;
+}
+
+RecordingSession::~RecordingSession() {
+    stopRecording();
+    std::cout << "[RecordingSession] Destroyed" << std::endl;
+}
+
+void RecordingSession::startRecording() {
+    if (_isRecording.load(std::memory_order_acquire)) {
+        std::cout << "[RecordingSession] Already recording" << std::endl;
+        return;
+    }
+
+    _recordingStartSample.store(0, std::memory_order_release); // Will be set by EngineHost
+    _isRecording.store(true, std::memory_order_release);
+    std::cout << "[RecordingSession] Recording started" << std::endl;
+}
+
+void RecordingSession::stopRecording() {
+    if (!_isRecording.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    _isRecording.store(false, std::memory_order_release);
+    std::cout << "[RecordingSession] Recording stopped" << std::endl;
+}
+
+void RecordingSession::setArmState(const std::string& laneId, bool armed) {
+    std::unique_lock<std::shared_mutex> lock(_armStateMutex);
+    _armedLanes[laneId].store(armed, std::memory_order_release);
+    std::cout << "[RecordingSession] Lane " << laneId << " arm state: " << (armed ? "armed" : "disarmed") << std::endl;
+}
+
+bool RecordingSession::isLaneArmed(const std::string& laneId) const {
+    std::shared_lock<std::shared_mutex> lock(_armStateMutex);
+    auto it = _armedLanes.find(laneId);
+    if (it == _armedLanes.end()) {
+        return false;
+    }
+    return it->second.load(std::memory_order_acquire);
+}
+
+void RecordingSession::bindInputToLane(const std::string& inputNodeId, const std::string& laneId) {
+    std::unique_lock<std::shared_mutex> lock(_inputMapMutex);
+    _inputToLaneMap[inputNodeId] = laneId;
+    std::cout << "[RecordingSession] Bound input " << inputNodeId << " to lane " << laneId << std::endl;
+}
+
+std::string RecordingSession::getTargetLaneForInput(const std::string& inputNodeId) const {
+    std::shared_lock<std::shared_mutex> lock(_inputMapMutex);
+    auto it = _inputToLaneMap.find(inputNodeId);
+    if (it == _inputToLaneMap.end()) {
+        return "";
+    }
+    return it->second;
+}
+
+bool RecordingSession::captureAudioChunk(const RecordedAudioChunk& chunk) {
+    if (!_isRecording.load(std::memory_order_acquire)) {
+        return false;
+    }
+    return _audioChunkQueue.push(chunk);
+}
+
+bool RecordingSession::captureMidiChunk(const RecordedMidiChunk& chunk) {
+    if (!_isRecording.load(std::memory_order_acquire)) {
+        return false;
+    }
+    return _midiChunkQueue.push(chunk);
+}
+
+size_t RecordingSession::consumeAudioChunks(std::vector<RecordedAudioChunk>& out) {
+    size_t count = 0;
+    RecordedAudioChunk chunk;
+    while (_audioChunkQueue.pop(chunk)) {
+        out.push_back(chunk);
+        count++;
+    }
+    return count;
+}
+
+size_t RecordingSession::consumeMidiChunks(std::vector<RecordedMidiChunk>& out) {
+    size_t count = 0;
+    RecordedMidiChunk chunk;
+    while (_midiChunkQueue.pop(chunk)) {
+        out.push_back(chunk);
+        count++;
+    }
+    return count;
+}
+

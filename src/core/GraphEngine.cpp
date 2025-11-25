@@ -140,6 +140,12 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
         case NodeKind::Device:
             return std::make_unique<DeviceNode>(desc.nodeId);
 
+        case NodeKind::AudioInput:
+            return std::make_unique<AudioInputNode>(desc.nodeId, desc.deviceId.value_or(""), desc.inputChannelIndex.value_or(0));
+
+        case NodeKind::MidiInput:
+            return std::make_unique<MidiInputNode>(desc.nodeId, desc.portId.value_or(""));
+
         default:
             std::cerr << "[GraphEngine] Warning: Unknown node kind for node: " << desc.nodeId << std::endl;
             return nullptr;
