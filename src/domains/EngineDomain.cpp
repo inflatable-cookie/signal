@@ -95,6 +95,35 @@ void EngineDomain::handle(const Envelope& env) {
                     segment.endSamples = beatsToSamples(endBeats);
                     segment.assetStartSamples = beatsToSamples(assetStartBeats);
 
+                    // Phase 9: Parse fade metadata (if present)
+                    if (segmentJson.contains("fadeInBeats")) {
+                        double fadeInBeats = segmentJson.value("fadeInBeats", 0.0);
+                        segment.fadeInSamples = beatsToSamples(fadeInBeats);
+                        segment.fadeInCurve = segmentJson.value("fadeInCurve", "linear");
+                    } else {
+                        segment.fadeInSamples = 0;
+                        segment.fadeInCurve = "linear";
+                    }
+
+                    if (segmentJson.contains("fadeOutBeats")) {
+                        double fadeOutBeats = segmentJson.value("fadeOutBeats", 0.0);
+                        segment.fadeOutSamples = beatsToSamples(fadeOutBeats);
+                        segment.fadeOutCurve = segmentJson.value("fadeOutCurve", "linear");
+                    } else {
+                        segment.fadeOutSamples = 0;
+                        segment.fadeOutCurve = "linear";
+                    }
+
+                    // Phase 9: Parse stretch metadata (if present)
+                    if (segmentJson.contains("stretch") && segmentJson["stretch"].is_object()) {
+                        const auto& stretchJson = segmentJson["stretch"];
+                        segment.stretch.mode = stretchJson.value("mode", "none");
+                        segment.stretch.ratio = stretchJson.value("ratio", 1.0);
+                    } else {
+                        segment.stretch.mode = "none";
+                        segment.stretch.ratio = 1.0;
+                    }
+
                     audioSegments.push_back(segment);
                 }
             }

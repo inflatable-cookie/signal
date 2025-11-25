@@ -143,6 +143,14 @@ public:
             blockOffsetStart,
             numChannels
         );
+
+        // Phase 9: TODO - Apply fade-in/fade-out ramps
+        // For now, fade metadata is stored but not applied
+        // Future: Apply gain ramps based on segment->fadeInSamples, fadeOutSamples, fadeInCurve, fadeOutCurve
+
+        // Phase 9: TODO - Apply time-stretching
+        // For now, stretch metadata is stored but not applied
+        // Future: Apply stretch algorithm based on segment->stretch.mode and segment->stretch.ratio
     }
 
 private:
