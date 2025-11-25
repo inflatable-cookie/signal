@@ -56,26 +56,9 @@ void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
             const auto& path = entry.path();
 
             // Check for .clap bundle (macOS) or .so/.dylib files
-            bool isClapFile = false;
+            // ClapPluginLibrary now handles .clap bundle resolution internally
             std::string ext = path.extension().string();
-
-            if (ext == ".clap") {
-                // macOS .clap bundle - need to find the actual library inside
-                // Structure: PluginName.clap/Contents/PlugIns/plugin.so
-                std::filesystem::path pluginPath = path / "Contents" / "PlugIns";
-                if (std::filesystem::exists(pluginPath)) {
-                    for (const auto& pluginEntry : std::filesystem::directory_iterator(pluginPath)) {
-                        if (pluginEntry.path().extension() == ".so" ||
-                            pluginEntry.path().extension() == ".dylib") {
-                            scanPath(pluginEntry.path());
-                        }
-                    }
-                }
-                isClapFile = true;
-            } else if (ext == ".so" || ext == ".dylib" || ext == ".dll") {
-                // Direct library file - try to load it
-                isClapFile = true;
-            }
+            bool isClapFile = (ext == ".clap" || ext == ".so" || ext == ".dylib" || ext == ".dll");
 
             if (isClapFile) {
                 try {

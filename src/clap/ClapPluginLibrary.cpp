@@ -2,6 +2,7 @@
 #include "clap/clap.h"
 #include <iostream>
 #include <cstring>
+#include <filesystem>
 
 // Platform-specific dynamic loading
 #if defined(_WIN32)
@@ -21,6 +22,57 @@
 // CLAP entry point function signature
 // This matches the CLAP SDK ABI
 typedef const clap_plugin_entry* (*clap_entry_func_t)(clap_version_t);
+
+/// Resolve the actual library path from a .clap bundle on macOS
+/// On macOS, .clap files are bundles (directories) containing the actual library
+/// Structure: PluginName.clap/Contents/MacOS/plugin.dylib
+static std::filesystem::path resolveClapLibraryPath(const std::filesystem::path& path) {
+    // If it's not a .clap extension, assume it's already the library path
+    if (path.extension() != ".clap") {
+        return path;
+    }
+
+    #if defined(__APPLE__)
+        // On macOS, .clap is a bundle directory
+        // Try Contents/MacOS/ first (standard macOS bundle structure)
+        std::filesystem::path macosPath = path / "Contents" / "MacOS";
+        if (std::filesystem::exists(macosPath) && std::filesystem::is_directory(macosPath)) {
+            // Look for library files in MacOS directory
+            // CLAP plugins on macOS typically have no extension (Mach-O bundles)
+            // but may also have .dylib or .so extensions
+            for (const auto& entry : std::filesystem::directory_iterator(macosPath)) {
+                const auto& entryPath = entry.path();
+                if (std::filesystem::is_regular_file(entryPath)) {
+                    std::string ext = entryPath.extension().string();
+                    // Accept files with .dylib/.so extensions, or files without extensions (Mach-O bundles)
+                    if (ext == ".dylib" || ext == ".so" || ext.empty()) {
+                        return entryPath;
+                    }
+                }
+            }
+        }
+
+        // Fallback: Try Contents/PlugIns/ (alternative structure)
+        std::filesystem::path pluginsPath = path / "Contents" / "PlugIns";
+        if (std::filesystem::exists(pluginsPath) && std::filesystem::is_directory(pluginsPath)) {
+            for (const auto& entry : std::filesystem::directory_iterator(pluginsPath)) {
+                const auto& entryPath = entry.path();
+                if (std::filesystem::is_regular_file(entryPath)) {
+                    std::string ext = entryPath.extension().string();
+                    if (ext == ".dylib" || ext == ".so" || ext.empty()) {
+                        return entryPath;
+                    }
+                }
+            }
+        }
+
+        // If no library found, return original path (will fail with clear error)
+        return path;
+    #else
+        // On Linux/Windows, .clap might be a direct library file
+        return path;
+    #endif
+}
 
 ClapPluginLibrary::ClapPluginLibrary(const std::filesystem::path& path)
     : _path(path)
@@ -71,24 +123,17 @@ ClapPluginLibrary& ClapPluginLibrary::operator=(ClapPluginLibrary&& other) noexc
 }
 
 bool ClapPluginLibrary::loadLibrary() {
-    // Phase 5: Real CLAP loading
-    // For now, we'll implement a minimal version that:
-    // 1. Loads the shared library
-    // 2. Finds the CLAP entry point
-    // 3. Initializes the factory
-    //
-    // Note: This requires CLAP SDK headers to be available
-    // For Phase 5, we'll implement the structure but may need to
-    // add CLAP SDK as a dependency or include headers
+    // Resolve the actual library path (handles .clap bundles on macOS)
+    std::filesystem::path libraryPath = resolveClapLibraryPath(_path);
 
-    _handle = CLAP_LIB_LOAD(_path);
+    _handle = CLAP_LIB_LOAD(libraryPath);
     if (!_handle) {
         #if defined(_WIN32)
             DWORD error = GetLastError();
-            std::cerr << "[ClapPluginLibrary] LoadLibrary failed: " << error << std::endl;
+            std::cerr << "[ClapPluginLibrary] LoadLibrary failed: " << libraryPath << " - " << error << std::endl;
         #else
             const char* error = dlerror();
-            std::cerr << "[ClapPluginLibrary] dlopen failed: " << (error ? error : "unknown") << std::endl;
+            std::cerr << "[ClapPluginLibrary] dlopen failed: " << libraryPath << " - " << (error ? error : "unknown") << std::endl;
         #endif
         return false;
     }
