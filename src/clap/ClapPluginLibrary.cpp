@@ -29,52 +29,31 @@
 /// On macOS, .clap files are bundles (directories) containing the actual library
 /// Structure: PluginName.clap/Contents/MacOS/PluginName
 static std::filesystem::path resolveClapLibraryPath(const std::filesystem::path& path) {
-    std::cout << "[ClapPluginLibrary] resolveClapLibraryPath() for: " << path << std::endl;
-    std::cout.flush();
-
     // If it's not a .clap extension, assume it's already the library path
     if (path.extension() != ".clap") {
-        std::cout << "[ClapPluginLibrary] Not a .clap bundle, using path directly: " << path << std::endl;
-        std::cout.flush();
         return path;
     }
 
     #if defined(__APPLE__)
-        std::cout << "[ClapPluginLibrary] macOS .clap bundle detected: " << path << std::endl;
-        std::cout.flush();
-
         // Get bundle name from path stem (e.g., "ThingsCrusher" from "ThingsCrusher.clap")
         std::string bundleName = path.stem().string();
         std::filesystem::path macosDir = path / "Contents" / "MacOS";
 
-        std::cout << "[ClapPluginLibrary] Bundle name: " << bundleName << std::endl;
-        std::cout << "[ClapPluginLibrary] MacOS directory: " << macosDir << std::endl;
-        std::cout.flush();
-
         // First, try the canonical bundle binary path
         std::filesystem::path canonical = macosDir / bundleName;
-        std::cout << "[ClapPluginLibrary] Checking canonical bundle binary: " << canonical << std::endl;
-        std::cout.flush();
 
         if (std::filesystem::exists(canonical) && std::filesystem::is_regular_file(canonical)) {
-            std::cout << "[ClapPluginLibrary] Using canonical bundle binary: " << canonical << std::endl;
-            std::cout.flush();
             return canonical;
         }
 
         // Fallback: scan MacOS directory if it exists
         if (std::filesystem::exists(macosDir) && std::filesystem::is_directory(macosDir)) {
-            std::cout << "[ClapPluginLibrary] Canonical path not found, scanning MacOS directory for fallback candidate..." << std::endl;
-            std::cout.flush();
-
             for (const auto& entry : std::filesystem::directory_iterator(macosDir)) {
                 const auto& entryPath = entry.path();
                 if (std::filesystem::is_regular_file(entryPath)) {
                     std::string ext = entryPath.extension().string();
                     // Accept files with .dylib/.so extensions, or files without extensions (Mach-O bundles)
                     if (ext == ".dylib" || ext == ".so" || ext.empty()) {
-                        std::cout << "[ClapPluginLibrary] Using fallback candidate: " << entryPath << std::endl;
-                        std::cout.flush();
                         return entryPath;
                     }
                 }
@@ -104,9 +83,6 @@ ClapPluginLibrary::ClapPluginLibrary(const std::filesystem::path& path)
     , _factory(nullptr)
     , _valid(false)
 {
-    std::cout << "[ClapPluginLibrary] Constructing for: " << path << std::endl;
-    std::cout.flush();
-
     // Set global flag for crash reporting
     g_inPluginLoading = true;
     std::string pathStr = path.string();
@@ -116,10 +92,8 @@ ClapPluginLibrary::ClapPluginLibrary(const std::filesystem::path& path)
     try {
         if (loadLibrary()) {
             _valid = true;
-            std::cout << "[ClapPluginLibrary] Successfully loaded: " << path << std::endl;
-            std::cout.flush();
         } else {
-            std::cerr << "[ClapPluginLibrary] Failed to load: " << path << std::endl;
+            std::cerr << "[ClapPluginLibrary] Failed to load plugin: " << path << std::endl;
             std::cerr.flush();
             // Jump buffer flag should already be cleared by loadLibrary() on failure
         }
@@ -179,16 +153,9 @@ ClapPluginLibrary& ClapPluginLibrary::operator=(ClapPluginLibrary&& other) noexc
 }
 
 bool ClapPluginLibrary::loadLibrary() {
-    std::cout << "[ClapPluginLibrary] loadLibrary() called for: " << _path << std::endl;
-    std::cout.flush();
-
     // Resolve the actual library path (handles .clap bundles on macOS)
     std::filesystem::path libraryPath = resolveClapLibraryPath(_path);
-    std::cout << "[ClapPluginLibrary] Resolved library path: " << libraryPath << std::endl;
-    std::cout.flush();
 
-    std::cout << "[ClapPluginLibrary] Attempting to dlopen: " << libraryPath << std::endl;
-    std::cout.flush();
     _handle = CLAP_LIB_LOAD(libraryPath);
     if (!_handle) {
         #if defined(_WIN32)
@@ -202,12 +169,7 @@ bool ClapPluginLibrary::loadLibrary() {
         return false;
     }
 
-    std::cout << "[ClapPluginLibrary] dlopen succeeded, initializing CLAP entry..." << std::endl;
-    std::cout.flush();
-
     // Find CLAP entry point
-    std::cout << "[ClapPluginLibrary] Calling initClapEntry()..." << std::endl;
-    std::cout.flush();
     if (!initClapEntry()) {
         std::cerr << "[ClapPluginLibrary] initClapEntry() failed for: " << libraryPath << std::endl;
         std::cerr.flush();
@@ -216,8 +178,6 @@ bool ClapPluginLibrary::loadLibrary() {
     }
 
     // Initialize factory
-    std::cout << "[ClapPluginLibrary] Calling initFactory()..." << std::endl;
-    std::cout.flush();
     if (!initFactory()) {
         std::cerr << "[ClapPluginLibrary] initFactory() failed for: " << libraryPath << std::endl;
         std::cerr.flush();
@@ -225,8 +185,6 @@ bool ClapPluginLibrary::loadLibrary() {
         return false;
     }
 
-    std::cout << "[ClapPluginLibrary] Library fully initialized: " << libraryPath << std::endl;
-    std::cout.flush();
     return true;
 }
 
@@ -245,9 +203,6 @@ void ClapPluginLibrary::unloadLibrary() {
 }
 
 bool ClapPluginLibrary::initClapEntry() {
-    std::cout << "[ClapPluginLibrary] initClapEntry() - looking for clap_entry symbol..." << std::endl;
-    std::cout.flush();
-
     // CLAP plugins export clap_entry as a global data symbol (const clap_plugin_entry_t), not a function
     // Use dlsym/GetProcAddress to get the address of the clap_plugin_entry_t struct
     void* symbolAddr = CLAP_LIB_SYMBOL(_handle, "clap_entry");
@@ -258,12 +213,9 @@ bool ClapPluginLibrary::initClapEntry() {
         return false;
     }
 
-    std::cout << "[ClapPluginLibrary] Found clap_entry symbol at address: " << symbolAddr << std::endl;
-    std::cout.flush();
-
     // Validate symbol address is not in an obviously invalid memory range
     if (reinterpret_cast<uintptr_t>(symbolAddr) < 0x1000) {
-        std::cerr << "[ClapPluginLibrary] Invalid symbol address (too low): " << symbolAddr << std::endl;
+        std::cerr << "[ClapPluginLibrary] Invalid symbol address (too low): " << symbolAddr << " for: " << _path << std::endl;
         std::cerr << "[ClapPluginLibrary] This may indicate an ABI mismatch - plugin may be incompatible" << std::endl;
         std::cerr.flush();
         return false;
@@ -271,9 +223,6 @@ bool ClapPluginLibrary::initClapEntry() {
 
     // Cast to pointer to clap_plugin_entry_t struct
     // Use sigsetjmp/siglongjmp to recover from bus errors when accessing the struct
-    std::cout << "[ClapPluginLibrary] Accessing clap_entry struct..." << std::endl;
-    std::cout.flush();
-
     g_pluginLoadJumpSet = true;
     int jumpResult = sigsetjmp(g_pluginLoadJumpBuf, 1);
 
@@ -307,34 +256,20 @@ bool ClapPluginLibrary::initClapEntry() {
     const clap_version_t& pluginVersion = entryPtr->clap_version;
     const clap_version_t& hostVersion = CLAP_VERSION;
 
-    std::cout << "[ClapPluginLibrary] Plugin CLAP version: " << pluginVersion.major << "." << pluginVersion.minor << "." << pluginVersion.revision << std::endl;
-    std::cout << "[ClapPluginLibrary] Host CLAP version: " << hostVersion.major << "." << hostVersion.minor << "." << hostVersion.revision << std::endl;
-    std::cout.flush();
-
     if (pluginVersion.major != hostVersion.major) {
         std::cerr << "[ClapPluginLibrary] Version mismatch for: " << _path << std::endl;
+        std::cerr << "[ClapPluginLibrary] Plugin CLAP version: " << pluginVersion.major << "." << pluginVersion.minor << "." << pluginVersion.revision << std::endl;
+        std::cerr << "[ClapPluginLibrary] Host CLAP version: " << hostVersion.major << "." << hostVersion.minor << "." << hostVersion.revision << std::endl;
         std::cerr << "[ClapPluginLibrary] Major version mismatch - plugin may not be compatible" << std::endl;
         std::cerr.flush();
         // Continue anyway for now (as per requirements)
-    } else if (pluginVersion.minor != hostVersion.minor || pluginVersion.revision != hostVersion.revision) {
-        std::cout << "[ClapPluginLibrary] Minor/revision version difference for: " << _path << std::endl;
-        std::cout.flush();
     }
 
     _entry = entryPtr;
     g_pluginLoadJumpSet = false; // Clear protection after successful struct access
 
-    std::cout << "[ClapPluginLibrary] Using clap_entry struct as plugin entry point" << std::endl;
-    std::cout.flush();
-
-    std::cout << "[ClapPluginLibrary] Got CLAP entry point, initializing..." << std::endl;
-    std::cout.flush();
-
     // Initialize entry - also wrap in sigsetjmp in case init() crashes
     if (_entry->init) {
-        std::cout << "[ClapPluginLibrary] Calling entry->init()..." << std::endl;
-        std::cout.flush();
-
         g_pluginLoadJumpSet = true;
         int jumpResult = sigsetjmp(g_pluginLoadJumpBuf, 1);
 
@@ -362,23 +297,14 @@ bool ClapPluginLibrary::initClapEntry() {
             _entry = nullptr;
             return false;
         }
-
-        std::cout << "[ClapPluginLibrary] entry->init() completed successfully" << std::endl;
-        std::cout.flush();
-    } else {
-        std::cout << "[ClapPluginLibrary] Entry has no init function" << std::endl;
-        std::cout.flush();
     }
 
     return true;
 }
 
 bool ClapPluginLibrary::initFactory() {
-    std::cout << "[ClapPluginLibrary] initFactory() called" << std::endl;
-    std::cout.flush();
-
     if (!_entry) {
-        std::cerr << "[ClapPluginLibrary] initFactory() called but _entry is null" << std::endl;
+        std::cerr << "[ClapPluginLibrary] initFactory() called but _entry is null for: " << _path << std::endl;
         std::cerr.flush();
         return false;
     }
@@ -390,8 +316,6 @@ bool ClapPluginLibrary::initFactory() {
         return false;
     }
 
-    std::cout << "[ClapPluginLibrary] Calling entry->get_factory(CLAP_PLUGIN_FACTORY_ID)..." << std::endl;
-    std::cout.flush();
     _factory = static_cast<const clap_plugin_factory_t*>(
         _entry->get_factory(CLAP_PLUGIN_FACTORY_ID)
     );
@@ -402,8 +326,6 @@ bool ClapPluginLibrary::initFactory() {
         return false;
     }
 
-    std::cout << "[ClapPluginLibrary] Successfully got plugin factory" << std::endl;
-    std::cout.flush();
     return true;
 }
 
