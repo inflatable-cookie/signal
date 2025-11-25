@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-25 00:10:40 UTC) [added] Implemented automation playback integration: AutomationData structures, block-time parameter application in renderBlock, routing to mixer nodes (gain/pan/send) and plugin nodes (CLAP parameters), with IPC handler for AutomationSnapshot from Pulse.
+
 (2025-11-24 23:52:37 UTC) [added] Implemented real CLAP plugin loading and discovery with ClapPluginLibrary, ClapRegistry, and full CLAP API integration for plugin lifecycle, processing, parameters, and state.
 
 (2025-11-24 23:34:41 UTC) [added] Implemented plugin hosting abstraction (PluginInstance, PluginHost) and CLAP adapter stub for MidiFxNode, InstrumentNode, and AudioFxNode. Added parameter change handling with lock-free queue and plugin state save/load hooks.

@@ -14,6 +14,7 @@
 #include "core/AudioBus.hpp"
 #include "core/GraphSnapshot.hpp"
 #include "core/ParameterChange.hpp"
+#include "core/AutomationData.hpp"
 #include <atomic>
 #include <memory>
 #include <optional>
@@ -63,6 +64,10 @@ public:
     // In practice, this is safe because renderBlock completes before next swap
     const TransportState* getTransportSnapshot() const;
 
+    // Get current automation snapshot (for audio thread - lock-free)
+    // Returns const pointer - caller must ensure it's not used after next swap
+    const AutomationData* getAutomationSnapshot() const;
+
     // Commit transport state updates (creates new snapshot and swaps atomically)
     // Must be called after modifying transport() to make changes visible to audio thread
     void commitTransportUpdate();
@@ -96,6 +101,9 @@ public:
 
     // Parameter changes (called from IPC thread)
     void applyParameterChanges(const std::vector<ParameterChange>& changes);
+
+    // Load automation snapshot (called from IPC thread)
+    void loadAutomationSnapshot(const AutomationData& snapshot);
 
     // Prepare engine (called on control thread)
     void prepareEngine(int sampleRate, int maxBlockSize);
@@ -138,6 +146,13 @@ private:
     std::atomic<const TransportState*> _activeTransport;
     std::shared_ptr<TransportState> _transportState;  // Current mutable state (control thread only)
     std::shared_ptr<TransportState> _previousTransport;  // Keep previous snapshot alive until next swap
+
+    // Automation data (thread-safe snapshot swap)
+    // Control thread: updates via loadAutomationSnapshot() which creates new snapshot and swaps atomically
+    // Audio thread: reads via getAutomationSnapshot() which returns const pointer (lock-free)
+    std::atomic<const AutomationData*> _activeAutomation;
+    std::shared_ptr<AutomationData> _automationData;  // Current automation state (control thread only)
+    std::shared_ptr<AutomationData> _previousAutomation;  // Keep previous snapshot alive until next swap
 
     bool _shuttingDown;
 

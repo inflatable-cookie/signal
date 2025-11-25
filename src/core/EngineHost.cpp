@@ -13,6 +13,7 @@
 #include "core/AudioAssetSource.hpp"
 #include "core/PluginHost.hpp"
 #include "core/GraphNodes.hpp"
+#include "core/AutomationData.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -41,6 +42,10 @@ EngineHost::EngineHost()
     // Initialize transport state with default values
     _transportState = std::make_shared<TransportState>();
     _activeTransport.store(_transportState.get(), std::memory_order_release);
+
+    // Initialize automation data with empty snapshot
+    _automationData = std::make_shared<AutomationData>(AutomationData::empty());
+    _activeAutomation.store(_automationData.get(), std::memory_order_release);
 
     setupAudioCallback();  // Legacy - for backward compatibility
     setupAudioBackend();   // New backend-based approach
@@ -183,6 +188,28 @@ void EngineHost::commitTransportUpdate() {
     // Update our mutable state pointer (now points to the new snapshot)
     // This ensures future calls to transport() return the new snapshot
     _transportState = newSnapshot;
+}
+
+const AutomationData* EngineHost::getAutomationSnapshot() const {
+    // Read atomic pointer once (lock-free)
+    // Pointer remains valid until next swap (previous snapshot kept alive in _previousAutomation)
+    return _activeAutomation.load(std::memory_order_acquire);
+}
+
+void EngineHost::loadAutomationSnapshot(const AutomationData& snapshot) {
+    // Create a new snapshot from provided data (copy constructor)
+    auto newSnapshot = std::make_shared<AutomationData>(snapshot);
+
+    // Keep previous snapshot alive until next swap (ensures audio thread safety)
+    _previousAutomation = _automationData;
+
+    // Atomically swap pointer (old snapshot kept alive in _previousAutomation)
+    _activeAutomation.store(newSnapshot.get(), std::memory_order_release);
+
+    // Update _automationData to point to new snapshot
+    _automationData = newSnapshot;
+
+    std::cout << "[EngineHost] Loaded automation snapshot: " << snapshot.events.size() << " events" << std::endl;
 }
 
 double EngineHost::getCpuLoad() const {
@@ -398,6 +425,89 @@ void EngineHost::renderBlock(
 
     // Clear output buffer
     output.clear();
+
+    // Phase 6: Apply automation events for this block
+    const AutomationData* automation = getAutomationSnapshot();
+    if (automation && !automation->events.empty()) {
+        uint64_t blockStartSamples = ctx.playheadSamples;
+        uint64_t blockEndSamples = blockStartSamples + static_cast<uint64_t>(output.numFrames());
+
+        // Find automation events in this block range
+        // For Phase 6, we use step interpolation: use the last event at or before block start
+        // Future: support linear interpolation within blocks
+
+        // Build a map of (nodeId, paramId) -> value for this block
+        std::unordered_map<std::string, float> automationValues; // Key: "nodeId:paramId"
+
+        // Find the last event at or before block start for each (nodeId, paramId) pair
+        for (const auto& event : automation->events) {
+            if (event.timeSamples > blockEndSamples) {
+                // Past this block, stop searching (events are sorted)
+                break;
+            }
+
+            if (event.timeSamples <= blockStartSamples) {
+                // Event is at or before block start - use it
+                std::string key = event.nodeId + ":" + event.paramId;
+                automationValues[key] = event.valueNorm;
+            }
+        }
+
+        // Apply automation values to nodes
+        for (const auto& [key, valueNorm] : automationValues) {
+            // Parse key: "nodeId:paramId"
+            size_t colonPos = key.find(':');
+            if (colonPos == std::string::npos) continue;
+
+            std::string nodeId = key.substr(0, colonPos);
+            std::string paramId = key.substr(colonPos + 1);
+
+            GraphNode* node = _graphEngine->findNode(nodeId);
+            if (!node) continue;
+
+            // Route to appropriate node type
+            if (node->getKind() == NodeKind::MixerChannel) {
+                auto* mixer = dynamic_cast<MixerChannelNode*>(node);
+                if (mixer) {
+                    if (paramId == "gain") {
+                        mixer->setGain(valueNorm);
+                    } else if (paramId == "pan") {
+                        // Convert normalised [0,1] to pan [-1,1]
+                        float pan = (valueNorm * 2.0f) - 1.0f;
+                        mixer->setPan(pan);
+                    }
+                }
+            } else if (node->getKind() == NodeKind::Send) {
+                auto* send = dynamic_cast<SendNode*>(node);
+                if (send) {
+                    // Handle "send-level" or "send-level:<busId>" format
+                    if (paramId == "send-level" || paramId.find("send-level:") == 0) {
+                        send->setSendLevel(valueNorm);
+                    }
+                }
+            } else if (node->getKind() == NodeKind::MidiFx ||
+                       node->getKind() == NodeKind::Instrument ||
+                       node->getKind() == NodeKind::AudioFx) {
+                // Plugin nodes: use parameter change mechanism
+                // For Phase 6, apply directly (future: queue for sample-accurate timing)
+                PluginInstance* plugin = nullptr;
+                if (node->getKind() == NodeKind::MidiFx) {
+                    auto* midiFx = dynamic_cast<MidiFxNode*>(node);
+                    if (midiFx) plugin = midiFx->getPlugin();
+                } else if (node->getKind() == NodeKind::Instrument) {
+                    auto* instrument = dynamic_cast<InstrumentNode*>(node);
+                    if (instrument) plugin = instrument->getPlugin();
+                } else if (node->getKind() == NodeKind::AudioFx) {
+                    auto* audioFx = dynamic_cast<AudioFxNode*>(node);
+                    if (audioFx) plugin = audioFx->getPlugin();
+                }
+
+                if (plugin) {
+                    plugin->setParameterValue(paramId, valueNorm);
+                }
+            }
+        }
+    }
 
     // Phase 4: Apply pending parameter changes (lock-free swap)
     if (_parameterChangesPending.load(std::memory_order_acquire)) {
