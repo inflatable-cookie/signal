@@ -262,6 +262,14 @@ const MixerService& EngineHost::mixer() const {
     return *_mixerService;
 }
 
+PluginHost* EngineHost::pluginHost() {
+    return _pluginHost.get();
+}
+
+const PluginHost* EngineHost::pluginHost() const {
+    return _pluginHost.get();
+}
+
 AutomationService& EngineHost::automation() {
     return *_automationService;
 }

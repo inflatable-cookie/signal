@@ -38,6 +38,11 @@ public:
     ClapRegistry& getClapRegistry() { return *_clapRegistry; }
     const ClapRegistry& getClapRegistry() const { return *_clapRegistry; }
 
+    /// Scan for CLAP plugins (deferred from construction)
+    /// This should be called after Signal has started its server
+    /// to prevent crashes from blocking startup
+    void scanPlugins();
+
 private:
     std::unique_ptr<ClapRegistry> _clapRegistry;
 };

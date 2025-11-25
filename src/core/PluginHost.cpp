@@ -6,13 +6,28 @@
 
 PluginHost::PluginHost() {
     _clapRegistry = std::make_unique<ClapRegistry>();
-    // Phase 5: Scan for CLAP plugins on initialization
-    _clapRegistry->scanDefaultPaths();
-    std::cout << "[PluginHost] Created (scanned " << _clapRegistry->listPlugins().size() << " CLAP plugins)" << std::endl;
+    // Phase 5: Defer plugin scanning until after server starts
+    // This prevents Signal from crashing before it can accept connections
+    std::cout << "[PluginHost] Created (plugin scanning deferred)" << std::endl;
 }
 
 PluginHost::~PluginHost() {
     std::cout << "[PluginHost] Destroyed" << std::endl;
+}
+
+void PluginHost::scanPlugins() {
+    // Phase 5: Scan for CLAP plugins after server starts
+    // Wrap in try-catch to prevent crashes from bad plugins
+    try {
+        _clapRegistry->scanDefaultPaths();
+        std::cout << "[PluginHost] Plugin scanning complete (found " << _clapRegistry->listPlugins().size() << " CLAP plugins)" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "[PluginHost] Error during plugin scanning: " << e.what() << std::endl;
+        std::cerr << "[PluginHost] Continuing with " << _clapRegistry->listPlugins().size() << " successfully loaded plugins" << std::endl;
+    } catch (...) {
+        std::cerr << "[PluginHost] Unknown error during plugin scanning, continuing anyway" << std::endl;
+        std::cerr << "[PluginHost] Continuing with " << _clapRegistry->listPlugins().size() << " successfully loaded plugins" << std::endl;
+    }
 }
 
 std::unique_ptr<PluginInstance> PluginHost::createInstance(const PluginDescriptor& desc) {

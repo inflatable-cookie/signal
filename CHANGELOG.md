@@ -24,6 +24,10 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-25 08:37:03 UTC) [fixed] Deferred CLAP plugin scanning until after Signal's IPC server starts, preventing crashes from problematic plugins from blocking Signal startup and allowing Pulse to connect even if plugin scanning fails.
+
+(2025-11-25 08:32:50 UTC) [fixed] Added error handling to prevent Signal from crashing when encountering problematic CLAP plugins during scanning, and added exception handling in main() and SignalApp initialization to provide better error reporting.
+
 (2025-11-25 08:21:09 UTC) [fixed] Fixed CLAP plugin loading on macOS to correctly handle .clap bundles by resolving the actual library path from Contents/MacOS/ (handles files with or without extensions) and simplified ClapRegistry to delegate bundle resolution to ClapPluginLibrary.
 
 (2025-11-25 07:27:09 UTC) [added] Phase 7: Recording & Live Input Integration - Added AudioInputNode and MidiInputNode for hardware input, RecordingSession for capture management, and real-time safe recording capture system.

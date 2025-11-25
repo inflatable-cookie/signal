@@ -4,6 +4,7 @@
 #include "ipc/DomainDispatcher.hpp"
 #include "ipc/IpcEnvelope.hpp"
 #include "core/EngineHost.hpp"
+#include "core/PluginHost.hpp"
 #include "core/MeteringService.hpp"
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
@@ -24,26 +25,34 @@
 SignalApp::SignalApp() {
     std::cout << "[SignalApp] Initialising..." << std::endl;
 
-    _engineHost = std::make_unique<EngineHost>();
-    _router = std::make_unique<IpcRouter>();
+    try {
+        _engineHost = std::make_unique<EngineHost>();
+        _router = std::make_unique<IpcRouter>();
 
-    // Register domain handlers
-    auto engineDomain = std::make_shared<EngineDomain>(_engineHost.get());
-    _router->registerHandler("engine", engineDomain);
+        // Register domain handlers
+        auto engineDomain = std::make_shared<EngineDomain>(_engineHost.get());
+        _router->registerHandler("engine", engineDomain);
 
-    auto transportDomain = std::make_shared<TransportDomain>(_engineHost.get());
-    _router->registerHandler("transport", transportDomain);
+        auto transportDomain = std::make_shared<TransportDomain>(_engineHost.get());
+        _router->registerHandler("transport", transportDomain);
 
-            auto meteringDomain = std::make_shared<MeteringDomain>(&_engineHost->metering(), _engineHost.get());
-            _router->registerHandler("metering", meteringDomain);
+        auto meteringDomain = std::make_shared<MeteringDomain>(&_engineHost->metering(), _engineHost.get());
+        _router->registerHandler("metering", meteringDomain);
 
-            auto mixerDomain = std::make_shared<MixerDomain>(_engineHost.get());
-            _router->registerHandler("mixer", mixerDomain);
+        auto mixerDomain = std::make_shared<MixerDomain>(_engineHost.get());
+        _router->registerHandler("mixer", mixerDomain);
 
-            auto automationDomain = std::make_shared<AutomationDomain>(_engineHost.get());
-            _router->registerHandler("automation", automationDomain);
+        auto automationDomain = std::make_shared<AutomationDomain>(_engineHost.get());
+        _router->registerHandler("automation", automationDomain);
 
-    std::cout << "[SignalApp] Initialised" << std::endl;
+        std::cout << "[SignalApp] Initialised" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "[SignalApp] Error during initialization: " << e.what() << std::endl;
+        throw;
+    } catch (...) {
+        std::cerr << "[SignalApp] Unknown error during initialization" << std::endl;
+        throw;
+    }
 }
 
 SignalApp::~SignalApp() {
@@ -159,6 +168,13 @@ int SignalApp::run() {
 
     // Start server
     server.start();
+
+    // Scan for plugins after server starts (deferred to prevent blocking startup)
+    // This allows Signal to accept connections even if plugin scanning fails
+    if (_engineHost && _engineHost->pluginHost()) {
+        std::cout << "[SignalApp] Scanning for CLAP plugins..." << std::endl;
+        _engineHost->pluginHost()->scanPlugins();
+    }
 
     // Run IO loop
     std::cout << "[SignalApp] Starting IO loop..." << std::endl;

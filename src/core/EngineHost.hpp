@@ -97,6 +97,10 @@ public:
     StreamScheduler& streamScheduler();
     const StreamScheduler& streamScheduler() const;
 
+    // Plugin host
+    PluginHost* pluginHost();
+    const PluginHost* pluginHost() const;
+
     // Graph engine
     GraphEngine& graphEngine();
     const GraphEngine& graphEngine() const;
