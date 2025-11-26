@@ -5,14 +5,18 @@
 /// Thread: Main/control thread for lifecycle, audio thread for callbacks
 /// Ownership: Owned by application or EngineHost wrapper
 ///
-/// This is a placeholder implementation that simulates audio callbacks.
-/// In the future, this will be replaced with actual miniaudio integration.
+/// Real-time safe: The audio callback runs on a high-priority thread and must not
+/// allocate memory, acquire locks, or perform I/O operations.
 
 #include "backend/AudioBackend.hpp"
 #include <atomic>
-#include <thread>
+#include <string>
 #include <memory>
-#include <vector>
+#include <cstdint>
+
+// Forward declaration - miniaudio types (opaque pointers)
+struct ma_context;
+struct ma_device;
 
 class MiniaudioBackend : public AudioBackend {
 public:
@@ -30,18 +34,40 @@ public:
     int getNumInputChannels() const override;
     int getNumOutputChannels() const override;
 
+    /// Get the name of the output device (or "System Default" if not available)
+    std::string getOutputDeviceName() const override;
+
 private:
-    void audioLoop();
+    // Static callback function for miniaudio (C-compatible)
+    // Note: Implementation in .cpp file where miniaudio.h is included
+    static void audioCallback(
+        void* pDevice,
+        void* pOutput,
+        const void* pInput,
+        unsigned int frameCount
+    );
+
+    // Instance callback wrapper (called from static callback)
+    void processAudio(
+        float* output,
+        const float* input,
+        unsigned int frameCount
+    );
 
     AudioBackendConfig _config;
     RenderCallback _renderCallback;
+    std::atomic<bool> _initialised;
     std::atomic<bool> _running;
-    std::atomic<bool> _shouldStop;
-    std::thread _audioThread;
 
-    // Audio buffers (interleaved format)
-    std::vector<float> _inputBuffer;
-    std::vector<float> _outputBuffer;
+    // Miniaudio objects (opaque pointers)
+    void* _context;  // ma_context*
+    void* _device;   // ma_device*
+
+    // Actual runtime values (may differ from config preferences)
+    std::atomic<double> _actualSampleRate;
+    std::atomic<uint32_t> _actualBufferSize;
+    std::atomic<uint32_t> _actualOutputChannels;
+    std::string _outputDeviceName;
 
     // Host time tracking (monotonic, in seconds)
     std::atomic<double> _hostTimeSeconds;

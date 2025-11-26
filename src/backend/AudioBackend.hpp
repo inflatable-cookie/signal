@@ -58,5 +58,11 @@ public:
 
     /// Get number of output channels
     virtual int getNumOutputChannels() const = 0;
+
+    /// Get output device name (if available)
+    /// @return Device name or empty string if not available
+    virtual std::string getOutputDeviceName() const {
+        return "System Default";
+    }
 };
 

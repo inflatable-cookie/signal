@@ -246,6 +246,20 @@ size_t EngineHost::getBlockSize() const {
     return BLOCK_SIZE;
 }
 
+std::string EngineHost::getOutputDeviceName() const {
+    if (_audioBackend) {
+        return _audioBackend->getOutputDeviceName();
+    }
+    return "System Default";
+}
+
+int EngineHost::getNumOutputChannels() const {
+    if (_audioBackend) {
+        return _audioBackend->getNumOutputChannels();
+    }
+    return 2; // Default to stereo
+}
+
 MeteringService& EngineHost::metering() {
     return *_meteringService;
 }

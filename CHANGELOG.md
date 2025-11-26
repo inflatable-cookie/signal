@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-26 23:36:33 UTC) [added] Phase 12a: Audio I/O & First Sound - Replaced placeholder MiniaudioBackend with real miniaudio integration, implemented device initialisation and enumeration, added runtime configuration (sample rate, buffer size, device name) to engine.state events, and wired device info flow from Signal to Pulse to Aura.
+
 (2025-11-25 11:26:53 UTC) [added] Phase 9: Editing Engine - Extended AudioSegmentCompiled with fade metadata (fadeInSamples, fadeOutSamples, fade curves) and stretch metadata (StretchDescriptor with mode and ratio), added parsing in EngineDomain for fade/stretch from schedule JSON, and added TODO placeholders for future fade DSP and stretch algorithm implementation.
 
 (2025-11-25 11:05:41 UTC) [added] Phase 8: Timebase & Transport Enhancements - Extended TransportState with sample-based loop regions, implemented loop wrapping in audio thread, added MusicalTimeInfo structure, and integrated transport/tempo info into NodeProcessContext for plugins.

@@ -3,12 +3,47 @@
 #include "core/AudioBus.hpp"
 #include <iostream>
 #include <chrono>
-#include <cmath>
 #include <cstring>
 
+// Include miniaudio implementation
+#define MINIAUDIO_IMPLEMENTATION
+#include <miniaudio.h>
+
+// Static callback wrapper - miniaudio requires a C-compatible function
+void MiniaudioBackend::audioCallback(
+    void* pDevice,
+    void* pOutput,
+    const void* pInput,
+    unsigned int frameCount
+) {
+    // Get backend instance from user data
+    ma_device* device = static_cast<ma_device*>(pDevice);
+    MiniaudioBackend* backend = static_cast<MiniaudioBackend*>(device->pUserData);
+    if (!backend) {
+        // Safety: zero output if backend is null
+        if (pOutput) {
+            std::memset(pOutput, 0, frameCount * device->playback.channels * sizeof(float));
+        }
+        return;
+    }
+
+    // Cast buffers to float* (miniaudio uses float32 format)
+    float* output = static_cast<float*>(pOutput);
+    const float* input = pInput ? static_cast<const float*>(pInput) : nullptr;
+
+    // Process audio
+    backend->processAudio(output, input, frameCount);
+}
+
 MiniaudioBackend::MiniaudioBackend()
-    : _running(false)
-    , _shouldStop(false)
+    : _initialised(false)
+    , _running(false)
+    , _context(nullptr)
+    , _device(nullptr)
+    , _actualSampleRate(0.0)
+    , _actualBufferSize(0)
+    , _actualOutputChannels(0)
+    , _outputDeviceName("System Default")
     , _hostTimeSeconds(0.0)
 {
 }
@@ -18,25 +53,88 @@ MiniaudioBackend::~MiniaudioBackend() {
 }
 
 bool MiniaudioBackend::initialise(const AudioBackendConfig& config) {
-    if (_running.load()) {
-        std::cout << "[MiniaudioBackend] Cannot initialise: already running" << std::endl;
+    if (_initialised.load()) {
+        std::cout << "[MiniaudioBackend] Already initialised" << std::endl;
         return false;
     }
 
     _config = config;
 
-    // Allocate buffers (interleaved format)
-    int totalInputSamples = config.numInputChannels * config.preferredBufferSize;
-    int totalOutputSamples = config.numOutputChannels * config.preferredBufferSize;
+    // Allocate context
+    _context = new ma_context;
+    ma_result result = ma_context_init(nullptr, 0, nullptr, static_cast<ma_context*>(_context));
+    if (result != MA_SUCCESS) {
+        std::cerr << "[MiniaudioBackend] Failed to initialise context: " << result << std::endl;
+        delete static_cast<ma_context*>(_context);
+        _context = nullptr;
+        return false;
+    }
 
-    _inputBuffer.resize(totalInputSamples, 0.0f);
-    _outputBuffer.resize(totalOutputSamples, 0.0f);
+    // Allocate device
+    _device = new ma_device;
+    std::memset(_device, 0, sizeof(ma_device));
+    ma_device* device = static_cast<ma_device*>(_device);
+
+    // Configure device
+    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+    deviceConfig.playback.format = ma_format_f32;  // 32-bit float
+    deviceConfig.playback.channels = static_cast<ma_uint32>(config.numOutputChannels);
+    deviceConfig.sampleRate = static_cast<ma_uint32>(config.preferredSampleRate);
+    // Cast callback to match miniaudio's expected signature
+    deviceConfig.dataCallback = reinterpret_cast<ma_device_data_proc>(audioCallback);
+    deviceConfig.pUserData = this;  // Pass backend instance to callback
+
+    // If a specific output device is requested, set it
+    if (config.outputDeviceId.has_value()) {
+        // TODO: Phase 12b - Implement device selection by ID
+        // For now, use default device
+    }
+
+    // Initialise device
+    result = ma_device_init(static_cast<ma_context*>(_context), &deviceConfig, device);
+    if (result != MA_SUCCESS) {
+        std::cerr << "[MiniaudioBackend] Failed to initialise device: " << result << std::endl;
+        ma_context_uninit(static_cast<ma_context*>(_context));
+        delete static_cast<ma_context*>(_context);
+        delete device;
+        _context = nullptr;
+        _device = nullptr;
+        return false;
+    }
+
+    // Get actual runtime values (device may have negotiated different settings)
+    _actualSampleRate.store(static_cast<double>(device->sampleRate), std::memory_order_release);
+    _actualBufferSize.store(device->playback.internalPeriodSizeInFrames, std::memory_order_release);
+    _actualOutputChannels.store(device->playback.channels, std::memory_order_release);
+
+    // Try to get device name
+    ma_device_info* playbackInfos = nullptr;
+    ma_uint32 playbackCount = 0;
+    ma_device_info* captureInfos = nullptr;
+    ma_uint32 captureCount = 0;
+
+    if (ma_context_get_devices(static_cast<ma_context*>(_context), &playbackInfos, &playbackCount, &captureInfos, &captureCount) == MA_SUCCESS) {
+        // Find the default playback device
+        ma_uint32 defaultPlaybackIndex = 0;
+        for (ma_uint32 i = 0; i < playbackCount; ++i) {
+            if (playbackInfos[i].isDefault) {
+                defaultPlaybackIndex = i;
+                break;
+            }
+        }
+
+        if (defaultPlaybackIndex < playbackCount && playbackInfos[defaultPlaybackIndex].name[0] != '\0') {
+            _outputDeviceName = std::string(playbackInfos[defaultPlaybackIndex].name);
+        }
+    }
+
+    _initialised.store(true, std::memory_order_release);
 
     std::cout << "[MiniaudioBackend] Initialised: "
-              << "sampleRate=" << config.preferredSampleRate
-              << ", bufferSize=" << config.preferredBufferSize
-              << ", inChannels=" << config.numInputChannels
-              << ", outChannels=" << config.numOutputChannels
+              << "sampleRate=" << _actualSampleRate.load()
+              << ", bufferSize=" << _actualBufferSize.load()
+              << ", outChannels=" << _actualOutputChannels.load()
+              << ", device=" << _outputDeviceName
               << std::endl;
 
     return true;
@@ -45,14 +143,30 @@ bool MiniaudioBackend::initialise(const AudioBackendConfig& config) {
 void MiniaudioBackend::shutdown() {
     stop();
 
-    _inputBuffer.clear();
-    _outputBuffer.clear();
+    if (_device) {
+        ma_device_uninit(static_cast<ma_device*>(_device));
+        delete static_cast<ma_device*>(_device);
+        _device = nullptr;
+    }
+
+    if (_context) {
+        ma_context_uninit(static_cast<ma_context*>(_context));
+        delete static_cast<ma_context*>(_context);
+        _context = nullptr;
+    }
+
+    _initialised.store(false, std::memory_order_release);
     _renderCallback = nullptr;
 
     std::cout << "[MiniaudioBackend] Shutdown complete" << std::endl;
 }
 
 bool MiniaudioBackend::start() {
+    if (!_initialised.load()) {
+        std::cout << "[MiniaudioBackend] Cannot start: not initialised" << std::endl;
+        return false;
+    }
+
     if (_running.load()) {
         std::cout << "[MiniaudioBackend] Already running" << std::endl;
         return false;
@@ -63,10 +177,14 @@ bool MiniaudioBackend::start() {
         return false;
     }
 
-    _shouldStop = false;
-    _running = true;
-    _hostTimeSeconds.store(0.0);
-    _audioThread = std::thread(&MiniaudioBackend::audioLoop, this);
+    ma_result result = ma_device_start(static_cast<ma_device*>(_device));
+    if (result != MA_SUCCESS) {
+        std::cerr << "[MiniaudioBackend] Failed to start device: " << result << std::endl;
+        return false;
+    }
+
+    _running.store(true, std::memory_order_release);
+    _hostTimeSeconds.store(0.0, std::memory_order_release);
 
     std::cout << "[MiniaudioBackend] Started" << std::endl;
     return true;
@@ -77,11 +195,11 @@ void MiniaudioBackend::stop() {
         return;
     }
 
-    _shouldStop = true;
-    if (_audioThread.joinable()) {
-        _audioThread.join();
+    if (_device) {
+        ma_device_stop(static_cast<ma_device*>(_device));
     }
-    _running = false;
+
+    _running.store(false, std::memory_order_release);
 
     std::cout << "[MiniaudioBackend] Stopped" << std::endl;
 }
@@ -91,11 +209,11 @@ void MiniaudioBackend::setRenderCallback(RenderCallback callback) {
 }
 
 double MiniaudioBackend::getSampleRate() const {
-    return _config.preferredSampleRate;
+    return _actualSampleRate.load(std::memory_order_acquire);
 }
 
 int MiniaudioBackend::getBufferSize() const {
-    return _config.preferredBufferSize;
+    return static_cast<int>(_actualBufferSize.load(std::memory_order_acquire));
 }
 
 int MiniaudioBackend::getNumInputChannels() const {
@@ -103,58 +221,64 @@ int MiniaudioBackend::getNumInputChannels() const {
 }
 
 int MiniaudioBackend::getNumOutputChannels() const {
-    return _config.numOutputChannels;
+    return static_cast<int>(_actualOutputChannels.load(std::memory_order_acquire));
 }
 
-void MiniaudioBackend::audioLoop() {
-    // Simulate audio callback timing
-    const double sampleRate = _config.preferredSampleRate;
-    const int blockSize = _config.preferredBufferSize;
-    const auto frameTime = std::chrono::nanoseconds(
-        static_cast<long long>(blockSize / sampleRate * 1e9)
+std::string MiniaudioBackend::getOutputDeviceName() const {
+    return _outputDeviceName;
+}
+
+void MiniaudioBackend::processAudio(
+    float* output,
+    const float* input,
+    unsigned int frameCount
+) {
+    // Real-time safety: No allocations, locks, or I/O in this function
+
+    if (!_renderCallback || !output) {
+        // Safety: zero output if callback not set
+        std::memset(output, 0, frameCount * _actualOutputChannels.load(std::memory_order_acquire) * sizeof(float));
+        return;
+    }
+
+    // Update host time (monotonic, in seconds)
+    // Use a simple counter-based approach for now (can be improved with ma_device_get_time)
+    static std::atomic<uint64_t> frameCounter(0);
+    uint64_t currentFrame = frameCounter.fetch_add(frameCount, std::memory_order_acq_rel);
+    double sampleRate = _actualSampleRate.load(std::memory_order_acquire);
+    double hostTime = sampleRate > 0.0 ? (static_cast<double>(currentFrame) / sampleRate) : 0.0;
+    _hostTimeSeconds.store(hostTime, std::memory_order_release);
+
+    // Create render context
+    EngineRenderContext ctx;
+    ctx.hostTimeSeconds = hostTime;
+    ctx.sampleRate = sampleRate;
+    ctx.blockSize = static_cast<int>(frameCount);
+    ctx.playheadSamples = 0;  // Will be updated by EngineHost
+
+    // Wrap input buffer (if available)
+    AudioBus inputBus(
+        const_cast<float*>(input),  // AudioBus doesn't modify, but needs non-const for interface
+        _config.numInputChannels,
+        static_cast<int>(frameCount),
+        true  // read-only
     );
 
-    auto startTime = std::chrono::steady_clock::now();
+    // Wrap output buffer
+    int numOutputChannels = static_cast<int>(_actualOutputChannels.load(std::memory_order_acquire));
+    AudioBus outputBus(
+        output,
+        numOutputChannels,
+        static_cast<int>(frameCount),
+        false  // writable
+    );
 
-    while (!_shouldStop.load()) {
-        // Calculate host time (monotonic, in seconds)
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(now - startTime);
-        double hostTime = elapsed.count() / 1e9;
-        _hostTimeSeconds.store(hostTime, std::memory_order_release);
-
-        // Clear output buffer
-        std::memset(_outputBuffer.data(), 0, _outputBuffer.size() * sizeof(float));
-
-        // Create render context
-        EngineRenderContext ctx;
-        ctx.hostTimeSeconds = hostTime;
-        ctx.sampleRate = sampleRate;
-        ctx.blockSize = blockSize;
-        ctx.playheadSamples = 0; // Will be updated by EngineHost
-
-        // Wrap buffers in AudioBus objects
-        AudioBus inputBus(
-            _inputBuffer.data(),
-            _config.numInputChannels,
-            blockSize,
-            true  // read-only
-        );
-
-        AudioBus outputBus(
-            _outputBuffer.data(),
-            _config.numOutputChannels,
-            blockSize,
-            false  // writable
-        );
-
-        // Call render callback
-        if (_renderCallback) {
-            _renderCallback(ctx, inputBus, outputBus);
-        }
-
-        // Simulate audio buffer timing
-        std::this_thread::sleep_for(frameTime);
+    // Call render callback
+    try {
+        _renderCallback(ctx, inputBus, outputBus);
+    } catch (...) {
+        // Safety: Never throw from audio callback
+        // Zero output on error
+        std::memset(output, 0, frameCount * numOutputChannels * sizeof(float));
     }
 }
-

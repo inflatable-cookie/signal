@@ -120,10 +120,12 @@ void DomainDispatcher::handleEngineDomain(
         } else {
             payload["lastError"] = nullptr;
         }
-        // Include sample rate and block size in state event
+        // Include runtime configuration in state event
         if (engineHost_) {
             payload["sampleRate"] = engineHost_->getSampleRate();
             payload["blockSize"] = engineHost_->getBlockSize();
+            payload["outputDeviceName"] = engineHost_->getOutputDeviceName();
+            payload["numOutputChannels"] = engineHost_->getNumOutputChannels();
         }
 
         stateEvent.payload = payload;

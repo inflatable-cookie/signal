@@ -82,6 +82,8 @@ public:
     uint64_t getXruns() const; // Stub for now
     double getSampleRate() const;
     size_t getBlockSize() const;
+    std::string getOutputDeviceName() const;
+    int getNumOutputChannels() const;
 
     // Metering
     MeteringService& metering();

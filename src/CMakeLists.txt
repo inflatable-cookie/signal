@@ -47,6 +47,9 @@ target_compile_definitions(signal-core PUBLIC ASIO_STANDALONE)
 # Add official CLAP SDK include directory
 target_include_directories(signal-core PUBLIC ${clap_SOURCE_DIR}/include)
 
+# Add miniaudio include directory
+target_include_directories(signal-core PUBLIC ${miniaudio_SOURCE_DIR})
+
 # Link system libraries that Asio needs
 if(UNIX AND NOT APPLE)
     target_link_libraries(signal-core PUBLIC pthread)

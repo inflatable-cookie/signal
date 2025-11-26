@@ -33,6 +33,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(clap)
 
+# Fetch miniaudio (single-header audio library)
+FetchContent_Declare(
+    miniaudio
+    GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(miniaudio)
+
 # Create an interface target for standalone Asio
 if(NOT TARGET asio::asio)
     add_library(asio_standalone INTERFACE)
