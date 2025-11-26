@@ -15,11 +15,13 @@
 #include "core/GraphSnapshot.hpp"
 #include "core/ParameterChange.hpp"
 #include "core/AutomationData.hpp"
+#include "backend/OutputDeviceInfo.hpp"
 #include <atomic>
 #include <memory>
 #include <optional>
 #include <string>
 #include <cstdint>
+#include <vector>
 #include <vector>
 
 class AudioThread;
@@ -84,6 +86,9 @@ public:
     size_t getBlockSize() const;
     std::string getOutputDeviceName() const;
     int getNumOutputChannels() const;
+    std::string getActiveOutputDeviceId() const;
+    std::vector<OutputDeviceInfo> enumerateOutputDevices() const;
+    bool setOutputDevice(const std::string& deviceId);
 
     // Metering
     MeteringService& metering();

@@ -3,6 +3,7 @@
 #include "backend/AudioBackend.hpp"
 #include "backend/MiniaudioBackend.hpp"
 #include "backend/AudioBackendConfig.hpp"
+#include "backend/OutputDeviceInfo.hpp"
 #include "core/MeteringService.hpp"
 #include "core/MixerService.hpp"
 #include "core/AutomationService.hpp"
@@ -258,6 +259,39 @@ int EngineHost::getNumOutputChannels() const {
         return _audioBackend->getNumOutputChannels();
     }
     return 2; // Default to stereo
+}
+
+std::string EngineHost::getActiveOutputDeviceId() const {
+    if (_audioBackend) {
+        // Try to cast to MiniaudioBackend to access device-specific methods
+        auto* miniaudioBackend = dynamic_cast<MiniaudioBackend*>(_audioBackend.get());
+        if (miniaudioBackend) {
+            return miniaudioBackend->getActiveOutputDeviceId();
+        }
+    }
+    return "";
+}
+
+std::vector<OutputDeviceInfo> EngineHost::enumerateOutputDevices() const {
+    if (_audioBackend) {
+        // Try to cast to MiniaudioBackend to access device-specific methods
+        auto* miniaudioBackend = dynamic_cast<MiniaudioBackend*>(_audioBackend.get());
+        if (miniaudioBackend) {
+            return miniaudioBackend->enumerateOutputDevices();
+        }
+    }
+    return {};
+}
+
+bool EngineHost::setOutputDevice(const std::string& deviceId) {
+    if (_audioBackend) {
+        // Try to cast to MiniaudioBackend to access device-specific methods
+        auto* miniaudioBackend = dynamic_cast<MiniaudioBackend*>(_audioBackend.get());
+        if (miniaudioBackend) {
+            return miniaudioBackend->setOutputDevice(deviceId);
+        }
+    }
+    return false;
 }
 
 MeteringService& EngineHost::metering() {

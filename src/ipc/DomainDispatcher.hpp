@@ -30,6 +30,11 @@ private:
         const std::shared_ptr<TcpClientSession>& session
     );
 
+    void handleHardwareDomain(
+        const IpcEnvelope& env,
+        const std::shared_ptr<TcpClientSession>& session
+    );
+
     void handleUnknownDomain(
         const IpcEnvelope& env,
         const std::shared_ptr<TcpClientSession>& session

@@ -9,10 +9,12 @@
 /// allocate memory, acquire locks, or perform I/O operations.
 
 #include "backend/AudioBackend.hpp"
+#include "backend/OutputDeviceInfo.hpp"
 #include <atomic>
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <vector>
 
 // Forward declaration - miniaudio types (opaque pointers)
 struct ma_context;
@@ -36,6 +38,18 @@ public:
 
     /// Get the name of the output device (or "System Default" if not available)
     std::string getOutputDeviceName() const override;
+
+    /// Get the ID of the currently active output device
+    std::string getActiveOutputDeviceId() const;
+
+    /// Enumerate available output devices
+    /// @return Vector of output device information
+    std::vector<OutputDeviceInfo> enumerateOutputDevices() const;
+
+    /// Set the active output device by ID
+    /// @param deviceId Device ID from enumerateOutputDevices()
+    /// @return true on success, false on failure
+    bool setOutputDevice(const std::string& deviceId);
 
 private:
     // Static callback function for miniaudio (C-compatible)
@@ -68,6 +82,7 @@ private:
     std::atomic<uint32_t> _actualBufferSize;
     std::atomic<uint32_t> _actualOutputChannels;
     std::string _outputDeviceName;
+    std::string _activeDeviceId;  // Currently active device ID
 
     // Host time tracking (monotonic, in seconds)
     std::atomic<double> _hostTimeSeconds;

@@ -32,6 +32,8 @@ void DomainDispatcher::handleEnvelope(
         handleEngineDomain(env, session);
     } else if (env.domain == "transport") {
         handleTransportDomain(env, session);
+    } else if (env.domain == "hardware") {
+        handleHardwareDomain(env, session);
     } else {
         // Route other domains (automation, mixer, metering, etc.) through the router
         handleGenericDomain(env, session);
@@ -262,6 +264,142 @@ void DomainDispatcher::handleTransportDomain(
         stateEvent.payload = payload;
 
         session->send(stateEvent);
+    }
+}
+
+void DomainDispatcher::handleHardwareDomain(
+    const IpcEnvelope& env,
+    const std::shared_ptr<TcpClientSession>& session
+) {
+    if (env.kind != IpcKind::Command) {
+        std::cout << "[DomainDispatcher] Ignoring non-command hardware envelope" << std::endl;
+        return;
+    }
+
+    if (!engineHost_) {
+        std::cerr << "[DomainDispatcher] EngineHost is null" << std::endl;
+        return;
+    }
+
+    // Helper to create response envelope
+    auto createResponse = [&](const std::string& name, const nlohmann::json& payload) -> IpcEnvelope {
+        IpcEnvelope response;
+        response.version = 1;
+        response.id = "hardware-" + name + "-" + env.id;
+        response.correlationId = env.id;
+        response.timestamp = currentTimestamp();
+        response.origin = IpcOrigin::Signal;
+
+        // Convert origin to target
+        switch (env.origin) {
+        case IpcOrigin::Aura:
+            response.target = IpcTarget::Aura;
+            break;
+        case IpcOrigin::Pulse:
+            response.target = IpcTarget::Pulse;
+            break;
+        case IpcOrigin::Signal:
+            response.target = IpcTarget::Signal;
+            break;
+        case IpcOrigin::Composer:
+            response.target = IpcTarget::Composer;
+            break;
+        }
+
+        response.domain = "hardware";
+        response.kind = IpcKind::Event;
+        response.name = name;
+        response.priority = env.priority;
+        response.payload = payload;
+        return response;
+    };
+
+    if (env.name == "listOutputDevices") {
+        // Enumerate output devices
+        auto devices = engineHost_->enumerateOutputDevices();
+        std::string activeDeviceId = engineHost_->getActiveOutputDeviceId();
+
+        nlohmann::json payload;
+        nlohmann::json devicesArray = nlohmann::json::array();
+
+        for (const auto& device : devices) {
+            nlohmann::json deviceJson;
+            deviceJson["id"] = device.id;
+            deviceJson["name"] = device.name;
+            deviceJson["isDefault"] = device.isDefault;
+            deviceJson["isActive"] = (device.id == activeDeviceId);
+            deviceJson["maxChannels"] = device.maxChannels;
+            deviceJson["preferredSampleRate"] = device.preferredSampleRate;
+            devicesArray.push_back(deviceJson);
+        }
+
+        payload["devices"] = devicesArray;
+        payload["activeDeviceId"] = activeDeviceId;
+
+        IpcEnvelope response = createResponse("outputDevicesListed", payload);
+        session->send(response);
+
+        std::cout << "[DomainDispatcher] Listed " << devices.size() << " output devices" << std::endl;
+    } else if (env.name == "selectOutputDevice") {
+        // Parse device ID from payload
+        std::string deviceId;
+        try {
+            if (env.payload.contains("id") && env.payload["id"].is_string()) {
+                deviceId = env.payload["id"].get<std::string>();
+            } else {
+                std::cerr << "[DomainDispatcher] selectOutputDevice: missing or invalid 'id' field" << std::endl;
+                nlohmann::json errorPayload;
+                errorPayload["success"] = false;
+                errorPayload["error"] = "Missing or invalid device ID";
+                IpcEnvelope errorResponse = createResponse("outputDeviceSelected", errorPayload);
+                session->send(errorResponse);
+                return;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "[DomainDispatcher] Failed to parse selectOutputDevice payload: " << e.what() << std::endl;
+            nlohmann::json errorPayload;
+            errorPayload["success"] = false;
+            errorPayload["error"] = "Failed to parse payload: " + std::string(e.what());
+            IpcEnvelope errorResponse = createResponse("outputDeviceSelected", errorPayload);
+            session->send(errorResponse);
+            return;
+        }
+
+        // Attempt to set the device
+        bool success = engineHost_->setOutputDevice(deviceId);
+
+        nlohmann::json payload;
+        payload["success"] = success;
+        payload["deviceId"] = deviceId;
+
+        if (success) {
+            // Refresh device list to get updated active status
+            auto devices = engineHost_->enumerateOutputDevices();
+            std::string activeDeviceId = engineHost_->getActiveOutputDeviceId();
+
+            nlohmann::json devicesArray = nlohmann::json::array();
+            for (const auto& device : devices) {
+                nlohmann::json deviceJson;
+                deviceJson["id"] = device.id;
+                deviceJson["name"] = device.name;
+                deviceJson["isDefault"] = device.isDefault;
+                deviceJson["isActive"] = (device.id == activeDeviceId);
+                deviceJson["maxChannels"] = device.maxChannels;
+                deviceJson["preferredSampleRate"] = device.preferredSampleRate;
+                devicesArray.push_back(deviceJson);
+            }
+            payload["devices"] = devicesArray;
+            payload["activeDeviceId"] = activeDeviceId;
+        } else {
+            payload["error"] = "Failed to switch to device: " + deviceId;
+        }
+
+        IpcEnvelope response = createResponse("outputDeviceSelected", payload);
+        session->send(response);
+
+        std::cout << "[DomainDispatcher] Device selection " << (success ? "succeeded" : "failed") << ": " << deviceId << std::endl;
+    } else {
+        std::cout << "[DomainDispatcher] Unknown hardware command: " << env.name << std::endl;
     }
 }
 
