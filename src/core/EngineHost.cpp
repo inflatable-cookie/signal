@@ -350,6 +350,15 @@ void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
 
 void EngineHost::prepareEngine(int sampleRate, int maxBlockSize) {
     _graphEngine->prepareGraph(sampleRate, maxBlockSize);
+
+    // Update asset source sample rate for tone generation
+    if (_audioAssetSource) {
+        auto* stubSource = dynamic_cast<StubAudioAssetSource*>(_audioAssetSource.get());
+        if (stubSource) {
+            stubSource->setSampleRate(static_cast<double>(sampleRate));
+        }
+    }
+
     // TODO: Also prepare plugins, allocate buffers, etc. in future phases
 }
 

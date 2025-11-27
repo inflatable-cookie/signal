@@ -39,9 +39,22 @@ public:
 };
 
 /// Stub implementation for testing (generates predictable test patterns)
+///
+/// Thread: Audio thread (readSamples)
+/// Ownership: Owned by EngineHost
+///
+/// This implementation provides test audio generation for development and testing.
+/// It handles special test asset IDs and generates audio patterns.
 class StubAudioAssetSource : public AudioAssetSource {
 public:
-    StubAudioAssetSource() = default;
+    StubAudioAssetSource() : _sampleRate(44100.0) {
+        // Default sample rate (will be updated when engine is prepared)
+    }
+
+    /// Set sample rate for tone generation
+    void setSampleRate(double sampleRate) {
+        _sampleRate = sampleRate;
+    }
 
     bool readSamples(
         const AssetId& assetId,
@@ -51,23 +64,43 @@ public:
         int destFrameOffset,
         int numChannels
     ) override {
-        // Generate a simple ramp pattern for testing
-        // Sample value = (startSample + frame) / 1000.0f (scaled to avoid clipping)
-        for (int frame = 0; frame < numFrames; ++frame) {
-            float sample = static_cast<float>(startSample + frame) / 1000.0f;
-            // Clamp to [-1.0, 1.0]
-            if (sample > 1.0f) sample = 1.0f;
-            if (sample < -1.0f) sample = -1.0f;
+        // Handle special test asset IDs
+        if (assetId == "test://tone-440hz") {
+            // Generate 440 Hz sine wave at comfortable level (0.15 amplitude)
+            const float amplitude = 0.15f;
+            const float frequency = 440.0f;
+            const float twoPi = 2.0f * 3.14159265358979323846f;
 
-            // Write to all requested channels
+            for (int frame = 0; frame < numFrames; ++frame) {
+                uint64_t absoluteSample = startSample + frame;
+                float phase = static_cast<float>(absoluteSample) * frequency / static_cast<float>(_sampleRate);
+                float sample = amplitude * std::sin(twoPi * phase);
+
+                // Write to all requested channels
+                for (int ch = 0; ch < numChannels && ch < buffer.numChannels(); ++ch) {
+                    int destFrame = destFrameOffset + frame;
+                    if (destFrame >= 0 && destFrame < buffer.numFrames()) {
+                        buffer.setSample(destFrame, ch, sample);
+                    }
+                }
+            }
+            return true;
+        }
+
+        // For other asset IDs, generate silence (safe default)
+        // This ensures unknown assets don't produce noise
+        for (int frame = 0; frame < numFrames; ++frame) {
             for (int ch = 0; ch < numChannels && ch < buffer.numChannels(); ++ch) {
                 int destFrame = destFrameOffset + frame;
                 if (destFrame >= 0 && destFrame < buffer.numFrames()) {
-                    buffer.setSample(destFrame, ch, sample);
+                    buffer.setSample(destFrame, ch, 0.0f);
                 }
             }
         }
         return true;
     }
+
+private:
+    double _sampleRate;  // Sample rate for tone generation
 };
 

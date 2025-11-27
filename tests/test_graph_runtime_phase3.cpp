@@ -73,10 +73,13 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     std::vector<AudioSegmentCompiled> audioSegments;
     AudioSegmentCompiled segment;
     segment.streamId = "stream-1";
-    segment.assetId = "asset-1";
+    segment.assetId = "asset-1";  // Non-test asset - will produce silence
     segment.startSamples = 0;
     segment.endSamples = 512; // One block
     segment.assetStartSamples = 0;
+    segment.gainDb = 0.0;
+    segment.fadeInSamples = 0;
+    segment.fadeOutSamples = 0;
     audioSegments.push_back(segment);
 
     std::vector<MidiEventCompiled> midiEvents;
@@ -92,22 +95,137 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     ctx.playheadSamples = 0;
 
     StubAudioAssetSource assetSource;
+    assetSource.setSampleRate(44100.0);
     engine.processGraph(ctx, &scheduler, &assetSource);
 
-    // Verify audio lane node has output (ramp pattern from stub)
+    // Verify audio lane node output (non-test assets produce silence)
     auto* lane = dynamic_cast<AudioLaneNode*>(engine.findNode("audio-lane-1"));
     REQUIRE(lane != nullptr);
-    // Stub generates: sample = (startSample + frame) / 1000.0f
-    // For frame 0: sample = 0 / 1000.0 = 0.0
-    // For frame 100: sample = 100 / 1000.0 = 0.1
-    REQUIRE(std::abs(lane->io.audioOut.getSample(0, 0)) < 0.001f); // First sample should be ~0
-    REQUIRE(lane->io.audioOut.getSample(100, 0) > 0.09f); // Frame 100 should be ~0.1
+    // Stub generates silence for non-test assets (safe default)
+    REQUIRE(std::abs(lane->io.audioOut.getSample(0, 0)) < 0.001f); // Should be silence
+    REQUIRE(std::abs(lane->io.audioOut.getSample(100, 0)) < 0.001f); // Should be silence
 
-    // Verify device node output matches (within tolerance)
+    // Verify device node output matches (silence)
     auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
     REQUIRE(device != nullptr);
     REQUIRE(std::abs(device->io.audioOut.getSample(0, 0)) < 0.001f);
-    REQUIRE(device->io.audioOut.getSample(100, 0) > 0.09f);
+    REQUIRE(std::abs(device->io.audioOut.getSample(100, 0)) < 0.001f);
+}
+
+TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-sound]") {
+    GraphEngine engine;
+    StreamScheduler scheduler;
+
+    // Create minimal graph: AudioLane -> Device
+    GraphSnapshot snapshot;
+    snapshot.id = "test-tone-graph";
+
+    NodeDesc laneNode;
+    laneNode.nodeId = "audio-lane-test";
+    laneNode.kind = NodeKind::AudioLane;
+    laneNode.trackId = "track-1";
+    laneNode.laneId = "lane-1";
+    snapshot.nodes.push_back(laneNode);
+
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device-output";
+    deviceNode.kind = NodeKind::Device;
+    snapshot.nodes.push_back(deviceNode);
+
+    // Stream binding: test-stream -> audio-lane-test
+    ConnectionDesc streamBinding;
+    streamBinding.fromStreamId = "test-stream";
+    streamBinding.toNodeId = "audio-lane-test";
+    streamBinding.toInputIndex = 0;
+    snapshot.connections.push_back(streamBinding);
+
+    // Node connection: audio-lane-test -> device-output
+    ConnectionDesc nodeConn;
+    nodeConn.fromNodeId = "audio-lane-test";
+    nodeConn.fromOutputIndex = 0;
+    nodeConn.toNodeId = "device-output";
+    nodeConn.toInputIndex = 0;
+    snapshot.connections.push_back(nodeConn);
+
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Set up schedule with test tone asset
+    std::vector<StreamDescriptor> streams;
+    StreamDescriptor stream;
+    stream.streamId = "test-stream";
+    stream.trackId = "track-1";
+    stream.laneId = "lane-1";
+    stream.streamType = "audio";
+    streams.push_back(stream);
+
+    std::vector<AudioSegmentCompiled> audioSegments;
+    AudioSegmentCompiled segment;
+    segment.streamId = "test-stream";
+    segment.assetId = "test://tone-440hz";  // Special test asset ID
+    segment.startSamples = 0;
+    segment.endSamples = 512; // One block
+    segment.assetStartSamples = 0;
+    segment.gainDb = 0.0; // No gain adjustment
+    segment.fadeInSamples = 0;
+    segment.fadeOutSamples = 0;
+    audioSegments.push_back(segment);
+
+    std::vector<MidiEventCompiled> midiEvents;
+    TempoMap tempoMap;
+    tempoMap.defaultTempo = 120.0;
+
+    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+
+    // Process graph with stub asset source
+    EngineRenderContext ctx;
+    ctx.sampleRate = 44100.0;
+    ctx.blockSize = 512;
+    ctx.playheadSamples = 0;
+    ctx.isPlaying = true;
+
+    StubAudioAssetSource assetSource;
+    assetSource.setSampleRate(44100.0);
+    engine.processGraph(ctx, &scheduler, &assetSource);
+
+    // Verify audio lane node has 440Hz tone output
+    auto* lane = dynamic_cast<AudioLaneNode*>(engine.findNode("audio-lane-test"));
+    REQUIRE(lane != nullptr);
+
+    // 440Hz at 44100Hz sample rate: period = 44100/440 = 100.227 samples
+    // Check that we have a sine wave pattern
+    // Sample at frame 0 should be near 0 (sin(0) = 0)
+    // Sample at frame 25 (quarter period) should be near peak (sin(π/2) = 1)
+    float sample0 = lane->io.audioOut.getSample(0, 0);
+    float sample25 = lane->io.audioOut.getSample(25, 0);
+    float sample50 = lane->io.audioOut.getSample(50, 0);
+
+    // First sample should be near 0 (sine wave starts at 0)
+    REQUIRE(std::abs(sample0) < 0.01f);
+
+    // Quarter period should be near peak (amplitude 0.15)
+    REQUIRE(sample25 > 0.10f);  // Should be positive and significant
+    REQUIRE(sample25 < 0.20f);  // Should be around 0.15 (amplitude)
+
+    // Half period should be near 0 (sine wave crosses zero)
+    REQUIRE(std::abs(sample50) < 0.01f);
+
+    // Verify device node output matches (tone should pass through)
+    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device-output"));
+    REQUIRE(device != nullptr);
+    REQUIRE(std::abs(device->io.audioOut.getSample(0, 0)) < 0.01f);
+    REQUIRE(device->io.audioOut.getSample(25, 0) > 0.10f);
+    REQUIRE(device->io.audioOut.getSample(25, 0) < 0.20f);
+
+    // Verify output is non-zero (we have audio)
+    bool hasOutput = false;
+    for (int frame = 0; frame < 512; ++frame) {
+        if (std::abs(device->io.audioOut.getSample(frame, 0)) > 0.001f) {
+            hasOutput = true;
+            break;
+        }
+    }
+    REQUIRE(hasOutput);
 }
 
 TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
