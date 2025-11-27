@@ -5,13 +5,14 @@
 #include "core/GraphNodes.hpp"
 #include "core/GraphNode.hpp"
 #include "ipc/Envelope.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 MixerDomain::MixerDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
 {
-    std::cout << "[MixerDomain] Initialised" << std::endl;
+    LOG_INFO({"MixerDomain"}, "Initialised");
 }
 
 void MixerDomain::handle(const Envelope& env) {
@@ -52,27 +53,33 @@ void MixerDomain::handle(const Envelope& env) {
                         float effectiveGain = effectiveMuted ? 0.0f : gain;
                         mixerNode->setGain(effectiveGain);
                         mixerNode->setPan(pan);
-                        std::cout << "[MixerDomain] Applied gain=" << effectiveGain
-                                  << " pan=" << pan
-                                  << " to MixerChannelNode " << nodeId << std::endl;
+                        std::ostringstream msg;
+                        msg << "Applied gain=" << effectiveGain
+                            << " pan=" << pan
+                            << " to MixerChannelNode " << nodeId;
+                        LOG_DEBUG({"MixerDomain"}, msg.str());
                     }
                 } else {
-                    std::cout << "[MixerDomain] Warning: MixerChannelNode not found for trackId=" << trackId
-                              << " (nodeId=" << nodeId << ")" << std::endl;
+                    std::ostringstream msg;
+                    msg << "Warning: MixerChannelNode not found for trackId=" << trackId
+                        << " (nodeId=" << nodeId << ")";
+                    LOG_WARN({"MixerDomain"}, msg.str());
                 }
             }
 
-            std::cout << "[MixerDomain] Updated channel " << channelId
-                      << " gain=" << gain
-                      << " pan=" << pan
-                      << " muted=" << isMuted
-                      << " soloed=" << isSoloed
-                      << " effectiveMuted=" << effectiveMuted << std::endl;
+            std::ostringstream msg;
+            msg << "Updated channel " << channelId
+                << " gain=" << gain
+                << " pan=" << pan
+                << " muted=" << isMuted
+                << " soloed=" << isSoloed
+                << " effectiveMuted=" << effectiveMuted;
+            LOG_DEBUG({"MixerDomain"}, msg.str());
         } catch (const std::exception& e) {
-            std::cerr << "[MixerDomain] Failed to parse updateChannel payload: " << e.what() << std::endl;
+            LOG_ERROR({"MixerDomain"}, std::string("Failed to parse updateChannel payload: ") + e.what());
         }
     } else {
-        std::cout << "[MixerDomain] Received unhandled mixer command: " << env.name << std::endl;
+        LOG_WARN({"MixerDomain"}, std::string("Received unhandled mixer command: ") + env.name);
     }
 }
 

@@ -12,6 +12,7 @@
 #include "domains/MixerDomain.hpp"
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"
+#include "logging/Logging.hpp"
 #include <asio/io_context.hpp>
 #include <asio/steady_timer.hpp>
 #include <asio/signal_set.hpp>
@@ -24,7 +25,10 @@
 #include <thread>
 
 SignalApp::SignalApp() {
-    std::cout << "[SignalApp] Initialising..." << std::endl;
+    // Initialize unified logging system
+    initLogging();
+
+    LOG_INFO({"SignalApp"}, "Initialising...");
 
     try {
         _engineHost = std::make_unique<EngineHost>();
@@ -49,22 +53,22 @@ SignalApp::SignalApp() {
         auto assetsDomain = std::make_shared<AssetsDomain>(_engineHost.get());
         _router->registerHandler("assets", assetsDomain);
 
-        std::cout << "[SignalApp] Initialised" << std::endl;
+        LOG_INFO({"SignalApp"}, "Initialised");
     } catch (const std::exception& e) {
-        std::cerr << "[SignalApp] Error during initialization: " << e.what() << std::endl;
+        LOG_ERROR({"SignalApp"}, std::string("Error during initialization: ") + e.what());
         throw;
     } catch (...) {
-        std::cerr << "[SignalApp] Unknown error during initialization" << std::endl;
+        LOG_ERROR({"SignalApp"}, "Unknown error during initialization");
         throw;
     }
 }
 
 SignalApp::~SignalApp() {
-    std::cout << "[SignalApp] Shutting down..." << std::endl;
+    LOG_INFO({"SignalApp"}, "Shutting down...");
 }
 
 int SignalApp::run() {
-    std::cout << "[SignalApp] Running..." << std::endl;
+    LOG_INFO({"SignalApp"}, "Running...");
 
     // Get host/port from environment or use defaults
     std::string host = "127.0.0.1";
@@ -80,7 +84,7 @@ int SignalApp::run() {
         try {
             port = static_cast<uint16_t>(std::stoi(port_env));
         } catch (const std::exception& e) {
-            std::cerr << "[SignalApp] Invalid SIGNAL_PORT, using default 7888" << std::endl;
+            LOG_WARN({"SignalApp"}, "Invalid SIGNAL_PORT, using default 7888");
         }
     }
 
@@ -106,7 +110,7 @@ int SignalApp::run() {
 
     signals.async_wait(
         [&server, &io, this, &shuttingDown](std::error_code /*ec*/, int /*signo*/) {
-            std::cout << "[SignalApp] Shutdown signal received" << std::endl;
+            LOG_INFO({"SignalApp"}, "Shutdown signal received");
             shuttingDown.store(true);
             if (_engineHost) {
                 _engineHost->shutdown();
@@ -164,7 +168,7 @@ int SignalApp::run() {
     server.setClientConnectedCallback(
         [&server, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
             if (_engineHost) {
-                std::cout << "[SignalApp] Client connected, sending initial engine state..." << std::endl;
+                LOG_INFO({"SignalApp"}, "Client connected, sending initial engine state...");
                 server.sendEngineState(_engineHost.get(), session);
             }
         }
@@ -176,15 +180,15 @@ int SignalApp::run() {
     // Scan for plugins after server starts (deferred to prevent blocking startup)
     // This allows Signal to accept connections even if plugin scanning fails
     if (_engineHost && _engineHost->pluginHost()) {
-        std::cout << "[SignalApp] Scanning for CLAP plugins..." << std::endl;
+        LOG_INFO({"SignalApp"}, "Scanning for CLAP plugins...");
         _engineHost->pluginHost()->scanPlugins();
     }
 
     // Run IO loop
-    std::cout << "[SignalApp] Starting IO loop..." << std::endl;
+    LOG_INFO({"SignalApp"}, "Starting IO loop...");
     io.run();
 
-    std::cout << "[SignalApp] IO loop finished" << std::endl;
+    LOG_INFO({"SignalApp"}, "IO loop finished");
     return 0;
 }
 

@@ -1,20 +1,21 @@
 #include "domains/AssetsDomain.hpp"
 #include "core/EngineHost.hpp"
 #include "ipc/Envelope.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 AssetsDomain::AssetsDomain(EngineHost* engineHost) : _engineHost(engineHost) {
 }
 
 void AssetsDomain::handle(const Envelope& env) {
     if (env.kind != "command") {
-        std::cout << "[AssetsDomain] Ignoring non-command: " << env.kind << std::endl;
+        LOG_DEBUG({"AssetsDomain"}, std::string("Ignoring non-command: ") + env.kind);
         return;
     }
 
     if (!_engineHost) {
-        std::cerr << "[AssetsDomain] EngineHost is null" << std::endl;
+        LOG_ERROR({"AssetsDomain"}, "EngineHost is null");
         return;
     }
 
@@ -25,13 +26,13 @@ void AssetsDomain::handle(const Envelope& env) {
 
             std::string assetId = payload.value("assetId", "");
             if (assetId.empty()) {
-                std::cerr << "[AssetsDomain] Missing assetId in registerAudioAsset" << std::endl;
+                LOG_ERROR({"AssetsDomain"}, "Missing assetId in registerAudioAsset");
                 return;
             }
 
             std::string path = payload.value("path", "");
             if (path.empty()) {
-                std::cerr << "[AssetsDomain] Missing path in registerAudioAsset" << std::endl;
+                LOG_ERROR({"AssetsDomain"}, "Missing path in registerAudioAsset");
                 return;
             }
 
@@ -40,23 +41,25 @@ void AssetsDomain::handle(const Envelope& env) {
             uint64_t frames = payload.value("frames", 0u);
 
             // Diagnostic logging: asset registration
-            std::cout << "[AssetsDomain] Registering audio asset: id='" << assetId
-                      << "', path='" << path
-                      << "', channels=" << channels
-                      << ", sampleRate=" << sampleRate
-                      << ", frames=" << frames << std::endl;
+            std::ostringstream msg;
+            msg << "Registering audio asset: id='" << assetId
+                << "', path='" << path
+                << "', channels=" << channels
+                << ", sampleRate=" << sampleRate
+                << ", frames=" << frames;
+            LOG_INFO({"AssetsDomain"}, msg.str());
 
             if (frames == 0) {
-                std::cerr << "[AssetsDomain] ⚠ Invalid frames count (0) for asset: " << assetId << std::endl;
+                LOG_WARN({"AssetsDomain"}, std::string("Invalid frames count (0) for asset: ") + assetId);
             }
 
             _engineHost->prepareAudioAsset(assetId, path, channels, sampleRate, frames);
-            std::cout << "[AssetsDomain] Called prepareAudioAsset for: " << assetId << std::endl;
+            LOG_DEBUG({"AssetsDomain"}, std::string("Called prepareAudioAsset for: ") + assetId);
         } catch (const std::exception& e) {
-            std::cerr << "[AssetsDomain] Failed to parse registerAudioAsset payload: " << e.what() << std::endl;
+            LOG_ERROR({"AssetsDomain"}, std::string("Failed to parse registerAudioAsset payload: ") + e.what());
         }
     } else {
-        std::cout << "[AssetsDomain] Unknown command: " << env.name << std::endl;
+        LOG_WARN({"AssetsDomain"}, std::string("Unknown command: ") + env.name);
     }
 }
 

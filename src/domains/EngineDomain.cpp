@@ -5,22 +5,24 @@
 #include "core/GraphSnapshot.hpp"
 #include "core/GraphSnapshotHelpers.hpp"
 #include "ipc/Envelope.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
 #include <unordered_set>
+#include <sstream>
+#include <iostream>
 
 EngineDomain::EngineDomain(EngineHost* engineHost) : _engineHost(engineHost) {
 }
 
 void EngineDomain::handle(const Envelope& env) {
     if (env.kind != "command") {
-        std::cout << "[EngineDomain] Ignoring non-command: " << env.kind << std::endl;
+        LOG_DEBUG({"EngineDomain"}, std::string("Ignoring non-command: ") + env.kind);
         return;
     }
 
     if (!_engineHost) {
-        std::cerr << "[EngineDomain] EngineHost is null" << std::endl;
+        LOG_ERROR({"EngineDomain"}, "EngineHost is null");
         return;
     }
 
@@ -31,11 +33,11 @@ void EngineDomain::handle(const Envelope& env) {
     } else if (env.name == "reset") {
         _engineHost->reset();
     } else if (env.name == "shutdown") {
-        std::cout << "[EngineDomain] Shutdown requested" << std::endl;
+        LOG_INFO({"EngineDomain"}, "Shutdown requested");
         _engineHost->shutdown();
     } else if (env.name == "heartbeat") {
         // Heartbeat command received - handled by DomainDispatcher to emit event
-        std::cout << "[EngineDomain] Heartbeat command received" << std::endl;
+        LOG_DEBUG({"EngineDomain"}, "Heartbeat command received");
     } else if (env.name == "scheduleSession" || env.name == "playbackScheduleSnapshot") {
         // Handle stream-based schedule from Pulse
         // Architecture: Pulse sends PlaybackScheduleSnapshot with streams, audioSegments, midiEvents

@@ -1,10 +1,10 @@
 #include "core/AutomationService.hpp"
+#include "logging/Logging.hpp"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 
 AutomationService::AutomationService() {
-    std::cout << "[AutomationService] Initialised" << std::endl;
+    LOG_INFO({"AutomationService"}, "Initialised");
 }
 
 AutomationService::~AutomationService() = default;
@@ -59,7 +59,9 @@ void AutomationService::setCurvesForSession(const std::vector<AutomationCurve>& 
         _curves[key] = std::move(state);
     }
 
-    std::cout << "[AutomationService] Set " << curves.size() << " automation curves" << std::endl;
+    std::ostringstream msg;
+    msg << "Set " << curves.size() << " automation curves";
+    LOG_INFO({"AutomationService"}, msg.str());
 }
 
 void AutomationService::updateCurve(const AutomationCurve& curve) {

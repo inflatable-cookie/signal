@@ -9,9 +9,10 @@
 ///   - Domain handlers update EngineHost/TransportState synchronously
 
 #include "ipc/TcpServer.hpp"
+#include "logging/Logging.hpp"
+#include <sstream>
 #include <asio/bind_executor.hpp>
 #include <asio/ip/tcp.hpp>
-#include <iostream>
 
 namespace loophole::signal::ipc {
 
@@ -24,7 +25,7 @@ TcpServer::TcpServer(
     std::error_code ec;
     asio::ip::tcp::endpoint endpoint(asio::ip::address::from_string(host, ec), port);
     if (ec) {
-        std::cerr << "[TcpServer] Invalid host address: " << host << std::endl;
+        LOG_ERROR({"TcpServer"}, std::string("Invalid host address: ") + host);
         throw std::runtime_error("Invalid host address");
     }
     acceptor_.open(endpoint.protocol());
@@ -36,7 +37,9 @@ TcpServer::TcpServer(
 void TcpServer::start() {
     std::string host = acceptor_.local_endpoint().address().to_string();
     uint16_t port = acceptor_.local_endpoint().port();
-    std::cout << "[Signal] IPC server listening on " << host << ":" << port << std::endl;
+    std::ostringstream msg;
+    msg << "IPC server listening on " << host << ":" << port;
+    LOG_INFO({"TcpServer"}, msg.str());
 
     doAccept();
 }
@@ -48,9 +51,11 @@ void TcpServer::doAccept() {
                 std::error_code ep_ec;
                 auto remote_ep = socket.remote_endpoint(ep_ec);
                 if (!ep_ec) {
-                    std::cout << "[TcpServer] Client connected from "
-                              << remote_ep.address().to_string()
-                              << ":" << remote_ep.port() << std::endl;
+                    std::ostringstream connMsg;
+                    connMsg << "Client connected from "
+                            << remote_ep.address().to_string()
+                            << ":" << remote_ep.port();
+                    LOG_INFO({"TcpServer"}, connMsg.str());
                 }
 
                 auto session = std::make_shared<TcpClientSession>(
@@ -70,7 +75,7 @@ void TcpServer::doAccept() {
                     clientConnectedCallback_(session);
                 }
             } else {
-                std::cerr << "[TcpServer] Accept error: " << ec.message() << std::endl;
+                LOG_ERROR({"TcpServer"}, std::string("Accept error: ") + ec.message());
             }
 
             // Continue accepting new connections
@@ -95,7 +100,7 @@ void TcpServer::stop() {
 
     if (acceptor_.is_open()) {
         acceptor_.close();
-        std::cout << "[TcpServer] Server stopped" << std::endl;
+        LOG_INFO({"TcpServer"}, "Server stopped");
     }
 }
 

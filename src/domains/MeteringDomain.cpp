@@ -2,7 +2,8 @@
 #include "core/MeteringService.hpp"
 #include "core/EngineHost.hpp"
 #include "ipc/Envelope.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
+#include <sstream>
 
 MeteringDomain::MeteringDomain(MeteringService* meteringService, EngineHost* engineHost)
     : _meteringService(meteringService)
@@ -13,7 +14,9 @@ MeteringDomain::MeteringDomain(MeteringService* meteringService, EngineHost* eng
 void MeteringDomain::handle(const Envelope& env) {
     // For now, metering domain only publishes events (no commands)
     // Future: could support commands like "enableMetering" or "setMeteringRate"
-    std::cout << "[MeteringDomain] Received envelope: " << env.domain << "." << env.name << std::endl;
+    std::ostringstream msg;
+    msg << "Received envelope: " << env.domain << "." << env.name;
+    LOG_DEBUG({"MeteringDomain"}, msg.str());
 }
 
 

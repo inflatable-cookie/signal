@@ -1,8 +1,9 @@
 #include "core/AudioAssetSource.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <fstream>
 #include <cstring>
 #include <cmath>
+#include <sstream>
 
 // Include miniaudio for decoding (implementation already in MiniaudioBackend.cpp)
 #include <miniaudio.h>
@@ -18,25 +19,28 @@ FileAudioAssetSource::~FileAudioAssetSource() {
 bool FileAudioAssetSource::prepareAsset(const AssetId& assetId, const AudioAssetMetadata& metadata) {
     // Check if already prepared
     if (_assets.find(assetId) != _assets.end()) {
-        std::cout << "[FileAudioAssetSource] Asset already prepared: " << assetId << std::endl;
+        LOG_DEBUG({"FileAudioAssetSource"}, std::string("Asset already prepared: ") + assetId);
         return true;
     }
 
     // Skip test assets (handled by stub)
     if (assetId.find("test://") == 0) {
-        std::cout << "[FileAudioAssetSource] Skipping test asset: " << assetId << std::endl;
+        LOG_DEBUG({"FileAudioAssetSource"}, std::string("Skipping test asset: ") + assetId);
         return false;
     }
 
-    std::cout << "[FileAudioAssetSource] Preparing asset: " << assetId << " from " << metadata.path << std::endl;
+    std::ostringstream msg;
+    msg << "Preparing asset: " << assetId << " from " << metadata.path;
+    LOG_INFO({"FileAudioAssetSource"}, msg.str());
 
     // Use miniaudio to decode the file
     ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 0, 0); // float32, default channels, default sample rate
     ma_decoder decoder;
     ma_result result = ma_decoder_init_file(metadata.path.c_str(), &decoderConfig, &decoder);
     if (result != MA_SUCCESS) {
-        std::cerr << "[FileAudioAssetSource] Failed to open file: " << metadata.path
-                  << " (error: " << result << ")" << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Failed to open file: " << metadata.path << " (error: " << result << ")";
+        LOG_ERROR({"FileAudioAssetSource"}, errMsg.str());
         return false;
     }
 
@@ -69,7 +73,7 @@ bool FileAudioAssetSource::prepareAsset(const AssetId& assetId, const AudioAsset
 
         // Safety check: if we've read a lot, stop (file might be corrupt or very large)
         if (totalFrames > 100000000) { // ~100M frames at 44.1kHz = ~38 minutes
-            std::cerr << "[FileAudioAssetSource] File appears too long, stopping decode" << std::endl;
+            LOG_WARN({"FileAudioAssetSource"}, "File appears too long, stopping decode");
             break;
         }
     }
@@ -77,14 +81,16 @@ bool FileAudioAssetSource::prepareAsset(const AssetId& assetId, const AudioAsset
     ma_uint64 frameCount = totalFrames;
 
     if (frameCount == 0) {
-        std::cerr << "[FileAudioAssetSource] Failed to decode any frames from file: " << metadata.path << std::endl;
+        LOG_ERROR({"FileAudioAssetSource"}, std::string("Failed to decode any frames from file: ") + metadata.path);
         ma_decoder_uninit(&decoder);
         return false;
     }
 
     // Validate format (we need float32)
     if (format != ma_format_f32) {
-        std::cerr << "[FileAudioAssetSource] Unsupported format (expected float32): " << format << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Unsupported format (expected float32): " << format;
+        LOG_ERROR({"FileAudioAssetSource"}, errMsg.str());
         ma_decoder_uninit(&decoder);
         return false;
     }
@@ -92,8 +98,10 @@ bool FileAudioAssetSource::prepareAsset(const AssetId& assetId, const AudioAsset
     // Check file size limit (safety check)
     uint64_t estimatedSizeMB = (frameCount * channels * sizeof(float)) / (1024 * 1024);
     if (estimatedSizeMB > MAX_FILE_SIZE_MB) {
-        std::cerr << "[FileAudioAssetSource] File too large: " << estimatedSizeMB
-                  << " MB (limit: " << MAX_FILE_SIZE_MB << " MB)" << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "File too large: " << estimatedSizeMB
+               << " MB (limit: " << MAX_FILE_SIZE_MB << " MB)";
+        LOG_ERROR({"FileAudioAssetSource"}, errMsg.str());
         ma_decoder_uninit(&decoder);
         return false;
     }
@@ -110,9 +118,11 @@ bool FileAudioAssetSource::prepareAsset(const AssetId& assetId, const AudioAsset
 
     _assets[assetId] = std::move(assetData);
 
-    std::cout << "[FileAudioAssetSource] Asset prepared: " << assetId
-              << " (" << channels << " channels, " << sampleRate << " Hz, "
-              << frameCount << " frames)" << std::endl;
+    std::ostringstream prepMsg;
+    prepMsg << "Asset prepared: " << assetId
+        << " (" << channels << " channels, " << sampleRate << " Hz, "
+        << frameCount << " frames)";
+    LOG_INFO({"FileAudioAssetSource"}, prepMsg.str());
 
     return true;
 }
@@ -121,7 +131,7 @@ void FileAudioAssetSource::releaseAsset(const AssetId& assetId) {
     auto it = _assets.find(assetId);
     if (it != _assets.end()) {
         _assets.erase(it);
-        std::cout << "[FileAudioAssetSource] Released asset: " << assetId << std::endl;
+        LOG_DEBUG({"FileAudioAssetSource"}, std::string("Released asset: ") + assetId);
     }
 }
 
@@ -139,7 +149,7 @@ bool FileAudioAssetSource::readSamples(
         // Log warning (throttled to avoid spam)
         static int logCount = 0;
         if (logCount++ < 5) {
-            std::cerr << "[FileAudioAssetSource] Asset not prepared: '" << assetId << "' - producing silence" << std::endl;
+            LOG_WARN({"FileAudioAssetSource"}, std::string("Asset not prepared: '") + assetId + "' - producing silence");
         }
         for (int frame = 0; frame < numFrames; ++frame) {
             for (int ch = 0; ch < numChannels && ch < buffer.numChannels(); ++ch) {

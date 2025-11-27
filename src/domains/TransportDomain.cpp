@@ -2,20 +2,21 @@
 #include "core/EngineHost.hpp"
 #include "core/TransportState.hpp"
 #include "ipc/Envelope.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 TransportDomain::TransportDomain(EngineHost* engineHost) : _engineHost(engineHost) {
 }
 
 void TransportDomain::handle(const Envelope& env) {
     if (env.kind != "command") {
-        std::cout << "[TransportDomain] Ignoring non-command: " << env.kind << std::endl;
+        LOG_DEBUG({"TransportDomain"}, std::string("Ignoring non-command: ") + env.kind);
         return;
     }
 
     if (!_engineHost) {
-        std::cerr << "[TransportDomain] EngineHost is null" << std::endl;
+        LOG_ERROR({"TransportDomain"}, "EngineHost is null");
         return;
     }
 
@@ -30,14 +31,18 @@ void TransportDomain::handle(const Envelope& env) {
         uint64_t playheadSamples = static_cast<uint64_t>(transport.positionSeconds * sampleRate);
         _engineHost->setPlayheadSamples(playheadSamples);
         _engineHost->commitTransportUpdate();  // Commit snapshot swap
-        std::cout << "[TransportDomain] Play command received, playhead: " << playheadSamples << " samples" << std::endl;
+        std::ostringstream msg;
+        msg << "Play command received, playhead: " << playheadSamples << " samples";
+        LOG_INFO({"TransportDomain"}, msg.str());
     } else if (env.name == "stop") {
         transport.isPlaying = false;
         // Update transport position from playhead when stopping
         uint64_t playheadSamples = _engineHost->getPlayheadSamples();
         transport.positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
         _engineHost->commitTransportUpdate();  // Commit snapshot swap
-        std::cout << "[TransportDomain] Stop command received, position: " << transport.positionSeconds << "s" << std::endl;
+        std::ostringstream msg;
+        msg << "Stop command received, position: " << transport.positionSeconds << "s";
+        LOG_INFO({"TransportDomain"}, msg.str());
     } else if (env.name == "seek") {
         try {
             nlohmann::json payload = nlohmann::json::parse(env.payload);
@@ -60,10 +65,12 @@ void TransportDomain::handle(const Envelope& env) {
             _engineHost->setPlayheadSamples(playheadSamples);
             _engineHost->commitTransportUpdate();  // Commit snapshot swap
 
-            std::cout << "[TransportDomain] Seek command received, position: "
-                      << transport.positionSeconds << "s (" << playheadSamples << " samples)" << std::endl;
+            std::ostringstream msg;
+            msg << "Seek command received, position: "
+                << transport.positionSeconds << "s (" << playheadSamples << " samples)";
+            LOG_INFO({"TransportDomain"}, msg.str());
         } catch (const std::exception& e) {
-            std::cerr << "[TransportDomain] Failed to parse seek payload: " << e.what() << std::endl;
+            LOG_ERROR({"TransportDomain"}, std::string("Failed to parse seek payload: ") + e.what());
         }
     } else if (env.name == "setLoopEnabled") {
         try {
@@ -71,10 +78,12 @@ void TransportDomain::handle(const Envelope& env) {
             if (payload.contains("enabled")) {
                 transport.loopEnabled = payload["enabled"].get<bool>();
                 _engineHost->commitTransportUpdate();  // Commit snapshot swap
-                std::cout << "[TransportDomain] Loop enabled: " << transport.loopEnabled << std::endl;
+                std::ostringstream msg;
+                msg << "Loop enabled: " << transport.loopEnabled;
+                LOG_INFO({"TransportDomain"}, msg.str());
             }
         } catch (const std::exception& e) {
-            std::cerr << "[TransportDomain] Failed to parse setLoopEnabled payload: " << e.what() << std::endl;
+            LOG_ERROR({"TransportDomain"}, std::string("Failed to parse setLoopEnabled payload: ") + e.what());
         }
     } else if (env.name == "setLoopRegion") {
         try {
@@ -112,20 +121,22 @@ void TransportDomain::handle(const Envelope& env) {
                 transport.loopRegionSamples = loopSamples;
 
                 _engineHost->commitTransportUpdate();  // Commit snapshot swap
-                std::cout << "[TransportDomain] Loop region set: " << region.startSeconds
-                          << " - " << region.endSeconds << "s ("
-                          << loopSamples.startSamples << " - " << loopSamples.endSamples << " samples)" << std::endl;
+                std::ostringstream msg;
+                msg << "Loop region set: " << region.startSeconds
+                    << " - " << region.endSeconds << "s ("
+                    << loopSamples.startSamples << " - " << loopSamples.endSamples << " samples)";
+                LOG_INFO({"TransportDomain"}, msg.str());
             } else {
                 // Clear loop region if enabled is false
                 if (payload.contains("enabled") && !payload["enabled"].get<bool>()) {
                     transport.loopRegion = std::nullopt;
                     transport.loopRegionSamples = std::nullopt;
                     _engineHost->commitTransportUpdate();  // Commit snapshot swap
-                    std::cout << "[TransportDomain] Loop region cleared" << std::endl;
+                    LOG_INFO({"TransportDomain"}, "Loop region cleared");
                 }
             }
         } catch (const std::exception& e) {
-            std::cerr << "[TransportDomain] Failed to parse setLoopRegion payload: " << e.what() << std::endl;
+            LOG_ERROR({"TransportDomain"}, std::string("Failed to parse setLoopRegion payload: ") + e.what());
         }
     } else if (env.name == "setTempo") {
         try {
@@ -133,13 +144,15 @@ void TransportDomain::handle(const Envelope& env) {
             if (payload.contains("tempo")) {
                 transport.tempo = payload["tempo"].get<double>();
                 _engineHost->commitTransportUpdate();  // Commit snapshot swap
-                std::cout << "[TransportDomain] Tempo set to: " << transport.tempo << " BPM" << std::endl;
+                std::ostringstream msg;
+                msg << "Tempo set to: " << transport.tempo << " BPM";
+                LOG_INFO({"TransportDomain"}, msg.str());
             }
         } catch (const std::exception& e) {
-            std::cerr << "[TransportDomain] Failed to parse setTempo payload: " << e.what() << std::endl;
+            LOG_ERROR({"TransportDomain"}, std::string("Failed to parse setTempo payload: ") + e.what());
         }
     } else {
-        std::cout << "[TransportDomain] Unknown command: " << env.name << std::endl;
+        LOG_WARN({"TransportDomain"}, std::string("Unknown command: ") + env.name);
     }
 }
 

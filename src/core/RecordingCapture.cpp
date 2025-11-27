@@ -1,6 +1,7 @@
 #include "core/RecordingCapture.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <algorithm>
+#include <sstream>
 
 RecordingSession::RecordingSession()
     : _isRecording(false)
@@ -8,23 +9,23 @@ RecordingSession::RecordingSession()
     , _audioChunkQueue(CAPTURE_QUEUE_SIZE)
     , _midiChunkQueue(CAPTURE_QUEUE_SIZE)
 {
-    std::cout << "[RecordingSession] Created" << std::endl;
+    LOG_INFO({"RecordingSession"}, "Created");
 }
 
 RecordingSession::~RecordingSession() {
     stopRecording();
-    std::cout << "[RecordingSession] Destroyed" << std::endl;
+    LOG_DEBUG({"RecordingSession"}, "Destroyed");
 }
 
 void RecordingSession::startRecording() {
     if (_isRecording.load(std::memory_order_acquire)) {
-        std::cout << "[RecordingSession] Already recording" << std::endl;
+        LOG_DEBUG({"RecordingSession"}, "Already recording");
         return;
     }
 
     _recordingStartSample.store(0, std::memory_order_release); // Will be set by EngineHost
     _isRecording.store(true, std::memory_order_release);
-    std::cout << "[RecordingSession] Recording started" << std::endl;
+    LOG_INFO({"RecordingSession"}, "Recording started");
 }
 
 void RecordingSession::stopRecording() {
@@ -33,13 +34,15 @@ void RecordingSession::stopRecording() {
     }
 
     _isRecording.store(false, std::memory_order_release);
-    std::cout << "[RecordingSession] Recording stopped" << std::endl;
+    LOG_INFO({"RecordingSession"}, "Recording stopped");
 }
 
 void RecordingSession::setArmState(const std::string& laneId, bool armed) {
     std::unique_lock<std::shared_mutex> lock(_armStateMutex);
     _armedLanes[laneId].store(armed, std::memory_order_release);
-    std::cout << "[RecordingSession] Lane " << laneId << " arm state: " << (armed ? "armed" : "disarmed") << std::endl;
+    std::ostringstream msg;
+    msg << "Lane " << laneId << " arm state: " << (armed ? "armed" : "disarmed");
+    LOG_DEBUG({"RecordingSession"}, msg.str());
 }
 
 bool RecordingSession::isLaneArmed(const std::string& laneId) const {
@@ -54,7 +57,9 @@ bool RecordingSession::isLaneArmed(const std::string& laneId) const {
 void RecordingSession::bindInputToLane(const std::string& inputNodeId, const std::string& laneId) {
     std::unique_lock<std::shared_mutex> lock(_inputMapMutex);
     _inputToLaneMap[inputNodeId] = laneId;
-    std::cout << "[RecordingSession] Bound input " << inputNodeId << " to lane " << laneId << std::endl;
+    std::ostringstream msg;
+    msg << "Bound input " << inputNodeId << " to lane " << laneId;
+    LOG_DEBUG({"RecordingSession"}, msg.str());
 }
 
 std::string RecordingSession::getTargetLaneForInput(const std::string& inputNodeId) const {

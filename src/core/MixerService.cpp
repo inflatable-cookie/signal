@@ -1,10 +1,11 @@
 #include "core/MixerService.hpp"
+#include "logging/Logging.hpp"
 #include <algorithm>
-#include <iostream>
 #include <memory>
+#include <sstream>
 
 MixerService::MixerService() {
-    std::cout << "[MixerService] Initialised" << std::endl;
+    LOG_INFO({"MixerService"}, "Initialised");
 }
 
 MixerService::~MixerService() = default;
@@ -13,14 +14,14 @@ void MixerService::registerChannel(const std::string& channelId) {
     std::lock_guard<std::mutex> lock(_mutex);
     if (_channels.find(channelId) == _channels.end()) {
         _channels[channelId] = std::make_unique<ChannelMixerState>(channelId);
-        std::cout << "[MixerService] Registered channel: " << channelId << std::endl;
+        LOG_DEBUG({"MixerService"}, std::string("Registered channel: ") + channelId);
     }
 }
 
 void MixerService::unregisterChannel(const std::string& channelId) {
     std::lock_guard<std::mutex> lock(_mutex);
     _channels.erase(channelId);
-    std::cout << "[MixerService] Unregistered channel: " << channelId << std::endl;
+        LOG_DEBUG({"MixerService"}, std::string("Unregistered channel: ") + channelId);
 }
 
 void MixerService::updateChannel(
@@ -53,7 +54,7 @@ void MixerService::updateChannel(
         state->isMuted.store(isMuted, std::memory_order_release);
         state->isSoloed.store(isSoloed, std::memory_order_release);
         state->effectiveMuted.store(effectiveMuted, std::memory_order_release);
-        std::cout << "[MixerService] Auto-registered and updated channel: " << channelId << std::endl;
+        LOG_DEBUG({"MixerService"}, std::string("Auto-registered and updated channel: ") + channelId);
     }
 
     // If solo state changed, recompute effective mutes for all channels

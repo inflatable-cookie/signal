@@ -16,6 +16,7 @@
 #include "core/GraphNodes.hpp"
 #include "core/AutomationData.hpp"
 #include "core/RecordingCapture.hpp"
+#include "logging/Logging.hpp"
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -24,6 +25,7 @@
 #include <cstring>
 #include <unordered_set>
 #include <unordered_map>
+#include <sstream>
 
 EngineHost::EngineHost()
     : _state(State::Stopped)
@@ -58,29 +60,29 @@ EngineHost::EngineHost()
 
     setupAudioCallback();  // Legacy - for backward compatibility
     setupAudioBackend();   // New backend-based approach
-    std::cout << "[EngineHost] Created" << std::endl;
+    LOG_INFO({"EngineHost"}, "Created");
 }
 
 EngineHost::~EngineHost() {
     if (_state == State::Running || _state == State::Starting) {
         stop();
     }
-    std::cout << "[EngineHost] Destroyed" << std::endl;
+    LOG_DEBUG({"EngineHost"}, "Destroyed");
 }
 
 void EngineHost::start() {
     if (_shuttingDown) {
-        std::cout << "[EngineHost] Cannot start: shutting down" << std::endl;
+        LOG_WARN({"EngineHost"}, "Cannot start: shutting down");
         return;
     }
 
     if (_state == State::Running) {
-        std::cout << "[EngineHost] Already running" << std::endl;
+        LOG_DEBUG({"EngineHost"}, "Already running");
         return;
     }
 
     if (_state == State::Error) {
-        std::cout << "[EngineHost] Cannot start: in error state" << std::endl;
+        LOG_WARN({"EngineHost"}, "Cannot start: in error state");
         return;
     }
 
@@ -101,12 +103,12 @@ void EngineHost::start() {
 
     // After audio starts successfully, transition to running
     _state = State::Running;
-    std::cout << "[EngineHost] Started" << std::endl;
+    LOG_INFO({"EngineHost"}, "Started");
 }
 
 void EngineHost::stop() {
     if (_state == State::Stopped) {
-        std::cout << "[EngineHost] Already stopped" << std::endl;
+        LOG_DEBUG({"EngineHost"}, "Already stopped");
         return;
     }
 
@@ -118,7 +120,7 @@ void EngineHost::stop() {
         _audioThread->stop();
     }
 
-    std::cout << "[EngineHost] Stopped" << std::endl;
+    LOG_INFO({"EngineHost"}, "Stopped");
 }
 
 void EngineHost::reset() {
@@ -132,7 +134,7 @@ void EngineHost::reset() {
 
     _playheadSamples.store(0, std::memory_order_release);
     _streamScheduler->clearSchedule();
-    std::cout << "[EngineHost] Reset" << std::endl;
+    LOG_INFO({"EngineHost"}, "Reset");
 }
 
 void EngineHost::shutdown() {
@@ -142,7 +144,7 @@ void EngineHost::shutdown() {
 
     _shuttingDown = true;
     stop();
-    std::cout << "[EngineHost] Shutdown complete" << std::endl;
+    LOG_INFO({"EngineHost"}, "Shutdown complete");
 }
 
 EngineHost::State EngineHost::state() const noexcept {
@@ -156,7 +158,7 @@ std::optional<std::string> EngineHost::lastError() const noexcept {
 void EngineHost::setError(const std::string& error) {
     _state = State::Error;
     _lastError = error;
-    std::cout << "[EngineHost] Error: " << error << std::endl;
+    LOG_ERROR({"EngineHost"}, std::string("Error: ") + error);
 }
 
 void EngineHost::clearError() {
@@ -226,7 +228,9 @@ void EngineHost::loadAutomationSnapshot(const AutomationData& snapshot) {
     // Update _automationData to point to new snapshot
     _automationData = newSnapshot;
 
-    std::cout << "[EngineHost] Loaded automation snapshot: " << snapshot.events.size() << " events" << std::endl;
+    std::ostringstream msg;
+    msg << "Loaded automation snapshot: " << snapshot.events.size() << " events";
+    LOG_INFO({"EngineHost"}, msg.str());
 }
 
 double EngineHost::getCpuLoad() const {
@@ -370,13 +374,13 @@ void EngineHost::prepareEngine(int sampleRate, int maxBlockSize) {
 
 void EngineHost::prepareAudioAsset(const std::string& assetId, const std::string& path, uint32_t channels, uint32_t sampleRate, uint64_t frames) {
     if (!_audioAssetSource) {
-        std::cerr << "[EngineHost] Cannot prepare asset: asset source is null" << std::endl;
+        LOG_ERROR({"EngineHost"}, "Cannot prepare asset: asset source is null");
         return;
     }
 
     auto* router = dynamic_cast<AudioAssetSourceRouter*>(_audioAssetSource.get());
     if (!router) {
-        std::cerr << "[EngineHost] Cannot prepare asset: asset source is not a router" << std::endl;
+        LOG_ERROR({"EngineHost"}, "Cannot prepare asset: asset source is not a router");
         return;
     }
 
@@ -387,9 +391,9 @@ void EngineHost::prepareAudioAsset(const std::string& assetId, const std::string
     metadata.frames = frames;
 
     if (router->prepareAsset(assetId, metadata)) {
-        std::cout << "[EngineHost] Prepared audio asset: " << assetId << std::endl;
+        LOG_INFO({"EngineHost"}, std::string("Prepared audio asset: ") + assetId);
     } else {
-        std::cerr << "[EngineHost] Failed to prepare audio asset: " << assetId << std::endl;
+        LOG_ERROR({"EngineHost"}, std::string("Failed to prepare audio asset: ") + assetId);
     }
 }
 
@@ -425,7 +429,7 @@ void EngineHost::setupAudioBackend() {
     config.numOutputChannels = 2;  // Stereo output
 
     if (!_audioBackend->initialise(config)) {
-        std::cerr << "[EngineHost] Failed to initialise audio backend" << std::endl;
+        LOG_ERROR({"EngineHost"}, "Failed to initialise audio backend");
         _audioBackend.reset();
         return;
     }
@@ -439,7 +443,7 @@ void EngineHost::setupAudioBackend() {
         this->renderBlock(ctx, input, output);
     });
 
-    std::cout << "[EngineHost] Audio backend configured" << std::endl;
+    LOG_INFO({"EngineHost"}, "Audio backend configured");
 }
 
 void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels) {
@@ -863,14 +867,16 @@ void EngineHost::renderBlock(
         bool scheduleLoaded = _streamScheduler->hasSchedule();
         int activeStreamCount = _streamScheduler->getActiveStreamCount();
 
-        std::cout << "[EngineHost][Render] Block " << blockCount
-                  << ": playing=" << (ctx.isPlaying ? "yes" : "no")
-                  << ", playhead=" << ctx.playheadSamples
-                  << ", graph=" << (graphLoaded ? "yes" : "no")
-                  << ", schedule=" << (scheduleLoaded ? "yes" : "no")
-                  << ", activeStreams=" << activeStreamCount
-                  << ", maxOutput=" << maxOutput
-                  << std::endl;
+        // Format diagnostic message
+        std::ostringstream diagMsg;
+        diagMsg << "Block " << blockCount
+                << ": playing=" << (ctx.isPlaying ? "yes" : "no")
+                << ", playhead=" << ctx.playheadSamples
+                << ", graph=" << (graphLoaded ? "yes" : "no")
+                << ", schedule=" << (scheduleLoaded ? "yes" : "no")
+                << ", activeStreams=" << activeStreamCount
+                << ", maxOutput=" << maxOutput;
+        LOG_DEBUG({"EngineHost", "Render"}, diagMsg.str());
     }
 
     // Diagnostic: Track consecutive silence
@@ -880,7 +886,7 @@ void EngineHost::renderBlock(
         uint64_t silenceCount = _consecutiveSilenceBlocks.fetch_add(1, std::memory_order_acq_rel) + 1;
         // Log warning if we've had silence for a while (e.g., 1 second = ~86 blocks at 44.1kHz/512)
         if (silenceCount == 86) {
-            std::cerr << "[EngineHost][Render] ⚠ WARNING: Output still silence after 1 second of playback" << std::endl;
+            LOG_WARN({"EngineHost", "Render"}, "⚠ WARNING: Output still silence after 1 second of playback");
         }
     }
 

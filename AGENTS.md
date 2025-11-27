@@ -149,7 +149,115 @@ Keep modules small and focused. One major type per file.
 
 ---
 
-## 6. Real-Time Safety
+## 6. Logging System
+
+Signal uses a **unified logging system** that matches the same 1–8 log level scale as Aura and Pulse. All logs output to `stdout`/`stderr` with the standardised prefix format.
+
+### 6.1 Log Levels
+
+The unified log level system uses numeric levels 1–8 with threshold semantics (only logs where `log_level <= DEBUG_LEVEL` are emitted):
+
+- **Level 1 – Core**: Absolute essentials (startup/shutdown, fatal errors)
+- **Level 2 – Error**: Recoverable errors and serious failures
+- **Level 3 – Warn**: Warnings indicating something is off but not fatal
+- **Level 4 – Info**: Normal high-level operational info (default)
+- **Level 5 – Debug**: Developer-oriented details
+- **Level 6 – Verbose**: Detailed logs inside domains
+- **Level 7 – Trace**: Very fine-grained events
+- **Level 8 – All**: Everything including highly repetitive logs
+
+### 6.2 Configuration
+
+The `DEBUG_LEVEL` environment variable controls logging verbosity:
+
+- Read from environment at startup (defaults to 4 if unset)
+- Initialised via `initLogging()` (typically called in `SignalApp` constructor)
+- Passed from Pulse when Signal is spawned as a child process
+
+### 6.3 Usage
+
+**Location**: `src/logging/Logging.hpp` and `Logging.cpp`
+
+**Macros**:
+```cpp
+#include "logging/Logging.hpp"
+
+// Single area
+LOG_INFO({"SignalApp"}, "Initialising...");
+
+// Multiple areas
+LOG_DEBUG({"EngineHost", "Graph"}, "Graph has 5 nodes");
+
+// Error logging
+LOG_ERROR({"TcpServer"}, std::string("Failed to start: ") + error);
+
+// With formatted messages
+std::ostringstream msg;
+msg << "Prepared asset: " << assetId;
+LOG_INFO({"FileAudioAssetSource"}, msg.str());
+```
+
+**Format**: All logs follow `[Signal][LevelName][Area1][Area2] message...`
+
+- Core and Error levels go to `stderr`
+- All other levels go to `stdout`
+- Aura's main process parses and colorises these logs
+
+### 6.4 Available Macros
+
+- `LOG_CORE(areas, message)` - Level 1 (Core)
+- `LOG_ERROR(areas, message)` - Level 2 (Error)
+- `LOG_WARN(areas, message)` - Level 3 (Warn)
+- `LOG_INFO(areas, message)` - Level 4 (Info)
+- `LOG_DEBUG(areas, message)` - Level 5 (Debug)
+- `LOG_VERBOSE(areas, message)` - Level 6 (Verbose)
+- `LOG_TRACE(areas, message)` - Level 7 (Trace)
+- `LOG_ALL(areas, message)` - Level 8 (All)
+
+**Macro syntax**: Areas use `std::initializer_list<std::string>`:
+```cpp
+LOG_INFO(({"EngineHost", "Transport"}), "Play command received");
+```
+
+**Note**: The double parentheses are required for the initializer list syntax in macros.
+
+### 6.5 When to Use Each Level
+
+- **Core (1)**: Critical lifecycle (Signal start, shutdown, fatal errors)
+- **Error (2)**: Recoverable errors (plugin load failures, device errors)
+- **Warn (3)**: Warnings (unknown node types, missing assets, invalid configurations)
+- **Info (4)**: Normal operations (engine started, device selected, plugin scanned)
+- **Debug (5)**: Detailed operations (graph building, schedule parsing, stream bindings)
+- **Verbose (6)**: Extra context (detailed domain operations, audio processing details)
+- **Trace (7)**: Per-envelope logging, fine-grained events
+- **All (8)**: Everything including per-callback logging
+
+### 6.6 Rules
+
+- **Never use `std::cout`/`std::cerr` directly** except in the logging module implementation
+- **Never use `printf` or other C-style output** — use the unified logging macros
+- All logging must use the unified system for proper prefix formatting and `DEBUG_LEVEL` filtering
+- Areas should be descriptive strings (e.g., `"SignalApp"`, `"EngineHost"`, `"GraphEngine"`)
+- For multi-part areas, use multiple strings: `{"Domain", "SubComponent"}`
+- Always pass message as `std::string` or use `std::ostringstream` for dynamic content
+- **Real-time audio thread**: Logging from audio callbacks should use Trace/All levels only, and be minimal to avoid performance impact
+
+### 6.7 Initialisation
+
+Call `initLogging()` early in application startup (typically in `SignalApp` constructor):
+
+```cpp
+#include "logging/Logging.hpp"
+
+SignalApp::SignalApp() {
+    initLogging();  // Read DEBUG_LEVEL from environment
+    // ... rest of initialisation
+}
+```
+
+---
+
+## 7. Real-Time Safety
 
 Signal must adhere to real-time rules defined in Chorus:
 
@@ -187,7 +295,7 @@ When adding DSP nodes to the audio graph:
 
 ---
 
-## 7. AI / Cursor Expectations
+## 8. AI / Cursor Expectations
 
 - Read existing docs before making changes.
 - Keep changes small and scoped.

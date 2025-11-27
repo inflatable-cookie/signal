@@ -2,7 +2,7 @@
 #include "backend/OutputDeviceInfo.hpp"
 #include "core/EngineRenderContext.hpp"
 #include "core/AudioBus.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <chrono>
 #include <cstring>
 #include <sstream>
@@ -58,7 +58,7 @@ MiniaudioBackend::~MiniaudioBackend() {
 
 bool MiniaudioBackend::initialise(const AudioBackendConfig& config) {
     if (_initialised.load()) {
-        std::cout << "[MiniaudioBackend] Already initialised" << std::endl;
+        LOG_DEBUG({"MiniaudioBackend"}, "Already initialised");
         return false;
     }
 
@@ -68,7 +68,9 @@ bool MiniaudioBackend::initialise(const AudioBackendConfig& config) {
     _context = new ma_context;
     ma_result result = ma_context_init(nullptr, 0, nullptr, static_cast<ma_context*>(_context));
     if (result != MA_SUCCESS) {
-        std::cerr << "[MiniaudioBackend] Failed to initialise context: " << result << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Failed to initialise context: " << result;
+        LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
         delete static_cast<ma_context*>(_context);
         _context = nullptr;
         return false;
@@ -97,7 +99,9 @@ bool MiniaudioBackend::initialise(const AudioBackendConfig& config) {
     // Initialise device
     result = ma_device_init(static_cast<ma_context*>(_context), &deviceConfig, device);
     if (result != MA_SUCCESS) {
-        std::cerr << "[MiniaudioBackend] Failed to initialise device: " << result << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Failed to initialise device: " << result;
+        LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
         ma_context_uninit(static_cast<ma_context*>(_context));
         delete static_cast<ma_context*>(_context);
         delete device;
@@ -138,12 +142,12 @@ bool MiniaudioBackend::initialise(const AudioBackendConfig& config) {
 
     _initialised.store(true, std::memory_order_release);
 
-    std::cout << "[MiniaudioBackend] Initialised: "
-              << "sampleRate=" << _actualSampleRate.load()
-              << ", bufferSize=" << _actualBufferSize.load()
-              << ", outChannels=" << _actualOutputChannels.load()
-              << ", device=" << _outputDeviceName
-              << std::endl;
+    std::ostringstream msg;
+    msg << "Initialised: sampleRate=" << _actualSampleRate.load()
+        << ", bufferSize=" << _actualBufferSize.load()
+        << ", outChannels=" << _actualOutputChannels.load()
+        << ", device=" << _outputDeviceName;
+    LOG_INFO({"MiniaudioBackend"}, msg.str());
 
     return true;
 }
@@ -166,35 +170,37 @@ void MiniaudioBackend::shutdown() {
     _initialised.store(false, std::memory_order_release);
     _renderCallback = nullptr;
 
-    std::cout << "[MiniaudioBackend] Shutdown complete" << std::endl;
+    LOG_INFO({"MiniaudioBackend"}, "Shutdown complete");
 }
 
 bool MiniaudioBackend::start() {
     if (!_initialised.load()) {
-        std::cout << "[MiniaudioBackend] Cannot start: not initialised" << std::endl;
+        LOG_WARN({"MiniaudioBackend"}, "Cannot start: not initialised");
         return false;
     }
 
     if (_running.load()) {
-        std::cout << "[MiniaudioBackend] Already running" << std::endl;
+        LOG_DEBUG({"MiniaudioBackend"}, "Already running");
         return false;
     }
 
     if (!_renderCallback) {
-        std::cout << "[MiniaudioBackend] Cannot start: no render callback set" << std::endl;
+        LOG_WARN({"MiniaudioBackend"}, "Cannot start: no render callback set");
         return false;
     }
 
     ma_result result = ma_device_start(static_cast<ma_device*>(_device));
     if (result != MA_SUCCESS) {
-        std::cerr << "[MiniaudioBackend] Failed to start device: " << result << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Failed to start device: " << result;
+        LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
         return false;
     }
 
     _running.store(true, std::memory_order_release);
     _hostTimeSeconds.store(0.0, std::memory_order_release);
 
-    std::cout << "[MiniaudioBackend] Started" << std::endl;
+    LOG_INFO({"MiniaudioBackend"}, "Started");
     return true;
 }
 
@@ -209,7 +215,7 @@ void MiniaudioBackend::stop() {
 
     _running.store(false, std::memory_order_release);
 
-    std::cout << "[MiniaudioBackend] Stopped" << std::endl;
+    LOG_INFO({"MiniaudioBackend"}, "Stopped");
 }
 
 void MiniaudioBackend::setRenderCallback(RenderCallback callback) {
@@ -303,7 +309,9 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
         ma_context tempContext;
         ma_result result = ma_context_init(nullptr, 0, nullptr, &tempContext);
         if (result != MA_SUCCESS) {
-            std::cerr << "[MiniaudioBackend] Failed to create context for enumeration: " << result << std::endl;
+            std::ostringstream errMsg;
+            errMsg << "Failed to create context for enumeration: " << result;
+            LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
             return devices;
         }
 
@@ -313,7 +321,9 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
         ma_uint32 captureCount = 0;
 
         if (ma_context_get_devices(&tempContext, &playbackInfos, &playbackCount, &captureInfos, &captureCount) == MA_SUCCESS) {
-            std::cout << "[MiniaudioBackend] Enumerated " << playbackCount << " playback devices" << std::endl;
+            std::ostringstream msg;
+            msg << "Enumerated " << playbackCount << " playback devices";
+            LOG_DEBUG({"MiniaudioBackend"}, msg.str());
             for (ma_uint32 i = 0; i < playbackCount; ++i) {
                 OutputDeviceInfo info;
                 // Generate stable ID: "miniaudio-<index>"
@@ -344,7 +354,9 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
         ma_uint32 captureCount = 0;
 
         if (ma_context_get_devices(static_cast<ma_context*>(_context), &playbackInfos, &playbackCount, &captureInfos, &captureCount) == MA_SUCCESS) {
-            std::cout << "[MiniaudioBackend] Enumerated " << playbackCount << " playback devices" << std::endl;
+            std::ostringstream msg;
+            msg << "Enumerated " << playbackCount << " playback devices";
+            LOG_DEBUG({"MiniaudioBackend"}, msg.str());
             for (ma_uint32 i = 0; i < playbackCount; ++i) {
                 OutputDeviceInfo info;
                 // Generate stable ID: "miniaudio-<index>"
@@ -378,7 +390,7 @@ bool MiniaudioBackend::setOutputDevice(const std::string& deviceId) {
 
     // Parse device ID to get index (format: "miniaudio-<index>")
     if (deviceId.find("miniaudio-") != 0) {
-        std::cerr << "[MiniaudioBackend] Invalid device ID format: " << deviceId << std::endl;
+        LOG_ERROR({"MiniaudioBackend"}, std::string("Invalid device ID format: ") + deviceId);
         return false;
     }
 
@@ -387,14 +399,16 @@ bool MiniaudioBackend::setOutputDevice(const std::string& deviceId) {
     try {
         deviceIndex = std::stoul(indexStr);
     } catch (...) {
-        std::cerr << "[MiniaudioBackend] Invalid device index in ID: " << deviceId << std::endl;
+        LOG_ERROR({"MiniaudioBackend"}, std::string("Invalid device index in ID: ") + deviceId);
         return false;
     }
 
     // Check if device exists
     auto devices = enumerateOutputDevices();
     if (deviceIndex >= devices.size()) {
-        std::cerr << "[MiniaudioBackend] Device index out of range: " << deviceIndex << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Device index out of range: " << deviceIndex;
+        LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
         return false;
     }
 
@@ -435,14 +449,16 @@ bool MiniaudioBackend::setOutputDevice(const std::string& deviceId) {
     ma_uint32 captureCount = 0;
 
     if (ma_context_get_devices(static_cast<ma_context*>(_context), &playbackInfos, &playbackCount, &captureInfos, &captureCount) != MA_SUCCESS) {
-        std::cerr << "[MiniaudioBackend] Failed to get device list for selection" << std::endl;
+        LOG_ERROR({"MiniaudioBackend"}, "Failed to get device list for selection");
         delete device;
         _device = nullptr;
         return false;
     }
 
     if (deviceIndex >= playbackCount) {
-        std::cerr << "[MiniaudioBackend] Device index out of range: " << deviceIndex << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Device index out of range: " << deviceIndex;
+        LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
         delete device;
         _device = nullptr;
         return false;
@@ -454,7 +470,9 @@ bool MiniaudioBackend::setOutputDevice(const std::string& deviceId) {
     // Initialise device
     ma_result result = ma_device_init(static_cast<ma_context*>(_context), &deviceConfig, device);
     if (result != MA_SUCCESS) {
-        std::cerr << "[MiniaudioBackend] Failed to initialise device " << deviceId << ": " << result << std::endl;
+        std::ostringstream errMsg;
+        errMsg << "Failed to initialise device " << deviceId << ": " << result;
+        LOG_ERROR({"MiniaudioBackend"}, errMsg.str());
         delete device;
         _device = nullptr;
         // Try to restore previous device if possible
@@ -478,11 +496,13 @@ bool MiniaudioBackend::setOutputDevice(const std::string& deviceId) {
     // Restart if it was running
     if (wasRunning) {
         if (!start()) {
-            std::cerr << "[MiniaudioBackend] Failed to restart device after selection" << std::endl;
+            LOG_ERROR({"MiniaudioBackend"}, "Failed to restart device after selection");
             return false;
         }
     }
 
-    std::cout << "[MiniaudioBackend] Switched to device: " << _outputDeviceName << " (ID: " << deviceId << ")" << std::endl;
+    std::ostringstream msg;
+    msg << "Switched to device: " << _outputDeviceName << " (ID: " << deviceId << ")";
+    LOG_INFO({"MiniaudioBackend"}, msg.str());
     return true;
 }

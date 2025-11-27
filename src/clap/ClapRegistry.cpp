@@ -1,15 +1,16 @@
 #include "clap/ClapRegistry.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <algorithm>
 #include <cstdlib>
+#include <sstream>
 
 ClapRegistry::ClapRegistry() {
-    std::cout << "[ClapRegistry] Created" << std::endl;
+    LOG_INFO({"ClapRegistry"}, "Created");
 }
 
 ClapRegistry::~ClapRegistry() {
     clear();
-    std::cout << "[ClapRegistry] Destroyed" << std::endl;
+    LOG_DEBUG({"ClapRegistry"}, "Destroyed");
 }
 
 void ClapRegistry::scanDefaultPaths() {
@@ -24,7 +25,7 @@ void ClapRegistry::scanDefaultPaths() {
 
 void ClapRegistry::scanPath(const std::filesystem::path& path) {
     if (!std::filesystem::exists(path)) {
-        std::cerr << "[ClapRegistry] Path does not exist: " << path << std::endl;
+        LOG_WARN({"ClapRegistry"}, std::string("Path does not exist: ") + path.string());
         return;
     }
 
@@ -44,7 +45,7 @@ void ClapRegistry::scanPath(const std::filesystem::path& path) {
                 }
             }
         } catch (const std::exception& e) {
-            std::cerr << "[ClapRegistry] Failed to load plugin: " << path << " - " << e.what() << std::endl;
+            LOG_WARN({"ClapRegistry"}, std::string("Failed to load plugin: ") + path.string() + " - " + e.what());
         }
     }
 }
@@ -71,15 +72,12 @@ void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
                             }
                         }
                     } else {
-                        std::cerr << "[ClapRegistry] Failed to load plugin: " << path << std::endl;
-                        std::cerr.flush();
+                        LOG_DEBUG({"ClapRegistry"}, std::string("Failed to load plugin: ") + path.string());
                     }
                 } catch (const std::exception& e) {
-                    std::cerr << "[ClapRegistry] Exception loading plugin " << path << ": " << e.what() << std::endl;
-                    std::cerr.flush();
+                    LOG_WARN({"ClapRegistry"}, std::string("Exception loading plugin ") + path.string() + ": " + e.what());
                 } catch (...) {
-                    std::cerr << "[ClapRegistry] Unknown exception loading plugin: " << path << std::endl;
-                    std::cerr.flush();
+                    LOG_WARN({"ClapRegistry"}, std::string("Unknown exception loading plugin: ") + path.string());
                 }
             } else if (std::filesystem::is_directory(path)) {
                 // Recursively scan subdirectories (with depth limit)
@@ -87,8 +85,7 @@ void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "[ClapRegistry] Error scanning directory: " << dir << " - " << e.what() << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapRegistry"}, std::string("Error scanning directory: ") + dir.string() + " - " + e.what());
     }
 }
 
@@ -104,7 +101,7 @@ void ClapRegistry::registerPlugin(
 
     // Check if already registered
     if (_idToIndex.find(pluginId) != _idToIndex.end()) {
-        std::cout << "[ClapRegistry] Plugin already registered: " << pluginId << std::endl;
+        LOG_DEBUG({"ClapRegistry"}, std::string("Plugin already registered: ") + pluginId);
         return;
     }
 
@@ -130,8 +127,7 @@ void ClapRegistry::registerPlugin(
     _entries.push_back(entry);
     _idToIndex[pluginId] = _entries.size() - 1;
 
-    std::cout << "[ClapRegistry] Found plugin: " << desc.name << " (" << pluginId << ")" << std::endl;
-    std::cout.flush();
+    LOG_INFO({"ClapRegistry"}, std::string("Found plugin: ") + desc.name + " (" + pluginId + ")");
 }
 
 std::vector<PluginDescriptor> ClapRegistry::listPlugins() const {

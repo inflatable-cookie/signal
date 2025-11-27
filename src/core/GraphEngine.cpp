@@ -2,18 +2,19 @@
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/NodeProcessContext.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <queue>
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 
 GraphEngine::GraphEngine() : _pluginHost(nullptr) {
-    std::cout << "[GraphEngine][Lifecycle] Created" << std::endl;
+    LOG_DEBUG({"GraphEngine", "Lifecycle"}, "Created");
 }
 
 GraphEngine::~GraphEngine() {
     clear();
-    std::cout << "[GraphEngine][Lifecycle] Destroyed" << std::endl;
+    LOG_DEBUG({"GraphEngine", "Lifecycle"}, "Destroyed");
 }
 
 void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost) {
@@ -22,9 +23,11 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
 
     _pluginHost = pluginHost;
 
-    std::cout << "[GraphEngine][Graph] Loading graph snapshot: " << snapshot.id
-              << " (" << snapshot.nodes.size() << " nodes, "
-              << snapshot.connections.size() << " connections)" << std::endl;
+    std::ostringstream loadMsg;
+    loadMsg << "Loading graph snapshot: " << snapshot.id
+        << " (" << snapshot.nodes.size() << " nodes, "
+        << snapshot.connections.size() << " connections)";
+    LOG_INFO({"GraphEngine", "Graph"}, loadMsg.str());
 
     // Create nodes
     for (const auto& desc : snapshot.nodes) {
@@ -32,7 +35,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
         if (node) {
             _nodes[desc.nodeId] = std::move(node);
         } else {
-            std::cerr << "[GraphEngine][Graph] Warning: Failed to create node: " << desc.nodeId << std::endl;
+            LOG_WARN({"GraphEngine", "Graph"}, std::string("Warning: Failed to create node: ") + desc.nodeId);
         }
     }
 
@@ -60,15 +63,19 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
     buildAdjacencyList();
     computeExecutionOrder();
 
-    std::cout << "[GraphEngine][Graph] Graph loaded: " << _nodes.size() << " nodes, "
-              << _connections.size() << " connections, "
-              << _streamBindings.size() << " stream bindings, "
-              << _executionOrder.size() << " nodes in execution order" << std::endl;
+    std::ostringstream msg;
+    msg << "Graph loaded: " << _nodes.size() << " nodes, "
+        << _connections.size() << " connections, "
+        << _streamBindings.size() << " stream bindings, "
+        << _executionOrder.size() << " nodes in execution order";
+    LOG_INFO({"GraphEngine", "Graph"}, msg.str());
 }
 
 void GraphEngine::prepareGraph(int sampleRate, int maxBlockSize) {
-    std::cout << "[GraphEngine][Graph] Preparing graph (sampleRate=" << sampleRate
-              << ", maxBlockSize=" << maxBlockSize << ")" << std::endl;
+    std::ostringstream prepareMsg;
+    prepareMsg << "Preparing graph (sampleRate=" << sampleRate
+        << ", maxBlockSize=" << maxBlockSize << ")";
+    LOG_INFO({"GraphEngine", "Graph"}, prepareMsg.str());
 
     // Call prepare() on all nodes in execution order
     for (GraphNode* node : _executionOrder) {
@@ -77,7 +84,7 @@ void GraphEngine::prepareGraph(int sampleRate, int maxBlockSize) {
         }
     }
 
-    std::cout << "[GraphEngine][Graph] Graph prepared" << std::endl;
+    LOG_INFO({"GraphEngine", "Graph"}, "Graph prepared");
 }
 
 const std::vector<GraphNode*>& GraphEngine::getExecutionOrder() const noexcept {
@@ -151,7 +158,9 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
             return std::make_unique<MidiInputNode>(desc.nodeId, desc.portId.value_or(""));
 
         default:
-            std::cerr << "[GraphEngine] Warning: Unknown node kind for node: " << desc.nodeId << std::endl;
+            std::ostringstream msg;
+            msg << "Warning: Unknown node kind for node: " << desc.nodeId;
+            LOG_WARN({"GraphEngine"}, msg.str());
             return nullptr;
     }
 }
@@ -171,8 +180,10 @@ void GraphEngine::buildAdjacencyList() {
         // Verify both nodes exist
         if (_nodes.find(conn.fromNodeId) == _nodes.end() ||
             _nodes.find(conn.toNodeId) == _nodes.end()) {
-            std::cerr << "[GraphEngine] Warning: Connection references non-existent node: "
-                      << conn.fromNodeId << " -> " << conn.toNodeId << std::endl;
+            std::ostringstream msg;
+            msg << "Warning: Connection references non-existent node: "
+                << conn.fromNodeId << " -> " << conn.toNodeId;
+            LOG_WARN({"GraphEngine"}, msg.str());
             continue;
         }
 
@@ -220,9 +231,11 @@ void GraphEngine::computeExecutionOrder() {
 
     // Check for cycles (if there are nodes not in execution order, there's a cycle)
     if (_executionOrder.size() < _nodes.size()) {
-        std::cerr << "[GraphEngine] Warning: Graph contains cycles or disconnected nodes. "
-                   << "Execution order has " << _executionOrder.size()
-                   << " nodes, but graph has " << _nodes.size() << " nodes." << std::endl;
+        std::ostringstream msg;
+        msg << "Warning: Graph contains cycles or disconnected nodes. "
+            << "Execution order has " << _executionOrder.size()
+            << " nodes, but graph has " << _nodes.size() << " nodes.";
+        LOG_WARN({"GraphEngine"}, msg.str());
 
         // Add remaining nodes in arbitrary order (fallback)
         for (const auto& pair : _nodes) {
@@ -332,10 +345,10 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
         static int logCount = 0;
         if (logCount++ < 5) {
             if (!schedule) {
-                std::cerr << "[GraphEngine] injectStreamData: schedule is null" << std::endl;
+                LOG_ERROR({"GraphEngine"}, "injectStreamData: schedule is null");
             }
             if (!assetSource) {
-                std::cerr << "[GraphEngine] injectStreamData: assetSource is null" << std::endl;
+                LOG_ERROR({"GraphEngine"}, "injectStreamData: assetSource is null");
             }
         }
         #endif
@@ -349,7 +362,9 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
     #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     static int bindingLogCount = 0;
     if (bindingLogCount++ < 5) {
-                std::cout << "[GraphEngine][StreamData] injectStreamData: " << _streamBindings.size() << " stream binding(s)" << std::endl;
+                std::ostringstream msg;
+                msg << "injectStreamData: " << _streamBindings.size() << " stream binding(s)";
+                LOG_DEBUG({"GraphEngine", "StreamData"}, msg.str());
     }
     #endif
 
@@ -360,8 +375,9 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
             #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
             static int logCount = 0;
             if (logCount++ < 5) {
-                std::cerr << "[GraphEngine] injectStreamData: target node not found: '"
-                          << binding.targetNodeId << "'" << std::endl;
+                std::ostringstream msg;
+                msg << "injectStreamData: target node not found: '" << binding.targetNodeId << "'";
+                LOG_WARN({"GraphEngine"}, msg.str());
             }
             #endif
             continue;
@@ -379,8 +395,10 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
                 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
                 static int segmentLogCount = 0;
                 if (segmentLogCount++ < 5) {
-                    std::cout << "[GraphEngine] injectStreamData: stream '" << binding.streamId
-                              << "' has " << segments.size() << " active segment(s)" << std::endl;
+                    std::ostringstream msg;
+                    msg << "injectStreamData: stream '" << binding.streamId
+                        << "' has " << segments.size() << " active segment(s)";
+                    LOG_DEBUG({"GraphEngine"}, msg.str());
                 }
                 #endif
 

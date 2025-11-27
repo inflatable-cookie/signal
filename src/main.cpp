@@ -1,5 +1,6 @@
 #include "core/SignalApp.hpp"
 #include "core/PluginCrashTracking.hpp"
+#include "logging/Logging.hpp"
 #include <iostream>
 #include <exception>
 #include <csignal>
@@ -65,6 +66,7 @@ int main() {
         SignalApp app;
         return app.run();
     } catch (const std::exception& e) {
+        // Use direct stderr for fatal errors during startup/shutdown
         std::cerr << "[Signal] Fatal error: " << e.what() << std::endl;
         return 1;
     } catch (...) {

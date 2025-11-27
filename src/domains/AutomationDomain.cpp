@@ -4,14 +4,15 @@
 #include "core/AutomationData.hpp"
 #include "core/ScheduleData.hpp"
 #include "ipc/Envelope.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
+#include <sstream>
 
 AutomationDomain::AutomationDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
 {
-    std::cout << "[AutomationDomain] Initialised" << std::endl;
+    LOG_INFO({"AutomationDomain"}, "Initialised");
 }
 
 void AutomationDomain::handle(const Envelope& env) {
@@ -46,9 +47,11 @@ void AutomationDomain::handle(const Envelope& env) {
 
             _engineHost->automation().setCurvesForSession(curves);
 
-            std::cout << "[AutomationDomain] Set " << curves.size() << " automation curves" << std::endl;
+            std::ostringstream msg;
+            msg << "Set " << curves.size() << " automation curves";
+            LOG_DEBUG({"AutomationDomain"}, msg.str());
         } catch (const std::exception& e) {
-            std::cerr << "[AutomationDomain] Failed to parse setCurvesForSession payload: " << e.what() << std::endl;
+            LOG_ERROR({"AutomationDomain"}, std::string("Failed to parse setCurvesForSession payload: ") + e.what());
         }
     } else if (env.name == "automationSnapshot") {
         // Handle AutomationSnapshot from Pulse
@@ -104,10 +107,11 @@ void AutomationDomain::handle(const Envelope& env) {
             // Load automation snapshot into EngineHost
             _engineHost->loadAutomationSnapshot(automationData);
 
-            std::cout << "[AutomationDomain] Loaded automation snapshot: "
-                      << automationData.events.size() << " events" << std::endl;
+            std::ostringstream msg;
+            msg << "Loaded automation snapshot: " << automationData.events.size() << " events";
+            LOG_INFO({"AutomationDomain"}, msg.str());
         } catch (const std::exception& e) {
-            std::cerr << "[AutomationDomain] Failed to parse automationSnapshot payload: " << e.what() << std::endl;
+            LOG_ERROR({"AutomationDomain"}, std::string("Failed to parse automationSnapshot payload: ") + e.what());
         }
     } else if (env.name == "updateCurve") {
         try {
@@ -128,12 +132,14 @@ void AutomationDomain::handle(const Envelope& env) {
 
             _engineHost->automation().updateCurve(curve);
 
-            std::cout << "[AutomationDomain] Updated curve for " << curve.targetId << "." << curve.parameter << std::endl;
+            std::ostringstream msg;
+            msg << "Updated curve for " << curve.targetId << "." << curve.parameter;
+            LOG_DEBUG({"AutomationDomain"}, msg.str());
         } catch (const std::exception& e) {
-            std::cerr << "[AutomationDomain] Failed to parse updateCurve payload: " << e.what() << std::endl;
+            LOG_ERROR({"AutomationDomain"}, std::string("Failed to parse updateCurve payload: ") + e.what());
         }
     } else {
-        std::cout << "[AutomationDomain] Received unhandled automation command: " << env.name << std::endl;
+        LOG_WARN({"AutomationDomain"}, std::string("Received unhandled automation command: ") + env.name);
     }
 }
 

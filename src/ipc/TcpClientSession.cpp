@@ -1,9 +1,9 @@
 #include "ipc/TcpClientSession.hpp"
 #include "ipc/IpcEnvelopeCodec.hpp"
+#include "logging/Logging.hpp"
 #include <asio/buffer.hpp>
 #include <asio/read_until.hpp>
 #include <asio/write.hpp>
-#include <iostream>
 #include <sstream>
 
 namespace loophole::signal::ipc {
@@ -27,9 +27,9 @@ void TcpClientSession::doRead() {
         [this, self](std::error_code ec, std::size_t /*bytes_read*/) {
             if (ec) {
                 if (ec == asio::error::eof || ec == asio::error::connection_reset) {
-                    std::cout << "[TcpClientSession] Client disconnected" << std::endl;
+                    LOG_DEBUG({"TcpClientSession"}, "Client disconnected");
                 } else {
-                    std::cerr << "[TcpClientSession] Read error: " << ec.message() << std::endl;
+                    LOG_ERROR({"TcpClientSession"}, std::string("Read error: ") + ec.message());
                 }
                 return;
             }
@@ -54,7 +54,7 @@ void TcpClientSession::doRead() {
 void TcpClientSession::handleLine(std::string_view line) {
     auto env_opt = deserialiseEnvelope(line);
     if (!env_opt.has_value()) {
-        std::cerr << "[TcpClientSession] Failed to parse envelope, skipping" << std::endl;
+        LOG_ERROR({"TcpClientSession"}, "Failed to parse envelope, skipping");
         return;
     }
 
@@ -68,7 +68,7 @@ void TcpClientSession::send(const IpcEnvelope& env) {
         std::string json_line = serialiseEnvelope(env) + "\n";
         asio::write(socket_, asio::buffer(json_line));
     } catch (const std::exception& e) {
-        std::cerr << "[TcpClientSession] Send error: " << e.what() << std::endl;
+        LOG_ERROR({"TcpClientSession"}, std::string("Send error: ") + e.what());
     }
 }
 

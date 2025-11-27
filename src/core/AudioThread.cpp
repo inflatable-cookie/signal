@@ -1,8 +1,8 @@
 #include "core/AudioThread.hpp"
 #include "core/MeteringService.hpp"
+#include "logging/Logging.hpp"
 #include <cmath>
 #include <cstring>
-#include <iostream>
 #include <thread>
 #include <algorithm>
 #include <chrono>
@@ -26,7 +26,7 @@ void AudioThread::start() {
     _shouldStop = false;
     _running = true;
     _thread = std::thread(&AudioThread::audioLoop, this);
-    std::cout << "[AudioThread] Started" << std::endl;
+    LOG_INFO({"AudioThread"}, "Started");
 }
 
 void AudioThread::stop() {
@@ -39,7 +39,7 @@ void AudioThread::stop() {
         _thread.join();
     }
     _running = false;
-    std::cout << "[AudioThread] Stopped" << std::endl;
+    LOG_INFO({"AudioThread"}, "Stopped");
 }
 
 bool AudioThread::isRunning() const noexcept {

@@ -1,7 +1,8 @@
 #include "core/StreamScheduler.hpp"
+#include "logging/Logging.hpp"
 #include <algorithm>
-#include <iostream>
 #include <memory>
+#include <sstream>
 
 StreamScheduler::StreamScheduler()
 {
@@ -9,7 +10,7 @@ StreamScheduler::StreamScheduler()
     _emptySchedule = std::make_shared<ScheduleData>(44100.0, 120.0);
     _activeSchedule.store(_emptySchedule.get(), std::memory_order_release);
 
-    std::cout << "[StreamScheduler] Initialised" << std::endl;
+    LOG_INFO({"StreamScheduler"}, "Initialised");
 }
 
 StreamScheduler::~StreamScheduler() {
@@ -52,9 +53,11 @@ void StreamScheduler::setSchedule(
     // Update our current schedule pointer
     _currentSchedule = newSchedule;
 
-    std::cout << "[StreamScheduler] Set schedule: " << streams.size() << " streams, "
-              << audioSegments.size() << " audio segments, "
-              << midiEvents.size() << " MIDI events" << std::endl;
+    std::ostringstream msg;
+    msg << "Set schedule: " << streams.size() << " streams, "
+        << audioSegments.size() << " audio segments, "
+        << midiEvents.size() << " MIDI events";
+    LOG_INFO({"StreamScheduler"}, msg.str());
 }
 
 void StreamScheduler::clearSchedule() {
@@ -67,7 +70,7 @@ void StreamScheduler::clearSchedule() {
     // Clear current schedule (will be recreated on next setSchedule)
     _currentSchedule.reset();
 
-    std::cout << "[StreamScheduler] Cleared schedule" << std::endl;
+    LOG_INFO({"StreamScheduler"}, "Cleared schedule");
 }
 
 std::vector<const AudioSegmentCompiled*> StreamScheduler::getActiveAudioSegments(
