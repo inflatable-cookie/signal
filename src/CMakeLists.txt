@@ -13,6 +13,7 @@ add_library(signal-core STATIC
     core/RecordingCapture.cpp
     core/PluginHost.cpp
     core/PluginCrashTracking.cpp
+    core/AudioAssetSource.cpp
     clap/ClapPluginLibrary.cpp
     clap/ClapRegistry.cpp
     clap/ClapPluginInstance.cpp
@@ -29,6 +30,7 @@ add_library(signal-core STATIC
     domains/MeteringDomain.cpp
     domains/MixerDomain.cpp
     domains/AutomationDomain.cpp
+    domains/AssetsDomain.cpp
 )
 
 target_include_directories(signal-core PUBLIC

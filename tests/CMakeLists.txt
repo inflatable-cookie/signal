@@ -15,6 +15,7 @@ add_executable(signal-tests
     test_schedule_transport_thread_safety.cpp
     test_graph_runtime.cpp
     test_graph_runtime_phase3.cpp
+    test_file_audio_asset_source.cpp
     test_plugin_hosting.cpp
     test_automation.cpp
     test_recording.cpp

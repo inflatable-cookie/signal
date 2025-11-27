@@ -124,6 +124,9 @@ public:
     // Prepare engine (called on control thread)
     void prepareEngine(int sampleRate, int maxBlockSize);
 
+    // Asset source management (called from IPC thread)
+    void prepareAudioAsset(const std::string& assetId, const std::string& path, uint32_t channels, uint32_t sampleRate, uint64_t frames);
+
     // Playhead management (for transport control)
     uint64_t getPlayheadSamples() const noexcept;
     void setPlayheadSamples(uint64_t samples) noexcept;

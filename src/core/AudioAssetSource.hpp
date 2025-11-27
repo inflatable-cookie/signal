@@ -12,6 +12,9 @@
 #include "core/NodeBuffers.hpp"
 #include <string>
 #include <cstdint>
+#include <unordered_map>
+#include <vector>
+#include <memory>
 
 using AssetId = std::string;
 
@@ -36,6 +39,14 @@ public:
         int destFrameOffset,
         int numChannels
     ) = 0;
+};
+
+/// Asset metadata for file-based assets
+struct AudioAssetMetadata {
+    std::string path;           // File path
+    uint32_t channels;          // Number of channels
+    uint32_t sampleRate;        // Sample rate in Hz
+    uint64_t frames;            // Total number of frames
 };
 
 /// Stub implementation for testing (generates predictable test patterns)
@@ -102,5 +113,84 @@ public:
 
 private:
     double _sampleRate;  // Sample rate for tone generation
+};
+
+/// File-based audio asset source
+///
+/// Thread: Control thread (prepareAsset), Audio thread (readSamples)
+/// Ownership: Owned by EngineHost
+///
+/// This implementation decodes audio files using miniaudio and provides
+/// real-time sample access from decoded PCM buffers.
+class FileAudioAssetSource : public AudioAssetSource {
+public:
+    FileAudioAssetSource();
+    ~FileAudioAssetSource() override;
+
+    /// Prepare an asset for playback
+    /// @param assetId Asset identifier
+    /// @param metadata Asset metadata (path, channels, sample rate, frames)
+    /// @return true if preparation succeeded, false otherwise
+    bool prepareAsset(const AssetId& assetId, const AudioAssetMetadata& metadata);
+
+    /// Release an asset (free memory)
+    void releaseAsset(const AssetId& assetId);
+
+    bool readSamples(
+        const AssetId& assetId,
+        uint64_t startSample,
+        int numFrames,
+        AudioBuffer& buffer,
+        int destFrameOffset,
+        int numChannels
+    ) override;
+
+private:
+    /// Decoded PCM data for an asset
+    struct AssetData {
+        std::vector<float> pcm;      // Interleaved PCM data
+        uint32_t channels;            // Number of channels
+        uint32_t sampleRate;          // Sample rate
+        uint64_t frames;              // Total frames
+    };
+
+    std::unordered_map<AssetId, AssetData> _assets;  // Asset ID -> decoded PCM
+    static constexpr uint64_t MAX_FILE_SIZE_MB = 100; // Safety limit: 100MB
+};
+
+/// Asset source router that delegates to stub or file sources
+///
+/// Thread: Control thread (prepareAsset), Audio thread (readSamples)
+/// Ownership: Owned by EngineHost
+///
+/// This router decides which asset source to use based on asset ID:
+/// - `test://*` assets → StubAudioAssetSource
+/// - Other assets → FileAudioAssetSource
+class AudioAssetSourceRouter : public AudioAssetSource {
+public:
+    AudioAssetSourceRouter();
+    ~AudioAssetSourceRouter() override = default;
+
+    /// Set sample rate (for stub source)
+    void setSampleRate(double sampleRate);
+
+    /// Prepare a file-based asset
+    bool prepareAsset(const AssetId& assetId, const AudioAssetMetadata& metadata);
+
+    /// Release a file-based asset
+    void releaseAsset(const AssetId& assetId);
+
+    bool readSamples(
+        const AssetId& assetId,
+        uint64_t startSample,
+        int numFrames,
+        AudioBuffer& buffer,
+        int destFrameOffset,
+        int numChannels
+    ) override;
+
+private:
+    std::unique_ptr<StubAudioAssetSource> _stubSource;
+    std::unique_ptr<FileAudioAssetSource> _fileSource;
 };
 

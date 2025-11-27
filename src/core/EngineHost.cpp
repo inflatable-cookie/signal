@@ -37,7 +37,7 @@ EngineHost::EngineHost()
     _automationService = std::make_unique<AutomationService>();
     _streamScheduler = std::make_unique<StreamScheduler>();
     _graphEngine = std::make_unique<GraphEngine>();
-    _audioAssetSource = std::make_unique<StubAudioAssetSource>(); // Phase 3: Use stub for now
+    _audioAssetSource = std::make_unique<AudioAssetSourceRouter>(); // Phase 12b.2: Router delegates to stub/file sources
     _pluginHost = std::make_unique<PluginHost>(); // Phase 4: Plugin host
     _recordingSession = std::make_unique<RecordingSession>(); // Phase 7: Recording session
     _parameterChangesPending.store(false, std::memory_order_release);
@@ -351,15 +351,40 @@ void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
 void EngineHost::prepareEngine(int sampleRate, int maxBlockSize) {
     _graphEngine->prepareGraph(sampleRate, maxBlockSize);
 
-    // Update asset source sample rate for tone generation
+    // Update asset source router sample rate for tone generation
     if (_audioAssetSource) {
-        auto* stubSource = dynamic_cast<StubAudioAssetSource*>(_audioAssetSource.get());
-        if (stubSource) {
-            stubSource->setSampleRate(static_cast<double>(sampleRate));
+        auto* router = dynamic_cast<AudioAssetSourceRouter*>(_audioAssetSource.get());
+        if (router) {
+            router->setSampleRate(static_cast<double>(sampleRate));
         }
     }
 
     // TODO: Also prepare plugins, allocate buffers, etc. in future phases
+}
+
+void EngineHost::prepareAudioAsset(const std::string& assetId, const std::string& path, uint32_t channels, uint32_t sampleRate, uint64_t frames) {
+    if (!_audioAssetSource) {
+        std::cerr << "[EngineHost] Cannot prepare asset: asset source is null" << std::endl;
+        return;
+    }
+
+    auto* router = dynamic_cast<AudioAssetSourceRouter*>(_audioAssetSource.get());
+    if (!router) {
+        std::cerr << "[EngineHost] Cannot prepare asset: asset source is not a router" << std::endl;
+        return;
+    }
+
+    AudioAssetMetadata metadata;
+    metadata.path = path;
+    metadata.channels = channels;
+    metadata.sampleRate = sampleRate;
+    metadata.frames = frames;
+
+    if (router->prepareAsset(assetId, metadata)) {
+        std::cout << "[EngineHost] Prepared audio asset: " << assetId << std::endl;
+    } else {
+        std::cerr << "[EngineHost] Failed to prepare audio asset: " << assetId << std::endl;
+    }
 }
 
 uint64_t EngineHost::getPlayheadSamples() const noexcept {
