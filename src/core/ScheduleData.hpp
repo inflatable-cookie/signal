@@ -40,11 +40,12 @@ struct AudioSegmentCompiled {
     uint64_t endSamples;
     uint64_t assetStartSamples; // Offset into asset
 
-    // Phase 9: Fade metadata (for future DSP implementation)
-    uint64_t fadeInSamples;   // Fade-in duration in samples (0 = no fade)
-    uint64_t fadeOutSamples;  // Fade-out duration in samples (0 = no fade)
-    std::string fadeInCurve;  // "linear" or "exponential"
-    std::string fadeOutCurve; // "linear" or "exponential"
+    // Phase 12b: Clip gain and fade metadata
+    double gainDb;              // Gain in dB (0.0 = unity gain)
+    uint64_t fadeInSamples;     // Fade-in duration in samples (0 = no fade)
+    uint64_t fadeOutSamples;    // Fade-out duration in samples (0 = no fade)
+    std::string fadeInCurve;    // "linear" or "exponential"
+    std::string fadeOutCurve;   // "linear" or "exponential"
 
     // Phase 9: Stretch metadata (placeholder for future stretch algorithms)
     StretchDescriptor stretch; // Stretch mode and ratio

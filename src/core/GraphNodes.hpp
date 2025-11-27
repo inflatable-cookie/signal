@@ -144,9 +144,64 @@ public:
             numChannels
         );
 
-        // Phase 9: TODO - Apply fade-in/fade-out ramps
-        // For now, fade metadata is stored but not applied
-        // Future: Apply gain ramps based on segment->fadeInSamples, fadeOutSamples, fadeInCurve, fadeOutCurve
+        // Phase 12b: Apply clip gain and fade envelopes
+        if (segment->fadeInSamples > 0 || segment->fadeOutSamples > 0 || std::abs(segment->gainDb) > 0.0001) {
+            // Convert dB gain to linear
+            float gainLinear = 1.0f;
+            if (std::abs(segment->gainDb) > 0.0001) {
+                gainLinear = std::pow(10.0f, static_cast<float>(segment->gainDb) / 20.0f);
+            }
+
+            // Calculate clip length in samples (from segment duration)
+            uint64_t clipLengthSamples = segment->endSamples - segment->startSamples;
+
+            // Calculate position within the segment (relative to segment start)
+            uint64_t segmentPosition = segmentStart - segment->startSamples;
+
+            // Apply envelope to each sample in the block
+            for (int frame = 0; frame < framesToRead; ++frame) {
+                // Position within the clip (from clip start)
+                uint64_t clipPosition = segmentPosition + frame;
+
+                // Calculate fade factor (1.0 = no fade, 0.0 = fully faded)
+                float fade = 1.0f;
+
+                // Apply fade-in
+                if (segment->fadeInSamples > 0 && clipPosition < segment->fadeInSamples) {
+                    fade *= static_cast<float>(clipPosition) / static_cast<float>(segment->fadeInSamples);
+                }
+
+                // Apply fade-out
+                if (segment->fadeOutSamples > 0 && clipPosition >= clipLengthSamples - segment->fadeOutSamples) {
+                    uint64_t fadeOutPosition = clipLengthSamples - clipPosition;
+                    fade *= static_cast<float>(fadeOutPosition) / static_cast<float>(segment->fadeOutSamples);
+                }
+
+                // Apply combined envelope (fade * gain)
+                float envelope = fade * gainLinear;
+
+                // Apply to all channels
+                for (int ch = 0; ch < numChannels; ++ch) {
+                    int frameIndex = blockOffsetStart + frame;
+                    if (frameIndex >= 0 && frameIndex < io.audioOut.numFrames()) {
+                        float sample = io.audioOut.getSample(frameIndex, ch);
+                        io.audioOut.setSample(frameIndex, ch, sample * envelope);
+                    }
+                }
+            }
+        } else if (std::abs(segment->gainDb) > 0.0001) {
+            // Only gain, no fades - apply gain to entire block
+            float gainLinear = std::pow(10.0f, static_cast<float>(segment->gainDb) / 20.0f);
+            for (int frame = 0; frame < framesToRead; ++frame) {
+                int frameIndex = blockOffsetStart + frame;
+                if (frameIndex >= 0 && frameIndex < io.audioOut.numFrames()) {
+                    for (int ch = 0; ch < numChannels; ++ch) {
+                        float sample = io.audioOut.getSample(frameIndex, ch);
+                        io.audioOut.setSample(frameIndex, ch, sample * gainLinear);
+                    }
+                }
+            }
+        }
 
         // Phase 9: TODO - Apply time-stretching
         // For now, stretch metadata is stored but not applied

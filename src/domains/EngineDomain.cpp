@@ -95,7 +95,10 @@ void EngineDomain::handle(const Envelope& env) {
                     segment.endSamples = beatsToSamples(endBeats);
                     segment.assetStartSamples = beatsToSamples(assetStartBeats);
 
-                    // Phase 9: Parse fade metadata (if present)
+                    // Phase 12b: Parse gain (if present)
+                    segment.gainDb = segmentJson.value("gainDb", 0.0);
+
+                    // Phase 12b: Parse fade metadata (if present)
                     if (segmentJson.contains("fadeInBeats")) {
                         double fadeInBeats = segmentJson.value("fadeInBeats", 0.0);
                         segment.fadeInSamples = beatsToSamples(fadeInBeats);
