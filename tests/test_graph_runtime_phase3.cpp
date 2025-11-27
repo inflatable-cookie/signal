@@ -1,16 +1,19 @@
 #include <catch2/catch_test_macros.hpp>
 #include "core/GraphEngine.hpp"
 #include "core/GraphSnapshot.hpp"
+#include "core/GraphSnapshotHelpers.hpp"
 #include "core/GraphNode.hpp"
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/AudioAssetSource.hpp"
 #include "core/NodeProcessContext.hpp"
 #include "core/ScheduleData.hpp"
+#include "core/EngineRenderContext.hpp"
 #include <vector>
 #include <string>
 #include <memory>
 #include <cmath>
+#include <nlohmann/json.hpp>
 
 TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase3][audio]") {
     GraphEngine engine;
@@ -289,5 +292,166 @@ TEST_CASE("Phase 3 - NodeProcessContext test", "[graph][phase3][context]") {
     REQUIRE(lane != nullptr);
     // Context is passed to process() - if it works, the test passes
     REQUIRE(true);
+}
+
+TEST_CASE("Phase 3 - JSON snapshot parsing and graph/schedule alignment", "[graph][phase3][json][snapshot]") {
+    GraphEngine engine;
+    StreamScheduler scheduler;
+
+    // Create a JSON snapshot matching Pulse's format
+    nlohmann::json snapshotJson;
+    snapshotJson["id"] = "test-json-snapshot";
+
+    // Add nodes
+    nlohmann::json nodes = nlohmann::json::array();
+
+    nlohmann::json laneNode;
+    laneNode["nodeId"] = "audio-lane-1";
+    laneNode["kind"] = "audio-lane";
+    laneNode["trackId"] = "track-1";
+    laneNode["laneId"] = "lane-1";
+    nodes.push_back(laneNode);
+
+    nlohmann::json deviceNode;
+    deviceNode["nodeId"] = "device";
+    deviceNode["kind"] = "device";
+    nodes.push_back(deviceNode);
+
+    snapshotJson["nodes"] = nodes;
+
+    // Add connections
+    nlohmann::json connections = nlohmann::json::array();
+
+    // Stream binding
+    nlohmann::json streamBinding;
+    streamBinding["fromStreamId"] = "stream-1";
+    streamBinding["toNodeId"] = "audio-lane-1";
+    streamBinding["toInputIndex"] = 0;
+    connections.push_back(streamBinding);
+
+    // Node-to-node connection
+    nlohmann::json nodeConn;
+    nodeConn["fromNodeId"] = "audio-lane-1";
+    nodeConn["fromOutputIndex"] = 0;
+    nodeConn["toNodeId"] = "device";
+    nodeConn["toInputIndex"] = 0;
+    connections.push_back(nodeConn);
+
+    snapshotJson["connections"] = connections;
+
+    // Parse JSON into GraphSnapshot (simulating EngineDomain parsing)
+    GraphSnapshot snapshot;
+    snapshot.id = snapshotJson["id"].get<std::string>();
+
+    for (const auto& nodeJson : snapshotJson["nodes"]) {
+        NodeDesc node;
+        node.nodeId = nodeJson["nodeId"].get<std::string>();
+        if (nodeJson.contains("trackId")) {
+            node.trackId = nodeJson["trackId"].get<std::string>();
+        }
+        if (nodeJson.contains("laneId")) {
+            node.laneId = nodeJson["laneId"].get<std::string>();
+        }
+
+        std::string kindStr = nodeJson["kind"].get<std::string>();
+        auto kindOpt = nodeKindFromString(kindStr);
+        REQUIRE(kindOpt.has_value());
+        node.kind = kindOpt.value();
+
+        snapshot.nodes.push_back(node);
+    }
+
+    for (const auto& connJson : snapshotJson["connections"]) {
+        ConnectionDesc conn;
+        if (connJson.contains("fromStreamId")) {
+            conn.fromStreamId = connJson["fromStreamId"].get<std::string>();
+        } else if (connJson.contains("fromNodeId")) {
+            conn.fromNodeId = connJson["fromNodeId"].get<std::string>();
+        }
+        conn.fromOutputIndex = connJson.value("fromOutputIndex", 0u);
+        conn.toInputIndex = connJson.value("toInputIndex", 0u);
+        conn.toNodeId = connJson["toNodeId"].get<std::string>();
+        snapshot.connections.push_back(conn);
+    }
+
+    // Load snapshot into engine
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Verify graph was loaded correctly
+    REQUIRE(engine.findNode("audio-lane-1") != nullptr);
+    REQUIRE(engine.findNode("device") != nullptr);
+
+    // Verify stream binding
+    const auto& streamBindings = engine.getStreamBindings();
+    REQUIRE(streamBindings.size() == 1);
+    REQUIRE(streamBindings[0].streamId == "stream-1");
+    REQUIRE(streamBindings[0].targetNodeId == "audio-lane-1");
+
+    // Set up schedule matching the graph
+    std::vector<StreamDescriptor> streams;
+    StreamDescriptor stream;
+    stream.streamId = "stream-1";
+    stream.trackId = "track-1";
+    stream.laneId = "lane-1";
+    stream.streamType = "audio";
+    streams.push_back(stream);
+
+    std::vector<AudioSegmentCompiled> audioSegments;
+    AudioSegmentCompiled segment;
+    segment.streamId = "stream-1";
+    segment.assetId = "asset-1";
+    segment.startSamples = 0;
+    segment.endSamples = 512; // One block
+    segment.assetStartSamples = 0;
+    segment.gainDb = 0.0;
+    segment.fadeInSamples = 0;
+    segment.fadeOutSamples = 0;
+    segment.fadeInCurve = "linear";
+    segment.fadeOutCurve = "linear";
+    segment.stretch.mode = "none";
+    segment.stretch.ratio = 1.0;
+    audioSegments.push_back(segment);
+
+    std::vector<MidiEventCompiled> midiEvents;
+    TempoMap tempoMap;
+    tempoMap.defaultTempo = 120.0;
+
+    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+
+    // Process graph with schedule
+    EngineRenderContext ctx;
+    ctx.sampleRate = 44100.0;
+    ctx.blockSize = 512;
+    ctx.playheadSamples = 0;
+
+    StubAudioAssetSource assetSource;
+    engine.processGraph(ctx, &scheduler, &assetSource);
+
+    // Verify output is non-zero when schedule is active
+    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
+    REQUIRE(device != nullptr);
+
+    bool hasOutput = false;
+    for (int frame = 0; frame < 512; ++frame) {
+        if (std::abs(device->io.audioOut.getSample(frame, 0)) > 0.001f) {
+            hasOutput = true;
+            break;
+        }
+    }
+    REQUIRE(hasOutput); // Device should have output from schedule
+
+    // Test with empty schedule - should produce silence
+    scheduler.clearSchedule();
+    engine.processGraph(ctx, &scheduler, &assetSource);
+
+    bool hasSilence = true;
+    for (int frame = 0; frame < 512; ++frame) {
+        if (std::abs(device->io.audioOut.getSample(frame, 0)) > 0.001f) {
+            hasSilence = false;
+            break;
+        }
+    }
+    REQUIRE(hasSilence); // Device should be silent with empty schedule
 }
 
