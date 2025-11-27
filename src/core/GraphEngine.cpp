@@ -8,12 +8,12 @@
 #include <cmath>
 
 GraphEngine::GraphEngine() : _pluginHost(nullptr) {
-    std::cout << "[GraphEngine] Created" << std::endl;
+    std::cout << "[GraphEngine][Lifecycle] Created" << std::endl;
 }
 
 GraphEngine::~GraphEngine() {
     clear();
-    std::cout << "[GraphEngine] Destroyed" << std::endl;
+    std::cout << "[GraphEngine][Lifecycle] Destroyed" << std::endl;
 }
 
 void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost) {
@@ -22,7 +22,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
 
     _pluginHost = pluginHost;
 
-    std::cout << "[GraphEngine] Loading graph snapshot: " << snapshot.id
+    std::cout << "[GraphEngine][Graph] Loading graph snapshot: " << snapshot.id
               << " (" << snapshot.nodes.size() << " nodes, "
               << snapshot.connections.size() << " connections)" << std::endl;
 
@@ -32,7 +32,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
         if (node) {
             _nodes[desc.nodeId] = std::move(node);
         } else {
-            std::cerr << "[GraphEngine] Warning: Failed to create node: " << desc.nodeId << std::endl;
+            std::cerr << "[GraphEngine][Graph] Warning: Failed to create node: " << desc.nodeId << std::endl;
         }
     }
 
@@ -60,14 +60,14 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
     buildAdjacencyList();
     computeExecutionOrder();
 
-    std::cout << "[GraphEngine] Graph loaded: " << _nodes.size() << " nodes, "
+    std::cout << "[GraphEngine][Graph] Graph loaded: " << _nodes.size() << " nodes, "
               << _connections.size() << " connections, "
               << _streamBindings.size() << " stream bindings, "
               << _executionOrder.size() << " nodes in execution order" << std::endl;
 }
 
 void GraphEngine::prepareGraph(int sampleRate, int maxBlockSize) {
-    std::cout << "[GraphEngine] Preparing graph (sampleRate=" << sampleRate
+    std::cout << "[GraphEngine][Graph] Preparing graph (sampleRate=" << sampleRate
               << ", maxBlockSize=" << maxBlockSize << ")" << std::endl;
 
     // Call prepare() on all nodes in execution order
@@ -77,7 +77,7 @@ void GraphEngine::prepareGraph(int sampleRate, int maxBlockSize) {
         }
     }
 
-    std::cout << "[GraphEngine] Graph prepared" << std::endl;
+    std::cout << "[GraphEngine][Graph] Graph prepared" << std::endl;
 }
 
 const std::vector<GraphNode*>& GraphEngine::getExecutionOrder() const noexcept {
@@ -349,7 +349,7 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
     #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     static int bindingLogCount = 0;
     if (bindingLogCount++ < 5) {
-        std::cout << "[GraphEngine] injectStreamData: " << _streamBindings.size() << " stream binding(s)" << std::endl;
+                std::cout << "[GraphEngine][StreamData] injectStreamData: " << _streamBindings.size() << " stream binding(s)" << std::endl;
     }
     #endif
 
