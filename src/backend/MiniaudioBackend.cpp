@@ -313,6 +313,7 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
         ma_uint32 captureCount = 0;
 
         if (ma_context_get_devices(&tempContext, &playbackInfos, &playbackCount, &captureInfos, &captureCount) == MA_SUCCESS) {
+            std::cout << "[MiniaudioBackend] Enumerated " << playbackCount << " playback devices" << std::endl;
             for (ma_uint32 i = 0; i < playbackCount; ++i) {
                 OutputDeviceInfo info;
                 // Generate stable ID: "miniaudio-<index>"
@@ -321,8 +322,15 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
                 info.id = oss.str();
                 info.name = playbackInfos[i].name[0] != '\0' ? std::string(playbackInfos[i].name) : "Unknown Device";
                 info.isDefault = playbackInfos[i].isDefault != 0;
-                info.maxChannels = playbackInfos[i].nativeDataFormats[0].channels; // Use first format's channel count
-                info.preferredSampleRate = playbackInfos[i].nativeDataFormats[0].sampleRate; // Use first format's sample rate
+                // Get format info if available
+                if (playbackInfos[i].nativeDataFormatCount > 0) {
+                    info.maxChannels = playbackInfos[i].nativeDataFormats[0].channels;
+                    info.preferredSampleRate = playbackInfos[i].nativeDataFormats[0].sampleRate;
+                } else {
+                    // Fallback values if no format info available
+                    info.maxChannels = 2; // Assume stereo
+                    info.preferredSampleRate = 44100; // Assume 44.1kHz
+                }
                 devices.push_back(info);
             }
         }
@@ -336,6 +344,7 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
         ma_uint32 captureCount = 0;
 
         if (ma_context_get_devices(static_cast<ma_context*>(_context), &playbackInfos, &playbackCount, &captureInfos, &captureCount) == MA_SUCCESS) {
+            std::cout << "[MiniaudioBackend] Enumerated " << playbackCount << " playback devices" << std::endl;
             for (ma_uint32 i = 0; i < playbackCount; ++i) {
                 OutputDeviceInfo info;
                 // Generate stable ID: "miniaudio-<index>"
@@ -344,8 +353,15 @@ std::vector<OutputDeviceInfo> MiniaudioBackend::enumerateOutputDevices() const {
                 info.id = oss.str();
                 info.name = playbackInfos[i].name[0] != '\0' ? std::string(playbackInfos[i].name) : "Unknown Device";
                 info.isDefault = playbackInfos[i].isDefault != 0;
-                info.maxChannels = playbackInfos[i].nativeDataFormats[0].channels; // Use first format's channel count
-                info.preferredSampleRate = playbackInfos[i].nativeDataFormats[0].sampleRate; // Use first format's sample rate
+                // Get format info if available
+                if (playbackInfos[i].nativeDataFormatCount > 0) {
+                    info.maxChannels = playbackInfos[i].nativeDataFormats[0].channels;
+                    info.preferredSampleRate = playbackInfos[i].nativeDataFormats[0].sampleRate;
+                } else {
+                    // Fallback values if no format info available
+                    info.maxChannels = 2; // Assume stereo
+                    info.preferredSampleRate = 44100; // Assume 44.1kHz
+                }
                 devices.push_back(info);
             }
         }

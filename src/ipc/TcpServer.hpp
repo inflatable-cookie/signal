@@ -146,6 +146,12 @@ public:
             payload["lastError"] = nullptr;
         }
 
+        // Include runtime configuration (device is initialized even when stopped)
+        payload["sampleRate"] = engineHost->getSampleRate();
+        payload["blockSize"] = engineHost->getBlockSize();
+        payload["outputDeviceName"] = engineHost->getOutputDeviceName();
+        payload["numOutputChannels"] = engineHost->getNumOutputChannels();
+
         stateEvent.payload = payload;
 
         session->send(stateEvent);
