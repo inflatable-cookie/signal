@@ -41,19 +41,88 @@ void EngineDomain::handle(const Envelope& env) {
         // Architecture: Pulse sends PlaybackScheduleSnapshot with streams, audioSegments, midiEvents
         // Signal converts to compiled format and applies to StreamScheduler
         try {
-            nlohmann::json payload = env.payload;
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
+
+            // Diagnostic: Log raw JSON structure
+            std::cout << "[EngineDomain][Schedule][Signal] Received playback schedule snapshot envelope" << std::endl;
+            std::cout << "[EngineDomain][Schedule][Signal] Top-level keys: ";
+            if (payload.is_object()) {
+                for (auto it = payload.begin(); it != payload.end(); ++it) {
+                    std::cout << it.key() << " ";
+                }
+            }
+            std::cout << std::endl;
+            if (payload.contains("streams")) {
+                std::cout << "[EngineDomain][Schedule][Signal] 'streams' type: " << payload["streams"].type_name()
+                          << ", is_array: " << payload["streams"].is_array() << std::endl;
+                if (payload["streams"].is_array()) {
+                    std::cout << "[EngineDomain][Schedule][Signal] 'streams' array size: " << payload["streams"].size() << std::endl;
+                    if (payload["streams"].size() > 0) {
+                        const auto& firstStream = payload["streams"][0];
+                        std::cout << "[EngineDomain][Schedule][Signal] First stream JSON keys: ";
+                        if (firstStream.is_object()) {
+                            for (auto it = firstStream.begin(); it != firstStream.end(); ++it) {
+                                std::cout << it.key() << " ";
+                            }
+                        }
+                        std::cout << std::endl;
+                    }
+                } else {
+                    std::cerr << "[EngineDomain][Schedule][Signal] ERROR: 'streams' field exists but is not an array!" << std::endl;
+                }
+            } else {
+                std::cerr << "[EngineDomain][Schedule][Signal] ERROR: 'streams' field not found in payload!" << std::endl;
+            }
+            if (payload.contains("audioSegments")) {
+                std::cout << "[EngineDomain][Schedule][Signal] 'audioSegments' type: " << payload["audioSegments"].type_name()
+                          << ", is_array: " << payload["audioSegments"].is_array() << std::endl;
+                if (payload["audioSegments"].is_array()) {
+                    std::cout << "[EngineDomain][Schedule][Signal] 'audioSegments' array size: " << payload["audioSegments"].size() << std::endl;
+                    if (payload["audioSegments"].size() > 0) {
+                        const auto& firstSegment = payload["audioSegments"][0];
+                        std::cout << "[EngineDomain][Schedule][Signal] First segment JSON keys: ";
+                        if (firstSegment.is_object()) {
+                            for (auto it = firstSegment.begin(); it != firstSegment.end(); ++it) {
+                                std::cout << it.key() << " ";
+                            }
+                        }
+                        std::cout << std::endl;
+                    }
+                } else {
+                    std::cerr << "[EngineDomain][Schedule][Signal] ERROR: 'audioSegments' field exists but is not an array!" << std::endl;
+                }
+            } else {
+                std::cerr << "[EngineDomain][Schedule][Signal] ERROR: 'audioSegments' field not found in payload!" << std::endl;
+            }
+
             double sampleRate = _engineHost->getSampleRate();
 
             // Parse streams
             std::vector<StreamDescriptor> streams;
             if (payload.contains("streams") && payload["streams"].is_array()) {
-                for (const auto& streamJson : payload["streams"]) {
+                for (size_t idx = 0; idx < payload["streams"].size(); ++idx) {
+                    const auto& streamJson = payload["streams"][idx];
                     StreamDescriptor stream;
                     stream.streamId = streamJson.value("streamId", "");
                     stream.trackId = streamJson.value("trackId", "");
                     stream.laneId = streamJson.value("laneId", "");
-                    stream.streamType = streamJson.value("streamType", "");
+                    std::string streamTypeStr = streamJson.value("streamType", "");
+                    // Map string to StreamType enum
+                    if (streamTypeStr == "audio" || streamTypeStr == "Audio") {
+                        stream.streamType = "Audio";
+                    } else if (streamTypeStr == "midi" || streamTypeStr == "Midi") {
+                        stream.streamType = "Midi";
+                    } else {
+                        stream.streamType = streamTypeStr; // Keep as-is if unknown
+                    }
                     streams.push_back(stream);
+                    if (idx < 3) { // Log first 3 streams
+                        std::cout << "[EngineDomain][Schedule][Signal] Parsed Stream " << idx
+                                  << ": streamId='" << stream.streamId
+                                  << "', trackId='" << stream.trackId
+                                  << "', laneId='" << stream.laneId
+                                  << "', type=" << stream.streamType << std::endl;
+                    }
                 }
             }
 
@@ -84,7 +153,8 @@ void EngineDomain::handle(const Envelope& env) {
             };
 
             if (payload.contains("audioSegments") && payload["audioSegments"].is_array()) {
-                for (const auto& segmentJson : payload["audioSegments"]) {
+                for (size_t idx = 0; idx < payload["audioSegments"].size(); ++idx) {
+                    const auto& segmentJson = payload["audioSegments"][idx];
                     AudioSegmentCompiled segment;
                     segment.streamId = segmentJson.value("streamId", "");
                     segment.assetId = segmentJson.value("assetId", "");
@@ -131,6 +201,14 @@ void EngineDomain::handle(const Envelope& env) {
                     }
 
                     audioSegments.push_back(segment);
+                    if (idx < 3) { // Log first 3 segments
+                        std::cout << "[EngineDomain][Schedule][Signal] Parsed Segment " << idx
+                                  << ": streamId='" << segment.streamId
+                                  << "', assetId='" << segment.assetId
+                                  << "', startBeats=" << startBeats
+                                  << ", endBeats=" << endBeats
+                                  << ", assetStartBeats=" << assetStartBeats << std::endl;
+                    }
                 }
             }
 
@@ -202,10 +280,31 @@ void EngineDomain::handle(const Envelope& env) {
         // Architecture: Pulse sends GraphSnapshot with nodes and connections
         // Signal builds runtime node graph from snapshot
         try {
-            nlohmann::json payload = env.payload;
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
+
+            // Diagnostic: Log raw JSON structure (truncated)
+            std::cout << "[EngineDomain][Graph] Received graph snapshot envelope" << std::endl;
+            if (payload.contains("id")) {
+                std::cout << "[EngineDomain][Graph] Top-level keys: id, nodes, connections" << std::endl;
+            }
+            if (payload.contains("nodes") && payload["nodes"].is_array() && !payload["nodes"].empty()) {
+                const auto& firstNode = payload["nodes"][0];
+                std::cout << "[EngineDomain][Graph] First node keys: ";
+                if (firstNode.is_object()) {
+                    for (auto it = firstNode.begin(); it != firstNode.end(); ++it) {
+                        std::cout << it.key() << " ";
+                    }
+                }
+                std::cout << std::endl;
+            }
 
             // Parse graph snapshot ID
-            std::string snapshotId = payload.value("id", "unknown");
+            std::string snapshotId = "unknown";
+            if (payload.contains("id") && payload["id"].is_string()) {
+                snapshotId = payload["id"].get<std::string>();
+            } else if (payload.contains("id")) {
+                std::cerr << "[EngineDomain][Graph] WARNING: 'id' field is not a string, type: " << payload["id"].type_name() << std::endl;
+            }
 
             // Parse nodes
             std::vector<NodeDesc> nodes;
@@ -214,7 +313,7 @@ void EngineDomain::handle(const Envelope& env) {
                     NodeDesc node;
                     node.nodeId = nodeJson.value("nodeId", "");
                     if (node.nodeId.empty()) {
-                        std::cerr << "[EngineDomain] GraphSnapshot node missing nodeId" << std::endl;
+                        std::cerr << "[EngineDomain][Graph][Signal] Node missing nodeId" << std::endl;
                         continue;
                     }
 
@@ -226,15 +325,41 @@ void EngineDomain::handle(const Envelope& env) {
                         node.laneId = nodeJson["laneId"].get<std::string>();
                     }
 
-                    // Parse node kind
-                    std::string kindStr = nodeJson.value("kind", "");
+                    // Parse node kind with diagnostic logging
+                    std::string kindStr = "";
+                    if (nodeJson.contains("kind")) {
+                        if (nodeJson["kind"].is_string()) {
+                            kindStr = nodeJson["kind"].get<std::string>();
+                        } else {
+                            std::cerr << "[EngineDomain][Graph][Signal] Node " << node.nodeId
+                                      << " has 'kind' field but it's not a string, type: " << nodeJson["kind"].type_name() << std::endl;
+                        }
+                    }
                     auto kindOpt = nodeKindFromString(kindStr);
                     if (!kindOpt.has_value()) {
-                        std::cerr << "[EngineDomain] GraphSnapshot node " << node.nodeId
-                                  << " has invalid kind: " << kindStr << std::endl;
+                        std::cerr << "[EngineDomain][Graph][Signal] Node " << node.nodeId
+                                  << " has invalid kind: \"" << kindStr << "\" (raw JSON value)" << std::endl;
                         continue;
                     }
                     node.kind = kindOpt.value();
+                    // Log node kind mapping with readable name
+                    std::string kindName = "Unknown";
+                    switch (node.kind) {
+                        case NodeKind::MidiLane: kindName = "MidiLane"; break;
+                        case NodeKind::AudioLane: kindName = "AudioLane"; break;
+                        case NodeKind::MidiFx: kindName = "MidiFx"; break;
+                        case NodeKind::Instrument: kindName = "Instrument"; break;
+                        case NodeKind::AudioFx: kindName = "AudioFx"; break;
+                        case NodeKind::Send: kindName = "Send"; break;
+                        case NodeKind::MixerChannel: kindName = "MixerChannel"; break;
+                        case NodeKind::Receive: kindName = "Receive"; break;
+                        case NodeKind::Device: kindName = "Device"; break;
+                        case NodeKind::AudioInput: kindName = "AudioInput"; break;
+                        case NodeKind::MidiInput: kindName = "MidiInput"; break;
+                        default: kindName = "Unknown"; break;
+                    }
+                    std::cout << "[EngineDomain][Graph][Signal] Raw node: nodeId='" << node.nodeId
+                              << "', kind=\"" << kindStr << "\" → NodeKind::" << kindName << std::endl;
 
                     // Parse plugin metadata (if present)
                     if (nodeJson.contains("pluginFormat") && nodeJson["pluginFormat"].is_string()) {
@@ -292,8 +417,27 @@ void EngineDomain::handle(const Envelope& env) {
                     }
 
                     // Parse output/input indices (default to 0)
-                    conn.fromOutputIndex = connJson.value("fromOutputIndex", 0u);
-                    conn.toInputIndex = connJson.value("toInputIndex", 0u);
+                    // Use safe parsing that checks type first
+                    if (connJson.contains("fromOutputIndex")) {
+                        if (connJson["fromOutputIndex"].is_number_unsigned()) {
+                            conn.fromOutputIndex = connJson["fromOutputIndex"].get<uint32_t>();
+                        } else {
+                            std::cerr << "[EngineDomain][Graph] WARNING: fromOutputIndex is not a number, type: " << connJson["fromOutputIndex"].type_name() << std::endl;
+                            conn.fromOutputIndex = 0;
+                        }
+                    } else {
+                        conn.fromOutputIndex = 0;
+                    }
+                    if (connJson.contains("toInputIndex")) {
+                        if (connJson["toInputIndex"].is_number_unsigned()) {
+                            conn.toInputIndex = connJson["toInputIndex"].get<uint32_t>();
+                        } else {
+                            std::cerr << "[EngineDomain][Graph] WARNING: toInputIndex is not a number, type: " << connJson["toInputIndex"].type_name() << std::endl;
+                            conn.toInputIndex = 0;
+                        }
+                    } else {
+                        conn.toInputIndex = 0;
+                    }
 
                     // Parse destination (required)
                     if (connJson.contains("toNodeId") && connJson["toNodeId"].is_string()) {
@@ -338,12 +482,18 @@ void EngineDomain::handle(const Envelope& env) {
 
             // Check: At least one DeviceNode must exist as a sink
             bool hasDeviceNode = false;
+            int deviceNodeCount = 0;
+            int masterNodeCount = 0;
             for (const auto& node : nodes) {
                 if (node.kind == NodeKind::Device) {
                     hasDeviceNode = true;
-                    break;
+                    deviceNodeCount++;
                 }
+                // Note: Master is deprecated but check for it anyway
+                // (though nodeKindFromString maps "master" to Device, so this shouldn't be needed)
             }
+            std::cout << "[EngineDomain][Graph][Signal] Before validation: " << deviceNodeCount
+                      << " Device nodes, " << masterNodeCount << " Master nodes" << std::endl;
             if (!hasDeviceNode) {
                 validationError = "GraphSnapshot must contain at least one DeviceNode";
                 isValid = false;

@@ -452,8 +452,8 @@ void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels)
     // Check transport state (lock-free read via snapshot)
     const TransportState* transport = getTransportSnapshot();
     if (!transport || !transport->isPlaying) {
-        // Not playing - output silence, but still advance playhead for seek accuracy
-        _playheadSamples.store(currentPlayhead + numFrames, std::memory_order_release);
+        // Not playing - output silence and keep playhead at current position
+        // Playhead is explicitly set by seek/play commands, no need to advance when stopped
         return;
     }
 
@@ -840,11 +840,22 @@ void EngineHost::renderBlock(
         output.clear();
     }
 
-    // Diagnostic logging: Periodic status (every ~0.5 seconds)
+    // Diagnostic logging: Periodic status (every ~1 second when playing, less frequent when stopped)
     uint64_t blockCount = _renderBlockCount.fetch_add(1, std::memory_order_acq_rel) + 1;
     uint64_t lastLog = _lastDebugLogBlock.load(std::memory_order_acquire);
 
-    if (blockCount - lastLog >= DEBUG_LOG_INTERVAL_BLOCKS) {
+    // Only log when playing, or occasionally when stopped (every ~10 seconds) to confirm engine is alive
+    bool shouldLog = false;
+    if (ctx.isPlaying) {
+        // Log every ~1 second when playing
+        shouldLog = (blockCount - lastLog >= DEBUG_LOG_INTERVAL_BLOCKS);
+    } else {
+        // Log every ~10 seconds when stopped (much less frequent)
+        static constexpr uint32_t STOPPED_LOG_INTERVAL_BLOCKS = DEBUG_LOG_INTERVAL_BLOCKS * 10;
+        shouldLog = (blockCount - lastLog >= STOPPED_LOG_INTERVAL_BLOCKS);
+    }
+
+    if (shouldLog) {
         _lastDebugLogBlock.store(blockCount, std::memory_order_release);
 
         // Log diagnostic info (non-real-time, but throttled)
@@ -903,8 +914,11 @@ void EngineHost::renderBlock(
     }
     */
 
-    // Update playhead for next block
-    uint64_t newPlayhead = ctx.playheadSamples + output.numFrames();
-    _playheadSamples.store(newPlayhead, std::memory_order_release);
+    // Update playhead for next block (only when playing)
+    // When stopped, playhead is explicitly set by seek/play commands
+    if (ctx.isPlaying) {
+        uint64_t newPlayhead = ctx.playheadSamples + output.numFrames();
+        _playheadSamples.store(newPlayhead, std::memory_order_release);
+    }
 }
 

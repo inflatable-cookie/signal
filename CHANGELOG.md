@@ -24,6 +24,16 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-27 16:50:00 UTC) [fixed] Phase 12b.5: Fixed AssetsDomain JSON parsing bug - registerAudioAsset payload was not being parsed from string, causing asset registration to fail and producing silence during playback.
+
+(2025-11-27 16:45:00 UTC) [fixed] Phase 12b.5: Fixed graph engine processing streams when transport is stopped - streams are now only processed when ctx.isPlaying is true, preventing test tone from playing automatically.
+
+(2025-11-27 16:32:01 UTC) [fixed] Phase 12b.5: Fixed critical bug where graph and schedule snapshot payloads were not being parsed from JSON strings, causing Signal to reject valid snapshots from Pulse. Also fixed playhead advancement to only occur during playback, not when stopped.
+
+(2025-11-27 14:45:21 UTC) [dev] Phase 12b.5: Enhanced diagnostic logging for graph and schedule snapshot parsing, including raw JSON kind values, parsed NodeKind enum values, Device node counts, schedule array types/sizes, and detailed parsed stream/segment information to identify contract mismatches with Pulse.
+
+(2025-11-27 14:20:52 UTC) [fixed] Phase 12b.4: Fixed GraphSnapshot JSON parsing with type-safe field access and comprehensive diagnostic logging, added diagnostic logging for schedule snapshot parsing to identify field name/type mismatches, and improved error handling for JSON type mismatches.
+
 (2025-11-27 13:31:53 UTC) [dev] Phase 12b.3: Added comprehensive diagnostic logging and runtime probes throughout audio playback path, including debug checkpoints in EngineDomain and AssetsDomain, periodic render block logging with silence detection, runtime probes in AudioLaneNode and DeviceNode, diagnostic methods (hasGraph, hasSchedule, getActiveStreamCount), and headless offline render test for isolated audio processing verification.
 
 (2025-11-26 23:36:33 UTC) [added] Phase 12a: Audio I/O & First Sound - Replaced placeholder MiniaudioBackend with real miniaudio integration, implemented device initialisation and enumeration, added runtime configuration (sample rate, buffer size, device name) to engine.state events, and wired device info flow from Signal to Pulse to Aura.

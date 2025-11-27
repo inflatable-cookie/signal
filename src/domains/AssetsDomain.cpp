@@ -21,7 +21,7 @@ void AssetsDomain::handle(const Envelope& env) {
     if (env.name == "registerAudioAsset") {
         // Handle asset registration from Pulse
         try {
-            nlohmann::json payload = env.payload;
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
 
             std::string assetId = payload.value("assetId", "");
             if (assetId.empty()) {

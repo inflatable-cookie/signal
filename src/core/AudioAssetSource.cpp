@@ -136,6 +136,11 @@ bool FileAudioAssetSource::readSamples(
     auto it = _assets.find(assetId);
     if (it == _assets.end()) {
         // Asset not found - produce silence
+        // Log warning (throttled to avoid spam)
+        static int logCount = 0;
+        if (logCount++ < 5) {
+            std::cerr << "[FileAudioAssetSource] Asset not prepared: '" << assetId << "' - producing silence" << std::endl;
+        }
         for (int frame = 0; frame < numFrames; ++frame) {
             for (int ch = 0; ch < numChannels && ch < buffer.numChannels(); ++ch) {
                 int destFrame = destFrameOffset + frame;

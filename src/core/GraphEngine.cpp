@@ -245,8 +245,9 @@ void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* 
     // 1. Clear all node buffers
     clearAllBuffers();
 
-    // 2. Inject stream data into lane nodes
-    if (scheduler && assetSource) {
+    // 2. Inject stream data into lane nodes (only when playing)
+    // When stopped, we don't process streams to avoid generating audio
+    if (ctx.isPlaying && scheduler && assetSource) {
         injectStreamData(ctx, scheduler, assetSource);
     }
 
