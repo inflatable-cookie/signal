@@ -50,6 +50,12 @@ EngineHost::EngineHost()
     _automationData = std::make_shared<AutomationData>(AutomationData::empty());
     _activeAutomation.store(_automationData.get(), std::memory_order_release);
 
+#ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+    _renderBlockCount.store(0, std::memory_order_release);
+    _lastDebugLogBlock.store(0, std::memory_order_release);
+    _consecutiveSilenceBlocks.store(0, std::memory_order_release);
+#endif
+
     setupAudioCallback();  // Legacy - for backward compatibility
     setupAudioBackend();   // New backend-based approach
     std::cout << "[EngineHost] Created" << std::endl;
@@ -795,14 +801,18 @@ void EngineHost::renderBlock(
 
     // Copy device node output to EngineHost output buffer
     // TODO: Support multiple device nodes in future (e.g., different output devices, cue mixes)
-    // Reuse executionOrder from above
     GraphNode* deviceNode = nullptr;
-    for (GraphNode* node : executionOrder) {
+    const auto& deviceExecutionOrder = _graphEngine->getExecutionOrder();
+    for (GraphNode* node : deviceExecutionOrder) {
         if (node && node->getKind() == NodeKind::Device) {
             deviceNode = node;
             break; // For now, use first device node (previously assumed single master)
         }
     }
+
+    // Diagnostic: Check device node output level
+    float maxOutput = 0.0f;
+    bool hasOutput = false;
 
     if (deviceNode) {
         // Copy audio from device node to output bus
@@ -812,8 +822,54 @@ void EngineHost::renderBlock(
         for (int ch = 0; ch < numChannels; ++ch) {
             const float* src = deviceNode->io.audioOut.getChannelData(ch);
             for (int frame = 0; frame < numFrames; ++frame) {
-                output.setSample(frame, ch, src[frame]);
+                float sample = src[frame];
+                output.setSample(frame, ch, sample);
+
+                // Track max for diagnostics
+                float absSample = std::abs(sample);
+                if (absSample > maxOutput) {
+                    maxOutput = absSample;
+                }
+                if (absSample > 0.0001f) {
+                    hasOutput = true;
+                }
             }
+        }
+    } else {
+        // No device node - output will be silence
+        output.clear();
+    }
+
+    // Diagnostic logging: Periodic status (every ~0.5 seconds)
+    uint64_t blockCount = _renderBlockCount.fetch_add(1, std::memory_order_acq_rel) + 1;
+    uint64_t lastLog = _lastDebugLogBlock.load(std::memory_order_acquire);
+
+    if (blockCount - lastLog >= DEBUG_LOG_INTERVAL_BLOCKS) {
+        _lastDebugLogBlock.store(blockCount, std::memory_order_release);
+
+        // Log diagnostic info (non-real-time, but throttled)
+        bool graphLoaded = _graphEngine->hasGraph();
+        bool scheduleLoaded = _streamScheduler->hasSchedule();
+        int activeStreamCount = _streamScheduler->getActiveStreamCount();
+
+        std::cout << "[EngineHost][Render] Block " << blockCount
+                  << ": playing=" << (ctx.isPlaying ? "yes" : "no")
+                  << ", playhead=" << ctx.playheadSamples
+                  << ", graph=" << (graphLoaded ? "yes" : "no")
+                  << ", schedule=" << (scheduleLoaded ? "yes" : "no")
+                  << ", activeStreams=" << activeStreamCount
+                  << ", maxOutput=" << maxOutput
+                  << std::endl;
+    }
+
+    // Diagnostic: Track consecutive silence
+    if (hasOutput) {
+        _consecutiveSilenceBlocks.store(0, std::memory_order_release);
+    } else if (ctx.isPlaying) {
+        uint64_t silenceCount = _consecutiveSilenceBlocks.fetch_add(1, std::memory_order_acq_rel) + 1;
+        // Log warning if we've had silence for a while (e.g., 1 second = ~86 blocks at 44.1kHz/512)
+        if (silenceCount == 86) {
+            std::cerr << "[EngineHost][Render] ⚠ WARNING: Output still silence after 1 second of playback" << std::endl;
         }
     }
 

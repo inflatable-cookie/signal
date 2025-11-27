@@ -182,6 +182,14 @@ private:
     // Playhead tracking (for audio thread)
     std::atomic<uint64_t> _playheadSamples;
 
+#ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+    // Diagnostic counters for audio thread debugging
+    std::atomic<uint64_t> _renderBlockCount;
+    std::atomic<uint64_t> _lastDebugLogBlock;
+    std::atomic<uint32_t> _consecutiveSilenceBlocks;
+    static constexpr uint32_t DEBUG_LOG_INTERVAL_BLOCKS = 86; // Approx 1 second at 44.1kHz/512 block size
+#endif
+
     void setupAudioCallback();
     void audioCallback(float* buffer, size_t numFrames, int numChannels);  // Legacy
     void setupAudioBackend();

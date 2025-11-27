@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(SIGNAL_BUILD_TESTS "Build Signal tests" ON)
+option(LOOPHOLE_ENABLE_AUDIO_DEBUG "Enable audio debug logging and probes" ON)
 
 # Fetch nlohmann/json
 include(FetchContent)

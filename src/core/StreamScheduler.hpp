@@ -70,6 +70,14 @@ public:
     /// @return Pointer to current schedule (valid until next swap)
     const ScheduleData* getSchedule() const;
 
+    /// Check if schedule has been loaded (has streams)
+    /// Thread-safe: reads atomic pointer (lock-free)
+    bool hasSchedule() const noexcept;
+
+    /// Get count of active streams (for diagnostics)
+    /// Thread-safe: reads atomic pointer (lock-free)
+    int getActiveStreamCount() const noexcept;
+
 private:
     // Active schedule snapshot (read by audio thread, swapped by control thread)
     // Using raw pointer with shared_ptr for lifetime management

@@ -46,6 +46,11 @@ target_link_libraries(signal-core PUBLIC
 target_include_directories(signal-core PUBLIC ${asio_SOURCE_DIR}/asio/include)
 target_compile_definitions(signal-core PUBLIC ASIO_STANDALONE)
 
+# Add audio debug compile definition if enabled
+if(LOOPHOLE_ENABLE_AUDIO_DEBUG)
+    target_compile_definitions(signal-core PUBLIC LOOPHOLE_ENABLE_AUDIO_DEBUG)
+endif()
+
 # Add official CLAP SDK include directory
 target_include_directories(signal-core PUBLIC ${clap_SOURCE_DIR}/include)
 

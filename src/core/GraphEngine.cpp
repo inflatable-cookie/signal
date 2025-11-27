@@ -98,6 +98,10 @@ const GraphNode* GraphEngine::findNode(const NodeId& id) const noexcept {
     return (it != _nodes.end()) ? it->second.get() : nullptr;
 }
 
+bool GraphEngine::hasGraph() const noexcept {
+    return !_nodes.empty();
+}
+
 void GraphEngine::clear() {
     _nodes.clear();
     _connections.clear();
@@ -323,16 +327,42 @@ void GraphEngine::clearAllBuffers() {
 void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource) {
     const ScheduleData* schedule = scheduler->getSchedule();
     if (!schedule || !assetSource) {
+        #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+        static int logCount = 0;
+        if (logCount++ < 5) {
+            if (!schedule) {
+                std::cerr << "[GraphEngine] injectStreamData: schedule is null" << std::endl;
+            }
+            if (!assetSource) {
+                std::cerr << "[GraphEngine] injectStreamData: assetSource is null" << std::endl;
+            }
+        }
+        #endif
         return;
     }
 
     uint64_t blockStartSamples = ctx.playheadSamples;
     uint64_t blockEndSamples = blockStartSamples + ctx.blockSize;
 
+    // Diagnostic: Log stream binding count
+    #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+    static int bindingLogCount = 0;
+    if (bindingLogCount++ < 5) {
+        std::cout << "[GraphEngine] injectStreamData: " << _streamBindings.size() << " stream binding(s)" << std::endl;
+    }
+    #endif
+
     // Inject data for each stream binding
     for (const auto& binding : _streamBindings) {
         GraphNode* targetNode = findNode(binding.targetNodeId);
         if (!targetNode) {
+            #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+            static int logCount = 0;
+            if (logCount++ < 5) {
+                std::cerr << "[GraphEngine] injectStreamData: target node not found: '"
+                          << binding.targetNodeId << "'" << std::endl;
+            }
+            #endif
             continue;
         }
 
@@ -344,6 +374,15 @@ void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamSchedul
 
                 // Get active audio segments for this stream
                 auto segments = scheduler->getActiveAudioSegments(binding.streamId, blockStartSamples);
+
+                #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+                static int segmentLogCount = 0;
+                if (segmentLogCount++ < 5) {
+                    std::cout << "[GraphEngine] injectStreamData: stream '" << binding.streamId
+                              << "' has " << segments.size() << " active segment(s)" << std::endl;
+                }
+                #endif
+
                 for (const auto* segment : segments) {
                     if (segment && segment->startSamples < blockEndSamples && segment->endSamples > blockStartSamples) {
                         // Phase 3: Pass AudioAssetSource to injectAudioSegment

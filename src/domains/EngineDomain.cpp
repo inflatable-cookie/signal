@@ -154,6 +154,36 @@ void EngineDomain::handle(const Envelope& env) {
                 }
             }
 
+            // Diagnostic logging: schedule reception
+            std::cout << "[EngineDomain][Schedule] Received playback schedule snapshot" << std::endl;
+            std::cout << "[EngineDomain][Schedule] Parsed " << streams.size() << " streams, "
+                      << audioSegments.size() << " audio segments, "
+                      << midiEvents.size() << " MIDI events" << std::endl;
+
+            // Log stream details
+            for (const auto& stream : streams) {
+                std::cout << "[EngineDomain][Schedule] Stream: id='" << stream.streamId
+                          << "', track='" << stream.trackId
+                          << "', lane='" << stream.laneId
+                          << "', type='" << stream.streamType << "'" << std::endl;
+            }
+
+            // Log first few segments
+            for (size_t idx = 0; idx < audioSegments.size() && idx < 5; ++idx) {
+                const auto& seg = audioSegments[idx];
+                std::cout << "[EngineDomain][Schedule] Segment " << idx << ": stream='" << seg.streamId
+                          << "', asset='" << seg.assetId
+                          << "', start=" << seg.startSamples << " samples, end=" << seg.endSamples << " samples"
+                          << ", assetStart=" << seg.assetStartSamples << " samples" << std::endl;
+            }
+            if (audioSegments.size() > 5) {
+                std::cout << "[EngineDomain][Schedule] ... and " << (audioSegments.size() - 5) << " more segments" << std::endl;
+            }
+
+            if (audioSegments.empty()) {
+                std::cerr << "[EngineDomain][Schedule] ✗ WARNING: No audio segments in schedule!" << std::endl;
+            }
+
             // Apply schedule to StreamScheduler
             _engineHost->streamScheduler().setSchedule(
                 streams,
@@ -163,9 +193,7 @@ void EngineDomain::handle(const Envelope& env) {
                 sampleRate
             );
 
-            std::cout << "[EngineDomain] Applied stream-based schedule: " << streams.size() << " streams, "
-                      << audioSegments.size() << " audio segments, "
-                      << midiEvents.size() << " MIDI events" << std::endl;
+            std::cout << "[EngineDomain][Schedule] Schedule applied to StreamScheduler" << std::endl;
         } catch (const std::exception& e) {
             std::cerr << "[EngineDomain] Failed to parse schedule payload: " << e.what() << std::endl;
         }
@@ -327,6 +355,46 @@ void EngineDomain::handle(const Envelope& env) {
                 return;
             }
 
+            // Diagnostic logging: graph snapshot reception
+            std::cout << "[EngineDomain][Graph] Received graph snapshot: id='" << snapshotId << "'" << std::endl;
+            std::cout << "[EngineDomain][Graph] Parsed " << nodes.size() << " nodes, " << connections.size() << " connections" << std::endl;
+
+            // Count AudioLane nodes and check for fromStreamId connections (reuse hasDeviceNode from validation above)
+            std::vector<std::string> laneNodeIds;
+            for (const auto& node : nodes) {
+                if (node.kind == NodeKind::AudioLane) {
+                    laneNodeIds.push_back(node.nodeId);
+                }
+            }
+            if (hasDeviceNode) {
+                std::cout << "[EngineDomain][Graph] ✓ DeviceNode found" << std::endl;
+            } else {
+                std::cerr << "[EngineDomain][Graph] ✗ WARNING: No DeviceNode found in graph!" << std::endl;
+            }
+            if (!laneNodeIds.empty()) {
+                std::cout << "[EngineDomain][Graph] AudioLane nodes: ";
+                for (size_t i = 0; i < laneNodeIds.size(); ++i) {
+                    if (i > 0) std::cout << ", ";
+                    std::cout << laneNodeIds[i];
+                }
+                std::cout << std::endl;
+            }
+
+            // Check for fromStreamId connections
+            int streamBindingCount = 0;
+            for (const auto& conn : connections) {
+                if (conn.fromStreamId.has_value()) {
+                    streamBindingCount++;
+                    std::cout << "[EngineDomain][Graph] Stream binding: '" << conn.fromStreamId.value()
+                              << "' -> node '" << conn.toNodeId << "'" << std::endl;
+                }
+            }
+            if (streamBindingCount == 0) {
+                std::cerr << "[EngineDomain][Graph] ✗ WARNING: No fromStreamId connections found!" << std::endl;
+            } else {
+                std::cout << "[EngineDomain][Graph] ✓ Found " << streamBindingCount << " stream binding(s)" << std::endl;
+            }
+
             // Load snapshot into EngineHost
             _engineHost->loadGraphSnapshot(snapshot);
 
@@ -338,9 +406,7 @@ void EngineDomain::handle(const Envelope& env) {
                 );
             }
 
-            std::cout << "[EngineDomain] Loaded graph snapshot: " << snapshotId
-                      << " (" << nodes.size() << " nodes, "
-                      << connections.size() << " connections)" << std::endl;
+            std::cout << "[EngineDomain][Graph] Graph snapshot loaded and prepared" << std::endl;
         } catch (const std::exception& e) {
             std::cerr << "[EngineDomain] Failed to parse graph snapshot payload: " << e.what() << std::endl;
             // Don't replace current graph - keep previous or silence

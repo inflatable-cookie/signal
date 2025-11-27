@@ -66,6 +66,9 @@ public:
     GraphNode* findNode(const NodeId& id) noexcept;
     const GraphNode* findNode(const NodeId& id) const noexcept;
 
+    /// Check if graph has been loaded (has nodes)
+    bool hasGraph() const noexcept;
+
     /// Clear the graph (remove all nodes and connections)
     void clear();
 

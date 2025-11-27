@@ -39,12 +39,19 @@ void AssetsDomain::handle(const Envelope& env) {
             uint32_t sampleRate = payload.value("sampleRate", 44100u);
             uint64_t frames = payload.value("frames", 0u);
 
+            // Diagnostic logging: asset registration
+            std::cout << "[AssetsDomain] Registering audio asset: id='" << assetId
+                      << "', path='" << path
+                      << "', channels=" << channels
+                      << ", sampleRate=" << sampleRate
+                      << ", frames=" << frames << std::endl;
+
             if (frames == 0) {
-                std::cerr << "[AssetsDomain] Invalid frames count (0) for asset: " << assetId << std::endl;
-                return;
+                std::cerr << "[AssetsDomain] ⚠ Invalid frames count (0) for asset: " << assetId << std::endl;
             }
 
             _engineHost->prepareAudioAsset(assetId, path, channels, sampleRate, frames);
+            std::cout << "[AssetsDomain] Called prepareAudioAsset for: " << assetId << std::endl;
         } catch (const std::exception& e) {
             std::cerr << "[AssetsDomain] Failed to parse registerAudioAsset payload: " << e.what() << std::endl;
         }

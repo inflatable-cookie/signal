@@ -130,6 +130,23 @@ std::vector<const MidiEventCompiled*> StreamScheduler::getMidiEventsInRange(
     return events;
 }
 
+bool StreamScheduler::hasSchedule() const noexcept {
+    const ScheduleData* schedule = _activeSchedule.load(std::memory_order_acquire);
+    if (!schedule) {
+        return false;
+    }
+    // Check if schedule has streams (not empty)
+    return !schedule->streams.empty();
+}
+
+int StreamScheduler::getActiveStreamCount() const noexcept {
+    const ScheduleData* schedule = _activeSchedule.load(std::memory_order_acquire);
+    if (!schedule) {
+        return 0;
+    }
+    return static_cast<int>(schedule->streams.size());
+}
+
 const ScheduleData* StreamScheduler::getSchedule() const {
     return _activeSchedule.load(std::memory_order_acquire);
 }

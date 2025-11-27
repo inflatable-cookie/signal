@@ -111,6 +111,21 @@ public:
         class AudioAssetSource* assetSource
     ) {
         if (!segment || segment->streamId != _streamId || !assetSource) {
+            // Diagnostic: Log why injection failed
+            #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+            if (!segment) {
+                static int logCount = 0;
+                if (logCount++ < 5) {
+                    std::cerr << "[AudioLaneNode] injectAudioSegment: segment is null" << std::endl;
+                }
+            } else if (segment->streamId != _streamId) {
+                static int logCount = 0;
+                if (logCount++ < 5) {
+                    std::cerr << "[AudioLaneNode] injectAudioSegment: streamId mismatch: expected '"
+                              << _streamId << "', got '" << segment->streamId << "'" << std::endl;
+                }
+            }
+            #endif
             return;
         }
 
@@ -206,6 +221,30 @@ public:
         // Phase 9: TODO - Apply time-stretching
         // For now, stretch metadata is stored but not applied
         // Future: Apply stretch algorithm based on segment->stretch.mode and segment->stretch.ratio
+
+        // Diagnostic: Check if output is non-zero (debug builds only)
+        #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
+        static int debugCallCount = 0;
+        if (debugCallCount++ < 10) {
+            float maxSample = 0.0f;
+            for (int ch = 0; ch < io.audioOut.numChannels(); ++ch) {
+                for (int frame = 0; frame < io.audioOut.numFrames(); ++frame) {
+                    float absSample = std::abs(io.audioOut.getSample(frame, ch));
+                    if (absSample > maxSample) {
+                        maxSample = absSample;
+                    }
+                }
+            }
+            if (maxSample < 0.0001f) {
+                std::cerr << "[AudioLaneNode] ⚠ Zero output after injectAudioSegment: nodeId='"
+                          << getId() << "', streamId='" << _streamId
+                          << "', assetId='" << segment->assetId << "'" << std::endl;
+            } else {
+                std::cout << "[AudioLaneNode] ✓ Non-zero output: nodeId='" << getId()
+                          << "', maxSample=" << maxSample << std::endl;
+            }
+        }
+        #endif
     }
 
 private:

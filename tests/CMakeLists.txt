@@ -19,6 +19,7 @@ add_executable(signal-tests
     test_plugin_hosting.cpp
     test_automation.cpp
     test_recording.cpp
+    test_playback_path.cpp
 )
 
 target_link_libraries(signal-tests PRIVATE
