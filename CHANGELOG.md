@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 21:29:21 UTC) [added] Implemented engine self-test command: added offline render sanity check harness (EngineSelfTest) with 3 synthetic scenarios, IPC integration via EngineDomain, and diagnostics panel UI integration. Self-test runs short offline renders without touching live engine state and returns pass/fail summary.
+
 (2025-11-28 21:07:47 UTC) [added] Added latency and tail handling stubs: node-level API (getLatencyInSamples, getTailInSamples, hasTailCurrently), graph-level aggregation methods, and EngineHost integration with atomic caching. All methods return zero (stub phase) but provide clean foundation for future latency compensation and tail-aware transport.
 
 (2025-11-28 20:58:25 UTC) [changed] Enhanced graph snapshot channel metadata parsing to support separate input/output channel counts. GraphEngine now validates channel compatibility using explicit input/output channel counts from snapshot metadata, with improved error messages including node kind information.

@@ -2,6 +2,7 @@
 add_library(signal-core STATIC
     core/SignalApp.cpp
     core/EngineHost.cpp
+    core/EngineSelfTest.cpp
     core/MeteringService.cpp
     core/MixerService.cpp
     core/AutomationService.cpp

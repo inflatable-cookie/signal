@@ -22,6 +22,10 @@ private:
     void handleShutdown();
     void handleScheduleSession(const nlohmann::json& payload);
     void handleGraphSnapshot(const nlohmann::json& payload);
+    void handleSelfTest(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
 
     void emitEngineStateEvent(
         const loophole::signal::ipc::IpcEnvelope& commandEnv,

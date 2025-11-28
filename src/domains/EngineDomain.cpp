@@ -3,6 +3,7 @@
 #include "core/StreamScheduler.hpp"
 #include "core/ScheduleData.hpp"
 #include "core/GraphSnapshot.hpp"
+#include "core/EngineSelfTest.hpp"
 #include "ipc/IpcEnvelope.hpp"
 #include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
@@ -115,6 +116,9 @@ void EngineDomain::handle(
         handleScheduleSession(env.payload);
     } else if (env.name == "graphSnapshot" || env.name == "applyGraphSnapshot") {
         handleGraphSnapshot(env.payload);
+    } else if (env.name == "selfTest") {
+        handleSelfTest(env, session);
+        return; // Self-test emits its own event, don't emit state event
     } else {
         LOG_WARN({"EngineDomain"}, std::string("Unknown command: ") + env.name);
     }
@@ -256,5 +260,99 @@ void EngineDomain::emitHeartbeatEvent(
     heartbeatEvent.payload = payload;
 
     session->send(heartbeatEvent);
+}
+
+void EngineDomain::handleSelfTest(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    LOG_INFO({"EngineDomain"}, "Running engine self-test");
+
+    // Run self-test synchronously (should be fast - few ms)
+    // This runs on the IPC thread, not the audio thread
+    EngineSelfTestResult testResult;
+    try {
+        testResult = runEngineSelfTest();
+    } catch (const std::exception& e) {
+        LOG_ERROR({"EngineDomain"}, std::string("Self-test exception: ") + e.what());
+        testResult.ok = false;
+        // Add a single failed scenario to indicate error
+        EngineSelfTestScenarioResult errorScenario;
+        errorScenario.id = "error";
+        errorScenario.ok = false;
+        errorScenario.maxAbsSample = 0.0f;
+        testResult.scenarios.push_back(errorScenario);
+    } catch (...) {
+        LOG_ERROR({"EngineDomain"}, "Self-test failed with unknown exception");
+        testResult.ok = false;
+        EngineSelfTestScenarioResult errorScenario;
+        errorScenario.id = "error";
+        errorScenario.ok = false;
+        errorScenario.maxAbsSample = 0.0f;
+        testResult.scenarios.push_back(errorScenario);
+    }
+
+    // Build JSON payload
+    nlohmann::json payload;
+    payload["ok"] = testResult.ok;
+    payload["scenarioCount"] = static_cast<int>(testResult.scenarios.size());
+
+    int failedCount = 0;
+    for (const auto& scenario : testResult.scenarios) {
+        if (!scenario.ok) {
+            failedCount++;
+        }
+    }
+    payload["failedScenarioCount"] = failedCount;
+
+    nlohmann::json scenariosArray = nlohmann::json::array();
+    for (const auto& scenario : testResult.scenarios) {
+        nlohmann::json scenarioJson;
+        scenarioJson["id"] = scenario.id;
+        scenarioJson["ok"] = scenario.ok;
+        scenarioJson["maxAbsSample"] = scenario.maxAbsSample;
+        scenariosArray.push_back(scenarioJson);
+    }
+    payload["scenarios"] = scenariosArray;
+
+    // Emit self-test result event
+    IpcEnvelope resultEvent;
+    resultEvent.version = 1;
+    resultEvent.id = "engine-self-test-result-" + commandEnv.id;
+    resultEvent.correlationId = commandEnv.id;
+    resultEvent.timestamp = currentTimestamp();
+    resultEvent.origin = IpcOrigin::Signal;
+
+    // Convert origin to target for event
+    switch (commandEnv.origin) {
+    case IpcOrigin::Aura:
+        resultEvent.target = IpcTarget::Aura;
+        break;
+    case IpcOrigin::Pulse:
+        resultEvent.target = IpcTarget::Pulse;
+        break;
+    case IpcOrigin::Signal:
+        resultEvent.target = IpcTarget::Signal;
+        break;
+    case IpcOrigin::Composer:
+        resultEvent.target = IpcTarget::Composer;
+        break;
+    }
+
+    resultEvent.domain = "engine";
+    resultEvent.kind = IpcKind::Event;
+    resultEvent.name = "selfTestResult";
+    resultEvent.priority = commandEnv.priority;
+    resultEvent.payload = payload;
+
+    session->send(resultEvent);
+
+    std::ostringstream msg;
+    msg << "Engine self-test complete: " << (testResult.ok ? "PASS" : "FAIL")
+        << " (" << (testResult.scenarios.size() - failedCount) << "/"
+        << testResult.scenarios.size() << " scenarios passed)";
+    LOG_INFO({"EngineDomain"}, msg.str());
 }
 
