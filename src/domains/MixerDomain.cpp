@@ -5,12 +5,16 @@
 #include "core/GraphNodes.hpp"
 #include "core/GraphNode.hpp"
 #include "ipc/Envelope.hpp"
+#include "ipc/IpcEnvelope.hpp"
+#include "ipc/IpcLegacyBridge.hpp"
+#include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-MixerDomain::MixerDomain(EngineHost* engineHost)
-    : _engineHost(engineHost)
+MixerDomain::MixerDomain(IpcRouter* router, EngineHost* engineHost)
+    : _router(router)
+    , _engineHost(engineHost)
 {
     LOG_INFO({"MixerDomain"}, "Initialised");
 }
@@ -80,6 +84,22 @@ void MixerDomain::handle(const Envelope& env) {
         }
     } else {
         LOG_WARN({"MixerDomain"}, std::string("Received unhandled mixer command: ") + env.name);
+    }
+}
+
+void MixerDomain::handle(
+    const loophole::signal::ipc::IpcEnvelope& env,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    if (env.domain != "mixer") {
+        LOG_DEBUG({"MixerDomain"}, "Received envelope for different domain");
+        return;
+    }
+
+    // Convert to legacy envelope and route through router
+    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
+    if (_router) {
+        _router->dispatch(oldEnv);
     }
 }
 

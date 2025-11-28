@@ -2,11 +2,17 @@
 #include "core/EngineHost.hpp"
 #include "core/TransportState.hpp"
 #include "ipc/Envelope.hpp"
+#include "ipc/IpcEnvelope.hpp"
+#include "ipc/IpcLegacyBridge.hpp"
+#include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-TransportDomain::TransportDomain(EngineHost* engineHost) : _engineHost(engineHost) {
+TransportDomain::TransportDomain(IpcRouter* router, EngineHost* engineHost)
+    : _router(router)
+    , _engineHost(engineHost)
+{
 }
 
 void TransportDomain::handle(const Envelope& env) {
@@ -208,5 +214,88 @@ void TransportDomain::handle(const Envelope& env) {
     } else {
         LOG_WARN({"TransportDomain"}, std::string("Unknown command: ") + env.name);
     }
+}
+
+void TransportDomain::handle(
+    const loophole::signal::ipc::IpcEnvelope& env,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    if (env.domain != "transport") {
+        LOG_DEBUG({"TransportDomain"}, "Received envelope for different domain");
+        return;
+    }
+
+    // Convert to legacy envelope and route through router
+    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
+    if (_router) {
+        _router->dispatch(oldEnv);
+    }
+
+    // Emit state events after processing commands
+    if (env.kind == loophole::signal::ipc::IpcKind::Command) {
+        emitTransportStateEvent(env, session);
+    }
+}
+
+void TransportDomain::emitTransportStateEvent(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    IpcEnvelope stateEvent;
+    stateEvent.version = 1;
+    stateEvent.id = "transport-state-" + commandEnv.id;
+    stateEvent.correlationId = commandEnv.id;
+    stateEvent.timestamp = currentTimestamp();
+    stateEvent.origin = IpcOrigin::Signal;
+
+    switch (commandEnv.origin) {
+    case IpcOrigin::Aura:
+        stateEvent.target = IpcTarget::Aura;
+        break;
+    case IpcOrigin::Pulse:
+        stateEvent.target = IpcTarget::Pulse;
+        break;
+    case IpcOrigin::Signal:
+        stateEvent.target = IpcTarget::Signal;
+        break;
+    case IpcOrigin::Composer:
+        stateEvent.target = IpcTarget::Composer;
+        break;
+    }
+
+    stateEvent.domain = "transport";
+    stateEvent.kind = IpcKind::Event;
+    stateEvent.name = "state";
+    stateEvent.priority = commandEnv.priority;
+
+    // Get current transport state and create payload
+    nlohmann::json payload;
+    if (_engineHost) {
+        const auto& transport = _engineHost->transport();
+        payload["isPlaying"] = transport.isPlaying;
+        // Convert seconds to beats using real tempo
+        double tempo = transport.tempo;
+        payload["positionBeats"] = (transport.positionSeconds / 60.0) * tempo;
+        payload["loopEnabled"] = transport.loopEnabled;
+        if (transport.loopRegion.has_value()) {
+            nlohmann::json loopRegion;
+            loopRegion["startBeats"] = (transport.loopRegion->startSeconds / 60.0) * tempo;
+            loopRegion["endBeats"] = (transport.loopRegion->endSeconds / 60.0) * tempo;
+            payload["loopRegion"] = loopRegion;
+        } else {
+            payload["loopRegion"] = nullptr;
+        }
+    } else {
+        payload["isPlaying"] = false;
+        payload["positionBeats"] = 0.0;
+        payload["loopEnabled"] = false;
+        payload["loopRegion"] = nullptr;
+    }
+
+    stateEvent.payload = payload;
+
+    session->send(stateEvent);
 }
 

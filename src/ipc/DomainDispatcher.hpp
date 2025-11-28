@@ -1,19 +1,23 @@
 #pragma once
 
 #include "ipc/IpcEnvelope.hpp"
+#include "ipc/IpcDomainHandler.hpp"
 #include "ipc/TcpClientSession.hpp"
 #include "ipc/Router.hpp"
 #include <memory>
+#include <unordered_map>
+#include <string>
 
 class EngineHost;
-class HardwareDomain;
+class MeteringService;
 
 namespace loophole::signal::ipc {
 
-/// Central dispatcher that routes envelopes to domain handlers and can send replies
+/// Central dispatcher that routes envelopes to domain handlers
+/// Simple registry-based forwarding - no domain-specific logic
 class DomainDispatcher {
 public:
-    DomainDispatcher(IpcRouter* router, EngineHost* engineHost);
+    DomainDispatcher(IpcRouter* router, EngineHost* engineHost, MeteringService* meteringService);
 
     void handleEnvelope(
         const IpcEnvelope& env,
@@ -21,34 +25,9 @@ public:
     );
 
 private:
-    void handleEngineDomain(
-        const IpcEnvelope& env,
-        const std::shared_ptr<TcpClientSession>& session
-    );
-
-    void handleTransportDomain(
-        const IpcEnvelope& env,
-        const std::shared_ptr<TcpClientSession>& session
-    );
-
-    void handleHardwareDomain(
-        const IpcEnvelope& env,
-        const std::shared_ptr<TcpClientSession>& session
-    );
-
-    void handleUnknownDomain(
-        const IpcEnvelope& env,
-        const std::shared_ptr<TcpClientSession>& session
-    );
-
-    void handleGenericDomain(
-        const IpcEnvelope& env,
-        const std::shared_ptr<TcpClientSession>& session
-    );
-
     IpcRouter* router_;
     EngineHost* engineHost_;
-    std::unique_ptr<HardwareDomain> hardwareDomain_;
+    std::unordered_map<std::string, std::unique_ptr<IpcDomainHandler>> domains_;
 };
 
 } // namespace loophole::signal::ipc

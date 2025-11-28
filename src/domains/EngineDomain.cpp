@@ -5,6 +5,9 @@
 #include "core/GraphSnapshot.hpp"
 #include "core/GraphSnapshotHelpers.hpp"
 #include "ipc/Envelope.hpp"
+#include "ipc/IpcEnvelope.hpp"
+#include "ipc/IpcLegacyBridge.hpp"
+#include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
@@ -12,7 +15,10 @@
 #include <sstream>
 #include <iostream>
 
-EngineDomain::EngineDomain(EngineHost* engineHost) : _engineHost(engineHost) {
+EngineDomain::EngineDomain(IpcRouter* router, EngineHost* engineHost)
+    : _router(router)
+    , _engineHost(engineHost)
+{
 }
 
 void EngineDomain::handle(const Envelope& env) {
@@ -566,5 +572,163 @@ void EngineDomain::handle(const Envelope& env) {
     } else {
         std::cout << "[EngineDomain] Unknown command: " << env.name << std::endl;
     }
+}
+
+void EngineDomain::handle(
+    const loophole::signal::ipc::IpcEnvelope& env,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    if (env.domain != "engine") {
+        LOG_DEBUG({"EngineDomain"}, "Received envelope for different domain");
+        return;
+    }
+
+    // Convert to legacy envelope and route through router
+    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
+    if (_router) {
+        _router->dispatch(oldEnv);
+    }
+
+    // Emit state events after processing commands
+    if (env.kind == loophole::signal::ipc::IpcKind::Command) {
+        if (env.name == "heartbeat") {
+            emitHeartbeatEvent(env, session);
+        } else {
+            emitEngineStateEvent(env, session);
+        }
+    }
+}
+
+void EngineDomain::emitEngineStateEvent(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    IpcEnvelope stateEvent;
+    stateEvent.version = 1;
+    stateEvent.id = "engine-state-" + commandEnv.id;
+    stateEvent.correlationId = commandEnv.id;
+    stateEvent.timestamp = currentTimestamp();
+    stateEvent.origin = IpcOrigin::Signal;
+
+    // Convert origin to target for event
+    switch (commandEnv.origin) {
+    case IpcOrigin::Aura:
+        stateEvent.target = IpcTarget::Aura;
+        break;
+    case IpcOrigin::Pulse:
+        stateEvent.target = IpcTarget::Pulse;
+        break;
+    case IpcOrigin::Signal:
+        stateEvent.target = IpcTarget::Signal;
+        break;
+    case IpcOrigin::Composer:
+        stateEvent.target = IpcTarget::Composer;
+        break;
+    }
+
+    stateEvent.domain = "engine";
+    stateEvent.kind = IpcKind::Event;
+    stateEvent.name = "state";
+    stateEvent.priority = commandEnv.priority;
+
+    // Get current engine state and create payload
+    std::string lifecycle = "stopped";
+    std::optional<std::string> lastError;
+    if (_engineHost) {
+        switch (_engineHost->state()) {
+        case EngineHost::State::Stopped:
+            lifecycle = "stopped";
+            break;
+        case EngineHost::State::Starting:
+            lifecycle = "starting";
+            break;
+        case EngineHost::State::Running:
+            lifecycle = "running";
+            break;
+        case EngineHost::State::Error:
+            lifecycle = "error";
+            lastError = _engineHost->lastError();
+            break;
+        }
+    }
+
+    nlohmann::json payload;
+    payload["lifecycle"] = lifecycle;
+    if (lastError.has_value()) {
+        payload["lastError"] = lastError.value();
+    } else {
+        payload["lastError"] = nullptr;
+    }
+    // Include runtime configuration in state event
+    if (_engineHost) {
+        payload["sampleRate"] = _engineHost->getSampleRate();
+        payload["blockSize"] = _engineHost->getBlockSize();
+        payload["outputDeviceName"] = _engineHost->getOutputDeviceName();
+        payload["numOutputChannels"] = _engineHost->getNumOutputChannels();
+    }
+
+    stateEvent.payload = payload;
+
+    session->send(stateEvent);
+}
+
+void EngineDomain::emitHeartbeatEvent(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    IpcEnvelope heartbeatEvent;
+    heartbeatEvent.version = 1;
+    heartbeatEvent.id = "engine-heartbeat-" + commandEnv.id;
+    heartbeatEvent.correlationId = commandEnv.id;
+    heartbeatEvent.timestamp = currentTimestamp();
+    heartbeatEvent.origin = IpcOrigin::Signal;
+
+    switch (commandEnv.origin) {
+    case IpcOrigin::Aura:
+        heartbeatEvent.target = IpcTarget::Aura;
+        break;
+    case IpcOrigin::Pulse:
+        heartbeatEvent.target = IpcTarget::Pulse;
+        break;
+    case IpcOrigin::Signal:
+        heartbeatEvent.target = IpcTarget::Signal;
+        break;
+    case IpcOrigin::Composer:
+        heartbeatEvent.target = IpcTarget::Composer;
+        break;
+    }
+
+    heartbeatEvent.domain = "engine";
+    heartbeatEvent.kind = IpcKind::Event;
+    heartbeatEvent.name = "heartbeat";
+    heartbeatEvent.priority = commandEnv.priority;
+
+    std::string lifecycle = "stopped";
+    if (_engineHost) {
+        switch (_engineHost->state()) {
+        case EngineHost::State::Stopped:
+            lifecycle = "stopped";
+            break;
+        case EngineHost::State::Starting:
+            lifecycle = "starting";
+            break;
+        case EngineHost::State::Running:
+            lifecycle = "running";
+            break;
+        case EngineHost::State::Error:
+            lifecycle = "error";
+            break;
+        }
+    }
+
+    nlohmann::json payload;
+    payload["lifecycle"] = lifecycle;
+    heartbeatEvent.payload = payload;
+
+    session->send(heartbeatEvent);
 }
 

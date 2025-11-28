@@ -4,13 +4,17 @@
 #include "core/AutomationData.hpp"
 #include "core/ScheduleData.hpp"
 #include "ipc/Envelope.hpp"
+#include "ipc/IpcEnvelope.hpp"
+#include "ipc/IpcLegacyBridge.hpp"
+#include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <cmath>
 #include <sstream>
 
-AutomationDomain::AutomationDomain(EngineHost* engineHost)
-    : _engineHost(engineHost)
+AutomationDomain::AutomationDomain(IpcRouter* router, EngineHost* engineHost)
+    : _router(router)
+    , _engineHost(engineHost)
 {
     LOG_INFO({"AutomationDomain"}, "Initialised");
 }
@@ -140,6 +144,22 @@ void AutomationDomain::handle(const Envelope& env) {
         }
     } else {
         LOG_WARN({"AutomationDomain"}, std::string("Received unhandled automation command: ") + env.name);
+    }
+}
+
+void AutomationDomain::handle(
+    const loophole::signal::ipc::IpcEnvelope& env,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    if (env.domain != "automation") {
+        LOG_DEBUG({"AutomationDomain"}, "Received envelope for different domain");
+        return;
+    }
+
+    // Convert to legacy envelope and route through router
+    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
+    if (_router) {
+        _router->dispatch(oldEnv);
     }
 }
 

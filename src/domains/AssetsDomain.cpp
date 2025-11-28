@@ -1,11 +1,17 @@
 #include "domains/AssetsDomain.hpp"
 #include "core/EngineHost.hpp"
 #include "ipc/Envelope.hpp"
+#include "ipc/IpcEnvelope.hpp"
+#include "ipc/IpcLegacyBridge.hpp"
+#include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-AssetsDomain::AssetsDomain(EngineHost* engineHost) : _engineHost(engineHost) {
+AssetsDomain::AssetsDomain(IpcRouter* router, EngineHost* engineHost)
+    : _router(router)
+    , _engineHost(engineHost)
+{
 }
 
 void AssetsDomain::handle(const Envelope& env) {
@@ -60,6 +66,22 @@ void AssetsDomain::handle(const Envelope& env) {
         }
     } else {
         LOG_WARN({"AssetsDomain"}, std::string("Unknown command: ") + env.name);
+    }
+}
+
+void AssetsDomain::handle(
+    const loophole::signal::ipc::IpcEnvelope& env,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    if (env.domain != "assets") {
+        LOG_DEBUG({"AssetsDomain"}, "Received envelope for different domain");
+        return;
+    }
+
+    // Convert to legacy envelope and route through router
+    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
+    if (_router) {
+        _router->dispatch(oldEnv);
     }
 }
 
