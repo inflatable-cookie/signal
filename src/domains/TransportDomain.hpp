@@ -1,32 +1,33 @@
 #pragma once
 
-#include "ipc/Router.hpp"
 #include "ipc/IpcDomainHandler.hpp"
 #include <memory>
 
 class EngineHost;
 
-class TransportDomain : public DomainHandler, public loophole::signal::ipc::IpcDomainHandler {
+class TransportDomain : public loophole::signal::ipc::IpcDomainHandler {
 public:
-    explicit TransportDomain(IpcRouter* router, EngineHost* engineHost);
+    explicit TransportDomain(EngineHost* engineHost);
     ~TransportDomain() override = default;
 
-    // Legacy DomainHandler interface (for router)
-    void handle(const Envelope& env) override;
-
-    // New IpcDomainHandler interface
     void handle(
         const loophole::signal::ipc::IpcEnvelope& env,
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
     ) override;
 
 private:
+    void handlePlay();
+    void handleStop(const nlohmann::json& payload);
+    void handleSeek(const nlohmann::json& payload);
+    void handleSetLoopEnabled(const nlohmann::json& payload);
+    void handleSetLoopRegion(const nlohmann::json& payload);
+    void handleSetTempo(const nlohmann::json& payload);
+
     void emitTransportStateEvent(
         const loophole::signal::ipc::IpcEnvelope& commandEnv,
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
     );
 
-    IpcRouter* _router;
     EngineHost* _engineHost;
 };
 

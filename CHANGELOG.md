@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 17:59:22 UTC) [changed] Removed legacy IPC components (Router, Envelope, DomainHandler) and migrated all domains to pure IpcEnvelope handling via IpcDomainHandler interface. Simplified DomainDispatcher to registry-based forwarding only.
+
 (2025-11-28 17:40:38 UTC) [changed] Refactored DomainDispatcher to registry pattern and moved all domain-specific logic into domain classes.
 
 (2025-11-27 17:13:44 UTC) [fixed] Phase 12c: Fixed critical JSON parsing bug in MixerDomain - payload strings now correctly parsed before accessing JSON fields. Added MixerChannelNode gain application from MixerService updates.

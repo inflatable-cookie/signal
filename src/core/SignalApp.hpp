@@ -5,13 +5,12 @@
 /// Thread: Main thread
 /// Ownership: Owned by main()
 /// Communication:
-///   - Owns EngineHost and IpcRouter
+///   - Owns EngineHost
 ///   - Sets up IPC server with Asio io_context
 ///   - Coordinates shutdown
 
 #include <memory>
 
-class IpcRouter;
 class EngineHost;
 
 class SignalApp {
@@ -22,7 +21,6 @@ public:
     int run();
 
 private:
-    std::unique_ptr<IpcRouter> _router;
     std::unique_ptr<EngineHost> _engineHost;
 };
 

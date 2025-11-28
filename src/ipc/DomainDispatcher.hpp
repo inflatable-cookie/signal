@@ -3,7 +3,6 @@
 #include "ipc/IpcEnvelope.hpp"
 #include "ipc/IpcDomainHandler.hpp"
 #include "ipc/TcpClientSession.hpp"
-#include "ipc/Router.hpp"
 #include <memory>
 #include <unordered_map>
 #include <string>
@@ -17,7 +16,7 @@ namespace loophole::signal::ipc {
 /// Simple registry-based forwarding - no domain-specific logic
 class DomainDispatcher {
 public:
-    DomainDispatcher(IpcRouter* router, EngineHost* engineHost, MeteringService* meteringService);
+    DomainDispatcher(EngineHost* engineHost, MeteringService* meteringService);
 
     void handleEnvelope(
         const IpcEnvelope& env,
@@ -25,7 +24,6 @@ public:
     );
 
 private:
-    IpcRouter* router_;
     EngineHost* engineHost_;
     std::unordered_map<std::string, std::unique_ptr<IpcDomainHandler>> domains_;
 };

@@ -21,18 +21,17 @@
 
 namespace loophole::signal::ipc {
 
-DomainDispatcher::DomainDispatcher(IpcRouter* router, EngineHost* engineHost, MeteringService* meteringService)
-    : router_(router)
-    , engineHost_(engineHost)
+DomainDispatcher::DomainDispatcher(EngineHost* engineHost, MeteringService* meteringService)
+    : engineHost_(engineHost)
 {
     // Register all domain handlers
-    domains_.emplace("engine", std::make_unique<EngineDomain>(router_, engineHost_));
-    domains_.emplace("transport", std::make_unique<TransportDomain>(router_, engineHost_));
-    domains_.emplace("hardware", std::make_unique<HardwareDomain>(router_, engineHost_));
-    domains_.emplace("mixer", std::make_unique<MixerDomain>(router_, engineHost_));
-    domains_.emplace("automation", std::make_unique<AutomationDomain>(router_, engineHost_));
-    domains_.emplace("assets", std::make_unique<AssetsDomain>(router_, engineHost_));
-    domains_.emplace("metering", std::make_unique<MeteringDomain>(router_, meteringService, engineHost_));
+    domains_.emplace("engine", std::make_unique<EngineDomain>(engineHost_));
+    domains_.emplace("transport", std::make_unique<TransportDomain>(engineHost_));
+    domains_.emplace("hardware", std::make_unique<HardwareDomain>(engineHost_));
+    domains_.emplace("mixer", std::make_unique<MixerDomain>(engineHost_));
+    domains_.emplace("automation", std::make_unique<AutomationDomain>(engineHost_));
+    domains_.emplace("assets", std::make_unique<AssetsDomain>(engineHost_));
+    domains_.emplace("metering", std::make_unique<MeteringDomain>(meteringService, engineHost_));
 }
 
 void DomainDispatcher::handleEnvelope(

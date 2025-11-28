@@ -4,9 +4,7 @@
 #include "core/ScheduleData.hpp"
 #include "core/GraphSnapshot.hpp"
 #include "core/GraphSnapshotHelpers.hpp"
-#include "ipc/Envelope.hpp"
 #include "ipc/IpcEnvelope.hpp"
-#include "ipc/IpcLegacyBridge.hpp"
 #include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
@@ -15,41 +13,33 @@
 #include <sstream>
 #include <iostream>
 
-EngineDomain::EngineDomain(IpcRouter* router, EngineHost* engineHost)
-    : _router(router)
-    , _engineHost(engineHost)
+EngineDomain::EngineDomain(EngineHost* engineHost)
+    : _engineHost(engineHost)
 {
 }
 
-void EngineDomain::handle(const Envelope& env) {
-    if (env.kind != "command") {
-        LOG_DEBUG({"EngineDomain"}, std::string("Ignoring non-command: ") + env.kind);
-        return;
-    }
+void EngineDomain::handleStart() {
+    _engineHost->start();
+}
 
-    if (!_engineHost) {
-        LOG_ERROR({"EngineDomain"}, "EngineHost is null");
-        return;
-    }
+void EngineDomain::handleStop() {
+    _engineHost->stop();
+}
 
-    if (env.name == "start") {
-        _engineHost->start();
-    } else if (env.name == "stop") {
-        _engineHost->stop();
-    } else if (env.name == "reset") {
-        _engineHost->reset();
-    } else if (env.name == "shutdown") {
-        LOG_INFO({"EngineDomain"}, "Shutdown requested");
-        _engineHost->shutdown();
-    } else if (env.name == "heartbeat") {
-        // Heartbeat command received - handled by DomainDispatcher to emit event
-        LOG_DEBUG({"EngineDomain"}, "Heartbeat command received");
-    } else if (env.name == "scheduleSession" || env.name == "playbackScheduleSnapshot") {
-        // Handle stream-based schedule from Pulse
-        // Architecture: Pulse sends PlaybackScheduleSnapshot with streams, audioSegments, midiEvents
-        // Signal converts to compiled format and applies to StreamScheduler
-        try {
-            nlohmann::json payload = nlohmann::json::parse(env.payload);
+void EngineDomain::handleReset() {
+    _engineHost->reset();
+}
+
+void EngineDomain::handleShutdown() {
+    LOG_INFO({"EngineDomain"}, "Shutdown requested");
+    _engineHost->shutdown();
+}
+
+void EngineDomain::handleScheduleSession(const nlohmann::json& payload) {
+    // Handle stream-based schedule from Pulse
+    // Architecture: Pulse sends PlaybackScheduleSnapshot with streams, audioSegments, midiEvents
+    // Signal converts to compiled format and applies to StreamScheduler
+    try {
 
             // Diagnostic: Log raw JSON structure
             std::cout << "[EngineDomain][Schedule][Signal] Received playback schedule snapshot envelope" << std::endl;
@@ -279,16 +269,17 @@ void EngineDomain::handle(const Envelope& env) {
                 sampleRate
             );
 
-            std::cout << "[EngineDomain][Schedule] Schedule applied to StreamScheduler" << std::endl;
-        } catch (const std::exception& e) {
-            std::cerr << "[EngineDomain] Failed to parse schedule payload: " << e.what() << std::endl;
-        }
-    } else if (env.name == "graphSnapshot" || env.name == "applyGraphSnapshot") {
-        // Handle GraphSnapshot from Pulse
-        // Architecture: Pulse sends GraphSnapshot with nodes and connections
-        // Signal builds runtime node graph from snapshot
-        try {
-            nlohmann::json payload = nlohmann::json::parse(env.payload);
+        std::cout << "[EngineDomain][Schedule] Schedule applied to StreamScheduler" << std::endl;
+    } catch (const std::exception& e) {
+        LOG_ERROR({"EngineDomain"}, std::string("Failed to parse schedule payload: ") + e.what());
+    }
+}
+
+void EngineDomain::handleGraphSnapshot(const nlohmann::json& payload) {
+    // Handle GraphSnapshot from Pulse
+    // Architecture: Pulse sends GraphSnapshot with nodes and connections
+    // Signal builds runtime node graph from snapshot
+    try {
 
             // Diagnostic: Log raw JSON structure (truncated)
             std::cout << "[EngineDomain][Graph] Received graph snapshot envelope" << std::endl;
@@ -564,13 +555,10 @@ void EngineDomain::handle(const Envelope& env) {
                 );
             }
 
-            std::cout << "[EngineDomain][Graph] Graph snapshot loaded and prepared" << std::endl;
-        } catch (const std::exception& e) {
-            std::cerr << "[EngineDomain] Failed to parse graph snapshot payload: " << e.what() << std::endl;
-            // Don't replace current graph - keep previous or silence
-        }
-    } else {
-        std::cout << "[EngineDomain] Unknown command: " << env.name << std::endl;
+        std::cout << "[EngineDomain][Graph] Graph snapshot loaded and prepared" << std::endl;
+    } catch (const std::exception& e) {
+        LOG_ERROR({"EngineDomain"}, std::string("Failed to parse graph snapshot payload: ") + e.what());
+        // Don't replace current graph - keep previous or silence
     }
 }
 
@@ -583,19 +571,40 @@ void EngineDomain::handle(
         return;
     }
 
-    // Convert to legacy envelope and route through router
-    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
-    if (_router) {
-        _router->dispatch(oldEnv);
+    if (env.kind != loophole::signal::ipc::IpcKind::Command) {
+        LOG_DEBUG({"EngineDomain"}, "Ignoring non-command envelope");
+        return;
     }
 
-    // Emit state events after processing commands
-    if (env.kind == loophole::signal::ipc::IpcKind::Command) {
-        if (env.name == "heartbeat") {
-            emitHeartbeatEvent(env, session);
-        } else {
-            emitEngineStateEvent(env, session);
-        }
+    if (!_engineHost) {
+        LOG_ERROR({"EngineDomain"}, "EngineHost is null");
+        return;
+    }
+
+    // Handle commands directly
+    if (env.name == "start") {
+        handleStart();
+    } else if (env.name == "stop") {
+        handleStop();
+    } else if (env.name == "reset") {
+        handleReset();
+    } else if (env.name == "shutdown") {
+        handleShutdown();
+    } else if (env.name == "heartbeat") {
+        // Heartbeat command - just emit response
+        emitHeartbeatEvent(env, session);
+        return;
+    } else if (env.name == "scheduleSession" || env.name == "playbackScheduleSnapshot") {
+        handleScheduleSession(env.payload);
+    } else if (env.name == "graphSnapshot" || env.name == "applyGraphSnapshot") {
+        handleGraphSnapshot(env.payload);
+    } else {
+        LOG_WARN({"EngineDomain"}, std::string("Unknown command: ") + env.name);
+    }
+
+    // Emit state events after processing commands (except heartbeat which already emitted)
+    if (env.name != "heartbeat") {
+        emitEngineStateEvent(env, session);
     }
 }
 

@@ -1,5 +1,4 @@
 #include "core/SignalApp.hpp"
-#include "ipc/Router.hpp"
 #include "ipc/TcpServer.hpp"
 #include "ipc/DomainDispatcher.hpp"
 #include "ipc/IpcEnvelope.hpp"
@@ -33,30 +32,6 @@ SignalApp::SignalApp() {
 
     try {
         _engineHost = std::make_unique<EngineHost>();
-        _router = std::make_unique<IpcRouter>();
-
-        // Register domain handlers with router (for legacy DomainHandler interface)
-        auto engineDomain = std::make_shared<EngineDomain>(_router.get(), _engineHost.get());
-        _router->registerHandler("engine", engineDomain);
-
-        auto transportDomain = std::make_shared<TransportDomain>(_router.get(), _engineHost.get());
-        _router->registerHandler("transport", transportDomain);
-
-        auto meteringDomain = std::make_shared<MeteringDomain>(_router.get(), &_engineHost->metering(), _engineHost.get());
-        _router->registerHandler("metering", meteringDomain);
-
-        auto mixerDomain = std::make_shared<MixerDomain>(_router.get(), _engineHost.get());
-        _router->registerHandler("mixer", mixerDomain);
-
-        auto automationDomain = std::make_shared<AutomationDomain>(_router.get(), _engineHost.get());
-        _router->registerHandler("automation", automationDomain);
-
-        auto assetsDomain = std::make_shared<AssetsDomain>(_router.get(), _engineHost.get());
-        _router->registerHandler("assets", assetsDomain);
-
-        // Register hardware domain
-        auto hardwareDomain = std::make_shared<HardwareDomain>(_router.get(), _engineHost.get());
-        _router->registerHandler("hardware", hardwareDomain);
 
         LOG_INFO({"SignalApp"}, "Initialised");
     } catch (const std::exception& e) {
@@ -95,7 +70,7 @@ int SignalApp::run() {
 
     // Create IO context and server
     asio::io_context io;
-    loophole::signal::ipc::DomainDispatcher dispatcher(_router.get(), _engineHost.get(), &_engineHost->metering());
+    loophole::signal::ipc::DomainDispatcher dispatcher(_engineHost.get(), &_engineHost->metering());
 
     loophole::signal::ipc::TcpServer server(
         io,

@@ -8,8 +8,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(signal-tests
-    test_envelope.cpp
-    test_router.cpp
+    test_domain_dispatcher.cpp
     test_ipc_envelope_codec.cpp
     test_audio_bus.cpp
     test_schedule_transport_thread_safety.cpp

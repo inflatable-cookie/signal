@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ipc/Router.hpp"
 #include "ipc/IpcDomainHandler.hpp"
 #include <memory>
 #include <optional>
@@ -9,15 +8,11 @@
 
 class EngineHost;
 
-class HardwareDomain : public DomainHandler, public loophole::signal::ipc::IpcDomainHandler {
+class HardwareDomain : public loophole::signal::ipc::IpcDomainHandler {
 public:
-    explicit HardwareDomain(IpcRouter* router, EngineHost* engineHost);
+    explicit HardwareDomain(EngineHost* engineHost);
     ~HardwareDomain() override = default;
 
-    // Legacy DomainHandler interface (for router)
-    void handle(const Envelope& env) override;
-
-    // New IpcDomainHandler interface
     void handle(
         const loophole::signal::ipc::IpcEnvelope& env,
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
@@ -35,7 +30,6 @@ private:
         const std::string& deviceId
     );
 
-    IpcRouter* _router;
     EngineHost* _engineHost;
 };
 

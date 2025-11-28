@@ -18,10 +18,8 @@ add_library(signal-core STATIC
     clap/ClapRegistry.cpp
     clap/ClapPluginInstance.cpp
     backend/MiniaudioBackend.cpp
-    ipc/Envelope.cpp
     ipc/IpcEnvelope.cpp
     ipc/IpcEnvelopeCodec.cpp
-    ipc/Router.cpp
     ipc/TcpClientSession.cpp
     ipc/TcpServer.cpp
     ipc/DomainDispatcher.cpp

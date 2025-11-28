@@ -1,26 +1,15 @@
 #include "domains/MeteringDomain.hpp"
 #include "core/MeteringService.hpp"
 #include "core/EngineHost.hpp"
-#include "ipc/Envelope.hpp"
 #include "ipc/IpcEnvelope.hpp"
-#include "ipc/IpcLegacyBridge.hpp"
 #include "ipc/TcpClientSession.hpp"
 #include "logging/Logging.hpp"
 #include <sstream>
 
-MeteringDomain::MeteringDomain(IpcRouter* router, MeteringService* meteringService, EngineHost* engineHost)
-    : _router(router)
-    , _meteringService(meteringService)
+MeteringDomain::MeteringDomain(MeteringService* meteringService, EngineHost* engineHost)
+    : _meteringService(meteringService)
     , _engineHost(engineHost)
 {
-}
-
-void MeteringDomain::handle(const Envelope& env) {
-    // For now, metering domain only publishes events (no commands)
-    // Future: could support commands like "enableMetering" or "setMeteringRate"
-    std::ostringstream msg;
-    msg << "Received envelope: " << env.domain << "." << env.name;
-    LOG_DEBUG({"MeteringDomain"}, msg.str());
 }
 
 void MeteringDomain::handle(
@@ -32,10 +21,12 @@ void MeteringDomain::handle(
         return;
     }
 
-    // Convert to legacy envelope and route through router
-    auto oldEnv = loophole::signal::ipc::toLegacyEnvelope(env);
-    if (_router) {
-        _router->dispatch(oldEnv);
+    // For now, metering domain only publishes events (no commands)
+    // Future: could support commands like "enableMetering" or "setMeteringRate"
+    if (env.kind == loophole::signal::ipc::IpcKind::Command) {
+        std::ostringstream msg;
+        msg << "Received metering command: " << env.name;
+        LOG_DEBUG({"MeteringDomain"}, msg.str());
     }
 }
 
