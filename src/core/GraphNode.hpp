@@ -77,6 +77,24 @@ public:
         _audioConfig = config;
     }
 
+    /// Get total signal path latency in samples, as reported by this node.
+    /// Default: 0 (most nodes, especially simple audio lanes / busses).
+    /// Override in subclasses that introduce latency (e.g., plugins, lookahead processors).
+    /// Real-time safe: must return a constant or lock-free value.
+    virtual int getLatencyInSamples() const noexcept { return 0; }
+
+    /// Get estimated "tail" (ring-out) length for this node in samples.
+    /// Default: 0 for nodes that stop immediately when input stops.
+    /// Override in subclasses that have tails (e.g., reverb, delay plugins).
+    /// Real-time safe: must return a constant or lock-free value.
+    virtual int getTailInSamples() const noexcept { return 0; }
+
+    /// Check whether the node still has tail to render after input stopped.
+    /// Default implementation returns false (no tail).
+    /// Override in subclasses that track tail state dynamically.
+    /// Real-time safe: must use lock-free state checks only.
+    virtual bool hasTailCurrently() const noexcept { return false; }
+
     /// Node I/O buffers
     struct NodeIO {
         AudioBuffer audioIn;

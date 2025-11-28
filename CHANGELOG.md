@@ -24,6 +24,12 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 21:07:47 UTC) [added] Added latency and tail handling stubs: node-level API (getLatencyInSamples, getTailInSamples, hasTailCurrently), graph-level aggregation methods, and EngineHost integration with atomic caching. All methods return zero (stub phase) but provide clean foundation for future latency compensation and tail-aware transport.
+
+(2025-11-28 20:58:25 UTC) [changed] Enhanced graph snapshot channel metadata parsing to support separate input/output channel counts. GraphEngine now validates channel compatibility using explicit input/output channel counts from snapshot metadata, with improved error messages including node kind information.
+
+(2025-11-28 20:47:41 UTC) [changed] Added explicit channel metadata validation in graph snapshot: Signal now validates `audio.channels` metadata from Pulse's graph snapshot, warns for missing metadata on required nodes, and validates channel compatibility at snapshot load time. GraphEngine prefers `audio.channels` over legacy `numAudioInputs`/`numAudioOutputs` fields.
+
 (2025-11-28 20:38:53 UTC) [changed] Enhanced AudioBuffer::sumFrom() with channel-aware summing: now handles channel count mismatches with explicit upmix (duplicate last channel) and downmix (truncate extra channels) rules, supporting mono, stereo, and multi-channel layouts in the node-based mixer architecture.
 
 (2025-11-28 20:40:00 UTC) [changed] Refactored MixerService to be fully channel-aware: finalMix() now handles mono, stereo, and multi-channel layouts correctly with panning only for stereo (2 channels) and gain applied uniformly to all channels, aligned with the unified node-based multi-channel model.

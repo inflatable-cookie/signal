@@ -31,6 +31,8 @@ EngineHost::EngineHost()
     , _lastError(std::nullopt)
     , _shuttingDown(false)
     , _playheadSamples(0)
+    , _graphLatencySamples(0)
+    , _graphTailSamples(0)
 {
     _meteringService = std::make_unique<MeteringService>();
     _mixerService = std::make_unique<MixerService>();
@@ -335,8 +337,31 @@ const GraphEngine& EngineHost::graphEngine() const {
 
 void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
     _graphEngine->loadGraphSnapshot(snapshot, _pluginHost.get(), this);
-    // Mark that prepareEngine should be called before next render
-    // For Phase 1, we'll call prepareEngine explicitly when needed
+
+    // Update graph latency and tail metrics
+    // These are computed from the graph structure and cached for audio thread access
+    int totalLatency = _graphEngine->getTotalLatencyInSamples();
+    int maxTail = _graphEngine->getMaxTailInSamples();
+    _graphLatencySamples.store(totalLatency, std::memory_order_release);
+    _graphTailSamples.store(maxTail, std::memory_order_release);
+
+    // Log graph latency/tail info (once per graph update, not per block)
+    std::ostringstream msg;
+    msg << "Graph latency=" << totalLatency << " samples, tail=" << maxTail << " samples";
+    LOG_INFO({"EngineHost", "Latency"}, msg.str());
+
+    // TODO: Future latency compensation work:
+    //   - Adjust playhead offset by totalLatency when computing musical position
+    //   - Adjust schedule lookahead to account for latency
+    //   - Extend rendering beyond schedule end by maxTail when stopping playback
+
+    // Prepare graph if engine is already running
+    if (_state == State::Running) {
+        prepareEngine(
+            static_cast<int>(getSampleRate()),
+            static_cast<size_t>(getBlockSize())
+        );
+    }
 }
 
 void EngineHost::prepareEngine(int sampleRate, int maxBlockSize) {
@@ -698,6 +723,8 @@ void EngineHost::renderBlock(
         bool graphLoaded = _graphEngine->hasGraph();
         bool scheduleLoaded = _streamScheduler->hasSchedule();
         int activeStreamCount = _streamScheduler->getActiveStreamCount();
+        // TODO: Future tail handling - check if any nodes have active tail (hasTailCurrently())
+        //   Continue rendering even after schedule ends if tail is active
 
         // Format diagnostic message
         std::ostringstream diagMsg;

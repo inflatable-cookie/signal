@@ -23,6 +23,13 @@ enum class PluginFormat {
     Native
 };
 
+/// Audio channel configuration (matches Pulse NodeAudioConfig)
+struct NodeAudioConfigDesc {
+    uint16_t numInputs = 0;             // 0 = unknown/not specified, 0 = no audio input
+    uint16_t numOutputs = 0;            // 0 = unknown/not specified, 0 = no audio output
+    std::optional<std::string> layout;  // Optional layout identifier
+};
+
 /// Node descriptor (matches Pulse NodeDesc)
 struct NodeDesc {
     NodeId nodeId;
@@ -31,10 +38,19 @@ struct NodeDesc {
     NodeKind kind;
     std::optional<PluginFormat> pluginFormat;
     std::optional<std::string> pluginId;
+    /// Audio channel configuration (explicit metadata, preferred over legacy fields)
+    std::optional<NodeAudioConfigDesc> audio;
+    /// Legacy channel configuration fields (deprecated, use `audio` instead)
     std::optional<uint32_t> numAudioInputs;
     std::optional<uint32_t> numAudioOutputs;
     std::optional<uint32_t> numMidiInputs;
     std::optional<uint32_t> numMidiOutputs;
+    /// Optional latency hint in samples (for future latency compensation)
+    /// Signal will compute actual latency from plugin/node capabilities, but this can serve as a hint
+    std::optional<uint32_t> latencySamples;
+    /// Optional tail hint in samples (for future tail-aware transport)
+    /// Signal will compute actual tail from plugin/node capabilities, but this can serve as a hint
+    std::optional<uint32_t> tailSamples;
     // Input node fields (Phase 7)
     std::optional<std::string> deviceId;      // For AudioInputNode
     std::optional<int> inputChannelIndex;     // For AudioInputNode

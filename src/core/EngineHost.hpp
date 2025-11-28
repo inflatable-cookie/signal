@@ -130,6 +130,11 @@ public:
     uint64_t getPlayheadSamples() const noexcept;
     void setPlayheadSamples(uint64_t samples) noexcept;
 
+    // Graph latency and tail (read-only, safe for audio thread)
+    // These values are updated when the graph snapshot is loaded/updated
+    int getGraphLatencySamples() const noexcept { return _graphLatencySamples.load(std::memory_order_acquire); }
+    int getGraphTailSamples() const noexcept { return _graphTailSamples.load(std::memory_order_acquire); }
+
     // Audio thread entry point (called from AudioBackend)
     void renderBlock(
         EngineRenderContext& ctx,
@@ -178,6 +183,11 @@ private:
 
     // Playhead tracking (for audio thread)
     std::atomic<uint64_t> _playheadSamples;
+
+    // Graph latency and tail (updated on control thread, read on audio thread)
+    // These are computed from the graph when it's loaded/updated
+    std::atomic<int> _graphLatencySamples;
+    std::atomic<int> _graphTailSamples;
 
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     // Diagnostic counters for audio thread debugging

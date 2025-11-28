@@ -1,5 +1,6 @@
 #include "core/GraphEngine.hpp"
 #include "core/GraphNodes.hpp"
+#include "core/GraphSnapshotHelpers.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/NodeProcessContext.hpp"
 #include "core/NodeAudioConfig.hpp"
@@ -32,6 +33,32 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
 
     // Create nodes and assign channel configurations
     for (const auto& desc : snapshot.nodes) {
+        // Validate channel metadata for audio-processing nodes
+        bool requiresAudioChannels = (
+            desc.kind == NodeKind::AudioLane ||
+            desc.kind == NodeKind::Instrument ||
+            desc.kind == NodeKind::AudioFx ||
+            desc.kind == NodeKind::MixerChannel ||
+            desc.kind == NodeKind::Receive ||
+            desc.kind == NodeKind::Device ||
+            desc.kind == NodeKind::AudioInput
+        );
+
+        if (requiresAudioChannels) {
+            // Check if audio.numOutputs is missing (prefer explicit metadata)
+            // Note: numInputs can be 0 for source nodes (e.g., AudioLane), so we check numOutputs
+            if (!desc.audio.has_value() || desc.audio->numOutputs == 0) {
+                // Fall back to legacy fields
+                bool hasLegacyChannels = desc.numAudioOutputs.has_value() && desc.numAudioOutputs.value() > 0;
+                if (!hasLegacyChannels) {
+                    std::ostringstream msg;
+                    msg << "Missing audio channel metadata for node " << desc.nodeId
+                        << " (kind: " << nodeKindToString(desc.kind) << ") - defaulting to stereo";
+                    LOG_WARN({"GraphEngine", "Snapshot", "Channels"}, msg.str());
+                }
+            }
+        }
+
         auto node = createNode(desc, pluginHost);
         if (node) {
             // For DeviceNode, set EngineHost reference before assigning config
@@ -82,6 +109,39 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
     // Validate routing rules (channel compatibility, layout rules)
     validateRouting();
 
+    // Log channel validation summary
+    int nodesWithAudioMetadata = 0;
+    int nodesWithLegacyMetadata = 0;
+    int nodesMissingMetadata = 0;
+    for (const auto& desc : snapshot.nodes) {
+        bool requiresAudioChannels = (
+            desc.kind == NodeKind::AudioLane ||
+            desc.kind == NodeKind::Instrument ||
+            desc.kind == NodeKind::AudioFx ||
+            desc.kind == NodeKind::MixerChannel ||
+            desc.kind == NodeKind::Receive ||
+            desc.kind == NodeKind::Device ||
+            desc.kind == NodeKind::AudioInput
+        );
+        if (requiresAudioChannels) {
+            // Check for explicit audio metadata (numOutputs > 0 indicates valid metadata)
+            if (desc.audio.has_value() && desc.audio->numOutputs > 0) {
+                nodesWithAudioMetadata++;
+            } else if (desc.numAudioOutputs.has_value() && desc.numAudioOutputs.value() > 0) {
+                nodesWithLegacyMetadata++;
+            } else {
+                nodesMissingMetadata++;
+            }
+        }
+    }
+    if (nodesWithAudioMetadata > 0 || nodesWithLegacyMetadata > 0 || nodesMissingMetadata > 0) {
+        std::ostringstream msg;
+        msg << "Channel metadata: " << nodesWithAudioMetadata << " nodes with explicit audio.channels, "
+            << nodesWithLegacyMetadata << " nodes with legacy numAudioOutputs, "
+            << nodesMissingMetadata << " nodes missing metadata";
+        LOG_DEBUG({"GraphEngine", "Snapshot", "Channels"}, msg.str());
+    }
+
     // Log channel configuration summary
     std::ostringstream channelSummary;
     int monoNodes = 0;
@@ -107,7 +167,38 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
         auto* node = findNode(desc.nodeId);
         if (node) {
             const auto& config = node->getAudioConfig();
+            // Check if snapshot specified channel counts (prefer audio.numOutputs, fall back to legacy)
+            int snapshotInputs = 0;
+            int snapshotOutputs = 0;
+            if (desc.audio.has_value()) {
+                snapshotInputs = static_cast<int>(desc.audio->numInputs);
+                snapshotOutputs = static_cast<int>(desc.audio->numOutputs);
+            } else {
+                if (desc.numAudioInputs.has_value()) {
+                    snapshotInputs = static_cast<int>(desc.numAudioInputs.value());
+                }
+                if (desc.numAudioOutputs.has_value()) {
+                    snapshotOutputs = static_cast<int>(desc.numAudioOutputs.value());
+                }
+            }
+
             // Check if snapshot specified channel counts that differ from runtime config
+            if (snapshotInputs > 0 && snapshotInputs != config.numInputChannels) {
+                std::ostringstream msg;
+                msg << "Input channel count mismatch for node " << desc.nodeId
+                    << ": snapshot=" << snapshotInputs
+                    << ", runtime=" << config.numInputChannels;
+                LOG_WARN({"GraphEngine", "Snapshot", "Channels"}, msg.str());
+            }
+            if (snapshotOutputs > 0 && snapshotOutputs != config.numOutputChannels) {
+                std::ostringstream msg;
+                msg << "Output channel count mismatch for node " << desc.nodeId
+                    << ": snapshot=" << snapshotOutputs
+                    << ", runtime=" << config.numOutputChannels;
+                LOG_WARN({"GraphEngine", "Snapshot", "Channels"}, msg.str());
+            }
+
+            // Legacy check for numAudioInputs (for backwards compatibility)
             if (desc.numAudioInputs.has_value()) {
                 int snapshotInputs = static_cast<int>(desc.numAudioInputs.value());
                 if (snapshotInputs != config.numInputChannels) {
@@ -187,16 +278,56 @@ void GraphEngine::clear() {
     _incomingConnections.clear();
 }
 
+int GraphEngine::getTotalLatencyInSamples() const noexcept {
+    // Stub implementation: simple sum of all node latencies
+    // TODO: Future implementation should:
+    //   - Only consider nodes on the actual signal path (from sources to DeviceNode)
+    //   - Account for parallel paths and take maximum latency per path
+    //   - Consider that latency accumulates along the signal path
+    int totalLatency = 0;
+    for (const auto& pair : _nodes) {
+        totalLatency += pair.second->getLatencyInSamples();
+    }
+    return totalLatency;
+}
+
+int GraphEngine::getMaxTailInSamples() const noexcept {
+    // Stub implementation: simple maximum of all node tails
+    // TODO: Future implementation should:
+    //   - Only consider nodes on the actual signal path
+    //   - Account for parallel paths and take maximum tail per path
+    //   - Consider tail propagation through the graph (tail may extend through downstream nodes)
+    int maxTail = 0;
+    for (const auto& pair : _nodes) {
+        int nodeTail = pair.second->getTailInSamples();
+        if (nodeTail > maxTail) {
+            maxTail = nodeTail;
+        }
+    }
+    return maxTail;
+}
+
 NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, GraphNode* node) {
     // Start with node's current config (may have been set by constructor)
     NodeAudioConfig config = node->getAudioConfig();
 
-    // Override with explicit values from NodeDesc if provided
-    if (desc.numAudioInputs.has_value()) {
-        config.numInputChannels = static_cast<int>(desc.numAudioInputs.value());
-    }
-    if (desc.numAudioOutputs.has_value()) {
-        config.numOutputChannels = static_cast<int>(desc.numAudioOutputs.value());
+    // Prefer explicit audio.numInputs/numOutputs metadata over legacy numAudioInputs/numAudioOutputs
+    if (desc.audio.has_value()) {
+        // Use separate input/output channel counts from audio metadata
+        if (desc.audio->numInputs > 0) {
+            config.numInputChannels = static_cast<int>(desc.audio->numInputs);
+        }
+        if (desc.audio->numOutputs > 0) {
+            config.numOutputChannels = static_cast<int>(desc.audio->numOutputs);
+        }
+    } else {
+        // Fall back to legacy fields for backwards compatibility
+        if (desc.numAudioInputs.has_value()) {
+            config.numInputChannels = static_cast<int>(desc.numAudioInputs.value());
+        }
+        if (desc.numAudioOutputs.has_value()) {
+            config.numOutputChannels = static_cast<int>(desc.numAudioOutputs.value());
+        }
     }
 
     // Apply node-type-specific defaults and rules
@@ -565,6 +696,10 @@ void GraphEngine::validateRouting() {
             msg << "Channel mismatch in connection: " << conn.fromNodeId
                 << " (" << compat.sourceChannels << " ch) -> "
                 << conn.toNodeId << " (" << compat.destChannels << " ch)";
+            // Add node kind information for better diagnostics
+            std::string fromKind = nodeKindToString(fromNode->getKind());
+            std::string toKind = nodeKindToString(toNode->getKind());
+            msg << " (from " << fromKind << " to " << toKind << ")";
             LOG_ERROR({"GraphEngine", "Routing"}, msg.str());
             continue;
         } else if (compat.isCompatible) {

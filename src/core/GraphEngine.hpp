@@ -79,6 +79,20 @@ public:
     /// Clear the graph (remove all nodes and connections)
     void clear();
 
+    /// Get total signal path latency in samples for the graph's main path.
+    /// For now, this is a simple sum of all node latencies on the main chain.
+    /// TODO: Future implementation should account for parallel paths and take maximum,
+    ///       and should only consider nodes on the actual signal path (not all nodes).
+    /// Real-time safe: read-only, no allocations or locks.
+    int getTotalLatencyInSamples() const noexcept;
+
+    /// Get simple upper bound on tail length for the entire graph.
+    /// Returns the maximum tail length across all nodes.
+    /// TODO: Future implementation should account for parallel paths and take maximum,
+    ///       and should consider tail propagation through the graph.
+    /// Real-time safe: read-only, no allocations or locks.
+    int getMaxTailInSamples() const noexcept;
+
     /// Execute graph processing (called on audio thread)
     /// - Clears all node buffers
     /// - Routes connections (fan-in, with send levels)

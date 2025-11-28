@@ -86,7 +86,37 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.pluginId = nodeJson["pluginId"].get<std::string>();
         }
 
-        // Parse audio/MIDI channel counts (optional)
+        // Parse audio channel configuration (preferred, explicit metadata)
+        if (nodeJson.contains("audio") && nodeJson["audio"].is_object()) {
+            const auto& audioJson = nodeJson["audio"];
+            NodeAudioConfigDesc audioConfig;
+            // Parse separate input/output channel counts
+            if (audioJson.contains("inputs") && audioJson["inputs"].is_number_unsigned()) {
+                audioConfig.numInputs = audioJson["inputs"].get<uint16_t>();
+            }
+            if (audioJson.contains("outputs") && audioJson["outputs"].is_number_unsigned()) {
+                audioConfig.numOutputs = audioJson["outputs"].get<uint16_t>();
+            }
+            // Backwards compatibility: if old "channels" field exists, use it for both input and output
+            if (audioJson.contains("channels") && audioJson["channels"].is_number_unsigned()) {
+                uint16_t channels = audioJson["channels"].get<uint16_t>();
+                if (audioConfig.numInputs == 0) {
+                    audioConfig.numInputs = channels;
+                }
+                if (audioConfig.numOutputs == 0) {
+                    audioConfig.numOutputs = channels;
+                }
+            }
+            if (audioJson.contains("layout") && audioJson["layout"].is_string()) {
+                audioConfig.layout = audioJson["layout"].get<std::string>();
+            }
+            // Set audio config if we have at least output channels (input can be 0 for source nodes)
+            if (audioConfig.numOutputs > 0 || audioConfig.numInputs > 0) {
+                node.audio = audioConfig;
+            }
+        }
+
+        // Parse legacy audio/MIDI channel counts (optional, for backwards compatibility)
         if (nodeJson.contains("numAudioInputs") && nodeJson["numAudioInputs"].is_number_unsigned()) {
             node.numAudioInputs = nodeJson["numAudioInputs"].get<uint32_t>();
         }
@@ -98,6 +128,14 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
         }
         if (nodeJson.contains("numMidiOutputs") && nodeJson["numMidiOutputs"].is_number_unsigned()) {
             node.numMidiOutputs = nodeJson["numMidiOutputs"].get<uint32_t>();
+        }
+
+        // Parse optional latency/tail hints (for future use)
+        if (nodeJson.contains("latencySamples") && nodeJson["latencySamples"].is_number_unsigned()) {
+            node.latencySamples = nodeJson["latencySamples"].get<uint32_t>();
+        }
+        if (nodeJson.contains("tailSamples") && nodeJson["tailSamples"].is_number_unsigned()) {
+            node.tailSamples = nodeJson["tailSamples"].get<uint32_t>();
         }
 
         // Parse input node fields (Phase 7, optional)

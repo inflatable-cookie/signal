@@ -700,14 +700,30 @@ TEST_CASE("GraphEngine - Routing validation: channel mismatch", "[graph][routing
     NodeDesc lane;
     lane.nodeId = "lane-mono";
     lane.kind = NodeKind::AudioLane;
-    lane.numAudioOutputs = 1; // Mono
+    // Use new audio metadata format
+    {
+        NodeAudioConfigDesc laneAudio;
+        laneAudio.numInputs = 0;
+        laneAudio.numOutputs = 1; // Mono
+        lane.audio = laneAudio;
+    }
+    // Legacy field for backwards compatibility
+    lane.numAudioOutputs = 1;
     snapshot.nodes.push_back(lane);
 
     NodeDesc fx;
     fx.nodeId = "fx-stereo";
     fx.kind = NodeKind::AudioFx;
-    fx.numAudioInputs = 2;  // Stereo input
-    fx.numAudioOutputs = 2; // Stereo output
+    // Use new audio metadata format
+    {
+        NodeAudioConfigDesc fxAudio;
+        fxAudio.numInputs = 2;  // Stereo input
+        fxAudio.numOutputs = 2; // Stereo output
+        fx.audio = fxAudio;
+    }
+    // Legacy fields for backwards compatibility
+    fx.numAudioInputs = 2;
+    fx.numAudioOutputs = 2;
     snapshot.nodes.push_back(fx);
 
     // Connection: mono -> stereo (should be invalid)
@@ -733,6 +749,80 @@ TEST_CASE("GraphEngine - Routing validation: channel mismatch", "[graph][routing
     // The connection should be marked invalid and not used during routing
     // We can't directly check connection validity from outside, but we can verify
     // that the graph still loads (doesn't crash) and nodes are configured correctly
+}
+
+TEST_CASE("GraphEngine - Latency and tail API stubs", "[graph][latency][tail]") {
+    GraphEngine engine;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "latency-tail-test";
+
+    // Create simple graph with a few nodes
+    NodeDesc lane;
+    lane.nodeId = "lane-1";
+    lane.kind = NodeKind::AudioLane;
+    {
+        NodeAudioConfigDesc audioConfig;
+        audioConfig.numInputs = 0;
+        audioConfig.numOutputs = 2;
+        lane.audio = audioConfig;
+    }
+    snapshot.nodes.push_back(lane);
+
+    NodeDesc mixer;
+    mixer.nodeId = "mixer-1";
+    mixer.kind = NodeKind::MixerChannel;
+    {
+        NodeAudioConfigDesc audioConfig;
+        audioConfig.numInputs = 2;
+        audioConfig.numOutputs = 2;
+        mixer.audio = audioConfig;
+    }
+    snapshot.nodes.push_back(mixer);
+
+    NodeDesc device;
+    device.nodeId = "device-1";
+    device.kind = NodeKind::Device;
+    {
+        NodeAudioConfigDesc audioConfig;
+        audioConfig.numInputs = 2;
+        audioConfig.numOutputs = 2;
+        device.audio = audioConfig;
+    }
+    snapshot.nodes.push_back(device);
+
+    // Load graph
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Verify nodes exist
+    auto* laneNode = engine.findNode("lane-1");
+    auto* mixerNode = engine.findNode("mixer-1");
+    auto* deviceNode = engine.findNode("device-1");
+    REQUIRE(laneNode != nullptr);
+    REQUIRE(mixerNode != nullptr);
+    REQUIRE(deviceNode != nullptr);
+
+    // Verify node-level latency/tail API (should return 0 for stub nodes)
+    REQUIRE(laneNode->getLatencyInSamples() == 0);
+    REQUIRE(laneNode->getTailInSamples() == 0);
+    REQUIRE(laneNode->hasTailCurrently() == false);
+
+    REQUIRE(mixerNode->getLatencyInSamples() == 0);
+    REQUIRE(mixerNode->getTailInSamples() == 0);
+    REQUIRE(mixerNode->hasTailCurrently() == false);
+
+    REQUIRE(deviceNode->getLatencyInSamples() == 0);
+    REQUIRE(deviceNode->getTailInSamples() == 0);
+    REQUIRE(deviceNode->hasTailCurrently() == false);
+
+    // Verify graph-level aggregate methods
+    int totalLatency = engine.getTotalLatencyInSamples();
+    int maxTail = engine.getMaxTailInSamples();
+
+    // For stub implementation, should be 0 (all nodes return 0)
+    REQUIRE(totalLatency == 0);
+    REQUIRE(maxTail == 0);
 }
 
 TEST_CASE("GraphEngine - Routing validation: send/receive chain", "[graph][routing][validation]") {
