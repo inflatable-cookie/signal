@@ -467,7 +467,7 @@ void EngineHost::renderBlock(
     // Pointer remains valid for the entire renderBlock (previous snapshot kept alive)
     const TransportState* transport = getTransportSnapshot();
 
-    // Update context with current playhead
+    // Update context with current playhead (needed for hasWorkToDo check)
     ctx.playheadSamples = _playheadSamples.load(std::memory_order_acquire);
 
     // Update transport/tempo info in context (Phase 8)
@@ -494,6 +494,15 @@ void EngineHost::renderBlock(
         ctx.loopStartBeats = 0.0;
         ctx.loopEndBeats = 0.0;
     }
+
+    // Idle fast-path: skip processing if truly idle
+    if (!hasWorkToDo(ctx)) {
+        // Clear output and return early - no schedule, no tails, no live inputs
+        output.clear();
+        return;
+    }
+
+    // Update context with current playhead (already set above, but keeping for clarity)
 
     // Clear output buffer
     output.clear();
@@ -785,6 +794,34 @@ void EngineHost::renderBlock(
         uint64_t newPlayhead = ctx.playheadSamples + output.numFrames();
         _playheadSamples.store(newPlayhead, std::memory_order_release);
     }
+}
+
+bool EngineHost::hasWorkToDo(const EngineRenderContext& ctx) const noexcept {
+    // Real-time safe: read-only, no allocations or locks
+    // Check all conditions that require full processing
+
+    // 1. Transport is playing
+    if (ctx.isPlaying) {
+        return true;
+    }
+
+    // 2. Schedule has active streams at current position
+    if (_streamScheduler->hasActiveStreams(ctx.playheadSamples)) {
+        return true;
+    }
+
+    // 3. Graph has active tails (plugins still producing output after playback stops)
+    if (_graphEngine->hasActiveTails()) {
+        return true;
+    }
+
+    // 4. Graph has live inputs/monitors (AudioInput, MidiInput, or instrument with live MIDI)
+    if (_graphEngine->hasLiveInputsOrMonitors()) {
+        return true;
+    }
+
+    // All conditions false - truly idle, can use fast-path
+    return false;
 }
 
 

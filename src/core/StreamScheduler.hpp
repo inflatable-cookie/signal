@@ -72,6 +72,12 @@ public:
     /// Thread-safe: reads atomic pointer (lock-free)
     int getActiveStreamCount() const noexcept;
 
+    /// Check if schedule has active streams at the given sample position
+    /// Thread-safe: reads atomic pointer (lock-free)
+    /// @param samplePosition Current sample position
+    /// @return true if any stream has active audio segments or MIDI events at this position
+    bool hasActiveStreams(uint64_t samplePosition) const noexcept;
+
 private:
     // Active schedule snapshot (read by audio thread, swapped by control thread)
     // Using raw pointer with shared_ptr for lifetime management

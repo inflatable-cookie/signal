@@ -10,7 +10,7 @@
 #include <cmath>
 #include <sstream>
 
-GraphEngine::GraphEngine() : _pluginHost(nullptr) {
+GraphEngine::GraphEngine() : _pluginHost(nullptr), _hasLiveInputsOrMonitors(false) {
     LOG_DEBUG({"GraphEngine", "Lifecycle"}, "Created");
 }
 
@@ -222,6 +222,38 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
         }
     }
 
+    // Update live inputs/monitors flag based on graph structure
+    // Check for AudioInput, MidiInput nodes, or instrument nodes that might receive live MIDI
+    bool hasLiveInputs = false;
+    for (const auto& pair : _nodes) {
+        const GraphNode* node = pair.second.get();
+        if (!node) continue;
+
+        NodeKind kind = node->getKind();
+        if (kind == NodeKind::AudioInput || kind == NodeKind::MidiInput) {
+            hasLiveInputs = true;
+            break;
+        }
+
+        // Instrument nodes that receive MIDI from MidiInput nodes also need live processing
+        // We check if there's a path from MidiInput to Instrument
+        if (kind == NodeKind::Instrument) {
+            // Check if this instrument has incoming connections from MidiInput nodes
+            auto it = _incomingConnections.find(node->getId());
+            if (it != _incomingConnections.end()) {
+                for (const auto& conn : it->second) {
+                    GraphNode* fromNode = findNode(conn.fromNodeId);
+                    if (fromNode && fromNode->getKind() == NodeKind::MidiInput) {
+                        hasLiveInputs = true;
+                        break;
+                    }
+                }
+            }
+            if (hasLiveInputs) break;
+        }
+    }
+    setLiveInputsOrMonitorsActive(hasLiveInputs);
+
     std::ostringstream msg;
     msg << "Graph loaded: " << _nodes.size() << " nodes, "
         << _connections.size() << " connections, "
@@ -276,6 +308,7 @@ void GraphEngine::clear() {
     _adjacencyList.clear();
     _inDegree.clear();
     _incomingConnections.clear();
+    setLiveInputsOrMonitorsActive(false);
 }
 
 int GraphEngine::getTotalLatencyInSamples() const noexcept {
@@ -299,12 +332,27 @@ int GraphEngine::getMaxTailInSamples() const noexcept {
     //   - Consider tail propagation through the graph (tail may extend through downstream nodes)
     int maxTail = 0;
     for (const auto& pair : _nodes) {
-        int nodeTail = pair.second->getTailInSamples();
-        if (nodeTail > maxTail) {
-            maxTail = nodeTail;
-        }
+        maxTail = std::max(maxTail, pair.second->getTailInSamples());
     }
     return maxTail;
+}
+
+bool GraphEngine::hasActiveTails() const noexcept {
+    // Stub implementation: always returns false for now
+    // TODO: Future implementation should track actual tail state:
+    //   - Monitor plugin tail outputs after playback stops
+    //   - Return true if any plugin is still producing non-silent output
+    //   - Return false once all tails have decayed to silence
+    // This is a placeholder for future tail rendering logic
+    return false;
+}
+
+bool GraphEngine::hasLiveInputsOrMonitors() const noexcept {
+    return _hasLiveInputsOrMonitors.load(std::memory_order_acquire);
+}
+
+void GraphEngine::setLiveInputsOrMonitorsActive(bool active) noexcept {
+    _hasLiveInputsOrMonitors.store(active, std::memory_order_release);
 }
 
 NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, GraphNode* node) {

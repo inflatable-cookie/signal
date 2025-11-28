@@ -142,3 +142,36 @@ const ScheduleData* StreamScheduler::getSchedule() const {
     return _activeSchedule.load(std::memory_order_acquire);
 }
 
+bool StreamScheduler::hasActiveStreams(uint64_t samplePosition) const noexcept {
+    const ScheduleData* schedule = _activeSchedule.load(std::memory_order_acquire);
+    if (!schedule || schedule->streams.empty()) {
+        return false;
+    }
+
+    // Check if any stream has active audio segments at this position
+    for (const auto& stream : schedule->streams) {
+        auto it = schedule->audioSegmentsByStream.find(stream.streamId);
+        if (it != schedule->audioSegmentsByStream.end()) {
+            for (const AudioSegmentCompiled* segment : it->second) {
+                if (samplePosition >= segment->startSamples && samplePosition < segment->endSamples) {
+                    return true;
+                }
+            }
+        }
+
+        // Check if any stream has MIDI events near this position (within current block)
+        // For efficiency, check a small range around current position
+        constexpr uint64_t MIDI_CHECK_RANGE = 512; // One block size
+        auto midiIt = schedule->midiEventsByStream.find(stream.streamId);
+        if (midiIt != schedule->midiEventsByStream.end()) {
+            for (const MidiEventCompiled* event : midiIt->second) {
+                if (event->timeSamples >= samplePosition && event->timeSamples < samplePosition + MIDI_CHECK_RANGE) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+

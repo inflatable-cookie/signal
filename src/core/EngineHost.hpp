@@ -142,6 +142,10 @@ public:
         AudioBus& output
     );
 
+    // Check if engine has work to do (for idle fast-path)
+    // Real-time safe: read-only, no allocations or locks
+    bool hasWorkToDo(const EngineRenderContext& ctx) const noexcept;
+
 private:
     State _state;
     std::optional<std::string> _lastError;

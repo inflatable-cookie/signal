@@ -93,6 +93,22 @@ public:
     /// Real-time safe: read-only, no allocations or locks.
     int getMaxTailInSamples() const noexcept;
 
+    /// Check if graph has active tails (plugins still producing output after playback stops)
+    /// Real-time safe: read-only, no allocations or locks.
+    /// For now, this is a stub that returns false. Future implementation should track
+    /// actual tail state from plugins.
+    bool hasActiveTails() const noexcept;
+
+    /// Check if graph has live inputs or monitors that require processing even when transport is stopped
+    /// Real-time safe: read-only atomic flag.
+    /// Returns true if there are AudioInput or MidiInput nodes, or instrument nodes
+    /// that receive live MIDI, requiring real-time processing even when stopped.
+    bool hasLiveInputsOrMonitors() const noexcept;
+
+    /// Set live inputs/monitors flag (called from control thread when graph changes)
+    /// @param active true if graph has live input paths that need processing when stopped
+    void setLiveInputsOrMonitorsActive(bool active) noexcept;
+
     /// Execute graph processing (called on audio thread)
     /// - Clears all node buffers
     /// - Routes connections (fan-in, with send levels)
@@ -177,5 +193,10 @@ private:
 
     /// Plugin host (for creating plugin instances)
     PluginHost* _pluginHost;
+
+    /// Live inputs/monitors flag (updated on control thread, read on audio thread)
+    /// True if graph has AudioInput, MidiInput nodes, or instrument nodes that need
+    /// real-time processing even when transport is stopped.
+    std::atomic<bool> _hasLiveInputsOrMonitors;
 };
 
