@@ -42,7 +42,7 @@ void PluginHost::scanPlugins() {
 std::unique_ptr<PluginInstance> PluginHost::createInstance(const PluginDescriptor& desc) {
     std::ostringstream msg;
     msg << "Creating instance for plugin: " << desc.id << " (format: " << static_cast<int>(desc.format) << ")";
-    LOG_INFO({"PluginHost"}, msg.str());
+    LOG_DEBUG({"PluginHost"}, msg.str());
 
     switch (desc.format) {
         case PluginFormat::Clap:
@@ -62,7 +62,7 @@ std::unique_ptr<PluginInstance> PluginHost::createInstance(const PluginDescripto
 
                 auto instance = createClapInstance(library, clapDesc);
                 if (instance) {
-                    LOG_INFO({"PluginHost"}, std::string("Successfully created CLAP instance: ") + desc.id);
+                    LOG_DEBUG({"PluginHost"}, std::string("Successfully created CLAP instance: ") + desc.id);
                 } else {
                     LOG_ERROR({"PluginHost"}, std::string("Failed to create CLAP instance: ") + desc.id);
                 }

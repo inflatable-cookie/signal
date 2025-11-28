@@ -1,6 +1,7 @@
 #include "ipc/IpcEnvelopeCodec.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 namespace loophole::signal::ipc {
 
@@ -47,85 +48,93 @@ std::optional<IpcEnvelope> deserialiseEnvelope(std::string_view line) {
 
         // Required fields
         if (!j.contains("v") || !j["v"].is_number_integer()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'v' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'v' field");
             return std::nullopt;
         }
         env.version = j["v"].get<int>();
 
         if (!j.contains("id") || !j["id"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'id' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'id' field");
             return std::nullopt;
         }
         env.id = j["id"].get<std::string>();
 
         if (!j.contains("ts") || !j["ts"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'ts' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'ts' field");
             return std::nullopt;
         }
         env.timestamp = j["ts"].get<std::string>();
         if (env.timestamp.empty()) {
-            std::cerr << "[IpcEnvelopeCodec] Empty 'ts' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Empty 'ts' field");
             return std::nullopt;
         }
 
         if (!j.contains("origin") || !j["origin"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'origin' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'origin' field");
             return std::nullopt;
         }
         auto origin_opt = originFromString(j["origin"].get<std::string>());
         if (!origin_opt.has_value()) {
-            std::cerr << "[IpcEnvelopeCodec] Invalid 'origin' value: " << j["origin"] << std::endl;
+            std::ostringstream msg;
+            msg << "Invalid 'origin' value: " << j["origin"];
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, msg.str());
             return std::nullopt;
         }
         env.origin = origin_opt.value();
 
         if (!j.contains("target") || !j["target"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'target' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'target' field");
             return std::nullopt;
         }
         auto target_opt = targetFromString(j["target"].get<std::string>());
         if (!target_opt.has_value()) {
-            std::cerr << "[IpcEnvelopeCodec] Invalid 'target' value: " << j["target"] << std::endl;
+            std::ostringstream msg;
+            msg << "Invalid 'target' value: " << j["target"];
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, msg.str());
             return std::nullopt;
         }
         env.target = target_opt.value();
 
         if (!j.contains("domain") || !j["domain"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'domain' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'domain' field");
             return std::nullopt;
         }
         env.domain = j["domain"].get<std::string>();
 
         if (!j.contains("kind") || !j["kind"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'kind' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'kind' field");
             return std::nullopt;
         }
         auto kind_opt = kindFromString(j["kind"].get<std::string>());
         if (!kind_opt.has_value()) {
-            std::cerr << "[IpcEnvelopeCodec] Invalid 'kind' value: " << j["kind"] << std::endl;
+            std::ostringstream msg;
+            msg << "Invalid 'kind' value: " << j["kind"];
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, msg.str());
             return std::nullopt;
         }
         env.kind = kind_opt.value();
 
         if (!j.contains("name") || !j["name"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'name' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'name' field");
             return std::nullopt;
         }
         env.name = j["name"].get<std::string>();
 
         if (!j.contains("priority") || !j["priority"].is_string()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'priority' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'priority' field");
             return std::nullopt;
         }
         auto priority_opt = priorityFromString(j["priority"].get<std::string>());
         if (!priority_opt.has_value()) {
-            std::cerr << "[IpcEnvelopeCodec] Invalid 'priority' value: " << j["priority"] << std::endl;
+            std::ostringstream msg;
+            msg << "Invalid 'priority' value: " << j["priority"];
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, msg.str());
             return std::nullopt;
         }
         env.priority = priority_opt.value();
 
         if (!j.contains("payload") || !j["payload"].is_object()) {
-            std::cerr << "[IpcEnvelopeCodec] Missing or invalid 'payload' field" << std::endl;
+            LOG_VERBOSE({"IpcEnvelopeCodec"}, "Missing or invalid 'payload' field");
             return std::nullopt;
         }
         env.payload = j["payload"];
@@ -155,13 +164,13 @@ std::optional<IpcEnvelope> deserialiseEnvelope(std::string_view line) {
 
         return env;
     } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "[IpcEnvelopeCodec] JSON parse error: " << e.what() << std::endl;
+        LOG_ERROR({"IpcEnvelopeCodec"}, std::string("JSON parse error: ") + e.what());
         return std::nullopt;
     } catch (const nlohmann::json::type_error& e) {
-        std::cerr << "[IpcEnvelopeCodec] JSON type error: " << e.what() << std::endl;
+        LOG_ERROR({"IpcEnvelopeCodec"}, std::string("JSON type error: ") + e.what());
         return std::nullopt;
     } catch (const std::exception& e) {
-        std::cerr << "[IpcEnvelopeCodec] Unexpected error: " << e.what() << std::endl;
+        LOG_ERROR({"IpcEnvelopeCodec"}, std::string("Unexpected error: ") + e.what());
         return std::nullopt;
     }
 }

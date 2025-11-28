@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 21:51:02 UTC) [changed] Unified all logging to use DEBUG_LEVEL system: converted all std::cout/cerr calls to unified logging macros, demoted noisy per-plugin logs from Info to Debug, and standardised area prefixes. Signal now matches Pulse's quiet logging profile at default DEBUG_LEVEL=4.
+
 (2025-11-28 21:29:21 UTC) [added] Implemented engine self-test command: added offline render sanity check harness (EngineSelfTest) with 3 synthetic scenarios, IPC integration via EngineDomain, and diagnostics panel UI integration. Self-test runs short offline renders without touching live engine state and returns pass/fail summary.
 
 (2025-11-28 21:07:47 UTC) [added] Added latency and tail handling stubs: node-level API (getLatencyInSamples, getTailInSamples, hasTailCurrently), graph-level aggregation methods, and EngineHost integration with atomic caching. All methods return zero (stub phase) but provide clean foundation for future latency compensation and tail-aware transport.

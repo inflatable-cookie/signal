@@ -1,11 +1,12 @@
 #include "clap/ClapPluginLibrary.hpp"
 #include "clap/clap.h"
 #include "core/PluginCrashTracking.hpp"
-#include <iostream>
+#include "logging/Logging.hpp"
 #include <cstring>
 #include <filesystem>
 #include <setjmp.h>
 #include <csignal>
+#include <sstream>
 
 // Platform-specific dynamic loading
 #if defined(_WIN32)
@@ -61,14 +62,17 @@ static std::filesystem::path resolveClapLibraryPath(const std::filesystem::path&
         }
 
         // If no library found, log error and return original path (will fail with clear error)
-        std::cerr << "[ClapPluginLibrary] No library file found in bundle: " << path << std::endl;
-        std::cerr << "[ClapPluginLibrary] Expected canonical path: " << canonical << " (not found)" << std::endl;
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("No library file found in bundle: ") + path.string());
+        std::ostringstream msg;
+        msg << "Expected canonical path: " << canonical << " (not found)";
+        LOG_ERROR({"ClapPluginLibrary"}, msg.str());
         if (std::filesystem::exists(macosDir) && std::filesystem::is_directory(macosDir)) {
-            std::cerr << "[ClapPluginLibrary] MacOS directory exists but contains no suitable library file" << std::endl;
+            LOG_ERROR({"ClapPluginLibrary"}, "MacOS directory exists but contains no suitable library file");
         } else {
-            std::cerr << "[ClapPluginLibrary] MacOS directory does not exist: " << macosDir << std::endl;
+            std::ostringstream dirMsg;
+            dirMsg << "MacOS directory does not exist: " << macosDir;
+            LOG_ERROR({"ClapPluginLibrary"}, dirMsg.str());
         }
-        std::cerr.flush();
         return path;
     #else
         // On Linux/Windows, .clap might be a direct library file
@@ -93,20 +97,17 @@ ClapPluginLibrary::ClapPluginLibrary(const std::filesystem::path& path)
         if (loadLibrary()) {
             _valid = true;
         } else {
-            std::cerr << "[ClapPluginLibrary] Failed to load plugin: " << path << std::endl;
-            std::cerr.flush();
+            LOG_ERROR({"ClapPluginLibrary"}, std::string("Failed to load plugin: ") + path.string());
             // Jump buffer flag should already be cleared by loadLibrary() on failure
         }
     } catch (const std::exception& e) {
-        std::cerr << "[ClapPluginLibrary] Exception in constructor for " << path << ": " << e.what() << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("Exception in constructor for ") + path.string() + ": " + e.what());
         g_inPluginLoading = false;
         g_currentPluginPath[0] = '\0';
         g_pluginLoadJumpSet = false; // Clear jump buffer flag
         throw;
     } catch (...) {
-        std::cerr << "[ClapPluginLibrary] Unknown exception in constructor for: " << path << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("Unknown exception in constructor for: ") + path.string());
         g_inPluginLoading = false;
         g_currentPluginPath[0] = '\0';
         g_pluginLoadJumpSet = false; // Clear jump buffer flag
@@ -160,27 +161,32 @@ bool ClapPluginLibrary::loadLibrary() {
     if (!_handle) {
         #if defined(_WIN32)
             DWORD error = GetLastError();
-            std::cerr << "[ClapPluginLibrary] LoadLibrary failed: " << libraryPath << " - " << error << std::endl;
+            std::ostringstream msg;
+            msg << "LoadLibrary failed: " << libraryPath << " - " << error;
+            LOG_ERROR({"ClapPluginLibrary"}, msg.str());
         #else
             const char* error = dlerror();
-            std::cerr << "[ClapPluginLibrary] dlopen failed: " << libraryPath << " - " << (error ? error : "unknown") << std::endl;
+            std::ostringstream msg;
+            msg << "dlopen failed: " << libraryPath << " - " << (error ? error : "unknown");
+            LOG_ERROR({"ClapPluginLibrary"}, msg.str());
         #endif
-        std::cerr.flush();
         return false;
     }
 
     // Find CLAP entry point
     if (!initClapEntry()) {
-        std::cerr << "[ClapPluginLibrary] initClapEntry() failed for: " << libraryPath << std::endl;
-        std::cerr.flush();
+        std::ostringstream msg;
+        msg << "initClapEntry() failed for: " << libraryPath;
+        LOG_ERROR({"ClapPluginLibrary"}, msg.str());
         unloadLibrary();
         return false;
     }
 
     // Initialize factory
     if (!initFactory()) {
-        std::cerr << "[ClapPluginLibrary] initFactory() failed for: " << libraryPath << std::endl;
-        std::cerr.flush();
+        std::ostringstream msg;
+        msg << "initFactory() failed for: " << libraryPath;
+        LOG_ERROR({"ClapPluginLibrary"}, msg.str());
         unloadLibrary();
         return false;
     }
@@ -208,16 +214,16 @@ bool ClapPluginLibrary::initClapEntry() {
     void* symbolAddr = CLAP_LIB_SYMBOL(_handle, "clap_entry");
 
     if (!symbolAddr) {
-        std::cerr << "[ClapPluginLibrary] clap_entry symbol not found in: " << _path << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("clap_entry symbol not found in: ") + _path.string());
         return false;
     }
 
     // Validate symbol address is not in an obviously invalid memory range
     if (reinterpret_cast<uintptr_t>(symbolAddr) < 0x1000) {
-        std::cerr << "[ClapPluginLibrary] Invalid symbol address (too low): " << symbolAddr << " for: " << _path << std::endl;
-        std::cerr << "[ClapPluginLibrary] This may indicate an ABI mismatch - plugin may be incompatible" << std::endl;
-        std::cerr.flush();
+        std::ostringstream msg;
+        msg << "Invalid symbol address (too low): " << symbolAddr << " for: " << _path;
+        LOG_ERROR({"ClapPluginLibrary"}, msg.str());
+        LOG_ERROR({"ClapPluginLibrary"}, "This may indicate an ABI mismatch - plugin may be incompatible");
         return false;
     }
 
@@ -228,10 +234,9 @@ bool ClapPluginLibrary::initClapEntry() {
 
     if (jumpResult != 0) {
         // We jumped back from a signal handler - accessing the struct caused a crash
-        std::cerr << "[ClapPluginLibrary] Bus error/segfault when accessing clap_entry struct for: " << _path << std::endl;
-        std::cerr << "[ClapPluginLibrary] This indicates a likely ABI mismatch - plugin binary layout does not match host expectations" << std::endl;
-        std::cerr << "[ClapPluginLibrary] Skipping this plugin" << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("Bus error/segfault when accessing clap_entry struct for: ") + _path.string());
+        LOG_ERROR({"ClapPluginLibrary"}, "This indicates a likely ABI mismatch - plugin binary layout does not match host expectations");
+        LOG_ERROR({"ClapPluginLibrary"}, "Skipping this plugin");
         g_pluginLoadJumpSet = false;
         // Clean up the library handle since we can't use it
         if (_handle) {
@@ -246,8 +251,7 @@ bool ClapPluginLibrary::initClapEntry() {
     auto* entryPtr = reinterpret_cast<const clap_plugin_entry_t*>(symbolAddr);
 
     if (!entryPtr) {
-        std::cerr << "[ClapPluginLibrary] clap_entry struct pointer is null for: " << _path << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("clap_entry struct pointer is null for: ") + _path.string());
         g_pluginLoadJumpSet = false;
         return false;
     }
@@ -257,11 +261,12 @@ bool ClapPluginLibrary::initClapEntry() {
     const clap_version_t& hostVersion = CLAP_VERSION;
 
     if (pluginVersion.major != hostVersion.major) {
-        std::cerr << "[ClapPluginLibrary] Version mismatch for: " << _path << std::endl;
-        std::cerr << "[ClapPluginLibrary] Plugin CLAP version: " << pluginVersion.major << "." << pluginVersion.minor << "." << pluginVersion.revision << std::endl;
-        std::cerr << "[ClapPluginLibrary] Host CLAP version: " << hostVersion.major << "." << hostVersion.minor << "." << hostVersion.revision << std::endl;
-        std::cerr << "[ClapPluginLibrary] Major version mismatch - plugin may not be compatible" << std::endl;
-        std::cerr.flush();
+        LOG_WARN({"ClapPluginLibrary"}, std::string("Version mismatch for: ") + _path.string());
+        std::ostringstream msg;
+        msg << "Plugin CLAP version: " << pluginVersion.major << "." << pluginVersion.minor << "." << pluginVersion.revision
+            << ", Host CLAP version: " << hostVersion.major << "." << hostVersion.minor << "." << hostVersion.revision;
+        LOG_WARN({"ClapPluginLibrary"}, msg.str());
+        LOG_WARN({"ClapPluginLibrary"}, "Major version mismatch - plugin may not be compatible");
         // Continue anyway for now (as per requirements)
     }
 
@@ -275,9 +280,8 @@ bool ClapPluginLibrary::initClapEntry() {
 
         if (jumpResult != 0) {
             // We jumped back from a signal handler - init() caused a crash
-            std::cerr << "[ClapPluginLibrary] Bus error/segfault when calling entry->init() for: " << _path << std::endl;
-            std::cerr << "[ClapPluginLibrary] Skipping this plugin" << std::endl;
-            std::cerr.flush();
+            LOG_ERROR({"ClapPluginLibrary"}, std::string("Bus error/segfault when calling entry->init() for: ") + _path.string());
+            LOG_ERROR({"ClapPluginLibrary"}, "Skipping this plugin");
             g_pluginLoadJumpSet = false;
             _entry = nullptr; // Clear entry since init failed
             // Clean up the library handle since we can't use it
@@ -292,8 +296,7 @@ bool ClapPluginLibrary::initClapEntry() {
         g_pluginLoadJumpSet = false;
 
         if (!initResult) {
-            std::cerr << "[ClapPluginLibrary] entry->init() returned false for: " << _path << std::endl;
-            std::cerr.flush();
+            LOG_ERROR({"ClapPluginLibrary"}, std::string("entry->init() returned false for: ") + _path.string());
             _entry = nullptr;
             return false;
         }
@@ -304,15 +307,13 @@ bool ClapPluginLibrary::initClapEntry() {
 
 bool ClapPluginLibrary::initFactory() {
     if (!_entry) {
-        std::cerr << "[ClapPluginLibrary] initFactory() called but _entry is null for: " << _path << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("initFactory() called but _entry is null for: ") + _path.string());
         return false;
     }
 
     // Get factory from entry
     if (!_entry->get_factory) {
-        std::cerr << "[ClapPluginLibrary] Entry does not provide get_factory for: " << _path << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("Entry does not provide get_factory for: ") + _path.string());
         return false;
     }
 
@@ -321,8 +322,7 @@ bool ClapPluginLibrary::initFactory() {
     );
 
     if (!_factory) {
-        std::cerr << "[ClapPluginLibrary] Failed to get plugin factory for: " << _path << std::endl;
-        std::cerr.flush();
+        LOG_ERROR({"ClapPluginLibrary"}, std::string("Failed to get plugin factory for: ") + _path.string());
         return false;
     }
 

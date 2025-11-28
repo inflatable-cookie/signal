@@ -1,22 +1,23 @@
 #include "core/SignalApp.hpp"
 #include "core/PluginCrashTracking.hpp"
 #include "logging/Logging.hpp"
-#include <iostream>
 #include <exception>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 
 void busErrorHandler(int sig, siginfo_t* info, void* context) {
     (void)context;
-    std::cerr << std::endl;
-    std::cerr << "[Signal] SIGBUS (Bus Error) caught!" << std::endl;
+    (void)sig;
+    LOG_CORE({"SignalApp"}, "SIGBUS (Bus Error) caught!");
     if (g_inPluginLoading && g_currentPluginPath[0] != '\0') {
-        std::cerr << "[Signal] Error occurred while loading plugin: " << g_currentPluginPath << std::endl;
-        std::cerr << "[Signal] Skipping this plugin and continuing..." << std::endl;
+        LOG_CORE({"SignalApp"}, std::string("Error occurred while loading plugin: ") + g_currentPluginPath);
+        LOG_CORE({"SignalApp"}, "Skipping this plugin and continuing...");
     }
-    std::cerr << "[Signal] Fault address: " << info->si_addr << std::endl;
-    std::cerr.flush();
+    std::ostringstream msg;
+    msg << "Fault address: " << info->si_addr;
+    LOG_CORE({"SignalApp"}, msg.str());
 
     // If we have a jump buffer set up, jump back to recover
     if (g_pluginLoadJumpSet) {
@@ -29,14 +30,15 @@ void busErrorHandler(int sig, siginfo_t* info, void* context) {
 
 void segfaultHandler(int sig, siginfo_t* info, void* context) {
     (void)context;
-    std::cerr << std::endl;
-    std::cerr << "[Signal] SIGSEGV (Segmentation Fault) caught!" << std::endl;
+    (void)sig;
+    LOG_CORE({"SignalApp"}, "SIGSEGV (Segmentation Fault) caught!");
     if (g_inPluginLoading && g_currentPluginPath[0] != '\0') {
-        std::cerr << "[Signal] Error occurred while loading plugin: " << g_currentPluginPath << std::endl;
-        std::cerr << "[Signal] Skipping this plugin and continuing..." << std::endl;
+        LOG_CORE({"SignalApp"}, std::string("Error occurred while loading plugin: ") + g_currentPluginPath);
+        LOG_CORE({"SignalApp"}, "Skipping this plugin and continuing...");
     }
-    std::cerr << "[Signal] Fault address: " << info->si_addr << std::endl;
-    std::cerr.flush();
+    std::ostringstream msg;
+    msg << "Fault address: " << info->si_addr;
+    LOG_CORE({"SignalApp"}, msg.str());
 
     // If we have a jump buffer set up, jump back to recover
     if (g_pluginLoadJumpSet) {
@@ -66,11 +68,11 @@ int main() {
         SignalApp app;
         return app.run();
     } catch (const std::exception& e) {
-        // Use direct stderr for fatal errors during startup/shutdown
-        std::cerr << "[Signal] Fatal error: " << e.what() << std::endl;
+        // Use Core level for fatal errors during startup/shutdown
+        LOG_CORE({"SignalApp"}, std::string("Fatal error: ") + e.what());
         return 1;
     } catch (...) {
-        std::cerr << "[Signal] Unknown fatal error" << std::endl;
+        LOG_CORE({"SignalApp"}, "Unknown fatal error");
         return 1;
     }
 }

@@ -1,7 +1,6 @@
 #include "clap/ClapPluginInstance.hpp"
 #include "core/NodeBuffers.hpp"
 #include "logging/Logging.hpp"
-#include <iostream>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -50,7 +49,7 @@ ClapPluginInstance::ClapPluginInstance(
 
     // Create plugin instance
     if (!createPlugin()) {
-        std::cerr << "[ClapPluginInstance] Failed to create plugin: " << _descriptor.id << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, std::string("Failed to create plugin: ") + _descriptor.id);
     }
 }
 
@@ -65,19 +64,19 @@ bool ClapPluginInstance::createPlugin() {
 
     const clap_plugin_factory_t* factory = _library->getFactory();
     if (!factory || !factory->create_plugin) {
-        std::cerr << "[ClapPluginInstance] Factory does not provide create_plugin" << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, "Factory does not provide create_plugin");
         return false;
     }
 
     _plugin = factory->create_plugin(factory, &_host, _clapDesc->id);
     if (!_plugin) {
-        std::cerr << "[ClapPluginInstance] Factory failed to create plugin" << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, "Factory failed to create plugin");
         return false;
     }
 
     // Initialize plugin
     if (!_plugin->init || !_plugin->init(_plugin)) {
-        std::cerr << "[ClapPluginInstance] Plugin init failed" << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, "Plugin init failed");
         _plugin = nullptr;
         return false;
     }
@@ -91,7 +90,7 @@ bool ClapPluginInstance::createPlugin() {
     // Audio ports will be queried during negotiateAudioIO() call
     // Don't query here - wait for explicit negotiation request
 
-    std::cout << "[ClapPluginInstance] Created plugin: " << _descriptor.name << std::endl;
+    LOG_DEBUG({"ClapPluginInstance"}, std::string("Created plugin: ") + _descriptor.name);
     return true;
 }
 
@@ -171,7 +170,7 @@ void ClapPluginInstance::queryParameters() {
         _paramIdToIndex[paramInfo.id] = _parameters.size() - 1;
     }
 
-    std::cout << "[ClapPluginInstance] Found " << _parameters.size() << " parameters" << std::endl;
+    LOG_VERBOSE({"ClapPluginInstance"}, std::string("Found ") + std::to_string(_parameters.size()) + " parameters");
 }
 
 void ClapPluginInstance::queryAudioPorts(int requestedInputs, int requestedOutputs) {
@@ -276,7 +275,7 @@ void ClapPluginInstance::queryAudioPorts(int requestedInputs, int requestedOutpu
         std::ostringstream msg;
         msg << "Plugin I/O negotiation: requested " << requestedInputs << "/" << requestedOutputs
             << ", chosen " << chosenInputs << "/" << chosenOutputs;
-        std::cout << "[ClapPluginInstance] " << msg.str() << std::endl;
+        LOG_DEBUG({"ClapPluginInstance"}, msg.str());
     }
 }
 
@@ -299,7 +298,7 @@ void ClapPluginInstance::prepare(double sampleRate, int maxBlockSize) {
     }
 
     if (!_plugin) {
-        std::cerr << "[ClapPluginInstance] Cannot prepare: plugin not created" << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, "Cannot prepare: plugin not created");
         return;
     }
 
@@ -350,8 +349,10 @@ void ClapPluginInstance::prepare(double sampleRate, int maxBlockSize) {
     // Activate plugin
     activatePlugin();
 
-    std::cout << "[ClapPluginInstance] Prepared plugin: " << _descriptor.name
-              << " (sampleRate: " << sampleRate << ", blockSize: " << maxBlockSize << ")" << std::endl;
+    std::ostringstream msg;
+    msg << "Prepared plugin: " << _descriptor.name
+        << " (sampleRate: " << sampleRate << ", blockSize: " << maxBlockSize << ")";
+    LOG_DEBUG({"ClapPluginInstance"}, msg.str());
 }
 
 void ClapPluginInstance::activatePlugin() {
@@ -372,7 +373,7 @@ void ClapPluginInstance::activatePlugin() {
             _plugin->start_processing(_plugin);
         }
     } else {
-        std::cerr << "[ClapPluginInstance] Plugin activation failed" << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, "Plugin activation failed");
     }
 }
 
@@ -576,7 +577,7 @@ void ClapPluginInstance::setStateChunk(const std::vector<uint8_t>& data) {
 // CLAP host callbacks
 void ClapPluginInstance::hostRequestRestart(const clap_host* host) {
     // Phase 5: Request restart - log for now
-    std::cout << "[ClapPluginInstance] Plugin requested restart" << std::endl;
+    LOG_DEBUG({"ClapPluginInstance"}, "Plugin requested restart");
 }
 
 void ClapPluginInstance::hostRequestProcess(const clap_host* host) {
@@ -585,7 +586,7 @@ void ClapPluginInstance::hostRequestProcess(const clap_host* host) {
 
 void ClapPluginInstance::hostRequestCallback(const clap_host* host) {
     // Phase 5: Request callback - schedule for main thread
-    std::cout << "[ClapPluginInstance] Plugin requested callback" << std::endl;
+    LOG_DEBUG({"ClapPluginInstance"}, "Plugin requested callback");
 }
 
 const void* ClapPluginInstance::hostGetExtension(const clap_host* host, const char* extension_id) {
@@ -647,7 +648,7 @@ std::unique_ptr<PluginInstance> createClapInstance(
     try {
         return std::make_unique<ClapPluginInstance>(library, clapDesc);
     } catch (const std::exception& e) {
-        std::cerr << "[createClapInstance] Failed to create CLAP instance: " << e.what() << std::endl;
+        LOG_ERROR({"ClapPluginInstance"}, std::string("Failed to create CLAP instance: ") + e.what());
         return nullptr;
     }
 }
