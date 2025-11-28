@@ -10,6 +10,7 @@
 
 #include "ipc/TcpServer.hpp"
 #include "logging/Logging.hpp"
+#include <algorithm>
 #include <sstream>
 #include <asio/bind_executor.hpp>
 #include <asio/ip/tcp.hpp>
@@ -68,6 +69,33 @@ void TcpServer::doAccept() {
                     clients_.push_back(std::weak_ptr<TcpClientSession>(session));
                 }
 
+                // Set up disconnect notification callback
+                auto weak_self = std::weak_ptr<TcpClientSession>(session);
+                session->setDisconnectedCallback([this, weak_self]() {
+                    // Get the session if it still exists
+                    if (auto session = weak_self.lock()) {
+                        // Call client disconnected callback if set
+                        if (clientDisconnectedCallback_) {
+                            clientDisconnectedCallback_(session);
+                        }
+
+                        // Remove expired sessions from clients_ vector
+                        {
+                            std::lock_guard<std::mutex> lock(clientsMutex_);
+                            clients_.erase(
+                                std::remove_if(
+                                    clients_.begin(),
+                                    clients_.end(),
+                                    [](const std::weak_ptr<TcpClientSession>& wp) {
+                                        return wp.expired();
+                                    }
+                                ),
+                                clients_.end()
+                            );
+                        }
+                    }
+                });
+
                 session->start();
 
                 // Call client connected callback if set
@@ -106,6 +134,24 @@ void TcpServer::stop() {
 
 void TcpServer::setClientConnectedCallback(ClientConnectedCallback callback) {
     clientConnectedCallback_ = std::move(callback);
+}
+
+void TcpServer::setClientDisconnectedCallback(ClientDisconnectedCallback callback) {
+    clientDisconnectedCallback_ = std::move(callback);
+}
+
+size_t TcpServer::getActiveConnectionCount() const {
+    std::lock_guard<std::mutex> lock(clientsMutex_);
+
+    // Count non-expired weak pointers
+    size_t count = 0;
+    for (const auto& weak_session : clients_) {
+        if (!weak_session.expired()) {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 } // namespace loophole::signal::ipc

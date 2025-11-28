@@ -4,6 +4,7 @@
 #include <asio/buffer.hpp>
 #include <asio/read_until.hpp>
 #include <asio/write.hpp>
+#include <atomic>
 #include <sstream>
 
 namespace loophole::signal::ipc {
@@ -31,6 +32,7 @@ void TcpClientSession::doRead() {
                 } else {
                     LOG_ERROR({"TcpClientSession"}, std::string("Read error: ") + ec.message());
                 }
+                notifyDisconnected();
                 return;
             }
 
@@ -78,6 +80,22 @@ void TcpClientSession::close() {
     if (socket_.is_open()) {
         std::error_code ec;
         socket_.close(ec);
+    }
+
+    notifyDisconnected();
+}
+
+void TcpClientSession::setDisconnectedCallback(DisconnectedCallback callback) {
+    disconnectedCallback_ = std::move(callback);
+}
+
+void TcpClientSession::notifyDisconnected() {
+    // Only notify once
+    bool expected = false;
+    if (disconnectedNotified_.compare_exchange_strong(expected, true)) {
+        if (disconnectedCallback_) {
+            disconnectedCallback_();
+        }
     }
 }
 

@@ -35,6 +35,14 @@ public:
     using ClientConnectedCallback = std::function<void(const std::shared_ptr<TcpClientSession>&)>;
     void setClientConnectedCallback(ClientConnectedCallback callback);
 
+    // Set callback to be called when a client disconnects
+    // The callback receives the disconnected session
+    using ClientDisconnectedCallback = std::function<void(const std::shared_ptr<TcpClientSession>&)>;
+    void setClientDisconnectedCallback(ClientDisconnectedCallback callback);
+
+    // Get the current number of active connections
+    size_t getActiveConnectionCount() const;
+
     // Broadcast metering update event to all connected clients
     template<typename MeteringServiceType>
     void broadcastMetering(MeteringServiceType* meteringService) {
@@ -239,9 +247,10 @@ private:
     asio::io_context& io_;
     asio::ip::tcp::acceptor acceptor_;
     EnvelopeHandler handler_;
-    std::mutex clientsMutex_;
+    mutable std::mutex clientsMutex_;
     std::vector<std::weak_ptr<TcpClientSession>> clients_;
     ClientConnectedCallback clientConnectedCallback_;
+    ClientDisconnectedCallback clientDisconnectedCallback_;
 };
 
 } // namespace loophole::signal::ipc

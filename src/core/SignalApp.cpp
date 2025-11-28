@@ -164,12 +164,47 @@ int SignalApp::run() {
     };
     scheduleMetering();
 
+    // Track connection state for auto-shutdown
+    std::atomic<bool> hasEverBeenConnected{false};
+
     // Set up callback to send initial engine state when a client connects
     server.setClientConnectedCallback(
-        [&server, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
+        [&server, this, &hasEverBeenConnected](
+            const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+        ) {
+            hasEverBeenConnected.store(true);
+
             if (_engineHost) {
                 LOG_INFO({"SignalApp"}, "Client connected, sending initial engine state...");
                 server.sendEngineState(_engineHost.get(), session);
+            }
+        }
+    );
+
+    // Set up callback when a client disconnects
+    server.setClientDisconnectedCallback(
+        [&server, &io, this, &shuttingDown, &hasEverBeenConnected](
+            const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& /*session*/
+        ) {
+            // The disconnected session may still be in the count until it's destroyed,
+            // so check if we have 1 or fewer connections (this session will be removed)
+            size_t count = server.getActiveConnectionCount();
+
+            // If we've ever been connected and now have no connections (or just this one being removed), shutdown
+            if (
+                hasEverBeenConnected.load() &&
+                count <= 1 &&
+                !shuttingDown.load()
+            ) {
+                LOG_INFO({"SignalApp"}, "All clients disconnected; shutting down");
+                shuttingDown.store(true);
+
+                if (_engineHost) {
+                    _engineHost->shutdown();
+                }
+
+                server.stop();
+                io.stop();
             }
         }
     );

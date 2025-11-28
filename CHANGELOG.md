@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 01:11:51 UTC) [added] Signal now automatically shuts down when all Pulse connections are lost after having established at least one connection.
+
 (2025-11-27 17:13:44 UTC) [fixed] Phase 12c: Fixed critical JSON parsing bug in MixerDomain - payload strings now correctly parsed before accessing JSON fields. Added MixerChannelNode gain application from MixerService updates.
 
 (2025-11-27 16:50:00 UTC) [fixed] Phase 12b.5: Fixed AssetsDomain JSON parsing bug - registerAudioAsset payload was not being parsed from string, causing asset registration to fail and producing silence during playback.

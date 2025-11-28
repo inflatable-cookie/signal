@@ -26,14 +26,21 @@ public:
     void send(const IpcEnvelope& env);
     void close();
 
+    // Set callback to be called when the client disconnects
+    using DisconnectedCallback = std::function<void()>;
+    void setDisconnectedCallback(DisconnectedCallback callback);
+
 private:
     void doRead();
     void handleLine(std::string_view line);
+    void notifyDisconnected();
 
     asio::ip::tcp::socket socket_;
     EnvelopeHandler handler_;
     std::string readBuffer_;
     std::mutex writeMutex_;
+    DisconnectedCallback disconnectedCallback_;
+    std::atomic<bool> disconnectedNotified_{false};
 };
 
 } // namespace loophole::signal::ipc
