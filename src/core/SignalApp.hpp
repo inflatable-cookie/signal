@@ -20,7 +20,11 @@ public:
 
     int run();
 
+    // Request shutdown due to orphaned state (no active clients after having seen at least one)
+    void requestShutdownDueToOrphanedState();
+
 private:
     std::unique_ptr<EngineHost> _engineHost;
+    std::atomic<bool> _shutdownRequested{false};
 };
 

@@ -26,6 +26,10 @@ public:
     void send(const IpcEnvelope& env);
     void close();
 
+    // Set callback to be called when this session disconnects
+    using DisconnectedCallback = std::function<void()>;
+    void setDisconnectedCallback(DisconnectedCallback callback);
+
 private:
     void doRead();
     void handleLine(std::string_view line);
@@ -34,6 +38,7 @@ private:
     EnvelopeHandler handler_;
     std::string readBuffer_;
     std::mutex writeMutex_;
+    DisconnectedCallback disconnectedCallback_;
 };
 
 } // namespace loophole::signal::ipc

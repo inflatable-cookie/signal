@@ -35,6 +35,17 @@ public:
     using ClientConnectedCallback = std::function<void(const std::shared_ptr<TcpClientSession>&)>;
     void setClientConnectedCallback(ClientConnectedCallback callback);
 
+    // Set callback to be called when a client disconnects
+    // The callback receives no arguments
+    using ClientDisconnectedCallback = std::function<void()>;
+    void setClientDisconnectedCallback(ClientDisconnectedCallback callback);
+
+    // Get the number of active clients
+    int getActiveClientCount() const;
+
+    // Check if we've ever seen a client connection
+    bool hasEverSeenClient() const;
+
     // Broadcast metering update event to all connected clients
     template<typename MeteringServiceType>
     void broadcastMetering(MeteringServiceType* meteringService) {
@@ -412,6 +423,11 @@ private:
     std::mutex clientsMutex_;
     std::vector<std::weak_ptr<TcpClientSession>> clients_;
     ClientConnectedCallback clientConnectedCallback_;
+    ClientDisconnectedCallback clientDisconnectedCallback_;
+
+    // Client tracking for orphan detection
+    std::atomic<bool> hasEverSeenClient_{false};
+    std::atomic<int> activeClientCount_{0};
 
     // Throttling state for transport position updates
     std::chrono::steady_clock::time_point lastPositionReportTime_;

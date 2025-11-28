@@ -70,6 +70,29 @@ void TcpServer::doAccept() {
                     clients_.push_back(std::weak_ptr<TcpClientSession>(session));
                 }
 
+                // Update client tracking
+                hasEverSeenClient_.store(true);
+                activeClientCount_++;
+
+                // Set up disconnect callback for this session
+                auto weak_self = std::weak_ptr<TcpClientSession>(session);
+                session->setDisconnectedCallback([this, weak_self]() {
+                    // Only decrement if this session was actually active
+                    // (avoid double-counting if close() is called multiple times)
+                    if (weak_self.lock()) {
+                        int prev_count = activeClientCount_.fetch_sub(1);
+                        if (prev_count <= 0) {
+                            // Clamp to 0 (shouldn't happen, but be safe)
+                            activeClientCount_.store(0);
+                        }
+
+                        // Call client disconnected callback if set
+                        if (clientDisconnectedCallback_) {
+                            clientDisconnectedCallback_();
+                        }
+                    }
+                });
+
                 session->start();
 
                 // Call client connected callback if set
@@ -108,6 +131,18 @@ void TcpServer::stop() {
 
 void TcpServer::setClientConnectedCallback(ClientConnectedCallback callback) {
     clientConnectedCallback_ = std::move(callback);
+}
+
+void TcpServer::setClientDisconnectedCallback(ClientDisconnectedCallback callback) {
+    clientDisconnectedCallback_ = std::move(callback);
+}
+
+int TcpServer::getActiveClientCount() const {
+    return activeClientCount_.load();
+}
+
+bool TcpServer::hasEverSeenClient() const {
+    return hasEverSeenClient_.load();
 }
 
 } // namespace loophole::signal::ipc

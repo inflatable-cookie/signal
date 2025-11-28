@@ -92,6 +92,7 @@ int SignalApp::run() {
         [&server, &io, this, &shuttingDown](std::error_code /*ec*/, int /*signo*/) {
             LOG_INFO({"SignalApp"}, "Shutdown signal received");
             shuttingDown.store(true);
+            _shutdownRequested.store(true);
             if (_engineHost) {
                 _engineHost->shutdown();
             }
@@ -197,9 +198,55 @@ int SignalApp::run() {
     };
     scheduleTransportPosition();
 
-    // Set up callback to send initial engine state when a client connects
+
+    // Set up orphan detection with grace period timer
+    asio::steady_timer orphanShutdownTimer(io);
+    std::function<void()> scheduleOrphanCheck;
+    constexpr std::chrono::milliseconds ORPHAN_GRACE_PERIOD_MS{5000}; // 5 seconds
+
+    scheduleOrphanCheck = [&server, &orphanShutdownTimer, &io, this, &shuttingDown, &scheduleOrphanCheck, ORPHAN_GRACE_PERIOD_MS]() {
+        // Only schedule check if we've seen a client and have no active clients
+        if (server.hasEverSeenClient() && server.getActiveClientCount() == 0) {
+            LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "Last client disconnected; scheduling orphan check in 5000ms");
+            orphanShutdownTimer.expires_after(ORPHAN_GRACE_PERIOD_MS);
+            orphanShutdownTimer.async_wait(
+                [&server, &io, this, &shuttingDown](std::error_code ec) {
+                    if (ec || shuttingDown.load()) {
+                        // Timer was cancelled or shutdown already in progress
+                        return;
+                    }
+
+                    // Check again if we still have no clients
+                    if (server.hasEverSeenClient() && server.getActiveClientCount() == 0) {
+                        LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "No clients after grace period; shutting down Signal");
+                        requestShutdownDueToOrphanedState();
+                        if (_engineHost) {
+                            _engineHost->shutdown();
+                        }
+                        server.stop();
+                        io.stop();
+                    }
+                }
+            );
+        }
+    };
+
+    // Set up callback for when a client disconnects
+    server.setClientDisconnectedCallback([&scheduleOrphanCheck]() {
+        scheduleOrphanCheck();
+    });
+
+    // Set up callback to cancel orphan shutdown when a client connects
     server.setClientConnectedCallback(
-        [&server, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
+        [&server, &orphanShutdownTimer, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
+            // Cancel any pending orphan shutdown timer
+            orphanShutdownTimer.cancel();
+
+            // If we had scheduled an orphan check, log that it's cancelled
+            if (server.hasEverSeenClient() && server.getActiveClientCount() > 0) {
+                LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "New client connected; cancelling orphan shutdown");
+            }
+
             if (_engineHost) {
                 LOG_INFO({"SignalApp"}, "Client connected, sending initial engine state...");
                 server.sendEngineState(_engineHost.get(), session);
@@ -233,5 +280,15 @@ int SignalApp::run() {
 
     LOG_INFO({"SignalApp"}, "IO loop finished");
     return 0;
+}
+
+void SignalApp::requestShutdownDueToOrphanedState() {
+    if (_shutdownRequested.load()) {
+        // Shutdown already in progress
+        return;
+    }
+
+    _shutdownRequested.store(true);
+    LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "Requesting shutdown due to orphaned state");
 }
 

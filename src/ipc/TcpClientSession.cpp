@@ -31,6 +31,10 @@ void TcpClientSession::doRead() {
                 } else {
                     LOG_ERROR({"TcpClientSession"}, std::string("Read error: ") + ec.message());
                 }
+                // Notify disconnect callback
+                if (disconnectedCallback_) {
+                    disconnectedCallback_();
+                }
                 return;
             }
 
@@ -78,7 +82,15 @@ void TcpClientSession::close() {
     if (socket_.is_open()) {
         std::error_code ec;
         socket_.close(ec);
+        // Notify disconnect callback
+        if (disconnectedCallback_) {
+            disconnectedCallback_();
+        }
     }
+}
+
+void TcpClientSession::setDisconnectedCallback(DisconnectedCallback callback) {
+    disconnectedCallback_ = std::move(callback);
 }
 
 } // namespace loophole::signal::ipc
