@@ -34,22 +34,34 @@ void TransportDomain::handle(
     // Handle commands directly
     if (env.name == "play") {
         handlePlay();
+        // Emit position update immediately when play starts so Aura can sync
+        emitTransportPositionUpdate(env, session);
+        // Also emit state event
+        emitTransportStateEvent(env, session);
     } else if (env.name == "stop") {
         handleStop(env.payload);
+        // Emit position update immediately when stop happens
+        emitTransportPositionUpdate(env, session);
+        // Also emit state event
+        emitTransportStateEvent(env, session);
     } else if (env.name == "seek") {
         handleSeek(env.payload);
+        // Emit position update immediately after seek
+        emitTransportPositionUpdate(env, session);
+        // Also emit state event
+        emitTransportStateEvent(env, session);
     } else if (env.name == "setLoopEnabled") {
         handleSetLoopEnabled(env.payload);
+        emitTransportStateEvent(env, session);
     } else if (env.name == "setLoopRegion") {
         handleSetLoopRegion(env.payload);
+        emitTransportStateEvent(env, session);
     } else if (env.name == "setTempo") {
         handleSetTempo(env.payload);
+        emitTransportStateEvent(env, session);
     } else {
         LOG_WARN({"TransportDomain"}, std::string("Unknown command: ") + env.name);
     }
-
-    // Emit state events after processing commands
-    emitTransportStateEvent(env, session);
 }
 
 void TransportDomain::handlePlay() {
@@ -317,5 +329,63 @@ void TransportDomain::emitTransportStateEvent(
     stateEvent.payload = payload;
 
     session->send(stateEvent);
+}
+
+void TransportDomain::emitTransportPositionUpdate(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    if (!_engineHost) {
+        return;
+    }
+
+    // Get current playhead and transport state
+    uint64_t playheadSamples = _engineHost->getPlayheadSamples();
+    const auto& transport = _engineHost->transport();
+    double sampleRate = _engineHost->getSampleRate();
+
+    // Create transport.positionUpdate event
+    IpcEnvelope positionEvent;
+    positionEvent.version = 1;
+    positionEvent.id = "transport-position-update-" + commandEnv.id;
+    positionEvent.correlationId = commandEnv.id;
+    positionEvent.timestamp = currentTimestamp();
+    positionEvent.origin = IpcOrigin::Signal;
+
+    switch (commandEnv.origin) {
+    case IpcOrigin::Aura:
+        positionEvent.target = IpcTarget::Aura;
+        break;
+    case IpcOrigin::Pulse:
+        positionEvent.target = IpcTarget::Pulse;
+        break;
+    case IpcOrigin::Signal:
+        positionEvent.target = IpcTarget::Signal;
+        break;
+    case IpcOrigin::Composer:
+        positionEvent.target = IpcTarget::Composer;
+        break;
+    }
+
+    positionEvent.domain = "transport";
+    positionEvent.kind = IpcKind::Event;
+    positionEvent.name = "positionUpdate";
+    positionEvent.priority = commandEnv.priority;
+
+    nlohmann::json payload;
+    payload["state"] = transport.isPlaying ? "playing" : "stopped";
+    payload["positionSamples"] = playheadSamples;
+    payload["positionSeconds"] = static_cast<double>(playheadSamples) / sampleRate;
+    payload["sampleRate"] = sampleRate;
+
+    // Also include positionBeats for consistency with transport.state
+    double tempo = transport.tempo;
+    payload["positionBeats"] = (transport.positionSeconds / 60.0) * tempo;
+
+    positionEvent.payload = payload;
+
+    session->send(positionEvent);
 }
 

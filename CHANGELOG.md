@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 18:15:00 UTC) [changed] TransportDomain now sends transport.positionUpdate event immediately when play/stop/seek commands are processed, ensuring Aura can sync its simulated play timer with Signal's actual playback start time.
+
 (2025-11-28 17:59:22 UTC) [changed] Removed legacy IPC components (Router, Envelope, DomainHandler) and migrated all domains to pure IpcEnvelope handling via IpcDomainHandler interface. Simplified DomainDispatcher to registry-based forwarding only.
 
 (2025-11-28 17:40:38 UTC) [changed] Refactored DomainDispatcher to registry pattern and moved all domain-specific logic into domain classes.

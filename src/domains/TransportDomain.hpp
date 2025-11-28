@@ -28,6 +28,11 @@ private:
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
     );
 
+    void emitTransportPositionUpdate(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
+
     EngineHost* _engineHost;
 };
 
