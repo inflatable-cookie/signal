@@ -12,6 +12,7 @@
 #include "domains/MixerDomain.hpp"
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"
+#include "domains/HardwareDomain.hpp"
 #include "logging/Logging.hpp"
 #include <asio/io_context.hpp>
 #include <asio/steady_timer.hpp>
@@ -52,6 +53,10 @@ SignalApp::SignalApp() {
 
         auto assetsDomain = std::make_shared<AssetsDomain>(_engineHost.get());
         _router->registerHandler("assets", assetsDomain);
+
+        // Register hardware domain
+        auto hardwareDomain = std::make_shared<HardwareDomain>(_engineHost.get());
+        _router->registerHandler("hardware", hardwareDomain);
 
         LOG_INFO({"SignalApp"}, "Initialised");
     } catch (const std::exception& e) {
@@ -164,6 +169,29 @@ int SignalApp::run() {
     };
     scheduleMetering();
 
+    // Set up transport position update timer (emit every 50ms, ~20 Hz for smooth playhead updates)
+    asio::steady_timer transportPositionTimer(io);
+    std::function<void()> scheduleTransportPosition;
+    scheduleTransportPosition = [&transportPositionTimer, &server, this, &shuttingDown, &scheduleTransportPosition]() {
+        transportPositionTimer.expires_after(std::chrono::milliseconds(50));
+        transportPositionTimer.async_wait(
+            [&server, this, &shuttingDown, &scheduleTransportPosition](std::error_code ec) {
+                if (ec || shuttingDown.load()) {
+                    return;
+                }
+
+                // Only send position updates when engine is running
+                if (_engineHost && _engineHost->state() == EngineHost::State::Running) {
+                    server.broadcastTransportPosition(_engineHost.get());
+                }
+
+                // Schedule next position update
+                scheduleTransportPosition();
+            }
+        );
+    };
+    scheduleTransportPosition();
+
     // Set up callback to send initial engine state when a client connects
     server.setClientConnectedCallback(
         [&server, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
@@ -176,6 +204,16 @@ int SignalApp::run() {
 
     // Start server
     server.start();
+
+    // Auto-start the audio engine when Signal boots up
+    if (_engineHost) {
+        LOG_INFO({"SignalApp"}, "Auto-starting audio engine...");
+        _engineHost->start();
+        // Send initial engine state to any connected clients
+        // (This will be sent automatically when clients connect via the callback,
+        // but we also send it now in case a client is already connected)
+        server.broadcastEngineState(_engineHost.get());
+    }
 
     // Scan for plugins after server starts (deferred to prevent blocking startup)
     // This allows Signal to accept connections even if plugin scanning fails

@@ -157,6 +157,144 @@ public:
         session->send(stateEvent);
     }
 
+    // Broadcast engine state to all connected clients
+    template<typename EngineHostType>
+    void broadcastEngineState(EngineHostType* engineHost) {
+        std::lock_guard<std::mutex> lock(clientsMutex_);
+
+        // Remove expired weak pointers
+        clients_.erase(
+            std::remove_if(
+                clients_.begin(),
+                clients_.end(),
+                [](const std::weak_ptr<TcpClientSession>& wp) {
+                    return wp.expired();
+                }
+            ),
+            clients_.end()
+        );
+
+        if (!engineHost) {
+            return;
+        }
+
+        // Create engine.state event
+        IpcEnvelope stateEvent;
+        stateEvent.version = 1;
+        stateEvent.id = "engine-state-broadcast-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        stateEvent.correlationId = std::nullopt;
+        stateEvent.timestamp = currentTimestamp();
+        stateEvent.origin = IpcOrigin::Signal;
+        stateEvent.target = IpcTarget::Pulse;
+        stateEvent.domain = "engine";
+        stateEvent.kind = IpcKind::Event;
+        stateEvent.name = "state";
+        stateEvent.priority = IpcPriority::Normal;
+
+        // Get current engine state
+        std::string lifecycle = "stopped";
+        std::optional<std::string> lastError;
+        switch (engineHost->state()) {
+        case EngineHostType::State::Stopped:
+            lifecycle = "stopped";
+            break;
+        case EngineHostType::State::Starting:
+            lifecycle = "starting";
+            break;
+        case EngineHostType::State::Running:
+            lifecycle = "running";
+            break;
+        case EngineHostType::State::Error:
+            lifecycle = "error";
+            lastError = engineHost->lastError();
+            break;
+        }
+
+        nlohmann::json payload;
+        payload["lifecycle"] = lifecycle;
+        if (lastError.has_value()) {
+            payload["lastError"] = lastError.value();
+        } else {
+            payload["lastError"] = nullptr;
+        }
+
+        // Include runtime configuration
+        payload["sampleRate"] = engineHost->getSampleRate();
+        payload["blockSize"] = engineHost->getBlockSize();
+        payload["outputDeviceName"] = engineHost->getOutputDeviceName();
+        payload["numOutputChannels"] = engineHost->getNumOutputChannels();
+
+        stateEvent.payload = payload;
+
+        // Send to all active clients
+        for (auto& weak_session : clients_) {
+            if (auto session = weak_session.lock()) {
+                session->send(stateEvent);
+            }
+        }
+    }
+
+    // Broadcast transport position update to all connected clients
+    template<typename EngineHostType>
+    void broadcastTransportPosition(EngineHostType* engineHost) {
+        std::lock_guard<std::mutex> lock(clientsMutex_);
+
+        // Remove expired weak pointers
+        clients_.erase(
+            std::remove_if(
+                clients_.begin(),
+                clients_.end(),
+                [](const std::weak_ptr<TcpClientSession>& wp) {
+                    return wp.expired();
+                }
+            ),
+            clients_.end()
+        );
+
+        if (!engineHost) {
+            return;
+        }
+
+        // Get current playhead and transport state
+        uint64_t playheadSamples = engineHost->getPlayheadSamples();
+        const auto& transport = engineHost->transport();
+        double sampleRate = engineHost->getSampleRate();
+
+        // Only send updates when playing
+        if (!transport.isPlaying) {
+            return;
+        }
+
+        // Create transport.positionUpdate event
+        IpcEnvelope positionEvent;
+        positionEvent.version = 1;
+        positionEvent.id = "transport-position-update-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+        positionEvent.correlationId = std::nullopt;
+        positionEvent.timestamp = currentTimestamp();
+        positionEvent.origin = IpcOrigin::Signal;
+        positionEvent.target = IpcTarget::Pulse;
+        positionEvent.domain = "transport";
+        positionEvent.kind = IpcKind::Event;
+        positionEvent.name = "positionUpdate";
+        positionEvent.priority = IpcPriority::Normal;
+
+        nlohmann::json payload;
+        payload["state"] = transport.isPlaying ? "playing" : "stopped";
+        payload["positionSamples"] = playheadSamples;
+        payload["positionSeconds"] = static_cast<double>(playheadSamples) / sampleRate;
+
+        positionEvent.payload = payload;
+
+        // Send to all active clients
+        for (auto& weak_session : clients_) {
+            if (auto session = weak_session.lock()) {
+                session->send(positionEvent);
+            }
+        }
+    }
+
     // Broadcast diagnostics event to all connected clients
     template<typename EngineHostType>
     void broadcastDiagnostics(EngineHostType* engineHost) {

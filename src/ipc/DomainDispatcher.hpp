@@ -6,6 +6,7 @@
 #include <memory>
 
 class EngineHost;
+class HardwareDomain;
 
 namespace loophole::signal::ipc {
 
@@ -47,6 +48,7 @@ private:
 
     IpcRouter* router_;
     EngineHost* engineHost_;
+    std::unique_ptr<HardwareDomain> hardwareDomain_;
 };
 
 } // namespace loophole::signal::ipc

@@ -13,6 +13,7 @@
 #include "ipc/IpcEnvelope.hpp"
 #include "ipc/Envelope.hpp"
 #include "core/EngineHost.hpp"
+#include "domains/HardwareDomain.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
 
@@ -21,6 +22,7 @@ namespace loophole::signal::ipc {
 DomainDispatcher::DomainDispatcher(IpcRouter* router, EngineHost* engineHost)
     : router_(router)
     , engineHost_(engineHost)
+    , hardwareDomain_(std::make_unique<HardwareDomain>(engineHost))
 {
 }
 
@@ -276,10 +278,27 @@ void DomainDispatcher::handleHardwareDomain(
         return;
     }
 
-    if (!engineHost_) {
-        std::cerr << "[DomainDispatcher] EngineHost is null" << std::endl;
+    if (!engineHost_ || !hardwareDomain_) {
+        std::cerr << "[DomainDispatcher] EngineHost or HardwareDomain is null" << std::endl;
         return;
     }
+
+    // Convert IpcEnvelope to old Envelope format and route through router for command processing
+    Envelope old_env;
+    old_env.v = env.version;
+    old_env.id = env.id;
+    old_env.cid = env.correlationId.value_or("");
+    old_env.ts = env.timestamp;
+    old_env.origin = originToString(env.origin);
+    old_env.target = targetToString(env.target);
+    old_env.domain = env.domain; // Use canonical domain "hardware"
+    old_env.kind = kindToString(env.kind);
+    old_env.name = env.name;
+    old_env.priority = priorityToString(env.priority);
+    old_env.payload = env.payload.dump();
+
+    // Route command through router for processing
+    router_->dispatch(old_env);
 
     // Helper to create response envelope
     auto createResponse = [&](const std::string& name, const nlohmann::json& payload) -> IpcEnvelope {
@@ -306,6 +325,7 @@ void DomainDispatcher::handleHardwareDomain(
             break;
         }
 
+        // Use canonical domain name hardware for responses
         response.domain = "hardware";
         response.kind = IpcKind::Event;
         response.name = name;
@@ -314,40 +334,23 @@ void DomainDispatcher::handleHardwareDomain(
         return response;
     };
 
-    if (env.name == "listOutputDevices") {
-        // Enumerate output devices
-        auto devices = engineHost_->enumerateOutputDevices();
-        std::string activeDeviceId = engineHost_->getActiveOutputDeviceId();
-
-        nlohmann::json payload;
-        nlohmann::json devicesArray = nlohmann::json::array();
-
-        for (const auto& device : devices) {
-            nlohmann::json deviceJson;
-            deviceJson["id"] = device.id;
-            deviceJson["name"] = device.name;
-            deviceJson["isDefault"] = device.isDefault;
-            deviceJson["isActive"] = (device.id == activeDeviceId);
-            deviceJson["maxChannels"] = device.maxChannels;
-            deviceJson["preferredSampleRate"] = device.preferredSampleRate;
-            devicesArray.push_back(deviceJson);
+    // Get response data from HardwareDomain and send event
+    if (env.name == "listOutputDevices" || env.name == "refreshOutputDevices") {
+        auto response = hardwareDomain_->handleListOutputDevices();
+        if (response.has_value()) {
+            IpcEnvelope event = createResponse(response->eventName, response->payload);
+            session->send(event);
         }
-
-        payload["devices"] = devicesArray;
-        payload["activeDeviceId"] = activeDeviceId;
-
-        IpcEnvelope response = createResponse("outputDevicesListed", payload);
-        session->send(response);
-
-        std::cout << "[DomainDispatcher] Listed " << devices.size() << " output devices" << std::endl;
-    } else if (env.name == "selectOutputDevice") {
+    } else if (env.name == "selectOutputDevice" || env.name == "setActiveOutputDevice") {
         // Parse device ID from payload
         std::string deviceId;
         try {
             if (env.payload.contains("id") && env.payload["id"].is_string()) {
                 deviceId = env.payload["id"].get<std::string>();
+            } else if (env.payload.contains("deviceId") && env.payload["deviceId"].is_string()) {
+                deviceId = env.payload["deviceId"].get<std::string>();
             } else {
-                std::cerr << "[DomainDispatcher] selectOutputDevice: missing or invalid 'id' field" << std::endl;
+                std::cerr << "[DomainDispatcher] selectOutputDevice: missing or invalid 'id' or 'deviceId' field" << std::endl;
                 nlohmann::json errorPayload;
                 errorPayload["success"] = false;
                 errorPayload["error"] = "Missing or invalid device ID";
@@ -365,39 +368,18 @@ void DomainDispatcher::handleHardwareDomain(
             return;
         }
 
-        // Attempt to set the device
-        bool success = engineHost_->setOutputDevice(deviceId);
-
-        nlohmann::json payload;
-        payload["success"] = success;
-        payload["deviceId"] = deviceId;
-
-        if (success) {
-            // Refresh device list to get updated active status
-            auto devices = engineHost_->enumerateOutputDevices();
-            std::string activeDeviceId = engineHost_->getActiveOutputDeviceId();
-
-            nlohmann::json devicesArray = nlohmann::json::array();
-            for (const auto& device : devices) {
-                nlohmann::json deviceJson;
-                deviceJson["id"] = device.id;
-                deviceJson["name"] = device.name;
-                deviceJson["isDefault"] = device.isDefault;
-                deviceJson["isActive"] = (device.id == activeDeviceId);
-                deviceJson["maxChannels"] = device.maxChannels;
-                deviceJson["preferredSampleRate"] = device.preferredSampleRate;
-                devicesArray.push_back(deviceJson);
-            }
-            payload["devices"] = devicesArray;
-            payload["activeDeviceId"] = activeDeviceId;
+        auto response = hardwareDomain_->handleSelectOutputDevice(deviceId);
+        if (response.has_value()) {
+            IpcEnvelope event = createResponse(response->eventName, response->payload);
+            session->send(event);
         } else {
-            payload["error"] = "Failed to switch to device: " + deviceId;
+            // Fallback error response
+            nlohmann::json errorPayload;
+            errorPayload["success"] = false;
+            errorPayload["error"] = "Failed to process device selection";
+            IpcEnvelope errorResponse = createResponse("outputDeviceSelected", errorPayload);
+            session->send(errorResponse);
         }
-
-        IpcEnvelope response = createResponse("outputDeviceSelected", payload);
-        session->send(response);
-
-        std::cout << "[DomainDispatcher] Device selection " << (success ? "succeeded" : "failed") << ": " << deviceId << std::endl;
     } else {
         std::cout << "[DomainDispatcher] Unknown hardware command: " << env.name << std::endl;
     }

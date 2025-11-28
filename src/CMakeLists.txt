@@ -31,6 +31,7 @@ add_library(signal-core STATIC
     domains/MixerDomain.cpp
     domains/AutomationDomain.cpp
     domains/AssetsDomain.cpp
+    domains/HardwareDomain.cpp
     logging/Logging.cpp
 )
 
