@@ -91,6 +91,9 @@ EngineSelfTestScenarioResult runMonoToStereoScenario() {
 
         host.loadGraphSnapshot(snapshot);
 
+        // Prepare graph after loading (nodes need prepare() called to set up buffers)
+        host.prepareEngine(TEST_SAMPLE_RATE, TEST_BLOCK_SIZE);
+
         // Build minimal schedule with test tone
         std::vector<StreamDescriptor> streams;
         StreamDescriptor stream;
@@ -222,6 +225,9 @@ EngineSelfTestScenarioResult runStereoScenario() {
 
         host.loadGraphSnapshot(snapshot);
 
+        // Prepare graph after loading (nodes need prepare() called to set up buffers)
+        host.prepareEngine(TEST_SAMPLE_RATE, TEST_BLOCK_SIZE);
+
         // Build schedule with test tone
         std::vector<StreamDescriptor> streams;
         StreamDescriptor stream;
@@ -341,6 +347,9 @@ EngineSelfTestScenarioResult runSilenceScenario() {
         snapshot.connections.push_back(nodeConn);
 
         host.loadGraphSnapshot(snapshot);
+
+        // Prepare graph after loading (nodes need prepare() called to set up buffers)
+        host.prepareEngine(TEST_SAMPLE_RATE, TEST_BLOCK_SIZE);
 
         // Empty schedule (no audio segments)
         std::vector<StreamDescriptor> streams;
