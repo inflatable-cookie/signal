@@ -169,23 +169,53 @@ int SignalApp::run() {
     };
     scheduleMetering();
 
-    // Set up transport position update timer (emit every 50ms, ~20 Hz for smooth playhead updates)
+    // Set up transport position update timer (emit every ~1s while playing, throttled internally)
+    // Immediate updates are triggered by transport state changes (play/stop/seek)
+    bool lastTransportPlayingState = false;
+    uint64_t lastTransportPositionSamples = 0;
     asio::steady_timer transportPositionTimer(io);
     std::function<void()> scheduleTransportPosition;
-    scheduleTransportPosition = [&transportPositionTimer, &server, this, &shuttingDown, &scheduleTransportPosition]() {
-        transportPositionTimer.expires_after(std::chrono::milliseconds(50));
+    scheduleTransportPosition = [&transportPositionTimer, &server, this, &shuttingDown, &scheduleTransportPosition, &lastTransportPlayingState, &lastTransportPositionSamples]() mutable {
+        // Check every 500ms - this is a balance between responsiveness and efficiency
+        // The throttling inside broadcastTransportPosition will ensure we only send ~1Hz
+        transportPositionTimer.expires_after(std::chrono::milliseconds(500));
         transportPositionTimer.async_wait(
-            [&server, this, &shuttingDown, &scheduleTransportPosition](std::error_code ec) {
+            [&server, this, &shuttingDown, &scheduleTransportPosition, &lastTransportPlayingState, &lastTransportPositionSamples](std::error_code ec) mutable {
                 if (ec || shuttingDown.load()) {
                     return;
                 }
 
                 // Only send position updates when engine is running
                 if (_engineHost && _engineHost->state() == EngineHost::State::Running) {
-                    server.broadcastTransportPosition(_engineHost.get());
+                    const auto& transport = _engineHost->transport();
+                    uint64_t currentPositionSamples = _engineHost->getPlayheadSamples();
+                    bool currentPlayingState = transport.isPlaying;
+
+                    // Detect transport state changes (play/stop) or significant position jumps (seek)
+                    // Position jumps should only trigger immediate updates for large jumps (seeks),
+                    // not normal playback progress. A large jump is > 1 second of samples at 44.1kHz.
+                    bool stateChanged = (currentPlayingState != lastTransportPlayingState);
+                    int64_t positionDelta = static_cast<int64_t>(currentPositionSamples) - static_cast<int64_t>(lastTransportPositionSamples);
+                    bool positionJumped = (lastTransportPositionSamples > 0 && // Only check if we have a previous position
+                                         std::abs(positionDelta) > 44100); // More than 1 second at 44.1kHz (indicates a seek, not normal playback)
+
+                    // Force immediate update on state changes or significant position jumps (seek)
+                    bool forceImmediate = stateChanged || positionJumped;
+
+                    // Only call broadcastTransportPosition if:
+                    // - Force immediate (state change or seek), OR
+                    // - Playing (throttling inside will decide if enough time has passed)
+                    // Don't call when stopped unless forceImmediate
+                    if (forceImmediate || currentPlayingState) {
+                        server.broadcastTransportPosition(_engineHost.get(), forceImmediate);
+                    }
+
+                    // Update tracking state AFTER calling broadcast (so we detect changes correctly)
+                    lastTransportPlayingState = currentPlayingState;
+                    lastTransportPositionSamples = currentPositionSamples;
                 }
 
-                // Schedule next position update
+                // Schedule next position update check
                 scheduleTransportPosition();
             }
         );

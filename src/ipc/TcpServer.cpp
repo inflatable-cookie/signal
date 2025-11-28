@@ -21,7 +21,9 @@ TcpServer::TcpServer(
     const std::string& host,
     uint16_t port,
     EnvelopeHandler handler
-) : io_(io), acceptor_(io), handler_(std::move(handler)) {
+) : io_(io), acceptor_(io), handler_(std::move(handler)),
+    lastPositionReportTime_(std::chrono::steady_clock::now()),
+    lastReportedPositionSamples_(0) {
     std::error_code ec;
     asio::ip::tcp::endpoint endpoint(asio::ip::address::from_string(host, ec), port);
     if (ec) {

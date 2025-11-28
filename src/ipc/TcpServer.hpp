@@ -235,9 +235,10 @@ public:
         }
     }
 
-    // Broadcast transport position update to all connected clients
+    // Broadcast transport position update to all connected clients (throttled)
+    // Updates are sent at ~1Hz while playing, plus immediately on state changes
     template<typename EngineHostType>
-    void broadcastTransportPosition(EngineHostType* engineHost) {
+    void broadcastTransportPosition(EngineHostType* engineHost, bool forceImmediate = false) {
         std::lock_guard<std::mutex> lock(clientsMutex_);
 
         // Remove expired weak pointers
@@ -261,10 +262,32 @@ public:
         const auto& transport = engineHost->transport();
         double sampleRate = engineHost->getSampleRate();
 
-        // Only send updates when playing
-        if (!transport.isPlaying) {
-            return;
+        // Throttling: Only send periodic updates when playing
+        // Always send immediate updates on state changes (play/stop/seek)
+        if (!forceImmediate && !transport.isPlaying) {
+            return; // Don't send periodic updates when stopped
         }
+
+        // Check throttling (only for periodic updates, not forced immediate)
+        if (!forceImmediate && transport.isPlaying) {
+            auto now = std::chrono::steady_clock::now();
+            auto timeSinceLastReport = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - lastPositionReportTime_).count();
+
+            // Throttle to ~1Hz (1000ms interval) for periodic updates
+            constexpr int64_t POSITION_UPDATE_INTERVAL_MS = 1000;
+            if (timeSinceLastReport < POSITION_UPDATE_INTERVAL_MS) {
+                return; // Too soon, skip this update (throttling working correctly)
+            }
+        }
+
+        // If we get here, either:
+        // - forceImmediate is true (state change or seek), OR
+        // - Enough time has passed since last report (throttling passed)
+
+        // Update throttling state
+        lastPositionReportTime_ = std::chrono::steady_clock::now();
+        lastReportedPositionSamples_ = playheadSamples;
 
         // Create transport.positionUpdate event
         IpcEnvelope positionEvent;
@@ -284,6 +307,7 @@ public:
         payload["state"] = transport.isPlaying ? "playing" : "stopped";
         payload["positionSamples"] = playheadSamples;
         payload["positionSeconds"] = static_cast<double>(playheadSamples) / sampleRate;
+        payload["sampleRate"] = sampleRate;
 
         positionEvent.payload = payload;
 
@@ -380,6 +404,10 @@ private:
     std::mutex clientsMutex_;
     std::vector<std::weak_ptr<TcpClientSession>> clients_;
     ClientConnectedCallback clientConnectedCallback_;
+
+    // Throttling state for transport position updates
+    std::chrono::steady_clock::time_point lastPositionReportTime_;
+    uint64_t lastReportedPositionSamples_;
 };
 
 } // namespace loophole::signal::ipc
