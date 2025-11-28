@@ -183,22 +183,12 @@ bool FileAudioAssetSource::readSamples(
     int framesToRead = static_cast<int>(std::min(static_cast<uint64_t>(numFrames), availableFrames));
 
     // Copy samples from interleaved PCM to deinterleaved buffer
-    for (int frame = 0; frame < framesToRead; ++frame) {
-        uint64_t sourceFrame = startSample + frame;
-        int destFrame = destFrameOffset + frame;
-
-        if (destFrame < 0 || destFrame >= buffer.numFrames()) {
-            continue;
-        }
-
-        // Copy from interleaved PCM (asset.channels) to deinterleaved buffer (numChannels)
-        for (int ch = 0; ch < numChannels && ch < buffer.numChannels(); ++ch) {
-            // Map channel (handle mono -> stereo, etc.)
-            int sourceCh = std::min(ch, static_cast<int>(asset.channels) - 1);
-            size_t pcmIndex = sourceFrame * asset.channels + sourceCh;
-            float sample = asset.pcm[pcmIndex];
-            buffer.setSample(destFrame, ch, sample);
-        }
+    // Use efficient conversion utility for better performance
+    const float* pcmData = asset.pcm.data();
+    if (pcmData && framesToRead > 0) {
+        // Calculate source offset (startSample * asset.channels)
+        const float* srcOffset = pcmData + (startSample * asset.channels);
+        buffer.copyFromInterleaved(srcOffset, asset.channels, framesToRead, 0, destFrameOffset);
     }
 
     // Zero-pad remaining frames if we didn't read enough

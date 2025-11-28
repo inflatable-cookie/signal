@@ -4,7 +4,7 @@
 ///
 /// Thread: Control thread (prepare, reset, parameter changes)
 ///         Audio thread (processAudioMidi - read-only parameter access)
-/// Ownership: Owned by plugin nodes (MidiFxNode, InstrumentNode, AudioFxNode)
+/// Ownership: Owned by plugin nodes (PluginNode)
 ///
 /// This interface abstracts plugin hosting across different formats (CLAP, VST3, AU, LV2).
 /// Implementations handle format-specific details while providing a uniform API.
@@ -83,5 +83,12 @@ public:
 
     /// Get plugin descriptor
     virtual const PluginDescriptor& getDescriptor() const = 0;
+
+    /// Negotiate audio I/O configuration
+    /// Called after plugin creation to query actual I/O capabilities and match with requested configuration
+    /// @param requestedInputs Requested number of input channels (from NodeDesc)
+    /// @param requestedOutputs Requested number of output channels (from NodeDesc)
+    /// @return true if negotiation succeeded, false otherwise
+    virtual bool negotiateAudioIO(int requestedInputs, int requestedOutputs) = 0;
 };
 

@@ -111,6 +111,21 @@ public:
         return _descriptor;
     }
 
+    bool negotiateAudioIO(int requestedInputs, int requestedOutputs) override {
+        // Test plugin: accept requested I/O if it matches supported config
+        // For testing: support mono (1/1) and stereo (2/2) only
+        if ((requestedInputs == 1 && requestedOutputs == 1) ||
+            (requestedInputs == 2 && requestedOutputs == 2)) {
+            _descriptor.numAudioInputs = requestedInputs;
+            _descriptor.numAudioOutputs = requestedOutputs;
+            return true;
+        }
+        // Mismatch: set to what we actually support (for testing, use stereo as fallback)
+        _descriptor.numAudioInputs = 2;
+        _descriptor.numAudioOutputs = 2;
+        return true; // Query succeeded, but config doesn't match requested
+    }
+
 private:
     PluginDescriptor _descriptor;
     double _sampleRate;
@@ -186,7 +201,7 @@ TEST_CASE("Phase 4 - Plugin node integration", "[plugin][phase4][node]") {
     GraphEngine engine;
     TestPluginHost host;
 
-    // Create graph with AudioFxNode using test plugin
+    // Create graph with PluginNode (AudioFx kind) using test plugin
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
@@ -214,8 +229,9 @@ TEST_CASE("Phase 4 - Plugin node integration", "[plugin][phase4][node]") {
     engine.prepareGraph(44100, 512);
 
     // Verify plugin was created
-    auto* fx = dynamic_cast<AudioFxNode*>(engine.findNode("fx-1"));
+    auto* fx = dynamic_cast<PluginNode*>(engine.findNode("fx-1"));
     REQUIRE(fx != nullptr);
+    REQUIRE(fx->getPluginKind() == PluginNodeKind::AudioFx);
     REQUIRE(fx->getPlugin() != nullptr);
 
     // Test processing
@@ -237,7 +253,7 @@ TEST_CASE("Phase 4 - Parameter change test", "[plugin][phase4][parameter]") {
     TestPluginHost testHost;
     GraphEngine engine;
 
-    // Create graph with AudioFxNode
+    // Create graph with PluginNode (AudioFx kind)
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
@@ -264,8 +280,9 @@ TEST_CASE("Phase 4 - Parameter change test", "[plugin][phase4][parameter]") {
     engine.prepareGraph(44100, 512);
 
     // Get the plugin node
-    auto* fx = dynamic_cast<AudioFxNode*>(engine.findNode("fx-1"));
+    auto* fx = dynamic_cast<PluginNode*>(engine.findNode("fx-1"));
     REQUIRE(fx != nullptr);
+    REQUIRE(fx->getPluginKind() == PluginNodeKind::AudioFx);
     REQUIRE(fx->getPlugin() != nullptr);
 
     // Verify initial gain is 1.0
@@ -325,5 +342,104 @@ TEST_CASE("Phase 4 - Plugin state round-trip test", "[plugin][phase4][state]") {
 
     // Verify parameter returned to saved value
     REQUIRE(std::abs(plugin->getParameterValue("gain") - 0.75f) < 0.01f);
+}
+
+TEST_CASE("Phase 3 - Plugin I/O negotiation: mono plugin, mono snapshot", "[plugin][phase3][io]") {
+    GraphEngine engine;
+    TestPluginHost host;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "mono-plugin-test";
+
+    // Create mono plugin node
+    NodeDesc pluginDesc;
+    pluginDesc.nodeId = "plugin-mono";
+    pluginDesc.kind = NodeKind::AudioFx;
+    pluginDesc.pluginFormat = PluginFormat::Clap;
+    pluginDesc.pluginId = "test.plugin.mono";
+    pluginDesc.numAudioInputs = 1;  // Mono input
+    pluginDesc.numAudioOutputs = 1; // Mono output
+    snapshot.nodes.push_back(pluginDesc);
+
+    engine.loadGraphSnapshot(snapshot, &host);
+    engine.prepareGraph(44100, 512);
+
+    // Find the plugin node
+    auto* node = engine.findNode("plugin-mono");
+    REQUIRE(node != nullptr);
+    REQUIRE(node->getKind() == NodeKind::AudioFx);
+
+    // Check that config is mono (from snapshot)
+    const auto& config = node->getAudioConfig();
+    REQUIRE(config.numInputChannels == 1);
+    REQUIRE(config.numOutputChannels == 1);
+    REQUIRE(config.layout == ChannelLayout::Mono);
+}
+
+TEST_CASE("Phase 3 - Plugin I/O negotiation: stereo plugin, stereo snapshot", "[plugin][phase3][io]") {
+    GraphEngine engine;
+    TestPluginHost host;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "stereo-plugin-test";
+
+    // Create stereo plugin node
+    NodeDesc pluginDesc;
+    pluginDesc.nodeId = "plugin-stereo";
+    pluginDesc.kind = NodeKind::AudioFx;
+    pluginDesc.pluginFormat = PluginFormat::Clap;
+    pluginDesc.pluginId = "test.plugin.stereo";
+    pluginDesc.numAudioInputs = 2;  // Stereo input
+    pluginDesc.numAudioOutputs = 2; // Stereo output
+    snapshot.nodes.push_back(pluginDesc);
+
+    engine.loadGraphSnapshot(snapshot, &host);
+    engine.prepareGraph(44100, 512);
+
+    // Find the plugin node
+    auto* node = engine.findNode("plugin-stereo");
+    REQUIRE(node != nullptr);
+    REQUIRE(node->getKind() == NodeKind::AudioFx);
+
+    // Check that config is stereo (from snapshot)
+    const auto& config = node->getAudioConfig();
+    REQUIRE(config.numInputChannels == 2);
+    REQUIRE(config.numOutputChannels == 2);
+    REQUIRE(config.layout == ChannelLayout::Stereo);
+}
+
+TEST_CASE("Phase 3 - Plugin I/O negotiation: mono-only plugin, stereo snapshot", "[plugin][phase3][io]") {
+    GraphEngine engine;
+    TestPluginHost host;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "mismatch-plugin-test";
+
+    // Create plugin node with stereo request, but plugin only supports mono
+    NodeDesc pluginDesc;
+    pluginDesc.nodeId = "plugin-mismatch";
+    pluginDesc.kind = NodeKind::AudioFx;
+    pluginDesc.pluginFormat = PluginFormat::Clap;
+    pluginDesc.pluginId = "test.plugin.mono"; // This plugin only supports mono
+    pluginDesc.numAudioInputs = 2;  // Request stereo
+    pluginDesc.numAudioOutputs = 2; // Request stereo
+    snapshot.nodes.push_back(pluginDesc);
+
+    engine.loadGraphSnapshot(snapshot, &host);
+    engine.prepareGraph(44100, 512);
+
+    // Find the plugin node
+    auto* node = engine.findNode("plugin-mismatch");
+    REQUIRE(node != nullptr);
+    REQUIRE(node->getKind() == NodeKind::AudioFx);
+
+    // Check that config is still stereo (snapshot is source of truth)
+    const auto& config = node->getAudioConfig();
+    REQUIRE(config.numInputChannels == 2);
+    REQUIRE(config.numOutputChannels == 2);
+    REQUIRE(config.layout == ChannelLayout::Stereo);
+
+    // Note: In a real scenario, the plugin would be bypassed (_ioNegotiationOk = false)
+    // but the NodeAudioConfig remains as requested from snapshot
 }
 

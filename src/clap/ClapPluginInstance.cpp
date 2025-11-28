@@ -1,9 +1,11 @@
 #include "clap/ClapPluginInstance.hpp"
 #include "core/NodeBuffers.hpp"
+#include "logging/Logging.hpp"
 #include <iostream>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <sstream>
 
 // Phase 5: Real CLAP implementation
 // This replaces the Phase 4 stub with actual CLAP plugin loading and processing
@@ -27,8 +29,8 @@ ClapPluginInstance::ClapPluginInstance(
     _descriptor.id = clapDesc->id ? clapDesc->id : "";
     _descriptor.name = clapDesc->name ? clapDesc->name : _descriptor.id;
 
-    // TODO: Query actual I/O counts from CLAP plugin ports
-    // For now, use defaults
+    // Audio I/O will be queried from CLAP plugin ports after plugin creation
+    // Use defaults for now (will be updated in queryAudioPorts)
     _descriptor.numAudioInputs = 2;
     _descriptor.numAudioOutputs = 2;
     _descriptor.hasMidiInput = true;
@@ -86,6 +88,9 @@ bool ClapPluginInstance::createPlugin() {
     // Query parameters
     queryParameters();
 
+    // Audio ports will be queried during negotiateAudioIO() call
+    // Don't query here - wait for explicit negotiation request
+
     std::cout << "[ClapPluginInstance] Created plugin: " << _descriptor.name << std::endl;
     return true;
 }
@@ -114,6 +119,11 @@ void ClapPluginInstance::queryExtensions() {
     // Query state extension
     _stateExt = static_cast<const clap_plugin_state*>(
         _plugin->get_extension(_plugin, CLAP_EXT_STATE)
+    );
+
+    // Query audio ports extension
+    _audioPortsExt = static_cast<const clap_plugin_audio_ports*>(
+        _plugin->get_extension(_plugin, CLAP_EXT_AUDIO_PORTS)
     );
 }
 
@@ -162,6 +172,122 @@ void ClapPluginInstance::queryParameters() {
     }
 
     std::cout << "[ClapPluginInstance] Found " << _parameters.size() << " parameters" << std::endl;
+}
+
+void ClapPluginInstance::queryAudioPorts(int requestedInputs, int requestedOutputs) {
+    // Query CLAP audio ports extension to determine actual I/O configuration
+    // This is called during plugin creation and can be called again during negotiation
+
+    if (!_audioPortsExt) {
+        // No audio ports extension - use defaults
+        _descriptor.numAudioInputs = requestedInputs;
+        _descriptor.numAudioOutputs = requestedOutputs;
+        return;
+    }
+
+    // Query input port count
+    uint32_t numInputPorts = 0;
+    if (_audioPortsExt->count && _audioPortsExt->count(_plugin, true)) {
+        numInputPorts = _audioPortsExt->count(_plugin, true);
+    }
+
+    // Query output port count
+    uint32_t numOutputPorts = 0;
+    if (_audioPortsExt->count && _audioPortsExt->count(_plugin, false)) {
+        numOutputPorts = _audioPortsExt->count(_plugin, false);
+    }
+
+    // If plugin has ports, query the first input and output port for channel counts
+    int chosenInputs = requestedInputs;
+    int chosenOutputs = requestedOutputs;
+
+    if (numInputPorts > 0 && _audioPortsExt->get) {
+        clap_audio_port_info info = {};
+        if (_audioPortsExt->get(_plugin, 0, true, &info)) {
+            // Use port's channel count if available
+            if (info.channel_count > 0) {
+                chosenInputs = static_cast<int>(info.channel_count);
+            }
+        }
+    }
+
+    if (numOutputPorts > 0 && _audioPortsExt->get) {
+        clap_audio_port_info info = {};
+        if (_audioPortsExt->get(_plugin, 0, false, &info)) {
+            // Use port's channel count if available
+            if (info.channel_count > 0) {
+                chosenOutputs = static_cast<int>(info.channel_count);
+            }
+        }
+    }
+
+    // Negotiate: find exact match with requested counts
+    // Phase 3: Snapshot is source of truth - we verify plugin supports it, don't change it
+    if (numInputPorts > 0) {
+        // Check if requested matches any input port
+        bool foundMatch = false;
+        for (uint32_t i = 0; i < numInputPorts; ++i) {
+            clap_audio_port_info info = {};
+            if (_audioPortsExt->get(_plugin, i, true, &info)) {
+                if (info.channel_count == static_cast<uint32_t>(requestedInputs)) {
+                    chosenInputs = requestedInputs;
+                    foundMatch = true;
+                    break;
+                }
+            }
+        }
+        // If no exact match, use first port's channel count (will be checked by caller)
+        if (!foundMatch && numInputPorts > 0) {
+            clap_audio_port_info info = {};
+            if (_audioPortsExt->get(_plugin, 0, true, &info)) {
+                chosenInputs = static_cast<int>(info.channel_count);
+            }
+        }
+    }
+
+    if (numOutputPorts > 0) {
+        // Check if requested matches any output port
+        bool foundMatch = false;
+        for (uint32_t i = 0; i < numOutputPorts; ++i) {
+            clap_audio_port_info info = {};
+            if (_audioPortsExt->get(_plugin, i, false, &info)) {
+                if (info.channel_count == static_cast<uint32_t>(requestedOutputs)) {
+                    chosenOutputs = requestedOutputs;
+                    foundMatch = true;
+                    break;
+                }
+            }
+        }
+        // If no exact match, use first port's channel count (will be checked by caller)
+        if (!foundMatch && numOutputPorts > 0) {
+            clap_audio_port_info info = {};
+            if (_audioPortsExt->get(_plugin, 0, false, &info)) {
+                chosenOutputs = static_cast<int>(info.channel_count);
+            }
+        }
+    }
+
+    // Update descriptor with chosen configuration
+    _descriptor.numAudioInputs = chosenInputs;
+    _descriptor.numAudioOutputs = chosenOutputs;
+
+    // Log negotiation result
+    if (chosenInputs != requestedInputs || chosenOutputs != requestedOutputs) {
+        std::ostringstream msg;
+        msg << "Plugin I/O negotiation: requested " << requestedInputs << "/" << requestedOutputs
+            << ", chosen " << chosenInputs << "/" << chosenOutputs;
+        std::cout << "[ClapPluginInstance] " << msg.str() << std::endl;
+    }
+}
+
+bool ClapPluginInstance::negotiateAudioIO(int requestedInputs, int requestedOutputs) {
+    // Query CLAP audio ports and negotiate I/O configuration
+    queryAudioPorts(requestedInputs, requestedOutputs);
+
+    // Return true if negotiation query succeeded (descriptor updated)
+    // The caller (PluginNode) will check if negotiated matches requested
+    // This function just ensures we queried the plugin successfully
+    return true;
 }
 
 void ClapPluginInstance::prepare(double sampleRate, int maxBlockSize) {

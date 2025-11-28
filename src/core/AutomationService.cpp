@@ -1,9 +1,18 @@
 #include "core/AutomationService.hpp"
+#include "core/AutomationData.hpp"
 #include "logging/Logging.hpp"
 #include <algorithm>
 #include <sstream>
 
-AutomationService::AutomationService() {
+AutomationService::AutomationService()
+    : _transportPositionSamples(0)
+{
+    // Initialize double-buffer snapshots
+    _snapshotA.values.clear();
+    _snapshotB.values.clear();
+    _activeSnapshot.store(&_snapshotA, std::memory_order_release);
+    _useSnapshotA = true;
+
     LOG_INFO({"AutomationService"}, "Initialised");
 }
 
@@ -211,6 +220,7 @@ float AutomationService::getCurrentValue(
     const std::string& targetId,
     const std::string& parameter
 ) const {
+    // Deprecated: Use getParameterValue() after beginBlock() instead
     std::string key = makeKey(targetId, parameter);
 
     std::lock_guard<std::mutex> lock(_mutex);
@@ -223,7 +233,30 @@ float AutomationService::getCurrentValue(
     return state->currentValue.load(std::memory_order_acquire);
 }
 
+float AutomationService::getParameterValue(
+    const std::string& targetId,
+    const std::string& parameterId
+) const {
+    // Lock-free read from active snapshot (updated in beginBlock)
+    std::string key = makeKey(targetId, parameterId);
+
+    BlockSnapshot* snapshot = _activeSnapshot.load(std::memory_order_acquire);
+    if (!snapshot) {
+        // No snapshot - return default
+        return (parameterId == "pan") ? 0.0f : 1.0f;
+    }
+
+    auto it = snapshot->values.find(key);
+    if (it != snapshot->values.end()) {
+        return it->second;
+    }
+
+    // No automation for this parameter - return default
+    return (parameterId == "pan") ? 0.0f : 1.0f;
+}
+
 void AutomationService::updateCurrentValues(uint64_t samplePosition) {
+    // Deprecated: Use beginBlock() instead
     std::lock_guard<std::mutex> lock(_mutex);
 
     for (auto& pair : _curves) {
@@ -241,5 +274,135 @@ void AutomationService::updateCurrentValues(uint64_t samplePosition) {
         float value = evaluateCurve(points, samplePosition);
         state->currentValue.store(value, std::memory_order_release);
     }
+}
+
+void AutomationService::beginBlock(uint64_t blockStartSamples, int blockSize, double sampleRate) {
+    // Real-time safe: no allocations, pre-compute all parameter values for the block
+    // Use double-buffer for lock-free reads from audio thread
+
+    BlockSnapshot* snapshot = _useSnapshotA ? &_snapshotA : &_snapshotB;
+    snapshot->values.clear();
+    snapshot->blockStartSamples = blockStartSamples;
+    snapshot->blockSize = blockSize;
+
+    // Evaluate all curves at block start position
+    // Note: For per-sample automation, we'd evaluate at each sample, but for now we evaluate once per block
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    for (auto& pair : _curves) {
+        TargetAutomationState* state = pair.second.get();
+        if (!state->hasCurve.load(std::memory_order_acquire)) {
+            // No curve - use default value
+            float defaultValue = (state->parameter == "pan") ? 0.0f : 1.0f;
+            snapshot->values[pair.first] = defaultValue;
+            continue;
+        }
+
+        std::vector<AutomationCurvePoint> points;
+        {
+            std::lock_guard<std::mutex> pointsLock(state->pointsMutex);
+            points = state->points;
+        }
+
+        float value = evaluateCurve(points, blockStartSamples);
+        snapshot->values[pair.first] = value;
+
+        // Also update atomic currentValue for backward compatibility
+        state->currentValue.store(value, std::memory_order_release);
+    }
+
+    // Atomically swap snapshot pointer (lock-free)
+    _activeSnapshot.store(snapshot, std::memory_order_release);
+    _useSnapshotA = !_useSnapshotA;
+}
+
+void AutomationService::loadSnapshot(const AutomationData& snapshot) {
+    // Convert AutomationData events (nodeId:paramId) to AutomationService curves (targetId:parameter)
+    // Called on control thread when automation snapshot is received from Pulse
+
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    // Group events by (nodeId, paramId) to form curves
+    std::unordered_map<std::string, std::vector<AutomationCurvePoint>> curveMap;
+
+    for (const auto& event : snapshot.events) {
+        std::string key = makeKey(event.nodeId, event.paramId);
+
+        AutomationCurvePoint point;
+        point.timeSamples = event.timeSamples;
+        point.value = event.valueNorm;
+
+        // Convert AutomationCurveType to shape string
+        if (event.curve == AutomationCurveType::Step) {
+            point.shape = "step";
+        } else {
+            point.shape = "linear";
+        }
+
+        curveMap[key].push_back(point);
+    }
+
+    // Sort points by time for each curve
+    for (auto& pair : curveMap) {
+        std::sort(pair.second.begin(), pair.second.end(),
+            [](const AutomationCurvePoint& a, const AutomationCurvePoint& b) {
+                return a.timeSamples < b.timeSamples;
+            });
+    }
+
+    // Create or update curves
+    for (const auto& pair : curveMap) {
+        // Parse key back to targetId and parameter
+        size_t colonPos = pair.first.find(':');
+        if (colonPos == std::string::npos) {
+            continue;
+        }
+
+        std::string targetId = pair.first.substr(0, colonPos);
+        std::string parameter = pair.first.substr(colonPos + 1);
+
+        AutomationCurve curve;
+        curve.targetId = targetId;
+        curve.parameter = parameter;
+        curve.points = pair.second;
+
+        // Update or create curve
+        std::string key = makeKey(targetId, parameter);
+        auto it = _curves.find(key);
+        if (it != _curves.end()) {
+            // Update existing curve
+            TargetAutomationState* state = it->second.get();
+            {
+                std::lock_guard<std::mutex> pointsLock(state->pointsMutex);
+                state->points = curve.points;
+            }
+            state->hasCurve.store(!curve.points.empty(), std::memory_order_release);
+            if (!curve.points.empty()) {
+                state->currentValue.store(curve.points[0].value, std::memory_order_release);
+            }
+        } else {
+            // Create new curve
+            auto state = std::make_unique<TargetAutomationState>();
+            state->targetId = targetId;
+            state->parameter = parameter;
+            {
+                std::lock_guard<std::mutex> pointsLock(state->pointsMutex);
+                state->points = curve.points;
+            }
+            state->hasCurve.store(!curve.points.empty(), std::memory_order_release);
+            if (!curve.points.empty()) {
+                state->currentValue.store(curve.points[0].value, std::memory_order_release);
+            }
+            _curves[key] = std::move(state);
+        }
+    }
+
+    std::ostringstream msg;
+    msg << "Loaded automation snapshot: " << snapshot.events.size() << " events, " << curveMap.size() << " curves";
+    LOG_INFO({"AutomationService"}, msg.str());
+}
+
+void AutomationService::setTransportPosition(uint64_t positionSamples) {
+    _transportPositionSamples.store(positionSamples, std::memory_order_release);
 }
 

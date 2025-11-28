@@ -17,6 +17,8 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <nlohmann/json_fwd.hpp>
 
 /// Stream descriptor (from Pulse)
 struct StreamDescriptor {
@@ -117,4 +119,15 @@ struct ScheduleData {
 
     // Build lookup maps (called after segments/events are added)
     void buildLookupMaps();
+
+    /// Parse ScheduleData from JSON payload
+    /// @param j JSON payload from Pulse
+    /// @param sampleRate Sample rate for beats-to-samples conversion
+    /// @param defaultTempo Default tempo if tempoMap is missing (defaults to 120.0)
+    /// @return Parsed ScheduleData or nullopt on error
+    static std::optional<ScheduleData> fromJson(
+        const nlohmann::json& j,
+        double sampleRate,
+        double defaultTempo = 120.0
+    );
 };

@@ -126,8 +126,9 @@ void AutomationDomain::handleAutomationSnapshot(const nlohmann::json& payload) {
                 return a.timeSamples < b.timeSamples;
             });
 
-        // Load automation snapshot into EngineHost
-        _engineHost->loadAutomationSnapshot(automationData);
+        // Convert AutomationData to AutomationService curves
+        // This consolidates automation into a single system
+        _engineHost->automation().loadSnapshot(automationData);
 
         std::ostringstream msg;
         msg << "Loaded automation snapshot: " << automationData.events.size() << " events";

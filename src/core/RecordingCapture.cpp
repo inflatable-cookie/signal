@@ -1,4 +1,5 @@
 #include "core/RecordingCapture.hpp"
+#include "core/AudioBus.hpp"
 #include "logging/Logging.hpp"
 #include <algorithm>
 #include <sstream>
@@ -103,5 +104,38 @@ size_t RecordingSession::consumeMidiChunks(std::vector<RecordedMidiChunk>& out) 
         count++;
     }
     return count;
+}
+
+bool RecordingSession::captureFinalOutput(
+    const AudioBus& output,
+    uint64_t blockStartSamples,
+    const std::string& laneId
+) {
+    if (!_isRecording.load(std::memory_order_acquire)) {
+        return false;
+    }
+
+    if (!isLaneArmed(laneId)) {
+        return false;
+    }
+
+    // Convert interleaved AudioBus to RecordedAudioChunk
+    RecordedAudioChunk chunk;
+    chunk.laneId = laneId;
+    chunk.numChannels = output.numChannels();
+    chunk.sampleRate = 44100; // TODO: Get from context
+    chunk.startSample = blockStartSamples;
+    chunk.provisionalAssetId = "temp-master-" + std::to_string(blockStartSamples);
+
+    // Copy interleaved data directly (AudioBus already provides interleaved format)
+    const int numFrames = output.numFrames();
+    chunk.interleaved.resize(chunk.numChannels * numFrames);
+    const float* srcData = output.data();
+    if (srcData) {
+        std::memcpy(chunk.interleaved.data(), srcData, chunk.numChannels * numFrames * sizeof(float));
+    }
+
+    // Queue for async flush (lock-free)
+    return _audioChunkQueue.push(chunk);
 }
 

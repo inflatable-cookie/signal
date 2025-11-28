@@ -15,6 +15,10 @@
 /// Targets come from Pulse's graph model and represent processing elements,
 /// not track-level concepts.
 
+// Forward declaration
+struct AutomationData;
+enum class AutomationCurveType;
+
 #include <atomic>
 #include <unordered_map>
 #include <mutex>
@@ -69,10 +73,35 @@ public:
     float evaluateAt(const std::string& targetId, const std::string& parameter, uint64_t samplePosition) const;
 
     /// Get current automation value for a target (cached, updated by control thread)
+    /// @deprecated Use getParameterValue() after beginBlock() for real-time safe access
     float getCurrentValue(const std::string& targetId, const std::string& parameter) const;
 
+    /// Get parameter value for current block (lock-free, called after beginBlock())
+    /// Returns the automation value for the current block, or default if no automation exists
+    /// @param targetId Target identifier (node ID, track ID, etc.)
+    /// @param parameterId Parameter identifier within the target
+    /// @return Parameter value (normalised 0.0..1.0 for most parameters, -1.0..1.0 for pan)
+    float getParameterValue(const std::string& targetId, const std::string& parameterId) const;
+
     /// Update current values for all targets based on sample position (called periodically)
+    /// @deprecated Use beginBlock() instead
     void updateCurrentValues(uint64_t samplePosition);
+
+    /// Begin automation block evaluation (called once per audio block on audio thread)
+    /// Pre-computes all parameter values for the block and stores them for lock-free reads
+    /// @param blockStartSamples Start sample position of the block
+    /// @param blockSize Number of samples in the block
+    /// @param sampleRate Sample rate (for timebase conversion if needed)
+    void beginBlock(uint64_t blockStartSamples, int blockSize, double sampleRate);
+
+    /// Load automation snapshot from Pulse (converts events to curves)
+    /// Called on control thread when automation snapshot is received
+    /// @param snapshot Automation snapshot with events (nodeId:paramId format)
+    void loadSnapshot(const AutomationData& snapshot);
+
+    /// Set transport position (for timebase conversion)
+    /// Called on control thread when transport position changes
+    void setTransportPosition(uint64_t positionSamples);
 
 private:
     /// Get or create automation state for a target
@@ -89,5 +118,19 @@ private:
 
     /// Key format: "targetId:parameter"
     std::string makeKey(const std::string& targetId, const std::string& parameter) const;
+
+    /// Block snapshot for lock-free reads (updated in beginBlock, read-only from audio thread)
+    struct BlockSnapshot {
+        std::unordered_map<std::string, float> values; // key = "targetId:parameterId"
+        uint64_t blockStartSamples = 0;
+        int blockSize = 0;
+    };
+    std::atomic<BlockSnapshot*> _activeSnapshot; // Atomic pointer swap for lock-free reads
+    BlockSnapshot _snapshotA; // Double-buffer A
+    BlockSnapshot _snapshotB; // Double-buffer B
+    bool _useSnapshotA = true; // Toggle between A and B
+
+    /// Transport position (for timebase conversion)
+    std::atomic<uint64_t> _transportPositionSamples;
 };
 

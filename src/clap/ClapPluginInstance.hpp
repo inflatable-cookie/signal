@@ -49,6 +49,7 @@ public:
     void setStateChunk(const std::vector<uint8_t>& data) override;
 
     const PluginDescriptor& getDescriptor() const override { return _descriptor; }
+    bool negotiateAudioIO(int requestedInputs, int requestedOutputs) override;
 
 private:
     PluginDescriptor _descriptor;
@@ -77,6 +78,7 @@ private:
     // CLAP extensions
     const clap_plugin_params* _paramsExt;
     const clap_plugin_state* _stateExt;
+    const clap_plugin_audio_ports* _audioPortsExt;
 
     // Audio/MIDI buffers for CLAP processing
     struct ClapAudioBuffers {
@@ -106,6 +108,7 @@ private:
     void deactivatePlugin();
     void queryParameters();
     void queryExtensions();
+    void queryAudioPorts(int requestedInputs, int requestedOutputs);
 
     // CLAP host callbacks
     static void hostRequestRestart(const clap_host* host);

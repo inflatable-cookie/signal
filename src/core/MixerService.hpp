@@ -17,7 +17,12 @@
 #include <atomic>
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
+
+// Forward declarations
+class AudioBuffer;
+class AudioBus;
 
 /// Per-channel mixer state (atomic for lock-free audio thread access)
 struct ChannelMixerState {
@@ -77,11 +82,22 @@ public:
     /// Returns 0.0 if effectiveMuted is true, otherwise returns gain
     float getEffectiveGain(const std::string& channelId) const;
 
+    /// Apply final mix to device node output (called from audio thread)
+    /// Reads from device node AudioBuffer, applies gain/mute/solo, writes to AudioBus
+    /// @param deviceNodeOutput Device node audio output (deinterleaved)
+    /// @param output Final output bus (interleaved, will be written to)
+    /// @param channelId Channel ID for this device node (for mixer state lookup)
+    void finalMix(
+        const class AudioBuffer& deviceNodeOutput,
+        class AudioBus& output,
+        const std::string& channelId = "master"
+    ) const;
+
 private:
     /// Recompute effective mute for all channels (called after solo changes)
     void recomputeEffectiveMutes();
 
-    mutable std::mutex _mutex; // Protects _channels map structure
+    mutable std::shared_mutex _mutex; // Protects _channels map structure (allows concurrent reads)
     std::unordered_map<std::string, std::unique_ptr<ChannelMixerState>> _channels;
 };
 

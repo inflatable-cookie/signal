@@ -43,8 +43,16 @@ TEST_CASE("Schedule swap smoke test", "[core][thread-safety]") {
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
+    // Create ScheduleData object
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+
     // Set initial schedule
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    scheduler.setSchedule(schedule);
 
     // Simulate audio thread reads
     std::atomic<bool> stopReading(false);
@@ -79,7 +87,13 @@ TEST_CASE("Schedule swap smoke test", "[core][thread-safety]") {
 
     // Update schedule (modify segment)
     audioSegments[0].assetId = "asset-1-updated";
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData updatedSchedule(44100.0, 120.0);
+    updatedSchedule.streams = streams;
+    updatedSchedule.audioSegments = audioSegments;
+    updatedSchedule.midiEvents = midiEvents;
+    updatedSchedule.tempoMap = tempoMap;
+    updatedSchedule.buildLookupMaps();
+    scheduler.setSchedule(updatedSchedule);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 

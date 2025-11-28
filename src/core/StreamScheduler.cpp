@@ -18,27 +18,15 @@ StreamScheduler::~StreamScheduler() {
     _activeSchedule.store(nullptr, std::memory_order_release);
 }
 
-void StreamScheduler::setSchedule(
-    const std::vector<StreamDescriptor>& streams,
-    const std::vector<AudioSegmentCompiled>& audioSegments,
-    const std::vector<MidiEventCompiled>& midiEvents,
-    const TempoMap& tempoMap,
-    double sampleRate
-) {
+void StreamScheduler::setSchedule(const ScheduleData& schedule) {
     // Build new schedule (control thread only, no locks needed)
-    auto newSchedule = std::make_shared<ScheduleData>(sampleRate, tempoMap.defaultTempo);
+    auto newSchedule = std::make_shared<ScheduleData>(schedule.sampleRate, schedule.tempoMap.defaultTempo);
 
-    // Copy streams
-    newSchedule->streams = streams;
-
-    // Copy audio segments
-    newSchedule->audioSegments = audioSegments;
-
-    // Copy MIDI events
-    newSchedule->midiEvents = midiEvents;
-
-    // Copy tempo map
-    newSchedule->tempoMap = tempoMap;
+    // Copy all components
+    newSchedule->streams = schedule.streams;
+    newSchedule->audioSegments = schedule.audioSegments;
+    newSchedule->midiEvents = schedule.midiEvents;
+    newSchedule->tempoMap = schedule.tempoMap;
 
     // Build lookup maps for efficient audio thread access
     newSchedule->buildLookupMaps();
@@ -54,9 +42,9 @@ void StreamScheduler::setSchedule(
     _currentSchedule = newSchedule;
 
     std::ostringstream msg;
-    msg << "Set schedule: " << streams.size() << " streams, "
-        << audioSegments.size() << " audio segments, "
-        << midiEvents.size() << " MIDI events";
+    msg << "Set schedule: " << schedule.streams.size() << " streams, "
+        << schedule.audioSegments.size() << " audio segments, "
+        << schedule.midiEvents.size() << " MIDI events";
     LOG_INFO({"StreamScheduler"}, msg.str());
 }
 

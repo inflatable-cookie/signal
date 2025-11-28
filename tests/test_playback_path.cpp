@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "core/EngineHost.hpp"
+#include "core/ScheduleData.hpp"
 #include "core/GraphSnapshot.hpp"
 #include "core/AudioAssetSource.hpp"
 #include "core/EngineRenderContext.hpp"
@@ -80,8 +81,16 @@ TEST_CASE("Playback Path - Test Tone (440Hz) Offline Render", "[playback][offlin
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
+    // Create ScheduleData object
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+
     // Load schedule via StreamScheduler
-    host.streamScheduler().setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    host.streamScheduler().setSchedule(schedule);
 
     // Set transport to playing
     host.transport().isPlaying = true;
@@ -208,7 +217,13 @@ TEST_CASE("Playback Path - Fake File Asset Offline Render", "[playback][offline]
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
-    host.streamScheduler().setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+    host.streamScheduler().setSchedule(schedule);
 
     host.transport().isPlaying = true;
     host.transport().positionSamples = 0;

@@ -5,10 +5,12 @@
 #include "core/GraphNode.hpp"
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
+#include "core/ScheduleData.hpp"
 #include "core/AudioAssetSource.hpp"
 #include "core/NodeProcessContext.hpp"
 #include "core/ScheduleData.hpp"
 #include "core/EngineRenderContext.hpp"
+#include "core/NodeBuffers.hpp"
 #include <vector>
 #include <string>
 #include <memory>
@@ -86,7 +88,13 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+    scheduler.setSchedule(schedule);
 
     // Process graph with stub asset source
     EngineRenderContext ctx;
@@ -96,7 +104,9 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
 
     StubAudioAssetSource assetSource;
     assetSource.setSampleRate(44100.0);
-    engine.processGraph(ctx, &scheduler, &assetSource);
+    std::vector<MidiMessage> emptyMidi2;
+    engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
+    engine.processGraph(ctx);
 
     // Verify audio lane node output (non-test assets produce silence)
     auto* lane = dynamic_cast<AudioLaneNode*>(engine.findNode("audio-lane-1"));
@@ -175,7 +185,13 @@ TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-s
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+    scheduler.setSchedule(schedule);
 
     // Process graph with stub asset source
     EngineRenderContext ctx;
@@ -186,7 +202,9 @@ TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-s
 
     StubAudioAssetSource assetSource;
     assetSource.setSampleRate(44100.0);
-    engine.processGraph(ctx, &scheduler, &assetSource);
+    std::vector<MidiMessage> emptyMidi2;
+    engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
+    engine.processGraph(ctx);
 
     // Verify audio lane node has 440Hz tone output
     auto* lane = dynamic_cast<AudioLaneNode*>(engine.findNode("audio-lane-test"));
@@ -326,7 +344,13 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     tempoMap.defaultTempo = 120.0;
 
     StreamScheduler scheduler;
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+    scheduler.setSchedule(schedule);
 
     // Process graph
     EngineRenderContext ctx;
@@ -335,7 +359,9 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     ctx.playheadSamples = 0;
 
     StubAudioAssetSource assetSource;
-    engine.processGraph(ctx, &scheduler, &assetSource);
+    std::vector<MidiMessage> emptyMidi2;
+    engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
+    engine.processGraph(ctx);
 
     // Verify device node received output (from both dry and wet paths)
     // The exact value depends on stub source, but it should be non-zero
@@ -401,7 +427,9 @@ TEST_CASE("Phase 3 - NodeProcessContext test", "[graph][phase3][context]") {
     ctx.playheadSamples = 1000;
 
     StubAudioAssetSource assetSource;
-    engine.processGraph(ctx, nullptr, &assetSource);
+    std::vector<MidiMessage> emptyMidi;
+    engine.runSourceInputPass(ctx, nullptr, &assetSource, nullptr, 0, 0, emptyMidi);
+    engine.processGraph(ctx);
 
     // Verify NodeProcessContext is correctly populated
     // This is verified indirectly by the fact that process() is called without errors
@@ -535,7 +563,13 @@ TEST_CASE("Phase 3 - JSON snapshot parsing and graph/schedule alignment", "[grap
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+    scheduler.setSchedule(schedule);
 
     // Process graph with schedule
     EngineRenderContext ctx;
@@ -544,7 +578,9 @@ TEST_CASE("Phase 3 - JSON snapshot parsing and graph/schedule alignment", "[grap
     ctx.playheadSamples = 0;
 
     StubAudioAssetSource assetSource;
-    engine.processGraph(ctx, &scheduler, &assetSource);
+    std::vector<MidiMessage> emptyMidi2;
+    engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
+    engine.processGraph(ctx);
 
     // Verify output is non-zero when schedule is active
     auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
@@ -561,7 +597,8 @@ TEST_CASE("Phase 3 - JSON snapshot parsing and graph/schedule alignment", "[grap
 
     // Test with empty schedule - should produce silence
     scheduler.clearSchedule();
-    engine.processGraph(ctx, &scheduler, &assetSource);
+    engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
+    engine.processGraph(ctx);
 
     bool hasSilence = true;
     for (int frame = 0; frame < 512; ++frame) {

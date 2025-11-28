@@ -15,11 +15,17 @@
 #include "core/PluginInstance.hpp"
 #include "core/PluginHost.hpp"
 #include "core/GraphSnapshot.hpp"
+#include "core/NodeAudioConfig.hpp"
+#include "logging/Logging.hpp"
 #include <string>
+#include <sstream>
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <iostream>
+
+// Forward declaration (full include would create circular dependency)
+// DeviceNode needs EngineHost to query device channel count
+class EngineHost;
 
 /// MidiLaneNode - one per MIDI Lane
 /// Injects MIDI events from stream into graph
@@ -111,21 +117,6 @@ public:
         class AudioAssetSource* assetSource
     ) {
         if (!segment || segment->streamId != _streamId || !assetSource) {
-            // Diagnostic: Log why injection failed
-            #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
-            if (!segment) {
-                static int logCount = 0;
-                if (logCount++ < 5) {
-                    std::cerr << "[AudioLaneNode] injectAudioSegment: segment is null" << std::endl;
-                }
-            } else if (segment->streamId != _streamId) {
-                static int logCount = 0;
-                if (logCount++ < 5) {
-                    std::cerr << "[AudioLaneNode] injectAudioSegment: streamId mismatch: expected '"
-                              << _streamId << "', got '" << segment->streamId << "'" << std::endl;
-                }
-            }
-            #endif
             return;
         }
 
@@ -221,251 +212,206 @@ public:
         // Phase 9: TODO - Apply time-stretching
         // For now, stretch metadata is stored but not applied
         // Future: Apply stretch algorithm based on segment->stretch.mode and segment->stretch.ratio
-
-        // Diagnostic: Check if output is non-zero (debug builds only)
-        #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
-        static int debugCallCount = 0;
-        if (debugCallCount++ < 10) {
-            float maxSample = 0.0f;
-            for (int ch = 0; ch < io.audioOut.numChannels(); ++ch) {
-                for (int frame = 0; frame < io.audioOut.numFrames(); ++frame) {
-                    float absSample = std::abs(io.audioOut.getSample(frame, ch));
-                    if (absSample > maxSample) {
-                        maxSample = absSample;
-                    }
-                }
-            }
-            if (maxSample < 0.0001f) {
-                std::cerr << "[AudioLaneNode] ⚠ Zero output after injectAudioSegment: nodeId='"
-                          << getId() << "', streamId='" << _streamId
-                          << "', assetId='" << segment->assetId << "'" << std::endl;
-            } else {
-                std::cout << "[AudioLaneNode] ✓ Non-zero output: nodeId='" << getId()
-                          << "', maxSample=" << maxSample << std::endl;
-            }
-        }
-        #endif
     }
 
 private:
     StreamId _streamId;
 };
 
-/// MidiFxNode - MIDI effect plugins
-/// Phase 4: Processes MIDI through plugin
-class MidiFxNode : public GraphNode {
-public:
-    // Legacy constructor (for backward compatibility)
-    MidiFxNode(
-        const NodeId& id,
-        const std::string& trackId = "",
-        const std::string& pluginId = ""
-    )
-        : GraphNode(id, NodeKind::MidiFx, trackId)
-        , _pluginId(pluginId)
-        , _plugin(nullptr)
-    {
-    }
-
-    // Phase 4: Constructor with plugin descriptor
-    MidiFxNode(
-        const NodeId& id,
-        const std::string& trackId,
-        const NodeDesc& desc,
-        PluginHost* pluginHost
-    )
-        : GraphNode(id, NodeKind::MidiFx, trackId)
-        , _pluginId(desc.pluginId.value_or(""))
-        , _plugin(nullptr)
-    {
-        if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
-            // Build PluginDescriptor from NodeDesc
-            PluginDescriptor pluginDesc;
-            pluginDesc.format = desc.pluginFormat.value();
-            pluginDesc.id = desc.pluginId.value();
-            pluginDesc.name = desc.pluginId.value(); // Use ID as name for now
-            pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(0);
-            pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(0);
-            pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(1) > 0;
-            pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(1) > 0;
-
-            _plugin = pluginHost->createInstance(pluginDesc);
-            if (!_plugin) {
-                std::cerr << "[MidiFxNode] Failed to create plugin instance: " << pluginDesc.id << std::endl;
-            }
-        }
-    }
-
-    const std::string& getPluginId() const noexcept { return _pluginId; }
-
-    void prepare(int sampleRate, int maxBlockSize) override {
-        GraphNode::prepare(sampleRate, maxBlockSize);
-        if (_plugin) {
-            _plugin->prepare(static_cast<double>(sampleRate), maxBlockSize);
-            _plugin->reset();
-        }
-    }
-
-    void process(const NodeProcessContext& npc) override {
-        if (_plugin) {
-            // Phase 4: Process through plugin
-            _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
-        } else {
-            // Fallback: Pass-through MIDI
-            io.midiOut.clear();
-            io.midiOut.append(io.midiIn);
-        }
-    }
-
-    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
-
-private:
-    std::string _pluginId;
-    std::unique_ptr<PluginInstance> _plugin;
+/// PluginNodeKind - distinguishes plugin node types
+/// Maps to NodeKind but used internally for plugin-specific behavior
+enum class PluginNodeKind {
+    MidiFx,    // MIDI effect plugins (MIDI in/out, optional audio passthrough)
+    Instrument, // Instruments (MIDI in → audio out)
+    AudioFx    // Audio effects (audio in/out, optional MIDI)
 };
 
-/// InstrumentNode - instruments (MIDI in → audio out)
-/// Phase 4: Processes MIDI through instrument plugin
-class InstrumentNode : public GraphNode {
+/// PluginNode - unified plugin node implementation
+/// Replaces MidiFxNode, InstrumentNode, and AudioFxNode
+///
+/// I/O semantics by kind:
+/// - MidiFx: MIDI in/out (required), audio optional/passthrough
+/// - Instrument: MIDI in (required), audio out (required), MIDI out optional
+/// - AudioFx: Audio in/out (required), MIDI optional
+class PluginNode : public GraphNode {
 public:
     // Legacy constructor (for backward compatibility)
-    InstrumentNode(
+    PluginNode(
+        PluginNodeKind kind,
         const NodeId& id,
         const std::string& trackId = "",
         const std::string& pluginId = ""
     )
-        : GraphNode(id, NodeKind::Instrument, trackId)
+        : GraphNode(id, pluginKindToNodeKind(kind), trackId)
+        , _pluginKind(kind)
         , _pluginId(pluginId)
         , _plugin(nullptr)
     {
     }
 
-    // Phase 4: Constructor with plugin descriptor
-    InstrumentNode(
+    // Constructor with plugin descriptor
+    PluginNode(
+        PluginNodeKind kind,
         const NodeId& id,
         const std::string& trackId,
         const NodeDesc& desc,
         PluginHost* pluginHost
     )
-        : GraphNode(id, NodeKind::Instrument, trackId)
+        : GraphNode(id, pluginKindToNodeKind(kind), trackId)
+        , _pluginKind(kind)
         , _pluginId(desc.pluginId.value_or(""))
         , _plugin(nullptr)
     {
         if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
-            // Build PluginDescriptor from NodeDesc
+            // Build PluginDescriptor from NodeDesc with kind-specific defaults
             PluginDescriptor pluginDesc;
             pluginDesc.format = desc.pluginFormat.value();
             pluginDesc.id = desc.pluginId.value();
             pluginDesc.name = desc.pluginId.value(); // Use ID as name for now
-            pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(0);
-            pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(2); // Instruments typically have audio out
-            pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(1) > 0;
-            pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(0) > 0;
+
+            // Set defaults based on plugin kind
+            switch (_pluginKind) {
+                case PluginNodeKind::MidiFx:
+                    pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(0);
+                    pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(0);
+                    pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(1) > 0;
+                    pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(1) > 0;
+                    break;
+
+                case PluginNodeKind::Instrument:
+                    pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(0);
+                    pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(2); // Instruments typically have audio out
+                    pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(1) > 0;
+                    pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(0) > 0;
+                    break;
+
+                case PluginNodeKind::AudioFx:
+                    pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(2);
+                    pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(2);
+                    pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(0) > 0;
+                    pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(0) > 0;
+                    break;
+            }
+
+            // Store requested I/O for later negotiation (after GraphEngine sets config from snapshot)
+            _requestedInputs = pluginDesc.numAudioInputs;
+            _requestedOutputs = pluginDesc.numAudioOutputs;
 
             _plugin = pluginHost->createInstance(pluginDesc);
             if (!_plugin) {
-                std::cerr << "[InstrumentNode] Failed to create plugin instance: " << pluginDesc.id << std::endl;
+                LOG_ERROR({"PluginNode"}, std::string("Failed to create plugin instance: ") + pluginDesc.id);
+                _ioNegotiationOk = false;
             }
+            // Negotiation will happen in prepare() after GraphEngine sets config from snapshot
         }
     }
 
+    PluginNodeKind getPluginKind() const noexcept { return _pluginKind; }
     const std::string& getPluginId() const noexcept { return _pluginId; }
+    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
 
     void prepare(int sampleRate, int maxBlockSize) override {
         GraphNode::prepare(sampleRate, maxBlockSize);
+
+        // Perform I/O negotiation now that GraphEngine has set config from snapshot
         if (_plugin) {
+            // Get current config (set by GraphEngine from snapshot)
+            const auto& config = getAudioConfig();
+            int requestedInputs = config.numInputChannels;
+            int requestedOutputs = config.numOutputChannels;
+
+            // Negotiate audio I/O with plugin (query actual capabilities)
+            // Snapshot config is source of truth - negotiation verifies plugin can support it
+            if (_plugin->negotiateAudioIO(requestedInputs, requestedOutputs)) {
+                // Check if negotiated config matches requested (snapshot) config
+                const auto& negotiatedDesc = _plugin->getDescriptor();
+
+                if (negotiatedDesc.numAudioInputs == requestedInputs &&
+                    negotiatedDesc.numAudioOutputs == requestedOutputs) {
+                    // Exact match - negotiation succeeded
+                    _ioNegotiationOk = true;
+                    LOG_DEBUG({"PluginNode", "IO"},
+                        std::string("I/O negotiation succeeded for ") + getId() +
+                        ": " + std::to_string(requestedInputs) + "/" + std::to_string(requestedOutputs));
+                } else {
+                    // Mismatch - plugin doesn't support requested layout
+                    _ioNegotiationOk = false;
+                    std::ostringstream msg;
+                    msg << "I/O negotiation failed for " << getId()
+                        << ": requested " << requestedInputs << "/" << requestedOutputs
+                        << ", plugin supports " << negotiatedDesc.numAudioInputs << "/"
+                        << negotiatedDesc.numAudioOutputs << " - node will be bypassed";
+                    LOG_ERROR({"PluginNode", "IO"}, msg.str());
+                    // Keep NodeAudioConfig as requested (snapshot is source of truth)
+                }
+            } else {
+                // Negotiation call failed
+                _ioNegotiationOk = false;
+                LOG_ERROR({"PluginNode", "IO"},
+                    std::string("I/O negotiation call failed for ") + getId() + " - node will be bypassed");
+            }
+
+            // Prepare plugin with negotiated I/O
             _plugin->prepare(static_cast<double>(sampleRate), maxBlockSize);
             _plugin->reset();
+        } else {
+            _ioNegotiationOk = false;
         }
     }
 
     void process(const NodeProcessContext& npc) override {
-        if (_plugin) {
-            // Phase 4: Process MIDI through instrument plugin
-            _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
-        } else {
-            // Fallback: Pass-through audio, ignore MIDI
-            io.audioOut.copyFrom(io.audioIn);
-        }
-    }
+        // If plugin doesn't exist or I/O negotiation failed, bypass plugin
+        if (!_plugin || !_ioNegotiationOk) {
+            // Bypass behavior: pass input to output without processing
+            // This ensures the graph continues to work even if plugin negotiation fails
+            switch (_pluginKind) {
+                case PluginNodeKind::MidiFx:
+                    // Pass-through MIDI only
+                    io.midiOut.clear();
+                    io.midiOut.append(io.midiIn);
+                    // Audio outputs remain cleared (MidiFx has no audio)
+                    break;
 
-    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
+                case PluginNodeKind::Instrument:
+                    // Instrument: output silence if negotiation failed (no plugin to generate audio)
+                    io.audioOut.clear();
+                    io.midiOut.clear();
+                    io.midiOut.append(io.midiIn);
+                    break;
 
-private:
-    std::string _pluginId;
-    std::unique_ptr<PluginInstance> _plugin;
-};
-
-/// AudioFxNode - audio effects
-/// Phase 4: Processes audio through plugin
-class AudioFxNode : public GraphNode {
-public:
-    // Legacy constructor (for backward compatibility)
-    AudioFxNode(
-        const NodeId& id,
-        const std::string& trackId = "",
-        const std::string& pluginId = ""
-    )
-        : GraphNode(id, NodeKind::AudioFx, trackId)
-        , _pluginId(pluginId)
-        , _plugin(nullptr)
-    {
-    }
-
-    // Phase 4: Constructor with plugin descriptor
-    AudioFxNode(
-        const NodeId& id,
-        const std::string& trackId,
-        const NodeDesc& desc,
-        PluginHost* pluginHost
-    )
-        : GraphNode(id, NodeKind::AudioFx, trackId)
-        , _pluginId(desc.pluginId.value_or(""))
-        , _plugin(nullptr)
-    {
-        if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
-            // Build PluginDescriptor from NodeDesc
-            PluginDescriptor pluginDesc;
-            pluginDesc.format = desc.pluginFormat.value();
-            pluginDesc.id = desc.pluginId.value();
-            pluginDesc.name = desc.pluginId.value(); // Use ID as name for now
-            pluginDesc.numAudioInputs = desc.numAudioInputs.value_or(2);
-            pluginDesc.numAudioOutputs = desc.numAudioOutputs.value_or(2);
-            pluginDesc.hasMidiInput = desc.numMidiInputs.value_or(0) > 0;
-            pluginDesc.hasMidiOutput = desc.numMidiOutputs.value_or(0) > 0;
-
-            _plugin = pluginHost->createInstance(pluginDesc);
-            if (!_plugin) {
-                std::cerr << "[AudioFxNode] Failed to create plugin instance: " << pluginDesc.id << std::endl;
+                case PluginNodeKind::AudioFx:
+                    // Audio FX: pass-through audio (safe fallback)
+                    io.audioOut.copyFrom(io.audioIn);
+                    io.midiOut.clear();
+                    io.midiOut.append(io.midiIn);
+                    break;
             }
+            return;
         }
+
+        // Process through plugin (negotiation succeeded)
+        _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
     }
-
-    const std::string& getPluginId() const noexcept { return _pluginId; }
-
-    void prepare(int sampleRate, int maxBlockSize) override {
-        GraphNode::prepare(sampleRate, maxBlockSize);
-        if (_plugin) {
-            _plugin->prepare(static_cast<double>(sampleRate), maxBlockSize);
-            _plugin->reset();
-        }
-    }
-
-    void process(const NodeProcessContext& npc) override {
-        if (_plugin) {
-            // Phase 4: Process through plugin
-            _plugin->processAudioMidi(io.audioIn, io.audioOut, io.midiIn, io.midiOut, npc);
-        } else {
-            // Fallback: Pass-through audio
-            io.audioOut.copyFrom(io.audioIn);
-        }
-    }
-
-    PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
 
 private:
+    PluginNodeKind _pluginKind;
     std::string _pluginId;
     std::unique_ptr<PluginInstance> _plugin;
+    bool _ioNegotiationOk = false;  // Set to true if I/O negotiation succeeded
+    int _requestedInputs = 0;      // Stored from NodeDesc for negotiation
+    int _requestedOutputs = 0;     // Stored from NodeDesc for negotiation
+
+    // Convert PluginNodeKind to NodeKind for GraphNode base class
+    static NodeKind pluginKindToNodeKind(PluginNodeKind kind) {
+        switch (kind) {
+            case PluginNodeKind::MidiFx:
+                return NodeKind::MidiFx;
+            case PluginNodeKind::Instrument:
+                return NodeKind::Instrument;
+            case PluginNodeKind::AudioFx:
+                return NodeKind::AudioFx;
+        }
+    }
 };
 
 /// SendNode - sends to FX buses (ReceiveNodes)
@@ -493,10 +439,21 @@ public:
     float getSendLevel() const noexcept { return _sendLevel; }
 
     void process(const NodeProcessContext& npc) override {
-        // Phase 3: Apply send level and output
-        // The send level is applied during connection routing in GraphEngine
-        // For now, just copy input to output (scaling happens in routing)
-        io.audioOut.copyFrom(io.audioIn);
+        // Apply send level to input and output
+        // Real-time safe: no allocations, just sample-by-sample scaling
+        int numChannels = io.audioOut.numChannels();
+        int numFrames = io.audioOut.numFrames();
+
+        for (int ch = 0; ch < numChannels; ++ch) {
+            for (int frame = 0; frame < numFrames; ++frame) {
+                float sample = io.audioIn.getSample(frame, ch) * _sendLevel;
+                io.audioOut.setSample(frame, ch, sample);
+            }
+        }
+
+        // Pass through MIDI unchanged
+        io.midiOut.clear();
+        io.midiOut.append(io.midiIn);
     }
 
 private:
@@ -614,15 +571,158 @@ class DeviceNode : public GraphNode {
 public:
     DeviceNode(const NodeId& id)
         : GraphNode(id, NodeKind::Device)
+        , _engineHost(nullptr)
     {
+        // Config will be set from device channel count during prepare()
+    }
+
+    /// Set EngineHost reference (called by GraphEngine after node creation)
+    /// DeviceNode needs this to query active device channel count
+    void setEngineHost(EngineHost* engineHost);
+
+    /// Get device channel count (helper to avoid including EngineHost.hpp in header)
+    int getDeviceChannelCount() const;
+
+    void prepare(int sampleRate, int maxBlockSize) override {
+        GraphNode::prepare(sampleRate, maxBlockSize);
+
+        // Update channel config from active device
+        if (_engineHost) {
+            int deviceChannels = getDeviceChannelCount();
+            if (deviceChannels > 0) {
+                NodeAudioConfig config;
+                config.numInputChannels = deviceChannels;
+                config.numOutputChannels = deviceChannels;
+                // Determine layout from channel count
+                if (deviceChannels == 1) {
+                    config.layout = ChannelLayout::Mono;
+                } else if (deviceChannels == 2) {
+                    config.layout = ChannelLayout::Stereo;
+                } else {
+                    config.layout = ChannelLayout::Stereo; // Default for multi-channel (future: add Multi enum)
+                }
+                setAudioConfig(config);
+
+                // Resize buffers to match device channels
+                // Note: resize() signature is resize(numChannels, numFrames)
+                io.audioIn.resize(deviceChannels, maxBlockSize);
+                io.audioOut.resize(deviceChannels, maxBlockSize);
+
+                std::ostringstream msg;
+                msg << "DeviceNode " << getId() << " configured for " << deviceChannels << " channel(s)";
+                LOG_INFO({"DeviceNode", "Channels"}, msg.str());
+            } else {
+                // No active device - set to 0 channels (will invalidate routing)
+                NodeAudioConfig config;
+                config.numInputChannels = 0;
+                config.numOutputChannels = 0;
+                config.layout = ChannelLayout::Mono; // Not meaningful
+                setAudioConfig(config);
+                LOG_WARN({"DeviceNode"}, std::string("No active device - DeviceNode ") + getId() + " has 0 channels");
+            }
+        } else {
+            // No EngineHost reference - use default stereo (will be updated when EngineHost is set)
+            NodeAudioConfig config;
+            config.numInputChannels = 2;
+            config.numOutputChannels = 2;
+            config.layout = ChannelLayout::Stereo;
+            setAudioConfig(config);
+            LOG_WARN({"DeviceNode"}, std::string("No EngineHost reference - DeviceNode ") + getId() + " using default stereo");
+        }
     }
 
     void process(const NodeProcessContext& npc) override {
-        // Phase 3: Pass-through (output will be copied to EngineHost output buffer)
-        io.audioOut.copyFrom(io.audioIn);
+        // DeviceNode processes audio from upstream and prepares it for hardware output
+        // Handles channel count mismatches explicitly (expansion/truncation)
+        // Real-time safe: no allocations, no locks, no logging in hot path
+
+        const int inputChannels = io.audioIn.numChannels();
+        const int outputChannels = io.audioOut.numChannels();
+        const int numFrames = io.audioOut.numFrames();
+
+        // Clear output first
+        io.audioOut.clear();
+
+        if (inputChannels == 0 || outputChannels == 0) {
+            // No input or output - output is already cleared
+            return;
+        }
+
+        if (inputChannels == outputChannels) {
+            // Exact match - simple copy
+            io.audioOut.copyFrom(io.audioIn);
+        } else if (inputChannels < outputChannels) {
+            // Channel expansion: copy input channels, duplicate to fill remaining
+            // Strategy: copy available channels, duplicate last channel to remaining channels
+            const int channelsToCopy = std::min(inputChannels, outputChannels);
+
+            for (int ch = 0; ch < channelsToCopy; ++ch) {
+                const float* src = io.audioIn.getChannelData(ch);
+                float* dst = io.audioOut.getChannelData(ch);
+                if (src && dst) {
+                    std::memcpy(dst, src, numFrames * sizeof(float));
+                }
+            }
+
+            // Fill remaining channels by duplicating the last input channel
+            // For mono -> stereo: duplicate to all output channels
+            // For stereo -> 4ch: duplicate L to ch 2, R to ch 3
+            if (inputChannels == 1 && outputChannels >= 2) {
+                // Mono -> stereo: duplicate to all output channels
+                const float* mono = io.audioIn.getChannelData(0);
+                if (mono) {
+                    for (int ch = 1; ch < outputChannels; ++ch) {
+                        float* dst = io.audioOut.getChannelData(ch);
+                        if (dst) {
+                            std::memcpy(dst, mono, numFrames * sizeof(float));
+                        }
+                    }
+                }
+            } else {
+                // Multi-channel expansion: duplicate last channel to remaining
+                const float* lastChannel = io.audioIn.getChannelData(inputChannels - 1);
+                if (lastChannel) {
+                    for (int ch = inputChannels; ch < outputChannels; ++ch) {
+                        float* dst = io.audioOut.getChannelData(ch);
+                        if (dst) {
+                            std::memcpy(dst, lastChannel, numFrames * sizeof(float));
+                        }
+                    }
+                }
+            }
+        } else {
+            // Channel truncation: copy first N channels, drop the rest
+            // Strategy: copy first outputChannels from input
+            for (int ch = 0; ch < outputChannels; ++ch) {
+                const float* src = io.audioIn.getChannelData(ch);
+                float* dst = io.audioOut.getChannelData(ch);
+                if (src && dst) {
+                    std::memcpy(dst, src, numFrames * sizeof(float));
+                }
+            }
+            // Remaining input channels are dropped (deterministic: first N channels kept)
+        }
+
         // TODO: Phase 4 - Apply device processing, metering
     }
+
+private:
+    EngineHost* _engineHost;  // Reference to EngineHost for querying device channel count
 };
+
+// Implementation of DeviceNode methods that need EngineHost (after class definition)
+#include "core/EngineHost.hpp"
+
+inline void DeviceNode::setEngineHost(EngineHost* engineHost) {
+    _engineHost = engineHost;
+}
+
+inline int DeviceNode::getDeviceChannelCount() const {
+    if (_engineHost) {
+        return _engineHost->getNumOutputChannels();
+    }
+    return 0;
+}
 
 /// AudioInputNode - represents a hardware audio input stream
 /// Feeds live audio from the audio backend into the graph
@@ -660,13 +760,16 @@ public:
     }
 
     /// Inject audio from backend input (called by EngineHost before graph processing)
+    /// Extracts a single channel from interleaved input and writes to output buffer
     void injectInputAudio(const float* inputData, int numChannels, int numFrames, int channelOffset) {
-        // Copy input channel data to output buffer
-        // For Phase 7, assume mono extraction from interleaved input
+        // Extract single channel from interleaved input
         if (channelOffset < numChannels && io.audioOut.numChannels() > 0) {
-            for (int frame = 0; frame < numFrames && frame < io.audioOut.numFrames(); ++frame) {
-                int inputIndex = frame * numChannels + channelOffset;
-                io.audioOut.setSample(0, frame, inputData[inputIndex]);
+            const int numFramesToCopy = std::min(numFrames, io.audioOut.numFrames());
+            float* outChannel = io.audioOut.getChannelData(0);
+            if (outChannel) {
+                for (int frame = 0; frame < numFramesToCopy; ++frame) {
+                    outChannel[frame] = inputData[frame * numChannels + channelOffset];
+                }
             }
         }
     }

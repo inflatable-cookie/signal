@@ -24,6 +24,30 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-11-28 20:38:53 UTC) [changed] Enhanced AudioBuffer::sumFrom() with channel-aware summing: now handles channel count mismatches with explicit upmix (duplicate last channel) and downmix (truncate extra channels) rules, supporting mono, stereo, and multi-channel layouts in the node-based mixer architecture.
+
+(2025-11-28 20:40:00 UTC) [changed] Refactored MixerService to be fully channel-aware: finalMix() now handles mono, stereo, and multi-channel layouts correctly with panning only for stereo (2 channels) and gain applied uniformly to all channels, aligned with the unified node-based multi-channel model.
+
+(2025-11-28 20:30:00 UTC) [changed] Enhanced DeviceNode multi-channel support: DeviceNode now handles channel count mismatches with explicit expansion (duplicate channels) and truncation (drop extra channels) logic, updated GraphEngine routing validation to allow DeviceNode channel mismatches with warnings, and improved logging for device channel configuration.
+
+(2025-11-28 20:13:51 UTC) [changed] Extended DeviceNode to support multi-channel output devices: DeviceNode now queries active device channel count from EngineHost during prepare(), configures NodeAudioConfig to match device channels exactly, and GraphEngine validates device connections with strict channel matching.
+
+(2025-11-28 20:06:11 UTC) [changed] Refined CLAP I/O negotiation to respect Pulse snapshot as source of truth: added _ioNegotiationOk flag to mark bypassed nodes, moved negotiation to prepare() after GraphEngine sets config, and implemented safe bypass behavior in process() when negotiation fails.
+
+(2025-11-28 19:59:51 UTC) [changed] Implemented CLAP plugin audio I/O negotiation: plugins now query CLAP audio ports extension to determine actual I/O capabilities, negotiate with requested channel counts from Pulse snapshots, and update NodeAudioConfig accordingly. Added channel compatibility helper for routing validation.
+
+(2025-11-28 19:53:58 UTC) [changed] Implemented strict multi-channel routing validation: connections must have matching channel counts, invalid connections are marked and excluded from routing, with comprehensive validation rules and error logging.
+
+(2025-11-28 19:48:19 UTC) [changed] Unified channel configuration across all graph nodes: NodeAudioConfig is now the single source of truth, assigned from Pulse snapshot with node-type-specific defaults and connection validation.
+
+(2025-11-28 19:41:06 UTC) [changed] Consolidated audio buffer types: AudioBuffer is canonical (deinterleaved), AudioBus is lightweight view (interleaved). Added efficient conversion utilities and eliminated redundant conversions throughout the engine.
+
+(2025-11-28 19:38:04 UTC) [changed] Unified source and input node injection into a single Source/Input Pass that runs before node processing, eliminating duplication and clarifying render sequence responsibilities.
+
+(2025-11-28 19:32:52 UTC) [changed] Refactored MeteringService to use lock-free atomic operations on audio thread with new submitSampleBlock() API, improving real-time safety while maintaining backward compatibility with Pulse IPC contract.
+
+(2025-11-28 19:26:47 UTC) [changed] Unified MidiFxNode, InstrumentNode, and AudioFxNode into a single PluginNode class with PluginNodeKind enum, eliminating ~230 lines of duplicate code while preserving all existing behaviour and real-time safety guarantees.
+
 (2025-11-28 18:15:00 UTC) [changed] TransportDomain now sends transport.positionUpdate event immediately when play/stop/seek commands are processed, ensuring Aura can sync its simulated play timer with Signal's actual playback start time.
 
 (2025-11-28 17:59:22 UTC) [changed] Removed legacy IPC components (Router, Envelope, DomainHandler) and migrated all domains to pure IpcEnvelope handling via IpcDomainHandler interface. Simplified DomainDispatcher to registry-based forwarding only.

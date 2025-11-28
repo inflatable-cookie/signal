@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <nlohmann/json_fwd.hpp>
 
 /// Plugin format (matches Pulse PluginFormat)
 enum class PluginFormat {
@@ -54,5 +55,10 @@ struct GraphSnapshot {
     std::string id;
     std::vector<NodeDesc> nodes;
     std::vector<ConnectionDesc> connections;
+
+    /// Parse GraphSnapshot from JSON payload
+    /// @param j JSON payload from Pulse
+    /// @return Parsed GraphSnapshot or nullopt on error
+    static std::optional<GraphSnapshot> fromJson(const nlohmann::json& j);
 };
 

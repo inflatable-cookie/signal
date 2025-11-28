@@ -2,6 +2,7 @@
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/NodeProcessContext.hpp"
+#include "core/NodeAudioConfig.hpp"
 #include "logging/Logging.hpp"
 #include <queue>
 #include <algorithm>
@@ -17,7 +18,7 @@ GraphEngine::~GraphEngine() {
     LOG_DEBUG({"GraphEngine", "Lifecycle"}, "Destroyed");
 }
 
-void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost) {
+void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost, EngineHost* engineHost) {
     // Clear existing graph
     clear();
 
@@ -29,32 +30,46 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
         << snapshot.connections.size() << " connections)";
     LOG_INFO({"GraphEngine", "Graph"}, loadMsg.str());
 
-    // Create nodes
+    // Create nodes and assign channel configurations
     for (const auto& desc : snapshot.nodes) {
         auto node = createNode(desc, pluginHost);
         if (node) {
+            // For DeviceNode, set EngineHost reference before assigning config
+            // (DeviceNode needs it to query device channel count)
+            if (desc.kind == NodeKind::Device) {
+                auto* deviceNode = dynamic_cast<DeviceNode*>(node.get());
+                if (deviceNode && engineHost) {
+                    deviceNode->setEngineHost(engineHost);
+                }
+            }
+
+            // Assign channel configuration from NodeDesc
+            // For DeviceNode, this will be overridden in prepare() with actual device channel count
+            NodeAudioConfig config = createAudioConfigFromDesc(desc, node.get());
+            node->setAudioConfig(config);
             _nodes[desc.nodeId] = std::move(node);
         } else {
             LOG_WARN({"GraphEngine", "Graph"}, std::string("Warning: Failed to create node: ") + desc.nodeId);
         }
     }
 
-    // Process connections
+    // Process connections and validate channel compatibility
     for (const auto& connDesc : snapshot.connections) {
         if (connDesc.fromStreamId.has_value()) {
-            // Stream input binding
+            // Stream input binding (validated during Source/Input Pass)
             StreamInputBinding binding;
             binding.streamId = connDesc.fromStreamId.value();
             binding.targetNodeId = connDesc.toNodeId;
             binding.targetInputIndex = connDesc.toInputIndex;
             _streamBindings.push_back(binding);
         } else if (connDesc.fromNodeId.has_value()) {
-            // Node-to-node connection
+            // Add connection (validation happens later in validateRouting())
             GraphConnection conn;
             conn.fromNodeId = connDesc.fromNodeId.value();
             conn.fromOutputIndex = connDesc.fromOutputIndex;
             conn.toNodeId = connDesc.toNodeId;
             conn.toInputIndex = connDesc.toInputIndex;
+            conn.isValid = true; // Will be validated in validateRouting()
             _connections.push_back(conn);
         }
     }
@@ -62,6 +77,59 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
     // Build adjacency list and compute execution order
     buildAdjacencyList();
     computeExecutionOrder();
+    buildIncomingConnections();
+
+    // Validate routing rules (channel compatibility, layout rules)
+    validateRouting();
+
+    // Log channel configuration summary
+    std::ostringstream channelSummary;
+    int monoNodes = 0;
+    int stereoNodes = 0;
+    int multiChannelNodes = 0;
+    for (const auto& pair : _nodes) {
+        const auto& config = pair.second->getAudioConfig();
+        if (config.numOutputChannels == 1) {
+            monoNodes++;
+        } else if (config.numOutputChannels == 2) {
+            stereoNodes++;
+        } else if (config.numOutputChannels > 2) {
+            multiChannelNodes++;
+        }
+    }
+    if (monoNodes > 0 || stereoNodes > 0 || multiChannelNodes > 0) {
+        channelSummary << "Channel config: " << monoNodes << " mono, " << stereoNodes << " stereo, " << multiChannelNodes << " multi-channel";
+        LOG_DEBUG({"GraphEngine", "ChannelConfig"}, channelSummary.str());
+    }
+
+    // Validate runtime config matches snapshot (where applicable)
+    for (const auto& desc : snapshot.nodes) {
+        auto* node = findNode(desc.nodeId);
+        if (node) {
+            const auto& config = node->getAudioConfig();
+            // Check if snapshot specified channel counts that differ from runtime config
+            if (desc.numAudioInputs.has_value()) {
+                int snapshotInputs = static_cast<int>(desc.numAudioInputs.value());
+                if (snapshotInputs != config.numInputChannels) {
+                    std::ostringstream msg;
+                    msg << "Input channel mismatch for node " << desc.nodeId
+                        << ": snapshot=" << snapshotInputs
+                        << ", runtime=" << config.numInputChannels;
+                    LOG_WARN({"GraphEngine", "ChannelConfig"}, msg.str());
+                }
+            }
+            if (desc.numAudioOutputs.has_value()) {
+                int snapshotOutputs = static_cast<int>(desc.numAudioOutputs.value());
+                if (snapshotOutputs != config.numOutputChannels) {
+                    std::ostringstream msg;
+                    msg << "Output channel mismatch for node " << desc.nodeId
+                        << ": snapshot=" << snapshotOutputs
+                        << ", runtime=" << config.numOutputChannels;
+                    LOG_WARN({"GraphEngine", "ChannelConfig"}, msg.str());
+                }
+            }
+        }
+    }
 
     std::ostringstream msg;
     msg << "Graph loaded: " << _nodes.size() << " nodes, "
@@ -116,6 +184,156 @@ void GraphEngine::clear() {
     _executionOrder.clear();
     _adjacencyList.clear();
     _inDegree.clear();
+    _incomingConnections.clear();
+}
+
+NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, GraphNode* node) {
+    // Start with node's current config (may have been set by constructor)
+    NodeAudioConfig config = node->getAudioConfig();
+
+    // Override with explicit values from NodeDesc if provided
+    if (desc.numAudioInputs.has_value()) {
+        config.numInputChannels = static_cast<int>(desc.numAudioInputs.value());
+    }
+    if (desc.numAudioOutputs.has_value()) {
+        config.numOutputChannels = static_cast<int>(desc.numAudioOutputs.value());
+    }
+
+    // Apply node-type-specific defaults and rules
+    switch (desc.kind) {
+        case NodeKind::MidiLane:
+            // MIDI lanes have no audio I/O
+            config.numInputChannels = 0;
+            config.numOutputChannels = 0;
+            config.layout = ChannelLayout::Mono; // Not meaningful, but set for consistency
+            break;
+
+        case NodeKind::AudioLane:
+            // Audio lanes: output channels from asset/schedule, default to stereo
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 2; // Default stereo
+                config.layout = ChannelLayout::Stereo;
+            } else {
+                // Determine layout from channel count
+                if (config.numOutputChannels == 1) {
+                    config.layout = ChannelLayout::Mono;
+                } else {
+                    config.layout = ChannelLayout::Stereo; // Default for 2+ channels
+                }
+            }
+            config.numInputChannels = 0; // No inputs (reads from schedule)
+            break;
+
+        case NodeKind::MidiFx:
+            // MIDI FX: typically no audio, but may have passthrough
+            // Use values from NodeDesc or defaults
+            if (!desc.numAudioInputs.has_value()) {
+                config.numInputChannels = 0;
+            }
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 0;
+            }
+            config.layout = (config.numOutputChannels > 0) ? ChannelLayout::Stereo : ChannelLayout::Mono;
+            break;
+
+        case NodeKind::Instrument:
+            // Instruments: MIDI in, audio out (typically stereo)
+            config.numInputChannels = 0; // No audio input
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 2; // Default stereo
+                config.layout = ChannelLayout::Stereo;
+            } else {
+                config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
+            }
+            break;
+
+        case NodeKind::AudioFx:
+            // Audio FX: audio in/out (typically stereo)
+            if (!desc.numAudioInputs.has_value()) {
+                config.numInputChannels = 2; // Default stereo
+            }
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 2; // Default stereo
+            }
+            // Ensure input matches output for FX (unless explicitly configured otherwise)
+            if (!desc.numAudioInputs.has_value() && !desc.numAudioOutputs.has_value()) {
+                config.numInputChannels = config.numOutputChannels;
+            }
+            config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
+            break;
+
+        case NodeKind::Send:
+        case NodeKind::Receive:
+            // Send/Receive: pass through channels from connections
+            // Default to stereo if not specified
+            if (!desc.numAudioInputs.has_value()) {
+                config.numInputChannels = 2;
+            }
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 2;
+            }
+            // Ensure input matches output for routing nodes
+            if (!desc.numAudioInputs.has_value() && !desc.numAudioOutputs.has_value()) {
+                config.numInputChannels = config.numOutputChannels;
+            }
+            config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
+            break;
+
+        case NodeKind::MixerChannel:
+            // Mixer: typically stereo output
+            if (!desc.numAudioInputs.has_value()) {
+                config.numInputChannels = 2; // Default stereo
+            }
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 2; // Default stereo
+            }
+            config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
+            break;
+
+        case NodeKind::Device:
+            // Device: channel count will be set from actual device in prepare()
+            // Use default stereo for now (will be updated when DeviceNode::prepare() is called)
+            if (!desc.numAudioInputs.has_value()) {
+                config.numInputChannels = 2; // Default stereo (will be overridden in prepare())
+            }
+            if (!desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = 2; // Default stereo (will be overridden in prepare())
+            }
+            config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
+            break;
+
+        case NodeKind::AudioInput:
+            // AudioInput: already set in constructor (mono by default)
+            // But allow override from NodeDesc
+            if (desc.numAudioOutputs.has_value()) {
+                config.numOutputChannels = static_cast<int>(desc.numAudioOutputs.value());
+                config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
+            }
+            break;
+
+        case NodeKind::MidiInput:
+            // MIDI input: no audio
+            config.numInputChannels = 0;
+            config.numOutputChannels = 0;
+            config.layout = ChannelLayout::Mono; // Not meaningful
+            break;
+
+        default:
+            // Unknown node type: use defaults
+            break;
+    }
+
+    // Validate channel counts (must be non-negative)
+    if (config.numInputChannels < 0) {
+        LOG_WARN({"GraphEngine", "ChannelConfig"}, std::string("Invalid input channel count for node: ") + desc.nodeId);
+        config.numInputChannels = 0;
+    }
+    if (config.numOutputChannels < 0) {
+        LOG_WARN({"GraphEngine", "ChannelConfig"}, std::string("Invalid output channel count for node: ") + desc.nodeId);
+        config.numOutputChannels = 0;
+    }
+
+    return config;
 }
 
 std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginHost* pluginHost) {
@@ -131,13 +349,13 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
             return std::make_unique<AudioLaneNode>(desc.nodeId, trackId, laneId);
 
         case NodeKind::MidiFx:
-            return std::make_unique<MidiFxNode>(desc.nodeId, trackId, desc, pluginHost);
+            return std::make_unique<PluginNode>(PluginNodeKind::MidiFx, desc.nodeId, trackId, desc, pluginHost);
 
         case NodeKind::Instrument:
-            return std::make_unique<InstrumentNode>(desc.nodeId, trackId, desc, pluginHost);
+            return std::make_unique<PluginNode>(PluginNodeKind::Instrument, desc.nodeId, trackId, desc, pluginHost);
 
         case NodeKind::AudioFx:
-            return std::make_unique<AudioFxNode>(desc.nodeId, trackId, desc, pluginHost);
+            return std::make_unique<PluginNode>(PluginNodeKind::AudioFx, desc.nodeId, trackId, desc, pluginHost);
 
         case NodeKind::Send:
             return std::make_unique<SendNode>(desc.nodeId, trackId, pluginId); // Using pluginId as busId for now
@@ -148,8 +366,12 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
         case NodeKind::Receive:
             return std::make_unique<ReceiveNode>(desc.nodeId, pluginId); // Using pluginId as receiveName for now
 
-        case NodeKind::Device:
-            return std::make_unique<DeviceNode>(desc.nodeId);
+        case NodeKind::Device: {
+            auto deviceNode = std::make_unique<DeviceNode>(desc.nodeId);
+            // DeviceNode needs EngineHost reference to query device channel count
+            // This will be set after node creation if EngineHost is available
+            return deviceNode;
+        }
 
         case NodeKind::AudioInput:
             return std::make_unique<AudioInputNode>(desc.nodeId, desc.deviceId.value_or(""), desc.inputChannelIndex.value_or(0));
@@ -254,67 +476,254 @@ void GraphEngine::computeExecutionOrder() {
     }
 }
 
-void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource) {
-    // 1. Clear all node buffers
-    clearAllBuffers();
+GraphEngine::ChannelCompatibility GraphEngine::checkChannelCompatibility(
+    const GraphNode& source,
+    const GraphNode& dest
+) {
+    ChannelCompatibility result;
+    const auto& sourceConfig = source.getAudioConfig();
+    const auto& destConfig = dest.getAudioConfig();
 
-    // 2. Inject stream data into lane nodes (only when playing)
-    // When stopped, we don't process streams to avoid generating audio
-    if (ctx.isPlaying && scheduler && assetSource) {
-        injectStreamData(ctx, scheduler, assetSource);
+    result.sourceChannels = sourceConfig.numOutputChannels;
+    result.destChannels = destConfig.numInputChannels;
+
+    // Compatible if:
+    // - Both have audio channels (non-zero)
+    // - Channel counts match exactly
+    result.isCompatible = (
+        result.sourceChannels > 0 &&
+        result.destChannels > 0 &&
+        result.sourceChannels == result.destChannels
+    );
+
+    // Mismatch if:
+    // - Both have audio channels but counts don't match
+    result.isMismatch = (
+        result.sourceChannels > 0 &&
+        result.destChannels > 0 &&
+        result.sourceChannels != result.destChannels
+    );
+
+    return result;
+}
+
+void GraphEngine::buildIncomingConnections() {
+    // Pre-compute incoming connections per node for efficient routing
+    _incomingConnections.clear();
+
+    for (const auto& conn : _connections) {
+        // Only include valid connections in routing
+        if (conn.isValid) {
+            _incomingConnections[conn.toNodeId].push_back(conn);
+        }
+    }
+}
+
+void GraphEngine::validateRouting() {
+    // Validate all node-to-node connections according to routing rules
+    // Rules:
+    // 1. Channel count equality: fromNode.outputChannels == toNode.inputChannels
+    // 2. Audio-only nodes cannot connect to MIDI-only nodes (and vice versa)
+    // 3. DeviceNode must accept layouts matching hardware (for now, stereo only)
+    // 4. MidiLaneNode has 0 audio channels - audio connections are invalid
+
+    int invalidConnections = 0;
+
+    for (auto& conn : _connections) {
+        // Skip if already marked invalid
+        if (!conn.isValid) {
+            continue;
+        }
+
+        GraphNode* fromNode = findNode(conn.fromNodeId);
+        GraphNode* toNode = findNode(conn.toNodeId);
+
+        if (!fromNode || !toNode) {
+            // Node not found - mark as invalid
+            conn.isValid = false;
+            invalidConnections++;
+            std::ostringstream msg;
+            msg << "Invalid connection: node not found - "
+                << (fromNode ? conn.toNodeId : conn.fromNodeId);
+            LOG_ERROR({"GraphEngine", "Routing"}, msg.str());
+            continue;
+        }
+
+        const auto& fromConfig = fromNode->getAudioConfig();
+        const auto& toConfig = toNode->getAudioConfig();
+
+        // Rule 1: Channel count equality for audio connections
+        // Exception: DeviceNode can handle mismatches (handled in Rule 3)
+        ChannelCompatibility compat = checkChannelCompatibility(*fromNode, *toNode);
+        bool isDeviceNode = (toNode->getKind() == NodeKind::Device);
+
+        if (compat.isMismatch && !isDeviceNode) {
+            // Channel mismatch - mark connection as invalid (unless it's DeviceNode)
+            conn.isValid = false;
+            invalidConnections++;
+            std::ostringstream msg;
+            msg << "Channel mismatch in connection: " << conn.fromNodeId
+                << " (" << compat.sourceChannels << " ch) -> "
+                << conn.toNodeId << " (" << compat.destChannels << " ch)";
+            LOG_ERROR({"GraphEngine", "Routing"}, msg.str());
+            continue;
+        } else if (compat.isCompatible) {
+            // Log info for compatible connections (debug level)
+            LOG_DEBUG({"GraphEngine", "Routing"},
+                std::string("Compatible connection: ") + conn.fromNodeId +
+                " (" + std::to_string(compat.sourceChannels) + " ch) -> " +
+                conn.toNodeId + " (" + std::to_string(compat.destChannels) + " ch)");
+        }
+
+        // Rule 2: Audio-only nodes cannot connect to MIDI-only nodes
+        // (MIDI routing is separate and always valid)
+        // This is implicitly handled by channel count check above
+
+        // Rule 3: DeviceNode validation
+        // DeviceNode channel count comes from actual hardware device
+        // DeviceNode can handle channel mismatches (expansion/truncation), so we log warnings but don't mark as invalid
+        if (toNode->getKind() == NodeKind::Device) {
+            // DeviceNode channel count is set from actual device in prepare()
+            // DeviceNode will handle channel expansion/truncation in process()
+            if (compat.isMismatch) {
+                std::ostringstream msg;
+                msg << "DeviceNode " << conn.toNodeId
+                    << " channel mismatch: upstream has " << compat.sourceChannels
+                    << " ch, device has " << compat.destChannels << " ch";
+                if (compat.sourceChannels < compat.destChannels) {
+                    msg << " (will expand: duplicate channels)";
+                } else {
+                    msg << " (will truncate: drop extra channels)";
+                }
+                LOG_WARN({"GraphEngine", "Routing", "Device"}, msg.str());
+                // Connection is still valid - DeviceNode handles the mismatch
+                conn.isValid = true;
+            } else if (compat.isCompatible) {
+                LOG_DEBUG({"GraphEngine", "Routing", "Device"},
+                    std::string("DeviceNode ") + conn.toNodeId + " routing compatible: " +
+                    std::to_string(compat.destChannels) + " channels");
+            }
+        }
+
+        // Rule 4: MidiLaneNode has 0 audio channels
+        if (fromNode->getKind() == NodeKind::MidiLane) {
+            if (fromConfig.numOutputChannels > 0) {
+                // MidiLaneNode should have 0 audio channels
+                // This shouldn't happen if config is set correctly, but check anyway
+                std::ostringstream msg;
+                msg << "MidiLaneNode " << conn.fromNodeId
+                    << " has audio channels (" << fromConfig.numOutputChannels
+                    << ") - audio connection invalid";
+                LOG_ERROR({"GraphEngine", "Routing"}, msg.str());
+                conn.isValid = false;
+                invalidConnections++;
+                continue;
+            }
+        }
+
+        // Rule 5: Mixer-related node validation (SendNode, ReceiveNode, MixerChannelNode)
+        // These nodes participate in mixer routing and must have compatible channel counts
+        bool isMixerNode = (
+            fromNode->getKind() == NodeKind::Send ||
+            toNode->getKind() == NodeKind::Receive ||
+            fromNode->getKind() == NodeKind::MixerChannel ||
+            toNode->getKind() == NodeKind::MixerChannel
+        );
+
+        if (isMixerNode && compat.isCompatible) {
+            // Log mixer routing compatibility at debug level
+            LOG_DEBUG({"GraphEngine", "Routing", "Mixer"},
+                std::string("Mixer routing compatible: ") + conn.fromNodeId +
+                " (" + std::to_string(compat.sourceChannels) + " ch) -> " +
+                conn.toNodeId + " (" + std::to_string(compat.destChannels) + " ch)");
+        }
     }
 
-    // 3. Build NodeProcessContext for this block
+    // Count compatible connections for summary
+    int compatibleConnections = 0;
+    for (const auto& conn : _connections) {
+        if (conn.isValid) {
+            GraphNode* fromNode = findNode(conn.fromNodeId);
+            GraphNode* toNode = findNode(conn.toNodeId);
+            if (fromNode && toNode) {
+                ChannelCompatibility compat = checkChannelCompatibility(*fromNode, *toNode);
+                if (compat.isCompatible) {
+                    compatibleConnections++;
+                }
+            }
+        }
+    }
+
+    // Log summary
+    if (invalidConnections > 0) {
+        std::ostringstream msg;
+        msg << "Routing validation: " << compatibleConnections << " compatible, "
+            << invalidConnections << " invalid connection(s) marked and will be skipped at render time";
+        LOG_WARN({"GraphEngine", "Routing"}, msg.str());
+    } else {
+        std::ostringstream msg;
+        msg << "Routing validation: " << compatibleConnections << " compatible connection(s)";
+        LOG_DEBUG({"GraphEngine", "Routing"}, msg.str());
+    }
+}
+
+void GraphEngine::processGraph(EngineRenderContext& ctx) {
+    // Real-time safe: no allocations, no logging, deterministic processing order
+    // Note: Source/Input Pass must be called separately before this function
+
+    // 1. Build NodeProcessContext for this block
     NodeProcessContext npc;
     npc.sampleRate = static_cast<int>(ctx.sampleRate);
     npc.blockSize = ctx.blockSize;
     npc.blockStartSample = ctx.playheadSamples;
-
-    // Copy transport/tempo info from render context (Phase 8)
     npc.tempo = ctx.tempo;
     npc.isPlaying = ctx.isPlaying;
     npc.loopEnabled = ctx.loopEnabled;
     npc.loopStartBeats = ctx.loopStartBeats;
     npc.loopEndBeats = ctx.loopEndBeats;
 
-    // 4. Process nodes in execution order
-    // For each node, route connections from upstream nodes, then process
+    // 2. Process nodes in execution order
+    // For each node: route inputs, process
+    // Note: Source/Input Pass already populated outputs for source/input nodes
     for (GraphNode* node : _executionOrder) {
         if (!node) continue;
 
+        // Clear output buffers (will be filled by processing)
+        // Exception: Source/input nodes have outputs populated by Source/Input Pass, so don't clear them
+        NodeKind kind = node->getKind();
+        if (
+            kind != NodeKind::AudioLane &&
+            kind != NodeKind::MidiLane &&
+            kind != NodeKind::AudioInput &&
+            kind != NodeKind::MidiInput
+        ) {
+            node->io.audioOut.clear();
+            node->io.midiOut.clear();
+        }
+
         // Route connections from upstream nodes to this node (fan-in)
-        for (const auto& conn : _connections) {
-            if (conn.toNodeId == node->getId()) {
+        // Real-time safe: no allocations, uses pre-computed connection list
+        // Only valid connections are included in _incomingConnections (filtered during buildIncomingConnections)
+        auto it = _incomingConnections.find(node->getId());
+        if (it != _incomingConnections.end()) {
+            const auto& config = node->getAudioConfig();
+            for (const auto& conn : it->second) {
                 GraphNode* fromNode = findNode(conn.fromNodeId);
                 if (fromNode) {
-                    // Check if fromNode is a SendNode - apply send level
-                    if (fromNode->getKind() == NodeKind::Send) {
-                        auto* sendNode = dynamic_cast<SendNode*>(fromNode);
-                        if (sendNode) {
-                            float sendLevel = sendNode->getSendLevel();
-                            // Apply send level when summing
-                            // Create a temporary scaled buffer
-                            AudioBuffer scaledBuffer;
-                            scaledBuffer.resize(fromNode->io.audioOut.numChannels(), fromNode->io.audioOut.numFrames());
-                            scaledBuffer.copyFrom(fromNode->io.audioOut);
-                            // Scale by send level
-                            for (int ch = 0; ch < scaledBuffer.numChannels(); ++ch) {
-                                for (int frame = 0; frame < scaledBuffer.numFrames(); ++frame) {
-                                    float sample = scaledBuffer.getSample(frame, ch) * sendLevel;
-                                    scaledBuffer.setSample(frame, ch, sample);
-                                }
-                            }
-                            // Sum scaled audio into destination
-                            node->io.audioIn.sumFrom(scaledBuffer);
-                        } else {
-                            // Fallback: sum without scaling
-                            node->io.audioIn.sumFrom(fromNode->io.audioOut);
-                        }
-                    } else {
-                        // Normal connection: sum audio from upstream node
+                    const auto& fromConfig = fromNode->getAudioConfig();
+
+                    // Audio routing: sum outputs (channel-aware summing with upmix/downmix support)
+                    // Note: GraphEngine validation ensures most connections are compatible, but
+                    // sumFrom() can handle channel mismatches gracefully (upmix/downmix)
+                    if (fromConfig.numOutputChannels > 0 && config.numInputChannels > 0) {
+                        // Channel-aware summing: sumFrom() handles mismatches with upmix/downmix rules
                         node->io.audioIn.sumFrom(fromNode->io.audioOut);
+                        // If channel counts don't match, sumFrom() will apply upmix/downmix rules:
+                        // - Upmix: duplicate last source channel to fill target channels
+                        // - Downmix: truncate extra source channels (sum first N channels)
                     }
-                    // Append MIDI from upstream node
+
+                    // MIDI routing: append messages
                     node->io.midiIn.append(fromNode->io.midiOut);
                 }
             }
@@ -325,105 +734,102 @@ void GraphEngine::processGraph(EngineRenderContext& ctx, const StreamScheduler* 
     }
 }
 
-void GraphEngine::clearAllBuffers() {
-    for (auto& pair : _nodes) {
-        if (pair.second) {
-            // Clear input buffers (will be filled by routing/injection)
-            pair.second->io.audioIn.clear();
-            pair.second->io.midiIn.clear();
-            // Clear output buffers (will be filled by processing)
-            pair.second->io.audioOut.clear();
-            pair.second->io.midiOut.clear();
-        }
-    }
-}
 
-void GraphEngine::injectStreamData(EngineRenderContext& ctx, const StreamScheduler* scheduler, AudioAssetSource* assetSource) {
-    const ScheduleData* schedule = scheduler->getSchedule();
-    if (!schedule || !assetSource) {
-        #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
-        static int logCount = 0;
-        if (logCount++ < 5) {
-            if (!schedule) {
-                LOG_ERROR({"GraphEngine"}, "injectStreamData: schedule is null");
-            }
-            if (!assetSource) {
-                LOG_ERROR({"GraphEngine"}, "injectStreamData: assetSource is null");
-            }
-        }
-        #endif
-        return;
-    }
+/// Source/Input Pass - Unified injection of schedule data and hardware input
+///
+/// This pass runs once per render block, before the main node processing loop.
+/// It populates source and input node outputs with:
+/// - Schedule data (audio segments, MIDI events) for lane nodes
+/// - Hardware input (audio, MIDI) for input nodes
+///
+/// Real-time safety:
+/// - No allocations (uses pre-allocated buffers and vectors)
+/// - No locks (read-only access to scheduler, asset source)
+/// - No logging (silent operation)
+/// - Deterministic execution order
+void GraphEngine::runSourceInputPass(
+    const EngineRenderContext& ctx,
+    const StreamScheduler* scheduler,
+    AudioAssetSource* assetSource,
+    const float* hardwareAudioInput,
+    int hardwareAudioChannels,
+    int hardwareAudioFrames,
+    const std::vector<MidiMessage>& hardwareMidiInput
+) {
+    // Real-time safe: no allocations, no logging, deterministic
 
     uint64_t blockStartSamples = ctx.playheadSamples;
     uint64_t blockEndSamples = blockStartSamples + ctx.blockSize;
 
-    // Diagnostic: Log stream binding count
-    #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
-    static int bindingLogCount = 0;
-    if (bindingLogCount++ < 5) {
-                std::ostringstream msg;
-                msg << "injectStreamData: " << _streamBindings.size() << " stream binding(s)";
-                LOG_DEBUG({"GraphEngine", "StreamData"}, msg.str());
-    }
-    #endif
-
-    // Inject data for each stream binding
-    for (const auto& binding : _streamBindings) {
-        GraphNode* targetNode = findNode(binding.targetNodeId);
-        if (!targetNode) {
-            #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
-            static int logCount = 0;
-            if (logCount++ < 5) {
-                std::ostringstream msg;
-                msg << "injectStreamData: target node not found: '" << binding.targetNodeId << "'";
-                LOG_WARN({"GraphEngine"}, msg.str());
-            }
-            #endif
-            continue;
-        }
-
-        // Determine node type and inject accordingly
-        if (targetNode->getKind() == NodeKind::AudioLane) {
-            auto* audioLane = dynamic_cast<AudioLaneNode*>(targetNode);
-            if (audioLane) {
-                audioLane->setStreamId(binding.streamId);
-
-                // Get active audio segments for this stream
-                auto segments = scheduler->getActiveAudioSegments(binding.streamId, blockStartSamples);
-
-                #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
-                static int segmentLogCount = 0;
-                if (segmentLogCount++ < 5) {
-                    std::ostringstream msg;
-                    msg << "injectStreamData: stream '" << binding.streamId
-                        << "' has " << segments.size() << " active segment(s)";
-                    LOG_DEBUG({"GraphEngine"}, msg.str());
+    // Part 1: Inject schedule data into lane nodes (only when playing)
+    if (ctx.isPlaying && scheduler && assetSource) {
+        const ScheduleData* schedule = scheduler->getSchedule();
+        if (schedule) {
+            // Inject data for each stream binding
+            for (const auto& binding : _streamBindings) {
+                GraphNode* targetNode = findNode(binding.targetNodeId);
+                if (!targetNode) {
+                    continue;
                 }
-                #endif
 
-                for (const auto* segment : segments) {
-                    if (segment && segment->startSamples < blockEndSamples && segment->endSamples > blockStartSamples) {
-                        // Phase 3: Pass AudioAssetSource to injectAudioSegment
-                        audioLane->injectAudioSegment(segment, blockStartSamples, ctx.blockSize, assetSource);
+                // Determine node type and inject accordingly
+                if (targetNode->getKind() == NodeKind::AudioLane) {
+                    auto* audioLane = dynamic_cast<AudioLaneNode*>(targetNode);
+                    if (audioLane) {
+                        audioLane->setStreamId(binding.streamId);
+
+                        // Get active audio segments for this stream
+                        auto segments = scheduler->getActiveAudioSegments(binding.streamId, blockStartSamples);
+
+                        for (const auto* segment : segments) {
+                            if (segment && segment->startSamples < blockEndSamples && segment->endSamples > blockStartSamples) {
+                                audioLane->injectAudioSegment(segment, blockStartSamples, ctx.blockSize, assetSource);
+                            }
+                        }
+                    }
+                } else if (targetNode->getKind() == NodeKind::MidiLane) {
+                    auto* midiLane = dynamic_cast<MidiLaneNode*>(targetNode);
+                    if (midiLane) {
+                        midiLane->setStreamId(binding.streamId);
+
+                        // Get MIDI events for this stream in block range
+                        auto events = scheduler->getMidiEventsInRange(binding.streamId, blockStartSamples, blockEndSamples);
+                        midiLane->injectMidiEvents(events, blockStartSamples);
                     }
                 }
             }
-        } else if (targetNode->getKind() == NodeKind::MidiLane) {
-            auto* midiLane = dynamic_cast<MidiLaneNode*>(targetNode);
-            if (midiLane) {
-                midiLane->setStreamId(binding.streamId);
+        }
+    }
 
-                // Get MIDI events for this stream in block range
-                auto events = scheduler->getMidiEventsInRange(binding.streamId, blockStartSamples, blockEndSamples);
-                midiLane->injectMidiEvents(events, blockStartSamples);
+    // Part 2: Inject hardware input into input nodes
+    // Iterate through execution order to find input nodes
+    for (GraphNode* node : _executionOrder) {
+        if (!node) {
+            continue;
+        }
+
+        if (node->getKind() == NodeKind::AudioInput) {
+            auto* inputNode = dynamic_cast<AudioInputNode*>(node);
+            if (inputNode && hardwareAudioInput && hardwareAudioChannels > 0 && hardwareAudioFrames > 0) {
+                // Extract channel from interleaved input buffer
+                int channelIndex = inputNode->getInputChannelIndex();
+                if (channelIndex < hardwareAudioChannels) {
+                    inputNode->injectInputAudio(
+                        hardwareAudioInput,
+                        hardwareAudioChannels,
+                        hardwareAudioFrames,
+                        channelIndex
+                    );
+                }
+            }
+        } else if (node->getKind() == NodeKind::MidiInput) {
+            auto* midiInputNode = dynamic_cast<MidiInputNode*>(node);
+            if (midiInputNode) {
+                // Inject MIDI from hardware input (or empty if no backend)
+                midiInputNode->injectInputMidi(hardwareMidiInput);
             }
         }
     }
 }
 
-void GraphEngine::routeConnections() {
-    // This method is no longer used - routing happens inline in processGraph()
-    // Kept for potential future use or debugging
-}
 

@@ -121,18 +121,59 @@ public:
     }
 
     /// Sum samples from another buffer into this buffer (fan-in)
-    /// Both buffers must have same dimensions
+    /// Channel-aware: handles channel count mismatches with upmix/downmix rules
+    /// - Exact match: direct sum per channel
+    /// - Source < target: upmix by duplicating last source channel
+    /// - Source > target: downmix by truncating (sum first N channels)
+    /// Both buffers must have same frame count
     void sumFrom(const AudioBuffer& other) {
-        if (other._numChannels != _numChannels || other._numFrames != _numFrames) {
-            return; // Mismatch - skip
+        if (other._numFrames != _numFrames) {
+            return; // Frame count mismatch - skip
         }
 
-        for (int ch = 0; ch < _numChannels; ++ch) {
-            const float* src = other._data[ch].data();
-            float* dst = _data[ch].data();
-            for (int frame = 0; frame < _numFrames; ++frame) {
-                dst[frame] += src[frame];
+        const int sourceChannels = other._numChannels;
+        const int targetChannels = _numChannels;
+        const int numFrames = _numFrames;
+
+        if (sourceChannels == targetChannels) {
+            // Exact match: direct sum per channel
+            for (int ch = 0; ch < _numChannels; ++ch) {
+                const float* src = other._data[ch].data();
+                float* dst = _data[ch].data();
+                for (int frame = 0; frame < numFrames; ++frame) {
+                    dst[frame] += src[frame];
+                }
             }
+        } else if (sourceChannels < targetChannels) {
+            // Upmix: copy available channels, duplicate last channel to remaining
+            for (int ch = 0; ch < sourceChannels; ++ch) {
+                const float* src = other._data[ch].data();
+                float* dst = _data[ch].data();
+                for (int frame = 0; frame < numFrames; ++frame) {
+                    dst[frame] += src[frame];
+                }
+            }
+            // Duplicate last source channel to remaining target channels
+            if (sourceChannels > 0) {
+                const float* lastChannel = other._data[sourceChannels - 1].data();
+                for (int ch = sourceChannels; ch < targetChannels; ++ch) {
+                    float* dst = _data[ch].data();
+                    for (int frame = 0; frame < numFrames; ++frame) {
+                        dst[frame] += lastChannel[frame];
+                    }
+                }
+            }
+        } else {
+            // Downmix: sum first N channels (truncate extra channels)
+            const int channelsToSum = targetChannels;
+            for (int ch = 0; ch < channelsToSum; ++ch) {
+                const float* src = other._data[ch].data();
+                float* dst = _data[ch].data();
+                for (int frame = 0; frame < numFrames; ++frame) {
+                    dst[frame] += src[frame];
+                }
+            }
+            // Remaining source channels are dropped (deterministic truncation)
         }
     }
 
@@ -145,6 +186,63 @@ public:
 
         for (int ch = 0; ch < _numChannels; ++ch) {
             std::memcpy(_data[ch].data(), other._data[ch].data(), _numFrames * sizeof(float));
+        }
+    }
+
+    /// Copy deinterleaved buffer to interleaved format
+    /// Real-time safe: no allocations, writes directly to destination
+    /// @param dest Destination interleaved buffer (must have space for numChannels * numFrames samples)
+    /// @param destNumChannels Number of channels in destination (must match or be larger)
+    /// @param destNumFrames Number of frames in destination (must match or be larger)
+    void copyToInterleaved(float* dest, int destNumChannels, int destNumFrames) const {
+        if (!dest) {
+            return;
+        }
+
+        const int numChannels = std::min(_numChannels, destNumChannels);
+        const int numFrames = std::min(_numFrames, destNumFrames);
+
+        for (int frame = 0; frame < numFrames; ++frame) {
+            for (int ch = 0; ch < numChannels; ++ch) {
+                dest[frame * destNumChannels + ch] = _data[ch][frame];
+            }
+            // Zero-pad remaining channels if destination has more channels
+            for (int ch = numChannels; ch < destNumChannels; ++ch) {
+                dest[frame * destNumChannels + ch] = 0.0f;
+            }
+        }
+    }
+
+    /// Copy from interleaved format to deinterleaved buffer
+    /// Real-time safe: no allocations, writes directly to internal buffers
+    /// @param src Source interleaved buffer
+    /// @param srcNumChannels Number of channels in source
+    /// @param srcNumFrames Number of frames in source
+    /// @param destChannelOffset Channel offset in destination (default 0)
+    /// @param destFrameOffset Frame offset in destination (default 0)
+    void copyFromInterleaved(
+        const float* src,
+        int srcNumChannels,
+        int srcNumFrames,
+        int destChannelOffset = 0,
+        int destFrameOffset = 0
+    ) {
+        if (!src) {
+            return;
+        }
+
+        const int numChannels = std::min(srcNumChannels, _numChannels - destChannelOffset);
+        const int numFrames = std::min(srcNumFrames, _numFrames - destFrameOffset);
+
+        for (int frame = 0; frame < numFrames; ++frame) {
+            for (int ch = 0; ch < numChannels; ++ch) {
+                int srcIndex = frame * srcNumChannels + ch;
+                int destCh = destChannelOffset + ch;
+                int destFrame = destFrameOffset + frame;
+                if (destCh >= 0 && destCh < _numChannels && destFrame >= 0 && destFrame < _numFrames) {
+                    _data[destCh][destFrame] = src[srcIndex];
+                }
+            }
         }
     }
 

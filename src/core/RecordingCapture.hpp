@@ -19,6 +19,9 @@
 #include <unordered_set>
 #include <shared_mutex>
 
+// Forward declaration
+class AudioBus;
+
 /// Recorded audio chunk (interleaved format for I/O simplicity)
 struct RecordedAudioChunk {
     std::string provisionalAssetId; // Temporary GUID until Pulse assigns AssetId
@@ -125,6 +128,18 @@ public:
     /// Capture MIDI chunk (called from audio thread)
     /// Returns true if capture succeeded, false if queue full
     bool captureMidiChunk(const RecordedMidiChunk& chunk);
+
+    /// Capture final mixed output (called from audio thread)
+    /// Converts AudioBus to RecordedAudioChunk and queues for async flush
+    /// @param output Final mixed output bus
+    /// @param blockStartSamples Absolute sample position of block start
+    /// @param laneId Target lane for recording (defaults to "master")
+    /// @return true if capture succeeded, false if queue full or not recording
+    bool captureFinalOutput(
+        const class AudioBus& output,
+        uint64_t blockStartSamples,
+        const std::string& laneId = "master"
+    );
 
     /// Consume captured audio chunks (control thread)
     /// Returns number of chunks consumed

@@ -1,5 +1,4 @@
 #include "core/EngineHost.hpp"
-#include "core/AudioThread.hpp"
 #include "backend/AudioBackend.hpp"
 #include "backend/MiniaudioBackend.hpp"
 #include "backend/AudioBackendConfig.hpp"
@@ -33,7 +32,6 @@ EngineHost::EngineHost()
     , _shuttingDown(false)
     , _playheadSamples(0)
 {
-    _audioThread = std::make_unique<AudioThread>();
     _meteringService = std::make_unique<MeteringService>();
     _mixerService = std::make_unique<MixerService>();
     _automationService = std::make_unique<AutomationService>();
@@ -58,8 +56,7 @@ EngineHost::EngineHost()
     _consecutiveSilenceBlocks.store(0, std::memory_order_release);
 #endif
 
-    setupAudioCallback();  // Legacy - for backward compatibility
-    setupAudioBackend();   // New backend-based approach
+    setupAudioBackend();
     LOG_INFO({"EngineHost"}, "Created");
 }
 
@@ -89,16 +86,15 @@ void EngineHost::start() {
     _state = State::Starting;
     clearError();
 
-    // Start audio backend (preferred method)
-    if (_audioBackend) {
-        if (!_audioBackend->start()) {
-            setError("Failed to start audio backend");
-            return;
-        }
-    } else {
-        // Fallback to legacy AudioThread
-        _audioThread->setMeteringService(_meteringService.get());
-        _audioThread->start();
+    // Start audio backend
+    if (!_audioBackend) {
+        setError("Audio backend not initialised");
+        return;
+    }
+
+    if (!_audioBackend->start()) {
+        setError("Failed to start audio backend");
+        return;
     }
 
     // After audio starts successfully, transition to running
@@ -116,8 +112,6 @@ void EngineHost::stop() {
 
     if (_audioBackend) {
         _audioBackend->stop();
-    } else {
-        _audioThread->stop();
     }
 
     LOG_INFO({"EngineHost"}, "Stopped");
@@ -216,21 +210,8 @@ const RecordingSession& EngineHost::recordingSession() const {
 }
 
 void EngineHost::loadAutomationSnapshot(const AutomationData& snapshot) {
-    // Create a new snapshot from provided data (copy constructor)
-    auto newSnapshot = std::make_shared<AutomationData>(snapshot);
-
-    // Keep previous snapshot alive until next swap (ensures audio thread safety)
-    _previousAutomation = _automationData;
-
-    // Atomically swap pointer (old snapshot kept alive in _previousAutomation)
-    _activeAutomation.store(newSnapshot.get(), std::memory_order_release);
-
-    // Update _automationData to point to new snapshot
-    _automationData = newSnapshot;
-
-    std::ostringstream msg;
-    msg << "Loaded automation snapshot: " << snapshot.events.size() << " events";
-    LOG_INFO({"EngineHost"}, msg.str());
+    // Delegate to AutomationService (consolidated automation system)
+    _automationService->loadSnapshot(snapshot);
 }
 
 double EngineHost::getCpuLoad() const {
@@ -353,7 +334,7 @@ const GraphEngine& EngineHost::graphEngine() const {
 }
 
 void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
-    _graphEngine->loadGraphSnapshot(snapshot);
+    _graphEngine->loadGraphSnapshot(snapshot, _pluginHost.get(), this);
     // Mark that prepareEngine should be called before next render
     // For Phase 1, we'll call prepareEngine explicitly when needed
 }
@@ -411,12 +392,6 @@ void EngineHost::applyParameterChanges(const std::vector<ParameterChange>& chang
     _parameterChangesPending.store(true, std::memory_order_release);
 }
 
-void EngineHost::setupAudioCallback() {
-    _audioThread->setCallback([this](float* buffer, size_t numFrames, int numChannels) {
-        this->audioCallback(buffer, numFrames, numChannels);
-    });
-}
-
 void EngineHost::setupAudioBackend() {
     // Create MiniaudioBackend (placeholder implementation)
     _audioBackend = std::make_unique<MiniaudioBackend>();
@@ -446,108 +421,16 @@ void EngineHost::setupAudioBackend() {
     LOG_INFO({"EngineHost"}, "Audio backend configured");
 }
 
-void EngineHost::audioCallback(float* buffer, size_t numFrames, int numChannels) {
-    // Clear buffer
-    std::memset(buffer, 0, numFrames * numChannels * sizeof(float));
-
-    // Get current playhead position
-    uint64_t currentPlayhead = _playheadSamples.load(std::memory_order_acquire);
-
-    // Check transport state (lock-free read via snapshot)
-    const TransportState* transport = getTransportSnapshot();
-    if (!transport || !transport->isPlaying) {
-        // Not playing - output silence and keep playhead at current position
-        // Playhead is explicitly set by seek/play commands, no need to advance when stopped
-        return;
-    }
-
-    // Handle loop wrapping (use sample-based loop region if available for efficiency)
-    uint64_t effectivePlayhead = currentPlayhead;
-    bool wrapped = false;
-    if (transport && transport->loopEnabled) {
-        uint64_t loopStartSamples = 0;
-        uint64_t loopEndSamples = 0;
-        bool hasLoop = false;
-
-        // Prefer sample-based loop region (more efficient)
-        if (transport->loopRegionSamples.has_value()) {
-            const auto& loop = transport->loopRegionSamples.value();
-            loopStartSamples = loop.startSamples;
-            loopEndSamples = loop.endSamples;
-            hasLoop = true;
-        } else if (transport->loopRegion.has_value()) {
-            // Fallback to seconds-based (convert to samples)
-            const auto& loop = transport->loopRegion.value();
-            loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
-            loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
-            hasLoop = true;
-        }
-
-        if (hasLoop && loopEndSamples > loopStartSamples) {
-            if (currentPlayhead >= loopEndSamples) {
-                // Wrap to loop start
-                uint64_t loopLength = loopEndSamples - loopStartSamples;
-                effectivePlayhead = loopStartSamples + ((currentPlayhead - loopStartSamples) % loopLength);
-                wrapped = true;
-            } else if (currentPlayhead < loopStartSamples) {
-                // Before loop start - clamp to loop start
-                effectivePlayhead = loopStartSamples;
-                wrapped = true;
-            }
-        }
-    }
-
-    if (wrapped) {
-        _playheadSamples.store(effectivePlayhead, std::memory_order_release);
-    }
-
-    // Update automation current values once per block (for efficiency)
-    _automationService->updateCurrentValues(effectivePlayhead);
-
-    // TODO: Process audio via node graph (future implementation)
-    // The new architecture processes streams via node graph, not clips/channels:
-    // 1. Get active audio segments per stream from StreamScheduler
-    // 2. Load audio data from assets (per stream)
-    // 3. Feed streams into lane nodes (from GraphSnapshot)
-    // 4. Process through node graph (lane → fx → mixer → output)
-    // 5. Apply automation per node/parameter (not per channel)
-    // 6. Render final output
-    //
-    // Current implementation: Output silence until node graph is implemented
-    // Legacy clip/channel-based processing has been removed to align with new architecture
-
-    // Advance playhead
-    uint64_t newPlayhead = effectivePlayhead + numFrames;
-
-    // Handle loop wrapping at block boundary (use sample-based loop region if available)
-    if (transport && transport->loopEnabled) {
-        uint64_t loopStartSamples = 0;
-        uint64_t loopEndSamples = 0;
-        bool hasLoop = false;
-
-        // Prefer sample-based loop region (more efficient)
-        if (transport->loopRegionSamples.has_value()) {
-            const auto& loop = transport->loopRegionSamples.value();
-            loopStartSamples = loop.startSamples;
-            loopEndSamples = loop.endSamples;
-            hasLoop = true;
-        } else if (transport->loopRegion.has_value()) {
-            // Fallback to seconds-based (convert to samples)
-            const auto& loop = transport->loopRegion.value();
-            loopStartSamples = static_cast<uint64_t>(loop.startSeconds * SAMPLE_RATE);
-            loopEndSamples = static_cast<uint64_t>(loop.endSeconds * SAMPLE_RATE);
-            hasLoop = true;
-        }
-
-        if (hasLoop && loopEndSamples > loopStartSamples && newPlayhead >= loopEndSamples) {
-            uint64_t loopLength = loopEndSamples - loopStartSamples;
-            newPlayhead = loopStartSamples + ((newPlayhead - loopStartSamples) % loopLength);
-        }
-    }
-
-    _playheadSamples.store(newPlayhead, std::memory_order_release);
-}
-
+/// High-level render sequence (per block):
+/// 1. Sync transport and context
+/// 2. Clear node buffers
+/// 3. Source/Input Pass (schedule + hardware injection)
+/// 4. Automation update
+/// 5. Graph processing (nodes)
+/// 6. Mixer final mix
+/// 7. Metering capture
+/// 8. Recording capture
+/// 9. Diagnostics + playhead update
 void EngineHost::renderBlock(
     EngineRenderContext& ctx,
     AudioBus& input,
@@ -590,87 +473,35 @@ void EngineHost::renderBlock(
     // Clear output buffer
     output.clear();
 
-    // Phase 6: Apply automation events for this block
-    const AutomationData* automation = getAutomationSnapshot();
-    if (automation && !automation->events.empty()) {
-        uint64_t blockStartSamples = ctx.playheadSamples;
-        uint64_t blockEndSamples = blockStartSamples + static_cast<uint64_t>(output.numFrames());
+    // Step 1: Begin automation block evaluation (pre-computes all parameter values)
+    _automationService->beginBlock(ctx.playheadSamples, ctx.blockSize, ctx.sampleRate);
 
-        // Find automation events in this block range
-        // For Phase 6, we use step interpolation: use the last event at or before block start
-        // Future: support linear interpolation within blocks
+    // Step 2: Apply automation values to nodes and services
+    // Real-time safe: no allocations, just value lookups and assignments
+    const auto& executionOrder = _graphEngine->getExecutionOrder();
+    for (GraphNode* node : executionOrder) {
+        if (!node) continue;
 
-        // Build a map of (nodeId, paramId) -> value for this block
-        std::unordered_map<std::string, float> automationValues; // Key: "nodeId:paramId"
+        std::string nodeId = node->getId();
 
-        // Find the last event at or before block start for each (nodeId, paramId) pair
-        for (const auto& event : automation->events) {
-            if (event.timeSamples > blockEndSamples) {
-                // Past this block, stop searching (events are sorted)
-                break;
-            }
+        // Apply mixer channel automation (gain/pan)
+        if (node->getKind() == NodeKind::MixerChannel) {
+            auto* mixerNode = dynamic_cast<MixerChannelNode*>(node);
+            if (mixerNode) {
+                // Get track/channel ID from node (could be trackId or nodeId)
+                std::string channelId = node->getTrackId().empty() ? nodeId : node->getTrackId();
 
-            if (event.timeSamples <= blockStartSamples) {
-                // Event is at or before block start - use it
-                std::string key = event.nodeId + ":" + event.paramId;
-                automationValues[key] = event.valueNorm;
-            }
-        }
+                float gain = _automationService->getParameterValue(channelId, "gain");
+                float pan = _automationService->getParameterValue(channelId, "pan");
 
-        // Apply automation values to nodes
-        for (const auto& [key, valueNorm] : automationValues) {
-            // Parse key: "nodeId:paramId"
-            size_t colonPos = key.find(':');
-            if (colonPos == std::string::npos) continue;
-
-            std::string nodeId = key.substr(0, colonPos);
-            std::string paramId = key.substr(colonPos + 1);
-
-            GraphNode* node = _graphEngine->findNode(nodeId);
-            if (!node) continue;
-
-            // Route to appropriate node type
-            if (node->getKind() == NodeKind::MixerChannel) {
-                auto* mixer = dynamic_cast<MixerChannelNode*>(node);
-                if (mixer) {
-                    if (paramId == "gain") {
-                        mixer->setGain(valueNorm);
-                    } else if (paramId == "pan") {
-                        // Convert normalised [0,1] to pan [-1,1]
-                        float pan = (valueNorm * 2.0f) - 1.0f;
-                        mixer->setPan(pan);
-                    }
-                }
-            } else if (node->getKind() == NodeKind::Send) {
-                auto* send = dynamic_cast<SendNode*>(node);
-                if (send) {
-                    // Handle "send-level" or "send-level:<busId>" format
-                    if (paramId == "send-level" || paramId.find("send-level:") == 0) {
-                        send->setSendLevel(valueNorm);
-                    }
-                }
-            } else if (node->getKind() == NodeKind::MidiFx ||
-                       node->getKind() == NodeKind::Instrument ||
-                       node->getKind() == NodeKind::AudioFx) {
-                // Plugin nodes: use parameter change mechanism
-                // For Phase 6, apply directly (future: queue for sample-accurate timing)
-                PluginInstance* plugin = nullptr;
-                if (node->getKind() == NodeKind::MidiFx) {
-                    auto* midiFx = dynamic_cast<MidiFxNode*>(node);
-                    if (midiFx) plugin = midiFx->getPlugin();
-                } else if (node->getKind() == NodeKind::Instrument) {
-                    auto* instrument = dynamic_cast<InstrumentNode*>(node);
-                    if (instrument) plugin = instrument->getPlugin();
-                } else if (node->getKind() == NodeKind::AudioFx) {
-                    auto* audioFx = dynamic_cast<AudioFxNode*>(node);
-                    if (audioFx) plugin = audioFx->getPlugin();
-                }
-
-                if (plugin) {
-                    plugin->setParameterValue(paramId, valueNorm);
-                }
+                mixerNode->setGain(gain);
+                mixerNode->setPan(pan);
             }
         }
+
+        // Plugin parameter automation is applied via applyParameterChanges mechanism
+        // AutomationService values are pushed into that queue from control thread
+        // This keeps plugin parameter updates synchronized with other parameter changes
     }
 
     // Phase 4: Apply pending parameter changes (lock-free swap)
@@ -689,15 +520,15 @@ void EngineHost::renderBlock(
 
             // Check if node has a plugin
             PluginInstance* plugin = nullptr;
-            if (node->getKind() == NodeKind::MidiFx) {
-                auto* midiFx = dynamic_cast<MidiFxNode*>(node);
-                if (midiFx) plugin = midiFx->getPlugin();
-            } else if (node->getKind() == NodeKind::Instrument) {
-                auto* instrument = dynamic_cast<InstrumentNode*>(node);
-                if (instrument) plugin = instrument->getPlugin();
-            } else if (node->getKind() == NodeKind::AudioFx) {
-                auto* audioFx = dynamic_cast<AudioFxNode*>(node);
-                if (audioFx) plugin = audioFx->getPlugin();
+            if (
+                node->getKind() == NodeKind::MidiFx ||
+                node->getKind() == NodeKind::Instrument ||
+                node->getKind() == NodeKind::AudioFx
+            ) {
+                auto* pluginNode = dynamic_cast<PluginNode*>(node);
+                if (pluginNode) {
+                    plugin = pluginNode->getPlugin();
+                }
             }
 
             if (plugin) {
@@ -706,34 +537,30 @@ void EngineHost::renderBlock(
         }
     }
 
-    // Phase 7: Inject input data from backend into input nodes
-    const auto& executionOrder = _graphEngine->getExecutionOrder();
+    // Step 2: Clear all node buffers (prepares for Source/Input Pass and processing)
+    // This is done here so buffers are cleared before the Source/Input Pass populates outputs
     for (GraphNode* node : executionOrder) {
-        if (node && node->getKind() == NodeKind::AudioInput) {
-            auto* inputNode = dynamic_cast<AudioInputNode*>(node);
-            if (inputNode) {
-                // Extract channel from interleaved input buffer
-                int channelIndex = inputNode->getInputChannelIndex();
-                if (channelIndex < input.numChannels()) {
-                    inputNode->injectInputAudio(
-                        input.data(),
-                        input.numChannels(),
-                        input.numFrames(),
-                        channelIndex
-                    );
-                }
-            }
-        } else if (node && node->getKind() == NodeKind::MidiInput) {
-            // Phase 7: MIDI input injection (stub for now - no MIDI backend yet)
-            // TODO: Inject MIDI from backend when MIDI backend is implemented
-            auto* midiInputNode = dynamic_cast<MidiInputNode*>(node);
-            if (midiInputNode) {
-                // For Phase 7, MIDI input is empty (no backend yet)
-                std::vector<MidiMessage> emptyMidi;
-                midiInputNode->injectInputMidi(emptyMidi);
-            }
+        if (node) {
+            node->io.audioIn.clear();
+            node->io.midiIn.clear();
+            node->io.audioOut.clear();
+            node->io.midiOut.clear();
         }
     }
+
+    // Step 3: Source/Input Pass - inject schedule data and hardware input
+    // This unified pass populates all source and input node outputs before processing
+    // Real-time safe: no allocations, no locks, no logging
+    std::vector<MidiMessage> hardwareMidiInput; // TODO: Get from MIDI backend when implemented
+    _graphEngine->runSourceInputPass(
+        ctx,
+        _streamScheduler.get(),
+        _audioAssetSource.get(),
+        input.data(),
+        input.numChannels(),
+        input.numFrames(),
+        hardwareMidiInput
+    );
 
     // Phase 7: Capture from input nodes if recording is active
     if (_recordingSession->isRecording()) {
@@ -755,14 +582,10 @@ void EngineHost::renderBlock(
                             chunk.startSample = blockStartSamples;
                             chunk.provisionalAssetId = "temp-" + inputNode->getId() + "-" + std::to_string(blockStartSamples);
 
-                            // Convert deinterleaved to interleaved
+                            // Convert deinterleaved AudioBuffer to interleaved format
                             int numFrames = audioOut.numFrames();
                             chunk.interleaved.resize(chunk.numChannels * numFrames);
-                            for (int frame = 0; frame < numFrames; ++frame) {
-                                for (int ch = 0; ch < chunk.numChannels; ++ch) {
-                                    chunk.interleaved[frame * chunk.numChannels + ch] = audioOut.getSample(ch, frame);
-                                }
-                            }
+                            audioOut.copyToInterleaved(chunk.interleaved.data(), chunk.numChannels, numFrames);
 
                             _recordingSession->captureAudioChunk(chunk);
                         }
@@ -800,48 +623,57 @@ void EngineHost::renderBlock(
         }
     }
 
-    // Process graph (Phase 4: real audio streaming, send/receive routing, plugin processing)
-    _graphEngine->processGraph(ctx, _streamScheduler.get(), _audioAssetSource.get());
+    // Step 4: Process graph (routing, plugin processing)
+    // Note: Source/Input Pass was already called in Step 3, so nodes are ready to process
+    _graphEngine->processGraph(ctx);
 
-    // Copy device node output to EngineHost output buffer
-    // TODO: Support multiple device nodes in future (e.g., different output devices, cue mixes)
+    // Step 3: Find device node and apply final mix
     GraphNode* deviceNode = nullptr;
     const auto& deviceExecutionOrder = _graphEngine->getExecutionOrder();
     for (GraphNode* node : deviceExecutionOrder) {
         if (node && node->getKind() == NodeKind::Device) {
             deviceNode = node;
-            break; // For now, use first device node (previously assumed single master)
+            break; // For now, use first device node
         }
     }
 
-    // Diagnostic: Check device node output level
-    float maxOutput = 0.0f;
-    bool hasOutput = false;
-
     if (deviceNode) {
-        // Copy audio from device node to output bus
-        const int numChannels = std::min(deviceNode->io.audioOut.numChannels(), output.numChannels());
-        const int numFrames = std::min(deviceNode->io.audioOut.numFrames(), output.numFrames());
-
-        for (int ch = 0; ch < numChannels; ++ch) {
-            const float* src = deviceNode->io.audioOut.getChannelData(ch);
-            for (int frame = 0; frame < numFrames; ++frame) {
-                float sample = src[frame];
-                output.setSample(frame, ch, sample);
-
-                // Track max for diagnostics
-                float absSample = std::abs(sample);
-                if (absSample > maxOutput) {
-                    maxOutput = absSample;
-                }
-                if (absSample > 0.0001f) {
-                    hasOutput = true;
-                }
-            }
-        }
+        // Step 4: Apply final mix (gain/mute/solo/pan) from device node to output bus
+        _mixerService->finalMix(deviceNode->io.audioOut, output, "master");
     } else {
         // No device node - output will be silence
         output.clear();
+    }
+
+    // Step 5: Capture metering levels from final mixed output
+    // Real-time safe: submitSampleBlock is lock-free (uses shared_lock for map lookup only)
+    _meteringService->submitSampleBlock(
+        "master",
+        output.data(),
+        output.numChannels(),
+        output.numFrames()
+    );
+
+    // Step 6: Capture final output for recording (if recording is active)
+    if (_recordingSession->isRecording()) {
+        _recordingSession->captureFinalOutput(output, ctx.playheadSamples, "master");
+    }
+
+    // Diagnostic: Check output level
+    float maxOutput = 0.0f;
+    bool hasOutput = false;
+    const int numChannels = output.numChannels();
+    const int numFrames = output.numFrames();
+    for (int frame = 0; frame < numFrames; ++frame) {
+        for (int ch = 0; ch < numChannels; ++ch) {
+            float absSample = std::abs(output.sample(frame, ch));
+            if (absSample > maxOutput) {
+                maxOutput = absSample;
+            }
+            if (absSample > 0.0001f) {
+                hasOutput = true;
+            }
+        }
     }
 
     // Diagnostic logging: Periodic status (every ~1 second when playing, less frequent when stopped)
@@ -927,4 +759,5 @@ void EngineHost::renderBlock(
         _playheadSamples.store(newPlayhead, std::memory_order_release);
     }
 }
+
 

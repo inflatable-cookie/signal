@@ -30,15 +30,9 @@ public:
     StreamScheduler();
     ~StreamScheduler();
 
-    /// Set schedule from Pulse's PlaybackScheduleCompiled
+    /// Set schedule from ScheduleData
     /// This replaces the entire schedule atomically
-    void setSchedule(
-        const std::vector<StreamDescriptor>& streams,
-        const std::vector<AudioSegmentCompiled>& audioSegments,
-        const std::vector<MidiEventCompiled>& midiEvents,
-        const TempoMap& tempoMap,
-        double sampleRate
-    );
+    void setSchedule(const ScheduleData& schedule);
 
     /// Clear all scheduled streams
     void clearSchedule();

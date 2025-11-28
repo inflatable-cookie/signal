@@ -4,10 +4,12 @@
 #include "core/GraphNode.hpp"
 #include "core/GraphNodes.hpp"
 #include "core/StreamScheduler.hpp"
+#include "core/ScheduleData.hpp"
 #include "core/EngineRenderContext.hpp"
 #include "core/NodeProcessContext.hpp"
 #include "core/AudioAssetSource.hpp"
 #include "core/AudioBus.hpp"
+#include "core/NodeBuffers.hpp"
 #include <vector>
 #include <string>
 #include <memory>
@@ -310,7 +312,13 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     TempoMap tempoMap;
     tempoMap.defaultTempo = 120.0;
 
-    scheduler.setSchedule(streams, audioSegments, midiEvents, tempoMap, 44100.0);
+    ScheduleData schedule(44100.0, 120.0);
+    schedule.streams = streams;
+    schedule.audioSegments = audioSegments;
+    schedule.midiEvents = midiEvents;
+    schedule.tempoMap = tempoMap;
+    schedule.buildLookupMaps();
+    scheduler.setSchedule(schedule);
 
     // Process graph
     EngineRenderContext ctx;
@@ -319,7 +327,9 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     ctx.playheadSamples = 0;
 
     StubAudioAssetSource assetSource;
-    engine.processGraph(ctx, &scheduler, &assetSource);
+    std::vector<MidiMessage> emptyMidi;
+    engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi);
+    engine.processGraph(ctx);
 
     // Verify lane node received stream
     auto* lane = dynamic_cast<AudioLaneNode*>(engine.findNode("audio-lane-1"));
@@ -565,5 +575,234 @@ TEST_CASE("GraphEngine - Fan-in (multiple inputs)", "[graph][fan-in]") {
     // Verify FX received sum of both lanes
     REQUIRE(fx->io.audioIn.getSample(0, 0) == 0.8f); // 0.3 + 0.5
     REQUIRE(fx->io.audioIn.getSample(0, 1) == 0.8f);
+}
+
+TEST_CASE("GraphEngine - Routing validation: mono graph", "[graph][routing][validation]") {
+    GraphEngine engine;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "mono-graph-test";
+
+    // Create mono lane -> mono FX -> mono device
+    NodeDesc lane;
+    lane.nodeId = "lane-mono";
+    lane.kind = NodeKind::AudioLane;
+    lane.numAudioOutputs = 1; // Mono
+    snapshot.nodes.push_back(lane);
+
+    NodeDesc fx;
+    fx.nodeId = "fx-mono";
+    fx.kind = NodeKind::AudioFx;
+    fx.numAudioInputs = 1;  // Mono input
+    fx.numAudioOutputs = 1; // Mono output
+    snapshot.nodes.push_back(fx);
+
+    NodeDesc device;
+    device.nodeId = "device-mono";
+    device.kind = NodeKind::Device;
+    device.numAudioInputs = 1;  // Mono input
+    device.numAudioOutputs = 1; // Mono output
+    snapshot.nodes.push_back(device);
+
+    // Connections: lane -> fx -> device (all mono)
+    ConnectionDesc conn1;
+    conn1.fromNodeId = "lane-mono";
+    conn1.toNodeId = "fx-mono";
+    snapshot.connections.push_back(conn1);
+
+    ConnectionDesc conn2;
+    conn2.fromNodeId = "fx-mono";
+    conn2.toNodeId = "device-mono";
+    snapshot.connections.push_back(conn2);
+
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Verify all connections are valid
+    const auto& executionOrder = engine.getExecutionOrder();
+    REQUIRE(executionOrder.size() == 3);
+
+    // Verify channel configs
+    auto* laneNode = engine.findNode("lane-mono");
+    auto* fxNode = engine.findNode("fx-mono");
+    auto* deviceNode = engine.findNode("device-mono");
+    REQUIRE(laneNode != nullptr);
+    REQUIRE(fxNode != nullptr);
+    REQUIRE(deviceNode != nullptr);
+
+    REQUIRE(laneNode->getAudioConfig().numOutputChannels == 1);
+    REQUIRE(fxNode->getAudioConfig().numInputChannels == 1);
+    REQUIRE(fxNode->getAudioConfig().numOutputChannels == 1);
+    REQUIRE(deviceNode->getAudioConfig().numInputChannels == 1);
+}
+
+TEST_CASE("GraphEngine - Routing validation: stereo graph with fan-in", "[graph][routing][validation]") {
+    GraphEngine engine;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "stereo-fanin-test";
+
+    // Create two stereo lanes feeding one stereo FX
+    NodeDesc lane1;
+    lane1.nodeId = "lane-1";
+    lane1.kind = NodeKind::AudioLane;
+    lane1.numAudioOutputs = 2; // Stereo
+    snapshot.nodes.push_back(lane1);
+
+    NodeDesc lane2;
+    lane2.nodeId = "lane-2";
+    lane2.kind = NodeKind::AudioLane;
+    lane2.numAudioOutputs = 2; // Stereo
+    snapshot.nodes.push_back(lane2);
+
+    NodeDesc fx;
+    fx.nodeId = "fx-stereo";
+    fx.kind = NodeKind::AudioFx;
+    fx.numAudioInputs = 2;  // Stereo input
+    fx.numAudioOutputs = 2; // Stereo output
+    snapshot.nodes.push_back(fx);
+
+    // Connections: both lanes -> fx (fan-in)
+    ConnectionDesc conn1;
+    conn1.fromNodeId = "lane-1";
+    conn1.toNodeId = "fx-stereo";
+    snapshot.connections.push_back(conn1);
+
+    ConnectionDesc conn2;
+    conn2.fromNodeId = "lane-2";
+    conn2.toNodeId = "fx-stereo";
+    snapshot.connections.push_back(conn2);
+
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Verify channel configs
+    auto* lane1Node = engine.findNode("lane-1");
+    auto* lane2Node = engine.findNode("lane-2");
+    auto* fxNode = engine.findNode("fx-stereo");
+    REQUIRE(lane1Node != nullptr);
+    REQUIRE(lane2Node != nullptr);
+    REQUIRE(fxNode != nullptr);
+
+    REQUIRE(lane1Node->getAudioConfig().numOutputChannels == 2);
+    REQUIRE(lane2Node->getAudioConfig().numOutputChannels == 2);
+    REQUIRE(fxNode->getAudioConfig().numInputChannels == 2);
+    REQUIRE(fxNode->getAudioConfig().numOutputChannels == 2);
+}
+
+TEST_CASE("GraphEngine - Routing validation: channel mismatch", "[graph][routing][validation]") {
+    GraphEngine engine;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "mismatch-test";
+
+    // Create mono lane and stereo FX
+    NodeDesc lane;
+    lane.nodeId = "lane-mono";
+    lane.kind = NodeKind::AudioLane;
+    lane.numAudioOutputs = 1; // Mono
+    snapshot.nodes.push_back(lane);
+
+    NodeDesc fx;
+    fx.nodeId = "fx-stereo";
+    fx.kind = NodeKind::AudioFx;
+    fx.numAudioInputs = 2;  // Stereo input
+    fx.numAudioOutputs = 2; // Stereo output
+    snapshot.nodes.push_back(fx);
+
+    // Connection: mono -> stereo (should be invalid)
+    ConnectionDesc conn;
+    conn.fromNodeId = "lane-mono";
+    conn.toNodeId = "fx-stereo";
+    snapshot.connections.push_back(conn);
+
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Verify nodes exist
+    auto* laneNode = engine.findNode("lane-mono");
+    auto* fxNode = engine.findNode("fx-stereo");
+    REQUIRE(laneNode != nullptr);
+    REQUIRE(fxNode != nullptr);
+
+    // Verify channel configs
+    REQUIRE(laneNode->getAudioConfig().numOutputChannels == 1);
+    REQUIRE(fxNode->getAudioConfig().numInputChannels == 2);
+
+    // Note: Connection validation happens during loadGraphSnapshot()
+    // The connection should be marked invalid and not used during routing
+    // We can't directly check connection validity from outside, but we can verify
+    // that the graph still loads (doesn't crash) and nodes are configured correctly
+}
+
+TEST_CASE("GraphEngine - Routing validation: send/receive chain", "[graph][routing][validation]") {
+    GraphEngine engine;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "send-receive-test";
+
+    // Create source -> send -> receive -> device
+    NodeDesc source;
+    source.nodeId = "source";
+    source.kind = NodeKind::AudioLane;
+    source.numAudioOutputs = 2; // Stereo
+    snapshot.nodes.push_back(source);
+
+    NodeDesc send;
+    send.nodeId = "send";
+    send.kind = NodeKind::Send;
+    send.numAudioInputs = 2;  // Stereo input
+    send.numAudioOutputs = 2; // Stereo output
+    snapshot.nodes.push_back(send);
+
+    NodeDesc receive;
+    receive.nodeId = "receive";
+    receive.kind = NodeKind::Receive;
+    receive.numAudioInputs = 2;  // Stereo input
+    receive.numAudioOutputs = 2; // Stereo output
+    snapshot.nodes.push_back(receive);
+
+    NodeDesc device;
+    device.nodeId = "device";
+    device.kind = NodeKind::Device;
+    device.numAudioInputs = 2;  // Stereo input
+    device.numAudioOutputs = 2; // Stereo output
+    snapshot.nodes.push_back(device);
+
+    // Connections: source -> send -> receive -> device
+    ConnectionDesc conn1;
+    conn1.fromNodeId = "source";
+    conn1.toNodeId = "send";
+    snapshot.connections.push_back(conn1);
+
+    ConnectionDesc conn2;
+    conn2.fromNodeId = "send";
+    conn2.toNodeId = "receive";
+    snapshot.connections.push_back(conn2);
+
+    ConnectionDesc conn3;
+    conn3.fromNodeId = "receive";
+    conn3.toNodeId = "device";
+    snapshot.connections.push_back(conn3);
+
+    engine.loadGraphSnapshot(snapshot);
+    engine.prepareGraph(44100, 512);
+
+    // Verify all nodes have correct channel configs
+    auto* sourceNode = engine.findNode("source");
+    auto* sendNode = engine.findNode("send");
+    auto* receiveNode = engine.findNode("receive");
+    auto* deviceNode = engine.findNode("device");
+    REQUIRE(sourceNode != nullptr);
+    REQUIRE(sendNode != nullptr);
+    REQUIRE(receiveNode != nullptr);
+    REQUIRE(deviceNode != nullptr);
+
+    REQUIRE(sourceNode->getAudioConfig().numOutputChannels == 2);
+    REQUIRE(sendNode->getAudioConfig().numInputChannels == 2);
+    REQUIRE(sendNode->getAudioConfig().numOutputChannels == 2);
+    REQUIRE(receiveNode->getAudioConfig().numInputChannels == 2);
+    REQUIRE(receiveNode->getAudioConfig().numOutputChannels == 2);
+    REQUIRE(deviceNode->getAudioConfig().numInputChannels == 2);
 }
 

@@ -56,8 +56,8 @@ public:
             return;
         }
 
-        // Get metering snapshot
-        auto snapshot = meteringService->snapshotAll();
+        // Get metering snapshot (new format with per-channel L/R)
+        auto snapshot = meteringService->getSnapshotAndDecay();
         if (snapshot.empty()) {
             return; // No channels to meter
         }
@@ -77,14 +77,22 @@ public:
         meteringEvent.priority = IpcPriority::Normal;
 
         // Build payload with channel metering data
+        // Convert new format (peakL/peakR, rmsL/rmsR) to legacy format (peak, rms)
+        // For stereo: use max of L/R for peak, average for RMS
+        // For mono: use single value
         nlohmann::json payload;
         nlohmann::json channels = nlohmann::json::array();
-        for (const auto& metering : snapshot) {
+        for (const auto& meter : snapshot) {
             nlohmann::json channel;
-            channel["channelId"] = metering.channelId;
-            channel["peak"] = metering.peak;
-            channel["rms"] = metering.rms;
-            channel["timestamp"] = metering.timestamp;
+            channel["channelId"] = meter.id;
+            // Convert per-channel to single values (backward compatibility)
+            // Peak: max of L and R
+            // RMS: average of L and R (or just L for mono)
+            float peak = std::max(meter.peakL, meter.peakR);
+            float rms = (meter.peakR > 0.0f) ? ((meter.rmsL + meter.rmsR) * 0.5f) : meter.rmsL;
+            channel["peak"] = peak;
+            channel["rms"] = rms;
+            channel["timestamp"] = meter.timestamp;
             channels.push_back(channel);
         }
         payload["channels"] = channels;
