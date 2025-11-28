@@ -27,21 +27,75 @@ void TransportDomain::handle(const Envelope& env) {
 
     if (env.name == "play") {
         transport.isPlaying = true;
-        // Update playhead from transport position (in case we seeked while stopped)
-        uint64_t playheadSamples = static_cast<uint64_t>(transport.positionSeconds * sampleRate);
-        _engineHost->setPlayheadSamples(playheadSamples);
+        // Get current playhead from engine (source of truth) - this preserves position from stop/seek
+        uint64_t playheadSamples = _engineHost->getPlayheadSamples();
+        double positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
+        // Sync transport.positionSeconds with actual playhead
+        transport.positionSeconds = positionSeconds;
         _engineHost->commitTransportUpdate();  // Commit snapshot swap
         std::ostringstream msg;
-        msg << "Play command received, playhead: " << playheadSamples << " samples";
+        msg << "Play command received, playhead: " << playheadSamples << " samples (positionSeconds: " << positionSeconds << "s)";
         LOG_INFO({"TransportDomain"}, msg.str());
     } else if (env.name == "stop") {
+        // If payload contains a position, seek to it FIRST (from Aura's simulation)
+        // This ensures we stop at the exact position Aura requested, not where the playhead happens to be
+        try {
+            nlohmann::json payload = nlohmann::json::parse(env.payload);
+            double positionSeconds = 0.0;
+            bool hasPosition = false;
+
+            // Debug: log payload contents
+            std::ostringstream debugMsg;
+            debugMsg << "Stop payload: " << payload.dump();
+            LOG_DEBUG({"TransportDomain"}, debugMsg.str());
+
+            if (payload.contains("positionSamples")) {
+                // Direct sample position (preferred)
+                uint64_t samples = payload["positionSamples"].get<uint64_t>();
+                positionSeconds = static_cast<double>(samples) / sampleRate;
+                hasPosition = true;
+                LOG_DEBUG({"TransportDomain"}, "Using positionSamples from payload");
+            } else if (payload.contains("seconds")) {
+                positionSeconds = payload["seconds"].get<double>();
+                hasPosition = true;
+                LOG_DEBUG({"TransportDomain"}, "Using seconds from payload");
+            } else if (payload.contains("positionBeats")) {
+                // Convert beats to seconds using real tempo
+                double beats = payload["positionBeats"].get<double>();
+                positionSeconds = (beats / tempo) * 60.0;
+                hasPosition = true;
+                LOG_DEBUG({"TransportDomain"}, "Using positionBeats from payload");
+            }
+
+            if (hasPosition) {
+                // Seek to the requested position FIRST, then stop
+                // This ensures we stop at the exact position Aura requested
+                transport.positionSeconds = positionSeconds;
+                uint64_t playheadSamples = static_cast<uint64_t>(positionSeconds * sampleRate);
+                _engineHost->setPlayheadSamples(playheadSamples);
+            } else {
+                // No position in payload - use current playhead
+                uint64_t playheadSamples = _engineHost->getPlayheadSamples();
+                transport.positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
+            }
+        } catch (const std::exception& e) {
+            // If payload parsing fails, fall back to current playhead
+            uint64_t playheadSamples = _engineHost->getPlayheadSamples();
+            transport.positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
+            std::ostringstream msg;
+            msg << "Stop command received, payload parse failed: " << e.what() << ", using current: " << transport.positionSeconds << "s";
+            LOG_WARN({"TransportDomain"}, msg.str());
+        }
+
+        // Now stop playback (position already set above)
         transport.isPlaying = false;
-        // Update transport position from playhead when stopping
-        uint64_t playheadSamples = _engineHost->getPlayheadSamples();
-        transport.positionSeconds = static_cast<double>(playheadSamples) / sampleRate;
-        _engineHost->commitTransportUpdate();  // Commit snapshot swap
+        _engineHost->commitTransportUpdate();  // Commit stop + position in one update
+
+        // Log final state
+        uint64_t finalPlayheadSamples = _engineHost->getPlayheadSamples();
+        double finalPositionSeconds = static_cast<double>(finalPlayheadSamples) / sampleRate;
         std::ostringstream msg;
-        msg << "Stop command received, position: " << transport.positionSeconds << "s";
+        msg << "Stop command received, stopped at position: " << finalPositionSeconds << "s (" << finalPlayheadSamples << " samples)";
         LOG_INFO({"TransportDomain"}, msg.str());
     } else if (env.name == "seek") {
         try {
