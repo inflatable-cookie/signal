@@ -17,7 +17,6 @@
 #include "domains/AssetsDomain.hpp"
 #include "domains/MeteringDomain.hpp"
 #include "logging/Logging.hpp"
-#include <iostream>
 
 namespace loophole::signal::ipc {
 
@@ -51,4 +50,3 @@ void DomainDispatcher::handleEnvelope(
 }
 
 } // namespace loophole::signal::ipc
-

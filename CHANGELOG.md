@@ -24,6 +24,7 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-01 01:06:10 UTC) [docs] Documented canonical graph/render ingestion and dispatcher pattern in AGENTS and trimmed unused include from DomainDispatcher to keep the dispatch surface lean.
 (2025-11-28 21:51:02 UTC) [changed] Unified all logging to use DEBUG_LEVEL system: converted all std::cout/cerr calls to unified logging macros, demoted noisy per-plugin logs from Info to Debug, and standardised area prefixes. Signal now matches Pulse's quiet logging profile at default DEBUG_LEVEL=4.
 
 (2025-11-28 21:29:21 UTC) [added] Implemented engine self-test command: added offline render sanity check harness (EngineSelfTest) with 3 synthetic scenarios, IPC integration via EngineDomain, and diagnostics panel UI integration. Self-test runs short offline renders without touching live engine state and returns pass/fail summary.
@@ -117,4 +118,3 @@ Example entry:
 (2025-11-22 20:00:00 UTC) [added] Implemented Signal TCP IPC server handling JSON-line IpcEnvelopes with a central domain dispatcher stub.
 
 (2025-01-27 00:00:00 UTC) [added] Initial C++20 project skeleton with CMake build system, IPC envelope structure, domain router, and test harness using Catch2.
-

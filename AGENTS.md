@@ -149,11 +149,20 @@ Keep modules small and focused. One major type per file.
 
 ---
 
-## 6. Logging System
+## 6. Canonical Pipelines & Dispatcher Pattern
+
+- **Graph + schedule ingestion**: snapshots from Pulse are validated and applied once via `EngineDomain`/`EngineHost` into `GraphEngine` and `StreamScheduler`. No parallel ingestion paths or alternate snapshot formats.
+- **Render path**: single render loop in `EngineHost` calling `GraphEngine::processBlock` with pre-allocated buffers; no legacy audio threads or duplicate render loops.
+- **DomainDispatcher**: thin registry only; domains own their command handling. Do not add inline handlers or business logic to the dispatcher.
+- **Real-time safety**: audio thread must not allocate, block, or log noisily. Prepare state and buffers on control threads; communicate via lock-free/atomic mechanisms.
+
+---
+
+## 7. Logging System
 
 Signal uses a **unified logging system** that matches the same 1–8 log level scale as Aura and Pulse. All logs output to `stdout`/`stderr` with the standardised prefix format.
 
-### 6.1 Log Levels
+### 7.1 Log Levels
 
 The unified log level system uses numeric levels 1–8 with threshold semantics (only logs where `log_level <= DEBUG_LEVEL` are emitted):
 
@@ -166,7 +175,7 @@ The unified log level system uses numeric levels 1–8 with threshold semantics 
 - **Level 7 – Trace**: Very fine-grained events
 - **Level 8 – All**: Everything including highly repetitive logs
 
-### 6.2 Configuration
+### 7.2 Configuration
 
 The `DEBUG_LEVEL` environment variable controls logging verbosity:
 
@@ -174,7 +183,7 @@ The `DEBUG_LEVEL` environment variable controls logging verbosity:
 - Initialised via `initLogging()` (typically called in `SignalApp` constructor)
 - Passed from Pulse when Signal is spawned as a child process
 
-### 6.3 Usage
+### 7.3 Usage
 
 **Location**: `src/logging/Logging.hpp` and `Logging.cpp`
 
@@ -203,7 +212,7 @@ LOG_INFO({"FileAudioAssetSource"}, msg.str());
 - All other levels go to `stdout`
 - Aura's main process parses and colorises these logs
 
-### 6.4 Available Macros
+### 7.4 Available Macros
 
 - `LOG_CORE(areas, message)` - Level 1 (Core)
 - `LOG_ERROR(areas, message)` - Level 2 (Error)
@@ -221,7 +230,7 @@ LOG_INFO(({"EngineHost", "Transport"}), "Play command received");
 
 **Note**: The double parentheses are required for the initializer list syntax in macros.
 
-### 6.5 When to Use Each Level
+### 7.5 When to Use Each Level
 
 - **Core (1)**: Critical lifecycle (Signal start, shutdown, fatal errors)
 - **Error (2)**: Recoverable errors (plugin load failures, device errors)
@@ -232,7 +241,7 @@ LOG_INFO(({"EngineHost", "Transport"}), "Play command received");
 - **Trace (7)**: Per-envelope logging, fine-grained events
 - **All (8)**: Everything including per-callback logging
 
-### 6.6 Rules
+### 7.6 Rules
 
 - **Never use `std::cout`/`std::cerr` directly** except in the logging module implementation
 - **Never use `printf` or other C-style output** — use the unified logging macros
@@ -242,7 +251,7 @@ LOG_INFO(({"EngineHost", "Transport"}), "Play command received");
 - Always pass message as `std::string` or use `std::ostringstream` for dynamic content
 - **Real-time audio thread**: Logging from audio callbacks should use Trace/All levels only, and be minimal to avoid performance impact
 
-### 6.7 Initialisation
+### 7.7 Initialisation
 
 Call `initLogging()` early in application startup (typically in `SignalApp` constructor):
 
@@ -257,7 +266,7 @@ SignalApp::SignalApp() {
 
 ---
 
-## 7. Real-Time Safety
+## 8. Real-Time Safety
 
 Signal must adhere to real-time rules defined in Chorus:
 
@@ -270,20 +279,20 @@ Signal must adhere to real-time rules defined in Chorus:
 
 All JSON parsing and IPC handling must happen on non-real-time threads.
 
-### 6.1 Audio Thread Rules
+### 8.1 Audio Thread Rules
 
 - The audio callback runs in a dedicated high-priority thread.
 - The audio callback must never block, allocate, or perform I/O.
 - Use lock-free data structures for communication between control and audio threads.
 - State changes from IPC commands should be communicated via atomic flags or lock-free queues.
 
-### 6.2 CPU Affinity
+### 8.2 CPU Affinity
 
 - Audio thread should ideally run on a dedicated CPU core (when available).
 - Set audio thread priority to maximum (platform-specific).
 - Keep control/IPC threads on separate cores to avoid audio thread interruptions.
 
-### 6.3 Adding Future DSP Nodes
+### 8.3 Adding Future DSP Nodes
 
 When adding DSP nodes to the audio graph:
 
@@ -295,7 +304,7 @@ When adding DSP nodes to the audio graph:
 
 ---
 
-## 8. AI / Cursor Expectations
+## 9. AI / Cursor Expectations
 
 - Read existing docs before making changes.
 - Keep changes small and scoped.
@@ -307,7 +316,7 @@ When adding DSP nodes to the audio graph:
 
 ---
 
-## 8. Build & Run
+## 10. Build & Run
 
 To configure and build:
 
@@ -330,7 +339,7 @@ Or run the executable directly:
 
 ---
 
-## 9. Changelog Discipline
+## 11. Changelog Discipline
 
 You must **always** update `CHANGELOG.md` for any **significant** change:
 
@@ -383,4 +392,3 @@ Minor cosmetic edits or trivial renames **do not** need a changelog entry unless
 ---
 
 The default posture is: **clean, explicit, and careful**, not quick and dirty.
-
