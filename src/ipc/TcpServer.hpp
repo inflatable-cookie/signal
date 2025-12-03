@@ -364,9 +364,9 @@ public:
         diagEvent.timestamp = currentTimestamp();
         diagEvent.origin = IpcOrigin::Signal;
         diagEvent.target = IpcTarget::Pulse; // Diagnostics go to Pulse
-        diagEvent.domain = "engine";
+        diagEvent.domain = "diagnostics";
         diagEvent.kind = IpcKind::Event;
-        diagEvent.name = "diagnostics";
+        diagEvent.name = "engineMetrics";
         diagEvent.priority = IpcPriority::Normal;
 
         nlohmann::json payload;
