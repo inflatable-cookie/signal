@@ -149,6 +149,25 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.portId = nodeJson["portId"].get<std::string>();
         }
 
+        // Parse mixer configuration (optional, for mixer-channel nodes)
+        if (nodeJson.contains("mixer") && nodeJson["mixer"].is_object()) {
+            const auto& mixerJson = nodeJson["mixer"];
+            NodeMixerConfigDesc mixerConfig;
+            if (mixerJson.contains("gain") && mixerJson["gain"].is_number()) {
+                mixerConfig.gain = mixerJson["gain"].get<float>();
+            }
+            if (mixerJson.contains("pan") && mixerJson["pan"].is_number()) {
+                mixerConfig.pan = mixerJson["pan"].get<float>();
+            }
+            if (mixerJson.contains("muted") && mixerJson["muted"].is_boolean()) {
+                mixerConfig.muted = mixerJson["muted"].get<bool>();
+            }
+            if (mixerJson.contains("soloed") && mixerJson["soloed"].is_boolean()) {
+                mixerConfig.soloed = mixerJson["soloed"].get<bool>();
+            }
+            node.mixer = mixerConfig;
+        }
+
         snapshot.nodes.push_back(node);
     }
 
@@ -242,4 +261,3 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
 
     return snapshot;
 }
-

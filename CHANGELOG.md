@@ -24,6 +24,10 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-10 14:15:00 UTC) [dev] Tightened the existing send/receive runtime test to assert non-zero device output for the 440 Hz test tone and added a simple subgroup routing test that validates MixerChannel → bus → Device topology for Phase 7 routing scenarios.
+
+(2025-12-10 14:03:00 UTC) [changed] Wired MixerChannelNode initial gain/pan/mute state to the new mixer metadata in GraphSnapshot so Signal’s runtime graph starts in sync with Pulse’s Channel model before mixer.updateChannel and automation updates arrive.
+
 (2025-12-10 09:43:08 UTC) [dev] Added a minimal package.json with pnpm wrapper scripts for CMake build, run, and test workflows so Signal can be driven alongside Aura using the same package manager entrypoints.
 
 (2025-12-09 12:26:04 UTC) [fixed] Aligned EngineHost automation handling and tests with the consolidated AutomationService, ensuring mixer/send parameters respect node IDs and block-time evaluation while keeping the idle fast-path semantics intact.

@@ -30,6 +30,14 @@ struct NodeAudioConfigDesc {
     std::optional<std::string> layout;  // Optional layout identifier
 };
 
+/// Mixer configuration (matches Pulse NodeMixerConfig)
+struct NodeMixerConfigDesc {
+    std::optional<float> gain;
+    std::optional<float> pan;
+    std::optional<bool> muted;
+    std::optional<bool> soloed;
+};
+
 /// Node descriptor (matches Pulse NodeDesc)
 struct NodeDesc {
     NodeId nodeId;
@@ -51,6 +59,8 @@ struct NodeDesc {
     /// Optional tail hint in samples (for future tail-aware transport)
     /// Signal will compute actual tail from plugin/node capabilities, but this can serve as a hint
     std::optional<uint32_t> tailSamples;
+    /// Optional mixer configuration for channel-related nodes (e.g. MixerChannel)
+    std::optional<NodeMixerConfigDesc> mixer;
     // Input node fields (Phase 7)
     std::optional<std::string> deviceId;      // For AudioInputNode
     std::optional<int> inputChannelIndex;     // For AudioInputNode
@@ -77,4 +87,3 @@ struct GraphSnapshot {
     /// @return Parsed GraphSnapshot or nullopt on error
     static std::optional<GraphSnapshot> fromJson(const nlohmann::json& j);
 };
-

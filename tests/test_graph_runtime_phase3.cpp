@@ -365,11 +365,19 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
     engine.processGraph(ctx);
 
-    // Verify device node exists on the output path
+    // Verify device node exists on the output path and has non-zero output
     auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
     REQUIRE(device != nullptr);
-    // Detailed audio-level assertions are covered by dedicated playback
-    // path tests; here we only need structural routing to succeed.
+
+    bool hasOutput = false;
+    for (int frame = 0; frame < 512; ++frame) {
+        if (std::abs(device->io.audioOut.getSample(frame, 0)) > 0.001f) {
+            hasOutput = true;
+            break;
+        }
+    }
+
+    REQUIRE(hasOutput);
 }
 
 TEST_CASE("Phase 3 - Gain/Pan test", "[graph][phase3][mixer]") {

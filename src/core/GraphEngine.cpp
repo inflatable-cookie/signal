@@ -539,8 +539,35 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
         case NodeKind::Send:
             return std::make_unique<SendNode>(desc.nodeId, trackId, pluginId); // Using pluginId as busId for now
 
-        case NodeKind::MixerChannel:
-            return std::make_unique<MixerChannelNode>(desc.nodeId, trackId);
+        case NodeKind::MixerChannel: {
+            auto node = std::make_unique<MixerChannelNode>(desc.nodeId, trackId);
+
+            // Initialise mixer state from snapshot metadata, if present.
+            if (desc.mixer.has_value()) {
+                const auto& mixer = desc.mixer.value();
+
+                // Apply pan first so any gain adjustments (e.g. mute) operate on final gain.
+                if (mixer.pan.has_value()) {
+                    node->setPan(mixer.pan.value());
+                }
+
+                // Apply gain, respecting mute flag if present.
+                if (mixer.gain.has_value()) {
+                    float gain = mixer.gain.value();
+                    if (mixer.muted.has_value() && mixer.muted.value()) {
+                        gain = 0.0f;
+                    }
+                    node->setGain(gain);
+                } else if (mixer.muted.has_value() && mixer.muted.value()) {
+                    // No explicit gain but muted: force gain to 0.0
+                    node->setGain(0.0f);
+                }
+                // Solo semantics and effective mute remain coordinated by Pulse/MixerService;
+                // MixerChannelNode simply reflects the current gain/pan at load time.
+            }
+
+            return node;
+        }
 
         case NodeKind::Receive:
             return std::make_unique<ReceiveNode>(desc.nodeId, pluginId); // Using pluginId as receiveName for now
