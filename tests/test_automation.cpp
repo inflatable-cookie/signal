@@ -113,6 +113,11 @@ TEST_CASE("EngineHost - Automation application to MixerChannelNode", "[automatio
 
     host.loadAutomationSnapshot(automation);
 
+    // Mark transport as playing so the engine does work in renderBlock
+    auto& transport = host.transport();
+    transport.isPlaying = true;
+    host.commitTransportUpdate();
+
     // Create render context and audio bus
     EngineRenderContext ctx;
     ctx.playheadSamples = 0;
@@ -168,6 +173,11 @@ TEST_CASE("EngineHost - Automation application to SendNode", "[automation]") {
     automation.events.push_back(event);
 
     host.loadAutomationSnapshot(automation);
+
+    // Mark transport as playing so the engine does work in renderBlock
+    auto& transport = host.transport();
+    transport.isPlaying = true;
+    host.commitTransportUpdate();
 
     // Create render context and audio bus
     EngineRenderContext ctx;
@@ -235,6 +245,11 @@ TEST_CASE("EngineHost - Automation block-time step interpolation", "[automation]
 
     host.loadAutomationSnapshot(automation);
 
+    // Mark transport as playing so the engine does work in renderBlock
+    auto& transport = host.transport();
+    transport.isPlaying = true;
+    host.commitTransportUpdate();
+
     EngineRenderContext ctx;
     ctx.sampleRate = 44100.0;
     ctx.blockSize = 512;
@@ -262,4 +277,3 @@ TEST_CASE("EngineHost - Automation block-time step interpolation", "[automation]
 
     REQUIRE(mixer->getGain() == 1.0f);
 }
-

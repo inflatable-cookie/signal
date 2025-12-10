@@ -214,6 +214,13 @@ const RecordingSession& EngineHost::recordingSession() const {
 void EngineHost::loadAutomationSnapshot(const AutomationData& snapshot) {
     // Delegate to AutomationService (consolidated automation system)
     _automationService->loadSnapshot(snapshot);
+
+    // Maintain legacy AutomationData snapshot for diagnostic/testing callers
+    // This mirrors the transport snapshot pattern used for TransportState.
+    auto newSnapshot = std::make_shared<AutomationData>(snapshot);
+    _previousAutomation = _automationData;
+    _automationData = newSnapshot;
+    _activeAutomation.store(_automationData.get(), std::memory_order_release);
 }
 
 double EngineHost::getCpuLoad() const {
@@ -522,14 +529,24 @@ void EngineHost::renderBlock(
         if (node->getKind() == NodeKind::MixerChannel) {
             auto* mixerNode = dynamic_cast<MixerChannelNode*>(node);
             if (mixerNode) {
-                // Get track/channel ID from node (could be trackId or nodeId)
-                std::string channelId = node->getTrackId().empty() ? nodeId : node->getTrackId();
+                // Use node ID as automation target for mixer channels
+                const std::string& targetId = node->getId();
 
-                float gain = _automationService->getParameterValue(channelId, "gain");
-                float pan = _automationService->getParameterValue(channelId, "pan");
+                float gain = _automationService->getParameterValue(targetId, "gain");
+                float pan = _automationService->getParameterValue(targetId, "pan");
 
                 mixerNode->setGain(gain);
                 mixerNode->setPan(pan);
+            }
+        }
+
+        // Apply send level automation
+        if (node->getKind() == NodeKind::Send) {
+            auto* sendNode = dynamic_cast<SendNode*>(node);
+            if (sendNode) {
+                const std::string& targetId = node->getId();
+                float sendLevel = _automationService->getParameterValue(targetId, "send-level");
+                sendNode->setSendLevel(sendLevel);
             }
         }
 
@@ -823,5 +840,3 @@ bool EngineHost::hasWorkToDo(const EngineRenderContext& ctx) const noexcept {
     // All conditions false - truly idle, can use fast-path
     return false;
 }
-
-

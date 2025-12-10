@@ -54,7 +54,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
                     std::ostringstream msg;
                     msg << "Missing audio channel metadata for node " << desc.nodeId
                         << " (kind: " << nodeKindToString(desc.kind) << ") - defaulting to stereo";
-                    LOG_WARN({"GraphEngine", "Snapshot", "Channels"}, msg.str());
+                    LOG_DEBUG({"GraphEngine", "Snapshot", "Channels"}, msg.str());
                 }
             }
         }
@@ -871,8 +871,14 @@ void GraphEngine::processGraph(EngineRenderContext& ctx) {
     for (GraphNode* node : _executionOrder) {
         if (!node) continue;
 
-        // Clear output buffers (will be filled by processing)
-        // Exception: Source/input nodes have outputs populated by Source/Input Pass, so don't clear them
+        // Clear input buffers at the start of the block; they will be
+        // repopulated via routing from upstream nodes.
+        node->io.audioIn.clear();
+        node->io.midiIn.clear();
+
+        // Clear output buffers (will be filled by processing).
+        // Exception: source/input nodes have outputs populated by
+        // Source/Input Pass, so don't clear them here.
         NodeKind kind = node->getKind();
         if (
             kind != NodeKind::AudioLane &&
@@ -961,6 +967,10 @@ void GraphEngine::runSourceInputPass(
                     if (audioLane) {
                         audioLane->setStreamId(binding.streamId);
 
+                        // Clear lane output for this block; it will be repopulated
+                        // from any active audio segments (or remain silent if none).
+                        audioLane->io.audioOut.clear();
+
                         // Get active audio segments for this stream
                         auto segments = scheduler->getActiveAudioSegments(binding.streamId, blockStartSamples);
 
@@ -1014,5 +1024,3 @@ void GraphEngine::runSourceInputPass(
         }
     }
 }
-
-

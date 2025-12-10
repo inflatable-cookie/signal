@@ -19,7 +19,6 @@
 
 TEST_CASE("Playback Path - Test Tone (440Hz) Offline Render", "[playback][offline][tone]") {
     EngineHost host;
-    host.prepareEngine(44100, 512);
 
     // Build synthetic graph snapshot
     GraphSnapshot snapshot;
@@ -55,6 +54,9 @@ TEST_CASE("Playback Path - Test Tone (440Hz) Offline Render", "[playback][offlin
     snapshot.connections.push_back(nodeConn);
 
     host.loadGraphSnapshot(snapshot);
+
+    // Prepare graph and asset sources after the snapshot is loaded
+    host.prepareEngine(44100, 512);
 
     // Build minimal playback schedule
     std::vector<StreamDescriptor> streams;
@@ -157,7 +159,6 @@ TEST_CASE("Playback Path - Test Tone (440Hz) Offline Render", "[playback][offlin
 
 TEST_CASE("Playback Path - Fake File Asset Offline Render", "[playback][offline][file]") {
     EngineHost host;
-    host.prepareEngine(44100, 512);
 
     // Build synthetic graph snapshot (same as test A)
     GraphSnapshot snapshot;
@@ -189,6 +190,9 @@ TEST_CASE("Playback Path - Fake File Asset Offline Render", "[playback][offline]
     snapshot.connections.push_back(nodeConn);
 
     host.loadGraphSnapshot(snapshot);
+
+    // Prepare graph and asset sources after the snapshot is loaded
+    host.prepareEngine(44100, 512);
 
     // Build playback schedule with a different test tone asset
     // Note: In a real scenario, this would be a file asset, but for this test
@@ -272,4 +276,3 @@ TEST_CASE("Playback Path - Fake File Asset Offline Render", "[playback][offline]
     REQUIRE(rmsOutput > 0.001f); // RMS should be non-zero
     REQUIRE(rmsOutput < 0.5f);   // RMS should be reasonable
 }
-

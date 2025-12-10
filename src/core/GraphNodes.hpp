@@ -120,9 +120,6 @@ public:
             return;
         }
 
-        // Clear output buffer (will be filled with audio segments)
-        io.audioOut.clear();
-
         // Calculate intersection of segment with current block
         uint64_t blockEndSamples = blockStartSamples + numFrames;
         uint64_t segmentStart = std::max(segment->startSamples, blockStartSamples);
@@ -812,4 +809,3 @@ public:
 private:
     std::string _portId;
 };
-

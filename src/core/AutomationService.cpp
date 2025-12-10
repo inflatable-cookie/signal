@@ -277,16 +277,19 @@ void AutomationService::updateCurrentValues(uint64_t samplePosition) {
 }
 
 void AutomationService::beginBlock(uint64_t blockStartSamples, int blockSize, double sampleRate) {
-    // Real-time safe: no allocations, pre-compute all parameter values for the block
-    // Use double-buffer for lock-free reads from audio thread
+    // NOTE: Currently acquires _mutex and writes into the snapshot map.
+    // This is not strictly real-time safe and is used as a pragmatic
+    // block-time evaluation step from the audio thread. Future work
+    // should move curve evaluation to a lock-free, precomputed path
+    // on the control thread, keeping only lock-free reads here.
 
     BlockSnapshot* snapshot = _useSnapshotA ? &_snapshotA : &_snapshotB;
     snapshot->values.clear();
     snapshot->blockStartSamples = blockStartSamples;
     snapshot->blockSize = blockSize;
 
-    // Evaluate all curves at block start position
-    // Note: For per-sample automation, we'd evaluate at each sample, but for now we evaluate once per block
+    // Evaluate all curves at block start position.
+    // Note: For per-sample automation, we'd evaluate at each sample, but for now we evaluate once per block.
     std::lock_guard<std::mutex> lock(_mutex);
 
     for (auto& pair : _curves) {
@@ -405,4 +408,3 @@ void AutomationService::loadSnapshot(const AutomationData& snapshot) {
 void AutomationService::setTransportPosition(uint64_t positionSamples) {
     _transportPositionSamples.store(positionSamples, std::memory_order_release);
 }
-

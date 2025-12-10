@@ -10,7 +10,7 @@ StreamScheduler::StreamScheduler()
     _emptySchedule = std::make_shared<ScheduleData>(44100.0, 120.0);
     _activeSchedule.store(_emptySchedule.get(), std::memory_order_release);
 
-    LOG_INFO({"StreamScheduler"}, "Initialised");
+    LOG_DEBUG({"StreamScheduler"}, "Initialised");
 }
 
 StreamScheduler::~StreamScheduler() {
@@ -45,7 +45,7 @@ void StreamScheduler::setSchedule(const ScheduleData& schedule) {
     msg << "Set schedule: " << schedule.streams.size() << " streams, "
         << schedule.audioSegments.size() << " audio segments, "
         << schedule.midiEvents.size() << " MIDI events";
-    LOG_INFO({"StreamScheduler"}, msg.str());
+    LOG_DEBUG({"StreamScheduler"}, msg.str());
 }
 
 void StreamScheduler::clearSchedule() {
@@ -58,13 +58,17 @@ void StreamScheduler::clearSchedule() {
     // Clear current schedule (will be recreated on next setSchedule)
     _currentSchedule.reset();
 
-    LOG_INFO({"StreamScheduler"}, "Cleared schedule");
+    LOG_DEBUG({"StreamScheduler"}, "Cleared schedule");
 }
 
 std::vector<const AudioSegmentCompiled*> StreamScheduler::getActiveAudioSegments(
     const std::string& streamId,
     uint64_t samplePosition
 ) const {
+    // NOTE: This helper is called from the audio thread via GraphEngine.
+    // It allocates a small std::vector and iterates lookup maps; future
+    // real‑time work should provide a lock‑free, allocation‑free path
+    // (e.g. caller‑owned scratch buffers or cursor iteration).
     std::vector<const AudioSegmentCompiled*> active;
 
     // Read atomic pointer once (lock-free)
@@ -96,6 +100,9 @@ std::vector<const MidiEventCompiled*> StreamScheduler::getMidiEventsInRange(
     uint64_t startSample,
     uint64_t endSample
 ) const {
+    // NOTE: As above, this is currently used from the audio thread and
+    // relies on standard containers. It is acceptable at current scales
+    // but should be revisited for strict real‑time guarantees.
     std::vector<const MidiEventCompiled*> events;
 
     // Read atomic pointer once (lock-free)
@@ -174,4 +181,3 @@ bool StreamScheduler::hasActiveStreams(uint64_t samplePosition) const noexcept {
 
     return false;
 }
-

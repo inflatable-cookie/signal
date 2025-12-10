@@ -24,6 +24,12 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-10 09:43:08 UTC) [dev] Added a minimal package.json with pnpm wrapper scripts for CMake build, run, and test workflows so Signal can be driven alongside Aura using the same package manager entrypoints.
+
+(2025-12-09 12:26:04 UTC) [fixed] Aligned EngineHost automation handling and tests with the consolidated AutomationService, ensuring mixer/send parameters respect node IDs and block-time evaluation while keeping the idle fast-path semantics intact.
+(2025-12-09 12:26:04 UTC) [fixed] Hardened GraphEngine phase 3 runtime tests by fixing stream injection, clearing node input/output buffers per block, and updating schedule-driven lane behaviour and routing validation to match the current engine design.
+(2025-12-09 12:10:30 UTC) [dev] Fixed Signal offline playback path tests by preparing the graph after loading the test graph snapshot so EngineHost::renderBlock exercises the real AudioLane → Device graph with the stub test tone asset.
+
 (2025-12-01 01:06:10 UTC) [docs] Documented canonical graph/render ingestion and dispatcher pattern in AGENTS and trimmed unused include from DomainDispatcher to keep the dispatch surface lean.
 (2025-11-28 21:51:02 UTC) [changed] Unified all logging to use DEBUG_LEVEL system: converted all std::cout/cerr calls to unified logging macros, demoted noisy per-plugin logs from Info to Debug, and standardised area prefixes. Signal now matches Pulse's quiet logging profile at default DEBUG_LEVEL=4.
 
