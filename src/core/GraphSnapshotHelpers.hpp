@@ -24,7 +24,7 @@ inline std::optional<NodeKind> nodeKindFromString(const std::string& str) {
     if (str == "instrument") return NodeKind::Instrument;
     if (str == "audio-fx") return NodeKind::AudioFx;
     if (str == "send") return NodeKind::Send;
-    if (str == "mixer-channel") return NodeKind::MixerChannel;
+    if (str == "fader") return NodeKind::Fader;
     if (str == "receive") return NodeKind::Receive;
     if (str == "bus") return NodeKind::Receive; // Backward compatibility - TODO: remove once Pulse switches
     if (str == "device") return NodeKind::Device;
@@ -41,10 +41,9 @@ inline std::string nodeKindToString(NodeKind kind) {
         case NodeKind::Instrument: return "instrument";
         case NodeKind::AudioFx: return "audio-fx";
         case NodeKind::Send: return "send";
-        case NodeKind::MixerChannel: return "mixer-channel";
+        case NodeKind::Fader: return "fader";
         case NodeKind::Receive: return "receive";
         case NodeKind::Device: return "device";
         default: return "unknown";
     }
 }
-

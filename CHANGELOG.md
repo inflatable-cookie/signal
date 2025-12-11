@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-11 19:00:00 UTC) [changed] Aligned Signal graph node kinds and mixer handling with the Fader-based GraphSnapshot contract by treating `kind: "fader"` and `fader-*` IDs as the primary mixer nodes instead of the legacy `mixer-channel` naming.
+
 (2025-12-10 14:15:00 UTC) [dev] Tightened the existing send/receive runtime test to assert non-zero device output for the 440 Hz test tone and added a simple subgroup routing test that validates MixerChannel → bus → Device topology for Phase 7 routing scenarios.
 
 (2025-12-10 14:03:00 UTC) [changed] Wired MixerChannelNode initial gain/pan/mute state to the new mixer metadata in GraphSnapshot so Signal’s runtime graph starts in sync with Pulse’s Channel model before mixer.updateChannel and automation updates arrive.

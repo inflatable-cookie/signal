@@ -77,26 +77,26 @@ TEST_CASE("EngineHost - Load automation snapshot", "[automation]") {
     const AutomationData* loaded = host.getAutomationSnapshot();
     REQUIRE(loaded != nullptr);
     REQUIRE(loaded->events.size() == 1);
-    REQUIRE(loaded->events[0].nodeId == "mixer-1");
+    REQUIRE(loaded->events[0].nodeId == "fader-1");
     REQUIRE(loaded->events[0].paramId == "gain");
     REQUIRE(loaded->events[0].valueNorm == 0.5f);
 }
 
-TEST_CASE("EngineHost - Automation application to MixerChannelNode", "[automation]") {
+TEST_CASE("EngineHost - Automation application to FaderNode", "[automation]") {
     EngineHost host;
     host.prepareEngine(44100, 512);
 
-    // Create a simple graph with a MixerChannelNode
+    // Create a simple graph with a FaderNode
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
-    NodeDesc mixerNode;
-    mixerNode.nodeId = "mixer-1";
-    mixerNode.kind = NodeKind::MixerChannel;
-    mixerNode.trackId = "track-1";
-    snapshot.nodes.push_back(mixerNode);
+    NodeDesc faderNodeDesc;
+    faderNodeDesc.nodeId = "fader-1";
+    faderNodeDesc.kind = NodeKind::Fader;
+    faderNodeDesc.trackId = "track-1";
+    snapshot.nodes.push_back(faderNodeDesc);
 
-    // Load graph snapshot (needs PluginHost for plugin nodes, but MixerChannelNode doesn't need it)
+    // Load graph snapshot (needs PluginHost for plugin nodes, but FaderNode doesn't need it)
     host.loadGraphSnapshot(snapshot);
 
     // Load automation snapshot with gain automation
@@ -104,7 +104,7 @@ TEST_CASE("EngineHost - Automation application to MixerChannelNode", "[automatio
     automation.tempoMap.defaultTempo = 120.0;
 
     AutomationEventCompiled event;
-    event.nodeId = "mixer-1";
+    event.nodeId = "fader-1";
     event.paramId = "gain";
     event.timeSamples = 0;
     event.valueNorm = 0.75f; // 75% gain
@@ -134,13 +134,13 @@ TEST_CASE("EngineHost - Automation application to MixerChannelNode", "[automatio
     host.renderBlock(ctx, input, output);
 
     // Verify mixer node received automation
-    GraphNode* node = host.graphEngine().findNode("mixer-1");
+    GraphNode* node = host.graphEngine().findNode("fader-1");
     REQUIRE(node != nullptr);
-    REQUIRE(node->getKind() == NodeKind::MixerChannel);
+    REQUIRE(node->getKind() == NodeKind::Fader);
 
-    auto* mixer = dynamic_cast<MixerChannelNode*>(node);
-    REQUIRE(mixer != nullptr);
-    REQUIRE(mixer->getGain() == 0.75f); // Automation should have been applied
+    auto* faderNode = dynamic_cast<FaderNode*>(node);
+    REQUIRE(faderNode != nullptr);
+    REQUIRE(faderNode->getGain() == 0.75f); // Automation should have been applied
 }
 
 TEST_CASE("EngineHost - Automation application to SendNode", "[automation]") {
@@ -157,7 +157,7 @@ TEST_CASE("EngineHost - Automation application to SendNode", "[automation]") {
     sendNode.trackId = "track-1";
     snapshot.nodes.push_back(sendNode);
 
-    // Load graph snapshot (needs PluginHost for plugin nodes, but MixerChannelNode doesn't need it)
+    // Load graph snapshot (needs PluginHost for plugin nodes, but FaderNode doesn't need it)
     host.loadGraphSnapshot(snapshot);
 
     // Load automation snapshot with send level automation
@@ -208,17 +208,17 @@ TEST_CASE("EngineHost - Automation block-time step interpolation", "[automation]
     EngineHost host;
     host.prepareEngine(44100, 512);
 
-    // Create a simple graph with a MixerChannelNode
+    // Create a simple graph with a FaderNode
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
-    NodeDesc mixerNode;
-    mixerNode.nodeId = "mixer-1";
-    mixerNode.kind = NodeKind::MixerChannel;
-    mixerNode.trackId = "track-1";
-    snapshot.nodes.push_back(mixerNode);
+    NodeDesc faderNodeDesc;
+    faderNodeDesc.nodeId = "fader-1";
+    faderNodeDesc.kind = NodeKind::Fader;
+    faderNodeDesc.trackId = "track-1";
+    snapshot.nodes.push_back(faderNodeDesc);
 
-    // Load graph snapshot (needs PluginHost for plugin nodes, but MixerChannelNode doesn't need it)
+    // Load graph snapshot (needs PluginHost for plugin nodes, but FaderNode doesn't need it)
     host.loadGraphSnapshot(snapshot);
 
     // Load automation with events at different times
@@ -227,7 +227,7 @@ TEST_CASE("EngineHost - Automation block-time step interpolation", "[automation]
 
     // Event at time 0: gain = 0.5
     AutomationEventCompiled event1;
-    event1.nodeId = "mixer-1";
+    event1.nodeId = "fader-1";
     event1.paramId = "gain";
     event1.timeSamples = 0;
     event1.valueNorm = 0.5f;
@@ -236,7 +236,7 @@ TEST_CASE("EngineHost - Automation block-time step interpolation", "[automation]
 
     // Event at time 2048 (4 blocks later at 512 samples/block): gain = 1.0
     AutomationEventCompiled event2;
-    event2.nodeId = "mixer-1";
+    event2.nodeId = "fader-1";
     event2.paramId = "gain";
     event2.timeSamples = 2048;
     event2.valueNorm = 1.0f;
@@ -265,15 +265,15 @@ TEST_CASE("EngineHost - Automation block-time step interpolation", "[automation]
     host.setPlayheadSamples(0);
     host.renderBlock(ctx, input, output);
 
-    GraphNode* node = host.graphEngine().findNode("mixer-1");
-    auto* mixer = dynamic_cast<MixerChannelNode*>(node);
-    REQUIRE(mixer != nullptr);
-    REQUIRE(mixer->getGain() == 0.5f);
+    GraphNode* node = host.graphEngine().findNode("fader-1");
+    auto* faderNode = dynamic_cast<FaderNode*>(node);
+    REQUIRE(faderNode != nullptr);
+    REQUIRE(faderNode->getGain() == 0.5f);
 
     // Render block at playhead = 2048 (should use event2 value = 1.0)
     ctx.playheadSamples = 2048;
     host.setPlayheadSamples(2048);
     host.renderBlock(ctx, input, output);
 
-    REQUIRE(mixer->getGain() == 1.0f);
+    REQUIRE(faderNode->getGain() == 1.0f);
 }

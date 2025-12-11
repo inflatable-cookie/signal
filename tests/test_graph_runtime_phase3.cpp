@@ -21,7 +21,7 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     GraphEngine engine;
     StreamScheduler scheduler;
 
-    // Create graph: audio-lane -> MixerChannelNode -> DeviceNode
+    // Create graph: audio-lane -> FaderNode -> DeviceNode
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
@@ -32,11 +32,11 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     laneNode.laneId = "lane-1";
     snapshot.nodes.push_back(laneNode);
 
-    NodeDesc mixerNode;
-    mixerNode.nodeId = "mixer-1";
-    mixerNode.kind = NodeKind::MixerChannel;
-    mixerNode.trackId = "track-1";
-    snapshot.nodes.push_back(mixerNode);
+    NodeDesc faderNodeDesc;
+    faderNodeDesc.nodeId = "fader-1";
+    faderNodeDesc.kind = NodeKind::Fader;
+    faderNodeDesc.trackId = "track-1";
+    snapshot.nodes.push_back(faderNodeDesc);
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
@@ -46,11 +46,11 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     // Connections
     ConnectionDesc conn1;
     conn1.fromNodeId = "audio-lane-1";
-    conn1.toNodeId = "mixer-1";
+    conn1.toNodeId = "fader-1";
     snapshot.connections.push_back(conn1);
 
     ConnectionDesc conn2;
-    conn2.fromNodeId = "mixer-1";
+    conn2.fromNodeId = "fader-1";
     conn2.toNodeId = "device";
     snapshot.connections.push_back(conn2);
 
@@ -249,8 +249,8 @@ TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-s
 TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     GraphEngine engine;
 
-    // Create graph: audio-lane -> MixerChannelNode -> DeviceNode (dry)
-    //                MixerChannelNode -> SendNode -> ReceiveNode -> DeviceNode (wet)
+    // Create graph: audio-lane -> FaderNode -> DeviceNode (dry)
+    //                FaderNode -> SendNode -> ReceiveNode -> DeviceNode (wet)
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
@@ -259,10 +259,10 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     laneNode.kind = NodeKind::AudioLane;
     snapshot.nodes.push_back(laneNode);
 
-    NodeDesc mixerNode;
-    mixerNode.nodeId = "mixer-1";
-    mixerNode.kind = NodeKind::MixerChannel;
-    snapshot.nodes.push_back(mixerNode);
+    NodeDesc faderNodeDesc;
+    faderNodeDesc.nodeId = "fader-1";
+    faderNodeDesc.kind = NodeKind::Fader;
+    snapshot.nodes.push_back(faderNodeDesc);
 
     NodeDesc sendNode;
     sendNode.nodeId = "send-1";
@@ -283,17 +283,17 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     // Connections: lane -> mixer -> device (dry)
     ConnectionDesc conn1;
     conn1.fromNodeId = "audio-lane-1";
-    conn1.toNodeId = "mixer-1";
+    conn1.toNodeId = "fader-1";
     snapshot.connections.push_back(conn1);
 
     ConnectionDesc conn2;
-    conn2.fromNodeId = "mixer-1";
+    conn2.fromNodeId = "fader-1";
     conn2.toNodeId = "device";
     snapshot.connections.push_back(conn2);
 
     // Connections: mixer -> send -> receive -> device (wet)
     ConnectionDesc conn3;
-    conn3.fromNodeId = "mixer-1";
+    conn3.fromNodeId = "fader-1";
     conn3.toNodeId = "send-1";
     snapshot.connections.push_back(conn3);
 
@@ -380,33 +380,33 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     REQUIRE(hasOutput);
 }
 
-TEST_CASE("Phase 3 - Gain/Pan test", "[graph][phase3][mixer]") {
-    // Test mixer node directly (simpler and more reliable)
-    MixerChannelNode mixer("mixer-1");
-    mixer.prepare(44100, 512);
+TEST_CASE("Phase 3 - Gain/Pan test", "[graph][phase3][fader]") {
+    // Test fader node directly (simpler and more reliable)
+    FaderNode fader("fader-1");
+    fader.prepare(44100, 512);
 
     // Set gain to 0.5 and pan to -1.0 (full left)
-    mixer.setGain(0.5f);
-    mixer.setPan(-1.0f);
+    fader.setGain(0.5f);
+    fader.setPan(-1.0f);
 
     // Set input audio (stereo, unity)
-    mixer.io.audioIn.setSample(0, 0, 1.0f); // Left channel
-    mixer.io.audioIn.setSample(0, 1, 1.0f); // Right channel
+    fader.io.audioIn.setSample(0, 0, 1.0f); // Left channel
+    fader.io.audioIn.setSample(0, 1, 1.0f); // Right channel
 
-    // Process mixer
+    // Process fader
     NodeProcessContext npc;
     npc.sampleRate = 44100;
     npc.blockSize = 512;
     npc.blockStartSample = 0;
-    mixer.process(npc);
+    fader.process(npc);
 
     // Verify gain and pan applied
     // Pan -1.0 (full left): leftGain = (1 - (-1)) * 0.5 = 2.0 * 0.5 = 1.0, rightGain = (1 + (-1)) * 0.5 = 0.0
     // Input is 1.0 on both channels
     // Left output: 1.0 * 1.0 = 1.0
     // Right output: 1.0 * 0.0 = 0.0
-    REQUIRE(std::abs(mixer.io.audioOut.getSample(0, 0) - 1.0f) < 0.01f); // Left should be 1.0
-    REQUIRE(std::abs(mixer.io.audioOut.getSample(0, 1)) < 0.01f); // Right should be 0.0
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 0) - 1.0f) < 0.01f); // Left should be 1.0
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 1)) < 0.01f); // Right should be 0.0
 }
 
 TEST_CASE("Phase 3 - NodeProcessContext test", "[graph][phase3][context]") {

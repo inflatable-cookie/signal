@@ -59,7 +59,7 @@ struct NodeDesc {
     /// Optional tail hint in samples (for future tail-aware transport)
     /// Signal will compute actual tail from plugin/node capabilities, but this can serve as a hint
     std::optional<uint32_t> tailSamples;
-    /// Optional mixer configuration for channel-related nodes (e.g. MixerChannel)
+    /// Optional mixer configuration for channel-related nodes (e.g. Fader)
     std::optional<NodeMixerConfigDesc> mixer;
     // Input node fields (Phase 7)
     std::optional<std::string> deviceId;      // For AudioInputNode

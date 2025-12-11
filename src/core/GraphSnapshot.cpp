@@ -149,7 +149,7 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.portId = nodeJson["portId"].get<std::string>();
         }
 
-        // Parse mixer configuration (optional, for mixer-channel nodes)
+        // Parse mixer configuration (optional, for fader nodes)
         if (nodeJson.contains("mixer") && nodeJson["mixer"].is_object()) {
             const auto& mixerJson = nodeJson["mixer"];
             NodeMixerConfigDesc mixerConfig;

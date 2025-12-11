@@ -172,7 +172,7 @@ void MixerService::finalMix(
         // Stereo: Apply gain and pan
         // Linear pan law: pan in [-1, 1] where -1 = full left, 0 = centre, +1 = full right
         // leftGain = gain * (1 - pan), rightGain = gain * (1 + pan)
-        // This matches MixerChannelNode's pan implementation
+        // This matches FaderNode's pan implementation
         float leftGain = (1.0f - pan) * gain;
         float rightGain = (1.0f + pan) * gain;
 
@@ -203,4 +203,3 @@ void MixerService::finalMix(
         }
     }
 }
-

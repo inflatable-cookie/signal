@@ -5,16 +5,16 @@
 #include "core/GraphNodes.hpp"
 #include <nlohmann/json.hpp>
 
-TEST_CASE("Phase 7 - MixerChannelNode initial state from graph snapshot", "[graph][phase7][mixer]") {
+TEST_CASE("Phase 7 - FaderNode initial state from graph snapshot", "[graph][phase7][mixer]") {
     using nlohmann::json;
 
-    // Build a minimal graph snapshot JSON with a mixer-channel node that has mixer metadata.
+    // Build a minimal graph snapshot JSON with a fader node that has mixer metadata.
     json j = {
         {"id", "test-graph"},
         {"nodes", json::array({
              json{
-                 {"nodeId", "mixer-track-1"},
-                 {"kind", "mixer-channel"},
+                 {"nodeId", "fader-track-1"},
+                 {"kind", "fader"},
                  {"trackId", "track-1"},
                  {"mixer", {
                      {"gain", 0.5f},
@@ -36,28 +36,28 @@ TEST_CASE("Phase 7 - MixerChannelNode initial state from graph snapshot", "[grap
     // Load the parsed snapshot into the graph engine.
     host.loadGraphSnapshot(snapshotOpt.value());
 
-    auto* node = host.graphEngine().findNode("mixer-track-1");
+    auto* node = host.graphEngine().findNode("fader-track-1");
     REQUIRE(node != nullptr);
-    REQUIRE(node->getKind() == NodeKind::MixerChannel);
+    REQUIRE(node->getKind() == NodeKind::Fader);
 
-    auto* mixer = dynamic_cast<MixerChannelNode*>(node);
-    REQUIRE(mixer != nullptr);
+    auto* faderNode = dynamic_cast<FaderNode*>(node);
+    REQUIRE(faderNode != nullptr);
 
-    // MixerChannelNode should reflect gain and pan from the snapshot metadata.
-    REQUIRE(mixer->getGain() == Approx(0.5f));
-    REQUIRE(mixer->getPan() == Approx(-0.25f));
+    // FaderNode should reflect gain and pan from the snapshot metadata.
+    REQUIRE(faderNode->getGain() == Approx(0.5f));
+    REQUIRE(faderNode->getPan() == Approx(-0.25f));
 }
 
-TEST_CASE("Phase 7 - MixerChannelNode respects muted flag from graph snapshot", "[graph][phase7][mixer]") {
+TEST_CASE("Phase 7 - FaderNode respects muted flag from graph snapshot", "[graph][phase7][mixer]") {
     using nlohmann::json;
 
-    // Build a minimal graph snapshot JSON with a muted mixer-channel node.
+    // Build a minimal graph snapshot JSON with a muted fader node.
     json j = {
         {"id", "test-graph"},
         {"nodes", json::array({
              json{
-                 {"nodeId", "mixer-track-2"},
-                 {"kind", "mixer-channel"},
+                 {"nodeId", "fader-track-2"},
+                 {"kind", "fader"},
                  {"trackId", "track-2"},
                  {"mixer", {
                      {"gain", 0.8f},
@@ -77,14 +77,13 @@ TEST_CASE("Phase 7 - MixerChannelNode respects muted flag from graph snapshot", 
     host.prepareEngine(44100, 512);
     host.loadGraphSnapshot(snapshotOpt.value());
 
-    auto* node = host.graphEngine().findNode("mixer-track-2");
+    auto* node = host.graphEngine().findNode("fader-track-2");
     REQUIRE(node != nullptr);
-    REQUIRE(node->getKind() == NodeKind::MixerChannel);
+    REQUIRE(node->getKind() == NodeKind::Fader);
 
-    auto* mixer = dynamic_cast<MixerChannelNode*>(node);
-    REQUIRE(mixer != nullptr);
+    auto* faderNode = dynamic_cast<FaderNode*>(node);
+    REQUIRE(faderNode != nullptr);
 
     // Muted flag should force gain to 0.0 at load time, regardless of the gain value.
-    REQUIRE(mixer->getGain() == Approx(0.0f));
+    REQUIRE(faderNode->getGain() == Approx(0.0f));
 }
-

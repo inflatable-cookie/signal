@@ -24,7 +24,7 @@ enum class NodeKind {
     Instrument,
     AudioFx,
     Send,
-    MixerChannel,
+    Fader,
     Receive,  // Receives from SendNodes (was Bus)
     Device,   // Writes to hardware device output (was Master)
     AudioInput, // Live audio input from hardware
@@ -130,4 +130,3 @@ private:
     std::string _trackId;
     std::string _laneId;
 };
-

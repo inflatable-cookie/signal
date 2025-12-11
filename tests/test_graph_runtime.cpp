@@ -773,8 +773,8 @@ TEST_CASE("GraphEngine - Latency and tail API stubs", "[graph][latency][tail]") 
     snapshot.nodes.push_back(lane);
 
     NodeDesc mixer;
-    mixer.nodeId = "mixer-1";
-    mixer.kind = NodeKind::MixerChannel;
+    mixer.nodeId = "fader-1";
+    mixer.kind = NodeKind::Fader;
     {
         NodeAudioConfigDesc audioConfig;
         audioConfig.numInputs = 2;
@@ -800,10 +800,10 @@ TEST_CASE("GraphEngine - Latency and tail API stubs", "[graph][latency][tail]") 
 
     // Verify nodes exist
     auto* laneNode = engine.findNode("lane-1");
-    auto* mixerNode = engine.findNode("mixer-1");
+    auto* faderNode = engine.findNode("fader-1");
     auto* deviceNode = engine.findNode("device-1");
     REQUIRE(laneNode != nullptr);
-    REQUIRE(mixerNode != nullptr);
+    REQUIRE(faderNode != nullptr);
     REQUIRE(deviceNode != nullptr);
 
     // Verify node-level latency/tail API (should return 0 for stub nodes)
@@ -811,9 +811,9 @@ TEST_CASE("GraphEngine - Latency and tail API stubs", "[graph][latency][tail]") 
     REQUIRE(laneNode->getTailInSamples() == 0);
     REQUIRE(laneNode->hasTailCurrently() == false);
 
-    REQUIRE(mixerNode->getLatencyInSamples() == 0);
-    REQUIRE(mixerNode->getTailInSamples() == 0);
-    REQUIRE(mixerNode->hasTailCurrently() == false);
+    REQUIRE(faderNode->getLatencyInSamples() == 0);
+    REQUIRE(faderNode->getTailInSamples() == 0);
+    REQUIRE(faderNode->hasTailCurrently() == false);
 
     REQUIRE(deviceNode->getLatencyInSamples() == 0);
     REQUIRE(deviceNode->getTailInSamples() == 0);

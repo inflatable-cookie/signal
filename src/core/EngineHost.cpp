@@ -525,18 +525,18 @@ void EngineHost::renderBlock(
 
         std::string nodeId = node->getId();
 
-        // Apply mixer channel automation (gain/pan)
-        if (node->getKind() == NodeKind::MixerChannel) {
-            auto* mixerNode = dynamic_cast<MixerChannelNode*>(node);
-            if (mixerNode) {
+        // Apply fader automation (gain/pan)
+        if (node->getKind() == NodeKind::Fader) {
+            auto* faderNode = dynamic_cast<FaderNode*>(node);
+            if (faderNode) {
                 // Use node ID as automation target for mixer channels
                 const std::string& targetId = node->getId();
 
                 float gain = _automationService->getParameterValue(targetId, "gain");
                 float pan = _automationService->getParameterValue(targetId, "pan");
 
-                mixerNode->setGain(gain);
-                mixerNode->setPan(pan);
+                faderNode->setGain(gain);
+                faderNode->setPan(pan);
             }
         }
 

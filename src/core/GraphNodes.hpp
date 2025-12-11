@@ -458,15 +458,15 @@ private:
     float _sendLevel;       // Linear gain (0.0 to 1.0+)
 };
 
-/// MixerChannelNode - final channel output into busses/device
+/// FaderNode - final channel output into busses/device
 /// Phase 3: Applies gain and panning
-class MixerChannelNode : public GraphNode {
+class FaderNode : public GraphNode {
 public:
-    MixerChannelNode(
+    FaderNode(
         const NodeId& id,
         const std::string& trackId = ""
     )
-        : GraphNode(id, NodeKind::MixerChannel, trackId)
+        : GraphNode(id, NodeKind::Fader, trackId)
         , _gainLinear(1.0f)  // Default: unity gain
         , _pan(0.0f)         // Default: center pan
     {

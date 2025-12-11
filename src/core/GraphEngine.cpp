@@ -38,7 +38,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
             desc.kind == NodeKind::AudioLane ||
             desc.kind == NodeKind::Instrument ||
             desc.kind == NodeKind::AudioFx ||
-            desc.kind == NodeKind::MixerChannel ||
+            desc.kind == NodeKind::Fader ||
             desc.kind == NodeKind::Receive ||
             desc.kind == NodeKind::Device ||
             desc.kind == NodeKind::AudioInput
@@ -118,7 +118,7 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
             desc.kind == NodeKind::AudioLane ||
             desc.kind == NodeKind::Instrument ||
             desc.kind == NodeKind::AudioFx ||
-            desc.kind == NodeKind::MixerChannel ||
+            desc.kind == NodeKind::Fader ||
             desc.kind == NodeKind::Receive ||
             desc.kind == NodeKind::Device ||
             desc.kind == NodeKind::AudioInput
@@ -458,8 +458,8 @@ NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, Gra
             config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
             break;
 
-        case NodeKind::MixerChannel:
-            // Mixer: typically stereo output
+        case NodeKind::Fader:
+            // Fader: typically stereo output
             if (!desc.numAudioInputs.has_value()) {
                 config.numInputChannels = 2; // Default stereo
             }
@@ -539,8 +539,8 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
         case NodeKind::Send:
             return std::make_unique<SendNode>(desc.nodeId, trackId, pluginId); // Using pluginId as busId for now
 
-        case NodeKind::MixerChannel: {
-            auto node = std::make_unique<MixerChannelNode>(desc.nodeId, trackId);
+        case NodeKind::Fader: {
+            auto node = std::make_unique<FaderNode>(desc.nodeId, trackId);
 
             // Initialise mixer state from snapshot metadata, if present.
             if (desc.mixer.has_value()) {
@@ -563,7 +563,7 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
                     node->setGain(0.0f);
                 }
                 // Solo semantics and effective mute remain coordinated by Pulse/MixerService;
-                // MixerChannelNode simply reflects the current gain/pan at load time.
+                // FaderNode simply reflects the current gain/pan at load time.
             }
 
             return node;
@@ -831,13 +831,13 @@ void GraphEngine::validateRouting() {
             }
         }
 
-        // Rule 5: Mixer-related node validation (SendNode, ReceiveNode, MixerChannelNode)
+        // Rule 5: Mixer-related node validation (SendNode, ReceiveNode, FaderNode)
         // These nodes participate in mixer routing and must have compatible channel counts
         bool isMixerNode = (
             fromNode->getKind() == NodeKind::Send ||
             toNode->getKind() == NodeKind::Receive ||
-            fromNode->getKind() == NodeKind::MixerChannel ||
-            toNode->getKind() == NodeKind::MixerChannel
+            fromNode->getKind() == NodeKind::Fader ||
+            toNode->getKind() == NodeKind::Fader
         );
 
         if (isMixerNode && compat.isCompatible) {

@@ -56,28 +56,28 @@ void MixerDomain::handleUpdateChannel(const nlohmann::json& payload) {
             effectiveMuted
         );
 
-        // Apply gain to MixerChannelNode in graph (if trackId is provided)
+        // Apply gain to FaderNode in graph (if trackId is provided)
         if (payload.contains("trackId") && payload["trackId"].is_string()) {
             std::string trackId = payload["trackId"];
-            // MixerChannelNode ID format: "mixer-{trackId}"
-            std::string nodeId = "mixer-" + trackId;
+            // FaderNode ID format: "fader-{trackId}"
+            std::string nodeId = "fader-" + trackId;
             GraphNode* node = _engineHost->graphEngine().findNode(nodeId);
-            if (node && node->getKind() == NodeKind::MixerChannel) {
-                auto* mixerNode = dynamic_cast<MixerChannelNode*>(node);
-                if (mixerNode) {
+            if (node && node->getKind() == NodeKind::Fader) {
+                auto* faderNode = dynamic_cast<FaderNode*>(node);
+                if (faderNode) {
                     // Apply effective gain (0.0 if muted, otherwise use gain value)
                     float effectiveGain = effectiveMuted ? 0.0f : gain;
-                    mixerNode->setGain(effectiveGain);
-                    mixerNode->setPan(pan);
+                    faderNode->setGain(effectiveGain);
+                    faderNode->setPan(pan);
                     std::ostringstream msg;
                     msg << "Applied gain=" << effectiveGain
                         << " pan=" << pan
-                        << " to MixerChannelNode " << nodeId;
+                        << " to FaderNode " << nodeId;
                     LOG_DEBUG({"MixerDomain"}, msg.str());
                 }
             } else {
                 std::ostringstream msg;
-                msg << "Warning: MixerChannelNode not found for trackId=" << trackId
+                msg << "Warning: FaderNode not found for trackId=" << trackId
                     << " (nodeId=" << nodeId << ")";
                 LOG_WARN({"MixerDomain"}, msg.str());
             }
@@ -95,4 +95,3 @@ void MixerDomain::handleUpdateChannel(const nlohmann::json& payload) {
         LOG_ERROR({"MixerDomain"}, std::string("Failed to parse updateChannel payload: ") + e.what());
     }
 }
-
