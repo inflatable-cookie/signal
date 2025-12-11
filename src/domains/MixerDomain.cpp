@@ -56,33 +56,6 @@ void MixerDomain::handleUpdateChannel(const nlohmann::json& payload) {
             effectiveMuted
         );
 
-        // Apply gain to FaderNode in graph (if trackId is provided)
-        if (payload.contains("trackId") && payload["trackId"].is_string()) {
-            std::string trackId = payload["trackId"];
-            // FaderNode ID format: "fader-{trackId}"
-            std::string nodeId = "fader-" + trackId;
-            GraphNode* node = _engineHost->graphEngine().findNode(nodeId);
-            if (node && node->getKind() == NodeKind::Fader) {
-                auto* faderNode = dynamic_cast<FaderNode*>(node);
-                if (faderNode) {
-                    // Apply effective gain (0.0 if muted, otherwise use gain value)
-                    float effectiveGain = effectiveMuted ? 0.0f : gain;
-                    faderNode->setGain(effectiveGain);
-                    faderNode->setPan(pan);
-                    std::ostringstream msg;
-                    msg << "Applied gain=" << effectiveGain
-                        << " pan=" << pan
-                        << " to FaderNode " << nodeId;
-                    LOG_DEBUG({"MixerDomain"}, msg.str());
-                }
-            } else {
-                std::ostringstream msg;
-                msg << "Warning: FaderNode not found for trackId=" << trackId
-                    << " (nodeId=" << nodeId << ")";
-                LOG_WARN({"MixerDomain"}, msg.str());
-            }
-        }
-
         std::ostringstream msg;
         msg << "Updated channel " << channelId
             << " gain=" << gain

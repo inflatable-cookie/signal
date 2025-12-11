@@ -1,6 +1,6 @@
 #pragma once
 
-/// MixerService - Manages per-channel mixer state (gain, mute, solo)
+/// MixerService - Manages per-channel mixer state (gain, pan, mute, solo)
 ///
 /// Thread: Control thread (main thread)
 /// Ownership: Owned by EngineHost
@@ -8,6 +8,13 @@
 ///   - Updated by IPC thread (MixerDomain handlers)
 ///   - Read by audio thread via lock-free atomic operations
 ///   - Provides snapshot API for IPC updates
+///
+/// Phase 9 note:
+///   - Per-channel gain/pan live on Fader nodes and are driven via the Node
+///     domain (`node.setParameter`) and automation.
+///   - MixerService currently applies a final gain/pan/mute stage for a
+///     single `"master"` channel in `finalMix` as a temporary output path,
+///     not a permanent master-bus concept.
 ///
 /// Architecture note: Channels in Signal are processing paths (not tracks).
 /// A channel represents a processing path with nodes (lane → fx → mixer → output).
@@ -100,4 +107,3 @@ private:
     mutable std::shared_mutex _mutex; // Protects _channels map structure (allows concurrent reads)
     std::unordered_map<std::string, std::unique_ptr<ChannelMixerState>> _channels;
 };
-

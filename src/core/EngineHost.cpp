@@ -689,7 +689,11 @@ void EngineHost::renderBlock(
     }
 
     if (deviceNode) {
-        // Step 4: Apply final mix (gain/mute/solo/pan) from device node to output bus
+        // Step 4: Apply final mix from device node to output bus.
+        // Note: The `"master"` mixer channel here represents the current
+        // output path and is a temporary implementation detail, not a
+        // first-class "master bus" concept. Phase 9+ will replace this with
+        // an explicit output Channel/Fader node in the graph.
         _mixerService->finalMix(deviceNode->io.audioOut, output, "master");
     } else {
         // No device node - output will be silence

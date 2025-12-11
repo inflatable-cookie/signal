@@ -24,6 +24,8 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-11 22:22:28 UTC) [changed] Stopped MixerDomain from writing FaderNode gain and pan so Fader parameters are owned exclusively by the node.setParameter IPC path while MixerService continues to manage consolidated mixer state.
+
 (2025-12-11 19:00:00 UTC) [changed] Aligned Signal graph node kinds and mixer handling with the Fader-based GraphSnapshot contract by treating `kind: "fader"` and `fader-*` IDs as the primary mixer nodes instead of the legacy `mixer-channel` naming.
 
 (2025-12-10 14:15:00 UTC) [dev] Tightened the existing send/receive runtime test to assert non-zero device output for the 440 Hz test tone and added a simple subgroup routing test that validates MixerChannel → bus → Device topology for Phase 7 routing scenarios.

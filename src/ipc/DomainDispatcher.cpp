@@ -13,6 +13,7 @@
 #include "domains/TransportDomain.hpp"
 #include "domains/HardwareDomain.hpp"
 #include "domains/MixerDomain.hpp"
+#include "domains/NodeDomain.hpp"
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"
 #include "domains/MeteringDomain.hpp"
@@ -28,6 +29,7 @@ DomainDispatcher::DomainDispatcher(EngineHost* engineHost, MeteringService* mete
     domains_.emplace("transport", std::make_unique<TransportDomain>(engineHost_));
     domains_.emplace("hardware", std::make_unique<HardwareDomain>(engineHost_));
     domains_.emplace("mixer", std::make_unique<MixerDomain>(engineHost_));
+    domains_.emplace("node", std::make_unique<NodeDomain>(engineHost_));
     domains_.emplace("automation", std::make_unique<AutomationDomain>(engineHost_));
     domains_.emplace("assets", std::make_unique<AssetsDomain>(engineHost_));
     domains_.emplace("metering", std::make_unique<MeteringDomain>(meteringService, engineHost_));
