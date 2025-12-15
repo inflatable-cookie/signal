@@ -542,27 +542,27 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
         case NodeKind::Fader: {
             auto node = std::make_unique<FaderNode>(desc.nodeId, trackId);
 
-            // Initialise mixer state from snapshot metadata, if present.
-            if (desc.mixer.has_value()) {
-                const auto& mixer = desc.mixer.value();
+            // Initialise channel mix state from snapshot metadata, if present.
+            if (desc.channelMix.has_value()) {
+                const auto& channelMix = desc.channelMix.value();
 
                 // Apply pan first so any gain adjustments (e.g. mute) operate on final gain.
-                if (mixer.pan.has_value()) {
-                    node->setPan(mixer.pan.value());
+                if (channelMix.pan.has_value()) {
+                    node->setPan(channelMix.pan.value());
                 }
 
                 // Apply gain, respecting mute flag if present.
-                if (mixer.gain.has_value()) {
-                    float gain = mixer.gain.value();
-                    if (mixer.muted.has_value() && mixer.muted.value()) {
+                if (channelMix.gain.has_value()) {
+                    float gain = channelMix.gain.value();
+                    if (channelMix.muted.has_value() && channelMix.muted.value()) {
                         gain = 0.0f;
                     }
                     node->setGain(gain);
-                } else if (mixer.muted.has_value() && mixer.muted.value()) {
+                } else if (channelMix.muted.has_value() && channelMix.muted.value()) {
                     // No explicit gain but muted: force gain to 0.0
                     node->setGain(0.0f);
                 }
-                // Solo semantics and effective mute remain coordinated by Pulse/MixerService;
+                // Solo semantics and effective mute remain coordinated by Pulse/ChannelMixService;
                 // FaderNode simply reflects the current gain/pan at load time.
             }
 
@@ -832,7 +832,7 @@ void GraphEngine::validateRouting() {
         }
 
         // Rule 5: Mixer-related node validation (SendNode, ReceiveNode, FaderNode)
-        // These nodes participate in mixer routing and must have compatible channel counts
+        // These nodes participate in channel-mix routing and must have compatible channel counts
         bool isMixerNode = (
             fromNode->getKind() == NodeKind::Send ||
             toNode->getKind() == NodeKind::Receive ||
@@ -841,7 +841,7 @@ void GraphEngine::validateRouting() {
         );
 
         if (isMixerNode && compat.isCompatible) {
-            // Log mixer routing compatibility at debug level
+            // Log channel-mix routing compatibility at debug level
             LOG_DEBUG({"GraphEngine", "Routing", "Mixer"},
                 std::string("Mixer routing compatible: ") + conn.fromNodeId +
                 " (" + std::to_string(compat.sourceChannels) + " ch) -> " +

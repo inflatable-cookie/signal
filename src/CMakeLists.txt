@@ -4,7 +4,7 @@ add_library(signal-core STATIC
     core/EngineHost.cpp
     core/EngineSelfTest.cpp
     core/MeteringService.cpp
-    core/MixerService.cpp
+    core/ChannelMixService.cpp
     core/AutomationService.cpp
     core/StreamScheduler.cpp
     core/ScheduleData.cpp
@@ -76,4 +76,3 @@ add_executable(loophole-signal
 target_link_libraries(loophole-signal PRIVATE
     signal-core
 )
-

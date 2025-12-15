@@ -1,22 +1,22 @@
 #pragma once
 
-/// MixerDomain - IPC domain handler for mixer updates
+/// ChannelMixDomain - IPC domain handler for channel‑mix updates
 ///
 /// Thread: IPC thread (Asio handler context)
 /// Ownership: Owned by DomainDispatcher
 /// Communication:
-///   - Receives commands from Pulse (mixer.updateChannel)
-///   - Updates MixerService state (gain, pan, mute, solo, effective mute)
+///   - Receives commands from Pulse (channelMix.updateChannel)
+///   - Updates ChannelMixService state (gain, pan, mute, solo, effective mute)
 ///   - Changes are applied in real-time by audio thread
 ///
 /// Phase 9 note:
-///   - UI-facing mixer control now flows through Pulse via the `node` (Fader
+///   - UI-facing channel control now flows through Pulse via the `node` (Fader
 ///     parameters) and `console` (Channel mute/solo) domains.
-///   - MixerDomain remains as a Signal-facing bridge that applies consolidated
-///     mixer state to MixerService only.
+///   - ChannelMixDomain remains as a Signal-facing bridge that applies consolidated
+///     channel‑mix state to ChannelMixService only.
 ///   - FaderNode parameters are owned by the Node domain (`node.setParameter`)
-///     and MixerDomain no longer writes directly to FaderNode instances.
-///   - New IPC shaping should prefer the Node and Console domains; MixerDomain
+///     and ChannelMixDomain no longer writes directly to FaderNode instances.
+///   - New IPC shaping should prefer the Node and Console domains; ChannelMixDomain
 ///     is not intended for new UI traffic and will be retired once Signal is
 ///     fully aligned.
 
@@ -25,10 +25,10 @@
 
 class EngineHost;
 
-class MixerDomain : public loophole::signal::ipc::IpcDomainHandler {
+class ChannelMixDomain : public loophole::signal::ipc::IpcDomainHandler {
 public:
-    explicit MixerDomain(EngineHost* engineHost);
-    ~MixerDomain() override = default;
+    explicit ChannelMixDomain(EngineHost* engineHost);
+    ~ChannelMixDomain() override = default;
 
     void handle(
         const loophole::signal::ipc::IpcEnvelope& env,

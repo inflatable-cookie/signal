@@ -30,8 +30,8 @@ struct NodeAudioConfigDesc {
     std::optional<std::string> layout;  // Optional layout identifier
 };
 
-/// Mixer configuration (matches Pulse NodeMixerConfig)
-struct NodeMixerConfigDesc {
+/// Channel mix configuration (matches Pulse NodeChannelMixConfig)
+struct NodeChannelMixConfigDesc {
     std::optional<float> gain;
     std::optional<float> pan;
     std::optional<bool> muted;
@@ -59,8 +59,8 @@ struct NodeDesc {
     /// Optional tail hint in samples (for future tail-aware transport)
     /// Signal will compute actual tail from plugin/node capabilities, but this can serve as a hint
     std::optional<uint32_t> tailSamples;
-    /// Optional mixer configuration for channel-related nodes (e.g. Fader)
-    std::optional<NodeMixerConfigDesc> mixer;
+    /// Optional channel mix configuration for channel-related nodes (e.g. Fader)
+    std::optional<NodeChannelMixConfigDesc> channelMix;
     // Input node fields (Phase 7)
     std::optional<std::string> deviceId;      // For AudioInputNode
     std::optional<int> inputChannelIndex;     // For AudioInputNode

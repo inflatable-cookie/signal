@@ -11,8 +11,8 @@
 /// Phase 9 note:
 ///   - UI-facing Fader parameters (gain/pan) are sent via `node.setParameter`
 ///     using Fader node IDs (e.g. "fader-<trackId>").
-///   - MixerDomain remains responsible for consolidated mixer state and
-///     effective gain after mute/solo; NodeDomain applies raw parameters.
+///   - ChannelMixDomain remains responsible for consolidated channel mix state
+///     and effective gain after mute/solo; NodeDomain applies raw parameters.
 
 #include "ipc/IpcDomainHandler.hpp"
 #include <memory>
@@ -34,4 +34,3 @@ private:
 
     EngineHost* _engineHost;
 };
-

@@ -4,7 +4,7 @@
 #include "backend/AudioBackendConfig.hpp"
 #include "backend/OutputDeviceInfo.hpp"
 #include "core/MeteringService.hpp"
-#include "core/MixerService.hpp"
+#include "core/ChannelMixService.hpp"
 #include "core/AutomationService.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/GraphEngine.hpp"
@@ -35,7 +35,7 @@ EngineHost::EngineHost()
     , _graphTailSamples(0)
 {
     _meteringService = std::make_unique<MeteringService>();
-    _mixerService = std::make_unique<MixerService>();
+    _channelMixService = std::make_unique<ChannelMixService>();
     _automationService = std::make_unique<AutomationService>();
     _streamScheduler = std::make_unique<StreamScheduler>();
     _graphEngine = std::make_unique<GraphEngine>();
@@ -302,12 +302,12 @@ const MeteringService& EngineHost::metering() const {
     return *_meteringService;
 }
 
-MixerService& EngineHost::mixer() {
-    return *_mixerService;
+ChannelMixService& EngineHost::channelMix() {
+    return *_channelMixService;
 }
 
-const MixerService& EngineHost::mixer() const {
-    return *_mixerService;
+const ChannelMixService& EngineHost::channelMix() const {
+    return *_channelMixService;
 }
 
 PluginHost* EngineHost::pluginHost() {
@@ -529,7 +529,7 @@ void EngineHost::renderBlock(
         if (node->getKind() == NodeKind::Fader) {
             auto* faderNode = dynamic_cast<FaderNode*>(node);
             if (faderNode) {
-                // Use node ID as automation target for mixer channels
+                // Use node ID as automation target for channel mix entries
                 const std::string& targetId = node->getId();
 
                 float gain = _automationService->getParameterValue(targetId, "gain");
@@ -690,11 +690,11 @@ void EngineHost::renderBlock(
 
     if (deviceNode) {
         // Step 4: Apply final mix from device node to output bus.
-        // Note: The `"master"` mixer channel here represents the current
+        // Note: The `"master"` channel-mix entry here represents the current
         // output path and is a temporary implementation detail, not a
         // first-class "master bus" concept. Phase 9+ will replace this with
         // an explicit output Channel/Fader node in the graph.
-        _mixerService->finalMix(deviceNode->io.audioOut, output, "master");
+        _channelMixService->finalMix(deviceNode->io.audioOut, output, "master");
     } else {
         // No device node - output will be silence
         output.clear();
@@ -785,7 +785,7 @@ void EngineHost::renderBlock(
     // - Feed streams into lane nodes using getStreamBindings()
     // - Process through node graph with real audio/MIDI buffers
     // - Apply automation per node/parameter
-    // - Apply mixer gain/mute/solo per channel (channels are processing paths, not tracks)
+    // - Apply channel mix gain/mute/solo per channel (channels are processing paths, not tracks)
     // - Loop handling
     // - Metering
     //

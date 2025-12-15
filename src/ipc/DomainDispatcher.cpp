@@ -28,7 +28,7 @@ DomainDispatcher::DomainDispatcher(EngineHost* engineHost, MeteringService* mete
     domains_.emplace("engine", std::make_unique<EngineDomain>(engineHost_));
     domains_.emplace("transport", std::make_unique<TransportDomain>(engineHost_));
     domains_.emplace("hardware", std::make_unique<HardwareDomain>(engineHost_));
-    domains_.emplace("mixer", std::make_unique<MixerDomain>(engineHost_));
+    domains_.emplace("channelMix", std::make_unique<ChannelMixDomain>(engineHost_));
     domains_.emplace("node", std::make_unique<NodeDomain>(engineHost_));
     domains_.emplace("automation", std::make_unique<AutomationDomain>(engineHost_));
     domains_.emplace("assets", std::make_unique<AssetsDomain>(engineHost_));

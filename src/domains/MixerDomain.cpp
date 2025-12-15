@@ -1,6 +1,6 @@
 #include "domains/MixerDomain.hpp"
 #include "core/EngineHost.hpp"
-#include "core/MixerService.hpp"
+#include "core/ChannelMixService.hpp"
 #include "core/GraphEngine.hpp"
 #include "core/GraphNodes.hpp"
 #include "core/GraphNode.hpp"
@@ -10,34 +10,34 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
-MixerDomain::MixerDomain(EngineHost* engineHost)
+ChannelMixDomain::ChannelMixDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
 {
-    LOG_INFO({"MixerDomain"}, "Initialised");
+    LOG_INFO({"ChannelMixDomain"}, "Initialised");
 }
 
-void MixerDomain::handle(
+void ChannelMixDomain::handle(
     const loophole::signal::ipc::IpcEnvelope& env,
     const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
 ) {
-    if (env.domain != "mixer") {
-        LOG_DEBUG({"MixerDomain"}, "Received envelope for different domain");
+    if (env.domain != "channelMix") {
+        LOG_DEBUG({"ChannelMixDomain"}, "Received envelope for different domain");
         return;
     }
 
     if (env.kind != loophole::signal::ipc::IpcKind::Command) {
-        LOG_DEBUG({"MixerDomain"}, "Ignoring non-command envelope");
+        LOG_DEBUG({"ChannelMixDomain"}, "Ignoring non-command envelope");
         return;
     }
 
     if (env.name == "updateChannel") {
         handleUpdateChannel(env.payload);
     } else {
-        LOG_WARN({"MixerDomain"}, std::string("Received unhandled mixer command: ") + env.name);
+        LOG_WARN({"ChannelMixDomain"}, std::string("Received unhandled channelMix command: ") + env.name);
     }
 }
 
-void MixerDomain::handleUpdateChannel(const nlohmann::json& payload) {
+void ChannelMixDomain::handleUpdateChannel(const nlohmann::json& payload) {
     try {
         std::string channelId = payload["channelId"];
         float gain = payload["gain"];
@@ -46,8 +46,8 @@ void MixerDomain::handleUpdateChannel(const nlohmann::json& payload) {
         bool isSoloed = payload["isSoloed"];
         bool effectiveMuted = payload["effectiveMuted"];
 
-        // Update MixerService state
-        _engineHost->mixer().updateChannel(
+        // Update ChannelMixService state
+        _engineHost->channelMix().updateChannel(
             channelId,
             gain,
             pan,
@@ -63,8 +63,8 @@ void MixerDomain::handleUpdateChannel(const nlohmann::json& payload) {
             << " muted=" << isMuted
             << " soloed=" << isSoloed
             << " effectiveMuted=" << effectiveMuted;
-        LOG_DEBUG({"MixerDomain"}, msg.str());
+        LOG_DEBUG({"ChannelMixDomain"}, msg.str());
     } catch (const std::exception& e) {
-        LOG_ERROR({"MixerDomain"}, std::string("Failed to parse updateChannel payload: ") + e.what());
+        LOG_ERROR({"ChannelMixDomain"}, std::string("Failed to parse updateChannel payload: ") + e.what());
     }
 }

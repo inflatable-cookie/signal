@@ -1,0 +1,121 @@
+#include "core/ChannelMixService.hpp"
+
+#include "core/AudioBuffer.hpp"
+#include "core/AudioBus.hpp"
+#include "logging/Log.hpp"
+
+ChannelMixService::ChannelMixService() {
+    LOG_INFO({"ChannelMixService"}, "Initialised");
+}
+
+ChannelMixService::~ChannelMixService() = default;
+
+void ChannelMixService::registerChannel(const std::string& channelId) {
+    std::unique_lock lock(_mutex);
+    if (_channels.find(channelId) == _channels.end()) {
+        auto state = std::make_unique<ChannelMixerState>();
+        state->channelId = channelId;
+        _channels.emplace(channelId, std::move(state));
+        LOG_DEBUG({"ChannelMixService"}, std::string("Registered channel: ") + channelId);
+    }
+}
+
+void ChannelMixService::unregisterChannel(const std::string& channelId) {
+    std::unique_lock lock(_mutex);
+    _channels.erase(channelId);
+    LOG_DEBUG({"ChannelMixService"}, std::string("Unregistered channel: ") + channelId);
+}
+
+void ChannelMixService::updateChannel(
+    const std::string& channelId,
+    float gain,
+    float pan,
+    bool isMuted,
+    bool isSoloed,
+    bool effectiveMuted
+) {
+    std::unique_lock lock(_mutex);
+    auto it = _channels.find(channelId);
+    if (it == _channels.end()) {
+        auto state = std::make_unique<ChannelMixerState>();
+        state->channelId = channelId;
+        state->gain.store(gain);
+        state->pan.store(pan);
+        state->isMuted.store(isMuted);
+        state->isSoloed.store(isSoloed);
+        state->effectiveMuted.store(effectiveMuted);
+        _channels.emplace(channelId, std::move(state));
+        LOG_DEBUG({"ChannelMixService"}, std::string("Auto-registered and updated channel: ") + channelId);
+        return;
+    }
+
+    auto* state = it->second.get();
+    state->gain.store(gain);
+    state->pan.store(pan);
+    state->isMuted.store(isMuted);
+    state->isSoloed.store(isSoloed);
+    state->effectiveMuted.store(effectiveMuted);
+}
+
+ChannelMixerState* ChannelMixService::getChannelState(const std::string& channelId) {
+    std::shared_lock lock(_mutex);
+    auto it = _channels.find(channelId);
+    if (it == _channels.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
+float ChannelMixService::getEffectiveGain(const std::string& channelId) const {
+    std::shared_lock lock(_mutex);
+    auto it = _channels.find(channelId);
+    if (it == _channels.end()) {
+        return 1.0f;
+    }
+    const auto* state = it->second.get();
+    if (state->effectiveMuted.load()) {
+        return 0.0f;
+    }
+    return state->gain.load();
+}
+
+void ChannelMixService::recomputeEffectiveMutes() {
+    std::shared_lock lock(_mutex);
+    bool anySolo = false;
+    for (const auto& [_, statePtr] : _channels) {
+        if (statePtr->isSoloed.load()) {
+            anySolo = true;
+            break;
+        }
+    }
+
+    for (const auto& [_, statePtr] : _channels) {
+        const bool soloed = statePtr->isSoloed.load();
+        const bool muted = statePtr->isMuted.load();
+        if (!anySolo) {
+            statePtr->effectiveMuted.store(muted);
+        } else {
+            statePtr->effectiveMuted.store(!soloed || muted);
+        }
+    }
+}
+
+void ChannelMixService::finalMix(
+    const AudioBuffer& deviceNodeOutput,
+    AudioBus& output,
+    const std::string& channelId
+) const {
+    const float gain = getEffectiveGain(channelId);
+
+    const size_t numChannels = output.getNumChannels();
+    const size_t numFrames = output.getNumFrames();
+
+    for (size_t ch = 0; ch < numChannels; ++ch) {
+        const float* in = deviceNodeOutput.getChannelData(ch);
+        float* out = output.getChannelData(ch);
+        for (size_t i = 0; i < numFrames; ++i) {
+            out[i] = in[i] * gain;
+        }
+    }
+}
+

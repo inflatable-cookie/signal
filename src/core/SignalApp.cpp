@@ -291,4 +291,3 @@ void SignalApp::requestShutdownDueToOrphanedState() {
     _shutdownRequested.store(true);
     LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "Requesting shutdown due to orphaned state");
 }
-

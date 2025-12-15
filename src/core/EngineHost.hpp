@@ -26,7 +26,7 @@
 
 class AudioBackend;
 class MeteringService;
-class MixerService;
+class ChannelMixService;
 class AutomationService;
 class StreamScheduler;
 class GraphEngine;
@@ -94,8 +94,8 @@ public:
     const MeteringService& metering() const;
 
     // Mixer
-    MixerService& mixer();
-    const MixerService& mixer() const;
+    ChannelMixService& channelMix();
+    const ChannelMixService& channelMix() const;
 
     AutomationService& automation();
     const AutomationService& automation() const;
@@ -151,7 +151,7 @@ private:
     std::optional<std::string> _lastError;
     std::unique_ptr<AudioBackend> _audioBackend;
     std::unique_ptr<MeteringService> _meteringService;
-    std::unique_ptr<MixerService> _mixerService;
+    std::unique_ptr<ChannelMixService> _channelMixService;
     std::unique_ptr<AutomationService> _automationService;
     std::unique_ptr<StreamScheduler> _streamScheduler;
     std::unique_ptr<GraphEngine> _graphEngine;
@@ -203,4 +203,3 @@ private:
 
     void setupAudioBackend();
 };
-

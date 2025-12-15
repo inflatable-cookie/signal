@@ -149,23 +149,23 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.portId = nodeJson["portId"].get<std::string>();
         }
 
-        // Parse mixer configuration (optional, for fader nodes)
-        if (nodeJson.contains("mixer") && nodeJson["mixer"].is_object()) {
-            const auto& mixerJson = nodeJson["mixer"];
-            NodeMixerConfigDesc mixerConfig;
-            if (mixerJson.contains("gain") && mixerJson["gain"].is_number()) {
-                mixerConfig.gain = mixerJson["gain"].get<float>();
+        // Parse channel mix configuration (optional, for fader nodes)
+        if (nodeJson.contains("channelMix") && nodeJson["channelMix"].is_object()) {
+            const auto& channelMixJson = nodeJson["channelMix"];
+            NodeChannelMixConfigDesc channelMixConfig;
+            if (channelMixJson.contains("gain") && channelMixJson["gain"].is_number()) {
+                channelMixConfig.gain = channelMixJson["gain"].get<float>();
             }
-            if (mixerJson.contains("pan") && mixerJson["pan"].is_number()) {
-                mixerConfig.pan = mixerJson["pan"].get<float>();
+            if (channelMixJson.contains("pan") && channelMixJson["pan"].is_number()) {
+                channelMixConfig.pan = channelMixJson["pan"].get<float>();
             }
-            if (mixerJson.contains("muted") && mixerJson["muted"].is_boolean()) {
-                mixerConfig.muted = mixerJson["muted"].get<bool>();
+            if (channelMixJson.contains("muted") && channelMixJson["muted"].is_boolean()) {
+                channelMixConfig.muted = channelMixJson["muted"].get<bool>();
             }
-            if (mixerJson.contains("soloed") && mixerJson["soloed"].is_boolean()) {
-                mixerConfig.soloed = mixerJson["soloed"].get<bool>();
+            if (channelMixJson.contains("soloed") && channelMixJson["soloed"].is_boolean()) {
+                channelMixConfig.soloed = channelMixJson["soloed"].get<bool>();
             }
-            node.mixer = mixerConfig;
+            node.channelMix = channelMixConfig;
         }
 
         snapshot.nodes.push_back(node);
