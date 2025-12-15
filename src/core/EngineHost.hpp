@@ -201,6 +201,18 @@ private:
     std::string _outputMixIdB;
     std::atomic<const std::string*> _activeOutputMixId;
 
+    // Output node identifier (used to select the correct HardwareAudioOutputNode
+    // when multiple are present in the graph).
+    std::string _outputNodeIdA;
+    std::string _outputNodeIdB;
+    std::atomic<const std::string*> _activeOutputNodeId;
+
+    // Whether the selected HardwareAudioOutputNode is fed by an explicit output
+    // FaderNode in the same Channel. When true, the graph already owns final
+    // gain/pan, so EngineHost should only apply effective mute when mixing to
+    // the host output bus.
+    std::atomic<bool> _outputHasExplicitFader;
+
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     // Diagnostic counters for audio thread debugging
     std::atomic<uint64_t> _renderBlockCount;

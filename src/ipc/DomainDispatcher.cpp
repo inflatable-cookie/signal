@@ -12,7 +12,7 @@
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
 #include "domains/HardwareDomain.hpp"
-#include "domains/MixerDomain.hpp"
+#include "domains/ChannelMixDomain.hpp"
 #include "domains/NodeDomain.hpp"
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"

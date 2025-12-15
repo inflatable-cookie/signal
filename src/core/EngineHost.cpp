@@ -56,6 +56,12 @@ EngineHost::EngineHost()
     _outputMixIdB = "";
     _activeOutputMixId.store(&_outputMixIdA, std::memory_order_release);
 
+    _outputNodeIdA = "";
+    _outputNodeIdB = "";
+    _activeOutputNodeId.store(&_outputNodeIdA, std::memory_order_release);
+
+    _outputHasExplicitFader.store(false, std::memory_order_release);
+
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     _renderBlockCount.store(0, std::memory_order_release);
     _lastDebugLogBlock.store(0, std::memory_order_release);
@@ -349,22 +355,105 @@ const GraphEngine& EngineHost::graphEngine() const {
 void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
     _graphEngine->loadGraphSnapshot(snapshot, _pluginHost.get(), this);
 
-    // Determine the active output node ID from the graph snapshot.
-    // For now, we treat the first HardwareAudioOutput node ID as the host output target.
-    std::string outputMixId = *(_activeOutputMixId.load(std::memory_order_acquire));
+    // Determine the active output node ID (HardwareAudioOutputNode) and the
+    // output Channel identifier used for channel-mix/metering.
+    //
+    // Prefer the default hardware output node (deviceIsDefault=true) and
+    // prefer nodes that are fed by an explicit output Fader node in the same
+    // Channel (Phase 10 output Channel/Fader work).
+    std::string selectedOutputNodeId;
+    std::string selectedOutputChannelId;
+    bool selectedHasExplicitOutputFader = false;
+
+    const auto* previousOutputNodeId = _activeOutputNodeId.load(std::memory_order_acquire);
+    const auto* previousOutputMixId = _activeOutputMixId.load(std::memory_order_acquire);
+
+    auto nodeById = [&snapshot](const std::string& id) -> const NodeDesc* {
+        for (const auto& node : snapshot.nodes) {
+            if (node.nodeId == id) {
+                return &node;
+            }
+        }
+
+        return nullptr;
+    };
+
     for (const auto& node : snapshot.nodes) {
-        if (node.kind == NodeKind::HardwareAudioOutput) {
-            outputMixId = node.nodeId;
-            break;
+        if (node.kind != NodeKind::HardwareAudioOutput) {
+            continue;
+        }
+
+        const bool isDefault = node.deviceIsDefault.value_or(false);
+        const std::string channelId = node.channelId.value_or("");
+
+        bool hasExplicitOutputFader = false;
+
+        if (!channelId.empty()) {
+            for (const auto& conn : snapshot.connections) {
+                if (!conn.fromNodeId.has_value()) {
+                    continue;
+                }
+
+                if (conn.toNodeId != node.nodeId) {
+                    continue;
+                }
+
+                const auto* fromNode = nodeById(conn.fromNodeId.value());
+                if (!fromNode) {
+                    continue;
+                }
+
+                if (
+                    fromNode->kind == NodeKind::Fader &&
+                    fromNode->channelId.has_value() &&
+                    fromNode->channelId.value() == channelId
+                ) {
+                    hasExplicitOutputFader = true;
+                    break;
+                }
+            }
+        }
+
+        const bool preferNode =
+            selectedOutputNodeId.empty() ||
+            (!selectedHasExplicitOutputFader && hasExplicitOutputFader) ||
+            (!selectedHasExplicitOutputFader && !hasExplicitOutputFader && isDefault);
+
+        if (!preferNode) {
+            continue;
+        }
+
+        selectedOutputNodeId = node.nodeId;
+        selectedOutputChannelId = channelId;
+        selectedHasExplicitOutputFader = hasExplicitOutputFader;
+    }
+
+    if (selectedOutputNodeId.empty() && previousOutputNodeId) {
+        selectedOutputNodeId = *previousOutputNodeId;
+    }
+
+    if (selectedOutputChannelId.empty()) {
+        if (previousOutputMixId && !previousOutputMixId->empty()) {
+            selectedOutputChannelId = *previousOutputMixId;
+        } else {
+            selectedOutputChannelId = selectedOutputNodeId;
         }
     }
 
-    const std::string* current = _activeOutputMixId.load(std::memory_order_acquire);
-    std::string* next = (current == &_outputMixIdA) ? &_outputMixIdB : &_outputMixIdA;
-    *next = outputMixId;
-    _activeOutputMixId.store(next, std::memory_order_release);
-    if (!next->empty()) {
-        _meteringService->registerChannel(*next);
+    const std::string* currentMix = _activeOutputMixId.load(std::memory_order_acquire);
+    std::string* nextMix = (currentMix == &_outputMixIdA) ? &_outputMixIdB : &_outputMixIdA;
+    *nextMix = selectedOutputChannelId;
+    _activeOutputMixId.store(nextMix, std::memory_order_release);
+
+    const std::string* currentNode = _activeOutputNodeId.load(std::memory_order_acquire);
+    std::string* nextNode = (currentNode == &_outputNodeIdA) ? &_outputNodeIdB : &_outputNodeIdA;
+    *nextNode = selectedOutputNodeId;
+    _activeOutputNodeId.store(nextNode, std::memory_order_release);
+
+    _outputHasExplicitFader.store(selectedHasExplicitOutputFader, std::memory_order_release);
+
+    if (!nextMix->empty()) {
+        _meteringService->registerChannel(*nextMix);
     }
 
     // Update graph latency and tail metrics
@@ -702,11 +791,23 @@ void EngineHost::renderBlock(
 
     // Step 3: Find hardware audio output node and mix to host output bus
     GraphNode* outputNode = nullptr;
+    const std::string* preferredOutputNodeId = _activeOutputNodeId.load(std::memory_order_acquire);
     const auto& executionOrderAfterGraph = _graphEngine->getExecutionOrder();
+
     for (GraphNode* node : executionOrderAfterGraph) {
         if (node && node->getKind() == NodeKind::HardwareAudioOutput) {
-            outputNode = node;
-            break; // For now, use first hardware output node
+            if (
+                preferredOutputNodeId &&
+                !preferredOutputNodeId->empty() &&
+                node->getId() == *preferredOutputNodeId
+            ) {
+                outputNode = node;
+                break;
+            }
+
+            if (!outputNode) {
+                outputNode = node;
+            }
         }
     }
 
@@ -715,7 +816,8 @@ void EngineHost::renderBlock(
         const std::string& mixId = outputMixId ? *outputMixId : outputNode->getId();
 
         // Step 4: Apply channel-mix (gain/mute/solo) from output node to host output bus.
-        _channelMixService->applyChannelMixToBus(outputNode->io.audioOut, output, mixId);
+        const bool applyGainStage = !_outputHasExplicitFader.load(std::memory_order_acquire);
+        _channelMixService->applyChannelMixToBus(outputNode->io.audioOut, output, mixId, applyGainStage);
 
         // Step 5: Capture metering levels from final mixed output
         // Real-time safe: submitSampleBlock is lock-free (uses shared_lock for map lookup only)

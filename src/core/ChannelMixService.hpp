@@ -84,7 +84,8 @@ public:
     void applyChannelMixToBus(
         const class AudioBuffer& nodeOutput,
         class AudioBus& output,
-        const std::string& channelId
+        const std::string& channelId,
+        bool applyGain
     ) const;
 
 private:

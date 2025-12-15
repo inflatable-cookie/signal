@@ -51,6 +51,17 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.laneId = nodeJson["laneId"].get<std::string>();
         }
 
+        // Parse optional Channel metadata (Pulse emits `channel: { channelId, ... }`)
+        if (nodeJson.contains("channel") && nodeJson["channel"].is_object()) {
+            const auto& channelJson = nodeJson["channel"];
+            if (channelJson.contains("channelId") && channelJson["channelId"].is_string()) {
+                node.channelId = channelJson["channelId"].get<std::string>();
+            }
+        } else if (nodeJson.contains("channelId") && nodeJson["channelId"].is_string()) {
+            // Legacy/alternate shape (kept for compatibility).
+            node.channelId = nodeJson["channelId"].get<std::string>();
+        }
+
         // Parse node kind (required)
         std::string kindStr = "";
         if (nodeJson.contains("kind") && nodeJson["kind"].is_string()) {
@@ -138,10 +149,26 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.tailSamples = nodeJson["tailSamples"].get<uint32_t>();
         }
 
-        // Parse input node fields (Phase 7, optional)
-        if (nodeJson.contains("deviceId") && nodeJson["deviceId"].is_string()) {
+        // Parse hardware I/O fields (Phase 7+, optional).
+        // Pulse emits `device: { deviceId, isDefault }` for hardware nodes.
+        if (nodeJson.contains("device") && nodeJson["device"].is_object()) {
+            const auto& deviceJson = nodeJson["device"];
+            if (deviceJson.contains("deviceId") && deviceJson["deviceId"].is_string()) {
+                node.deviceId = deviceJson["deviceId"].get<std::string>();
+            }
+            if (deviceJson.contains("isDefault") && deviceJson["isDefault"].is_boolean()) {
+                node.deviceIsDefault = deviceJson["isDefault"].get<bool>();
+            }
+        }
+
+        // Legacy/alternate device fields (kept for compatibility).
+        if (!node.deviceId.has_value() && nodeJson.contains("deviceId") && nodeJson["deviceId"].is_string()) {
             node.deviceId = nodeJson["deviceId"].get<std::string>();
         }
+        if (!node.deviceIsDefault.has_value() && nodeJson.contains("deviceIsDefault") && nodeJson["deviceIsDefault"].is_boolean()) {
+            node.deviceIsDefault = nodeJson["deviceIsDefault"].get<bool>();
+        }
+
         if (nodeJson.contains("inputChannelIndex") && nodeJson["inputChannelIndex"].is_number_integer()) {
             node.inputChannelIndex = nodeJson["inputChannelIndex"].get<int>();
         }

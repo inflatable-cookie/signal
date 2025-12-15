@@ -1,4 +1,4 @@
-#include "domains/MixerDomain.hpp"
+#include "domains/ChannelMixDomain.hpp"
 #include "core/EngineHost.hpp"
 #include "core/ChannelMixService.hpp"
 #include "core/GraphEngine.hpp"

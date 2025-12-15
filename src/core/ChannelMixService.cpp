@@ -103,9 +103,23 @@ void ChannelMixService::recomputeEffectiveMutes() {
 void ChannelMixService::applyChannelMixToBus(
     const AudioBuffer& nodeOutput,
     AudioBus& output,
-    const std::string& channelId
+    const std::string& channelId,
+    bool applyGain
 ) const {
-    const float gain = getEffectiveGain(channelId);
+    float gain = 1.0f;
+
+    {
+        std::shared_lock lock(_mutex);
+        auto it = _channels.find(channelId);
+        if (it != _channels.end()) {
+            const auto* state = it->second.get();
+            if (state->effectiveMuted.load()) {
+                gain = 0.0f;
+            } else if (applyGain) {
+                gain = state->gain.load();
+            }
+        }
+    }
 
     const int numChannels = output.numChannels();
     const int numFrames = output.numFrames();

@@ -24,6 +24,12 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-15 21:49:21 UTC) [changed] Renamed the Signal `channelMix` IPC handler implementation from MixerDomain to ChannelMixDomain and removed remaining MixerDomain references.
+
+(2025-12-15 21:30:23 UTC) [fixed] Removed undefined behaviour in test and runtime schedule/graph DTOs by default-initialising connection indices and audio segment metadata.
+
+(2025-12-15 21:30:23 UTC) [changed] EngineHost now selects a specific HardwareAudioOutputNode (preferring the default device and an explicit output FaderNode upstream) and skips the redundant final gain stage when that output fader is present.
+
 (2025-12-11 22:22:28 UTC) [changed] Stopped MixerDomain from writing FaderNode gain and pan so Fader parameters are owned exclusively by the node.setParameter IPC path while MixerService continues to manage consolidated mixer state.
 
 (2025-12-11 19:00:00 UTC) [changed] Aligned Signal graph node kinds and mixer handling with the Fader-based GraphSnapshot contract by treating `kind: "fader"` and `fader-*` IDs as the primary mixer nodes instead of the legacy `mixer-channel` naming.

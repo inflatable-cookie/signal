@@ -30,8 +30,8 @@ struct StreamDescriptor {
 
 /// Stretch descriptor (Phase 9: placeholder for future stretch algorithms)
 struct StretchDescriptor {
-    std::string mode;  // "none", "phaseVocoder", "elastique", "rubberband"
-    double ratio;      // 1.0 = no stretch, >1.0 = slower, <1.0 = faster
+    std::string mode = "none"; // "none", "phaseVocoder", "elastique", "rubberband"
+    double ratio = 1.0;        // 1.0 = no stretch, >1.0 = slower, <1.0 = faster
 };
 
 /// Compiled audio segment (sample-based, for audio thread)
@@ -43,14 +43,14 @@ struct AudioSegmentCompiled {
     uint64_t assetStartSamples; // Offset into asset
 
     // Phase 12b: Clip gain and fade metadata
-    double gainDb;              // Gain in dB (0.0 = unity gain)
-    uint64_t fadeInSamples;     // Fade-in duration in samples (0 = no fade)
-    uint64_t fadeOutSamples;    // Fade-out duration in samples (0 = no fade)
-    std::string fadeInCurve;    // "linear" or "exponential"
-    std::string fadeOutCurve;   // "linear" or "exponential"
+    double gainDb = 0.0;                // Gain in dB (0.0 = unity gain)
+    uint64_t fadeInSamples = 0;         // Fade-in duration in samples (0 = no fade)
+    uint64_t fadeOutSamples = 0;        // Fade-out duration in samples (0 = no fade)
+    std::string fadeInCurve = "linear"; // "linear" or "exponential"
+    std::string fadeOutCurve = "linear"; // "linear" or "exponential"
 
     // Phase 9: Stretch metadata (placeholder for future stretch algorithms)
-    StretchDescriptor stretch; // Stretch mode and ratio
+    StretchDescriptor stretch{}; // Stretch mode and ratio
 };
 
 /// Compiled MIDI event (sample-based, for audio thread)

@@ -43,6 +43,9 @@ struct NodeDesc {
     NodeId nodeId;
     std::optional<std::string> trackId;
     std::optional<std::string> laneId;
+    // Optional owning Channel identifier from Pulse (Phase 10 output Channel/Fader work).
+    // This is used for output mix selection and metering/channel-mix lookup.
+    std::optional<std::string> channelId;
     NodeKind kind;
     std::optional<PluginFormat> pluginFormat;
     std::optional<std::string> pluginId;
@@ -63,6 +66,7 @@ struct NodeDesc {
     std::optional<NodeChannelMixConfigDesc> channelMix;
     // Hardware I/O node fields (Phase 7+)
     std::optional<std::string> deviceId;      // For HardwareAudioInputNode / HardwareAudioOutputNode
+    std::optional<bool> deviceIsDefault;      // For HardwareAudioOutputNode selection
     std::optional<int> inputChannelIndex;     // For HardwareAudioInputNode
     std::optional<std::string> portId;        // For HardwareMidiInputNode
 };
@@ -71,9 +75,9 @@ struct NodeDesc {
 struct ConnectionDesc {
     std::optional<StreamId> fromStreamId;
     std::optional<NodeId> fromNodeId;
-    uint32_t fromOutputIndex;  // Defaults to 0
+    uint32_t fromOutputIndex = 0;
     NodeId toNodeId;
-    uint32_t toInputIndex;     // Defaults to 0
+    uint32_t toInputIndex = 0;
 };
 
 /// Graph snapshot (matches Pulse GraphSnapshot)
