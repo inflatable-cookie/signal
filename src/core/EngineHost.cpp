@@ -52,6 +52,10 @@ EngineHost::EngineHost()
     _automationData = std::make_shared<AutomationData>(AutomationData::empty());
     _activeAutomation.store(_automationData.get(), std::memory_order_release);
 
+    _outputMixIdA = "";
+    _outputMixIdB = "";
+    _activeOutputMixId.store(&_outputMixIdA, std::memory_order_release);
+
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     _renderBlockCount.store(0, std::memory_order_release);
     _lastDebugLogBlock.store(0, std::memory_order_release);
@@ -345,6 +349,24 @@ const GraphEngine& EngineHost::graphEngine() const {
 void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
     _graphEngine->loadGraphSnapshot(snapshot, _pluginHost.get(), this);
 
+    // Determine the active output node ID from the graph snapshot.
+    // For now, we treat the first HardwareAudioOutput node ID as the host output target.
+    std::string outputMixId = *(_activeOutputMixId.load(std::memory_order_acquire));
+    for (const auto& node : snapshot.nodes) {
+        if (node.kind == NodeKind::HardwareAudioOutput) {
+            outputMixId = node.nodeId;
+            break;
+        }
+    }
+
+    const std::string* current = _activeOutputMixId.load(std::memory_order_acquire);
+    std::string* next = (current == &_outputMixIdA) ? &_outputMixIdB : &_outputMixIdA;
+    *next = outputMixId;
+    _activeOutputMixId.store(next, std::memory_order_release);
+    if (!next->empty()) {
+        _meteringService->registerChannel(*next);
+    }
+
     // Update graph latency and tail metrics
     // These are computed from the graph structure and cached for audio thread access
     int totalLatency = _graphEngine->getTotalLatencyInSamples();
@@ -618,7 +640,7 @@ void EngineHost::renderBlock(
         uint64_t blockStartSamples = ctx.playheadSamples;
 
         for (GraphNode* node : executionOrder) {
-            if (node && node->getKind() == NodeKind::AudioInput) {
+            if (node && node->getKind() == NodeKind::HardwareAudioInput) {
                 auto* inputNode = dynamic_cast<AudioInputNode*>(node);
                 if (inputNode) {
                     std::string laneId = _recordingSession->getTargetLaneForInput(inputNode->getId());
@@ -642,7 +664,7 @@ void EngineHost::renderBlock(
                         }
                     }
                 }
-            } else if (node && node->getKind() == NodeKind::MidiInput) {
+            } else if (node && node->getKind() == NodeKind::HardwareMidiInput) {
                 auto* midiInputNode = dynamic_cast<MidiInputNode*>(node);
                 if (midiInputNode) {
                     std::string laneId = _recordingSession->getTargetLaneForInput(midiInputNode->getId());
@@ -678,40 +700,39 @@ void EngineHost::renderBlock(
     // Note: Source/Input Pass was already called in Step 3, so nodes are ready to process
     _graphEngine->processGraph(ctx);
 
-    // Step 3: Find device node and apply final mix
-    GraphNode* deviceNode = nullptr;
-    const auto& deviceExecutionOrder = _graphEngine->getExecutionOrder();
-    for (GraphNode* node : deviceExecutionOrder) {
-        if (node && node->getKind() == NodeKind::Device) {
-            deviceNode = node;
-            break; // For now, use first device node
+    // Step 3: Find hardware audio output node and mix to host output bus
+    GraphNode* outputNode = nullptr;
+    const auto& executionOrderAfterGraph = _graphEngine->getExecutionOrder();
+    for (GraphNode* node : executionOrderAfterGraph) {
+        if (node && node->getKind() == NodeKind::HardwareAudioOutput) {
+            outputNode = node;
+            break; // For now, use first hardware output node
         }
     }
 
-    if (deviceNode) {
-        // Step 4: Apply final mix from device node to output bus.
-        // Note: The `"master"` channel-mix entry here represents the current
-        // output path and is a temporary implementation detail, not a
-        // first-class "master bus" concept. Phase 9+ will replace this with
-        // an explicit output Channel/Fader node in the graph.
-        _channelMixService->finalMix(deviceNode->io.audioOut, output, "master");
+    if (outputNode) {
+        const std::string* outputMixId = _activeOutputMixId.load(std::memory_order_acquire);
+        const std::string& mixId = outputMixId ? *outputMixId : outputNode->getId();
+
+        // Step 4: Apply channel-mix (gain/mute/solo) from output node to host output bus.
+        _channelMixService->applyChannelMixToBus(outputNode->io.audioOut, output, mixId);
+
+        // Step 5: Capture metering levels from final mixed output
+        // Real-time safe: submitSampleBlock is lock-free (uses shared_lock for map lookup only)
+        _meteringService->submitSampleBlock(
+            mixId,
+            output.data(),
+            output.numChannels(),
+            output.numFrames()
+        );
+
+        // Step 6: Capture final output for recording (if recording is active)
+        if (_recordingSession->isRecording()) {
+            _recordingSession->captureFinalOutput(output, ctx.playheadSamples, mixId);
+        }
     } else {
-        // No device node - output will be silence
+        // No hardware output node - output will be silence
         output.clear();
-    }
-
-    // Step 5: Capture metering levels from final mixed output
-    // Real-time safe: submitSampleBlock is lock-free (uses shared_lock for map lookup only)
-    _meteringService->submitSampleBlock(
-        "master",
-        output.data(),
-        output.numChannels(),
-        output.numFrames()
-    );
-
-    // Step 6: Capture final output for recording (if recording is active)
-    if (_recordingSession->isRecording()) {
-        _recordingSession->captureFinalOutput(output, ctx.playheadSamples, "master");
     }
 
     // Diagnostic: Check output level

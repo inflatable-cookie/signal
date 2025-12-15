@@ -26,9 +26,10 @@ enum class NodeKind {
     Send,
     Fader,
     Receive,  // Receives from SendNodes (was Bus)
-    Device,   // Writes to hardware device output (was Master)
-    AudioInput, // Live audio input from hardware
-    MidiInput    // Live MIDI input from hardware
+    HardwareAudioOutput, // Audio output to hardware
+    HardwareAudioInput,  // Live audio input from hardware
+    HardwareMidiInput,   // Live MIDI input from hardware
+    HardwareMidiOutput   // MIDI output to hardware (future)
 };
 
 /// Node identifier (matches Pulse NodeId)

@@ -24,7 +24,7 @@
 #include <algorithm>
 
 // Forward declaration (full include would create circular dependency)
-// DeviceNode needs EngineHost to query device channel count
+// HardwareAudioOutputNode needs EngineHost to query device channel count
 class EngineHost;
 
 /// MidiLaneNode - one per MIDI Lane
@@ -558,23 +558,22 @@ private:
     std::string _receiveName;
 };
 
-/// DeviceNode - writes to hardware device output
+/// HardwareAudioOutputNode - writes to hardware audio output
 /// Phase 2: Pass-through (writes to EngineHost output buffer)
 ///
-/// This node represents an endpoint that streams audio (and possibly MIDI) to a hardware device.
-/// Multiple DeviceNodes may be supported in future (e.g., different output devices, cue mixes, recording taps).
-/// For now, it acts in the role previously named "master" (single device output).
-class DeviceNode : public GraphNode {
+/// This node represents an endpoint that streams audio to a hardware output.
+/// Multiple output nodes may be supported in future (e.g. multiple hardware outputs, cue mixes, recording taps).
+class HardwareAudioOutputNode : public GraphNode {
 public:
-    DeviceNode(const NodeId& id)
-        : GraphNode(id, NodeKind::Device)
+    HardwareAudioOutputNode(const NodeId& id)
+        : GraphNode(id, NodeKind::HardwareAudioOutput)
         , _engineHost(nullptr)
     {
         // Config will be set from device channel count during prepare()
     }
 
     /// Set EngineHost reference (called by GraphEngine after node creation)
-    /// DeviceNode needs this to query active device channel count
+    /// HardwareAudioOutputNode needs this to query active device channel count
     void setEngineHost(EngineHost* engineHost);
 
     /// Get device channel count (helper to avoid including EngineHost.hpp in header)
@@ -606,8 +605,8 @@ public:
                 io.audioOut.resize(deviceChannels, maxBlockSize);
 
                 std::ostringstream msg;
-                msg << "DeviceNode " << getId() << " configured for " << deviceChannels << " channel(s)";
-                LOG_INFO({"DeviceNode", "Channels"}, msg.str());
+                msg << "HardwareAudioOutputNode " << getId() << " configured for " << deviceChannels << " channel(s)";
+                LOG_INFO({"HardwareAudioOutputNode", "Channels"}, msg.str());
             } else {
                 // No active device - set to 0 channels (will invalidate routing)
                 NodeAudioConfig config;
@@ -615,7 +614,7 @@ public:
                 config.numOutputChannels = 0;
                 config.layout = ChannelLayout::Mono; // Not meaningful
                 setAudioConfig(config);
-                LOG_WARN({"DeviceNode"}, std::string("No active device - DeviceNode ") + getId() + " has 0 channels");
+                LOG_WARN({"HardwareAudioOutputNode"}, std::string("No active device - HardwareAudioOutputNode ") + getId() + " has 0 channels");
             }
         } else {
             // No EngineHost reference - use default stereo (will be updated when EngineHost is set)
@@ -624,12 +623,12 @@ public:
             config.numOutputChannels = 2;
             config.layout = ChannelLayout::Stereo;
             setAudioConfig(config);
-            LOG_WARN({"DeviceNode"}, std::string("No EngineHost reference - DeviceNode ") + getId() + " using default stereo");
+            LOG_WARN({"HardwareAudioOutputNode"}, std::string("No EngineHost reference - HardwareAudioOutputNode ") + getId() + " using default stereo");
         }
     }
 
     void process(const NodeProcessContext& npc) override {
-        // DeviceNode processes audio from upstream and prepares it for hardware output
+        // HardwareAudioOutputNode processes audio from upstream and prepares it for hardware output
         // Handles channel count mismatches explicitly (expansion/truncation)
         // Real-time safe: no allocations, no locks, no logging in hot path
 
@@ -707,14 +706,14 @@ private:
     EngineHost* _engineHost;  // Reference to EngineHost for querying device channel count
 };
 
-// Implementation of DeviceNode methods that need EngineHost (after class definition)
+// Implementation of HardwareAudioOutputNode methods that need EngineHost (after class definition)
 #include "core/EngineHost.hpp"
 
-inline void DeviceNode::setEngineHost(EngineHost* engineHost) {
+inline void HardwareAudioOutputNode::setEngineHost(EngineHost* engineHost) {
     _engineHost = engineHost;
 }
 
-inline int DeviceNode::getDeviceChannelCount() const {
+inline int HardwareAudioOutputNode::getDeviceChannelCount() const {
     if (_engineHost) {
         return _engineHost->getNumOutputChannels();
     }
@@ -730,7 +729,7 @@ public:
         const std::string& deviceId = "",
         int inputChannelIndex = 0
     )
-        : GraphNode(id, NodeKind::AudioInput)
+        : GraphNode(id, NodeKind::HardwareAudioInput)
         , _deviceId(deviceId)
         , _inputChannelIndex(inputChannelIndex)
     {
@@ -784,7 +783,7 @@ public:
         const NodeId& id,
         const std::string& portId = ""
     )
-        : GraphNode(id, NodeKind::MidiInput)
+        : GraphNode(id, NodeKind::HardwareMidiInput)
         , _portId(portId)
     {
     }

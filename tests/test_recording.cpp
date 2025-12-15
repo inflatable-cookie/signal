@@ -17,7 +17,7 @@ TEST_CASE("AudioInputNode - Creation and basic properties", "[recording][input]"
 
     NodeDesc inputNode;
     inputNode.nodeId = "audio-input-1";
-    inputNode.kind = NodeKind::AudioInput;
+    inputNode.kind = NodeKind::HardwareAudioInput;
     inputNode.deviceId = "device-1";
     inputNode.inputChannelIndex = 0;
     snapshot.nodes.push_back(inputNode);
@@ -26,7 +26,7 @@ TEST_CASE("AudioInputNode - Creation and basic properties", "[recording][input]"
 
     GraphNode* node = engine.findNode("audio-input-1");
     REQUIRE(node != nullptr);
-    REQUIRE(node->getKind() == NodeKind::AudioInput);
+    REQUIRE(node->getKind() == NodeKind::HardwareAudioInput);
 
     auto* audioInput = dynamic_cast<AudioInputNode*>(node);
     REQUIRE(audioInput != nullptr);
@@ -42,7 +42,7 @@ TEST_CASE("MidiInputNode - Creation and basic properties", "[recording][input]")
 
     NodeDesc inputNode;
     inputNode.nodeId = "midi-input-1";
-    inputNode.kind = NodeKind::MidiInput;
+    inputNode.kind = NodeKind::HardwareMidiInput;
     inputNode.portId = "port-1";
     snapshot.nodes.push_back(inputNode);
 
@@ -50,7 +50,7 @@ TEST_CASE("MidiInputNode - Creation and basic properties", "[recording][input]")
 
     GraphNode* node = engine.findNode("midi-input-1");
     REQUIRE(node != nullptr);
-    REQUIRE(node->getKind() == NodeKind::MidiInput);
+    REQUIRE(node->getKind() == NodeKind::HardwareMidiInput);
 
     auto* midiInput = dynamic_cast<MidiInputNode*>(node);
     REQUIRE(midiInput != nullptr);
@@ -177,7 +177,7 @@ TEST_CASE("EngineHost - Input node integration", "[recording][engine]") {
 
     NodeDesc inputNode;
     inputNode.nodeId = "audio-input-1";
-    inputNode.kind = NodeKind::AudioInput;
+    inputNode.kind = NodeKind::HardwareAudioInput;
     inputNode.inputChannelIndex = 0;
     snapshot.nodes.push_back(inputNode);
 
@@ -187,11 +187,10 @@ TEST_CASE("EngineHost - Input node integration", "[recording][engine]") {
     // Verify input node exists and is properly configured
     GraphNode* node = host.graphEngine().findNode("audio-input-1");
     REQUIRE(node != nullptr);
-    REQUIRE(node->getKind() == NodeKind::AudioInput);
+    REQUIRE(node->getKind() == NodeKind::HardwareAudioInput);
 
     auto* audioInput = dynamic_cast<AudioInputNode*>(node);
     REQUIRE(audioInput != nullptr);
     REQUIRE(audioInput->getInputChannelIndex() == 0);
 }
 */
-

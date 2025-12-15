@@ -21,7 +21,7 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     GraphEngine engine;
     StreamScheduler scheduler;
 
-    // Create graph: audio-lane -> FaderNode -> DeviceNode
+    // Create graph: audio-lane -> FaderNode -> HardwareAudioOutputNode
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
@@ -40,7 +40,7 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Connections
@@ -115,8 +115,8 @@ TEST_CASE("Phase 3 - Real audio injection test (stubbed source)", "[graph][phase
     REQUIRE(std::abs(lane->io.audioOut.getSample(0, 0)) < 0.001f); // Should be silence
     REQUIRE(std::abs(lane->io.audioOut.getSample(100, 0)) < 0.001f); // Should be silence
 
-    // Verify device node output matches (silence)
-    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
+    // Verify output node output matches (silence)
+    auto* device = dynamic_cast<HardwareAudioOutputNode*>(engine.findNode("device"));
     REQUIRE(device != nullptr);
     REQUIRE(std::abs(device->io.audioOut.getSample(0, 0)) < 0.001f);
     REQUIRE(std::abs(device->io.audioOut.getSample(100, 0)) < 0.001f);
@@ -139,7 +139,7 @@ TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-s
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device-output";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Stream binding: test-stream -> audio-lane-test
@@ -228,8 +228,8 @@ TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-s
     // Half period should be near 0 (sine wave crosses zero)
     REQUIRE(std::abs(sample50) < 0.01f);
 
-    // Verify device node output matches (tone should pass through)
-    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device-output"));
+    // Verify output node output matches (tone should pass through)
+    auto* device = dynamic_cast<HardwareAudioOutputNode*>(engine.findNode("device-output"));
     REQUIRE(device != nullptr);
     REQUIRE(std::abs(device->io.audioOut.getSample(0, 0)) < 0.01f);
     REQUIRE(device->io.audioOut.getSample(25, 0) > 0.10f);
@@ -249,8 +249,8 @@ TEST_CASE("Phase 3 - 440Hz test tone generation", "[graph][phase3][tone][first-s
 TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     GraphEngine engine;
 
-    // Create graph: audio-lane -> FaderNode -> DeviceNode (dry)
-    //                FaderNode -> SendNode -> ReceiveNode -> DeviceNode (wet)
+    // Create graph: audio-lane -> FaderNode -> HardwareAudioOutputNode (dry)
+    //                FaderNode -> SendNode -> ReceiveNode -> HardwareAudioOutputNode (wet)
     GraphSnapshot snapshot;
     snapshot.id = "test-graph";
 
@@ -277,7 +277,7 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Connections: lane -> mixer -> device (dry)
@@ -365,8 +365,8 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     engine.runSourceInputPass(ctx, &scheduler, &assetSource, nullptr, 0, 0, emptyMidi2);
     engine.processGraph(ctx);
 
-    // Verify device node exists on the output path and has non-zero output
-    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
+    // Verify output node exists on the output path and has non-zero output
+    auto* device = dynamic_cast<HardwareAudioOutputNode*>(engine.findNode("device"));
     REQUIRE(device != nullptr);
 
     bool hasOutput = false;
@@ -588,7 +588,7 @@ TEST_CASE("Phase 3 - JSON snapshot parsing and graph/schedule alignment", "[grap
     engine.processGraph(ctx);
 
     // Verify output is non-zero when schedule is active
-    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
+    auto* device = dynamic_cast<HardwareAudioOutputNode*>(engine.findNode("device"));
     REQUIRE(device != nullptr);
 
     bool hasOutput = false;

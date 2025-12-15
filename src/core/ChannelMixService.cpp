@@ -100,8 +100,8 @@ void ChannelMixService::recomputeEffectiveMutes() {
     }
 }
 
-void ChannelMixService::finalMix(
-    const AudioBuffer& deviceNodeOutput,
+void ChannelMixService::applyChannelMixToBus(
+    const AudioBuffer& nodeOutput,
     AudioBus& output,
     const std::string& channelId
 ) const {
@@ -113,10 +113,9 @@ void ChannelMixService::finalMix(
     // Convert from deinterleaved AudioBuffer to interleaved AudioBus
     for (int frame = 0; frame < numFrames; ++frame) {
         for (int ch = 0; ch < numChannels; ++ch) {
-            const float* inChannel = deviceNodeOutput.getChannelData(ch);
+            const float* inChannel = nodeOutput.getChannelData(ch);
             float sample = inChannel[frame] * gain;
             output.setSample(frame, ch, sample);
         }
     }
 }
-

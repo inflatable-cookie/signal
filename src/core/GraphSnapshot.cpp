@@ -238,17 +238,17 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
         }
     }
 
-    // Validate: At least one Device node must exist
-    bool hasDeviceNode = false;
+    // Validate: At least one hardware audio output node must exist
+    bool hasOutputNode = false;
     for (const auto& node : snapshot.nodes) {
-        if (node.kind == NodeKind::Device) {
-            hasDeviceNode = true;
+        if (node.kind == NodeKind::HardwareAudioOutput) {
+            hasOutputNode = true;
             break;
         }
     }
 
-    if (!hasDeviceNode) {
-        LOG_ERROR({"GraphSnapshot"}, "GraphSnapshot must contain at least one Device node");
+    if (!hasOutputNode) {
+        LOG_ERROR({"GraphSnapshot"}, "GraphSnapshot must contain at least one hardware audio output node");
         return std::nullopt;
     }
 

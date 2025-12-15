@@ -65,7 +65,7 @@ EngineSelfTestScenarioResult runMonoToStereoScenario() {
         // Device node (stereo input)
         NodeDesc deviceNode;
         deviceNode.nodeId = "device";
-        deviceNode.kind = NodeKind::Device;
+        deviceNode.kind = NodeKind::HardwareAudioOutput;
         {
             NodeAudioConfigDesc audioConfig;
             audioConfig.numInputs = 2; // Stereo
@@ -201,7 +201,7 @@ EngineSelfTestScenarioResult runStereoScenario() {
 
         NodeDesc deviceNode;
         deviceNode.nodeId = "device";
-        deviceNode.kind = NodeKind::Device;
+        deviceNode.kind = NodeKind::HardwareAudioOutput;
         {
             NodeAudioConfigDesc audioConfig;
             audioConfig.numInputs = 2;
@@ -330,7 +330,7 @@ EngineSelfTestScenarioResult runSilenceScenario() {
 
         NodeDesc deviceNode;
         deviceNode.nodeId = "device";
-        deviceNode.kind = NodeKind::Device;
+        deviceNode.kind = NodeKind::HardwareAudioOutput;
         {
             NodeAudioConfigDesc audioConfig;
             audioConfig.numInputs = 2;
@@ -458,4 +458,3 @@ EngineSelfTestResult runEngineSelfTest() {
 
     return result;
 }
-

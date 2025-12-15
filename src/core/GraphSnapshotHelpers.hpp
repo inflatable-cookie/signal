@@ -15,7 +15,7 @@
 /// Convert string to NodeKind (for JSON parsing)
 /// Handles backward compatibility:
 ///   - "bus" → NodeKind::Receive
-///   - "master" → NodeKind::Device
+///   - "device" / "master" → NodeKind::HardwareAudioOutput
 /// TODO: Remove backward compatibility once Pulse switches to new names
 inline std::optional<NodeKind> nodeKindFromString(const std::string& str) {
     if (str == "midi-lane") return NodeKind::MidiLane;
@@ -27,8 +27,14 @@ inline std::optional<NodeKind> nodeKindFromString(const std::string& str) {
     if (str == "fader") return NodeKind::Fader;
     if (str == "receive") return NodeKind::Receive;
     if (str == "bus") return NodeKind::Receive; // Backward compatibility - TODO: remove once Pulse switches
-    if (str == "device") return NodeKind::Device;
-    if (str == "master") return NodeKind::Device; // Backward compatibility - TODO: remove once Pulse switches
+    if (str == "hardware-audio-output") return NodeKind::HardwareAudioOutput;
+    if (str == "device") return NodeKind::HardwareAudioOutput; // Backward compatibility - TODO: remove once Pulse switches
+    if (str == "master") return NodeKind::HardwareAudioOutput; // Backward compatibility - TODO: remove once Pulse switches
+    if (str == "hardware-audio-input") return NodeKind::HardwareAudioInput;
+    if (str == "audio-input") return NodeKind::HardwareAudioInput; // Legacy alias (early prototypes)
+    if (str == "hardware-midi-input") return NodeKind::HardwareMidiInput;
+    if (str == "midi-input") return NodeKind::HardwareMidiInput; // Legacy alias (early prototypes)
+    if (str == "hardware-midi-output") return NodeKind::HardwareMidiOutput;
     return std::nullopt;
 }
 
@@ -43,7 +49,10 @@ inline std::string nodeKindToString(NodeKind kind) {
         case NodeKind::Send: return "send";
         case NodeKind::Fader: return "fader";
         case NodeKind::Receive: return "receive";
-        case NodeKind::Device: return "device";
+        case NodeKind::HardwareAudioOutput: return "hardware-audio-output";
+        case NodeKind::HardwareAudioInput: return "hardware-audio-input";
+        case NodeKind::HardwareMidiInput: return "hardware-midi-input";
+        case NodeKind::HardwareMidiOutput: return "hardware-midi-output";
         default: return "unknown";
     }
 }

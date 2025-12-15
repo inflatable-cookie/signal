@@ -12,9 +12,9 @@
 /// Phase 9 note:
 ///   - Per-channel gain/pan live on Fader nodes and are driven via the Node
 ///     domain (`node.setParameter`) and automation.
-///   - ChannelMixService currently applies a final gain/pan/mute stage for a
-///     single `"master"` channel in `finalMix` as a temporary output path,
-///     not a permanent master-bus concept.
+///   - ChannelMixService currently applies a final gain/mute stage when
+///     mixing a hardware output node into the host output bus. This is a
+///     temporary output path while the graph-level routing/mapping matures.
 ///
 /// Architecture note: Channels in Signal are processing paths (not tracks).
 /// A channel represents a processing path with nodes (lane → fx → fader → output).
@@ -79,15 +79,12 @@ public:
     /// Returns 0.0 if effectiveMuted is true, otherwise returns gain
     float getEffectiveGain(const std::string& channelId) const;
 
-    /// Apply final mix to device node output (called from audio thread)
-    /// Reads from device node AudioBuffer, applies gain/mute/solo, writes to AudioBus
-    /// @param deviceNodeOutput Device node audio output (deinterleaved)
-    /// @param output Final output bus (interleaved, will be written to)
-    /// @param channelId Channel ID for this device node (for channel‑mix state lookup)
-    void finalMix(
-        const class AudioBuffer& deviceNodeOutput,
+    /// Apply channel-mix to a node output, writing into the host output bus (audio thread)
+    /// Reads from node AudioBuffer, applies gain/mute/solo, writes to AudioBus.
+    void applyChannelMixToBus(
+        const class AudioBuffer& nodeOutput,
         class AudioBus& output,
-        const std::string& channelId = "master"
+        const std::string& channelId
     ) const;
 
 private:
@@ -97,4 +94,3 @@ private:
     mutable std::shared_mutex _mutex; // Protects _channels map structure (allows concurrent reads)
     std::unordered_map<std::string, std::unique_ptr<ChannelMixerState>> _channels;
 };
-

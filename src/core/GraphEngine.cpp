@@ -40,8 +40,8 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
             desc.kind == NodeKind::AudioFx ||
             desc.kind == NodeKind::Fader ||
             desc.kind == NodeKind::Receive ||
-            desc.kind == NodeKind::Device ||
-            desc.kind == NodeKind::AudioInput
+            desc.kind == NodeKind::HardwareAudioOutput ||
+            desc.kind == NodeKind::HardwareAudioInput
         );
 
         if (requiresAudioChannels) {
@@ -61,17 +61,17 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
 
         auto node = createNode(desc, pluginHost);
         if (node) {
-            // For DeviceNode, set EngineHost reference before assigning config
-            // (DeviceNode needs it to query device channel count)
-            if (desc.kind == NodeKind::Device) {
-                auto* deviceNode = dynamic_cast<DeviceNode*>(node.get());
-                if (deviceNode && engineHost) {
-                    deviceNode->setEngineHost(engineHost);
+            // For HardwareAudioOutputNode, set EngineHost reference before assigning config
+            // (HardwareAudioOutputNode needs it to query device channel count)
+            if (desc.kind == NodeKind::HardwareAudioOutput) {
+                auto* outputNode = dynamic_cast<HardwareAudioOutputNode*>(node.get());
+                if (outputNode && engineHost) {
+                    outputNode->setEngineHost(engineHost);
                 }
             }
 
             // Assign channel configuration from NodeDesc
-            // For DeviceNode, this will be overridden in prepare() with actual device channel count
+            // For HardwareAudioOutputNode, this will be overridden in prepare() with actual device channel count
             NodeAudioConfig config = createAudioConfigFromDesc(desc, node.get());
             node->setAudioConfig(config);
             _nodes[desc.nodeId] = std::move(node);
@@ -120,8 +120,8 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
             desc.kind == NodeKind::AudioFx ||
             desc.kind == NodeKind::Fader ||
             desc.kind == NodeKind::Receive ||
-            desc.kind == NodeKind::Device ||
-            desc.kind == NodeKind::AudioInput
+            desc.kind == NodeKind::HardwareAudioOutput ||
+            desc.kind == NodeKind::HardwareAudioInput
         );
         if (requiresAudioChannels) {
             // Check for explicit audio metadata (numOutputs > 0 indicates valid metadata)
@@ -223,27 +223,27 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
     }
 
     // Update live inputs/monitors flag based on graph structure
-    // Check for AudioInput, MidiInput nodes, or instrument nodes that might receive live MIDI
+    // Check for hardware input nodes, or instrument nodes that might receive live MIDI
     bool hasLiveInputs = false;
     for (const auto& pair : _nodes) {
         const GraphNode* node = pair.second.get();
         if (!node) continue;
 
         NodeKind kind = node->getKind();
-        if (kind == NodeKind::AudioInput || kind == NodeKind::MidiInput) {
+        if (kind == NodeKind::HardwareAudioInput || kind == NodeKind::HardwareMidiInput) {
             hasLiveInputs = true;
             break;
         }
 
-        // Instrument nodes that receive MIDI from MidiInput nodes also need live processing
-        // We check if there's a path from MidiInput to Instrument
+        // Instrument nodes that receive MIDI from HardwareMidiInput nodes also need live processing
+        // We check if there's a path from HardwareMidiInput to Instrument
         if (kind == NodeKind::Instrument) {
-            // Check if this instrument has incoming connections from MidiInput nodes
+            // Check if this instrument has incoming connections from HardwareMidiInput nodes
             auto it = _incomingConnections.find(node->getId());
             if (it != _incomingConnections.end()) {
                 for (const auto& conn : it->second) {
                     GraphNode* fromNode = findNode(conn.fromNodeId);
-                    if (fromNode && fromNode->getKind() == NodeKind::MidiInput) {
+                    if (fromNode && fromNode->getKind() == NodeKind::HardwareMidiInput) {
                         hasLiveInputs = true;
                         break;
                     }
@@ -314,7 +314,7 @@ void GraphEngine::clear() {
 int GraphEngine::getTotalLatencyInSamples() const noexcept {
     // Stub implementation: simple sum of all node latencies
     // TODO: Future implementation should:
-    //   - Only consider nodes on the actual signal path (from sources to DeviceNode)
+    //   - Only consider nodes on the actual signal path (from sources to HardwareAudioOutputNode)
     //   - Account for parallel paths and take maximum latency per path
     //   - Consider that latency accumulates along the signal path
     int totalLatency = 0;
@@ -469,9 +469,9 @@ NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, Gra
             config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
             break;
 
-        case NodeKind::Device:
-            // Device: channel count will be set from actual device in prepare()
-            // Use default stereo for now (will be updated when DeviceNode::prepare() is called)
+        case NodeKind::HardwareAudioOutput:
+            // Hardware audio output: channel count will be set from actual device in prepare()
+            // Use default stereo for now (will be updated when HardwareAudioOutputNode::prepare() is called)
             if (!desc.numAudioInputs.has_value()) {
                 config.numInputChannels = 2; // Default stereo (will be overridden in prepare())
             }
@@ -481,7 +481,7 @@ NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, Gra
             config.layout = (config.numOutputChannels == 1) ? ChannelLayout::Mono : ChannelLayout::Stereo;
             break;
 
-        case NodeKind::AudioInput:
+        case NodeKind::HardwareAudioInput:
             // AudioInput: already set in constructor (mono by default)
             // But allow override from NodeDesc
             if (desc.numAudioOutputs.has_value()) {
@@ -490,7 +490,7 @@ NodeAudioConfig GraphEngine::createAudioConfigFromDesc(const NodeDesc& desc, Gra
             }
             break;
 
-        case NodeKind::MidiInput:
+        case NodeKind::HardwareMidiInput:
             // MIDI input: no audio
             config.numInputChannels = 0;
             config.numOutputChannels = 0;
@@ -572,17 +572,17 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
         case NodeKind::Receive:
             return std::make_unique<ReceiveNode>(desc.nodeId, pluginId); // Using pluginId as receiveName for now
 
-        case NodeKind::Device: {
-            auto deviceNode = std::make_unique<DeviceNode>(desc.nodeId);
-            // DeviceNode needs EngineHost reference to query device channel count
+        case NodeKind::HardwareAudioOutput: {
+            auto outputNode = std::make_unique<HardwareAudioOutputNode>(desc.nodeId);
+            // HardwareAudioOutputNode needs EngineHost reference to query device channel count
             // This will be set after node creation if EngineHost is available
-            return deviceNode;
+            return outputNode;
         }
 
-        case NodeKind::AudioInput:
+        case NodeKind::HardwareAudioInput:
             return std::make_unique<AudioInputNode>(desc.nodeId, desc.deviceId.value_or(""), desc.inputChannelIndex.value_or(0));
 
-        case NodeKind::MidiInput:
+        case NodeKind::HardwareMidiInput:
             return std::make_unique<MidiInputNode>(desc.nodeId, desc.portId.value_or(""));
 
         default:
@@ -730,7 +730,7 @@ void GraphEngine::validateRouting() {
     // Rules:
     // 1. Channel count equality: fromNode.outputChannels == toNode.inputChannels
     // 2. Audio-only nodes cannot connect to MIDI-only nodes (and vice versa)
-    // 3. DeviceNode must accept layouts matching hardware (for now, stereo only)
+    // 3. HardwareAudioOutputNode must accept layouts matching hardware (for now, stereo only)
     // 4. MidiLaneNode has 0 audio channels - audio connections are invalid
 
     int invalidConnections = 0;
@@ -759,12 +759,12 @@ void GraphEngine::validateRouting() {
         const auto& toConfig = toNode->getAudioConfig();
 
         // Rule 1: Channel count equality for audio connections
-        // Exception: DeviceNode can handle mismatches (handled in Rule 3)
+        // Exception: HardwareAudioOutputNode can handle mismatches (handled in Rule 3)
         ChannelCompatibility compat = checkChannelCompatibility(*fromNode, *toNode);
-        bool isDeviceNode = (toNode->getKind() == NodeKind::Device);
+        bool isHardwareOutputNode = (toNode->getKind() == NodeKind::HardwareAudioOutput);
 
-        if (compat.isMismatch && !isDeviceNode) {
-            // Channel mismatch - mark connection as invalid (unless it's DeviceNode)
+        if (compat.isMismatch && !isHardwareOutputNode) {
+            // Channel mismatch - mark connection as invalid (unless it's a hardware output node)
             conn.isValid = false;
             invalidConnections++;
             std::ostringstream msg;
@@ -789,15 +789,15 @@ void GraphEngine::validateRouting() {
         // (MIDI routing is separate and always valid)
         // This is implicitly handled by channel count check above
 
-        // Rule 3: DeviceNode validation
-        // DeviceNode channel count comes from actual hardware device
-        // DeviceNode can handle channel mismatches (expansion/truncation), so we log warnings but don't mark as invalid
-        if (toNode->getKind() == NodeKind::Device) {
-            // DeviceNode channel count is set from actual device in prepare()
-            // DeviceNode will handle channel expansion/truncation in process()
+        // Rule 3: HardwareAudioOutputNode validation
+        // HardwareAudioOutputNode channel count comes from actual hardware device
+        // HardwareAudioOutputNode can handle channel mismatches (expansion/truncation), so we log warnings but don't mark as invalid
+        if (toNode->getKind() == NodeKind::HardwareAudioOutput) {
+            // HardwareAudioOutputNode channel count is set from actual device in prepare()
+            // HardwareAudioOutputNode will handle channel expansion/truncation in process()
             if (compat.isMismatch) {
                 std::ostringstream msg;
-                msg << "DeviceNode " << conn.toNodeId
+                msg << "HardwareAudioOutputNode " << conn.toNodeId
                     << " channel mismatch: upstream has " << compat.sourceChannels
                     << " ch, device has " << compat.destChannels << " ch";
                 if (compat.sourceChannels < compat.destChannels) {
@@ -805,12 +805,12 @@ void GraphEngine::validateRouting() {
                 } else {
                     msg << " (will truncate: drop extra channels)";
                 }
-                LOG_WARN({"GraphEngine", "Routing", "Device"}, msg.str());
-                // Connection is still valid - DeviceNode handles the mismatch
+                LOG_WARN({"GraphEngine", "Routing", "HardwareAudioOutput"}, msg.str());
+                // Connection is still valid - HardwareAudioOutputNode handles the mismatch
                 conn.isValid = true;
             } else if (compat.isCompatible) {
-                LOG_DEBUG({"GraphEngine", "Routing", "Device"},
-                    std::string("DeviceNode ") + conn.toNodeId + " routing compatible: " +
+                LOG_DEBUG({"GraphEngine", "Routing", "HardwareAudioOutput"},
+                    std::string("HardwareAudioOutputNode ") + conn.toNodeId + " routing compatible: " +
                     std::to_string(compat.destChannels) + " channels");
             }
         }
@@ -910,8 +910,8 @@ void GraphEngine::processGraph(EngineRenderContext& ctx) {
         if (
             kind != NodeKind::AudioLane &&
             kind != NodeKind::MidiLane &&
-            kind != NodeKind::AudioInput &&
-            kind != NodeKind::MidiInput
+            kind != NodeKind::HardwareAudioInput &&
+            kind != NodeKind::HardwareMidiInput
         ) {
             node->io.audioOut.clear();
             node->io.midiOut.clear();
@@ -1028,7 +1028,7 @@ void GraphEngine::runSourceInputPass(
             continue;
         }
 
-        if (node->getKind() == NodeKind::AudioInput) {
+        if (node->getKind() == NodeKind::HardwareAudioInput) {
             auto* inputNode = dynamic_cast<AudioInputNode*>(node);
             if (inputNode && hardwareAudioInput && hardwareAudioChannels > 0 && hardwareAudioFrames > 0) {
                 // Extract channel from interleaved input buffer
@@ -1042,7 +1042,7 @@ void GraphEngine::runSourceInputPass(
                     );
                 }
             }
-        } else if (node->getKind() == NodeKind::MidiInput) {
+        } else if (node->getKind() == NodeKind::HardwareMidiInput) {
             auto* midiInputNode = dynamic_cast<MidiInputNode*>(node);
             if (midiInputNode) {
                 // Inject MIDI from hardware input (or empty if no backend)

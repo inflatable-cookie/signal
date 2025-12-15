@@ -45,7 +45,7 @@ TEST_CASE("GraphEngine - Node creation", "[graph][node]") {
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Load snapshot
@@ -61,7 +61,7 @@ TEST_CASE("GraphEngine - Node creation", "[graph][node]") {
     REQUIRE(engine.findNode("midi-lane-1")->getKind() == NodeKind::MidiLane);
     REQUIRE(engine.findNode("audio-lane-1")->getKind() == NodeKind::AudioLane);
     REQUIRE(engine.findNode("fx-1")->getKind() == NodeKind::AudioFx);
-    REQUIRE(engine.findNode("device")->getKind() == NodeKind::Device);
+    REQUIRE(engine.findNode("device")->getKind() == NodeKind::HardwareAudioOutput);
 
     // Verify metadata
     REQUIRE(engine.findNode("midi-lane-1")->getTrackId() == "track-1");
@@ -87,7 +87,7 @@ TEST_CASE("GraphEngine - Connections and stream bindings", "[graph][connection]"
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Add stream binding (stream -> lane node)
@@ -143,7 +143,7 @@ TEST_CASE("GraphEngine - Execution order (topological sort)", "[graph][execution
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Connect: lane -> fx -> device
@@ -265,10 +265,10 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     laneNode.laneId = "lane-1";
     snapshot.nodes.push_back(laneNode);
 
-    // Create device node
+    // Create output node
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Stream binding: stream-1 -> audio-lane-1
@@ -337,8 +337,8 @@ TEST_CASE("GraphEngine - Stream injection into lane node", "[graph][stream-injec
     REQUIRE(lane != nullptr);
     REQUIRE(lane->getStreamId() == "stream-1");
 
-    // Verify device node has output (pass-through from lane)
-    auto* device = dynamic_cast<DeviceNode*>(engine.findNode("device"));
+    // Verify output node has output (pass-through from lane)
+    auto* device = dynamic_cast<HardwareAudioOutputNode*>(engine.findNode("device"));
     REQUIRE(device != nullptr);
     // Device should have audio output (even if test tone)
     REQUIRE(device->io.audioOut.numFrames() > 0);
@@ -363,7 +363,7 @@ TEST_CASE("GraphEngine - Node pass-through", "[graph][pass-through]") {
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Connections
@@ -447,7 +447,7 @@ TEST_CASE("GraphEngine - MIDI routing", "[graph][midi]") {
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Connections
@@ -600,7 +600,7 @@ TEST_CASE("GraphEngine - Routing validation: mono graph", "[graph][routing][vali
 
     NodeDesc device;
     device.nodeId = "device-mono";
-    device.kind = NodeKind::Device;
+    device.kind = NodeKind::HardwareAudioOutput;
     device.numAudioInputs = 1;  // Mono input
     device.numAudioOutputs = 1; // Mono output
     snapshot.nodes.push_back(device);
@@ -634,7 +634,7 @@ TEST_CASE("GraphEngine - Routing validation: mono graph", "[graph][routing][vali
     REQUIRE(laneNode->getAudioConfig().numOutputChannels == 1);
     REQUIRE(fxNode->getAudioConfig().numInputChannels == 1);
     REQUIRE(fxNode->getAudioConfig().numOutputChannels == 1);
-    // DeviceNode channel configuration is derived from the active device
+    // HardwareAudioOutputNode channel configuration is derived from the active device
     // (via EngineHost) and defaults to stereo when used without an EngineHost
     // in tests, so we do not assert a specific input channel count here.
 }
@@ -785,7 +785,7 @@ TEST_CASE("GraphEngine - Latency and tail API stubs", "[graph][latency][tail]") 
 
     NodeDesc device;
     device.nodeId = "device-1";
-    device.kind = NodeKind::Device;
+    device.kind = NodeKind::HardwareAudioOutput;
     {
         NodeAudioConfigDesc audioConfig;
         audioConfig.numInputs = 2;
@@ -857,7 +857,7 @@ TEST_CASE("GraphEngine - Routing validation: send/receive chain", "[graph][routi
 
     NodeDesc device;
     device.nodeId = "device";
-    device.kind = NodeKind::Device;
+    device.kind = NodeKind::HardwareAudioOutput;
     device.numAudioInputs = 2;  // Stereo input
     device.numAudioOutputs = 2; // Stereo output
     snapshot.nodes.push_back(device);

@@ -35,7 +35,7 @@ TEST_CASE("Playback Path - Test Tone (440Hz) Offline Render", "[playback][offlin
     // Device node
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     // Stream binding: test-stream -> audio-lane-1
@@ -173,7 +173,7 @@ TEST_CASE("Playback Path - Fake File Asset Offline Render", "[playback][offline]
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     ConnectionDesc streamBinding;

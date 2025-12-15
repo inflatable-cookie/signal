@@ -54,7 +54,7 @@ public:
     /// Called on control thread
     /// @param snapshot Graph snapshot from Pulse
     /// @param pluginHost Plugin host for creating plugin instances
-    /// @param engineHost EngineHost reference (for DeviceNode to query device channel count)
+    /// @param engineHost EngineHost reference (for HardwareAudioOutputNode to query device channel count)
     void loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost = nullptr, EngineHost* engineHost = nullptr);
 
     /// Prepare graph for processing (called on control thread)
@@ -199,4 +199,3 @@ private:
     /// real-time processing even when transport is stopped.
     std::atomic<bool> _hasLiveInputsOrMonitors;
 };
-

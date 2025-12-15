@@ -193,6 +193,14 @@ private:
     std::atomic<int> _graphLatencySamples;
     std::atomic<int> _graphTailSamples;
 
+    // Output mix identifier (used for final output channel-mix/metering state).
+    // Updated on control thread when the graph snapshot changes, read on audio thread.
+    //
+    // Real-time safety: audio thread reads the active pointer without allocation.
+    std::string _outputMixIdA;
+    std::string _outputMixIdB;
+    std::atomic<const std::string*> _activeOutputMixId;
+
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     // Diagnostic counters for audio thread debugging
     std::atomic<uint64_t> _renderBlockCount;

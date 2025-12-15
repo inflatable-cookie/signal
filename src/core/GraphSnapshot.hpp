@@ -61,10 +61,10 @@ struct NodeDesc {
     std::optional<uint32_t> tailSamples;
     /// Optional channel mix configuration for channel-related nodes (e.g. Fader)
     std::optional<NodeChannelMixConfigDesc> channelMix;
-    // Input node fields (Phase 7)
-    std::optional<std::string> deviceId;      // For AudioInputNode
-    std::optional<int> inputChannelIndex;     // For AudioInputNode
-    std::optional<std::string> portId;        // For MidiInputNode
+    // Hardware I/O node fields (Phase 7+)
+    std::optional<std::string> deviceId;      // For HardwareAudioInputNode / HardwareAudioOutputNode
+    std::optional<int> inputChannelIndex;     // For HardwareAudioInputNode
+    std::optional<std::string> portId;        // For HardwareMidiInputNode
 };
 
 /// Connection descriptor (matches Pulse ConnectionDesc)

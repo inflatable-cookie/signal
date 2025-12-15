@@ -217,7 +217,7 @@ TEST_CASE("Phase 4 - Plugin node integration", "[plugin][phase4][node]") {
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     ConnectionDesc conn;
@@ -268,7 +268,7 @@ TEST_CASE("Phase 4 - Parameter change test", "[plugin][phase4][parameter]") {
 
     NodeDesc deviceNode;
     deviceNode.nodeId = "device";
-    deviceNode.kind = NodeKind::Device;
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
     snapshot.nodes.push_back(deviceNode);
 
     ConnectionDesc conn;
@@ -442,4 +442,3 @@ TEST_CASE("Phase 3 - Plugin I/O negotiation: mono-only plugin, stereo snapshot",
     // Note: In a real scenario, the plugin would be bypassed (_ioNegotiationOk = false)
     // but the NodeAudioConfig remains as requested from snapshot
 }
-
