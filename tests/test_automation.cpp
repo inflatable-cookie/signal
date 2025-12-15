@@ -77,7 +77,7 @@ TEST_CASE("EngineHost - Load automation snapshot", "[automation]") {
     const AutomationData* loaded = host.getAutomationSnapshot();
     REQUIRE(loaded != nullptr);
     REQUIRE(loaded->events.size() == 1);
-    REQUIRE(loaded->events[0].nodeId == "fader-1");
+    REQUIRE(loaded->events[0].nodeId == "mixer-1");
     REQUIRE(loaded->events[0].paramId == "gain");
     REQUIRE(loaded->events[0].valueNorm == 0.5f);
 }

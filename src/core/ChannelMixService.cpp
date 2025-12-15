@@ -1,8 +1,8 @@
 #include "core/ChannelMixService.hpp"
 
-#include "core/AudioBuffer.hpp"
+#include "core/NodeBuffers.hpp"
 #include "core/AudioBus.hpp"
-#include "logging/Log.hpp"
+#include "logging/Logging.hpp"
 
 ChannelMixService::ChannelMixService() {
     LOG_INFO({"ChannelMixService"}, "Initialised");
@@ -107,14 +107,15 @@ void ChannelMixService::finalMix(
 ) const {
     const float gain = getEffectiveGain(channelId);
 
-    const size_t numChannels = output.getNumChannels();
-    const size_t numFrames = output.getNumFrames();
+    const int numChannels = output.numChannels();
+    const int numFrames = output.numFrames();
 
-    for (size_t ch = 0; ch < numChannels; ++ch) {
-        const float* in = deviceNodeOutput.getChannelData(ch);
-        float* out = output.getChannelData(ch);
-        for (size_t i = 0; i < numFrames; ++i) {
-            out[i] = in[i] * gain;
+    // Convert from deinterleaved AudioBuffer to interleaved AudioBus
+    for (int frame = 0; frame < numFrames; ++frame) {
+        for (int ch = 0; ch < numChannels; ++ch) {
+            const float* inChannel = deviceNodeOutput.getChannelData(ch);
+            float sample = inChannel[frame] * gain;
+            output.setSample(frame, ch, sample);
         }
     }
 }
