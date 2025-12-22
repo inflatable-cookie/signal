@@ -21,6 +21,7 @@ add_library(signal-core STATIC
     backend/MiniaudioBackend.cpp
     ipc/IpcEnvelope.cpp
     ipc/IpcEnvelopeCodec.cpp
+    ipc/BinaryEnvelopeCodec.cpp
     ipc/TcpClientSession.cpp
     ipc/TcpServer.cpp
     ipc/DomainDispatcher.cpp

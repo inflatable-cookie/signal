@@ -49,12 +49,11 @@ Events (Signal → client):
 ### hardware
 
 Commands (client → Signal):
-- `listOutputDevices` / `refreshOutputDevices` - List available output devices
-- `selectOutputDevice` / `setActiveOutputDevice` - Select output device
+- `refreshOutputDevices` - List available output devices
+- `selectOutputDevice` - Select output device
 
 Events (Signal → client):
-- `outputDevicesListed` - Device list response
-- `outputDeviceSelected` - Device selection response
+- `state` - Hardware state (outputDevices, activeDeviceId, optional lastError)
 
 ### mixer
 
@@ -106,4 +105,3 @@ All messages use the `IpcEnvelope` format:
 - All IPC is synchronous within the IPC thread context
 - Domain handlers update `EngineHost` state directly
 - Events are sent back via `TcpClientSession`
-

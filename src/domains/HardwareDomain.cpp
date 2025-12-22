@@ -32,7 +32,7 @@ void HardwareDomain::handle(
     }
 
     // Handle device selection commands directly
-    if (env.name == "selectOutputDevice" || env.name == "setActiveOutputDevice") {
+    if (env.name == "selectOutputDevice") {
         // Parse device ID from payload and set device
         std::string deviceId;
         if (env.payload.contains("id") && env.payload["id"].is_string()) {
@@ -45,7 +45,7 @@ void HardwareDomain::handle(
             using namespace loophole::signal::ipc;
             IpcEnvelope errorResponse;
             errorResponse.version = 1;
-            errorResponse.id = "hardware-outputDeviceSelected-" + env.id;
+            errorResponse.id = "hardware-state-" + env.id;
             errorResponse.correlationId = env.id;
             errorResponse.timestamp = currentTimestamp();
             errorResponse.origin = IpcOrigin::Signal;
@@ -57,11 +57,10 @@ void HardwareDomain::handle(
             }
             errorResponse.domain = "hardware";
             errorResponse.kind = IpcKind::Event;
-            errorResponse.name = "outputDeviceSelected";
+            errorResponse.name = "state";
             errorResponse.priority = env.priority;
             nlohmann::json errorPayload;
-            errorPayload["success"] = false;
-            errorPayload["error"] = "Missing or invalid device ID";
+            errorPayload["lastError"] = "Missing or invalid device ID";
             errorResponse.payload = errorPayload;
             session->send(errorResponse);
             return;
@@ -81,9 +80,9 @@ void HardwareDomain::handle(
     }
 
     // Handle responses based on command name
-    if (env.name == "listOutputDevices" || env.name == "refreshOutputDevices") {
+    if (env.name == "refreshOutputDevices") {
         sendListOutputDevicesResponse(env, session);
-    } else if (env.name == "selectOutputDevice" || env.name == "setActiveOutputDevice") {
+    } else if (env.name == "selectOutputDevice") {
         // Parse device ID from payload
         std::string deviceId;
         try {
@@ -97,7 +96,7 @@ void HardwareDomain::handle(
                 using namespace loophole::signal::ipc;
                 IpcEnvelope errorResponse;
                 errorResponse.version = 1;
-                errorResponse.id = "hardware-outputDeviceSelected-" + env.id;
+                errorResponse.id = "hardware-state-" + env.id;
                 errorResponse.correlationId = env.id;
                 errorResponse.timestamp = currentTimestamp();
                 errorResponse.origin = IpcOrigin::Signal;
@@ -109,11 +108,10 @@ void HardwareDomain::handle(
                 }
                 errorResponse.domain = "hardware";
                 errorResponse.kind = IpcKind::Event;
-                errorResponse.name = "outputDeviceSelected";
+                errorResponse.name = "state";
                 errorResponse.priority = env.priority;
                 nlohmann::json errorPayload;
-                errorPayload["success"] = false;
-                errorPayload["error"] = "Missing or invalid device ID";
+                errorPayload["lastError"] = "Missing or invalid device ID";
                 errorResponse.payload = errorPayload;
                 session->send(errorResponse);
                 return;
@@ -124,7 +122,7 @@ void HardwareDomain::handle(
             using namespace loophole::signal::ipc;
             IpcEnvelope errorResponse;
             errorResponse.version = 1;
-            errorResponse.id = "hardware-outputDeviceSelected-" + env.id;
+            errorResponse.id = "hardware-state-" + env.id;
             errorResponse.correlationId = env.id;
             errorResponse.timestamp = currentTimestamp();
             errorResponse.origin = IpcOrigin::Signal;
@@ -136,11 +134,10 @@ void HardwareDomain::handle(
             }
             errorResponse.domain = "hardware";
             errorResponse.kind = IpcKind::Event;
-            errorResponse.name = "outputDeviceSelected";
+            errorResponse.name = "state";
             errorResponse.priority = env.priority;
             nlohmann::json errorPayload;
-            errorPayload["success"] = false;
-            errorPayload["error"] = "Failed to parse payload: " + std::string(e.what());
+            errorPayload["lastError"] = "Failed to parse payload: " + std::string(e.what());
             errorResponse.payload = errorPayload;
             session->send(errorResponse);
             return;
@@ -180,12 +177,12 @@ void HardwareDomain::sendListOutputDevicesResponse(
         devicesArray.push_back(deviceJson);
     }
 
-    payload["devices"] = devicesArray;
+    payload["outputDevices"] = devicesArray;
     payload["activeDeviceId"] = activeDeviceId;
 
     IpcEnvelope response;
     response.version = 1;
-    response.id = "hardware-outputDevicesListed-" + commandEnv.id;
+    response.id = "hardware-state-" + commandEnv.id;
     response.correlationId = commandEnv.id;
     response.timestamp = currentTimestamp();
     response.origin = IpcOrigin::Signal;
@@ -207,7 +204,7 @@ void HardwareDomain::sendListOutputDevicesResponse(
 
     response.domain = "hardware";
     response.kind = IpcKind::Event;
-    response.name = "outputDevicesListed";
+    response.name = "state";
     response.priority = commandEnv.priority;
     response.payload = payload;
 
@@ -233,8 +230,6 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
     bool success = _engineHost->setOutputDevice(deviceId);
 
     nlohmann::json payload;
-    payload["success"] = success;
-    payload["deviceId"] = deviceId;
 
     if (success) {
         // Refresh device list to get updated active status
@@ -252,14 +247,14 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
             deviceJson["preferredSampleRate"] = device.preferredSampleRate;
             devicesArray.push_back(deviceJson);
         }
-        payload["devices"] = devicesArray;
+        payload["outputDevices"] = devicesArray;
         payload["activeDeviceId"] = activeDeviceId;
 
         std::ostringstream msg;
         msg << "Device selection succeeded: " << deviceId;
         LOG_INFO({"HardwareDomain"}, msg.str());
     } else {
-        payload["error"] = "Failed to switch to device: " + deviceId;
+        payload["lastError"] = "Failed to switch to device: " + deviceId;
         std::ostringstream msg;
         msg << "Device selection failed: " << deviceId;
         LOG_WARN({"HardwareDomain"}, msg.str());
@@ -267,7 +262,7 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
 
     IpcEnvelope response;
     response.version = 1;
-    response.id = "hardware-outputDeviceSelected-" + commandEnv.id;
+    response.id = "hardware-state-" + commandEnv.id;
     response.correlationId = commandEnv.id;
     response.timestamp = currentTimestamp();
     response.origin = IpcOrigin::Signal;
@@ -289,10 +284,9 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
 
     response.domain = "hardware";
     response.kind = IpcKind::Event;
-    response.name = "outputDeviceSelected";
+    response.name = "state";
     response.priority = commandEnv.priority;
     response.payload = payload;
 
     session->send(response);
 }
-

@@ -24,6 +24,50 @@ Example entry:
 
 ## [Unreleased]
 
+(2025-12-22 21:31:49 UTC) [added] Added binary-envelope-v2 TLV decoding for `engine.heartbeat` and `engine.selfTest` commands over LPF1 framing.
+
+(2025-12-22 21:24:29 UTC) [removed] Removed unused JSON-string TLV decoding helper now that runtime-push commands are fully typed.
+
+(2025-12-22 21:19:02 UTC) [changed] Replaced JSON-string parsing for `automation.automationSnapshot` with typed TLV decoding (rebuilding the JSON object from TLV).
+
+(2025-12-22 21:12:05 UTC) [changed] Replaced JSON-string parsing for `engine.playbackScheduleSnapshot` with typed TLV decoding (rebuilding the JSON object from TLV).
+
+(2025-12-22 21:00:28 UTC) [changed] Replaced JSON-string parsing for `engine.graphSnapshot` with typed TLV decoding (rebuilding the JSON object from TLV).
+
+(2025-12-22 20:46:24 UTC) [added] Added binary-envelope-v2 TLV decoding for `engine.start` and `engine.stop` commands over LPF1 framing.
+
+(2025-12-22 20:41:40 UTC) [added] Added binary-envelope-v2 TLV decoding for core `transport` commands (play/stop/seek/loop) over LPF1 framing.
+
+(2025-12-22 19:51:42 UTC) [changed] Removed legacy `hardware.listOutputDevices` and `hardware.setActiveOutputDevice` aliases in favour of `refreshOutputDevices` and `selectOutputDevice` only.
+
+(2025-12-22 19:47:32 UTC) [changed] Normalised hardware responses to emit `hardware.state` and added TLV encoding support for binary-envelope-v2 framed events.
+
+(2025-12-22 17:57:56 UTC) [added] Added an experimental framed-binary `binary-envelope-v2` decoder for the Pulse→Signal pilot (`assets.registerAudioAsset`), auto-detected via LPF1 magic.
+
+(2025-12-22 18:07:25 UTC) [changed] Extended framed-binary control-plane IPC to accept kind=1 JSON envelope frames alongside kind=3 `binary-envelope-v2` frames.
+
+(2025-12-22 18:46:09 UTC) [changed] Signal now emits JSON envelopes as framed kind=1 messages when the control-plane connection is in LPF1 framed mode.
+
+(2025-12-22 18:53:28 UTC) [added] Signal can now emit `engine.state` as kind=3 `binary-envelope-v2` frames (TLV payload), falling back to kind=1 JSON for all other messages.
+
+(2025-12-22 18:56:59 UTC) [added] Signal can now emit `transport.state` as kind=3 `binary-envelope-v2` frames (TLV payload), falling back to kind=1 JSON for all other messages.
+
+(2025-12-22 19:00:31 UTC) [added] Signal can now emit `transport.positionUpdate` as kind=3 `binary-envelope-v2` frames (TLV payload), falling back to kind=1 JSON for all other messages.
+
+(2025-12-22 19:03:56 UTC) [added] Signal can now emit `engine.selfTestResult` as kind=3 `binary-envelope-v2` frames (TLV payload), including object-list encoding for self-test scenarios.
+
+(2025-12-22 19:06:53 UTC) [added] Signal can now decode kind=3 `binary-envelope-v2` frames for `engine.graphSnapshot` and `engine.playbackScheduleSnapshot` (TLV payload contains JSON string).
+
+(2025-12-22 19:11:10 UTC) [added] Signal can now decode kind=3 `binary-envelope-v2` frames for `automation.automationSnapshot` (TLV payload contains JSON string).
+
+(2025-12-22 19:15:21 UTC) [added] Signal can now decode kind=3 `binary-envelope-v2` frames for `channelMix.updateChannel` (TLV typed payload).
+
+(2025-12-22 19:23:24 UTC) [changed] Removed legacy newline-delimited JSON IPC for the Pulse control-plane and now requires LPF1 framing (with kind=1 JSON frames where needed).
+
+(2025-12-22 19:30:53 UTC) [added] Signal can now decode kind=3 `binary-envelope-v2` frames for `node.setParameter` (TLV typed payload).
+
+(2025-12-22 19:35:41 UTC) [added] Signal can now decode kind=3 `binary-envelope-v2` frames for `hardware.refreshOutputDevices` and `hardware.selectOutputDevice` (TLV typed payloads).
+
 (2025-12-15 21:49:21 UTC) [changed] Renamed the Signal `channelMix` IPC handler implementation from MixerDomain to ChannelMixDomain and removed remaining MixerDomain references.
 
 (2025-12-15 21:30:23 UTC) [fixed] Removed undefined behaviour in test and runtime schedule/graph DTOs by default-initialising connection indices and audio segment metadata.

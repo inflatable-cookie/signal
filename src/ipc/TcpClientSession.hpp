@@ -2,10 +2,14 @@
 
 #include "ipc/IpcEnvelope.hpp"
 #include <asio/ip/tcp.hpp>
+#include <array>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <span>
 #include <string>
+#include <vector>
 
 namespace loophole::signal::ipc {
 
@@ -34,12 +38,18 @@ private:
     void doRead();
     void handleLine(std::string_view line);
 
+    void doReadBinary();
+    void handleBinaryBytes(std::span<const std::uint8_t> bytes);
+    void processBinaryBuffer();
+
     asio::ip::tcp::socket socket_;
     EnvelopeHandler handler_;
-    std::string readBuffer_;
+    std::vector<std::uint8_t> binaryBuffer_;
+    std::array<std::uint8_t, 8192> binaryReadChunk_{};
+    bool binaryMagicConsumed_ = false;
+    bool framedMagicSent_ = false;
     std::mutex writeMutex_;
     DisconnectedCallback disconnectedCallback_;
 };
 
 } // namespace loophole::signal::ipc
-
