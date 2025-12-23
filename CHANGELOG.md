@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2025-12-22 23:22:43 UTC) [removed] Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
 
 (2025-12-22 21:31:49 UTC) [added] Added binary-envelope-v2 TLV decoding for `engine.heartbeat` and `engine.selfTest` commands over LPF1 framing.
 

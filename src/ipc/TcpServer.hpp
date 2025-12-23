@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ipc/IpcEnvelope.hpp"
-#include "ipc/IpcEnvelopeCodec.hpp"
 #include "ipc/TcpClientSession.hpp"
 #include <asio/ip/tcp.hpp>
 #include <algorithm>
@@ -435,4 +434,3 @@ private:
 };
 
 } // namespace loophole::signal::ipc
-

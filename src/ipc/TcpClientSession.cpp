@@ -1,6 +1,5 @@
 #include "ipc/TcpClientSession.hpp"
 #include "ipc/BinaryEnvelopeCodec.hpp"
-#include "ipc/IpcEnvelopeCodec.hpp"
 #include "logging/Logging.hpp"
 #include <asio/buffer.hpp>
 #include <asio/read_until.hpp>
@@ -20,19 +19,8 @@ void TcpClientSession::start() {
 }
 
 void TcpClientSession::doRead() {
-    // Signal control-plane IPC is framed-only (LPF1). Payloads may still be JSON (kind=1),
-    // but they are carried inside frames.
+    // Signal control-plane IPC is framed-only (LPF1) and binary-envelope-v2 only.
     doReadBinary();
-}
-
-void TcpClientSession::handleLine(std::string_view line) {
-    auto env_opt = deserialiseEnvelope(line);
-    if (!env_opt.has_value()) {
-        LOG_ERROR({"TcpClientSession"}, "Failed to parse envelope, skipping");
-        return;
-    }
-
-    handler_(env_opt.value(), shared_from_this());
 }
 
 void TcpClientSession::doReadBinary() {
@@ -72,7 +60,6 @@ void TcpClientSession::handleBinaryBytes(std::span<const std::uint8_t> bytes) {
 void TcpClientSession::processBinaryBuffer() {
     constexpr std::uint8_t expectedMagic[4] = {'L', 'P', 'F', '1'};
     constexpr std::size_t maxFrameLen = 16 * 1024 * 1024;
-    constexpr std::uint8_t kindJsonEnvelope = 1;
     constexpr std::uint8_t kindBinaryEnvelope = 3;
 
     if (!binaryMagicConsumed_) {
@@ -115,17 +102,10 @@ void TcpClientSession::processBinaryBuffer() {
         }
 
         std::uint8_t kind = frame[0];
-        if (kind == kindJsonEnvelope) {
-            std::string line(reinterpret_cast<const char*>(frame.data() + 1), frame.size() - 1);
-            if (!line.empty()) {
-                handleLine(line);
-            }
-            continue;
-        }
-
         if (kind != kindBinaryEnvelope) {
-            LOG_WARN({"TcpClientSession"}, std::string("Unknown framed-binary kind: ") + std::to_string(kind));
-            continue;
+            LOG_ERROR({"TcpClientSession"}, std::string("Unsupported framed-binary kind: ") + std::to_string(kind));
+            close();
+            return;
         }
 
         std::string err;
@@ -147,7 +127,6 @@ void TcpClientSession::send(const IpcEnvelope& env) {
     std::lock_guard<std::mutex> lock(writeMutex_);
 
     try {
-        constexpr std::uint8_t kindJsonEnvelope = 1;
         constexpr std::uint8_t kindBinaryEnvelope = 3;
 
         if (!framedMagicSent_) {
@@ -158,27 +137,13 @@ void TcpClientSession::send(const IpcEnvelope& env) {
 
         std::string err;
         auto bin = tryEncodeBinaryEnvelopeV2(env, err);
-        if (bin.has_value()) {
-            std::uint32_t len = static_cast<std::uint32_t>(1 + bin.value().size());
-            std::uint8_t lenBytes[4] = {
-                static_cast<std::uint8_t>(len & 0xff),
-                static_cast<std::uint8_t>((len >> 8) & 0xff),
-                static_cast<std::uint8_t>((len >> 16) & 0xff),
-                static_cast<std::uint8_t>((len >> 24) & 0xff),
-            };
-
-            asio::write(socket_, asio::buffer(lenBytes, 4));
-            asio::write(socket_, asio::buffer(&kindBinaryEnvelope, 1));
-            asio::write(socket_, asio::buffer(bin.value()));
+        if (!bin.has_value()) {
+            LOG_ERROR({"TcpClientSession"}, std::string("Failed to encode binary envelope: ") + err);
+            close();
             return;
         }
-        if (!err.empty()) {
-            LOG_WARN({"TcpClientSession"}, std::string("Binary encode failed, falling back to JSON: ") + err);
-        }
 
-        std::string json = serialiseEnvelope(env);
-
-        std::uint32_t len = static_cast<std::uint32_t>(1 + json.size());
+        std::uint32_t len = static_cast<std::uint32_t>(1 + bin.value().size());
         std::uint8_t lenBytes[4] = {
             static_cast<std::uint8_t>(len & 0xff),
             static_cast<std::uint8_t>((len >> 8) & 0xff),
@@ -187,8 +152,8 @@ void TcpClientSession::send(const IpcEnvelope& env) {
         };
 
         asio::write(socket_, asio::buffer(lenBytes, 4));
-        asio::write(socket_, asio::buffer(&kindJsonEnvelope, 1));
-        asio::write(socket_, asio::buffer(json));
+        asio::write(socket_, asio::buffer(&kindBinaryEnvelope, 1));
+        asio::write(socket_, asio::buffer(bin.value()));
     } catch (const std::exception& e) {
         LOG_ERROR({"TcpClientSession"}, std::string("Send error: ") + e.what());
     }

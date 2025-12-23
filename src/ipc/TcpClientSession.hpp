@@ -36,7 +36,6 @@ public:
 
 private:
     void doRead();
-    void handleLine(std::string_view line);
 
     void doReadBinary();
     void handleBinaryBytes(std::span<const std::uint8_t> bytes);
