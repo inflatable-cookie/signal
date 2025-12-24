@@ -9,6 +9,35 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 
+namespace {
+std::optional<int> parseSpatialChannelGainIndex(const std::string& parameterId) {
+    static const std::string prefix = "spatial.channelGain.";
+
+    if (parameterId.rfind(prefix, 0) != 0) {
+        return std::nullopt;
+    }
+
+    const std::string suffix = parameterId.substr(prefix.size());
+    if (suffix.empty()) {
+        return std::nullopt;
+    }
+
+    try {
+        size_t pos = 0;
+        int index = std::stoi(suffix, &pos, 10);
+        if (pos != suffix.size()) {
+            return std::nullopt;
+        }
+        if (index < 0) {
+            return std::nullopt;
+        }
+        return index;
+    } catch (...) {
+        return std::nullopt;
+    }
+}
+}
+
 NodeDomain::NodeDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
 {
@@ -71,6 +100,9 @@ void NodeDomain::handleSetParameter(const nlohmann::json& payload) {
             } else if (parameterId == "spatial.balance") {
                 const float value = payload.value("value", 0.0f);
                 faderNode->setPan(value);
+            } else if (auto channelIndex = parseSpatialChannelGainIndex(parameterId)) {
+                const float value = payload.value("value", 1.0f);
+                faderNode->setChannelGain(channelIndex.value(), value);
             } else if (parameterId == "muted") {
                 if (!payload.contains("value") || !payload["value"].is_boolean()) {
                     std::ostringstream msg;

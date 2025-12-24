@@ -554,6 +554,19 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
                 // consumes the computed effective mute state.
             }
 
+            if (desc.spatial.has_value()) {
+                const auto& spatial = desc.spatial.value();
+                const bool enabled = spatial.enabled.value_or(false);
+                if (enabled && spatial.adapter.has_value()) {
+                    const auto& adapter = spatial.adapter.value();
+                    if (adapter == "perChannelGain") {
+                        node->setSpatialAdapter(FaderNode::SpatialAdapter::PerChannelGain);
+                    } else if (adapter == "balance") {
+                        node->setSpatialAdapter(FaderNode::SpatialAdapter::Balance);
+                    }
+                }
+            }
+
             return node;
         }
 

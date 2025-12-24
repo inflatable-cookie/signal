@@ -23,6 +23,8 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2025-12-24 19:28:51 UTC) [changed] Made `spatial.balance` a non-amplifying balance control and applied left/right group attenuation for common multichannel layouts (5.1/7.1/7.1.4), falling back safely for unknown layouts.
+(2025-12-24 18:22:25 UTC) [added] Added `perChannelGain` spatial adapter support for FaderNodes and routed `spatial.channelGain.<index>` parameters.
 (2025-12-24 16:46:07 UTC) [changed] Removed graph snapshot `mix.pan` initialisation and switched fader automation/control-plane to `parameterId="spatial.balance"`.
 (2025-12-24 14:49:03 UTC) [changed] Removed remaining “channel-mix” terminology from Signal comments now that mix controls are node-owned.
 (2025-12-24 12:21:43 UTC) [changed] Renamed graph snapshot node `channelMix` to `mix` (gain/pan only) across TLV decoding and graph-load application.

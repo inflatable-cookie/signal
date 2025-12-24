@@ -380,12 +380,12 @@ TEST_CASE("Phase 3 - Send/Receive test", "[graph][phase3][send]") {
     REQUIRE(hasOutput);
 }
 
-TEST_CASE("Phase 3 - Gain/Pan test", "[graph][phase3][fader]") {
+TEST_CASE("Phase 3 - Gain/balance test", "[graph][phase3][fader]") {
     // Test fader node directly (simpler and more reliable)
     FaderNode fader("fader-1");
     fader.prepare(44100, 512);
 
-    // Set gain to 0.5 and pan to -1.0 (full left)
+    // Set gain to 0.5 and balance to -1.0 (full left)
     fader.setGain(0.5f);
     fader.setPan(-1.0f);
 
@@ -400,13 +400,67 @@ TEST_CASE("Phase 3 - Gain/Pan test", "[graph][phase3][fader]") {
     npc.blockStartSample = 0;
     fader.process(npc);
 
-    // Verify gain and pan applied
-    // Pan -1.0 (full left): leftGain = (1 - (-1)) * 0.5 = 2.0 * 0.5 = 1.0, rightGain = (1 + (-1)) * 0.5 = 0.0
-    // Input is 1.0 on both channels
-    // Left output: 1.0 * 1.0 = 1.0
-    // Right output: 1.0 * 0.0 = 0.0
-    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 0) - 1.0f) < 0.01f); // Left should be 1.0
+    // Verify gain and balance applied without amplification above unity.
+    // balance -1.0 (full left): gL = 1, gR = 0
+    // Left output: 1.0 * (0.5 * 1.0) = 0.5
+    // Right output: 1.0 * (0.5 * 0.0) = 0.0
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 0) - 0.5f) < 0.01f); // Left should be 0.5
     REQUIRE(std::abs(fader.io.audioOut.getSample(0, 1)) < 0.01f); // Right should be 0.0
+}
+
+TEST_CASE("Phase 29 - Balance group attenuation applies on 5.1", "[graph][phase29][spatial][balance]") {
+    FaderNode fader("fader-5.1");
+    fader.prepare(44100, 512);
+
+    // Simulate a 5.1 stream in canonical order: [L, R, C, LFE, Ls, Rs]
+    fader.io.audioIn.resize(6, 512);
+    fader.io.audioOut.resize(6, 512);
+
+    fader.setGain(1.0f);
+    fader.setPan(1.0f); // full right => gL=0, gR=1, gC=0.5
+
+    for (int ch = 0; ch < 6; ++ch) {
+        fader.io.audioIn.setSample(0, ch, 1.0f);
+    }
+
+    NodeProcessContext npc;
+    npc.sampleRate = 44100;
+    npc.blockSize = 512;
+    npc.blockStartSample = 0;
+    fader.process(npc);
+
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 0) - 0.0f) < 0.01f); // L
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 1) - 1.0f) < 0.01f); // R
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 2) - 0.5f) < 0.01f); // C
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 3) - 0.5f) < 0.01f); // LFE
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 4) - 0.0f) < 0.01f); // Ls
+    REQUIRE(std::abs(fader.io.audioOut.getSample(0, 5) - 1.0f) < 0.01f); // Rs
+}
+
+TEST_CASE("Phase 29 - Balance falls back to uniform gain on unknown multi-channel layouts", "[graph][phase29][spatial][balance]") {
+    FaderNode fader("fader-custom");
+    fader.prepare(44100, 512);
+
+    // 3-channel layout is treated as unsupported for balance in Phase 29.
+    fader.io.audioIn.resize(3, 512);
+    fader.io.audioOut.resize(3, 512);
+
+    fader.setGain(0.5f);
+    fader.setPan(1.0f); // would hard-right if it were supported
+
+    for (int ch = 0; ch < 3; ++ch) {
+        fader.io.audioIn.setSample(0, ch, 1.0f);
+    }
+
+    NodeProcessContext npc;
+    npc.sampleRate = 44100;
+    npc.blockSize = 512;
+    npc.blockStartSample = 0;
+    fader.process(npc);
+
+    for (int ch = 0; ch < 3; ++ch) {
+        REQUIRE(std::abs(fader.io.audioOut.getSample(0, ch) - 0.5f) < 0.01f);
+    }
 }
 
 TEST_CASE("Phase 3 - NodeProcessContext test", "[graph][phase3][context]") {

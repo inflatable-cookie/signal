@@ -17,6 +17,7 @@
 #include "core/GraphSnapshot.hpp"
 #include "core/NodeAudioConfig.hpp"
 #include "logging/Logging.hpp"
+#include <array>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -474,6 +475,12 @@ private:
 /// Phase 3: Applies gain and panning
 class FaderNode : public GraphNode {
 public:
+    enum class SpatialAdapter {
+        None,
+        Balance,
+        PerChannelGain,
+    };
+
     FaderNode(
         const NodeId& id,
         const std::string& trackId = ""
@@ -482,7 +489,9 @@ public:
         , _gainLinear(1.0f)  // Default: unity gain
         , _pan(0.0f)         // Default: center pan
         , _muted(false)
+        , _spatialAdapter(SpatialAdapter::Balance)
     {
+        _channelGains.fill(1.0f);
     }
 
     /// Set gain (linear, 0.0 = off, 1.0 = unity)
@@ -491,6 +500,14 @@ public:
     }
 
     float getGain() const noexcept { return _gainLinear; }
+
+    void setSpatialAdapter(SpatialAdapter adapter) noexcept {
+        _spatialAdapter = adapter;
+    }
+
+    SpatialAdapter getSpatialAdapter() const noexcept {
+        return _spatialAdapter;
+    }
 
     /// Set pan (-1.0 = left, 0.0 = center, 1.0 = right)
     /// Only used for stereo layouts
@@ -502,6 +519,17 @@ public:
     }
 
     float getPan() const noexcept { return _pan; }
+
+    void setChannelGain(int channelIndex, float gain) noexcept {
+        if (channelIndex < 0 || channelIndex >= static_cast<int>(MAX_CHANNEL_GAINS)) {
+            return;
+        }
+
+        float g = gain;
+        if (g < 0.0f) g = 0.0f;
+        if (g > 4.0f) g = 4.0f;
+        _channelGains[static_cast<size_t>(channelIndex)] = g;
+    }
 
     void setMuted(bool muted) noexcept { _muted = muted; }
     bool isMuted() const noexcept { return _muted; }
@@ -520,20 +548,51 @@ public:
             return;
         }
 
+        if (_spatialAdapter == SpatialAdapter::PerChannelGain) {
+            // Apply gain-per-channel, independent of layout.
+            for (int ch = 0; ch < numChannels; ++ch) {
+                const float channelGain = (ch < static_cast<int>(MAX_CHANNEL_GAINS))
+                    ? _channelGains[static_cast<size_t>(ch)]
+                    : 1.0f;
+
+                const float g = _gainLinear * channelGain;
+                for (int frame = 0; frame < numFrames; ++frame) {
+                    float sample = io.audioIn.getSample(frame, ch) * g;
+                    io.audioOut.setSample(frame, ch, sample);
+                }
+            }
+            return;
+        }
+
         if (numChannels == 1) {
-            // Mono: Apply gain only
+            // Mono: Apply gain only.
+            //
+            // Note: the `balance` adapter is a layout-aware control. For mono
+            // nodes, balance has no meaningful left/right split at this node’s
+            // channel surface, so we treat it as pass-through.
+            const float channelGain = _channelGains[0];
             for (int frame = 0; frame < numFrames; ++frame) {
-                float sample = io.audioIn.getSample(frame, 0) * _gainLinear;
+                float sample = io.audioIn.getSample(frame, 0) * (_gainLinear * channelGain);
                 io.audioOut.setSample(frame, 0, sample);
             }
         } else if (numChannels == 2) {
-            // Stereo: Apply gain and pan
-            // Simple linear pan: left = (1 - pan), right = (1 + pan)
-            // For pan = -1.0 (left): left = 2.0, right = 0.0
-            // For pan = 0.0 (center): left = 1.0, right = 1.0
-            // For pan = 1.0 (right): left = 0.0, right = 2.0
-            float leftGain = (1.0f - _pan) * _gainLinear;
-            float rightGain = (1.0f + _pan) * _gainLinear;
+            // Stereo: Apply gain + balance.
+            //
+            // `spatial.balance` is defined as a stereo-friendly balance control
+            // that must not amplify above unity. Mapping:
+            //
+            // - if balance >= 0: gL = 1 - balance, gR = 1
+            // - if balance < 0:  gL = 1,          gR = 1 + balance
+            float gL = 1.0f;
+            float gR = 1.0f;
+            if (_pan >= 0.0f) {
+                gL = 1.0f - _pan;
+            } else {
+                gR = 1.0f + _pan;
+            }
+
+            float leftGain = gL * _gainLinear * _channelGains[0];
+            float rightGain = gR * _gainLinear * _channelGains[1];
 
             for (int frame = 0; frame < numFrames; ++frame) {
                 float inLeft = io.audioIn.getSample(frame, 0);
@@ -543,10 +602,68 @@ public:
                 io.audioOut.setSample(frame, 1, inRight * rightGain);
             }
         } else {
-            // Multi-channel: Apply gain uniformly (no panning)
+            // Multi-channel:
+            //
+            // For common layouts, `balance` is applied as left/right group
+            // attenuation (see Chorus: `docs/specs/engine/spatial-adapters.md`).
+            //
+            // If the channel count does not match a known layout, treat balance
+            // as unsupported and fall back to uniform gain.
+            float gL = 1.0f;
+            float gR = 1.0f;
+            if (_pan >= 0.0f) {
+                gL = 1.0f - _pan;
+            } else {
+                gR = 1.0f + _pan;
+            }
+
+            const float gC = (gL + gR) * 0.5f;
+
             for (int ch = 0; ch < numChannels; ++ch) {
+                const float channelGain = (ch < static_cast<int>(MAX_CHANNEL_GAINS))
+                    ? _channelGains[static_cast<size_t>(ch)]
+                    : 1.0f;
+
+                const bool isKnownLayout =
+                    (numChannels == 6) || (numChannels == 8) || (numChannels == 12);
+                const float balanceMul = [&]() noexcept -> float {
+                    if (!isKnownLayout) {
+                        return 1.0f;
+                    }
+
+                    // Canonical order:
+                    // - 5.1:   [L, R, C, LFE, Ls, Rs]
+                    // - 7.1:   [L, R, C, LFE, Ls, Rs, Lrs, Rrs]
+                    // - 7.1.4: [L, R, C, LFE, Ls, Rs, Lrs, Rrs, Ltf, Rtf, Ltr, Rtr]
+                    switch (numChannels) {
+                        case 6: {
+                            // left: 0(L),4(Ls) | right: 1(R),5(Rs) | centre: 2(C),3(LFE)
+                            if (ch == 0 || ch == 4) return gL;
+                            if (ch == 1 || ch == 5) return gR;
+                            return gC;
+                        }
+                        case 8: {
+                            // left: 0(L),4(Ls),6(Lrs) | right: 1(R),5(Rs),7(Rrs) | centre: 2(C),3(LFE)
+                            if (ch == 0 || ch == 4 || ch == 6) return gL;
+                            if (ch == 1 || ch == 5 || ch == 7) return gR;
+                            return gC;
+                        }
+                        case 12: {
+                            // left: 0(L),4(Ls),6(Lrs),8(Ltf),10(Ltr)
+                            // right: 1(R),5(Rs),7(Rrs),9(Rtf),11(Rtr)
+                            // centre: 2(C),3(LFE)
+                            if (ch == 0 || ch == 4 || ch == 6 || ch == 8 || ch == 10) return gL;
+                            if (ch == 1 || ch == 5 || ch == 7 || ch == 9 || ch == 11) return gR;
+                            return gC;
+                        }
+                        default:
+                            return 1.0f;
+                    }
+                }();
+
+                const float g = _gainLinear * channelGain * balanceMul;
                 for (int frame = 0; frame < numFrames; ++frame) {
-                    float sample = io.audioIn.getSample(frame, ch) * _gainLinear;
+                    float sample = io.audioIn.getSample(frame, ch) * g;
                     io.audioOut.setSample(frame, ch, sample);
                 }
             }
@@ -554,9 +671,13 @@ public:
     }
 
 private:
+    static constexpr size_t MAX_CHANNEL_GAINS = 64;
+
     float _gainLinear; // Linear gain (0.0 to 1.0+)
     float _pan;        // Pan position (-1.0 = left, 0.0 = center, 1.0 = right)
     bool _muted;
+    SpatialAdapter _spatialAdapter;
+    std::array<float, MAX_CHANNEL_GAINS> _channelGains;
 };
 
 /// ReceiveNode - receives from SendNodes (receive point for routed audio/MIDI)
