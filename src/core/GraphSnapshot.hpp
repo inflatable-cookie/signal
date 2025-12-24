@@ -30,12 +30,10 @@ struct NodeAudioConfigDesc {
     std::optional<std::string> layout;  // Optional layout identifier
 };
 
-/// Channel mix configuration (matches Pulse NodeChannelMixConfig)
-struct NodeChannelMixConfigDesc {
+/// Per-node mix configuration (matches Pulse NodeMixConfig)
+struct NodeMixConfigDesc {
     std::optional<float> gain;
     std::optional<float> pan;
-    std::optional<bool> muted;
-    std::optional<bool> soloed;
 };
 
 /// Node descriptor (matches Pulse NodeDesc)
@@ -44,7 +42,7 @@ struct NodeDesc {
     std::optional<std::string> trackId;
     std::optional<std::string> laneId;
     // Optional owning Channel identifier from Pulse (Phase 10 output Channel/Fader work).
-    // This is used for output mix selection and metering/channel-mix lookup.
+    // This is used for output mix selection and metering identifiers.
     std::optional<std::string> channelId;
     NodeKind kind;
     std::optional<PluginFormat> pluginFormat;
@@ -62,8 +60,8 @@ struct NodeDesc {
     /// Optional tail hint in samples (for future tail-aware transport)
     /// Signal will compute actual tail from plugin/node capabilities, but this can serve as a hint
     std::optional<uint32_t> tailSamples;
-    /// Optional channel mix configuration for channel-related nodes (e.g. Fader)
-    std::optional<NodeChannelMixConfigDesc> channelMix;
+    /// Optional per-node mix configuration for channel-related nodes (e.g. Fader)
+    std::optional<NodeMixConfigDesc> mix;
     // Hardware I/O node fields (Phase 7+)
     std::optional<std::string> deviceId;      // For HardwareAudioInputNode / HardwareAudioOutputNode
     std::optional<bool> deviceIsDefault;      // For HardwareAudioOutputNode selection

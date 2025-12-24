@@ -635,13 +635,9 @@ std::optional<nlohmann::json> decodeGraphSnapshotPayloadTlv(
                                     mix["gain"] = readTlvF64(mv);
                                 } else if (mh.fieldId == 3 && mh.fieldType == TLV_F64) {
                                     mix["pan"] = readTlvF64(mv);
-                                } else if (mh.fieldId == 4 && mh.fieldType == TLV_BOOL) {
-                                    mix["muted"] = readTlvBool(mv);
-                                } else if (mh.fieldId == 5 && mh.fieldType == TLV_BOOL) {
-                                    mix["soloed"] = readTlvBool(mv);
                                 }
                             }
-                            node["channelMix"] = mix;
+                            node["mix"] = mix;
                         } else if (nh.fieldId == 16 && nh.fieldType == TLV_OBJECT) {
                             nlohmann::json channel = nlohmann::json::object();
                             TlvReader cr(nv);
@@ -1508,74 +1504,6 @@ std::optional<IpcEnvelope> decodeBinaryEnvelopeV2(
             }
             payload = decodedPayload.value();
         } else if (
-            domain == "channelMix"
-            && name == "updateChannel"
-            && kindOpt.value() == IpcKind::Command
-        ) {
-            TlvReader rr(payloadBytes);
-            std::optional<std::string> channelId;
-            std::optional<double> gain;
-            std::optional<double> pan;
-            std::optional<bool> isMuted;
-            std::optional<bool> isSoloed;
-            std::optional<bool> effectiveMuted;
-
-            while (true) {
-                auto hOpt = rr.readNextHeader();
-                if (!hOpt.has_value()) {
-                    break;
-                }
-
-                TlvHeader h = hOpt.value();
-                auto valueBytes = rr.readValueBytes(h.byteLen);
-
-                if (h.fieldId == 2 && h.fieldType == TLV_STRING) {
-                    channelId = readTlvString(valueBytes);
-                } else if (h.fieldId == 3 && h.fieldType == TLV_F64) {
-                    gain = readTlvF64(valueBytes);
-                } else if (h.fieldId == 4 && h.fieldType == TLV_F64) {
-                    pan = readTlvF64(valueBytes);
-                } else if (h.fieldId == 5 && h.fieldType == TLV_BOOL) {
-                    isMuted = readTlvBool(valueBytes);
-                } else if (h.fieldId == 6 && h.fieldType == TLV_BOOL) {
-                    isSoloed = readTlvBool(valueBytes);
-                } else if (h.fieldId == 7 && h.fieldType == TLV_BOOL) {
-                    effectiveMuted = readTlvBool(valueBytes);
-                }
-            }
-
-            if (!channelId.has_value()) {
-                error = "channelMix.updateChannel missing channelId";
-                return std::nullopt;
-            }
-            if (!gain.has_value()) {
-                error = "channelMix.updateChannel missing gain";
-                return std::nullopt;
-            }
-            if (!pan.has_value()) {
-                error = "channelMix.updateChannel missing pan";
-                return std::nullopt;
-            }
-            if (!isMuted.has_value()) {
-                error = "channelMix.updateChannel missing isMuted";
-                return std::nullopt;
-            }
-            if (!isSoloed.has_value()) {
-                error = "channelMix.updateChannel missing isSoloed";
-                return std::nullopt;
-            }
-            if (!effectiveMuted.has_value()) {
-                error = "channelMix.updateChannel missing effectiveMuted";
-                return std::nullopt;
-            }
-
-            payload["channelId"] = channelId.value();
-            payload["gain"] = gain.value();
-            payload["pan"] = pan.value();
-            payload["isMuted"] = isMuted.value();
-            payload["isSoloed"] = isSoloed.value();
-            payload["effectiveMuted"] = effectiveMuted.value();
-        } else if (
             domain == "node"
             && name == "setParameter"
             && kindOpt.value() == IpcKind::Command
@@ -1584,6 +1512,7 @@ std::optional<IpcEnvelope> decodeBinaryEnvelopeV2(
             std::optional<std::string> nodeId;
             std::optional<std::string> parameterId;
             std::optional<double> value;
+            std::optional<bool> valueBool;
 
             while (true) {
                 auto hOpt = rr.readNextHeader();
@@ -1600,12 +1529,18 @@ std::optional<IpcEnvelope> decodeBinaryEnvelopeV2(
                     parameterId = readTlvString(valueBytes);
                 } else if (h.fieldId == 4 && h.fieldType == TLV_F64) {
                     value = readTlvF64(valueBytes);
+                } else if (h.fieldId == 5 && h.fieldType == TLV_BOOL) {
+                    valueBool = readTlvBool(valueBytes);
                 }
             }
 
             payload["nodeId"] = nodeId.value_or("");
             payload["parameterId"] = parameterId.value_or("");
-            payload["value"] = value.value_or(0.0);
+            if (valueBool.has_value()) {
+                payload["value"] = valueBool.value();
+            } else {
+                payload["value"] = value.value_or(0.0);
+            }
         } else if (
             domain == "hardware"
             && name == "refreshOutputDevices"
@@ -1806,6 +1741,69 @@ std::optional<IpcEnvelope> decodeBinaryEnvelopeV2(
     }
 }
 
+std::optional<std::vector<std::uint8_t>> encodeMeteringUpdatePayloadTlv(
+    const nlohmann::json& payload,
+    std::string& error
+) {
+    try {
+        if (!payload.contains("channels") || !payload["channels"].is_array()) {
+            error = "metering.update missing channels";
+            return std::nullopt;
+        }
+
+        std::vector<std::vector<std::uint8_t>> channels;
+        for (const auto& ch : payload["channels"]) {
+            if (!ch.is_object()) {
+                continue;
+            }
+
+            if (!ch.contains("channelId") || !ch["channelId"].is_string()) {
+                error = "metering.update.channels[] missing channelId";
+                return std::nullopt;
+            }
+            if (!ch.contains("peak") || !ch["peak"].is_number()) {
+                error = "metering.update.channels[] missing peak";
+                return std::nullopt;
+            }
+            if (!ch.contains("rms") || !ch["rms"].is_number()) {
+                error = "metering.update.channels[] missing rms";
+                return std::nullopt;
+            }
+            if (!ch.contains("timestamp") || !ch["timestamp"].is_number_unsigned()) {
+                if (!ch.contains("timestamp") || !ch["timestamp"].is_number_integer()) {
+                    error = "metering.update.channels[] missing timestamp";
+                    return std::nullopt;
+                }
+                auto ts_signed = ch["timestamp"].get<std::int64_t>();
+                if (ts_signed < 0) {
+                    error = "metering.update.channels[] timestamp must be non-negative";
+                    return std::nullopt;
+                }
+            }
+
+            TlvWriter cw;
+            cw.writeU32(1, 1);
+            cw.writeString(2, ch["channelId"].get<std::string>());
+            cw.writeF64(3, ch["peak"].get<double>());
+            cw.writeF64(4, ch["rms"].get<double>());
+            if (ch["timestamp"].is_number_unsigned()) {
+                cw.writeU64(5, ch["timestamp"].get<std::uint64_t>());
+            } else {
+                cw.writeU64(5, static_cast<std::uint64_t>(ch["timestamp"].get<std::int64_t>()));
+            }
+            channels.push_back(cw.intoBytes());
+        }
+
+        TlvWriter w;
+        w.writeU32(1, 1);
+        w.writeObjectList(2, channels);
+        return w.intoBytes();
+    } catch (const std::exception& e) {
+        error = e.what();
+        return std::nullopt;
+    }
+}
+
 std::optional<std::vector<std::uint8_t>> encodeBinaryEnvelopeV2(
     const IpcEnvelope& envelope,
     std::span<const std::uint8_t> payloadTlvBytes,
@@ -1899,6 +1897,16 @@ std::optional<std::vector<std::uint8_t>> tryEncodeBinaryEnvelopeV2(
         return encodeBinaryEnvelopeV2(envelope, payload.value(), error);
     }
 
+    if (envelope.domain == "metering" && envelope.name == "update" && envelope.kind == IpcKind::Event) {
+        auto payload = encodeMeteringUpdatePayloadTlv(envelope.payload, error);
+        if (!payload.has_value()) {
+            return std::nullopt;
+        }
+        return encodeBinaryEnvelopeV2(envelope, payload.value(), error);
+    }
+
+    error =
+        "No typed payload codec for " + envelope.domain + "." + envelope.name + " (" + kindToString(envelope.kind) + ")";
     return std::nullopt;
 }
 

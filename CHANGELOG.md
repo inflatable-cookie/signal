@@ -23,6 +23,16 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2025-12-24 14:49:03 UTC) [changed] Removed remaining “channel-mix” terminology from Signal comments now that mix controls are node-owned.
+(2025-12-24 12:21:43 UTC) [changed] Renamed graph snapshot node `channelMix` to `mix` (gain/pan only) across TLV decoding and graph-load application.
+(2025-12-24 11:03:08 UTC) [removed] Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.
+(2025-12-24 10:53:19 UTC) [removed] Removed the unused `channelMix` IPC domain handler now that mute is expressed via node parameters.
+(2025-12-24 10:23:01 UTC) [changed] Removed `muted`/`soloed` decoding from the `engine.graphSnapshot` channel-mix TLV payload, consolidating mute on `node.setParameter`.
+(2025-12-24 08:50:05 UTC) [changed] Stopped applying graph snapshot `mixer.muted` flags at load time; mute is now driven solely by the `node.setParameter` (`muted`) control-plane.
+(2025-12-24 08:37:25 UTC) [added] Implemented `muted` handling for plugin nodes via `node.setParameter` and added a regression test ensuring muted plugin nodes output silence.
+(2025-12-24 08:26:34 UTC) [changed] Applied mute via `node.setParameter` (`muted`) on FaderNodes and removed the `channelMix.updateChannel` binary decoder path.
+(2025-12-24 07:00:29 UTC) [fixed] Added binary-envelope-v2 TLV encoding for `metering.update` and relaxed timestamp parsing to avoid spurious encode failures.
+(2025-12-24 06:34:55 UTC) [fixed] Dropped unsupported outbound binary envelopes instead of closing the Pulse↔Signal control-plane connection, preventing Signal disconnect loops.
 (2025-12-22 23:22:43 UTC) [removed] Removed kind=1 JSON frames and the JSON envelope codec from the Pulse↔Signal LPF1 control-plane (binary-envelope-v2 only).
 
 (2025-12-22 21:31:49 UTC) [added] Added binary-envelope-v2 TLV decoding for `engine.heartbeat` and `engine.selfTest` commands over LPF1 framing.

@@ -48,7 +48,7 @@ TEST_CASE("Phase 7 - FaderNode initial state from graph snapshot", "[graph][phas
     REQUIRE(faderNode->getPan() == Approx(-0.25f));
 }
 
-TEST_CASE("Phase 7 - FaderNode respects muted flag from graph snapshot", "[graph][phase7][mixer]") {
+TEST_CASE("Phase 7 - FaderNode ignores muted flag from graph snapshot (mute via node parameter)", "[graph][phase7][mixer]") {
     using nlohmann::json;
 
     // Build a minimal graph snapshot JSON with a muted fader node.
@@ -84,6 +84,7 @@ TEST_CASE("Phase 7 - FaderNode respects muted flag from graph snapshot", "[graph
     auto* faderNode = dynamic_cast<FaderNode*>(node);
     REQUIRE(faderNode != nullptr);
 
-    // Muted flag should force gain to 0.0 at load time, regardless of the gain value.
-    REQUIRE(faderNode->getGain() == Approx(0.0f));
+    // Muted is now projected to nodes via `node.setParameter` (`muted`), so the
+    // graph snapshot mute flag must not affect gain at load time.
+    REQUIRE(faderNode->getGain() == Approx(0.8f));
 }

@@ -138,8 +138,11 @@ void TcpClientSession::send(const IpcEnvelope& env) {
         std::string err;
         auto bin = tryEncodeBinaryEnvelopeV2(env, err);
         if (!bin.has_value()) {
-            LOG_ERROR({"TcpClientSession"}, std::string("Failed to encode binary envelope: ") + err);
-            close();
+            LOG_WARN(
+                {"TcpClientSession"},
+                std::string("Dropping outbound envelope (binary codec missing): ")
+                    + env.domain + "." + env.name + " (" + kindToString(env.kind) + "): " + err
+            );
             return;
         }
 

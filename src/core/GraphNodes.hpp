@@ -243,6 +243,7 @@ public:
         , _pluginKind(kind)
         , _pluginId(pluginId)
         , _plugin(nullptr)
+        , _muted(false)
     {
     }
 
@@ -258,6 +259,7 @@ public:
         , _pluginKind(kind)
         , _pluginId(desc.pluginId.value_or(""))
         , _plugin(nullptr)
+        , _muted(false)
     {
         if (pluginHost && desc.pluginFormat.has_value() && desc.pluginId.has_value()) {
             // Build PluginDescriptor from NodeDesc with kind-specific defaults
@@ -306,6 +308,8 @@ public:
     PluginNodeKind getPluginKind() const noexcept { return _pluginKind; }
     const std::string& getPluginId() const noexcept { return _pluginId; }
     PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
+    void setMuted(bool muted) noexcept { _muted = muted; }
+    bool isMuted() const noexcept { return _muted; }
 
     void prepare(int sampleRate, int maxBlockSize) override {
         GraphNode::prepare(sampleRate, maxBlockSize);
@@ -357,6 +361,13 @@ public:
     }
 
     void process(const NodeProcessContext& npc) override {
+        if (_muted) {
+            io.audioOut.clear();
+            io.midiOut.clear();
+            io.midiOut.append(io.midiIn);
+            return;
+        }
+
         // If plugin doesn't exist or I/O negotiation failed, bypass plugin
         if (!_plugin || !_ioNegotiationOk) {
             // Bypass behavior: pass input to output without processing
@@ -397,6 +408,7 @@ private:
     bool _ioNegotiationOk = false;  // Set to true if I/O negotiation succeeded
     int _requestedInputs = 0;      // Stored from NodeDesc for negotiation
     int _requestedOutputs = 0;     // Stored from NodeDesc for negotiation
+    bool _muted;
 
     // Convert PluginNodeKind to NodeKind for GraphNode base class
     static NodeKind pluginKindToNodeKind(PluginNodeKind kind) {
@@ -469,6 +481,7 @@ public:
         : GraphNode(id, NodeKind::Fader, trackId)
         , _gainLinear(1.0f)  // Default: unity gain
         , _pan(0.0f)         // Default: center pan
+        , _muted(false)
     {
     }
 
@@ -490,10 +503,22 @@ public:
 
     float getPan() const noexcept { return _pan; }
 
+    void setMuted(bool muted) noexcept { _muted = muted; }
+    bool isMuted() const noexcept { return _muted; }
+
     void process(const NodeProcessContext& npc) override {
         // Phase 3: Apply gain and panning
         int numChannels = io.audioOut.numChannels();
         int numFrames = io.audioOut.numFrames();
+
+        if (_muted) {
+            for (int ch = 0; ch < numChannels; ++ch) {
+                for (int frame = 0; frame < numFrames; ++frame) {
+                    io.audioOut.setSample(frame, ch, 0.0f);
+                }
+            }
+            return;
+        }
 
         if (numChannels == 1) {
             // Mono: Apply gain only
@@ -531,6 +556,7 @@ public:
 private:
     float _gainLinear; // Linear gain (0.0 to 1.0+)
     float _pan;        // Pan position (-1.0 = left, 0.0 = center, 1.0 = right)
+    bool _muted;
 };
 
 /// ReceiveNode - receives from SendNodes (receive point for routed audio/MIDI)

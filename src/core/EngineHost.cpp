@@ -4,7 +4,6 @@
 #include "backend/AudioBackendConfig.hpp"
 #include "backend/OutputDeviceInfo.hpp"
 #include "core/MeteringService.hpp"
-#include "core/ChannelMixService.hpp"
 #include "core/AutomationService.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/GraphEngine.hpp"
@@ -22,6 +21,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
 #include <sstream>
@@ -35,7 +35,6 @@ EngineHost::EngineHost()
     , _graphTailSamples(0)
 {
     _meteringService = std::make_unique<MeteringService>();
-    _channelMixService = std::make_unique<ChannelMixService>();
     _automationService = std::make_unique<AutomationService>();
     _streamScheduler = std::make_unique<StreamScheduler>();
     _graphEngine = std::make_unique<GraphEngine>();
@@ -59,8 +58,6 @@ EngineHost::EngineHost()
     _outputNodeIdA = "";
     _outputNodeIdB = "";
     _activeOutputNodeId.store(&_outputNodeIdA, std::memory_order_release);
-
-    _outputHasExplicitFader.store(false, std::memory_order_release);
 
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     _renderBlockCount.store(0, std::memory_order_release);
@@ -312,14 +309,6 @@ const MeteringService& EngineHost::metering() const {
     return *_meteringService;
 }
 
-ChannelMixService& EngineHost::channelMix() {
-    return *_channelMixService;
-}
-
-const ChannelMixService& EngineHost::channelMix() const {
-    return *_channelMixService;
-}
-
 PluginHost* EngineHost::pluginHost() {
     return _pluginHost.get();
 }
@@ -356,7 +345,7 @@ void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
     _graphEngine->loadGraphSnapshot(snapshot, _pluginHost.get(), this);
 
     // Determine the active output node ID (HardwareAudioOutputNode) and the
-    // output Channel identifier used for channel-mix/metering.
+    // output Channel identifier used for metering/recording identifiers.
     //
     // Prefer the default hardware output node (deviceIsDefault=true) and
     // prefer nodes that are fed by an explicit output Fader node in the same
@@ -449,8 +438,6 @@ void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
     std::string* nextNode = (currentNode == &_outputNodeIdA) ? &_outputNodeIdB : &_outputNodeIdA;
     *nextNode = selectedOutputNodeId;
     _activeOutputNodeId.store(nextNode, std::memory_order_release);
-
-    _outputHasExplicitFader.store(selectedHasExplicitOutputFader, std::memory_order_release);
 
     if (!nextMix->empty()) {
         _meteringService->registerChannel(*nextMix);
@@ -640,7 +627,7 @@ void EngineHost::renderBlock(
         if (node->getKind() == NodeKind::Fader) {
             auto* faderNode = dynamic_cast<FaderNode*>(node);
             if (faderNode) {
-                // Use node ID as automation target for channel mix entries
+                // Use node ID as automation target for fader parameters
                 const std::string& targetId = node->getId();
 
                 float gain = _automationService->getParameterValue(targetId, "gain");
@@ -815,9 +802,33 @@ void EngineHost::renderBlock(
         const std::string* outputMixId = _activeOutputMixId.load(std::memory_order_acquire);
         const std::string& mixId = outputMixId ? *outputMixId : outputNode->getId();
 
-        // Step 4: Apply channel-mix (gain/mute/solo) from output node to host output bus.
-        const bool applyGainStage = !_outputHasExplicitFader.load(std::memory_order_acquire);
-        _channelMixService->applyChannelMixToBus(outputNode->io.audioOut, output, mixId, applyGainStage);
+        // Step 4: Mix output node into host output bus.
+        //
+        // Note: Mute/gain/pan are owned by nodes in the graph (e.g. FaderNode),
+        // so EngineHost can do a straightforward copy/format conversion here.
+        const int numChannels = output.numChannels();
+        const int numFrames = std::min(output.numFrames(), outputNode->io.audioOut.numFrames());
+
+        for (int frame = 0; frame < numFrames; ++frame) {
+            for (int ch = 0; ch < numChannels; ++ch) {
+                const float* inChannel = outputNode->io.audioOut.getChannelData(ch);
+
+                if (!inChannel) {
+                    output.setSample(frame, ch, 0.0f);
+                    continue;
+                }
+
+                output.setSample(frame, ch, inChannel[frame]);
+            }
+        }
+
+        if (numFrames < output.numFrames()) {
+            for (int frame = numFrames; frame < output.numFrames(); ++frame) {
+                for (int ch = 0; ch < numChannels; ++ch) {
+                    output.setSample(frame, ch, 0.0f);
+                }
+            }
+        }
 
         // Step 5: Capture metering levels from final mixed output
         // Real-time safe: submitSampleBlock is lock-free (uses shared_lock for map lookup only)
@@ -908,7 +919,7 @@ void EngineHost::renderBlock(
     // - Feed streams into lane nodes using getStreamBindings()
     // - Process through node graph with real audio/MIDI buffers
     // - Apply automation per node/parameter
-    // - Apply channel mix gain/mute/solo per channel (channels are processing paths, not tracks)
+    // - Apply per-node mix controls (gain/pan/mute) via node parameters
     // - Loop handling
     // - Metering
     //

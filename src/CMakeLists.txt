@@ -4,7 +4,6 @@ add_library(signal-core STATIC
     core/EngineHost.cpp
     core/EngineSelfTest.cpp
     core/MeteringService.cpp
-    core/ChannelMixService.cpp
     core/AutomationService.cpp
     core/StreamScheduler.cpp
     core/ScheduleData.cpp
@@ -27,7 +26,6 @@ add_library(signal-core STATIC
     domains/EngineDomain.cpp
     domains/TransportDomain.cpp
     domains/MeteringDomain.cpp
-    domains/ChannelMixDomain.cpp
     domains/AutomationDomain.cpp
     domains/AssetsDomain.cpp
     domains/HardwareDomain.cpp

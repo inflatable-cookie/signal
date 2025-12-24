@@ -176,23 +176,17 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             node.portId = nodeJson["portId"].get<std::string>();
         }
 
-        // Parse channel mix configuration (optional, for fader nodes)
-        if (nodeJson.contains("channelMix") && nodeJson["channelMix"].is_object()) {
-            const auto& channelMixJson = nodeJson["channelMix"];
-            NodeChannelMixConfigDesc channelMixConfig;
-            if (channelMixJson.contains("gain") && channelMixJson["gain"].is_number()) {
-                channelMixConfig.gain = channelMixJson["gain"].get<float>();
+        // Parse per-node mix configuration (optional, for fader nodes)
+        if (nodeJson.contains("mix") && nodeJson["mix"].is_object()) {
+            const auto& mixJson = nodeJson["mix"];
+            NodeMixConfigDesc mixConfig;
+            if (mixJson.contains("gain") && mixJson["gain"].is_number()) {
+                mixConfig.gain = mixJson["gain"].get<float>();
             }
-            if (channelMixJson.contains("pan") && channelMixJson["pan"].is_number()) {
-                channelMixConfig.pan = channelMixJson["pan"].get<float>();
+            if (mixJson.contains("pan") && mixJson["pan"].is_number()) {
+                mixConfig.pan = mixJson["pan"].get<float>();
             }
-            if (channelMixJson.contains("muted") && channelMixJson["muted"].is_boolean()) {
-                channelMixConfig.muted = channelMixJson["muted"].get<bool>();
-            }
-            if (channelMixJson.contains("soloed") && channelMixJson["soloed"].is_boolean()) {
-                channelMixConfig.soloed = channelMixJson["soloed"].get<bool>();
-            }
-            node.channelMix = channelMixConfig;
+            node.mix = mixConfig;
         }
 
         snapshot.nodes.push_back(node);

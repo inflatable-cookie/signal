@@ -40,7 +40,6 @@ void NodeDomain::handleSetParameter(const nlohmann::json& payload) {
     try {
         const std::string nodeId = payload.value("nodeId", "");
         const std::string parameterId = payload.value("parameterId", "");
-        const float value = payload.value("value", 0.0f);
 
         if (nodeId.empty() || parameterId.empty()) {
             LOG_WARN({"NodeDomain"}, "setParameter payload missing nodeId or parameterId");
@@ -67,9 +66,19 @@ void NodeDomain::handleSetParameter(const nlohmann::json& payload) {
             }
 
             if (parameterId == "gain") {
+                const float value = payload.value("value", 0.0f);
                 faderNode->setGain(value);
             } else if (parameterId == "pan") {
+                const float value = payload.value("value", 0.0f);
                 faderNode->setPan(value);
+            } else if (parameterId == "muted") {
+                if (!payload.contains("value") || !payload["value"].is_boolean()) {
+                    std::ostringstream msg;
+                    msg << "setParameter muted expects boolean value for nodeId=" << nodeId;
+                    LOG_WARN({"NodeDomain"}, msg.str());
+                    return;
+                }
+                faderNode->setMuted(payload["value"].get<bool>());
             } else {
                 std::ostringstream msg;
                 msg << "Unhandled Fader parameterId=" << parameterId
@@ -80,8 +89,35 @@ void NodeDomain::handleSetParameter(const nlohmann::json& payload) {
             std::ostringstream msg;
             msg << "Applied setParameter nodeId=" << nodeId
                 << " parameterId=" << parameterId
-                << " value=" << value;
+                << " value=" << payload.value("value", 0.0f);
             LOG_DEBUG({"NodeDomain"}, msg.str());
+        } else if (
+            node->getKind() == NodeKind::Instrument
+            || node->getKind() == NodeKind::AudioFx
+            || node->getKind() == NodeKind::MidiFx
+        ) {
+            auto* pluginNode = dynamic_cast<PluginNode*>(node);
+            if (!pluginNode) {
+                std::ostringstream msg;
+                msg << "Node " << nodeId << " reported as PluginNode kind but dynamic_cast failed";
+                LOG_WARN({"NodeDomain"}, msg.str());
+                return;
+            }
+
+            if (parameterId == "muted") {
+                if (!payload.contains("value") || !payload["value"].is_boolean()) {
+                    std::ostringstream msg;
+                    msg << "setParameter muted expects boolean value for nodeId=" << nodeId;
+                    LOG_WARN({"NodeDomain"}, msg.str());
+                    return;
+                }
+                pluginNode->setMuted(payload["value"].get<bool>());
+            } else {
+                std::ostringstream msg;
+                msg << "Unhandled PluginNode parameterId=" << parameterId
+                    << " for nodeId=" << nodeId;
+                LOG_WARN({"NodeDomain"}, msg.str());
+            }
         } else {
             // Future: handle other node kinds once parameter routing is unified.
             std::ostringstream msg;
@@ -92,4 +128,3 @@ void NodeDomain::handleSetParameter(const nlohmann::json& payload) {
         LOG_ERROR({"NodeDomain"}, std::string("Failed to handle setParameter payload: ") + e.what());
     }
 }
-

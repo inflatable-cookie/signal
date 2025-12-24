@@ -8,7 +8,6 @@
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
 #include "domains/MeteringDomain.hpp"
-#include "domains/ChannelMixDomain.hpp"
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"
 #include "domains/HardwareDomain.hpp"

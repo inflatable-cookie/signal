@@ -22,11 +22,9 @@
 #include <string>
 #include <cstdint>
 #include <vector>
-#include <vector>
 
 class AudioBackend;
 class MeteringService;
-class ChannelMixService;
 class AutomationService;
 class StreamScheduler;
 class GraphEngine;
@@ -93,10 +91,6 @@ public:
     MeteringService& metering();
     const MeteringService& metering() const;
 
-    // Mixer
-    ChannelMixService& channelMix();
-    const ChannelMixService& channelMix() const;
-
     AutomationService& automation();
     const AutomationService& automation() const;
 
@@ -151,7 +145,6 @@ private:
     std::optional<std::string> _lastError;
     std::unique_ptr<AudioBackend> _audioBackend;
     std::unique_ptr<MeteringService> _meteringService;
-    std::unique_ptr<ChannelMixService> _channelMixService;
     std::unique_ptr<AutomationService> _automationService;
     std::unique_ptr<StreamScheduler> _streamScheduler;
     std::unique_ptr<GraphEngine> _graphEngine;
@@ -193,7 +186,7 @@ private:
     std::atomic<int> _graphLatencySamples;
     std::atomic<int> _graphTailSamples;
 
-    // Output mix identifier (used for final output channel-mix/metering state).
+    // Output mix identifier (used for metering/recording identifiers).
     // Updated on control thread when the graph snapshot changes, read on audio thread.
     //
     // Real-time safety: audio thread reads the active pointer without allocation.
@@ -206,12 +199,6 @@ private:
     std::string _outputNodeIdA;
     std::string _outputNodeIdB;
     std::atomic<const std::string*> _activeOutputNodeId;
-
-    // Whether the selected HardwareAudioOutputNode is fed by an explicit output
-    // FaderNode in the same Channel. When true, the graph already owns final
-    // gain/pan, so EngineHost should only apply effective mute when mixing to
-    // the host output bus.
-    std::atomic<bool> _outputHasExplicitFader;
 
 #ifdef LOOPHOLE_ENABLE_AUDIO_DEBUG
     // Diagnostic counters for audio thread debugging
