@@ -20,6 +20,33 @@ add_library(signal-core STATIC
 	    backend/MiniaudioBackend.cpp
 	    ipc/IpcEnvelope.cpp
 	    ipc/BinaryEnvelopeCodec.cpp
+        ipc/binary_envelope/PayloadCodecs.cpp
+        ipc/binary_envelope/assets/codecs.cpp
+        ipc/binary_envelope/assets/command_register_audio_asset.cpp
+        ipc/binary_envelope/automation/codecs.cpp
+        ipc/binary_envelope/automation/command_automation_snapshot.cpp
+        ipc/binary_envelope/engine/codecs.cpp
+        ipc/binary_envelope/engine/command_graph_snapshot.cpp
+        ipc/binary_envelope/engine/command_playback_schedule_snapshot.cpp
+        ipc/binary_envelope/engine/command_schema_only.cpp
+        ipc/binary_envelope/engine/event_state.cpp
+        ipc/binary_envelope/engine/event_self_test_result.cpp
+        ipc/binary_envelope/hardware/codecs.cpp
+        ipc/binary_envelope/hardware/command_refresh_output_devices.cpp
+        ipc/binary_envelope/hardware/command_select_output_device.cpp
+        ipc/binary_envelope/hardware/event_state.cpp
+        ipc/binary_envelope/metering/codecs.cpp
+        ipc/binary_envelope/metering/event_update.cpp
+        ipc/binary_envelope/node/codecs.cpp
+        ipc/binary_envelope/node/command_set_parameter.cpp
+        ipc/binary_envelope/transport/codecs.cpp
+        ipc/binary_envelope/transport/command_play.cpp
+        ipc/binary_envelope/transport/command_stop.cpp
+        ipc/binary_envelope/transport/command_seek.cpp
+        ipc/binary_envelope/transport/command_set_loop_enabled.cpp
+        ipc/binary_envelope/transport/command_set_loop_region.cpp
+        ipc/binary_envelope/transport/event_state.cpp
+        ipc/binary_envelope/transport/event_position_update.cpp
 	    ipc/TcpClientSession.cpp
 	    ipc/TcpServer.cpp
     ipc/DomainDispatcher.cpp

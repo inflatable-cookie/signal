@@ -623,7 +623,7 @@ void EngineHost::renderBlock(
 
         std::string nodeId = node->getId();
 
-        // Apply fader automation (gain/pan)
+        // Apply fader automation (gain/spatial.balance)
         if (node->getKind() == NodeKind::Fader) {
             auto* faderNode = dynamic_cast<FaderNode*>(node);
             if (faderNode) {
@@ -631,10 +631,10 @@ void EngineHost::renderBlock(
                 const std::string& targetId = node->getId();
 
                 float gain = _automationService->getParameterValue(targetId, "gain");
-                float pan = _automationService->getParameterValue(targetId, "pan");
+                float balance = _automationService->getParameterValue(targetId, "spatial.balance");
 
                 faderNode->setGain(gain);
-                faderNode->setPan(pan);
+                faderNode->setPan(balance);
             }
         }
 
@@ -804,7 +804,7 @@ void EngineHost::renderBlock(
 
         // Step 4: Mix output node into host output bus.
         //
-        // Note: Mute/gain/pan are owned by nodes in the graph (e.g. FaderNode),
+        // Note: Mute/gain/spatial.balance are owned by nodes in the graph (e.g. FaderNode),
         // so EngineHost can do a straightforward copy/format conversion here.
         const int numChannels = output.numChannels();
         const int numFrames = std::min(output.numFrames(), outputNode->io.audioOut.numFrames());
@@ -919,7 +919,7 @@ void EngineHost::renderBlock(
     // - Feed streams into lane nodes using getStreamBindings()
     // - Process through node graph with real audio/MIDI buffers
     // - Apply automation per node/parameter
-    // - Apply per-node mix controls (gain/pan/mute) via node parameters
+    // - Apply per-node mix controls (gain/spatial.balance/mute) via node parameters
     // - Loop handling
     // - Metering
     //

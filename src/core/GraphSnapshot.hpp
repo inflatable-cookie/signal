@@ -33,7 +33,16 @@ struct NodeAudioConfigDesc {
 /// Per-node mix configuration (matches Pulse NodeMixConfig)
 struct NodeMixConfigDesc {
     std::optional<float> gain;
-    std::optional<float> pan;
+};
+
+struct NodeSpatialOptionsDesc {
+    std::optional<std::string> mixPolicy;
+};
+
+struct NodeSpatialConfigDesc {
+    std::optional<bool> enabled;
+    std::optional<std::string> adapter;
+    std::optional<NodeSpatialOptionsDesc> options;
 };
 
 /// Node descriptor (matches Pulse NodeDesc)
@@ -62,6 +71,7 @@ struct NodeDesc {
     std::optional<uint32_t> tailSamples;
     /// Optional per-node mix configuration for channel-related nodes (e.g. Fader)
     std::optional<NodeMixConfigDesc> mix;
+    std::optional<NodeSpatialConfigDesc> spatial;
     // Hardware I/O node fields (Phase 7+)
     std::optional<std::string> deviceId;      // For HardwareAudioInputNode / HardwareAudioOutputNode
     std::optional<bool> deviceIsDefault;      // For HardwareAudioOutputNode selection

@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2025-12-24 16:46:07 UTC) [changed] Removed graph snapshot `mix.pan` initialisation and switched fader automation/control-plane to `parameterId="spatial.balance"`.
 (2025-12-24 14:49:03 UTC) [changed] Removed remaining “channel-mix” terminology from Signal comments now that mix controls are node-owned.
 (2025-12-24 12:21:43 UTC) [changed] Renamed graph snapshot node `channelMix` to `mix` (gain/pan only) across TLV decoding and graph-load application.
 (2025-12-24 11:03:08 UTC) [removed] Removed `ChannelMixService` from the audio render path now that mute/gain are owned by graph nodes.

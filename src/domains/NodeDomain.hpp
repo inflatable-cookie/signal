@@ -9,7 +9,7 @@
 ///   - Applies parameter changes to GraphNode instances (e.g. FaderNode)
 ///
 /// Phase 9 note:
-///   - UI-facing Fader parameters (gain/pan) are sent via `node.setParameter`
+///   - UI-facing Fader parameters (gain/spatial.balance) are sent via `node.setParameter`
 ///     using Fader node IDs (e.g. "fader-<trackId>").
 ///   - Mute is applied via `node.setParameter` (`parameterId="muted"`) and
 ///     NodeDomain applies these parameters directly to nodes.

@@ -546,11 +546,6 @@ std::unique_ptr<GraphNode> GraphEngine::createNode(const NodeDesc& desc, PluginH
             if (desc.mix.has_value()) {
                 const auto& mix = desc.mix.value();
 
-                // Apply pan first so any gain adjustments (e.g. mute) operate on final gain.
-                if (mix.pan.has_value()) {
-                    node->setPan(mix.pan.value());
-                }
-
                 // Apply gain. Mute is handled via `node.setParameter` (`muted`).
                 if (mix.gain.has_value()) {
                     node->setGain(mix.gain.value());

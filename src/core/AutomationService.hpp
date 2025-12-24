@@ -80,7 +80,7 @@ public:
     /// Returns the automation value for the current block, or default if no automation exists
     /// @param targetId Target identifier (node ID, track ID, etc.)
     /// @param parameterId Parameter identifier within the target
-    /// @return Parameter value (normalised 0.0..1.0 for most parameters, -1.0..1.0 for pan)
+    /// @return Parameter value (normalised 0.0..1.0 for most parameters, -1.0..1.0 for spatial.balance)
     float getParameterValue(const std::string& targetId, const std::string& parameterId) const;
 
     /// Update current values for all targets based on sample position (called periodically)
@@ -133,4 +133,3 @@ private:
     /// Transport position (for timebase conversion)
     std::atomic<uint64_t> _transportPositionSamples;
 };
-

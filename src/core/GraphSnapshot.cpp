@@ -183,10 +183,31 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
             if (mixJson.contains("gain") && mixJson["gain"].is_number()) {
                 mixConfig.gain = mixJson["gain"].get<float>();
             }
-            if (mixJson.contains("pan") && mixJson["pan"].is_number()) {
-                mixConfig.pan = mixJson["pan"].get<float>();
-            }
             node.mix = mixConfig;
+        }
+
+        if (nodeJson.contains("spatial") && nodeJson["spatial"].is_object()) {
+            const auto& spatialJson = nodeJson["spatial"];
+            NodeSpatialConfigDesc spatial;
+
+            if (spatialJson.contains("enabled") && spatialJson["enabled"].is_boolean()) {
+                spatial.enabled = spatialJson["enabled"].get<bool>();
+            }
+            if (spatialJson.contains("adapter") && spatialJson["adapter"].is_string()) {
+                spatial.adapter = spatialJson["adapter"].get<std::string>();
+            }
+            if (spatialJson.contains("options") && spatialJson["options"].is_object()) {
+                const auto& optionsJson = spatialJson["options"];
+                NodeSpatialOptionsDesc options;
+
+                if (optionsJson.contains("mixPolicy") && optionsJson["mixPolicy"].is_string()) {
+                    options.mixPolicy = optionsJson["mixPolicy"].get<std::string>();
+                }
+
+                spatial.options = options;
+            }
+
+            node.spatial = spatial;
         }
 
         snapshot.nodes.push_back(node);

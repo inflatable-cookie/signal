@@ -68,7 +68,7 @@ void NodeDomain::handleSetParameter(const nlohmann::json& payload) {
             if (parameterId == "gain") {
                 const float value = payload.value("value", 0.0f);
                 faderNode->setGain(value);
-            } else if (parameterId == "pan") {
+            } else if (parameterId == "spatial.balance") {
                 const float value = payload.value("value", 0.0f);
                 faderNode->setPan(value);
             } else if (parameterId == "muted") {

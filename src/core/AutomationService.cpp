@@ -190,8 +190,8 @@ float AutomationService::evaluateAt(
     auto it = _curves.find(key);
     if (it == _curves.end()) {
         // No automation - return default based on parameter type
-        if (parameter == "pan") {
-            return 0.0f; // Default centre pan
+        if (parameter == "spatial.balance") {
+            return 0.0f; // Default centre balance
         }
         return 1.0f; // Default unity gain for other parameters
     }
@@ -199,8 +199,8 @@ float AutomationService::evaluateAt(
     const TargetAutomationState* state = it->second.get();
     if (!state->hasCurve.load(std::memory_order_acquire)) {
         // No curve - return default based on parameter type
-        if (parameter == "pan") {
-            return 0.0f; // Default centre pan
+        if (parameter == "spatial.balance") {
+            return 0.0f; // Default centre balance
         }
         return 1.0f; // Default unity gain for other parameters
     }
@@ -243,7 +243,7 @@ float AutomationService::getParameterValue(
     BlockSnapshot* snapshot = _activeSnapshot.load(std::memory_order_acquire);
     if (!snapshot) {
         // No snapshot - return default
-        return (parameterId == "pan") ? 0.0f : 1.0f;
+        return (parameterId == "spatial.balance") ? 0.0f : 1.0f;
     }
 
     auto it = snapshot->values.find(key);
@@ -252,7 +252,7 @@ float AutomationService::getParameterValue(
     }
 
     // No automation for this parameter - return default
-    return (parameterId == "pan") ? 0.0f : 1.0f;
+    return (parameterId == "spatial.balance") ? 0.0f : 1.0f;
 }
 
 void AutomationService::updateCurrentValues(uint64_t samplePosition) {
@@ -296,7 +296,7 @@ void AutomationService::beginBlock(uint64_t blockStartSamples, int blockSize, do
         TargetAutomationState* state = pair.second.get();
         if (!state->hasCurve.load(std::memory_order_acquire)) {
             // No curve - use default value
-            float defaultValue = (state->parameter == "pan") ? 0.0f : 1.0f;
+            float defaultValue = (state->parameter == "spatial.balance") ? 0.0f : 1.0f;
             snapshot->values[pair.first] = defaultValue;
             continue;
         }
