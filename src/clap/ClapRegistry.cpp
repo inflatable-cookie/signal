@@ -13,24 +13,32 @@ ClapRegistry::~ClapRegistry() {
     LOG_DEBUG({"ClapRegistry"}, "Destroyed");
 }
 
-void ClapRegistry::scanDefaultPaths() {
+void ClapRegistry::scanDefaultPaths(std::stop_token stopToken) {
     std::vector<std::filesystem::path> paths = getDefaultSearchPaths();
 
     for (const auto& path : paths) {
+        if (stopToken.stop_requested()) {
+            return;
+        }
+
         if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-            scanPath(path);
+            scanPath(path, stopToken);
         }
     }
 }
 
-void ClapRegistry::scanPath(const std::filesystem::path& path) {
+void ClapRegistry::scanPath(const std::filesystem::path& path, std::stop_token stopToken) {
+    if (stopToken.stop_requested()) {
+        return;
+    }
+
     if (!std::filesystem::exists(path)) {
         LOG_WARN({"ClapRegistry"}, std::string("Path does not exist: ") + path.string());
         return;
     }
 
     if (std::filesystem::is_directory(path)) {
-        scanDirectory(path);
+        scanDirectory(path, stopToken);
     } else if (std::filesystem::is_regular_file(path)) {
         // Single file - try to load it
         try {
@@ -50,9 +58,13 @@ void ClapRegistry::scanPath(const std::filesystem::path& path) {
     }
 }
 
-void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
+void ClapRegistry::scanDirectory(const std::filesystem::path& dir, std::stop_token stopToken) {
     try {
         for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+            if (stopToken.stop_requested()) {
+                return;
+            }
+
             const auto& path = entry.path();
 
             // Check for .clap bundle (macOS) or .so/.dylib files
@@ -81,7 +93,7 @@ void ClapRegistry::scanDirectory(const std::filesystem::path& dir) {
                 }
             } else if (std::filesystem::is_directory(path)) {
                 // Recursively scan subdirectories (with depth limit)
-                scanDirectory(path);
+                scanDirectory(path, stopToken);
             }
         }
     } catch (const std::filesystem::filesystem_error& e) {
@@ -210,4 +222,3 @@ std::vector<std::filesystem::path> ClapRegistry::getDefaultSearchPaths() const {
 
     return paths;
 }
-

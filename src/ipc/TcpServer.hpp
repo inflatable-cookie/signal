@@ -394,6 +394,25 @@ public:
 
             const auto& transport = engineHost->transport();
             payload["transportState"] = transport.isPlaying ? "playing" : "stopped";
+
+            if (auto* pluginHost = engineHost->pluginHost()) {
+                auto scan = pluginHost->scanStatus();
+                payload["pluginScanState"] = scan.state_tag();
+                payload["pluginScanPluginCount"] = scan.plugin_count;
+
+                if (scan.last_error.has_value()) {
+                    payload["pluginScanLastError"] = scan.last_error.value();
+                } else {
+                    payload["pluginScanLastError"] = nullptr;
+                }
+
+                if (scan.duration.has_value()) {
+                    payload["pluginScanDurationMs"] =
+                        static_cast<std::uint64_t>(scan.duration.value().count());
+                } else {
+                    payload["pluginScanDurationMs"] = nullptr;
+                }
+            }
         } else {
             payload["cpuLoad"] = 0.0;
             payload["xruns"] = 0;
@@ -401,6 +420,7 @@ public:
             payload["sampleRate"] = 44100.0;
             payload["blockSize"] = 512;
             payload["transportState"] = "stopped";
+            payload["pluginScanState"] = "notStarted";
         }
 
         diagEvent.payload = payload;

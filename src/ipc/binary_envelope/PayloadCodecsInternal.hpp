@@ -31,6 +31,7 @@ struct PayloadCodec {
 
 void appendAssetsPayloadCodecs(std::vector<PayloadCodec>& out);
 void appendAutomationPayloadCodecs(std::vector<PayloadCodec>& out);
+void appendDiagnosticsPayloadCodecs(std::vector<PayloadCodec>& out);
 void appendEnginePayloadCodecs(std::vector<PayloadCodec>& out);
 void appendHardwarePayloadCodecs(std::vector<PayloadCodec>& out);
 void appendMeteringPayloadCodecs(std::vector<PayloadCodec>& out);

@@ -16,33 +16,112 @@ PluginHost::~PluginHost() {
     LOG_DEBUG({"PluginHost"}, "Destroyed");
 }
 
-void PluginHost::scanPlugins() {
+void PluginHost::scanPlugins(std::stop_token stopToken) {
     // Phase 5: Scan for CLAP plugins after server starts
     // Wrap in try-catch to prevent crashes from bad plugins
     LOG_INFO({"PluginHost"}, "Starting CLAP plugin scan...");
+
+    {
+        std::lock_guard<std::mutex> lock(scanMutex_);
+        scanStatus_ = PluginScanStatus{
+            .state = PluginScanState::Running,
+            .plugin_count = 0,
+            .last_error = std::nullopt,
+            .duration = std::nullopt,
+        };
+    }
+
+    const auto start = std::chrono::steady_clock::now();
+
     try {
-        _clapRegistry->scanDefaultPaths();
-        size_t pluginCount = _clapRegistry->listPlugins().size();
+        {
+            std::lock_guard<std::mutex> lock(registryMutex_);
+            _clapRegistry->scanDefaultPaths(stopToken);
+        }
+
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start
+        );
+
+        size_t pluginCount = 0;
+        {
+            std::lock_guard<std::mutex> lock(registryMutex_);
+            pluginCount = _clapRegistry->listPlugins().size();
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(scanMutex_);
+            scanStatus_.state = stopToken.stop_requested() ? PluginScanState::Cancelled : PluginScanState::Completed;
+            scanStatus_.plugin_count = static_cast<std::uint32_t>(pluginCount);
+            scanStatus_.duration = duration;
+        }
+
         std::ostringstream msg;
-        msg << "Plugin scan complete - found " << pluginCount << " CLAP plugin(s)";
+        msg << "Plugin scan " << (stopToken.stop_requested() ? "cancelled" : "complete")
+            << " - found " << pluginCount << " CLAP plugin(s)";
         LOG_INFO({"PluginHost"}, msg.str());
     } catch (const std::exception& e) {
         LOG_ERROR({"PluginHost"}, std::string("Exception during plugin scanning: ") + e.what());
+
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start
+        );
+
+        size_t pluginCount = 0;
+        {
+            std::lock_guard<std::mutex> lock(registryMutex_);
+            pluginCount = _clapRegistry->listPlugins().size();
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(scanMutex_);
+            scanStatus_.state = PluginScanState::Failed;
+            scanStatus_.plugin_count = static_cast<std::uint32_t>(pluginCount);
+            scanStatus_.last_error = e.what();
+            scanStatus_.duration = duration;
+        }
+
         std::ostringstream msg;
-        msg << "Continuing with " << _clapRegistry->listPlugins().size() << " successfully loaded plugins";
+        msg << "Continuing with " << pluginCount << " successfully loaded plugins";
         LOG_INFO({"PluginHost"}, msg.str());
     } catch (...) {
         LOG_ERROR({"PluginHost"}, "Unknown exception during plugin scanning, continuing anyway");
+
+        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start
+        );
+
+        size_t pluginCount = 0;
+        {
+            std::lock_guard<std::mutex> lock(registryMutex_);
+            pluginCount = _clapRegistry->listPlugins().size();
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(scanMutex_);
+            scanStatus_.state = PluginScanState::Failed;
+            scanStatus_.plugin_count = static_cast<std::uint32_t>(pluginCount);
+            scanStatus_.last_error = "Unknown exception during plugin scanning";
+            scanStatus_.duration = duration;
+        }
+
         std::ostringstream msg;
-        msg << "Continuing with " << _clapRegistry->listPlugins().size() << " successfully loaded plugins";
+        msg << "Continuing with " << pluginCount << " successfully loaded plugins";
         LOG_INFO({"PluginHost"}, msg.str());
     }
+}
+
+PluginHost::PluginScanStatus PluginHost::scanStatus() const {
+    std::lock_guard<std::mutex> lock(scanMutex_);
+    return scanStatus_;
 }
 
 std::unique_ptr<PluginInstance> PluginHost::createInstance(const PluginDescriptor& desc) {
     std::ostringstream msg;
     msg << "Creating instance for plugin: " << desc.id << " (format: " << static_cast<int>(desc.format) << ")";
     LOG_DEBUG({"PluginHost"}, msg.str());
+
+    std::lock_guard<std::mutex> lock(registryMutex_);
 
     switch (desc.format) {
         case PluginFormat::Clap:
@@ -84,4 +163,3 @@ std::unique_ptr<PluginInstance> PluginHost::createInstance(const PluginDescripto
 bool PluginHost::isFormatSupported(PluginFormat format) const {
     return format == PluginFormat::Clap;
 }
-

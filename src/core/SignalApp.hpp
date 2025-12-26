@@ -10,6 +10,8 @@
 ///   - Coordinates shutdown
 
 #include <memory>
+#include <atomic>
+#include <thread>
 
 class EngineHost;
 
@@ -26,5 +28,5 @@ public:
 private:
     std::unique_ptr<EngineHost> _engineHost;
     std::atomic<bool> _shutdownRequested{false};
+    std::jthread _pluginScanThread;
 };
-

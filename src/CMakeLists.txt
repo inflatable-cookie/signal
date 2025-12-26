@@ -25,6 +25,8 @@ add_library(signal-core STATIC
         ipc/binary_envelope/assets/command_register_audio_asset.cpp
         ipc/binary_envelope/automation/codecs.cpp
         ipc/binary_envelope/automation/command_automation_snapshot.cpp
+        ipc/binary_envelope/diagnostics/codecs.cpp
+        ipc/binary_envelope/diagnostics/event_engine_metrics.cpp
         ipc/binary_envelope/engine/codecs.cpp
         ipc/binary_envelope/engine/command_graph_snapshot.cpp
         ipc/binary_envelope/engine/command_playback_schedule_snapshot.cpp

@@ -92,6 +92,7 @@ int SignalApp::run() {
             LOG_INFO({"SignalApp"}, "Shutdown signal received");
             shuttingDown.store(true);
             _shutdownRequested.store(true);
+            _pluginScanThread.request_stop();
             if (_engineHost) {
                 _engineHost->shutdown();
             }
@@ -266,11 +267,21 @@ int SignalApp::run() {
         server.broadcastEngineState(_engineHost.get());
     }
 
-    // Scan for plugins after server starts (deferred to prevent blocking startup)
-    // This allows Signal to accept connections even if plugin scanning fails
+    // Scan for plugins after server starts, but never block IO:
+    // run scanning on a background thread so the Asio loop can accept connections.
     if (_engineHost && _engineHost->pluginHost()) {
-        LOG_INFO({"SignalApp"}, "Scanning for CLAP plugins...");
-        _engineHost->pluginHost()->scanPlugins();
+        LOG_INFO({"SignalApp"}, "Scheduling CLAP plugin scan (background)...");
+        _pluginScanThread = std::jthread([this](std::stop_token stopToken) {
+            if (!_engineHost || !_engineHost->pluginHost()) {
+                return;
+            }
+
+            if (stopToken.stop_requested()) {
+                return;
+            }
+
+            _engineHost->pluginHost()->scanPlugins(stopToken);
+        });
     }
 
     // Run IO loop
@@ -288,5 +299,6 @@ void SignalApp::requestShutdownDueToOrphanedState() {
     }
 
     _shutdownRequested.store(true);
+    _pluginScanThread.request_stop();
     LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "Requesting shutdown due to orphaned state");
 }
