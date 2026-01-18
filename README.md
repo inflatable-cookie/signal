@@ -50,7 +50,7 @@ Its responsibilities include:
 Signal does not manage project data, UI state, or higher-level editing logic.
 Those responsibilities belong to Pulse and Aura, as defined in:
 
-[`@chorus:/docs/architecture/01-overview.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/docs/architecture/01-overview.md)
+[`@chorus:/architecture/01-overview.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/architecture/01-overview.md)
 
 ---
 
@@ -66,13 +66,13 @@ Signal participates in Loophole’s multi-process architecture:
 Relevant documents:
 
 - Architecture Overview
-  [`@chorus:/docs/architecture/01-overview.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/docs/architecture/01-overview.md)
+  [`@chorus:/architecture/01-overview.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/architecture/01-overview.md)
 
 - IPC Specifications
-  [`@chorus:/docs/specs/`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/docs/specs/)
+  [`@chorus:/specs/`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/)
 
 - Real-Time Safety Guidelines
-  [`@chorus:/docs/specs/guidelines/realtime-safety.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/docs/specs/guidelines/realtime-safety.md)
+  [`@chorus:/specs/guidelines/realtime-safety.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/guidelines/realtime-safety.md)
 
 Signal MUST conform to these specifications.
 
@@ -155,7 +155,7 @@ APIs and plugin frameworks.
 
 Signal MUST adhere to the real-time rules defined in Chorus:
 
-[`@chorus:/docs/specs/guidelines/realtime-safety.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/docs/specs/guidelines/realtime-safety.md)
+[`@chorus:/specs/guidelines/realtime-safety.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/guidelines/realtime-safety.md)
 
 In particular, real-time code must not:
 

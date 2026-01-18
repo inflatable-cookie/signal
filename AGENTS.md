@@ -10,7 +10,7 @@ quick hacks or speculative abstraction.
 
 ## Important: Significant Changes Require Reports
 
-Any **significant** change made to the repository must include an accompanying changelog entry. The changelog entry must follow the project convention: create a new file in the **Chorus repository** at `loophole-chorus/docs/reports/` named `<YYYY-MM-DD-HHMMSS>-<file-name>.md` describing the change.
+Any **significant** change made to the repository must include an accompanying changelog entry. The changelog entry must follow the project convention: create a new file in the **Chorus repository** at `loophole-chorus/reports/` named `<YYYY-MM-DD-HHMMSS>-<file-name>.md` describing the change.
 
 **Old report files must never be modified.** Existing files in `docs/reports/` are historical artefacts and should be left unchanged.
 
@@ -19,7 +19,7 @@ Any **significant** change made to the repository must include an accompanying c
 All long-lived documentation (specs, ADRs, guides, references, reports) should be stored in the **Chorus** repository under `docs/`. Docs within Signal should generally be minimal stubs pointing to Chorus, unless there is a very strong repo-local reason.
 
 When making significant changes or completing non-trivial tasks, write a **report** in the Chorus repo at:
-- `loophole-chorus/docs/reports/`
+- `loophole-chorus/reports/`
 
 Use the filename format:
 - `YYYY-MM-DD-HHMMSS-file-name.md`
@@ -124,7 +124,7 @@ if (isReady) {
 - Do not invent names or domains; follow Chorus docs.
 - Put envelope struct and encoder/decoder in a dedicated `ipc` module.
 - All IPC messages must use the Chorus envelope format defined in:
-  - [`docs/specs/ipc/envelope.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/docs/specs/ipc/envelope.md)
+  - [`docs/specs/ipc/envelope.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/ipc/envelope.md)
 
 ---
 
