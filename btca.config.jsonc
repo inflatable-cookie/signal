@@ -30,7 +30,7 @@
       "searchPath": "."
     }
   ],
-  "model": "minimax-m2.1-free",
+  "model": "big-pickle",
   "provider": "opencode",
   "providerTimeoutMs": 300000
 }
