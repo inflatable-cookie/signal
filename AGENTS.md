@@ -8,6 +8,24 @@ quick hacks or speculative abstraction.
 
 ---
 
+## btca
+
+When you need up-to-date information about technologies used in this project, use btca to query source repositories directly.
+
+**Available resources**: nlohmannJson, asio, clapSdk, miniaudio
+
+### Usage
+
+```bash
+btca ask -r <resource> -q "<question>"
+```
+
+Use multiple `-r` flags to query multiple resources at once:
+
+```bash
+btca ask -r asio -r miniaudio -q "How should io threads be structured to avoid blocking audio processing?"
+```
+
 ## Important: Significant Changes Require Reports
 
 Any **significant** change made to the repository must include an accompanying changelog entry. The changelog entry must follow the project convention: create a new file in the **Chorus repository** at `loophole-chorus/reports/` named `<YYYY-MM-DD-HHMMSS>-<file-name>.md` describing the change.

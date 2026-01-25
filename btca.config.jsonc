@@ -1,0 +1,36 @@
+{
+  "$schema": "https://btca.dev/btca.schema.json",
+  "resources": [
+    {
+      "name": "nlohmannJson",
+      "type": "git",
+      "url": "https://github.com/nlohmann/json",
+      "branch": "develop",
+      "searchPath": "docs"
+    },
+    {
+      "name": "asio",
+      "type": "git",
+      "url": "https://github.com/chriskohlhoff/asio",
+      "branch": "master",
+      "searchPath": "asio"
+    },
+    {
+      "name": "clapSdk",
+      "type": "git",
+      "url": "https://github.com/free-audio/clap",
+      "branch": "main",
+      "searchPath": "."
+    },
+    {
+      "name": "miniaudio",
+      "type": "git",
+      "url": "https://github.com/mackron/miniaudio",
+      "branch": "master",
+      "searchPath": "."
+    }
+  ],
+  "model": "minimax-m2.1-free",
+  "provider": "opencode",
+  "providerTimeoutMs": 300000
+}
