@@ -100,6 +100,14 @@ inline std::string formatVariantIdentifier(const Variant& value) {
 
 } // namespace
 
+inline std::string formatPortIdentifier(const libremidi::container_identifier& value) {
+    return formatVariantIdentifier(value);
+}
+
+inline std::string formatPortIdentifier(const libremidi::device_identifier& value) {
+    return formatVariantIdentifier(value);
+}
+
 inline std::string buildStableMidiDeviceId(const libremidi::input_port& port) {
     std::ostringstream out;
     auto api_name = libremidi::get_api_name(port.api);

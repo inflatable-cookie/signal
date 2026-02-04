@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <thread>
 #include <tuple>
+#include <unordered_set>
 
 namespace {
 
@@ -37,8 +38,7 @@ std::vector<MidiInputDeviceInfo> normaliseMidiDeviceSnapshot(
         devices.begin(),
         devices.end(),
         [](const MidiInputDeviceInfo& left, const MidiInputDeviceInfo& right) {
-            return std::tie(left.id, left.name, left.manufacturer, left.is_connected) <
-                std::tie(right.id, right.name, right.manufacturer, right.is_connected);
+            return left.id < right.id;
         }
     );
 
@@ -61,6 +61,16 @@ bool midiDeviceSnapshotsEqual(
             left_device.id != right_device.id
             || left_device.name != right_device.name
             || left_device.manufacturer != right_device.manufacturer
+            || left_device.api != right_device.api
+            || left_device.container_id != right_device.container_id
+            || left_device.device_id != right_device.device_id
+            || left_device.port_handle != right_device.port_handle
+            || left_device.port_name != right_device.port_name
+            || left_device.device_name != right_device.device_name
+            || left_device.display_name != right_device.display_name
+            || left_device.product != right_device.product
+            || left_device.serial != right_device.serial
+            || left_device.last_seen_timestamp_ms != right_device.last_seen_timestamp_ms
             || left_device.is_connected != right_device.is_connected
         ) {
             return false;
@@ -83,12 +93,87 @@ nlohmann::json buildControlDeviceInventoryPayload(
         device_json["name"] = device.name;
         device_json["manufacturer"] = device.manufacturer;
         device_json["connectionState"] = device.is_connected ? "connected" : "disconnected";
+
+        if (!device.api.empty()) {
+            device_json["portApi"] = device.api;
+        }
+        if (!device.container_id.empty()) {
+            device_json["portContainerId"] = device.container_id;
+        }
+        if (!device.device_id.empty()) {
+            device_json["portDeviceId"] = device.device_id;
+        }
+        if (device.port_handle.has_value()) {
+            device_json["portHandle"] = device.port_handle.value();
+        }
+        if (!device.port_name.empty()) {
+            device_json["portName"] = device.port_name;
+        }
+        if (!device.device_name.empty()) {
+            device_json["deviceName"] = device.device_name;
+        }
+        if (!device.display_name.empty()) {
+            device_json["displayName"] = device.display_name;
+        }
+        if (!device.product.empty()) {
+            device_json["product"] = device.product;
+        }
+        if (!device.serial.empty()) {
+            device_json["serial"] = device.serial;
+        }
+        if (device.last_seen_timestamp_ms.has_value()) {
+            device_json["lastSeenTimestampMs"] = device.last_seen_timestamp_ms.value();
+        }
+
         device_array.push_back(device_json);
     }
 
     payload["devices"] = device_array;
 
     return payload;
+}
+
+std::vector<MidiInputDeviceInfo> mergeMidiDeviceSnapshot(
+    std::unordered_map<std::string, MidiInputDeviceInfo>& registry,
+    const std::vector<MidiInputDeviceInfo>& current,
+    std::uint64_t now_ms
+) {
+    std::unordered_set<std::string> seen;
+    seen.reserve(current.size());
+
+    for (const auto& device : current) {
+        auto it = registry.find(device.id);
+        MidiInputDeviceInfo entry = device;
+        bool was_connected = it != registry.end() && it->second.is_connected;
+
+        if (!was_connected) {
+            entry.last_seen_timestamp_ms = now_ms;
+        } else if (it != registry.end()) {
+            entry.last_seen_timestamp_ms = it->second.last_seen_timestamp_ms;
+        }
+
+        entry.is_connected = true;
+        registry[device.id] = entry;
+        seen.insert(device.id);
+    }
+
+    for (auto& [id, entry] : registry) {
+        if (seen.find(id) == seen.end()) {
+            if (entry.is_connected) {
+                entry.last_seen_timestamp_ms = now_ms;
+            }
+
+            entry.is_connected = false;
+        }
+    }
+
+    std::vector<MidiInputDeviceInfo> snapshot;
+    snapshot.reserve(registry.size());
+    for (const auto& [id, entry] : registry) {
+        snapshot.push_back(entry);
+    }
+
+    return normaliseMidiDeviceSnapshot(std::move(snapshot));
 }
 
 } // namespace
@@ -233,8 +318,13 @@ int SignalApp::run() {
             return {};
         }
 
+        auto now_ms = static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()
+            ).count()
+        );
         auto devices = _engineHost->enumerateMidiInputDevices();
-        return normaliseMidiDeviceSnapshot(std::move(devices));
+        return mergeMidiDeviceSnapshot(_midiDeviceRegistry, devices, now_ms);
     };
 
     scheduleMidiInventoryPoll = [

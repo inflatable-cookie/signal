@@ -14,6 +14,7 @@
 #include <atomic>
 #include <thread>
 #include <vector>
+#include <unordered_map>
 
 class EngineHost;
 
@@ -32,4 +33,5 @@ private:
     std::atomic<bool> _shutdownRequested{false};
     std::jthread _pluginScanThread;
     std::vector<MidiInputDeviceInfo> _lastMidiDeviceSnapshot;
+    std::unordered_map<std::string, MidiInputDeviceInfo> _midiDeviceRegistry;
 };

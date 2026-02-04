@@ -317,6 +317,17 @@ std::vector<MidiInputDeviceInfo> EngineHost::enumerateMidiInputDevices() const {
             info.name = loophole::signal::midi::pickDeviceName(port, index);
             info.id = loophole::signal::midi::buildStableMidiDeviceId(port);
             info.manufacturer = port.manufacturer;
+            info.api = libremidi::get_api_name(port.api);
+            info.container_id = loophole::signal::midi::formatPortIdentifier(port.container);
+            info.device_id = loophole::signal::midi::formatPortIdentifier(port.device);
+            if (port.port != static_cast<libremidi::port_handle>(-1)) {
+                info.port_handle = static_cast<std::uint64_t>(port.port);
+            }
+            info.port_name = port.port_name;
+            info.device_name = port.device_name;
+            info.display_name = port.display_name;
+            info.product = port.product;
+            info.serial = port.serial;
             info.is_connected = true;
             devices.push_back(std::move(info));
         }
