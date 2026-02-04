@@ -5,6 +5,7 @@
 #include "core/EngineHost.hpp"
 #include "core/PluginHost.hpp"
 #include "core/MeteringService.hpp"
+#include "core/MidiInputRouter.hpp"
 #include "domains/EngineDomain.hpp"
 #include "domains/TransportDomain.hpp"
 #include "domains/MeteringDomain.hpp"
@@ -22,6 +23,7 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <signal.h>
 #include <thread>
 #include <tuple>
@@ -151,19 +153,50 @@ int SignalApp::run() {
         }
     );
 
+    MidiInputRouter midiInputRouter;
+    midiInputRouter.setEventCallback(
+        [&server, &io](
+            const std::string& deviceId,
+            const std::string& controlKey,
+            const std::string& action,
+            std::optional<double> value
+        ) {
+            nlohmann::json payload;
+            payload["deviceId"] = deviceId;
+            payload["controlKey"] = controlKey;
+            payload["action"] = action;
+            payload["timestampMs"] = static_cast<std::uint64_t>(
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()
+                ).count()
+            );
+
+            if (value.has_value()) {
+                payload["value"] = value.value();
+            }
+
+            io.post([payload = std::move(payload), &server]() mutable {
+                server.broadcastControlEvent(payload);
+            });
+        }
+    );
+
     // Set up signal handling for graceful shutdown
     asio::signal_set signals(io, SIGINT, SIGTERM);
     std::atomic<bool> shuttingDown{false};
 
     signals.async_wait(
-        [&server, &io, this, &shuttingDown](std::error_code /*ec*/, int /*signo*/) {
+        [&server, &io, this, &shuttingDown, &midiInputRouter](std::error_code /*ec*/, int /*signo*/) {
             LOG_INFO({"SignalApp"}, "Shutdown signal received");
             shuttingDown.store(true);
             _shutdownRequested.store(true);
             _pluginScanThread.request_stop();
+
             if (_engineHost) {
                 _engineHost->shutdown();
             }
+
+            midiInputRouter.shutdown();
             server.stop();
             io.stop();
         }
@@ -207,6 +240,7 @@ int SignalApp::run() {
     scheduleMidiInventoryPoll = [
         &midiInventoryTimer,
         &server,
+        &midiInputRouter,
         this,
         &shuttingDown,
         &scheduleMidiInventoryPoll,
@@ -217,6 +251,7 @@ int SignalApp::run() {
             [
                 &server,
                 this,
+                &midiInputRouter,
                 &shuttingDown,
                 &scheduleMidiInventoryPoll,
                 captureMidiDeviceSnapshot
@@ -226,6 +261,8 @@ int SignalApp::run() {
                 }
 
                 auto snapshot = captureMidiDeviceSnapshot();
+
+                midiInputRouter.refreshInputs();
 
                 if (!midiDeviceSnapshotsEqual(snapshot, _lastMidiDeviceSnapshot)) {
                     _lastMidiDeviceSnapshot = snapshot;
@@ -321,13 +358,13 @@ int SignalApp::run() {
     std::function<void()> scheduleOrphanCheck;
     constexpr std::chrono::milliseconds ORPHAN_GRACE_PERIOD_MS{5000}; // 5 seconds
 
-    scheduleOrphanCheck = [&server, &orphanShutdownTimer, &io, this, &shuttingDown, &scheduleOrphanCheck, ORPHAN_GRACE_PERIOD_MS]() {
+    scheduleOrphanCheck = [&server, &orphanShutdownTimer, &io, this, &shuttingDown, &scheduleOrphanCheck, ORPHAN_GRACE_PERIOD_MS, &midiInputRouter]() {
         // Only schedule check if we've seen a client and have no active clients
         if (server.hasEverSeenClient() && server.getActiveClientCount() == 0) {
             LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "Last client disconnected; scheduling orphan check in 5000ms");
             orphanShutdownTimer.expires_after(ORPHAN_GRACE_PERIOD_MS);
             orphanShutdownTimer.async_wait(
-                [&server, &io, this, &shuttingDown](std::error_code ec) {
+                [&server, &io, this, &shuttingDown, &midiInputRouter](std::error_code ec) {
                     if (ec || shuttingDown.load()) {
                         // Timer was cancelled or shutdown already in progress
                         return;
@@ -337,9 +374,12 @@ int SignalApp::run() {
                     if (server.hasEverSeenClient() && server.getActiveClientCount() == 0) {
                         LOG_INFO({"SignalApp", "Lifecycle", "Orphan"}, "No clients after grace period; shutting down Signal");
                         requestShutdownDueToOrphanedState();
+
                         if (_engineHost) {
                             _engineHost->shutdown();
                         }
+
+                        midiInputRouter.shutdown();
                         server.stop();
                         io.stop();
                     }
@@ -355,7 +395,7 @@ int SignalApp::run() {
 
     // Set up callback to cancel orphan shutdown when a client connects
     server.setClientConnectedCallback(
-        [&server, &orphanShutdownTimer, this, captureMidiDeviceSnapshot](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
+        [&server, &orphanShutdownTimer, this, captureMidiDeviceSnapshot, &midiInputRouter](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
             // Cancel any pending orphan shutdown timer
             orphanShutdownTimer.cancel();
 
@@ -368,6 +408,8 @@ int SignalApp::run() {
                 LOG_INFO({"SignalApp"}, "Client connected, sending initial engine state...");
                 server.sendEngineState(_engineHost.get(), session);
             }
+
+            midiInputRouter.refreshInputs();
 
             auto snapshot = captureMidiDeviceSnapshot();
             _lastMidiDeviceSnapshot = snapshot;

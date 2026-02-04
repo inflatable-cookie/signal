@@ -7,6 +7,7 @@ add_library(signal-core STATIC
     core/AutomationService.cpp
     core/StreamScheduler.cpp
     core/ScheduleData.cpp
+    core/MidiInputRouter.cpp
     core/GraphNode.cpp
     core/GraphSnapshot.cpp
     core/GraphEngine.cpp

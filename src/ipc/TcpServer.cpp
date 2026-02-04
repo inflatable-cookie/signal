@@ -205,4 +205,39 @@ void TcpServer::broadcastControlDeviceInventory(const nlohmann::json& payload) {
     }
 }
 
+void TcpServer::broadcastControlEvent(const nlohmann::json& payload) {
+    std::lock_guard<std::mutex> lock(clientsMutex_);
+
+    clients_.erase(
+        std::remove_if(
+            clients_.begin(),
+            clients_.end(),
+            [](const std::weak_ptr<TcpClientSession>& wp) {
+                return wp.expired();
+            }
+        ),
+        clients_.end()
+    );
+
+    IpcEnvelope event;
+    event.version = 1;
+    event.id = "control-event-broadcast-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
+    event.correlationId = std::nullopt;
+    event.timestamp = currentTimestamp();
+    event.origin = IpcOrigin::Signal;
+    event.target = IpcTarget::Pulse;
+    event.domain = "control";
+    event.kind = IpcKind::Event;
+    event.name = "event";
+    event.priority = IpcPriority::High;
+    event.payload = payload;
+
+    for (auto& weak_session : clients_) {
+        if (auto session = weak_session.lock()) {
+            session->send(event);
+        }
+    }
+}
+
 } // namespace loophole::signal::ipc

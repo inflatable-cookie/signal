@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-04 20:38:52 UTC) [added] Emitted control events from libremidi input using stable MIDI device identifiers.
 (2026-02-04 19:19:23 UTC) [changed] Refined MIDI device ids with libremidi metadata and deterministic hashing.
 (2026-02-04 19:06:28 UTC) [changed] Switched MIDI inventory enumeration to libremidi observer port metadata for stable identifiers.
 (2026-02-04 18:57:16 UTC) [added] Added libremidi-based MIDI input enumeration for control device inventory.

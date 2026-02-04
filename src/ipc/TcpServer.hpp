@@ -54,6 +54,9 @@ public:
     // Broadcast control device inventory event to all connected clients
     void broadcastControlDeviceInventory(const nlohmann::json& payload);
 
+    // Broadcast control event to all connected clients
+    void broadcastControlEvent(const nlohmann::json& payload);
+
     // Broadcast metering update event to all connected clients
     template<typename MeteringServiceType>
     void broadcastMetering(MeteringServiceType* meteringService) {
