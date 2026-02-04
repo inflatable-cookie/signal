@@ -16,6 +16,7 @@
 #include "core/ParameterChange.hpp"
 #include "core/AutomationData.hpp"
 #include "backend/OutputDeviceInfo.hpp"
+#include "backend/MidiInputDeviceInfo.hpp"
 #include <atomic>
 #include <memory>
 #include <optional>
@@ -86,6 +87,7 @@ public:
     std::string getActiveOutputDeviceId() const;
     std::vector<OutputDeviceInfo> enumerateOutputDevices() const;
     bool setOutputDevice(const std::string& deviceId);
+    std::vector<MidiInputDeviceInfo> enumerateMidiInputDevices() const;
 
     // Metering
     MeteringService& metering();

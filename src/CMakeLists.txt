@@ -25,6 +25,9 @@ add_library(signal-core STATIC
         ipc/binary_envelope/assets/command_register_audio_asset.cpp
         ipc/binary_envelope/automation/codecs.cpp
         ipc/binary_envelope/automation/command_automation_snapshot.cpp
+        ipc/binary_envelope/control/codecs.cpp
+        ipc/binary_envelope/control/event_control_event.cpp
+        ipc/binary_envelope/control/event_device_inventory.cpp
         ipc/binary_envelope/diagnostics/codecs.cpp
         ipc/binary_envelope/diagnostics/event_engine_metrics.cpp
         ipc/binary_envelope/engine/codecs.cpp
@@ -57,6 +60,7 @@ add_library(signal-core STATIC
     domains/MeteringDomain.cpp
     domains/AutomationDomain.cpp
     domains/AssetsDomain.cpp
+    domains/control/MidiControlNormaliser.cpp
     domains/HardwareDomain.cpp
     domains/NodeDomain.cpp
     logging/Logging.cpp
@@ -69,6 +73,14 @@ target_include_directories(signal-core PUBLIC
 target_link_libraries(signal-core PUBLIC
     nlohmann_json::nlohmann_json
 )
+
+if(TARGET libremidi::libremidi)
+    target_link_libraries(signal-core PUBLIC libremidi::libremidi)
+elseif(TARGET libremidi)
+    target_link_libraries(signal-core PUBLIC libremidi)
+else()
+    message(FATAL_ERROR "libremidi target not found")
+endif()
 
 # Add Asio include directory and define ASIO_STANDALONE
 # Standalone Asio doesn't provide a CMake target, so we handle it manually

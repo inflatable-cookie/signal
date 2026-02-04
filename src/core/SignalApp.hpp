@@ -9,9 +9,11 @@
 ///   - Sets up IPC server with Asio io_context
 ///   - Coordinates shutdown
 
+#include "backend/MidiInputDeviceInfo.hpp"
 #include <memory>
 #include <atomic>
 #include <thread>
+#include <vector>
 
 class EngineHost;
 
@@ -29,4 +31,5 @@ private:
     std::unique_ptr<EngineHost> _engineHost;
     std::atomic<bool> _shutdownRequested{false};
     std::jthread _pluginScanThread;
+    std::vector<MidiInputDeviceInfo> _lastMidiDeviceSnapshot;
 };

@@ -42,6 +42,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(miniaudio)
 
+# Fetch libremidi (cross-platform MIDI library)
+FetchContent_Declare(
+    libremidi
+    GIT_REPOSITORY https://github.com/celtera/libremidi.git
+    GIT_TAG v5.4.3
+)
+FetchContent_MakeAvailable(libremidi)
+
 # Create an interface target for standalone Asio
 if(NOT TARGET asio::asio)
     add_library(asio_standalone INTERFACE)
@@ -65,4 +73,3 @@ if(SIGNAL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
-

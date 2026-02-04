@@ -186,21 +186,7 @@ void HardwareDomain::sendListOutputDevicesResponse(
     response.correlationId = commandEnv.id;
     response.timestamp = currentTimestamp();
     response.origin = IpcOrigin::Signal;
-
-    switch (commandEnv.origin) {
-    case IpcOrigin::Aura:
-        response.target = IpcTarget::Aura;
-        break;
-    case IpcOrigin::Pulse:
-        response.target = IpcTarget::Pulse;
-        break;
-    case IpcOrigin::Signal:
-        response.target = IpcTarget::Signal;
-        break;
-    case IpcOrigin::Composer:
-        response.target = IpcTarget::Composer;
-        break;
-    }
+    response.target = IpcTarget::Pulse;
 
     response.domain = "hardware";
     response.kind = IpcKind::Event;
@@ -213,6 +199,8 @@ void HardwareDomain::sendListOutputDevicesResponse(
     std::ostringstream msg;
     msg << "Listed " << devices.size() << " output devices";
     LOG_INFO({"HardwareDomain"}, msg.str());
+
+    sendControlDeviceInventory(commandEnv, session);
 }
 
 void HardwareDomain::sendSelectOutputDeviceResponse(
@@ -237,6 +225,7 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
         std::string activeDeviceId = _engineHost->getActiveOutputDeviceId();
 
         nlohmann::json devicesArray = nlohmann::json::array();
+
         for (const auto& device : devices) {
             nlohmann::json deviceJson;
             deviceJson["id"] = device.id;
@@ -247,6 +236,7 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
             deviceJson["preferredSampleRate"] = device.preferredSampleRate;
             devicesArray.push_back(deviceJson);
         }
+
         payload["outputDevices"] = devicesArray;
         payload["activeDeviceId"] = activeDeviceId;
 
@@ -266,25 +256,58 @@ void HardwareDomain::sendSelectOutputDeviceResponse(
     response.correlationId = commandEnv.id;
     response.timestamp = currentTimestamp();
     response.origin = IpcOrigin::Signal;
-
-    switch (commandEnv.origin) {
-    case IpcOrigin::Aura:
-        response.target = IpcTarget::Aura;
-        break;
-    case IpcOrigin::Pulse:
-        response.target = IpcTarget::Pulse;
-        break;
-    case IpcOrigin::Signal:
-        response.target = IpcTarget::Signal;
-        break;
-    case IpcOrigin::Composer:
-        response.target = IpcTarget::Composer;
-        break;
-    }
+    response.target = IpcTarget::Pulse;
 
     response.domain = "hardware";
     response.kind = IpcKind::Event;
     response.name = "state";
+    response.priority = commandEnv.priority;
+    response.payload = payload;
+
+    session->send(response);
+
+    sendControlDeviceInventory(commandEnv, session);
+}
+
+void HardwareDomain::sendControlDeviceInventory(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    if (!_engineHost) {
+        return;
+    }
+
+    auto midi_inputs = _engineHost->enumerateMidiInputDevices();
+
+    nlohmann::json payload;
+    nlohmann::json devices_array = nlohmann::json::array();
+
+    for (const auto& device : midi_inputs) {
+        nlohmann::json device_json;
+        device_json["id"] = device.id;
+        device_json["kind"] = "midi";
+        device_json["name"] = device.name;
+        device_json["manufacturer"] = device.manufacturer;
+        device_json["connectionState"] = device.is_connected ? "connected" : "disconnected";
+        devices_array.push_back(device_json);
+    }
+
+    payload["devices"] = devices_array;
+
+    IpcEnvelope response;
+    response.version = 1;
+    response.id = "control-device-inventory-" + commandEnv.id;
+    response.correlationId = commandEnv.id;
+    response.timestamp = currentTimestamp();
+    response.origin = IpcOrigin::Signal;
+
+    response.target = IpcTarget::Pulse;
+
+    response.domain = "control";
+    response.kind = IpcKind::Event;
+    response.name = "deviceInventory";
     response.priority = commandEnv.priority;
     response.payload = payload;
 

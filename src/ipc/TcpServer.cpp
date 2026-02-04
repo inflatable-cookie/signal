@@ -145,5 +145,64 @@ bool TcpServer::hasEverSeenClient() const {
     return hasEverSeenClient_.load();
 }
 
-} // namespace loophole::signal::ipc
+void TcpServer::sendControlDeviceInventory(
+    const nlohmann::json& payload,
+    const std::shared_ptr<TcpClientSession>& session
+) {
+    if (!session) {
+        return;
+    }
 
+    IpcEnvelope event;
+    event.version = 1;
+    event.id = "control-device-inventory-initial-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
+    event.correlationId = std::nullopt;
+    event.timestamp = currentTimestamp();
+    event.origin = IpcOrigin::Signal;
+    event.target = IpcTarget::Pulse;
+    event.domain = "control";
+    event.kind = IpcKind::Event;
+    event.name = "deviceInventory";
+    event.priority = IpcPriority::Normal;
+    event.payload = payload;
+
+    session->send(event);
+}
+
+void TcpServer::broadcastControlDeviceInventory(const nlohmann::json& payload) {
+    std::lock_guard<std::mutex> lock(clientsMutex_);
+
+    clients_.erase(
+        std::remove_if(
+            clients_.begin(),
+            clients_.end(),
+            [](const std::weak_ptr<TcpClientSession>& wp) {
+                return wp.expired();
+            }
+        ),
+        clients_.end()
+    );
+
+    IpcEnvelope event;
+    event.version = 1;
+    event.id = "control-device-inventory-broadcast-" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count());
+    event.correlationId = std::nullopt;
+    event.timestamp = currentTimestamp();
+    event.origin = IpcOrigin::Signal;
+    event.target = IpcTarget::Pulse;
+    event.domain = "control";
+    event.kind = IpcKind::Event;
+    event.name = "deviceInventory";
+    event.priority = IpcPriority::Normal;
+    event.payload = payload;
+
+    for (auto& weak_session : clients_) {
+        if (auto session = weak_session.lock()) {
+            session->send(event);
+        }
+    }
+}
+
+} // namespace loophole::signal::ipc

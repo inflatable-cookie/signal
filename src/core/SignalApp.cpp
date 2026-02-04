@@ -15,6 +15,8 @@
 #include <asio/io_context.hpp>
 #include <asio/steady_timer.hpp>
 #include <asio/signal_set.hpp>
+#include <nlohmann/json.hpp>
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
@@ -22,6 +24,72 @@
 #include <iostream>
 #include <signal.h>
 #include <thread>
+#include <tuple>
+
+namespace {
+
+std::vector<MidiInputDeviceInfo> normaliseMidiDeviceSnapshot(
+    std::vector<MidiInputDeviceInfo> devices
+) {
+    std::sort(
+        devices.begin(),
+        devices.end(),
+        [](const MidiInputDeviceInfo& left, const MidiInputDeviceInfo& right) {
+            return std::tie(left.id, left.name, left.manufacturer, left.is_connected) <
+                std::tie(right.id, right.name, right.manufacturer, right.is_connected);
+        }
+    );
+
+    return devices;
+}
+
+bool midiDeviceSnapshotsEqual(
+    const std::vector<MidiInputDeviceInfo>& left,
+    const std::vector<MidiInputDeviceInfo>& right
+) {
+    if (left.size() != right.size()) {
+        return false;
+    }
+
+    for (size_t index = 0; index < left.size(); ++index) {
+        const auto& left_device = left[index];
+        const auto& right_device = right[index];
+
+        if (
+            left_device.id != right_device.id
+            || left_device.name != right_device.name
+            || left_device.manufacturer != right_device.manufacturer
+            || left_device.is_connected != right_device.is_connected
+        ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+nlohmann::json buildControlDeviceInventoryPayload(
+    const std::vector<MidiInputDeviceInfo>& devices
+) {
+    nlohmann::json payload;
+    nlohmann::json device_array = nlohmann::json::array();
+
+    for (const auto& device : devices) {
+        nlohmann::json device_json;
+        device_json["id"] = device.id;
+        device_json["kind"] = "midi";
+        device_json["name"] = device.name;
+        device_json["manufacturer"] = device.manufacturer;
+        device_json["connectionState"] = device.is_connected ? "connected" : "disconnected";
+        device_array.push_back(device_json);
+    }
+
+    payload["devices"] = device_array;
+
+    return payload;
+}
+
+} // namespace
 
 SignalApp::SignalApp() {
     // Initialize unified logging system
@@ -121,6 +189,55 @@ int SignalApp::run() {
         );
     };
     scheduleDiagnostics();
+
+    // Set up MIDI device inventory polling
+    asio::steady_timer midiInventoryTimer(io);
+    std::function<void()> scheduleMidiInventoryPoll;
+    constexpr std::chrono::seconds MIDI_INVENTORY_POLL_INTERVAL{2};
+
+    auto captureMidiDeviceSnapshot = [this]() -> std::vector<MidiInputDeviceInfo> {
+        if (!_engineHost) {
+            return {};
+        }
+
+        auto devices = _engineHost->enumerateMidiInputDevices();
+        return normaliseMidiDeviceSnapshot(std::move(devices));
+    };
+
+    scheduleMidiInventoryPoll = [
+        &midiInventoryTimer,
+        &server,
+        this,
+        &shuttingDown,
+        &scheduleMidiInventoryPoll,
+        captureMidiDeviceSnapshot
+    ]() mutable {
+        midiInventoryTimer.expires_after(MIDI_INVENTORY_POLL_INTERVAL);
+        midiInventoryTimer.async_wait(
+            [
+                &server,
+                this,
+                &shuttingDown,
+                &scheduleMidiInventoryPoll,
+                captureMidiDeviceSnapshot
+            ](std::error_code ec) mutable {
+                if (ec || shuttingDown.load()) {
+                    return;
+                }
+
+                auto snapshot = captureMidiDeviceSnapshot();
+
+                if (!midiDeviceSnapshotsEqual(snapshot, _lastMidiDeviceSnapshot)) {
+                    _lastMidiDeviceSnapshot = snapshot;
+                    auto payload = buildControlDeviceInventoryPayload(_lastMidiDeviceSnapshot);
+                    server.broadcastControlDeviceInventory(payload);
+                }
+
+                scheduleMidiInventoryPoll();
+            }
+        );
+    };
+    scheduleMidiInventoryPoll();
 
     // Set up metering timer (emit every 50ms, ~20 Hz for smooth UI updates)
     asio::steady_timer meteringTimer(io);
@@ -238,7 +355,7 @@ int SignalApp::run() {
 
     // Set up callback to cancel orphan shutdown when a client connects
     server.setClientConnectedCallback(
-        [&server, &orphanShutdownTimer, this](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
+        [&server, &orphanShutdownTimer, this, captureMidiDeviceSnapshot](const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session) {
             // Cancel any pending orphan shutdown timer
             orphanShutdownTimer.cancel();
 
@@ -251,6 +368,11 @@ int SignalApp::run() {
                 LOG_INFO({"SignalApp"}, "Client connected, sending initial engine state...");
                 server.sendEngineState(_engineHost.get(), session);
             }
+
+            auto snapshot = captureMidiDeviceSnapshot();
+            _lastMidiDeviceSnapshot = snapshot;
+            auto payload = buildControlDeviceInventoryPayload(_lastMidiDeviceSnapshot);
+            server.sendControlDeviceInventory(payload, session);
         }
     );
 

@@ -45,6 +45,15 @@ public:
     // Check if we've ever seen a client connection
     bool hasEverSeenClient() const;
 
+    // Send control device inventory event to a specific client session
+    void sendControlDeviceInventory(
+        const nlohmann::json& payload,
+        const std::shared_ptr<TcpClientSession>& session
+    );
+
+    // Broadcast control device inventory event to all connected clients
+    void broadcastControlDeviceInventory(const nlohmann::json& payload);
+
     // Broadcast metering update event to all connected clients
     template<typename MeteringServiceType>
     void broadcastMetering(MeteringServiceType* meteringService) {

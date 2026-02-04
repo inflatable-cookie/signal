@@ -10,6 +10,7 @@ const std::vector<PayloadCodec>& allCodecs() {
         out.reserve(32);
         appendAssetsPayloadCodecs(out);
         appendAutomationPayloadCodecs(out);
+        appendControlPayloadCodecs(out);
         appendDiagnosticsPayloadCodecs(out);
         appendEnginePayloadCodecs(out);
         appendHardwarePayloadCodecs(out);

@@ -15,6 +15,7 @@
 #include "core/AutomationData.hpp"
 #include "core/RecordingCapture.hpp"
 #include "logging/Logging.hpp"
+#include <libremidi/libremidi.hpp>
 #include <iostream>
 #include <memory>
 #include <cstdint>
@@ -25,6 +26,174 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <sstream>
+#include <iomanip>
+#include <string_view>
+
+namespace {
+
+std::string toHexByte(unsigned char value) {
+    const char* digits = "0123456789abcdef";
+    std::string out;
+    out.push_back(digits[(value >> 4) & 0x0F]);
+    out.push_back(digits[value & 0x0F]);
+    return out;
+}
+
+std::string formatUuid(const libremidi::uuid& value) {
+    std::string out;
+    out.reserve(32);
+
+    for (auto byte : value.bytes) {
+        out += toHexByte(byte);
+    }
+
+    return out;
+}
+
+std::string formatUsbDeviceId(const libremidi::usb_device_identifier& value) {
+    std::ostringstream out;
+    out << "usb:" << std::hex << std::setw(4) << std::setfill('0')
+        << value.vendor_id << ":" << std::setw(4) << value.product_id;
+    return out.str();
+}
+
+std::string sanitizeSegment(std::string value) {
+    for (auto& ch : value) {
+        if (ch == ';' || ch == '=' || ch == '|') {
+            ch = '_';
+        }
+    }
+
+    return value;
+}
+
+std::uint64_t fnv1a64(std::string_view input) {
+    std::uint64_t hash = 14695981039346656037ull;
+
+    for (unsigned char byte : input) {
+        hash ^= static_cast<std::uint64_t>(byte);
+        hash *= 1099511628211ull;
+    }
+
+    return hash;
+}
+
+std::string formatHex64(std::uint64_t value) {
+    std::ostringstream out;
+    out << std::hex << std::setw(16) << std::setfill('0') << value;
+    return out.str();
+}
+
+template <typename Variant>
+std::string formatVariantIdentifier(const Variant& value) {
+    struct VariantFormatter {
+        std::string operator()(libremidi::monostate) const {
+            return "";
+        }
+
+        std::string operator()(const std::string& v) const {
+            return v;
+        }
+
+        std::string operator()(std::uint64_t v) const {
+            return std::to_string(v);
+        }
+
+        std::string operator()(const libremidi::uuid& v) const {
+            return formatUuid(v);
+        }
+
+        std::string operator()(const libremidi::usb_device_identifier& v) const {
+            return formatUsbDeviceId(v);
+        }
+
+        template <typename T>
+        std::string operator()(const T&) const {
+            return "";
+        }
+    };
+
+    return libremidi::visit(
+        VariantFormatter{},
+        value
+    );
+}
+
+std::string buildStableMidiDeviceId(const libremidi::input_port& port) {
+    std::ostringstream out;
+    auto api_name = libremidi::get_api_name(port.api);
+    out << "libremidi:" << api_name;
+
+    auto container_id = formatVariantIdentifier(port.container);
+
+    if (!container_id.empty()) {
+        out << ";c=" << sanitizeSegment(container_id);
+    }
+
+    auto device_id = formatVariantIdentifier(port.device);
+
+    if (!device_id.empty()) {
+        out << ";d=" << sanitizeSegment(device_id);
+    }
+
+    if (!port.manufacturer.empty()) {
+        out << ";m=" << sanitizeSegment(port.manufacturer);
+    }
+
+    if (!port.product.empty()) {
+        out << ";prod=" << sanitizeSegment(port.product);
+    }
+
+    if (!port.serial.empty()) {
+        out << ";sn=" << sanitizeSegment(port.serial);
+    }
+
+    if (port.port != static_cast<libremidi::port_handle>(-1)) {
+        out << ";p=" << port.port;
+    }
+
+    std::string name = port.display_name;
+
+    if (name.empty()) {
+        name = port.port_name;
+    }
+
+    if (name.empty()) {
+        name = port.device_name;
+    }
+
+    if (!name.empty()) {
+        out << ";n=" << sanitizeSegment(name);
+    }
+
+    std::ostringstream fallback_key;
+    fallback_key << api_name << "|" << port.manufacturer << "|" << port.product
+                 << "|" << port.serial << "|" << port.display_name << "|" << port.port_name
+                 << "|" << port.device_name;
+    auto fallback_hash = fnv1a64(fallback_key.str());
+
+    out << ";h=" << formatHex64(fallback_hash);
+
+    return out.str();
+}
+
+std::string pickDeviceName(const libremidi::input_port& port, std::size_t fallbackIndex) {
+    if (!port.display_name.empty()) {
+        return port.display_name;
+    }
+
+    if (!port.port_name.empty()) {
+        return port.port_name;
+    }
+
+    if (!port.device_name.empty()) {
+        return port.device_name;
+    }
+
+    return "MIDI Input " + std::to_string(fallbackIndex + 1);
+}
+
+} // namespace
 
 EngineHost::EngineHost()
     : _state(State::Stopped)
@@ -299,6 +468,31 @@ bool EngineHost::setOutputDevice(const std::string& deviceId) {
         }
     }
     return false;
+}
+
+std::vector<MidiInputDeviceInfo> EngineHost::enumerateMidiInputDevices() const {
+    std::vector<MidiInputDeviceInfo> devices;
+
+    try {
+        libremidi::observer observer;
+        auto ports = observer.get_input_ports();
+        devices.reserve(ports.size());
+
+        for (std::size_t index = 0; index < ports.size(); ++index) {
+            const auto& port = ports[index];
+            MidiInputDeviceInfo info;
+            info.name = pickDeviceName(port, index);
+            info.id = buildStableMidiDeviceId(port);
+            info.manufacturer = port.manufacturer;
+            info.is_connected = true;
+            devices.push_back(std::move(info));
+        }
+
+    } catch (const std::exception& e) {
+        LOG_WARN({"EngineHost"}, std::string("Failed to enumerate MIDI inputs: ") + e.what());
+    }
+
+    return devices;
 }
 
 MeteringService& EngineHost::metering() {
