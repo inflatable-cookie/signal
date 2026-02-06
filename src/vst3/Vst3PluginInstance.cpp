@@ -103,24 +103,41 @@ void Vst3PluginInstance::setParameterValue(const std::string& paramId, float nor
 std::vector<uint8_t> Vst3PluginInstance::getStateChunk() const {
     static constexpr char kMagic[] = {'V', 'S', 'T', '3', 'S', 'T', 'B', '1'};
     constexpr std::size_t kMagicSize = sizeof(kMagic);
-    constexpr std::size_t kStateSize = kMagicSize + sizeof(std::int32_t) * 2 + sizeof(std::uint8_t) * 2;
-
-    std::vector<uint8_t> state(kStateSize);
-    std::memcpy(state.data(), kMagic, kMagicSize);
+    std::vector<uint8_t> state;
+    state.reserve(
+        kMagicSize
+        + sizeof(std::int32_t) * 2
+        + sizeof(std::uint8_t) * 2
+        + sizeof(std::uint32_t)
+        + _parameterValues.size() * (sizeof(std::uint16_t) + 16 + sizeof(float))
+    );
+    state.insert(state.end(), kMagic, kMagic + kMagicSize);
 
     std::int32_t inputs = static_cast<std::int32_t>(_descriptor.numAudioInputs);
     std::int32_t outputs = static_cast<std::int32_t>(_descriptor.numAudioOutputs);
     std::uint8_t midiIn = _descriptor.hasMidiInput ? 1 : 0;
     std::uint8_t midiOut = _descriptor.hasMidiOutput ? 1 : 0;
 
-    std::size_t offset = kMagicSize;
-    std::memcpy(state.data() + offset, &inputs, sizeof(inputs));
-    offset += sizeof(inputs);
-    std::memcpy(state.data() + offset, &outputs, sizeof(outputs));
-    offset += sizeof(outputs);
-    std::memcpy(state.data() + offset, &midiIn, sizeof(midiIn));
-    offset += sizeof(midiIn);
-    std::memcpy(state.data() + offset, &midiOut, sizeof(midiOut));
+    auto appendBytes = [&state](const auto& value) {
+        const auto* ptr = reinterpret_cast<const std::uint8_t*>(&value);
+        state.insert(state.end(), ptr, ptr + sizeof(value));
+    };
+
+    appendBytes(inputs);
+    appendBytes(outputs);
+    appendBytes(midiIn);
+    appendBytes(midiOut);
+
+    const auto parameterCount = static_cast<std::uint32_t>(_parameterValues.size());
+    appendBytes(parameterCount);
+
+    for (const auto& [paramId, value] : _parameterValues) {
+        const auto clampedSize = std::min<std::size_t>(paramId.size(), 0xffff);
+        const auto idSize = static_cast<std::uint16_t>(clampedSize);
+        appendBytes(idSize);
+        state.insert(state.end(), paramId.begin(), paramId.begin() + static_cast<std::ptrdiff_t>(idSize));
+        appendBytes(value);
+    }
 
     return state;
 }
@@ -128,9 +145,10 @@ std::vector<uint8_t> Vst3PluginInstance::getStateChunk() const {
 void Vst3PluginInstance::setStateChunk(const std::vector<uint8_t>& data) {
     static constexpr char kMagic[] = {'V', 'S', 'T', '3', 'S', 'T', 'B', '1'};
     constexpr std::size_t kMagicSize = sizeof(kMagic);
-    constexpr std::size_t kStateSize = kMagicSize + sizeof(std::int32_t) * 2 + sizeof(std::uint8_t) * 2;
+    constexpr std::size_t kMinimumStateSize =
+        kMagicSize + sizeof(std::int32_t) * 2 + sizeof(std::uint8_t) * 2 + sizeof(std::uint32_t);
 
-    if (data.size() < kStateSize) {
+    if (data.size() < kMinimumStateSize) {
         return;
     }
 
@@ -143,6 +161,7 @@ void Vst3PluginInstance::setStateChunk(const std::vector<uint8_t>& data) {
     std::int32_t outputs = 0;
     std::uint8_t midiIn = 0;
     std::uint8_t midiOut = 0;
+    std::uint32_t parameterCount = 0;
 
     std::memcpy(&inputs, data.data() + offset, sizeof(inputs));
     offset += sizeof(inputs);
@@ -151,6 +170,9 @@ void Vst3PluginInstance::setStateChunk(const std::vector<uint8_t>& data) {
     std::memcpy(&midiIn, data.data() + offset, sizeof(midiIn));
     offset += sizeof(midiIn);
     std::memcpy(&midiOut, data.data() + offset, sizeof(midiOut));
+    offset += sizeof(midiOut);
+    std::memcpy(&parameterCount, data.data() + offset, sizeof(parameterCount));
+    offset += sizeof(parameterCount);
 
     if (inputs >= 0) {
         _descriptor.numAudioInputs = static_cast<int>(inputs);
@@ -162,6 +184,32 @@ void Vst3PluginInstance::setStateChunk(const std::vector<uint8_t>& data) {
 
     _descriptor.hasMidiInput = midiIn != 0;
     _descriptor.hasMidiOutput = midiOut != 0;
+
+    for (std::uint32_t i = 0; i < parameterCount; ++i) {
+        if (offset + sizeof(std::uint16_t) > data.size()) {
+            break;
+        }
+
+        std::uint16_t idSize = 0;
+        std::memcpy(&idSize, data.data() + offset, sizeof(idSize));
+        offset += sizeof(idSize);
+
+        if (offset + idSize + sizeof(float) > data.size()) {
+            break;
+        }
+
+        std::string paramId(
+            reinterpret_cast<const char*>(data.data() + offset),
+            reinterpret_cast<const char*>(data.data() + offset + idSize)
+        );
+        offset += idSize;
+
+        float value = 0.0f;
+        std::memcpy(&value, data.data() + offset, sizeof(value));
+        offset += sizeof(value);
+
+        setParameterValue(paramId, value);
+    }
 }
 
 const PluginDescriptor& Vst3PluginInstance::getDescriptor() const {

@@ -390,6 +390,12 @@ TEST_CASE("Phase 80 - VST3 factory creates runtime instance from scanned registr
     plugin->setStateChunk(initialState);
     REQUIRE(plugin->getDescriptor().numAudioInputs == runtimeDesc->numAudioInputs);
     REQUIRE(plugin->getDescriptor().numAudioOutputs == runtimeDesc->numAudioOutputs);
+    REQUIRE(plugin->getParameterValue("bypass") == 0.0f);
+
+    plugin->setParameterValue("bypass", 1.0f);
+    REQUIRE(plugin->getParameterValue("bypass") == 1.0f);
+    plugin->setStateChunk(initialState);
+    REQUIRE(plugin->getParameterValue("bypass") == 0.0f);
 
     std::error_code ignored;
     std::filesystem::remove_all(tempDir, ignored);
