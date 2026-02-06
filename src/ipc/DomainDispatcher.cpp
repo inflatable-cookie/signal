@@ -14,6 +14,7 @@
 #include "domains/HardwareDomain.hpp"
 #include "domains/NodeDomain.hpp"
 #include "domains/ParameterDomain.hpp"
+#include "domains/PluginDomain.hpp"
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"
 #include "domains/MeteringDomain.hpp"
@@ -33,6 +34,7 @@ DomainDispatcher::DomainDispatcher(EngineHost* engineHost, MeteringService* mete
     domains_.emplace("assets", std::make_unique<AssetsDomain>(engineHost_));
     domains_.emplace("metering", std::make_unique<MeteringDomain>(meteringService, engineHost_));
     domains_.emplace("parameter", std::make_unique<ParameterDomain>(engineHost_));
+    domains_.emplace("plugin", std::make_unique<PluginDomain>(engineHost_));
 }
 
 void DomainDispatcher::handleEnvelope(

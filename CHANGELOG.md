@@ -23,6 +23,9 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 22:06:01 UTC) [fixed] Relaxed `plugin.list` command decode to accept the TLV payload shape emitted by Pulse, avoiding false trailing-bytes decode failures.
+(2026-02-06 21:43:04 UTC) [added] Added a canonical `plugin` domain handler with `plugin.list` support that returns the current scanned CLAP/VST3 catalogue as correlated events.
+(2026-02-06 21:43:04 UTC) [changed] Registered typed binary-envelope-v2 codecs for `plugin.list` command/event payloads in the Signal codec registry and build graph.
 (2026-02-06 16:56:44 UTC) [changed] Parameter domain now enforces canonical `scope.pluginInstanceId` matching against the active plugin node instance and returns scope-invalid errors when mismatched.
 (2026-02-06 16:56:44 UTC) [changed] Graph snapshot parsing and PluginNode runtime identity now carry `pluginInstanceId`, and parameter responses emit the canonical scope identity from runtime state.
 (2026-02-06 16:56:44 UTC) [dev] Extended plugin graph-hosting coverage to assert configured `pluginInstanceId` is retained on runtime plugin nodes.

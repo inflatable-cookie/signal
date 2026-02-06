@@ -55,6 +55,9 @@ add_library(signal-core STATIC
         ipc/binary_envelope/parameter/event_descriptors_snapshot.cpp
         ipc/binary_envelope/parameter/event_values_snapshot.cpp
         ipc/binary_envelope/parameter/event_value_changed.cpp
+        ipc/binary_envelope/plugin/codecs.cpp
+        ipc/binary_envelope/plugin/command_list.cpp
+        ipc/binary_envelope/plugin/event_list.cpp
         ipc/binary_envelope/transport/codecs.cpp
         ipc/binary_envelope/transport/command_play.cpp
         ipc/binary_envelope/transport/command_stop.cpp
@@ -75,6 +78,7 @@ add_library(signal-core STATIC
     domains/HardwareDomain.cpp
     domains/NodeDomain.cpp
     domains/ParameterDomain.cpp
+    domains/PluginDomain.cpp
     logging/Logging.cpp
 )
 
