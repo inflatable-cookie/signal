@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "build": "cmake -S . -B build && cmake --build build --config Debug",
-    "run": "cmake -S . -B build && cmake --build build --config Debug && ./build/loophole-signal",
+    "dev": "cmake -S . -B build && cmake --build build --config Debug && ./build/src/loophole-signal",
     "test": "cmake -S . -B build && cmake --build build --config Debug && ctest --test-dir build --output-on-failure"
   }
 }

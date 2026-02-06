@@ -57,11 +57,9 @@ if(SIGNAL_ENABLE_VST3)
         vst3sdk
         GIT_REPOSITORY https://github.com/steinbergmedia/vst3sdk.git
         GIT_TAG v3.7.14_build_55
+        EXCLUDE_FROM_ALL
     )
-    FetchContent_GetProperties(vst3sdk)
-    if(NOT vst3sdk_POPULATED)
-        FetchContent_Populate(vst3sdk)
-    endif()
+    FetchContent_MakeAvailable(vst3sdk)
 endif()
 
 # Create an interface target for standalone Asio
