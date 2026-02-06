@@ -120,10 +120,17 @@ void AutomationDomain::handleAutomationSnapshot(const nlohmann::json& payload) {
             }
         }
 
-        // Sort events by timeSamples
+        // Sort events deterministically so equal-time events are applied in a
+        // stable order across runs.
         std::sort(automationData.events.begin(), automationData.events.end(),
             [](const AutomationEventCompiled& a, const AutomationEventCompiled& b) {
-                return a.timeSamples < b.timeSamples;
+                if (a.timeSamples != b.timeSamples) {
+                    return a.timeSamples < b.timeSamples;
+                }
+                if (a.nodeId != b.nodeId) {
+                    return a.nodeId < b.nodeId;
+                }
+                return a.paramId < b.paramId;
             });
 
         // Convert AutomationData to AutomationService curves
@@ -163,4 +170,3 @@ void AutomationDomain::handleUpdateCurve(const nlohmann::json& payload) {
         LOG_ERROR({"AutomationDomain"}, std::string("Failed to parse updateCurve payload: ") + e.what());
     }
 }
-

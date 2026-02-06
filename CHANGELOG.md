@@ -23,6 +23,8 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 15:53:15 UTC) [changed] Made automation snapshot ingestion deterministic for equal-time events by sorting on time samples, node id, then parameter id in `AutomationDomain`.
+(2026-02-06 15:53:15 UTC) [dev] Expanded automation sorting tests to assert stable tie-break ordering for equal-time events.
 (2026-02-06 13:50:05 UTC) [added] Added a canonical `parameter` IPC domain handler in Signal with `requestDescriptors`, `requestValues`, and `setValue` command handling plus correlated `descriptorsSnapshot`/`valuesSnapshot`/`valueChanged` events.
 (2026-02-06 13:50:05 UTC) [dev] Added binary-envelope-v2 coverage for `parameter.valuesSnapshot` and `parameter.valueChanged` and registered typed parameter payload codecs in the Signal build/runtime pipeline.
 (2026-02-06 13:42:16 UTC) [changed] Extended VST3 state-chunk serialisation to persist canonical plugin parameter values and restored them through graph/plugin state reload paths.

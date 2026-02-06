@@ -46,16 +46,34 @@ TEST_CASE("AutomationData - Event sorting", "[automation]") {
     data.events.push_back(event2);
     data.events.push_back(event3);
 
-    // Sort events
+    AutomationEventCompiled event4;
+    event4.nodeId = "node-0";
+    event4.paramId = "gain";
+    event4.timeSamples = 1000;
+    event4.valueNorm = 0.9f;
+    event4.curve = AutomationCurveType::Step;
+
+    data.events.push_back(event4);
+
+    // Sort events deterministically.
     std::sort(data.events.begin(), data.events.end(),
         [](const AutomationEventCompiled& a, const AutomationEventCompiled& b) {
-            return a.timeSamples < b.timeSamples;
+            if (a.timeSamples != b.timeSamples) {
+                return a.timeSamples < b.timeSamples;
+            }
+            if (a.nodeId != b.nodeId) {
+                return a.nodeId < b.nodeId;
+            }
+            return a.paramId < b.paramId;
         });
 
-    REQUIRE(data.events.size() == 3);
+    REQUIRE(data.events.size() == 4);
     REQUIRE(data.events[0].timeSamples == 500);
     REQUIRE(data.events[1].timeSamples == 1000);
-    REQUIRE(data.events[2].timeSamples == 2000);
+    REQUIRE(data.events[1].nodeId == "node-0");
+    REQUIRE(data.events[2].timeSamples == 1000);
+    REQUIRE(data.events[2].nodeId == "node-1");
+    REQUIRE(data.events[3].timeSamples == 2000);
 }
 
 TEST_CASE("EngineHost - Load automation snapshot", "[automation]") {
