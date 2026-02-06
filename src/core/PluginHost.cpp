@@ -4,6 +4,7 @@
 #include "clap/clap.h"
 #include "logging/Logging.hpp"
 #include "vst3/Vst3Backend.hpp"
+#include <algorithm>
 #include <sstream>
 
 PluginHost::PluginHost() {
@@ -60,6 +61,8 @@ void PluginHost::scanPlugins(std::stop_token stopToken) {
             std::lock_guard<std::mutex> lock(scanMutex_);
             scanStatus_.state = stopToken.stop_requested() ? PluginScanState::Cancelled : PluginScanState::Completed;
             scanStatus_.plugin_count = static_cast<std::uint32_t>(pluginCount);
+            scanStatus_.clap_plugin_count = static_cast<std::uint32_t>(clapCount);
+            scanStatus_.vst3_plugin_count = static_cast<std::uint32_t>(vst3Count);
             scanStatus_.duration = duration;
         }
 
@@ -85,6 +88,8 @@ void PluginHost::scanPlugins(std::stop_token stopToken) {
             std::lock_guard<std::mutex> lock(scanMutex_);
             scanStatus_.state = PluginScanState::Failed;
             scanStatus_.plugin_count = static_cast<std::uint32_t>(pluginCount);
+            scanStatus_.clap_plugin_count = static_cast<std::uint32_t>(_clapRegistry->listPlugins().size());
+            scanStatus_.vst3_plugin_count = static_cast<std::uint32_t>(_vst3Backend->listPlugins().size());
             scanStatus_.last_error = e.what();
             scanStatus_.duration = duration;
         }
@@ -109,6 +114,8 @@ void PluginHost::scanPlugins(std::stop_token stopToken) {
             std::lock_guard<std::mutex> lock(scanMutex_);
             scanStatus_.state = PluginScanState::Failed;
             scanStatus_.plugin_count = static_cast<std::uint32_t>(pluginCount);
+            scanStatus_.clap_plugin_count = static_cast<std::uint32_t>(_clapRegistry->listPlugins().size());
+            scanStatus_.vst3_plugin_count = static_cast<std::uint32_t>(_vst3Backend->listPlugins().size());
             scanStatus_.last_error = "Unknown exception during plugin scanning";
             scanStatus_.duration = duration;
         }
@@ -122,6 +129,32 @@ void PluginHost::scanPlugins(std::stop_token stopToken) {
 PluginHost::PluginScanStatus PluginHost::scanStatus() const {
     std::lock_guard<std::mutex> lock(scanMutex_);
     return scanStatus_;
+}
+
+std::vector<PluginDescriptor> PluginHost::listPlugins() const {
+    std::lock_guard<std::mutex> lock(registryMutex_);
+
+    auto clapPlugins = _clapRegistry->listPlugins();
+    auto vst3Plugins = _vst3Backend->listPlugins();
+
+    std::vector<PluginDescriptor> plugins;
+    plugins.reserve(clapPlugins.size() + vst3Plugins.size());
+    plugins.insert(plugins.end(), clapPlugins.begin(), clapPlugins.end());
+    plugins.insert(plugins.end(), vst3Plugins.begin(), vst3Plugins.end());
+
+    std::sort(
+        plugins.begin(),
+        plugins.end(),
+        [](const PluginDescriptor& lhs, const PluginDescriptor& rhs) {
+            if (lhs.format != rhs.format) {
+                return lhs.format < rhs.format;
+            }
+
+            return lhs.id < rhs.id;
+        }
+    );
+
+    return plugins;
 }
 
 std::unique_ptr<PluginInstance> PluginHost::createInstance(const PluginDescriptor& desc) {

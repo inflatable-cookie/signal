@@ -37,6 +37,8 @@ public:
     struct PluginScanStatus {
         PluginScanState state{PluginScanState::NotStarted};
         std::uint32_t plugin_count{0};
+        std::uint32_t clap_plugin_count{0};
+        std::uint32_t vst3_plugin_count{0};
         std::optional<std::string> last_error;
         std::optional<std::chrono::milliseconds> duration;
 
@@ -82,6 +84,7 @@ public:
     void scanPlugins(std::stop_token stopToken = {});
 
     PluginScanStatus scanStatus() const;
+    std::vector<PluginDescriptor> listPlugins() const;
 
 private:
     std::unique_ptr<ClapRegistry> _clapRegistry;

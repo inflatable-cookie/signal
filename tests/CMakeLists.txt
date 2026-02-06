@@ -17,6 +17,7 @@ add_executable(signal-tests
     test_graph_runtime_phase3.cpp
     test_file_audio_asset_source.cpp
     test_plugin_hosting.cpp
+    test_vst3_registry.cpp
     test_node_muted_parameter.cpp
     test_automation.cpp
     test_recording.cpp
