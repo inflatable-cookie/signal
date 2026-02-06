@@ -330,6 +330,42 @@ TEST_CASE("Phase 80 - VST3 factory failure is safe", "[plugin][phase80][vst3]") 
     REQUIRE(plugin == nullptr);
 }
 
+TEST_CASE("Phase 82 - Missing plugin node is tracked as unavailable on graph load", "[plugin][phase82][restore]") {
+    PluginHost host;
+    GraphEngine engine;
+    GraphSnapshot snapshot;
+    snapshot.id = "phase82-missing-plugin";
+
+    NodeDesc fxNode;
+    fxNode.nodeId = "fx-missing";
+    fxNode.kind = NodeKind::AudioFx;
+    fxNode.trackId = "track-1";
+    fxNode.pluginFormat = PluginFormat::Vst3;
+    fxNode.pluginId = "vst3:missing-plugin";
+    fxNode.numAudioInputs = 2;
+    fxNode.numAudioOutputs = 2;
+    snapshot.nodes.push_back(fxNode);
+
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
+    snapshot.nodes.push_back(deviceNode);
+
+    ConnectionDesc conn;
+    conn.fromNodeId = "fx-missing";
+    conn.toNodeId = "device";
+    snapshot.connections.push_back(conn);
+
+    engine.loadGraphSnapshot(snapshot, &host);
+
+    const auto& unavailable = engine.getUnavailablePluginNodes();
+    REQUIRE(unavailable.size() == 1);
+    REQUIRE(unavailable[0].nodeId == "fx-missing");
+    REQUIRE(unavailable[0].pluginId == "vst3:missing-plugin");
+    REQUIRE(unavailable[0].pluginFormat == PluginFormat::Vst3);
+    REQUIRE(unavailable[0].reason == "instance_create_failed");
+}
+
 TEST_CASE("Phase 80 - VST3 factory creates runtime instance from scanned registry", "[plugin][phase80][vst3][runtime]") {
     const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
     const auto tempDir = std::filesystem::temp_directory_path()

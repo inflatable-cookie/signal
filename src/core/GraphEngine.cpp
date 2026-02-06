@@ -22,6 +22,7 @@ GraphEngine::~GraphEngine() {
 void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* pluginHost, EngineHost* engineHost) {
     // Clear existing graph
     clear();
+    _unavailablePluginNodes.clear();
 
     _pluginHost = pluginHost;
 
@@ -61,6 +62,25 @@ void GraphEngine::loadGraphSnapshot(const GraphSnapshot& snapshot, PluginHost* p
 
         auto node = createNode(desc, pluginHost);
         if (node) {
+            const bool isPluginNode =
+                desc.kind == NodeKind::MidiFx ||
+                desc.kind == NodeKind::Instrument ||
+                desc.kind == NodeKind::AudioFx;
+            if (isPluginNode) {
+                const auto* pluginNode = dynamic_cast<const PluginNode*>(node.get());
+                if (pluginNode &&
+                    desc.pluginId.has_value() &&
+                    !desc.pluginId->empty() &&
+                    pluginNode->getPlugin() == nullptr) {
+                    UnavailablePluginNode unavailable;
+                    unavailable.nodeId = desc.nodeId;
+                    unavailable.pluginFormat = desc.pluginFormat;
+                    unavailable.pluginId = desc.pluginId.value_or("");
+                    unavailable.reason = "instance_create_failed";
+                    _unavailablePluginNodes.push_back(std::move(unavailable));
+                }
+            }
+
             // For HardwareAudioOutputNode, set EngineHost reference before assigning config
             // (HardwareAudioOutputNode needs it to query device channel count)
             if (desc.kind == NodeKind::HardwareAudioOutput) {
@@ -320,6 +340,10 @@ std::unordered_map<NodeId, std::vector<std::uint8_t>> GraphEngine::capturePlugin
     return result;
 }
 
+const std::vector<GraphEngine::UnavailablePluginNode>& GraphEngine::getUnavailablePluginNodes() const noexcept {
+    return _unavailablePluginNodes;
+}
+
 void GraphEngine::clear() {
     _nodes.clear();
     _connections.clear();
@@ -328,6 +352,7 @@ void GraphEngine::clear() {
     _adjacencyList.clear();
     _inDegree.clear();
     _incomingConnections.clear();
+    _unavailablePluginNodes.clear();
     setLiveInputsOrMonitorsActive(false);
 }
 

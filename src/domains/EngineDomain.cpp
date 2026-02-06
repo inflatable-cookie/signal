@@ -1,5 +1,6 @@
 #include "domains/EngineDomain.hpp"
 #include "core/EngineHost.hpp"
+#include "core/GraphEngine.hpp"
 #include "core/StreamScheduler.hpp"
 #include "core/ScheduleData.hpp"
 #include "core/GraphSnapshot.hpp"
@@ -9,6 +10,29 @@
 #include "logging/Logging.hpp"
 #include <nlohmann/json.hpp>
 #include <sstream>
+
+namespace {
+std::string pluginFormatToString(std::optional<PluginFormat> format) {
+    if (!format.has_value()) {
+        return "unknown";
+    }
+
+    switch (format.value()) {
+        case PluginFormat::Clap:
+            return "clap";
+        case PluginFormat::Vst3:
+            return "vst3";
+        case PluginFormat::Au:
+            return "au";
+        case PluginFormat::Lv2:
+            return "lv2";
+        case PluginFormat::Native:
+            return "native";
+    }
+
+    return "unknown";
+}
+} // namespace
 
 EngineDomain::EngineDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
@@ -56,11 +80,14 @@ void EngineDomain::handleScheduleSession(const nlohmann::json& payload) {
     _engineHost->streamScheduler().setSchedule(schedule);
 }
 
-void EngineDomain::handleGraphSnapshot(const nlohmann::json& payload) {
+void EngineDomain::handleGraphSnapshot(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
     // Handle GraphSnapshot from Pulse
     // Architecture: Pulse sends GraphSnapshot with nodes and connections
     // Signal parses via GraphSnapshot::fromJson and applies to GraphEngine
-    auto graphOpt = GraphSnapshot::fromJson(payload);
+    auto graphOpt = GraphSnapshot::fromJson(commandEnv.payload);
     if (!graphOpt) {
         LOG_WARN({"EngineDomain", "Graph"}, "Failed to parse graph snapshot; leaving existing graph in place");
         return;
@@ -70,6 +97,10 @@ void EngineDomain::handleGraphSnapshot(const nlohmann::json& payload) {
 
     // Load snapshot into EngineHost
     _engineHost->loadGraphSnapshot(snapshot);
+
+    if (!_engineHost->graphEngine().getUnavailablePluginNodes().empty()) {
+        emitPluginUnavailableDiagnosticsEvent(commandEnv, session);
+    }
 
     // Prepare graph if engine is already running
     if (_engineHost->state() == EngineHost::State::Running) {
@@ -115,7 +146,7 @@ void EngineDomain::handle(
     } else if (env.name == "scheduleSession" || env.name == "playbackScheduleSnapshot") {
         handleScheduleSession(env.payload);
     } else if (env.name == "graphSnapshot" || env.name == "applyGraphSnapshot") {
-        handleGraphSnapshot(env.payload);
+        handleGraphSnapshot(env, session);
     } else if (env.name == "selfTest") {
         handleSelfTest(env, session);
         return; // Self-test emits its own event, don't emit state event
@@ -127,6 +158,56 @@ void EngineDomain::handle(
     if (env.name != "heartbeat") {
         emitEngineStateEvent(env, session);
     }
+}
+
+void EngineDomain::emitPluginUnavailableDiagnosticsEvent(
+    const loophole::signal::ipc::IpcEnvelope& commandEnv,
+    const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+) {
+    using namespace loophole::signal::ipc;
+
+    const auto& unavailable = _engineHost->graphEngine().getUnavailablePluginNodes();
+    if (unavailable.empty()) {
+        return;
+    }
+
+    IpcEnvelope diagnosticsEvent;
+    diagnosticsEvent.version = 1;
+    diagnosticsEvent.id = "diagnostics-error-" + commandEnv.id;
+    diagnosticsEvent.correlationId = commandEnv.id;
+    diagnosticsEvent.timestamp = currentTimestamp();
+    diagnosticsEvent.origin = IpcOrigin::Signal;
+    diagnosticsEvent.target = IpcTarget::Pulse;
+    diagnosticsEvent.domain = "diagnostics";
+    diagnosticsEvent.kind = IpcKind::Event;
+    diagnosticsEvent.name = "error";
+    diagnosticsEvent.priority = commandEnv.priority;
+
+    nlohmann::json unavailablePlugins = nlohmann::json::array();
+    for (const auto& item : unavailable) {
+        unavailablePlugins.push_back({
+            {"nodeId", item.nodeId},
+            {"pluginId", item.pluginId},
+            {"pluginFormat", pluginFormatToString(item.pluginFormat)},
+            {"reason", item.reason},
+        });
+    }
+
+    std::ostringstream message;
+    message << "Graph loaded with " << unavailable.size()
+            << " unavailable plugin node(s); affected nodes are bypassed.";
+
+    diagnosticsEvent.payload = {
+        {"kind", "engine.pluginUnavailableOnRestore"},
+        {"message", message.str()},
+        {"details",
+            {
+                {"code", "plugin_unavailable_on_restore"},
+                {"unavailablePlugins", unavailablePlugins},
+            }},
+    };
+
+    session->send(diagnosticsEvent);
 }
 
 void EngineDomain::emitEngineStateEvent(
@@ -355,4 +436,3 @@ void EngineDomain::handleSelfTest(
         << testResult.scenarios.size() << " scenarios passed)";
     LOG_INFO({"EngineDomain"}, msg.str());
 }
-

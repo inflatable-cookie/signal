@@ -21,7 +21,10 @@ private:
     void handleReset();
     void handleShutdown();
     void handleScheduleSession(const nlohmann::json& payload);
-    void handleGraphSnapshot(const nlohmann::json& payload);
+    void handleGraphSnapshot(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
     void handleSelfTest(
         const loophole::signal::ipc::IpcEnvelope& commandEnv,
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
@@ -37,6 +40,10 @@ private:
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
     );
 
+    void emitPluginUnavailableDiagnosticsEvent(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
+
     EngineHost* _engineHost;
 };
-

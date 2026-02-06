@@ -48,6 +48,13 @@ struct StreamInputBinding {
 
 class GraphEngine {
 public:
+    struct UnavailablePluginNode {
+        NodeId nodeId;
+        std::optional<PluginFormat> pluginFormat;
+        std::string pluginId;
+        std::string reason;
+    };
+
     GraphEngine();
     ~GraphEngine();
 
@@ -80,6 +87,9 @@ public:
     /// Capture plugin state chunks by node ID for persistence snapshots.
     /// Nodes without plugin state support are omitted.
     std::unordered_map<NodeId, std::vector<std::uint8_t>> capturePluginStateChunks() const;
+
+    /// List plugin nodes that could not be instantiated from the last loaded graph snapshot.
+    const std::vector<UnavailablePluginNode>& getUnavailablePluginNodes() const noexcept;
 
     /// Clear the graph (remove all nodes and connections)
     void clear();
@@ -198,6 +208,9 @@ private:
 
     /// Plugin host (for creating plugin instances)
     PluginHost* _pluginHost;
+
+    /// Plugin nodes that failed to instantiate in the most recent graph load.
+    std::vector<UnavailablePluginNode> _unavailablePluginNodes;
 
     /// Live inputs/monitors flag (updated on control thread, read on audio thread)
     /// True if graph has AudioInput, MidiInput nodes, or instrument nodes that need
