@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 12:24:33 UTC) [changed] Added Phase 80.4 VST3 runtime node wiring with a host-created passthrough instance scaffold, shared I/O negotiation, and graph-path integration tests.
 (2026-02-06 11:27:54 UTC) [changed] Added Phase 80.3 unified CLAP+VST3 plugin catalogue listing and per-format scan status counters with VST3 registry discovery tests.
 (2026-02-06 11:24:25 UTC) [added] Added Phase 80 VST3 backend scaffolding with registry discovery, PluginHost factory routing, and optional SDK fetch/build wiring.
 (2026-02-04 20:38:52 UTC) [added] Emitted control events from libremidi input using stable MIDI device identifiers.

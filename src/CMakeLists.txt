@@ -20,6 +20,7 @@ add_library(signal-core STATIC
     clap/ClapPluginInstance.cpp
     vst3/Vst3Registry.cpp
     vst3/Vst3Backend.cpp
+    vst3/Vst3PluginInstance.cpp
 	    backend/MiniaudioBackend.cpp
 	    ipc/IpcEnvelope.cpp
 	    ipc/BinaryEnvelopeCodec.cpp

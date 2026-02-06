@@ -13,6 +13,52 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <optional>
+#include <utility>
+
+namespace {
+class ScopedEnvVar {
+public:
+    ScopedEnvVar(std::string key, std::string value)
+        : _key(std::move(key))
+    {
+        const char* existing = std::getenv(_key.c_str());
+        if (existing != nullptr) {
+            _previous = std::string(existing);
+        }
+
+        set(value);
+    }
+
+    ~ScopedEnvVar() {
+        if (_previous.has_value()) {
+            set(_previous.value());
+        } else {
+#if defined(_WIN32)
+            _putenv_s(_key.c_str(), "");
+#else
+            unsetenv(_key.c_str());
+#endif
+        }
+    }
+
+private:
+    void set(const std::string& value) {
+#if defined(_WIN32)
+        _putenv_s(_key.c_str(), value.c_str());
+#else
+        setenv(_key.c_str(), value.c_str(), 1);
+#endif
+    }
+
+    std::string _key;
+    std::optional<std::string> _previous;
+};
+}
 
 /// Test plugin implementation for testing
 class TestPluginInstance : public PluginInstance {
@@ -262,6 +308,118 @@ TEST_CASE("Phase 80 - VST3 factory failure is safe", "[plugin][phase80][vst3]") 
 
     auto plugin = host.createInstance(desc);
     REQUIRE(plugin == nullptr);
+}
+
+TEST_CASE("Phase 80 - VST3 factory creates runtime instance from scanned registry", "[plugin][phase80][vst3][runtime]") {
+    const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto tempDir = std::filesystem::temp_directory_path()
+        / ("loophole-signal-vst3-runtime-" + std::to_string(nonce));
+    std::filesystem::create_directories(tempDir);
+    const auto pluginPath = tempDir / "RuntimeTestPlugin.vst3";
+    std::ofstream(pluginPath.string()) << "dummy";
+
+    ScopedEnvVar pathVar("LOOPHOLE_VST3_PATH", tempDir.string());
+
+    PluginHost host;
+    host.scanPlugins();
+
+    std::optional<PluginDescriptor> runtimeDesc;
+    for (const auto& plugin : host.listPlugins()) {
+        if (plugin.format == PluginFormat::Vst3 && plugin.name == "RuntimeTestPlugin") {
+            runtimeDesc = plugin;
+            break;
+        }
+    }
+
+    REQUIRE(runtimeDesc.has_value());
+
+    auto plugin = host.createInstance(runtimeDesc.value());
+    REQUIRE(plugin != nullptr);
+
+    plugin->prepare(48000.0, 128);
+
+    AudioBuffer audioIn, audioOut;
+    audioIn.resize(2, 128);
+    audioOut.resize(2, 128);
+    audioIn.setSample(0, 0, 0.75f);
+
+    MidiBuffer midiIn, midiOut;
+    NodeProcessContext npc;
+    npc.sampleRate = 48000;
+    npc.blockSize = 128;
+    npc.blockStartSample = 0;
+
+    plugin->processAudioMidi(audioIn, audioOut, midiIn, midiOut, npc);
+    REQUIRE(std::abs(audioOut.getSample(0, 0) - 0.75f) < 0.01f);
+
+    std::error_code ignored;
+    std::filesystem::remove_all(tempDir, ignored);
+}
+
+TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin][phase80][vst3][graph]") {
+    const auto nonce = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto tempDir = std::filesystem::temp_directory_path()
+        / ("loophole-signal-vst3-graph-" + std::to_string(nonce));
+    std::filesystem::create_directories(tempDir);
+    const auto pluginPath = tempDir / "GraphRuntimePlugin.vst3";
+    std::ofstream(pluginPath.string()) << "dummy";
+
+    ScopedEnvVar pathVar("LOOPHOLE_VST3_PATH", tempDir.string());
+
+    PluginHost host;
+    host.scanPlugins();
+
+    std::optional<PluginDescriptor> runtimeDesc;
+    for (const auto& plugin : host.listPlugins()) {
+        if (plugin.format == PluginFormat::Vst3 && plugin.name == "GraphRuntimePlugin") {
+            runtimeDesc = plugin;
+            break;
+        }
+    }
+    REQUIRE(runtimeDesc.has_value());
+
+    GraphEngine engine;
+
+    GraphSnapshot snapshot;
+    snapshot.id = "vst3-graph";
+
+    NodeDesc fxNode;
+    fxNode.nodeId = "fx-vst3";
+    fxNode.kind = NodeKind::AudioFx;
+    fxNode.pluginFormat = PluginFormat::Vst3;
+    fxNode.pluginId = runtimeDesc->id;
+    fxNode.numAudioInputs = 2;
+    fxNode.numAudioOutputs = 2;
+    snapshot.nodes.push_back(fxNode);
+
+    NodeDesc deviceNode;
+    deviceNode.nodeId = "device";
+    deviceNode.kind = NodeKind::HardwareAudioOutput;
+    snapshot.nodes.push_back(deviceNode);
+
+    ConnectionDesc conn;
+    conn.fromNodeId = "fx-vst3";
+    conn.toNodeId = "device";
+    snapshot.connections.push_back(conn);
+
+    engine.loadGraphSnapshot(snapshot, &host);
+    engine.prepareGraph(48000, 128);
+
+    auto* fx = dynamic_cast<PluginNode*>(engine.findNode("fx-vst3"));
+    REQUIRE(fx != nullptr);
+    REQUIRE(fx->getPlugin() != nullptr);
+
+    fx->io.audioIn.setSample(0, 0, 0.5f);
+    NodeProcessContext npc;
+    npc.sampleRate = 48000;
+    npc.blockSize = 128;
+    npc.blockStartSample = 0;
+    fx->process(npc);
+
+    REQUIRE(std::abs(fx->io.audioOut.getSample(0, 0) - 0.5f) < 0.01f);
+
+    std::error_code ignored;
+    std::filesystem::remove_all(tempDir, ignored);
 }
 
 TEST_CASE("Phase 4 - Parameter change test", "[plugin][phase4][parameter]") {
