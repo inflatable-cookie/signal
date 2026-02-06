@@ -391,6 +391,12 @@ TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin]
     }
     REQUIRE(runtimeDesc.has_value());
 
+    auto stateSourcePlugin = host.createInstance(runtimeDesc.value());
+    REQUIRE(stateSourcePlugin != nullptr);
+    REQUIRE(stateSourcePlugin->negotiateAudioIO(1, 1));
+    const auto restoredState = stateSourcePlugin->getStateChunk();
+    REQUIRE(!restoredState.empty());
+
     GraphEngine engine;
 
     GraphSnapshot snapshot;
@@ -403,6 +409,7 @@ TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin]
     fxNode.pluginId = runtimeDesc->id;
     fxNode.numAudioInputs = 2;
     fxNode.numAudioOutputs = 2;
+    fxNode.pluginStateChunk = restoredState;
     snapshot.nodes.push_back(fxNode);
 
     NodeDesc deviceNode;
@@ -421,6 +428,8 @@ TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin]
     auto* fx = dynamic_cast<PluginNode*>(engine.findNode("fx-vst3"));
     REQUIRE(fx != nullptr);
     REQUIRE(fx->getPlugin() != nullptr);
+    REQUIRE(fx->getPlugin()->getDescriptor().numAudioInputs == 1);
+    REQUIRE(fx->getPlugin()->getDescriptor().numAudioOutputs == 1);
 
     fx->io.audioIn.setSample(0, 0, 0.5f);
     NodeProcessContext npc;
@@ -430,6 +439,11 @@ TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin]
     fx->process(npc);
 
     REQUIRE(std::abs(fx->io.audioOut.getSample(0, 0) - 0.5f) < 0.01f);
+
+    const auto captured = engine.capturePluginStateChunks();
+    auto chunkIt = captured.find("fx-vst3");
+    REQUIRE(chunkIt != captured.end());
+    REQUIRE(chunkIt->second == restoredState);
 
     std::error_code ignored;
     std::filesystem::remove_all(tempDir, ignored);

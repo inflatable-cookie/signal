@@ -96,6 +96,30 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
         if (nodeJson.contains("pluginId") && nodeJson["pluginId"].is_string()) {
             node.pluginId = nodeJson["pluginId"].get<std::string>();
         }
+        if (nodeJson.contains("pluginStateChunk") && nodeJson["pluginStateChunk"].is_array()) {
+            std::vector<std::uint8_t> bytes;
+            bool valid = true;
+            for (const auto& item : nodeJson["pluginStateChunk"]) {
+                if (!item.is_number_unsigned()) {
+                    valid = false;
+                    break;
+                }
+
+                const auto value = item.get<std::uint32_t>();
+                if (value > 255) {
+                    valid = false;
+                    break;
+                }
+
+                bytes.push_back(static_cast<std::uint8_t>(value));
+            }
+
+            if (valid) {
+                node.pluginStateChunk = std::move(bytes);
+            } else {
+                LOG_WARN({"GraphSnapshot"}, std::string("Ignoring invalid pluginStateChunk for node ") + node.nodeId);
+            }
+        }
 
         // Parse audio channel configuration (preferred, explicit metadata)
         if (nodeJson.contains("audio") && nodeJson["audio"].is_object()) {

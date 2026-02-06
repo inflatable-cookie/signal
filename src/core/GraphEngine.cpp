@@ -300,6 +300,26 @@ bool GraphEngine::hasGraph() const noexcept {
     return !_nodes.empty();
 }
 
+std::unordered_map<NodeId, std::vector<std::uint8_t>> GraphEngine::capturePluginStateChunks() const {
+    std::unordered_map<NodeId, std::vector<std::uint8_t>> result;
+
+    for (const auto& entry : _nodes) {
+        const auto* pluginNode = dynamic_cast<const PluginNode*>(entry.second.get());
+        if (!pluginNode) {
+            continue;
+        }
+
+        auto chunk = pluginNode->getStateChunk();
+        if (chunk.empty()) {
+            continue;
+        }
+
+        result.emplace(entry.first, std::move(chunk));
+    }
+
+    return result;
+}
+
 void GraphEngine::clear() {
     _nodes.clear();
     _connections.clear();

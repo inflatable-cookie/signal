@@ -22,6 +22,7 @@
 #include "core/AudioAssetSource.hpp"
 #include "core/PluginHost.hpp"
 #include <memory>
+#include <cstdint>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -75,6 +76,10 @@ public:
 
     /// Check if graph has been loaded (has nodes)
     bool hasGraph() const noexcept;
+
+    /// Capture plugin state chunks by node ID for persistence snapshots.
+    /// Nodes without plugin state support are omitted.
+    std::unordered_map<NodeId, std::vector<std::uint8_t>> capturePluginStateChunks() const;
 
     /// Clear the graph (remove all nodes and connections)
     void clear();

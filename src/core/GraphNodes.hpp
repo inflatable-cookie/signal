@@ -18,6 +18,7 @@
 #include "core/NodeAudioConfig.hpp"
 #include "logging/Logging.hpp"
 #include <array>
+#include <cstdint>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -301,6 +302,8 @@ public:
             if (!_plugin) {
                 LOG_ERROR({"PluginNode"}, std::string("Failed to create plugin instance: ") + pluginDesc.id);
                 _ioNegotiationOk = false;
+            } else if (desc.pluginStateChunk.has_value()) {
+                _plugin->setStateChunk(desc.pluginStateChunk.value());
             }
             // Negotiation will happen in prepare() after GraphEngine sets config from snapshot
         }
@@ -309,6 +312,18 @@ public:
     PluginNodeKind getPluginKind() const noexcept { return _pluginKind; }
     const std::string& getPluginId() const noexcept { return _pluginId; }
     PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
+    std::vector<std::uint8_t> getStateChunk() const {
+        if (!_plugin) {
+            return {};
+        }
+
+        return _plugin->getStateChunk();
+    }
+    void setStateChunk(const std::vector<std::uint8_t>& chunk) {
+        if (_plugin) {
+            _plugin->setStateChunk(chunk);
+        }
+    }
     void setMuted(bool muted) noexcept { _muted = muted; }
     bool isMuted() const noexcept { return _muted; }
 

@@ -9,6 +9,7 @@
 /// It is a temporary DTO that GraphEngine consumes to build the runtime graph.
 
 #include "core/GraphNode.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <optional>
@@ -56,6 +57,7 @@ struct NodeDesc {
     NodeKind kind;
     std::optional<PluginFormat> pluginFormat;
     std::optional<std::string> pluginId;
+    std::optional<std::vector<std::uint8_t>> pluginStateChunk;
     /// Audio channel configuration (explicit metadata, preferred over legacy fields)
     std::optional<NodeAudioConfigDesc> audio;
     /// Legacy channel configuration fields (deprecated, use `audio` instead)
