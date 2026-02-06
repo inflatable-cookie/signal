@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 11:24:25 UTC) [added] Added Phase 80 VST3 backend scaffolding with registry discovery, PluginHost factory routing, and optional SDK fetch/build wiring.
 (2026-02-04 20:38:52 UTC) [added] Emitted control events from libremidi input using stable MIDI device identifiers.
 (2026-02-04 19:19:23 UTC) [changed] Refined MIDI device ids with libremidi metadata and deterministic hashing.
 (2026-02-04 19:06:28 UTC) [changed] Switched MIDI inventory enumeration to libremidi observer port metadata for stable identifiers.

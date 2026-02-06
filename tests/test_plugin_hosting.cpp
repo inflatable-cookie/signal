@@ -248,6 +248,22 @@ TEST_CASE("Phase 4 - Plugin node integration", "[plugin][phase4][node]") {
     REQUIRE(std::abs(fx->io.audioOut.getSample(0, 0) - 1.0f) < 0.01f);
 }
 
+TEST_CASE("Phase 80 - VST3 factory failure is safe", "[plugin][phase80][vst3]") {
+    PluginHost host;
+
+    PluginDescriptor desc;
+    desc.format = PluginFormat::Vst3;
+    desc.id = "vst3:missing-plugin";
+    desc.name = "Missing VST3 Plugin";
+    desc.numAudioInputs = 2;
+    desc.numAudioOutputs = 2;
+    desc.hasMidiInput = true;
+    desc.hasMidiOutput = false;
+
+    auto plugin = host.createInstance(desc);
+    REQUIRE(plugin == nullptr);
+}
+
 TEST_CASE("Phase 4 - Parameter change test", "[plugin][phase4][parameter]") {
     // Use TestPluginHost for reliable plugin creation
     TestPluginHost testHost;

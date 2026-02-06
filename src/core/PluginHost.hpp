@@ -18,6 +18,7 @@
 
 // Forward declarations
 class ClapRegistry;
+class Vst3Backend;
 std::unique_ptr<PluginInstance> createClapInstance(
     std::shared_ptr<class ClapPluginLibrary> library,
     const struct clap_plugin_descriptor* clapDesc
@@ -72,6 +73,8 @@ public:
     /// Get the CLAP registry (for discovery)
     ClapRegistry& getClapRegistry() { return *_clapRegistry; }
     const ClapRegistry& getClapRegistry() const { return *_clapRegistry; }
+    Vst3Backend& getVst3Backend() { return *_vst3Backend; }
+    const Vst3Backend& getVst3Backend() const { return *_vst3Backend; }
 
     /// Scan for CLAP plugins (deferred from construction)
     /// This should be called after Signal has started its server
@@ -82,6 +85,7 @@ public:
 
 private:
     std::unique_ptr<ClapRegistry> _clapRegistry;
+    std::unique_ptr<Vst3Backend> _vst3Backend;
     mutable std::mutex registryMutex_;
     mutable std::mutex scanMutex_;
     PluginScanStatus scanStatus_{};

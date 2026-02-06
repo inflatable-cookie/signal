@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(SIGNAL_BUILD_TESTS "Build Signal tests" ON)
 option(LOOPHOLE_ENABLE_AUDIO_DEBUG "Enable audio debug logging and probes" ON)
+option(SIGNAL_ENABLE_VST3 "Enable VST3 backend scaffolding" ON)
 
 # Fetch nlohmann/json
 include(FetchContent)
@@ -49,6 +50,19 @@ FetchContent_Declare(
     GIT_TAG v5.4.3
 )
 FetchContent_MakeAvailable(libremidi)
+
+if(SIGNAL_ENABLE_VST3)
+    # Fetch official Steinberg VST3 SDK (header/source dependency for backend work)
+    FetchContent_Declare(
+        vst3sdk
+        GIT_REPOSITORY https://github.com/steinbergmedia/vst3sdk.git
+        GIT_TAG v3.7.14_build_55
+    )
+    FetchContent_GetProperties(vst3sdk)
+    if(NOT vst3sdk_POPULATED)
+        FetchContent_Populate(vst3sdk)
+    endif()
+endif()
 
 # Create an interface target for standalone Asio
 if(NOT TARGET asio::asio)

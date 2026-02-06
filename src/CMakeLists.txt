@@ -18,6 +18,8 @@ add_library(signal-core STATIC
     clap/ClapPluginLibrary.cpp
     clap/ClapRegistry.cpp
     clap/ClapPluginInstance.cpp
+    vst3/Vst3Registry.cpp
+    vst3/Vst3Backend.cpp
 	    backend/MiniaudioBackend.cpp
 	    ipc/IpcEnvelope.cpp
 	    ipc/BinaryEnvelopeCodec.cpp
@@ -95,6 +97,24 @@ endif()
 
 # Add official CLAP SDK include directory
 target_include_directories(signal-core PUBLIC ${clap_SOURCE_DIR}/include)
+
+# Add VST3 SDK include directories and compile-time flags
+if(SIGNAL_ENABLE_VST3)
+    target_compile_definitions(signal-core PUBLIC SIGNAL_ENABLE_VST3=1)
+    if(vst3sdk_POPULATED)
+        target_compile_definitions(signal-core PUBLIC SIGNAL_ENABLE_VST3_SDK=1)
+        target_include_directories(signal-core PUBLIC
+            ${vst3sdk_SOURCE_DIR}
+            ${vst3sdk_SOURCE_DIR}/base/source
+            ${vst3sdk_SOURCE_DIR}/pluginterfaces
+            ${vst3sdk_SOURCE_DIR}/public.sdk/source
+        )
+    else()
+        target_compile_definitions(signal-core PUBLIC SIGNAL_ENABLE_VST3_SDK=0)
+    endif()
+else()
+    target_compile_definitions(signal-core PUBLIC SIGNAL_ENABLE_VST3=0 SIGNAL_ENABLE_VST3_SDK=0)
+endif()
 
 # Add miniaudio include directory
 target_include_directories(signal-core PUBLIC ${miniaudio_SOURCE_DIR})
