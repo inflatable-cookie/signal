@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 12:59:21 UTC) [fixed] Unblocked Signal builds by fixing MIDI polling lambda capture, correcting `MidiInputRouter` PIMPL wiring, and stabilising MIDI normaliser/plugin-hosting tests.
 (2026-02-06 12:36:43 UTC) [changed] Wired plugin-state chunk restore on graph snapshot load and added GraphEngine state-chunk capture export for persisted plugin runtime state.
 (2026-02-06 12:26:10 UTC) [changed] Extended the Phase 80 VST3 runtime scaffold with state-chunk roundtrip support and tests covering lifecycle, I/O negotiation, and restore semantics.
 (2026-02-06 12:24:33 UTC) [changed] Added Phase 80.4 VST3 runtime node wiring with a host-created passthrough instance scaffold, shared I/O negotiation, and graph-path integration tests.

@@ -334,7 +334,8 @@ int SignalApp::run() {
         this,
         &shuttingDown,
         &scheduleMidiInventoryPoll,
-        captureMidiDeviceSnapshot
+        captureMidiDeviceSnapshot,
+        MIDI_INVENTORY_POLL_INTERVAL
     ]() mutable {
         midiInventoryTimer.expires_after(MIDI_INVENTORY_POLL_INTERVAL);
         midiInventoryTimer.async_wait(

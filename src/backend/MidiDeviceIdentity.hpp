@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace loophole::signal::midi {
 namespace {
@@ -65,35 +66,24 @@ inline std::string formatHex64(std::uint64_t value) {
 
 template <typename Variant>
 inline std::string formatVariantIdentifier(const Variant& value) {
-    struct VariantFormatter {
-        std::string operator()(libremidi::monostate) const {
-            return "";
-        }
-
-        std::string operator()(const std::string& v) const {
-            return v;
-        }
-
-        std::string operator()(std::uint64_t v) const {
-            return std::to_string(v);
-        }
-
-        std::string operator()(const libremidi::uuid& v) const {
-            return formatUuid(v);
-        }
-
-        std::string operator()(const libremidi::usb_device_identifier& v) const {
-            return formatUsbDeviceId(v);
-        }
-
-        template <typename T>
-        std::string operator()(const T&) const {
-            return "";
-        }
-    };
-
     return libremidi::visit(
-        VariantFormatter{},
+        [](const auto& v) -> std::string {
+            using T = std::decay_t<decltype(v)>;
+
+            if constexpr (std::is_same_v<T, libremidi::monostate>) {
+                return "";
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                return v;
+            } else if constexpr (std::is_same_v<T, std::uint64_t>) {
+                return std::to_string(v);
+            } else if constexpr (std::is_same_v<T, libremidi::uuid>) {
+                return formatUuid(v);
+            } else if constexpr (std::is_same_v<T, libremidi::usb_device_identifier>) {
+                return formatUsbDeviceId(v);
+            } else {
+                return "";
+            }
+        },
         value
     );
 }

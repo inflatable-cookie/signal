@@ -14,7 +14,9 @@ struct MidiInputConnection {
     std::unique_ptr<libremidi::midi_in> input;
 };
 
-struct MidiInputRouterImpl {
+} // namespace
+
+struct MidiInputRouter::Impl {
     libremidi::observer observer;
     std::unordered_map<std::string, MidiInputConnection> inputs;
     MidiInputRouter::ControlEventCallback callback;
@@ -109,10 +111,8 @@ struct MidiInputRouterImpl {
     }
 };
 
-} // namespace
-
 MidiInputRouter::MidiInputRouter()
-    : _impl(std::make_unique<MidiInputRouterImpl>())
+    : _impl(std::make_unique<Impl>())
 {
 }
 
