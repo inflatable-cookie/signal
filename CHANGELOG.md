@@ -23,6 +23,8 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 13:50:05 UTC) [added] Added a canonical `parameter` IPC domain handler in Signal with `requestDescriptors`, `requestValues`, and `setValue` command handling plus correlated `descriptorsSnapshot`/`valuesSnapshot`/`valueChanged` events.
+(2026-02-06 13:50:05 UTC) [dev] Added binary-envelope-v2 coverage for `parameter.valuesSnapshot` and `parameter.valueChanged` and registered typed parameter payload codecs in the Signal build/runtime pipeline.
 (2026-02-06 13:42:16 UTC) [changed] Extended VST3 state-chunk serialisation to persist canonical plugin parameter values and restored them through graph/plugin state reload paths.
 (2026-02-06 13:42:16 UTC) [dev] Added Signal runtime-host test assertions that `bypass` parameter state round-trips through VST3 state chunks.
 (2026-02-06 13:24:43 UTC) [changed] Added VST3 scaffold parameter value storage with clamping and bypass coercion, and extended plugin-hosting tests for parameter read/write behaviour.

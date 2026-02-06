@@ -48,6 +48,13 @@ add_library(signal-core STATIC
         ipc/binary_envelope/metering/event_update.cpp
         ipc/binary_envelope/node/codecs.cpp
         ipc/binary_envelope/node/command_set_parameter.cpp
+        ipc/binary_envelope/parameter/codecs.cpp
+        ipc/binary_envelope/parameter/command_request_descriptors.cpp
+        ipc/binary_envelope/parameter/command_request_values.cpp
+        ipc/binary_envelope/parameter/command_set_value.cpp
+        ipc/binary_envelope/parameter/event_descriptors_snapshot.cpp
+        ipc/binary_envelope/parameter/event_values_snapshot.cpp
+        ipc/binary_envelope/parameter/event_value_changed.cpp
         ipc/binary_envelope/transport/codecs.cpp
         ipc/binary_envelope/transport/command_play.cpp
         ipc/binary_envelope/transport/command_stop.cpp
@@ -67,6 +74,7 @@ add_library(signal-core STATIC
     domains/control/MidiControlNormaliser.cpp
     domains/HardwareDomain.cpp
     domains/NodeDomain.cpp
+    domains/ParameterDomain.cpp
     logging/Logging.cpp
 )
 

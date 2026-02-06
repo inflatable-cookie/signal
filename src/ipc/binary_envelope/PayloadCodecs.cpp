@@ -16,6 +16,7 @@ const std::vector<PayloadCodec>& allCodecs() {
         appendHardwarePayloadCodecs(out);
         appendMeteringPayloadCodecs(out);
         appendNodePayloadCodecs(out);
+        appendParameterPayloadCodecs(out);
         appendTransportPayloadCodecs(out);
         return out;
     }();
