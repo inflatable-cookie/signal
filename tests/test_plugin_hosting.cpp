@@ -475,6 +475,7 @@ TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin]
     fxNode.kind = NodeKind::AudioFx;
     fxNode.pluginFormat = PluginFormat::Vst3;
     fxNode.pluginId = runtimeDesc->id;
+    fxNode.pluginInstanceId = "plugin-instance:phase82-vst3-graph";
     fxNode.numAudioInputs = 2;
     fxNode.numAudioOutputs = 2;
     fxNode.pluginStateChunk = restoredState;
@@ -496,6 +497,8 @@ TEST_CASE("Phase 80 - VST3 plugin node loads via graph snapshot path", "[plugin]
     auto* fx = dynamic_cast<PluginNode*>(engine.findNode("fx-vst3"));
     REQUIRE(fx != nullptr);
     REQUIRE(fx->getPlugin() != nullptr);
+    REQUIRE(fx->getPluginInstanceId().has_value());
+    REQUIRE(fx->getPluginInstanceId().value() == "plugin-instance:phase82-vst3-graph");
     REQUIRE(fx->getPlugin()->getDescriptor().numAudioInputs == 2);
     REQUIRE(fx->getPlugin()->getDescriptor().numAudioOutputs == 2);
 

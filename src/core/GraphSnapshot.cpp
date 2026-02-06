@@ -96,6 +96,9 @@ std::optional<GraphSnapshot> GraphSnapshot::fromJson(const nlohmann::json& j) {
         if (nodeJson.contains("pluginId") && nodeJson["pluginId"].is_string()) {
             node.pluginId = nodeJson["pluginId"].get<std::string>();
         }
+        if (nodeJson.contains("pluginInstanceId") && nodeJson["pluginInstanceId"].is_string()) {
+            node.pluginInstanceId = nodeJson["pluginInstanceId"].get<std::string>();
+        }
         if (nodeJson.contains("pluginStateChunk") && nodeJson["pluginStateChunk"].is_array()) {
             std::vector<std::uint8_t> bytes;
             bool valid = true;

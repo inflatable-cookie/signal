@@ -57,6 +57,7 @@ struct NodeDesc {
     NodeKind kind;
     std::optional<PluginFormat> pluginFormat;
     std::optional<std::string> pluginId;
+    std::optional<std::string> pluginInstanceId;
     std::optional<std::vector<std::uint8_t>> pluginStateChunk;
     /// Audio channel configuration (explicit metadata, preferred over legacy fields)
     std::optional<NodeAudioConfigDesc> audio;

@@ -24,6 +24,22 @@ nlohmann::json makeScopePayload(
 
     return scopePayload;
 }
+
+nlohmann::json makeScopeErrorDetails(
+    const std::string& nodeId,
+    const std::optional<std::string>& pluginInstanceId,
+    const std::string& code
+) {
+    nlohmann::json details = nlohmann::json::object();
+    details["nodeId"] = nodeId;
+    details["code"] = code;
+
+    if (pluginInstanceId.has_value()) {
+        details["pluginInstanceId"] = pluginInstanceId.value();
+    }
+
+    return details;
+}
 }
 
 ParameterDomain::ParameterDomain(EngineHost* engineHost)
@@ -134,7 +150,7 @@ void ParameterDomain::handleRequestDescriptors(
             session,
             "invalid_scope",
             "parameter.requestDescriptors requires scope.nodeId",
-            nlohmann::json::object()
+            nlohmann::json{{"code", "parameter_scope_invalid"}}
         );
         return;
     }
@@ -146,7 +162,26 @@ void ParameterDomain::handleRequestDescriptors(
             session,
             "plugin_not_found",
             "Plugin node was not found for scope.nodeId",
-            nlohmann::json{{"nodeId", scope->nodeId}}
+            makeScopeErrorDetails(scope->nodeId, scope->pluginInstanceId, "parameter_scope_invalid")
+        );
+        return;
+    }
+
+    const auto canonicalPluginInstanceId = pluginNode->getPluginInstanceId();
+    if (scope->pluginInstanceId.has_value() &&
+        canonicalPluginInstanceId.has_value() &&
+        scope->pluginInstanceId.value() != canonicalPluginInstanceId.value()) {
+        emitError(
+            env,
+            session,
+            "invalid_scope",
+            "parameter.requestDescriptors scope.pluginInstanceId does not match the active plugin instance",
+            nlohmann::json{
+                {"nodeId", scope->nodeId},
+                {"requestedPluginInstanceId", scope->pluginInstanceId.value()},
+                {"expectedPluginInstanceId", canonicalPluginInstanceId.value()},
+                {"code", "parameter_scope_invalid"}
+            }
         );
         return;
     }
@@ -169,7 +204,7 @@ void ParameterDomain::handleRequestDescriptors(
     event.priority = env.priority;
 
     nlohmann::json payload = nlohmann::json::object();
-    payload["scope"] = makeScopePayload(scope->nodeId, scope->pluginInstanceId);
+    payload["scope"] = makeScopePayload(scope->nodeId, canonicalPluginInstanceId);
 
     nlohmann::json descriptors = nlohmann::json::array();
     for (const auto& descriptor : pluginNode->getPlugin()->listParameterDescriptors()) {
@@ -204,7 +239,7 @@ void ParameterDomain::handleRequestValues(
             session,
             "invalid_scope",
             "parameter.requestValues requires scope.nodeId",
-            nlohmann::json::object()
+            nlohmann::json{{"code", "parameter_scope_invalid"}}
         );
         return;
     }
@@ -216,7 +251,26 @@ void ParameterDomain::handleRequestValues(
             session,
             "plugin_not_found",
             "Plugin node was not found for scope.nodeId",
-            nlohmann::json{{"nodeId", scope->nodeId}}
+            makeScopeErrorDetails(scope->nodeId, scope->pluginInstanceId, "parameter_scope_invalid")
+        );
+        return;
+    }
+
+    const auto canonicalPluginInstanceId = pluginNode->getPluginInstanceId();
+    if (scope->pluginInstanceId.has_value() &&
+        canonicalPluginInstanceId.has_value() &&
+        scope->pluginInstanceId.value() != canonicalPluginInstanceId.value()) {
+        emitError(
+            env,
+            session,
+            "invalid_scope",
+            "parameter.requestValues scope.pluginInstanceId does not match the active plugin instance",
+            nlohmann::json{
+                {"nodeId", scope->nodeId},
+                {"requestedPluginInstanceId", scope->pluginInstanceId.value()},
+                {"expectedPluginInstanceId", canonicalPluginInstanceId.value()},
+                {"code", "parameter_scope_invalid"}
+            }
         );
         return;
     }
@@ -260,7 +314,7 @@ void ParameterDomain::handleRequestValues(
     event.name = "valuesSnapshot";
     event.priority = env.priority;
     event.payload = {
-        {"scope", makeScopePayload(scope->nodeId, scope->pluginInstanceId)},
+        {"scope", makeScopePayload(scope->nodeId, canonicalPluginInstanceId)},
         {"values", values}
     };
 
@@ -280,7 +334,7 @@ void ParameterDomain::handleSetValue(
             session,
             "invalid_scope",
             "parameter.setValue requires scope.nodeId",
-            nlohmann::json::object()
+            nlohmann::json{{"code", "parameter_scope_invalid"}}
         );
         return;
     }
@@ -314,7 +368,26 @@ void ParameterDomain::handleSetValue(
             session,
             "plugin_not_found",
             "Plugin node was not found for scope.nodeId",
-            nlohmann::json{{"nodeId", scope->nodeId}}
+            makeScopeErrorDetails(scope->nodeId, scope->pluginInstanceId, "parameter_scope_invalid")
+        );
+        return;
+    }
+
+    const auto canonicalPluginInstanceId = pluginNode->getPluginInstanceId();
+    if (scope->pluginInstanceId.has_value() &&
+        canonicalPluginInstanceId.has_value() &&
+        scope->pluginInstanceId.value() != canonicalPluginInstanceId.value()) {
+        emitError(
+            env,
+            session,
+            "invalid_scope",
+            "parameter.setValue scope.pluginInstanceId does not match the active plugin instance",
+            nlohmann::json{
+                {"nodeId", scope->nodeId},
+                {"requestedPluginInstanceId", scope->pluginInstanceId.value()},
+                {"expectedPluginInstanceId", canonicalPluginInstanceId.value()},
+                {"code", "parameter_scope_invalid"}
+            }
         );
         return;
     }
@@ -362,7 +435,7 @@ void ParameterDomain::handleSetValue(
     event.name = "valueChanged";
     event.priority = env.priority;
     event.payload = {
-        {"scope", makeScopePayload(scope->nodeId, scope->pluginInstanceId)},
+        {"scope", makeScopePayload(scope->nodeId, canonicalPluginInstanceId)},
         {"paramId", paramId},
         {"value", confirmedValue}
     };

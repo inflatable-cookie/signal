@@ -23,6 +23,9 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 16:56:44 UTC) [changed] Parameter domain now enforces canonical `scope.pluginInstanceId` matching against the active plugin node instance and returns scope-invalid errors when mismatched.
+(2026-02-06 16:56:44 UTC) [changed] Graph snapshot parsing and PluginNode runtime identity now carry `pluginInstanceId`, and parameter responses emit the canonical scope identity from runtime state.
+(2026-02-06 16:56:44 UTC) [dev] Extended plugin graph-hosting coverage to assert configured `pluginInstanceId` is retained on runtime plugin nodes.
 (2026-02-06 16:07:13 UTC) [changed] Emitted `diagnostics.error` (`engine.pluginUnavailableOnRestore`) after graph snapshot loads with unavailable plugin nodes so Pulse/Aura can surface degraded restore state.
 (2026-02-06 16:07:13 UTC) [dev] Added graph-load regression coverage for tracking unavailable plugin nodes when plugin instantiation fails.
 (2026-02-06 15:53:15 UTC) [changed] Made automation snapshot ingestion deterministic for equal-time events by sorting on time samples, node id, then parameter id in `AutomationDomain`.

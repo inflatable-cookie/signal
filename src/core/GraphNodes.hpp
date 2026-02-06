@@ -24,6 +24,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <optional>
 
 // Forward declaration (full include would create circular dependency)
 // HardwareAudioOutputNode needs EngineHost to query device channel count
@@ -244,6 +245,7 @@ public:
         : GraphNode(id, pluginKindToNodeKind(kind), trackId)
         , _pluginKind(kind)
         , _pluginId(pluginId)
+        , _pluginInstanceId(std::string("plugin-instance:") + id)
         , _plugin(nullptr)
         , _muted(false)
     {
@@ -260,6 +262,11 @@ public:
         : GraphNode(id, pluginKindToNodeKind(kind), trackId)
         , _pluginKind(kind)
         , _pluginId(desc.pluginId.value_or(""))
+        , _pluginInstanceId(
+            desc.pluginInstanceId.has_value() && !desc.pluginInstanceId->empty()
+                ? desc.pluginInstanceId.value()
+                : std::string("plugin-instance:") + id
+        )
         , _plugin(nullptr)
         , _muted(false)
     {
@@ -311,6 +318,7 @@ public:
 
     PluginNodeKind getPluginKind() const noexcept { return _pluginKind; }
     const std::string& getPluginId() const noexcept { return _pluginId; }
+    const std::optional<std::string>& getPluginInstanceId() const noexcept { return _pluginInstanceId; }
     PluginInstance* getPlugin() const noexcept { return _plugin.get(); }
     std::vector<std::uint8_t> getStateChunk() const {
         if (!_plugin) {
@@ -420,6 +428,7 @@ public:
 private:
     PluginNodeKind _pluginKind;
     std::string _pluginId;
+    std::optional<std::string> _pluginInstanceId;
     std::unique_ptr<PluginInstance> _plugin;
     bool _ioNegotiationOk = false;  // Set to true if I/O negotiation succeeded
     int _requestedInputs = 0;      // Stored from NodeDesc for negotiation
