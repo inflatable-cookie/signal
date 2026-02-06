@@ -145,9 +145,14 @@ void ClapPluginInstance::queryParameters() {
 
         ParameterInfo paramInfo;
         paramInfo.clapId = info.id;
+        paramInfo.name = info.name[0] != '\0' ? std::string(info.name) : std::string("param_") + std::to_string(info.id);
+        paramInfo.unit = info.module[0] != '\0' ? std::string(info.module) : std::string();
         paramInfo.minValue = info.min_value;
         paramInfo.maxValue = info.max_value;
         paramInfo.defaultValue = info.default_value;
+        paramInfo.step = 0.0;
+        paramInfo.isAutomatable = (info.flags & CLAP_PARAM_IS_AUTOMATABLE) != 0;
+        paramInfo.isBypass = (info.flags & CLAP_PARAM_IS_BYPASS) != 0;
         paramInfo.currentValue = info.default_value; // Will be normalised later
 
         // Normalise default value to 0..1
@@ -160,11 +165,7 @@ void ClapPluginInstance::queryParameters() {
 
         // Get parameter ID (use name if no ID string available)
         // Note: info.name is a fixed-size array, so check if first char is non-null
-        if (info.name[0] != '\0') {
-            paramInfo.id = info.name;
-        } else {
-            paramInfo.id = "param_" + std::to_string(info.id);
-        }
+        paramInfo.id = paramInfo.name;
 
         _parameters.push_back(paramInfo);
         _paramIdToIndex[paramInfo.id] = _parameters.size() - 1;
@@ -529,6 +530,27 @@ float ClapPluginInstance::getParameterValue(const std::string& paramId) const {
         return static_cast<float>(_parameters[it->second].currentValue);
     }
     return 0.0f;
+}
+
+std::vector<PluginParameterDescriptor> ClapPluginInstance::listParameterDescriptors() const {
+    std::vector<PluginParameterDescriptor> descriptors;
+    descriptors.reserve(_parameters.size());
+
+    for (const auto& param : _parameters) {
+        PluginParameterDescriptor descriptor;
+        descriptor.paramId = param.id;
+        descriptor.name = param.name;
+        descriptor.unit = param.unit;
+        descriptor.minValue = static_cast<float>(param.minValue);
+        descriptor.maxValue = static_cast<float>(param.maxValue);
+        descriptor.defaultValue = static_cast<float>(param.defaultValue);
+        descriptor.step = static_cast<float>(param.step);
+        descriptor.isAutomatable = param.isAutomatable;
+        descriptor.isBypass = param.isBypass;
+        descriptors.push_back(std::move(descriptor));
+    }
+
+    return descriptors;
 }
 
 void ClapPluginInstance::setParameterValue(const std::string& paramId, float normalisedValue) {

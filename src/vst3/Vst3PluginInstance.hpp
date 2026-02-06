@@ -7,6 +7,7 @@
 
 #include "core/PluginInstance.hpp"
 #include <string>
+#include <unordered_map>
 
 class Vst3PluginInstance : public PluginInstance {
 public:
@@ -31,6 +32,7 @@ public:
     int getNumParameters() const override;
     std::string getParameterId(int index) const override;
     float getParameterValue(const std::string& paramId) const override;
+    std::vector<PluginParameterDescriptor> listParameterDescriptors() const override;
     void setParameterValue(const std::string& paramId, float normalisedValue) override;
 
     std::vector<uint8_t> getStateChunk() const override;
@@ -42,6 +44,8 @@ public:
 private:
     PluginDescriptor _descriptor;
     std::string _modulePath;
+    std::vector<PluginParameterDescriptor> _parameterDescriptors;
+    std::unordered_map<std::string, float> _parameterValues;
     double _sampleRate{0.0};
     int _maxBlockSize{0};
 };

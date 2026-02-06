@@ -1,5 +1,7 @@
 #include "vst3/Vst3PluginInstance.hpp"
 #include <cstdint>
+#include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <utility>
 
@@ -10,6 +12,18 @@ Vst3PluginInstance::Vst3PluginInstance(
     : _descriptor(std::move(descriptor))
     , _modulePath(std::move(modulePath))
 {
+    _parameterDescriptors.push_back(PluginParameterDescriptor{
+        .paramId = "bypass",
+        .name = "Bypass",
+        .unit = "",
+        .minValue = 0.0f,
+        .maxValue = 1.0f,
+        .defaultValue = 0.0f,
+        .step = 1.0f,
+        .isAutomatable = true,
+        .isBypass = true
+    });
+    _parameterValues.emplace("bypass", 0.0f);
 }
 
 void Vst3PluginInstance::prepare(double sampleRate, int maxBlockSize) {
@@ -37,22 +51,53 @@ void Vst3PluginInstance::processAudioMidi(
 }
 
 int Vst3PluginInstance::getNumParameters() const {
-    return 0;
+    return static_cast<int>(_parameterDescriptors.size());
 }
 
 std::string Vst3PluginInstance::getParameterId(int index) const {
-    (void) index;
-    return {};
+    if (index < 0 || index >= static_cast<int>(_parameterDescriptors.size())) {
+        return {};
+    }
+
+    return _parameterDescriptors[static_cast<std::size_t>(index)].paramId;
 }
 
 float Vst3PluginInstance::getParameterValue(const std::string& paramId) const {
-    (void) paramId;
-    return 0.0f;
+    const auto it = _parameterValues.find(paramId);
+    if (it == _parameterValues.end()) {
+        return 0.0f;
+    }
+
+    return it->second;
+}
+
+std::vector<PluginParameterDescriptor> Vst3PluginInstance::listParameterDescriptors() const {
+    return _parameterDescriptors;
 }
 
 void Vst3PluginInstance::setParameterValue(const std::string& paramId, float normalisedValue) {
-    (void) paramId;
-    (void) normalisedValue;
+    auto it = std::find_if(
+        _parameterDescriptors.begin(),
+        _parameterDescriptors.end(),
+        [&paramId](const PluginParameterDescriptor& descriptor) {
+            return descriptor.paramId == paramId;
+        }
+    );
+
+    if (it == _parameterDescriptors.end()) {
+        return;
+    }
+
+    float clamped = std::max(it->minValue, std::min(it->maxValue, normalisedValue));
+
+    if (it->isBypass) {
+        clamped = clamped >= 0.5f ? 1.0f : 0.0f;
+    } else if (it->step > 0.0f) {
+        clamped = std::round(clamped / it->step) * it->step;
+        clamped = std::max(it->minValue, std::min(it->maxValue, clamped));
+    }
+
+    _parameterValues[paramId] = clamped;
 }
 
 std::vector<uint8_t> Vst3PluginInstance::getStateChunk() const {

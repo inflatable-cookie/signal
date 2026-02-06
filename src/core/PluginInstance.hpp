@@ -28,6 +28,18 @@ struct PluginDescriptor {
     // Future: latency, bus layouts, etc.
 };
 
+struct PluginParameterDescriptor {
+    std::string paramId;
+    std::string name;
+    std::string unit;
+    float minValue{0.0f};
+    float maxValue{1.0f};
+    float defaultValue{0.0f};
+    float step{0.0f};
+    bool isAutomatable{true};
+    bool isBypass{false};
+};
+
 /// Plugin instance interface
 class PluginInstance {
 public:
@@ -67,6 +79,9 @@ public:
     /// @param paramId Parameter ID
     virtual float getParameterValue(const std::string& paramId) const = 0;
 
+    /// List parameter descriptors in canonical format-agnostic shape.
+    virtual std::vector<PluginParameterDescriptor> listParameterDescriptors() const = 0;
+
     /// Set parameter value (normalised 0..1)
     /// Called on control thread or via lock-free mechanism from audio thread
     /// @param paramId Parameter ID
@@ -91,4 +106,3 @@ public:
     /// @return true if negotiation succeeded, false otherwise
     virtual bool negotiateAudioIO(int requestedInputs, int requestedOutputs) = 0;
 };
-

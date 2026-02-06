@@ -126,6 +126,22 @@ public:
         return 0.0f;
     }
 
+    std::vector<PluginParameterDescriptor> listParameterDescriptors() const override {
+        return {
+            PluginParameterDescriptor{
+                .paramId = "gain",
+                .name = "Gain",
+                .unit = "",
+                .minValue = 0.0f,
+                .maxValue = 1.0f,
+                .defaultValue = 1.0f,
+                .step = 0.0f,
+                .isAutomatable = true,
+                .isBypass = false
+            }
+        };
+    }
+
     void setParameterValue(const std::string& paramId, float normalisedValue) override {
         normalisedValue = std::max(0.0f, std::min(1.0f, normalisedValue));
         for (size_t i = 0; i < _parameterIds.size(); ++i) {
@@ -215,6 +231,10 @@ TEST_CASE("Phase 4 - Plugin host abstraction sanity", "[plugin][phase4]") {
     // Test prepare
     plugin->prepare(44100.0, 512);
     REQUIRE(plugin->getNumParameters() > 0);
+    const auto descriptors = plugin->listParameterDescriptors();
+    REQUIRE(descriptors.size() == 1);
+    REQUIRE(descriptors[0].paramId == "gain");
+    REQUIRE(descriptors[0].isAutomatable);
 
     // Test parameter access
     std::string paramId = plugin->getParameterId(0);
@@ -337,6 +357,12 @@ TEST_CASE("Phase 80 - VST3 factory creates runtime instance from scanned registr
     REQUIRE(plugin != nullptr);
     REQUIRE(plugin->getDescriptor().numAudioInputs == runtimeDesc->numAudioInputs);
     REQUIRE(plugin->getDescriptor().numAudioOutputs == runtimeDesc->numAudioOutputs);
+    REQUIRE(plugin->getNumParameters() >= 1);
+    REQUIRE(plugin->getParameterId(0) == "bypass");
+    plugin->setParameterValue("bypass", 0.8f);
+    REQUIRE(plugin->getParameterValue("bypass") == 1.0f);
+    plugin->setParameterValue("bypass", 0.2f);
+    REQUIRE(plugin->getParameterValue("bypass") == 0.0f);
 
     plugin->prepare(48000.0, 128);
 

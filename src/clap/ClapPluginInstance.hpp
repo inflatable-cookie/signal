@@ -43,6 +43,7 @@ public:
     int getNumParameters() const override;
     std::string getParameterId(int index) const override;
     float getParameterValue(const std::string& paramId) const override;
+    std::vector<PluginParameterDescriptor> listParameterDescriptors() const override;
     void setParameterValue(const std::string& paramId, float normalisedValue) override;
 
     std::vector<uint8_t> getStateChunk() const override;
@@ -67,9 +68,14 @@ private:
     struct ParameterInfo {
         std::string id;
         clap_id clapId;
+        std::string name;
+        std::string unit;
         double minValue;
         double maxValue;
         double defaultValue;
+        double step;
+        bool isAutomatable;
+        bool isBypass;
         double currentValue; // Normalised 0..1
     };
     std::vector<ParameterInfo> _parameters;

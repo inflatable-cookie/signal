@@ -23,6 +23,8 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-02-06 13:24:43 UTC) [changed] Added VST3 scaffold parameter value storage with clamping and bypass coercion, and extended plugin-hosting tests for parameter read/write behaviour.
+(2026-02-06 13:23:32 UTC) [changed] Added canonical plugin parameter descriptor listing to the shared plugin instance API with CLAP and VST3 implementations plus runtime-host tests.
 (2026-02-06 12:59:21 UTC) [fixed] Unblocked Signal builds by fixing MIDI polling lambda capture, correcting `MidiInputRouter` PIMPL wiring, and stabilising MIDI normaliser/plugin-hosting tests.
 (2026-02-06 12:36:43 UTC) [changed] Wired plugin-state chunk restore on graph snapshot load and added GraphEngine state-chunk capture export for persisted plugin runtime state.
 (2026-02-06 12:26:10 UTC) [changed] Extended the Phase 80 VST3 runtime scaffold with state-chunk roundtrip support and tests covering lifecycle, I/O negotiation, and restore semantics.
