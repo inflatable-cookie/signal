@@ -335,6 +335,8 @@ TEST_CASE("Phase 80 - VST3 factory creates runtime instance from scanned registr
 
     auto plugin = host.createInstance(runtimeDesc.value());
     REQUIRE(plugin != nullptr);
+    REQUIRE(plugin->getDescriptor().numAudioInputs == runtimeDesc->numAudioInputs);
+    REQUIRE(plugin->getDescriptor().numAudioOutputs == runtimeDesc->numAudioOutputs);
 
     plugin->prepare(48000.0, 128);
 
@@ -351,6 +353,17 @@ TEST_CASE("Phase 80 - VST3 factory creates runtime instance from scanned registr
 
     plugin->processAudioMidi(audioIn, audioOut, midiIn, midiOut, npc);
     REQUIRE(std::abs(audioOut.getSample(0, 0) - 0.75f) < 0.01f);
+
+    const auto initialState = plugin->getStateChunk();
+    REQUIRE(!initialState.empty());
+
+    REQUIRE(plugin->negotiateAudioIO(1, 1));
+    REQUIRE(plugin->getDescriptor().numAudioInputs == 1);
+    REQUIRE(plugin->getDescriptor().numAudioOutputs == 1);
+
+    plugin->setStateChunk(initialState);
+    REQUIRE(plugin->getDescriptor().numAudioInputs == runtimeDesc->numAudioInputs);
+    REQUIRE(plugin->getDescriptor().numAudioOutputs == runtimeDesc->numAudioOutputs);
 
     std::error_code ignored;
     std::filesystem::remove_all(tempDir, ignored);

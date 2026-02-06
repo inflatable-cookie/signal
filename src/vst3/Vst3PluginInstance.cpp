@@ -1,4 +1,6 @@
 #include "vst3/Vst3PluginInstance.hpp"
+#include <cstdint>
+#include <cstring>
 #include <utility>
 
 Vst3PluginInstance::Vst3PluginInstance(
@@ -54,11 +56,67 @@ void Vst3PluginInstance::setParameterValue(const std::string& paramId, float nor
 }
 
 std::vector<uint8_t> Vst3PluginInstance::getStateChunk() const {
-    return {};
+    static constexpr char kMagic[] = {'V', 'S', 'T', '3', 'S', 'T', 'B', '1'};
+    constexpr std::size_t kMagicSize = sizeof(kMagic);
+    constexpr std::size_t kStateSize = kMagicSize + sizeof(std::int32_t) * 2 + sizeof(std::uint8_t) * 2;
+
+    std::vector<uint8_t> state(kStateSize);
+    std::memcpy(state.data(), kMagic, kMagicSize);
+
+    std::int32_t inputs = static_cast<std::int32_t>(_descriptor.numAudioInputs);
+    std::int32_t outputs = static_cast<std::int32_t>(_descriptor.numAudioOutputs);
+    std::uint8_t midiIn = _descriptor.hasMidiInput ? 1 : 0;
+    std::uint8_t midiOut = _descriptor.hasMidiOutput ? 1 : 0;
+
+    std::size_t offset = kMagicSize;
+    std::memcpy(state.data() + offset, &inputs, sizeof(inputs));
+    offset += sizeof(inputs);
+    std::memcpy(state.data() + offset, &outputs, sizeof(outputs));
+    offset += sizeof(outputs);
+    std::memcpy(state.data() + offset, &midiIn, sizeof(midiIn));
+    offset += sizeof(midiIn);
+    std::memcpy(state.data() + offset, &midiOut, sizeof(midiOut));
+
+    return state;
 }
 
 void Vst3PluginInstance::setStateChunk(const std::vector<uint8_t>& data) {
-    (void) data;
+    static constexpr char kMagic[] = {'V', 'S', 'T', '3', 'S', 'T', 'B', '1'};
+    constexpr std::size_t kMagicSize = sizeof(kMagic);
+    constexpr std::size_t kStateSize = kMagicSize + sizeof(std::int32_t) * 2 + sizeof(std::uint8_t) * 2;
+
+    if (data.size() < kStateSize) {
+        return;
+    }
+
+    if (std::memcmp(data.data(), kMagic, kMagicSize) != 0) {
+        return;
+    }
+
+    std::size_t offset = kMagicSize;
+    std::int32_t inputs = 0;
+    std::int32_t outputs = 0;
+    std::uint8_t midiIn = 0;
+    std::uint8_t midiOut = 0;
+
+    std::memcpy(&inputs, data.data() + offset, sizeof(inputs));
+    offset += sizeof(inputs);
+    std::memcpy(&outputs, data.data() + offset, sizeof(outputs));
+    offset += sizeof(outputs);
+    std::memcpy(&midiIn, data.data() + offset, sizeof(midiIn));
+    offset += sizeof(midiIn);
+    std::memcpy(&midiOut, data.data() + offset, sizeof(midiOut));
+
+    if (inputs >= 0) {
+        _descriptor.numAudioInputs = static_cast<int>(inputs);
+    }
+
+    if (outputs >= 0) {
+        _descriptor.numAudioOutputs = static_cast<int>(outputs);
+    }
+
+    _descriptor.hasMidiInput = midiIn != 0;
+    _descriptor.hasMidiOutput = midiOut != 0;
 }
 
 const PluginDescriptor& Vst3PluginInstance::getDescriptor() const {
