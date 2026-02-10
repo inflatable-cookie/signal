@@ -12,6 +12,7 @@ add_library(signal-core STATIC
     core/GraphSnapshot.cpp
     core/GraphEngine.cpp
     core/GraphEngineLoadSnapshot.cpp
+    core/GraphEngineValidateRouting.cpp
     core/RecordingCapture.cpp
     core/PluginHost.cpp
     core/PluginCrashTracking.cpp
