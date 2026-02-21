@@ -512,32 +512,10 @@ int SignalApp::run() {
     // Start server
     server.start();
 
-    // Auto-start the audio engine when Signal boots up
-    if (_engineHost) {
-        LOG_INFO({"SignalApp"}, "Auto-starting audio engine...");
-        _engineHost->start();
-        // Send initial engine state to any connected clients
-        // (This will be sent automatically when clients connect via the callback,
-        // but we also send it now in case a client is already connected)
-        server.broadcastEngineState(_engineHost.get());
-    }
-
-    // Scan for plugins after server starts, but never block IO:
-    // run scanning on a background thread so the Asio loop can accept connections.
-    if (_engineHost && _engineHost->pluginHost()) {
-        LOG_INFO({"SignalApp"}, "Scheduling CLAP plugin scan (background)...");
-        _pluginScanThread = std::jthread([this](std::stop_token stopToken) {
-            if (!_engineHost || !_engineHost->pluginHost()) {
-                return;
-            }
-
-            if (stopToken.stop_requested()) {
-                return;
-            }
-
-            _engineHost->pluginHost()->scanPlugins(stopToken);
-        });
-    }
+    // Signal startup stays idle by default.
+    // Pulse is the lifecycle orchestrator and must explicitly request:
+    // - engine start/stop via engine domain commands
+    // - plugin scanning via plugin domain commands
 
     // Run IO loop
     LOG_INFO({"SignalApp"}, "Starting IO loop...");
