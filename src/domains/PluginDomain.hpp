@@ -1,9 +1,15 @@
 #pragma once
 
 #include "ipc/IpcDomainHandler.hpp"
+#include <nlohmann/json.hpp>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
+#include <vector>
+
+#include "core/PluginInstance.hpp"
 
 class EngineHost;
 enum class PluginFormat;
@@ -19,6 +25,12 @@ public:
     ) override;
 
 private:
+    struct ScanState {
+        std::string scanId;
+        loophole::signal::ipc::IpcTarget target{loophole::signal::ipc::IpcTarget::Pulse};
+        loophole::signal::ipc::IpcPriority priority{loophole::signal::ipc::IpcPriority::Normal};
+    };
+
     static std::optional<loophole::signal::ipc::IpcTarget> envelopeTargetForOrigin(
         loophole::signal::ipc::IpcOrigin origin
     );
@@ -28,6 +40,33 @@ private:
         const loophole::signal::ipc::IpcEnvelope& commandEnv,
         const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
     );
+    void handleRescan(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
+    void handleCancelScan(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
+    void handleScanStatus(
+        const loophole::signal::ipc::IpcEnvelope& commandEnv,
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session
+    );
+    void runScan(
+        std::string scanId,
+        std::optional<loophole::signal::ipc::IpcTarget> target,
+        loophole::signal::ipc::IpcPriority priority,
+        std::weak_ptr<loophole::signal::ipc::TcpClientSession> weakSession,
+        std::stop_token stopToken
+    );
+    void emitEvent(
+        const std::shared_ptr<loophole::signal::ipc::TcpClientSession>& session,
+        std::optional<loophole::signal::ipc::IpcTarget> target,
+        loophole::signal::ipc::IpcPriority priority,
+        std::optional<std::string> correlationId,
+        const std::string& name,
+        nlohmann::json payload
+    ) const;
 
     void emitError(
         const loophole::signal::ipc::IpcEnvelope& commandEnv,
@@ -37,4 +76,8 @@ private:
     ) const;
 
     EngineHost* _engineHost;
+    mutable std::mutex scanMutex_;
+    std::optional<ScanState> activeScan_;
+    std::vector<PluginDescriptor> lastEmittedCatalog_;
+    std::jthread scanThread_;
 };
