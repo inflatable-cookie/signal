@@ -47,6 +47,19 @@ nlohmann::json pluginPayloadForDescriptor(const PluginDescriptor& descriptor) {
                                   {"manufacturer", nullptr}}},
     };
 }
+
+std::string canonicalScanLevel(const nlohmann::json& payload) {
+    auto level = payload.value("scanLevel", std::string{});
+    if (level.empty() && payload.contains("options") && payload["options"].is_object()) {
+        level = payload["options"].value("scanLevel", std::string{});
+    }
+
+    if (level == "none" || level == "light" || level == "catalog" || level == "full") {
+        return level;
+    }
+
+    return "catalog";
+}
 } // namespace
 
 PluginDomain::PluginDomain(EngineHost* engineHost)
@@ -222,6 +235,8 @@ void PluginDomain::handleRescan(
         "scanId",
         "pluginScan:" + currentTimestamp()
     );
+    const auto scanLevel = canonicalScanLevel(commandEnv.payload);
+    const bool fullScan = scanLevel == "full";
 
     {
         std::lock_guard<std::mutex> lock(scanMutex_);
@@ -240,6 +255,7 @@ void PluginDomain::handleRescan(
 
         activeScan_ = ScanState{
             .scanId = scanId,
+            .scanLevel = scanLevel,
             .target = target.value(),
             .priority = commandEnv.priority,
         };
@@ -251,7 +267,7 @@ void PluginDomain::handleRescan(
         commandEnv.priority,
         commandEnv.id,
         "rescan",
-        nlohmann::json{{"scanId", scanId}}
+        nlohmann::json{{"scanId", scanId}, {"scanLevel", scanLevel}}
     );
     emitEvent(
         session,
@@ -259,19 +275,24 @@ void PluginDomain::handleRescan(
         commandEnv.priority,
         commandEnv.id,
         "scanStarted",
-        nlohmann::json{{"scanId", scanId}, {"fullScan", true}}
+        nlohmann::json{
+            {"scanId", scanId},
+            {"fullScan", fullScan},
+            {"scanLevel", scanLevel},
+        }
     );
 
     scanThread_ = std::jthread(
         [this,
          scanId,
+         scanLevel,
          target,
          priority = commandEnv.priority,
          weakSession =
              std::weak_ptr<loophole::signal::ipc::TcpClientSession>(session)](
             std::stop_token token
         ) {
-            runScan(scanId, target, priority, weakSession, token);
+            runScan(scanId, scanLevel, target, priority, weakSession, token);
         }
     );
 }
@@ -341,16 +362,21 @@ void PluginDomain::handleScanStatus(
 
     auto status = pluginHost->scanStatus();
     std::optional<std::string> scanId = std::nullopt;
+    std::optional<std::string> scanLevel = std::nullopt;
     {
         std::lock_guard<std::mutex> lock(scanMutex_);
         if (activeScan_.has_value()) {
             scanId = activeScan_->scanId;
+            scanLevel = activeScan_->scanLevel;
         }
     }
 
     nlohmann::json payload = nlohmann::json::object();
     if (scanId.has_value()) {
         payload["scanId"] = scanId.value();
+    }
+    if (scanLevel.has_value()) {
+        payload["scanLevel"] = scanLevel.value();
     }
     payload["state"] = status.state_tag();
     payload["pluginCount"] = status.plugin_count;
@@ -373,6 +399,7 @@ void PluginDomain::handleScanStatus(
 
 void PluginDomain::runScan(
     std::string scanId,
+    std::string scanLevel,
     std::optional<loophole::signal::ipc::IpcTarget> target,
     loophole::signal::ipc::IpcPriority priority,
     std::weak_ptr<loophole::signal::ipc::TcpClientSession> weakSession,
@@ -393,7 +420,30 @@ void PluginDomain::runScan(
             priority,
             std::nullopt,
             "scanFailed",
-            nlohmann::json{{"scanId", scanId}, {"code", "plugin_host_unavailable"}, {"message", "Plugin host is unavailable"}}
+            nlohmann::json{
+                {"scanId", scanId},
+                {"scanLevel", scanLevel},
+                {"code", "plugin_host_unavailable"},
+                {"message", "Plugin host is unavailable"},
+            }
+        );
+        std::lock_guard<std::mutex> lock(scanMutex_);
+        activeScan_ = std::nullopt;
+        return;
+    }
+
+    if (scanLevel == "none") {
+        emitEvent(
+            session,
+            target,
+            priority,
+            std::nullopt,
+            "scanCompleted",
+            nlohmann::json{
+                {"scanId", scanId},
+                {"scanLevel", scanLevel},
+                {"summary", nlohmann::json{{"added", 0}, {"removed", 0}, {"updated", 0}}},
+            }
         );
         std::lock_guard<std::mutex> lock(scanMutex_);
         activeScan_ = std::nullopt;
@@ -410,7 +460,12 @@ void PluginDomain::runScan(
             priority,
             std::nullopt,
             "scanFailed",
-            nlohmann::json{{"scanId", scanId}, {"code", "plugin_scan_failed"}, {"message", status.last_error.value_or("Plugin scan failed")}}
+            nlohmann::json{
+                {"scanId", scanId},
+                {"scanLevel", scanLevel},
+                {"code", "plugin_scan_failed"},
+                {"message", status.last_error.value_or("Plugin scan failed")},
+            }
         );
     } else if (status.state == PluginHost::PluginScanState::Cancelled) {
         emitEvent(
@@ -419,7 +474,12 @@ void PluginDomain::runScan(
             priority,
             std::nullopt,
             "scanFailed",
-            nlohmann::json{{"scanId", scanId}, {"code", "plugin_scan_cancelled"}, {"message", "Plugin scan cancelled"}}
+            nlohmann::json{
+                {"scanId", scanId},
+                {"scanLevel", scanLevel},
+                {"code", "plugin_scan_cancelled"},
+                {"message", "Plugin scan cancelled"},
+            }
         );
     } else {
         const auto descriptors = pluginHost->listPlugins();
@@ -512,6 +572,7 @@ void PluginDomain::runScan(
             std::nullopt,
             "scanCompleted",
             nlohmann::json{{"scanId", scanId},
+                           {"scanLevel", scanLevel},
                            {"summary", nlohmann::json{{"added", addedCount},
                                                       {"removed", removedCount},
                                                       {"updated", updatedCount}}}}

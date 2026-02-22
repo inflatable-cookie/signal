@@ -27,6 +27,7 @@ public:
 private:
     struct ScanState {
         std::string scanId;
+        std::string scanLevel{"catalog"};
         loophole::signal::ipc::IpcTarget target{loophole::signal::ipc::IpcTarget::Pulse};
         loophole::signal::ipc::IpcPriority priority{loophole::signal::ipc::IpcPriority::Normal};
     };
@@ -54,6 +55,7 @@ private:
     );
     void runScan(
         std::string scanId,
+        std::string scanLevel,
         std::optional<loophole::signal::ipc::IpcTarget> target,
         loophole::signal::ipc::IpcPriority priority,
         std::weak_ptr<loophole::signal::ipc::TcpClientSession> weakSession,

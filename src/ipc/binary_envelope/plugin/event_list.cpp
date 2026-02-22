@@ -74,6 +74,9 @@ std::optional<std::vector<std::uint8_t>> encodePluginRescanEvent(
         if (payload.contains("scanId") && payload["scanId"].is_string()) {
             writer.writeString(4, payload["scanId"].get<std::string>());
         }
+        if (payload.contains("scanLevel") && payload["scanLevel"].is_string()) {
+            writer.writeString(5, payload["scanLevel"].get<std::string>());
+        }
         return writer.intoBytes();
     } catch (const std::exception& ex) {
         error = ex.what();
@@ -93,6 +96,9 @@ std::optional<std::vector<std::uint8_t>> encodePluginScanStartedEvent(
         }
         if (payload.contains("fullScan") && payload["fullScan"].is_boolean()) {
             writer.writeU32(3, payload["fullScan"].get<bool>() ? 1U : 0U);
+        }
+        if (payload.contains("scanLevel") && payload["scanLevel"].is_string()) {
+            writer.writeString(4, payload["scanLevel"].get<std::string>());
         }
         return writer.intoBytes();
     } catch (const std::exception& ex) {
@@ -248,6 +254,9 @@ std::optional<std::vector<std::uint8_t>> encodePluginScanStatusEvent(
         }
         if (payload.contains("message") && payload["message"].is_string()) {
             writer.writeString(8, payload["message"].get<std::string>());
+        }
+        if (payload.contains("scanLevel") && payload["scanLevel"].is_string()) {
+            writer.writeString(9, payload["scanLevel"].get<std::string>());
         }
 
         return writer.intoBytes();

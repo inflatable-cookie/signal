@@ -19,6 +19,7 @@ std::optional<nlohmann::json> decodeRescanCommand(
         std::vector<std::string> formats;
         bool force = false;
         std::optional<std::string> scanId = std::nullopt;
+        std::optional<std::string> scanLevel = std::nullopt;
 
         while (auto header = reader.readNextHeader()) {
             auto valueBytes = reader.readValueBytes(header->byteLen);
@@ -42,12 +43,18 @@ std::optional<nlohmann::json> decodeRescanCommand(
             } else if (header->fieldId == 4 && header->fieldType == TLV_STRING) {
                 BinaryReader valueReader(valueBytes);
                 scanId = valueReader.readStringU16Len("scanId");
+            } else if (header->fieldId == 5 && header->fieldType == TLV_STRING) {
+                BinaryReader valueReader(valueBytes);
+                scanLevel = valueReader.readStringU16Len("scanLevel");
             }
         }
 
         nlohmann::json out = nlohmann::json::object();
         if (scanId.has_value()) {
             out["scanId"] = scanId.value();
+        }
+        if (scanLevel.has_value()) {
+            out["scanLevel"] = scanLevel.value();
         }
         out["options"] = nlohmann::json{
             {"formats", formats},
