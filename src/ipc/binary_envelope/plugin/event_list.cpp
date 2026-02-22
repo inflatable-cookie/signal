@@ -23,6 +23,9 @@ std::vector<std::uint8_t> buildPluginDescriptor(
     if (plugin.contains("manufacturer") && plugin["manufacturer"].is_string()) {
         objectWriter.writeString(5, plugin["manufacturer"].get<std::string>());
     }
+    if (plugin.contains("binaryPath") && plugin["binaryPath"].is_string()) {
+        objectWriter.writeString(6, plugin["binaryPath"].get<std::string>());
+    }
 
     return objectWriter.intoBytes();
 }
@@ -134,6 +137,9 @@ std::optional<std::vector<std::uint8_t>> encodePluginAddedEvent(
                 }
                 if (plugin->contains("manufacturer") && (*plugin)["manufacturer"].is_string()) {
                     nested.writeString(5, (*plugin)["manufacturer"].get<std::string>());
+                }
+                if (plugin->contains("binaryPath") && (*plugin)["binaryPath"].is_string()) {
+                    nested.writeString(6, (*plugin)["binaryPath"].get<std::string>());
                 }
             });
         }

@@ -23,6 +23,17 @@ std::vector<PluginDescriptor> Vst3Backend::listPlugins() const {
 #endif
 }
 
+std::optional<std::filesystem::path> Vst3Backend::findPathById(
+    const std::string& pluginId
+) const {
+#if SIGNAL_ENABLE_VST3
+    return _registry.findPathById(pluginId);
+#else
+    (void) pluginId;
+    return std::nullopt;
+#endif
+}
+
 std::unique_ptr<PluginInstance> Vst3Backend::createInstance(
     const PluginDescriptor& desc,
     std::string& error

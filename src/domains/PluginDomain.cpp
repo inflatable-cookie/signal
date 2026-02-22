@@ -1,8 +1,10 @@
 #include "domains/PluginDomain.hpp"
 #include "core/EngineHost.hpp"
 #include "core/PluginHost.hpp"
+#include "clap/ClapRegistry.hpp"
 #include "ipc/IpcEnvelope.hpp"
 #include "ipc/TcpClientSession.hpp"
+#include "vst3/Vst3Backend.hpp"
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 
@@ -38,13 +40,46 @@ bool pluginCatalogEntryChanged(
         || before.hasMidiOutput != after.hasMidiOutput;
 }
 
-nlohmann::json pluginPayloadForDescriptor(const PluginDescriptor& descriptor) {
+std::optional<std::string> resolveDescriptorBinaryPath(
+    PluginHost* pluginHost,
+    const PluginDescriptor& descriptor
+) {
+    if (pluginHost == nullptr) {
+        return std::nullopt;
+    }
+
+    switch (descriptor.format) {
+    case PluginFormat::Clap: {
+        auto library = pluginHost->getClapRegistry().getLibrary(descriptor.id);
+        if (library) {
+            return library->getPath().string();
+        }
+        return std::nullopt;
+    }
+    case PluginFormat::Vst3: {
+        auto path = pluginHost->getVst3Backend().findPathById(descriptor.id);
+        if (path.has_value()) {
+            return path->string();
+        }
+        return std::nullopt;
+    }
+    default:
+        return std::nullopt;
+    }
+}
+
+nlohmann::json pluginPayloadForDescriptor(
+    const PluginDescriptor& descriptor,
+    const std::optional<std::string>& binaryPath
+) {
     return nlohmann::json{
         {"pluginId", descriptor.id},
+        {"binaryPath", binaryPath.has_value() ? nlohmann::json(binaryPath.value()) : nlohmann::json(nullptr)},
         {"plugin", nlohmann::json{{"pluginId", descriptor.id},
                                   {"format", formatTagForCatalog(descriptor.format)},
                                   {"displayName", descriptor.name},
-                                  {"manufacturer", nullptr}}},
+                                  {"manufacturer", nullptr},
+                                  {"binaryPath", binaryPath.has_value() ? nlohmann::json(binaryPath.value()) : nlohmann::json(nullptr)}}},
     };
 }
 
@@ -193,11 +228,13 @@ void PluginDomain::handleList(
 
     nlohmann::json plugins = nlohmann::json::array();
     for (const auto& descriptor : descriptors) {
+        auto binaryPath = resolveDescriptorBinaryPath(pluginHost, descriptor);
         plugins.push_back({
             {"pluginId", descriptor.id},
             {"format", formatTag(descriptor.format)},
             {"displayName", descriptor.name},
             {"manufacturer", nullptr},
+            {"binaryPath", binaryPath.has_value() ? nlohmann::json(binaryPath.value()) : nlohmann::json(nullptr)},
         });
     }
 
@@ -529,7 +566,10 @@ void PluginDomain::runScan(
             const auto key = pluginCatalogKey(descriptor);
             const auto previous = previousByKey.find(key);
             if (previous == previousByKey.end()) {
-                nlohmann::json payload = pluginPayloadForDescriptor(descriptor);
+                nlohmann::json payload = pluginPayloadForDescriptor(
+                    descriptor,
+                    resolveDescriptorBinaryPath(pluginHost, descriptor)
+                );
                 payload["scanId"] = scanId;
                 emitEvent(
                     session,
@@ -547,7 +587,10 @@ void PluginDomain::runScan(
                 continue;
             }
 
-            nlohmann::json payload = pluginPayloadForDescriptor(descriptor);
+            nlohmann::json payload = pluginPayloadForDescriptor(
+                descriptor,
+                resolveDescriptorBinaryPath(pluginHost, descriptor)
+            );
             payload["scanId"] = scanId;
             emitEvent(
                 session,

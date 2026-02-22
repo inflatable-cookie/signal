@@ -7,6 +7,8 @@
 
 #include "core/PluginInstance.hpp"
 #include "vst3/Vst3Registry.hpp"
+#include <filesystem>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <vector>
@@ -18,6 +20,7 @@ public:
 
     void scanDefaultPaths(std::stop_token stopToken = {});
     std::vector<PluginDescriptor> listPlugins() const;
+    std::optional<std::filesystem::path> findPathById(const std::string& pluginId) const;
 
     std::unique_ptr<PluginInstance> createInstance(
         const PluginDescriptor& desc,
