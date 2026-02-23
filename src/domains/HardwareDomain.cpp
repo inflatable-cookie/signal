@@ -31,54 +31,6 @@ void HardwareDomain::handle(
         return;
     }
 
-    // Handle device selection commands directly
-    if (env.name == "selectOutputDevice") {
-        // Parse device ID from payload and set device
-        std::string deviceId;
-        if (env.payload.contains("id") && env.payload["id"].is_string()) {
-            deviceId = env.payload["id"].get<std::string>();
-        } else if (env.payload.contains("deviceId") && env.payload["deviceId"].is_string()) {
-            deviceId = env.payload["deviceId"].get<std::string>();
-        } else {
-            LOG_ERROR({"HardwareDomain"}, "selectOutputDevice: missing or invalid 'id' or 'deviceId' field");
-            // Send error response
-            using namespace loophole::signal::ipc;
-            IpcEnvelope errorResponse;
-            errorResponse.version = 1;
-            errorResponse.id = "hardware-state-" + env.id;
-            errorResponse.correlationId = env.id;
-            errorResponse.timestamp = currentTimestamp();
-            errorResponse.origin = IpcOrigin::Signal;
-            switch (env.origin) {
-            case IpcOrigin::Aura: errorResponse.target = IpcTarget::Aura; break;
-            case IpcOrigin::Pulse: errorResponse.target = IpcTarget::Pulse; break;
-            case IpcOrigin::Signal: errorResponse.target = IpcTarget::Signal; break;
-            case IpcOrigin::Composer: errorResponse.target = IpcTarget::Composer; break;
-            }
-            errorResponse.domain = "hardware";
-            errorResponse.kind = IpcKind::Event;
-            errorResponse.name = "state";
-            errorResponse.priority = env.priority;
-            nlohmann::json errorPayload;
-            errorPayload["lastError"] = "Missing or invalid device ID";
-            errorResponse.payload = errorPayload;
-            session->send(errorResponse);
-            return;
-        }
-
-        // Attempt to set the device
-        bool success = _engineHost->setOutputDevice(deviceId);
-        if (success) {
-            std::ostringstream msg;
-            msg << "Device selection succeeded: " << deviceId;
-            LOG_INFO({"HardwareDomain"}, msg.str());
-        } else {
-            std::ostringstream msg;
-            msg << "Device selection failed: " << deviceId;
-            LOG_WARN({"HardwareDomain"}, msg.str());
-        }
-    }
-
     // Handle responses based on command name
     if (env.name == "refreshOutputDevices") {
         sendListOutputDevicesResponse(env, session);
