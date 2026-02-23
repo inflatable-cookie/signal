@@ -25,6 +25,7 @@ public:
         std::string binaryPath;
         std::optional<std::uint64_t> fileMtimeUnix;
         std::optional<std::uint64_t> fileSizeBytes;
+        std::optional<std::string> fileSignatureHash;
     };
 
     void handle(

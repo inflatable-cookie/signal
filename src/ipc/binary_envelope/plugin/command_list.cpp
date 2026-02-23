@@ -73,6 +73,9 @@ std::optional<nlohmann::json> decodeRescanCommand(
                         } else if (entryHeader->fieldId == 5 && entryHeader->fieldType == TLV_U64) {
                             BinaryReader valueReader(entryValueBytes);
                             entry["fileSizeBytes"] = valueReader.readU64Le("lightCache.fileSizeBytes");
+                        } else if (entryHeader->fieldId == 6 && entryHeader->fieldType == TLV_STRING) {
+                            BinaryReader valueReader(entryValueBytes);
+                            entry["fileSignatureHash"] = valueReader.readStringU16Len("lightCache.fileSignatureHash");
                         }
                     }
                     lightCache.push_back(std::move(entry));

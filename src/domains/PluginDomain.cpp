@@ -146,6 +146,12 @@ std::vector<PluginDomain::LightCacheEntry> parseLightCacheEntries(const nlohmann
         if (entryValue.contains("fileSizeBytes") && entryValue["fileSizeBytes"].is_number_unsigned()) {
             entry.fileSizeBytes = entryValue["fileSizeBytes"].get<std::uint64_t>();
         }
+        if (entryValue.contains("fileSignatureHash") && entryValue["fileSignatureHash"].is_string()) {
+            const auto hash = entryValue["fileSignatureHash"].get<std::string>();
+            if (!hash.empty()) {
+                entry.fileSignatureHash = hash;
+            }
+        }
         entries.push_back(std::move(entry));
     }
 
@@ -582,6 +588,8 @@ void PluginDomain::runScan(
                 const auto mtime = fileMtimeUnixSeconds(path);
                 changed = !mtime.has_value() || mtime.value() != entry.fileMtimeUnix.value();
             }
+            // Hash hook point (disabled by default): when available, a future
+            // incremental policy can compare entry.fileSignatureHash here.
 
             if (changed) {
                 updatedCount += 1;
