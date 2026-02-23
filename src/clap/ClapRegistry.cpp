@@ -5,7 +5,7 @@
 #include <sstream>
 
 ClapRegistry::ClapRegistry() {
-    LOG_INFO({"ClapRegistry"}, "Created");
+    LOG_DEBUG({"ClapRegistry"}, "Created");
 }
 
 ClapRegistry::~ClapRegistry() {

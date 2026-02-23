@@ -41,7 +41,7 @@ std::optional<int> parseSpatialChannelGainIndex(const std::string& parameterId) 
 NodeDomain::NodeDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
 {
-    LOG_INFO({"NodeDomain"}, "Initialised");
+    LOG_DEBUG({"NodeDomain"}, "Initialised");
 }
 
 void NodeDomain::handle(

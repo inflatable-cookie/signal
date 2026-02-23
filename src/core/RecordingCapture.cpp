@@ -10,7 +10,7 @@ RecordingSession::RecordingSession()
     , _audioChunkQueue(CAPTURE_QUEUE_SIZE)
     , _midiChunkQueue(CAPTURE_QUEUE_SIZE)
 {
-    LOG_INFO({"RecordingSession"}, "Created");
+    LOG_DEBUG({"RecordingSession"}, "Created");
 }
 
 RecordingSession::~RecordingSession() {
@@ -138,4 +138,3 @@ bool RecordingSession::captureFinalOutput(
     // Queue for async flush (lock-free)
     return _audioChunkQueue.push(chunk);
 }
-

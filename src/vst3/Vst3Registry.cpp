@@ -14,7 +14,7 @@ std::string makeStablePluginId(const std::filesystem::path& path) {
 }
 
 Vst3Registry::Vst3Registry() {
-    LOG_INFO({"Vst3Registry"}, "Created");
+    LOG_DEBUG({"Vst3Registry"}, "Created");
 }
 
 Vst3Registry::~Vst3Registry() {

@@ -13,7 +13,7 @@ AutomationService::AutomationService()
     _activeSnapshot.store(&_snapshotA, std::memory_order_release);
     _useSnapshotA = true;
 
-    LOG_INFO({"AutomationService"}, "Initialised");
+    LOG_DEBUG({"AutomationService"}, "Initialised");
 }
 
 AutomationService::~AutomationService() = default;

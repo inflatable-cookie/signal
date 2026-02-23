@@ -14,7 +14,7 @@
 AutomationDomain::AutomationDomain(EngineHost* engineHost)
     : _engineHost(engineHost)
 {
-    LOG_INFO({"AutomationDomain"}, "Initialised");
+    LOG_DEBUG({"AutomationDomain"}, "Initialised");
 }
 
 void AutomationDomain::handle(

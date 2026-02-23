@@ -68,7 +68,7 @@ EngineHost::EngineHost()
 #endif
 
     setupAudioBackend();
-    LOG_INFO({"EngineHost"}, "Created");
+    LOG_DEBUG({"EngineHost"}, "Created");
 }
 
 EngineHost::~EngineHost() {

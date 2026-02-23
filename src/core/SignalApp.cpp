@@ -182,12 +182,12 @@ SignalApp::SignalApp() {
     // Initialize unified logging system
     initLogging();
 
-    LOG_INFO({"SignalApp"}, "Initialising...");
+    LOG_DEBUG({"SignalApp"}, "Initialising...");
 
     try {
         _engineHost = std::make_unique<EngineHost>();
 
-        LOG_INFO({"SignalApp"}, "Initialised");
+        LOG_DEBUG({"SignalApp"}, "Initialised");
     } catch (const std::exception& e) {
         LOG_ERROR({"SignalApp"}, std::string("Error during initialization: ") + e.what());
         throw;
@@ -202,7 +202,7 @@ SignalApp::~SignalApp() {
 }
 
 int SignalApp::run() {
-    LOG_INFO({"SignalApp"}, "Running...");
+    LOG_DEBUG({"SignalApp"}, "Running...");
 
     // Get host/port from environment or use defaults
     std::string host = "127.0.0.1";
@@ -518,7 +518,7 @@ int SignalApp::run() {
     // - plugin scanning via plugin domain commands
 
     // Run IO loop
-    LOG_INFO({"SignalApp"}, "Starting IO loop...");
+    LOG_DEBUG({"SignalApp"}, "Starting IO loop...");
     io.run();
 
     LOG_INFO({"SignalApp"}, "IO loop finished");

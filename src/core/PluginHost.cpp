@@ -12,7 +12,7 @@ PluginHost::PluginHost() {
     _vst3Backend = std::make_unique<Vst3Backend>();
     // Phase 5: Defer plugin scanning until after server starts
     // This prevents Signal from crashing before it can accept connections
-    LOG_INFO({"PluginHost"}, "Created (plugin scanning deferred, CLAP + VST3 scaffold)");
+    LOG_DEBUG({"PluginHost"}, "Created (plugin scanning deferred, CLAP + VST3 scaffold)");
 }
 
 PluginHost::~PluginHost() {
