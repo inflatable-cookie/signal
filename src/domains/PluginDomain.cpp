@@ -487,6 +487,30 @@ void PluginDomain::runScan(
         return;
     }
 
+    const bool executesCatalogPipeline = (
+        scanLevel == "light" || scanLevel == "catalog" || scanLevel == "full"
+    );
+    if (!executesCatalogPipeline) {
+        emitEvent(
+            session,
+            target,
+            priority,
+            std::nullopt,
+            "scanFailed",
+            nlohmann::json{
+                {"scanId", scanId},
+                {"scanLevel", scanLevel},
+                {"code", "plugin_scan_level_unsupported"},
+                {"message", "Unsupported plugin scan level"},
+            }
+        );
+        std::lock_guard<std::mutex> lock(scanMutex_);
+        activeScan_ = std::nullopt;
+        return;
+    }
+
+    // Current implementation uses the catalog pipeline for light/catalog/full.
+    // Pulse remains policy owner and chooses when each level is requested.
     pluginHost->scanPlugins(stopToken);
     const auto status = pluginHost->scanStatus();
 
