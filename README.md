@@ -12,162 +12,65 @@
 
 # Real-time audio engine server
 
-Signal is the dedicated audio-engine process of the Loophole Digital Audio Workstation.
-It is implemented in C++ using JUCE, and is responsible for real-time audio and MIDI
-processing, plugin hosting, graph execution, and telemetry output.
+Signal is the dedicated audio-engine process for the Loophole DAW. It is implemented in C++ (CMake, C++20) and is responsible for real-time audio/MIDI processing, plugin runtime integration, and engine telemetry.
 
-Signal is designed to operate with strict real-time safety guarantees and runs in its
-own process for isolation and performance.
-
----
-
-## Contents
-
-- [Purpose](#purpose)
-- [Architecture Integration](#architecture-integration)
-- [Responsibilities](#responsibilities)
-- [Non-Responsibilities](#non-responsibilities)
-- [Structure](#structure)
-- [Development](#development)
-- [Real-Time Safety](#real-time-safety)
-- [Licence](#licence)
-
----
-
-## Purpose
-
-Signal provides the real-time backbone of Loophole.
-Its responsibilities include:
-
-- Real-time audio processing
-- Plugin hosting (VST3, AU, CLAP)
-- Audio and MIDI I/O
-- Graph management and execution
-- Sample-accurate parameter handling
-- Emission of telemetry and analysis data
-- Execution of engine commands sent by the UI and model layers
-
-Signal does not manage project data, UI state, or higher-level editing logic.
-Those responsibilities belong to Pulse and Aura, as defined in:
-
-[`@chorus:/architecture/01-overview.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/architecture/01-overview.md)
-
----
-
-## Architecture Integration
-
-Signal participates in Loophole’s multi-process architecture:
-
-- Aura sends engine-control commands to Signal.
-- Pulse derives real-time-safe graph structures which Signal consumes.
-- Signal provides telemetry and error reporting back to Aura.
-- All interactions are defined by the IPC specifications in Chorus.
-
-Relevant documents:
-
-- Architecture Overview
-  [`@chorus:/architecture/01-overview.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/architecture/01-overview.md)
-
-- IPC Specifications
-  [`@chorus:/specs/`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/)
-
-- Real-Time Safety Guidelines
-  [`@chorus:/specs/guidelines/realtime-safety.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/guidelines/realtime-safety.md)
-
-Signal MUST conform to these specifications.
-
----
+Signal runs out-of-process for isolation from UI and project-model concerns.
 
 ## Responsibilities
 
 Signal is responsible for:
 
-- Performing audio and MIDI processing within real-time deadlines
-- Maintaining one or more plugin processing graphs
-- Hosting third-party plugins safely and defensively
-- Applying parameter changes with sample-accurate timing
-- Managing low-latency device interactions
-- Emitting telemetry for metering, timing and analysis
-- Ensuring engine stability even under heavy UI or system load
+- Real-time audio processing
+- MIDI input/output handling
+- Runtime plugin backend integration (VST3/CLAP backends in-tree)
+- Processing graph execution
+- Sample-accurate timing-sensitive engine behavior
+- Engine telemetry and diagnostics emission
 
-Signal is the only component of Loophole that executes time-critical code.
+Signal is not responsible for project editing/state ownership (Pulse) or UI behavior (Aura/Spark).
 
----
-
-## Non-Responsibilities
-
-Signal intentionally does **not**:
-
-- Store the project model
-- Manage routing or track structures beyond RT graph execution
-- Handle UI logic or plugin windowing
-- Perform disk operations
-- Make scheduling decisions outside the RT constraints
-- Encode business logic for editing or arrangement
-
-These are the responsibilities of Pulse and Aura.
-
----
-
-## Structure
-
-A typical layout for this repository will include:
+## Current Repository Layout
 
 ```
 src/
-  engine/
-  graph/
-  plugins/
-  devices/
-  telemetry/
-  ipc/
-tests/
-cmake/
-resources/
+  backend/          # Engine runtime/backend glue
+  clap/             # CLAP backend integration
+  core/             # Core engine primitives
+  domains/          # Domain-level command handling
+  ipc/              # Envelope and domain codecs
+  logging/          # Logging and diagnostics plumbing
+  vst3/             # VST3 backend integration
+tests/              # Engine tests
+docs/               # Local docs/spec notes
+CMakeLists.txt
 ```
-
-This structure may evolve as the engine develops and as IPC and specification
-requirements expand within Chorus.
-
----
 
 ## Development
 
-Signal is built using CMake.
+Signal uses CMake and exposes convenience scripts through `signal/package.json`:
 
-To configure and build:
+```bash
+# Build debug artifacts
+bun run build
 
+# Build + run signal binary
+bun run dev
+
+# Build + run CTest suite
+bun run test
 ```
-cmake -B build
-cmake --build build --config Release
+
+Equivalent raw CMake flow:
+
+```bash
+cmake -S . -B build
+cmake --build build --config Debug
+ctest --test-dir build --output-on-failure
 ```
-
-Debug builds are also supported.
-
-You may run Signal as a standalone process or allow Aura to launch and manage it.
-
-The engine must be tested on macOS, Windows and Linux due to differences in device
-APIs and plugin frameworks.
-
----
 
 ## Real-Time Safety
 
-Signal MUST adhere to the real-time rules defined in Chorus:
-
-[`@chorus:/specs/guidelines/realtime-safety.md`](https://github.com/infinite-loop-audio/loophole-chorus/blob/main/specs/guidelines/realtime-safety.md)
-
-In particular, real-time code must not:
-
-- Allocate or free memory
-- Acquire locks or use blocking operations
-- Perform I/O
-- Use dynamic container resizing
-- Execute unbounded computations
-
-Signal should treat plugin code as untrusted and must be defensive at API boundaries.
-
----
+Real-time code paths must avoid allocation, blocking calls, lock contention, and unbounded work. Treat plugin code as untrusted and keep API boundaries defensive.
 
 ## Licence
 
