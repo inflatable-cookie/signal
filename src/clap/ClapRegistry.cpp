@@ -139,7 +139,7 @@ void ClapRegistry::registerPlugin(
     _entries.push_back(entry);
     _idToIndex[pluginId] = _entries.size() - 1;
 
-    LOG_INFO({"ClapRegistry"}, std::string("Found plugin: ") + desc.name + " (" + pluginId + ")");
+    LOG_DEBUG({"ClapRegistry"}, std::string("Found plugin: ") + desc.name + " (" + pluginId + ")");
 }
 
 std::vector<PluginDescriptor> ClapRegistry::listPlugins() const {
