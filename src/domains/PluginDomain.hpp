@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <cstdint>
 #include <string>
 #include <thread>
 #include <vector>
@@ -18,6 +19,13 @@ class PluginDomain : public loophole::signal::ipc::IpcDomainHandler {
 public:
     explicit PluginDomain(EngineHost* engineHost);
     ~PluginDomain() override = default;
+
+    struct LightCacheEntry {
+        std::optional<std::string> pluginId;
+        std::string binaryPath;
+        std::optional<std::uint64_t> fileMtimeUnix;
+        std::optional<std::uint64_t> fileSizeBytes;
+    };
 
     void handle(
         const loophole::signal::ipc::IpcEnvelope& env,
@@ -56,6 +64,7 @@ private:
     void runScan(
         std::string scanId,
         std::string scanLevel,
+        std::vector<LightCacheEntry> lightCacheEntries,
         std::optional<loophole::signal::ipc::IpcTarget> target,
         loophole::signal::ipc::IpcPriority priority,
         std::weak_ptr<loophole::signal::ipc::TcpClientSession> weakSession,

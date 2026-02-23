@@ -20,6 +20,7 @@ std::optional<nlohmann::json> decodeRescanCommand(
         bool force = false;
         std::optional<std::string> scanId = std::nullopt;
         std::optional<std::string> scanLevel = std::nullopt;
+        nlohmann::json lightCache = nlohmann::json::array();
 
         while (auto header = reader.readNextHeader()) {
             auto valueBytes = reader.readValueBytes(header->byteLen);
@@ -46,6 +47,36 @@ std::optional<nlohmann::json> decodeRescanCommand(
             } else if (header->fieldId == 5 && header->fieldType == TLV_STRING) {
                 BinaryReader valueReader(valueBytes);
                 scanLevel = valueReader.readStringU16Len("scanLevel");
+            } else if (header->fieldId == 6 && header->fieldType == TLV_LIST) {
+                BinaryReader listReader(valueBytes);
+                auto elementType = listReader.readU8("lightCache.elementType");
+                auto count = listReader.readU32Le("lightCache.count");
+                if (elementType != TLV_OBJECT) {
+                    continue;
+                }
+                for (std::uint32_t idx = 0; idx < count; ++idx) {
+                    auto len = listReader.readU32Le("lightCache.length");
+                    auto entryBytes = listReader.readSlice(len, "lightCache.entry");
+                    TlvReader entryReader(entryBytes);
+                    nlohmann::json entry = nlohmann::json::object();
+                    while (auto entryHeader = entryReader.readNextHeader()) {
+                        auto entryValueBytes = entryReader.readValueBytes(entryHeader->byteLen);
+                        if (entryHeader->fieldId == 2 && entryHeader->fieldType == TLV_STRING) {
+                            BinaryReader valueReader(entryValueBytes);
+                            entry["pluginId"] = valueReader.readStringU16Len("lightCache.pluginId");
+                        } else if (entryHeader->fieldId == 3 && entryHeader->fieldType == TLV_STRING) {
+                            BinaryReader valueReader(entryValueBytes);
+                            entry["binaryPath"] = valueReader.readStringU16Len("lightCache.binaryPath");
+                        } else if (entryHeader->fieldId == 4 && entryHeader->fieldType == TLV_U64) {
+                            BinaryReader valueReader(entryValueBytes);
+                            entry["fileMtimeUnix"] = valueReader.readU64Le("lightCache.fileMtimeUnix");
+                        } else if (entryHeader->fieldId == 5 && entryHeader->fieldType == TLV_U64) {
+                            BinaryReader valueReader(entryValueBytes);
+                            entry["fileSizeBytes"] = valueReader.readU64Le("lightCache.fileSizeBytes");
+                        }
+                    }
+                    lightCache.push_back(std::move(entry));
+                }
             }
         }
 
@@ -59,6 +90,7 @@ std::optional<nlohmann::json> decodeRescanCommand(
         out["options"] = nlohmann::json{
             {"formats", formats},
             {"force", force},
+            {"lightCache", lightCache},
         };
         return out;
     } catch (const std::exception& ex) {

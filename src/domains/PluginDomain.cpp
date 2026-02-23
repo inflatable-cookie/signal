@@ -5,6 +5,8 @@
 #include "ipc/IpcEnvelope.hpp"
 #include "ipc/TcpClientSession.hpp"
 #include "vst3/Vst3Backend.hpp"
+#include <filesystem>
+#include <chrono>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 
@@ -94,6 +96,60 @@ std::string canonicalScanLevel(const nlohmann::json& payload) {
     }
 
     return "catalog";
+}
+
+std::optional<std::uint64_t> fileMtimeUnixSeconds(const std::filesystem::path& path) {
+    std::error_code ec;
+    const auto fileTime = std::filesystem::last_write_time(path, ec);
+    if (ec) {
+        return std::nullopt;
+    }
+    const auto systemTime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        fileTime - decltype(fileTime)::clock::now() + std::chrono::system_clock::now()
+    );
+    const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
+        systemTime.time_since_epoch()
+    );
+    if (seconds.count() < 0) {
+        return std::nullopt;
+    }
+    return static_cast<std::uint64_t>(seconds.count());
+}
+
+std::vector<PluginDomain::LightCacheEntry> parseLightCacheEntries(const nlohmann::json& payload) {
+    std::vector<PluginDomain::LightCacheEntry> entries;
+    const auto* options = payload.contains("options") && payload["options"].is_object()
+        ? &payload["options"]
+        : nullptr;
+    if (options == nullptr || !options->contains("lightCache") || !(*options)["lightCache"].is_array()) {
+        return entries;
+    }
+
+    for (const auto& entryValue : (*options)["lightCache"]) {
+        if (!entryValue.is_object()) {
+            continue;
+        }
+        const auto binaryPath = entryValue.value("binaryPath", std::string{});
+        if (binaryPath.empty()) {
+            continue;
+        }
+
+        PluginDomain::LightCacheEntry entry;
+        const auto pluginId = entryValue.value("pluginId", std::string{});
+        if (!pluginId.empty()) {
+            entry.pluginId = pluginId;
+        }
+        entry.binaryPath = binaryPath;
+        if (entryValue.contains("fileMtimeUnix") && entryValue["fileMtimeUnix"].is_number_unsigned()) {
+            entry.fileMtimeUnix = entryValue["fileMtimeUnix"].get<std::uint64_t>();
+        }
+        if (entryValue.contains("fileSizeBytes") && entryValue["fileSizeBytes"].is_number_unsigned()) {
+            entry.fileSizeBytes = entryValue["fileSizeBytes"].get<std::uint64_t>();
+        }
+        entries.push_back(std::move(entry));
+    }
+
+    return entries;
 }
 } // namespace
 
@@ -273,6 +329,7 @@ void PluginDomain::handleRescan(
         "pluginScan:" + currentTimestamp()
     );
     const auto scanLevel = canonicalScanLevel(commandEnv.payload);
+    const auto lightCacheEntries = parseLightCacheEntries(commandEnv.payload);
     const bool fullScan = scanLevel == "full";
 
     {
@@ -323,13 +380,22 @@ void PluginDomain::handleRescan(
         [this,
          scanId,
          scanLevel,
+         lightCacheEntries,
          target,
          priority = commandEnv.priority,
          weakSession =
              std::weak_ptr<loophole::signal::ipc::TcpClientSession>(session)](
             std::stop_token token
         ) {
-            runScan(scanId, scanLevel, target, priority, weakSession, token);
+            runScan(
+                scanId,
+                scanLevel,
+                std::move(lightCacheEntries),
+                target,
+                priority,
+                weakSession,
+                token
+            );
         }
     );
 }
@@ -437,6 +503,7 @@ void PluginDomain::handleScanStatus(
 void PluginDomain::runScan(
     std::string scanId,
     std::string scanLevel,
+    std::vector<LightCacheEntry> lightCacheEntries,
     std::optional<loophole::signal::ipc::IpcTarget> target,
     loophole::signal::ipc::IpcPriority priority,
     std::weak_ptr<loophole::signal::ipc::TcpClientSession> weakSession,
@@ -487,8 +554,66 @@ void PluginDomain::runScan(
         return;
     }
 
+    if (scanLevel == "light") {
+        std::uint64_t removedCount = 0;
+        std::uint64_t updatedCount = 0;
+
+        for (const auto& entry : lightCacheEntries) {
+            const std::filesystem::path path(entry.binaryPath);
+            std::error_code ec;
+            const bool exists = std::filesystem::exists(path, ec);
+            if (ec || !exists) {
+                removedCount += 1;
+                nlohmann::json payload{
+                    {"scanId", scanId},
+                    {"pluginId", entry.pluginId.has_value() ? nlohmann::json(entry.pluginId.value()) : nlohmann::json(nullptr)},
+                };
+                emitEvent(session, target, priority, std::nullopt, "removed", std::move(payload));
+                continue;
+            }
+
+            bool changed = false;
+            if (entry.fileSizeBytes.has_value()) {
+                std::error_code sizeEc;
+                const auto fileSize = std::filesystem::file_size(path, sizeEc);
+                changed = sizeEc || fileSize != entry.fileSizeBytes.value();
+            }
+            if (!changed && entry.fileMtimeUnix.has_value()) {
+                const auto mtime = fileMtimeUnixSeconds(path);
+                changed = !mtime.has_value() || mtime.value() != entry.fileMtimeUnix.value();
+            }
+
+            if (changed) {
+                updatedCount += 1;
+                nlohmann::json payload{
+                    {"scanId", scanId},
+                    {"pluginId", entry.pluginId.has_value() ? nlohmann::json(entry.pluginId.value()) : nlohmann::json(nullptr)},
+                };
+                emitEvent(session, target, priority, std::nullopt, "updated", std::move(payload));
+            }
+        }
+
+        emitEvent(
+            session,
+            target,
+            priority,
+            std::nullopt,
+            "scanCompleted",
+            nlohmann::json{
+                {"scanId", scanId},
+                {"scanLevel", scanLevel},
+                {"summary", nlohmann::json{{"added", 0}, {"removed", removedCount}, {"updated", updatedCount}}},
+            }
+        );
+        std::lock_guard<std::mutex> lock(scanMutex_);
+        if (activeScan_.has_value() && activeScan_->scanId == scanId) {
+            activeScan_ = std::nullopt;
+        }
+        return;
+    }
+
     const bool executesCatalogPipeline = (
-        scanLevel == "light" || scanLevel == "catalog" || scanLevel == "full"
+        scanLevel == "catalog" || scanLevel == "full"
     );
     if (!executesCatalogPipeline) {
         emitEvent(
