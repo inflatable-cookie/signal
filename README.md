@@ -47,17 +47,17 @@ CMakeLists.txt
 
 ## Development
 
-Signal uses CMake and exposes convenience scripts through `signal/package.json`:
+Signal uses Effigy task manifests (`signal/effigy.toml`) for its CMake workflow:
 
 ```bash
 # Build debug artifacts
-bun run build
+cargo run --manifest-path ../../effigy/Cargo.toml --bin effigy -- build
 
 # Build + run signal binary
-bun run dev
+cargo run --manifest-path ../../effigy/Cargo.toml --bin effigy -- dev
 
 # Build + run CTest suite
-bun run test
+cargo run --manifest-path ../../effigy/Cargo.toml --bin effigy -- test
 ```
 
 Equivalent raw CMake flow:

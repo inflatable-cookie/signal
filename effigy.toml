@@ -2,9 +2,18 @@
 alias = "signal"
 
 [tasks]
-build = "cmake -S . -B build && cmake --build build --config Debug"
-dev = "cmake -S . -B build && cmake --build build --config Debug && ./build/src/loophole-signal"
-test = "cmake -S . -B build && cmake --build build --config Debug && ctest --test-dir build --output-on-failure"
-
-# Sort these out
+build = [
+  { task = "configure:debug" },
+  { task = "compile:debug" },
+]
+dev = [
+  { task = "build" },
+  { run = "./build/src/loophole-signal {args}" },
+]
+test = [
+  { task = "build" },
+  { run = "ctest --test-dir build --output-on-failure {args}" },
+]
+"configure:debug" = "cmake -S . -B build"
+"compile:debug" = "cmake --build build --config Debug"
 "audit:god-files" = "python3 ../chorus/meta/tools/check_god_file_audit.py --workspace-root .. --fail-on high"
