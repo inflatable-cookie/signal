@@ -2,6 +2,12 @@
 alias = "signal"
 
 [tasks]
+health = [{ task = "build" }]
+validate = [
+  { task = "health" },
+  { task = "test" },
+]
+qa = [{ task = "validate" }]
 build = [
   { task = "configure:debug" },
   { task = "compile:debug" },

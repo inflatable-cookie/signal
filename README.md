@@ -47,17 +47,13 @@ CMakeLists.txt
 
 ## Development
 
-Signal uses Effigy task manifests (`signal/effigy.toml`) for its CMake workflow:
+Use Effigy as the default command surface inside `signal/`:
 
 ```bash
-# Build debug artifacts
-cargo run --manifest-path ../../effigy/Cargo.toml --bin effigy -- build
-
-# Build + run signal binary
-cargo run --manifest-path ../../effigy/Cargo.toml --bin effigy -- dev
-
-# Build + run CTest suite
-cargo run --manifest-path ../../effigy/Cargo.toml --bin effigy -- test
+effigy tasks --repo .
+effigy health --repo .
+effigy dev --repo .
+effigy validate --repo .
 ```
 
 Equivalent raw CMake flow:
