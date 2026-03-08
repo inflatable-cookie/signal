@@ -1,0 +1,11 @@
+[package]
+name = "signal-plugin"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Format-neutral plugin host abstractions for Signal."
+
+[dependencies]
+signal-ipc = { path = "../signal-ipc" }

@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/signal-primitives",
+  "crates/signal-dsp",
+  "crates/signal-dsp-spectral",
+  "crates/signal-analysis",
+  "crates/signal-analysis-rhythm",
+  "crates/signal-analysis-tonal",
+  "crates/signal-analysis-loudness",
+  "crates/signal-graph",
+  "crates/signal-runtime",
+  "crates/signal-ipc",
+  "crates/signal-plugin",
+  "crates/signal-plugin-clap",
+  "crates/signal-plugin-sandbox",
+  "crates/signal-hardware",
+  "crates/signal-hardware-coreaudio",
+  "crates/signal-host-local",
+  "crates/signal-host-server",
+  "crates/signal-supervisor-tools",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/infinite-loop-audio/signal"

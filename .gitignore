@@ -78,3 +78,6 @@ $RECYCLE.BIN/
 # btca
 .btca
 .effigy/
+
+# Rust
+target/

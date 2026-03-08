@@ -1,0 +1,16 @@
+[package]
+name = "signal-host-local"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Local desktop runtime host assembly for Signal."
+
+[dependencies]
+signal-hardware = { path = "../signal-hardware" }
+signal-hardware-coreaudio = { path = "../signal-hardware-coreaudio" }
+signal-ipc = { path = "../signal-ipc" }
+signal-plugin = { path = "../signal-plugin" }
+signal-plugin-clap = { path = "../signal-plugin-clap" }
+signal-runtime = { path = "../signal-runtime" }

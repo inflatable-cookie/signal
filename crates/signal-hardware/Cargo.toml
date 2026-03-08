@@ -1,0 +1,11 @@
+[package]
+name = "signal-hardware"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Common hardware and device abstractions for Signal."
+
+[dependencies]
+signal-primitives = { path = "../signal-primitives" }

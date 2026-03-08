@@ -1,0 +1,12 @@
+[package]
+name = "signal-dsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Reusable DSP kernels and transforms for Signal."
+
+[dependencies]
+signal-primitives = { path = "../signal-primitives" }
+

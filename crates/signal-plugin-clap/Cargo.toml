@@ -1,0 +1,12 @@
+[package]
+name = "signal-plugin-clap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "CLAP plugin adapter surfaces for Signal."
+
+[dependencies]
+signal-ipc = { path = "../signal-ipc" }
+signal-plugin = { path = "../signal-plugin" }

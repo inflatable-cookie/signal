@@ -1,0 +1,9 @@
+[package]
+name = "signal-primitives"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Foundational audio, time, and channel primitives for Signal."
+

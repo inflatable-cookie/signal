@@ -1,0 +1,16 @@
+[package]
+name = "signal-supervisor-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Supervisor soak-reporting tools for Signal runtime hosts."
+
+[dependencies]
+signal-host-local = { path = "../signal-host-local" }
+signal-host-server = { path = "../signal-host-server" }
+signal-runtime = { path = "../signal-runtime" }
+
+[dev-dependencies]
+signal-plugin = { path = "../signal-plugin" }

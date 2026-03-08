@@ -1,0 +1,12 @@
+[package]
+name = "signal-graph"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Graph model and execution semantics for Signal."
+
+[dependencies]
+signal-primitives = { path = "../signal-primitives" }
+

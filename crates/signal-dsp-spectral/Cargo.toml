@@ -1,0 +1,12 @@
+[package]
+name = "signal-dsp-spectral"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Spectral DSP helpers such as windows and STFT config for Signal."
+
+[dependencies]
+rustfft = "6.2"
+signal-primitives = { path = "../signal-primitives" }

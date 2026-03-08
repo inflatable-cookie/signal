@@ -1,0 +1,14 @@
+[package]
+name = "signal-analysis-tonal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Tonal analysis surfaces for Signal, including chroma and key detection."
+
+[dependencies]
+signal-analysis = { path = "../signal-analysis" }
+signal-dsp-spectral = { path = "../signal-dsp-spectral" }
+signal-primitives = { path = "../signal-primitives" }
+

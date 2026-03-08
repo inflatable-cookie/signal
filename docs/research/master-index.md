@@ -1,0 +1,56 @@
+# Signal Research Master Index
+
+Purpose: provide one implementation-facing map from Signal research outputs to
+crate planning, algorithm work, validation, and downstream consumers such as
+Finch and Loophole.
+
+## Start Here
+
+1. Read the relevant source hub for ecosystem and dependency context.
+2. Read the matching value track for the problem-led synthesis.
+3. Use the algorithm spec when implementation detail is already concrete enough
+   to shape crate APIs or validation targets.
+4. Check architecture and roadmap docs before freezing a new package or host
+   boundary.
+
+## Value Tracks
+
+| Track | Problem Area | Status | Intended Signal Surface |
+| --- | --- | --- | --- |
+| [Track 1: BPM and Tempo Detection](./value-tracks/bpm-tempo-detection.md) | Beat tracking, tempo estimation | Draft | `signal-analysis-rhythm` |
+| [Track 2: Key and Tonal Analysis](./value-tracks/key-tonal-analysis.md) | Key detection, chroma, tonal confidence | Draft | `signal-analysis-tonal` |
+| Track 3: Loudness and Dynamics | LUFS, true peak, dynamics metrics | Planned | `signal-analysis-loudness` |
+| [Track 4: Genre Classification](./value-tracks/genre-classification.md) | Embeddings and semantic classification | Draft | `signal-analysis-embed` |
+
+## Source Hubs
+
+| Hub | Topic | Status |
+| --- | --- | --- |
+| [001: Rust Audio Ecosystem](./source-hubs/001-rust-audio-ecosystem.md) | Rust dependency and crate survey | Draft |
+| [002: Signal Library Architecture](./source-hubs/002-signal-library-architecture.md) | Signal crate map and Finch/Loophole consumption model | Draft |
+
+## Algorithm Specs
+
+| Spec | Algorithm | Intended Signal Surface | Status |
+| --- | --- | --- | --- |
+| [001: Beat Tracking](./algorithm-specs/001-beat-tracking-boeck.md) | Böck-style multi-feature beat tracking | `signal-analysis-rhythm` | Draft |
+| [002: Key Detection](./algorithm-specs/002-key-detection-krumhansl.md) | Chroma plus profile correlation | `signal-analysis-tonal` | Draft |
+| [003: Loudness](./algorithm-specs/003-loudness-lufs.md) | ITU-R BS.1770 LUFS | `signal-analysis-loudness` | Draft |
+
+## Specimen Dossiers
+
+| Specimen | Studied for | Status |
+| --- | --- | --- |
+| [Essentia](./specimen-dossiers/essentia.md) | Reference algorithms, quality targets, migration cues | In progress |
+
+## Consumer Guidance
+
+| Consumer | Role | Start here |
+| --- | --- | --- |
+| Finch | Wrapper, review UX, sidecar/output integration | Source Hub 002 and the relevant value track |
+| Loophole | Runtime host and authority integration | Source Hub 002 and architecture/system docs |
+
+## Next Task
+
+Promote the package-map proposal into the roadmap and align the active value
+tracks and specs to the chosen names.
