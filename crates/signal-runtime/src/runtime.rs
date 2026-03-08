@@ -653,7 +653,8 @@ mod tests {
         HandshakeRequest, RestartRequest, RuntimeConfigRequest, RuntimeEvent, RuntimeEventRecorder,
         RuntimeEventSink, RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport,
         RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorReport, RuntimeWatchdogTrigger,
-        SafeModeRequest, ScheduleProjection, TransportProjection, WatchdogRestartRecord,
+        SafeModeRequest, ScheduleProjection, StopReason, TransportProjection,
+        WatchdogRestartRecord,
     };
     use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
     use signal_plugin::ParameterAutomationSummary;
