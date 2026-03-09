@@ -382,6 +382,23 @@ const GraphEngine& EngineHost::graphEngine() const {
 void EngineHost::loadGraphSnapshot(const GraphSnapshot& snapshot) {
     _graphEngine->loadGraphSnapshot(snapshot, _pluginHost.get(), this);
 
+    std::vector<std::pair<std::string, std::string>> recordingBindings;
+    for (const auto& node : snapshot.nodes) {
+        if (
+            node.kind != NodeKind::HardwareAudioInput &&
+            node.kind != NodeKind::HardwareMidiInput
+        ) {
+            continue;
+        }
+
+        if (!node.laneId.has_value() || node.laneId->empty()) {
+            continue;
+        }
+
+        recordingBindings.emplace_back(node.nodeId, node.laneId.value());
+    }
+    _recordingSession->replaceInputBindings(recordingBindings);
+
     // Determine the active output node ID (HardwareAudioOutputNode) and the
     // output Channel identifier used for metering/recording identifiers.
     //

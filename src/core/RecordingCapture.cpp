@@ -46,6 +46,18 @@ void RecordingSession::setArmState(const std::string& laneId, bool armed) {
     LOG_DEBUG({"RecordingSession"}, msg.str());
 }
 
+void RecordingSession::replaceArmedLanes(const std::vector<std::string>& laneIds) {
+    std::unique_lock<std::shared_mutex> lock(_armStateMutex);
+    _armedLanes.clear();
+
+    for (const auto& laneId : laneIds) {
+        if (laneId.empty()) {
+            continue;
+        }
+        _armedLanes[laneId].store(true, std::memory_order_release);
+    }
+}
+
 bool RecordingSession::isLaneArmed(const std::string& laneId) const {
     std::shared_lock<std::shared_mutex> lock(_armStateMutex);
     auto it = _armedLanes.find(laneId);
@@ -55,12 +67,46 @@ bool RecordingSession::isLaneArmed(const std::string& laneId) const {
     return it->second.load(std::memory_order_acquire);
 }
 
+std::vector<std::string> RecordingSession::getArmedLaneIds() const {
+    std::vector<std::string> laneIds;
+    std::shared_lock<std::shared_mutex> lock(_armStateMutex);
+    laneIds.reserve(_armedLanes.size());
+
+    for (const auto& [laneId, armed] : _armedLanes) {
+        if (armed.load(std::memory_order_acquire)) {
+            laneIds.push_back(laneId);
+        }
+    }
+
+    std::sort(laneIds.begin(), laneIds.end());
+    return laneIds;
+}
+
 void RecordingSession::bindInputToLane(const std::string& inputNodeId, const std::string& laneId) {
     std::unique_lock<std::shared_mutex> lock(_inputMapMutex);
     _inputToLaneMap[inputNodeId] = laneId;
     std::ostringstream msg;
     msg << "Bound input " << inputNodeId << " to lane " << laneId;
     LOG_DEBUG({"RecordingSession"}, msg.str());
+}
+
+void RecordingSession::clearInputBindings() {
+    std::unique_lock<std::shared_mutex> lock(_inputMapMutex);
+    _inputToLaneMap.clear();
+}
+
+void RecordingSession::replaceInputBindings(
+    const std::vector<std::pair<std::string, std::string>>& bindings
+) {
+    std::unique_lock<std::shared_mutex> lock(_inputMapMutex);
+    _inputToLaneMap.clear();
+
+    for (const auto& [inputNodeId, laneId] : bindings) {
+        if (inputNodeId.empty() || laneId.empty()) {
+            continue;
+        }
+        _inputToLaneMap[inputNodeId] = laneId;
+    }
 }
 
 std::string RecordingSession::getTargetLaneForInput(const std::string& inputNodeId) const {

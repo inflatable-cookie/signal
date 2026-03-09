@@ -39,6 +39,7 @@ void appendMeteringPayloadCodecs(std::vector<PayloadCodec>& out);
 void appendNodePayloadCodecs(std::vector<PayloadCodec>& out);
 void appendParameterPayloadCodecs(std::vector<PayloadCodec>& out);
 void appendPluginPayloadCodecs(std::vector<PayloadCodec>& out);
+void appendRecordingPayloadCodecs(std::vector<PayloadCodec>& out);
 void appendTransportPayloadCodecs(std::vector<PayloadCodec>& out);
 
 } // namespace loophole::signal::ipc::binary_envelope

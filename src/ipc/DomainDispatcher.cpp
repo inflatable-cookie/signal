@@ -18,6 +18,7 @@
 #include "domains/AutomationDomain.hpp"
 #include "domains/AssetsDomain.hpp"
 #include "domains/MeteringDomain.hpp"
+#include "domains/RecordingDomain.hpp"
 #include "logging/Logging.hpp"
 
 namespace loophole::signal::ipc {
@@ -35,6 +36,7 @@ DomainDispatcher::DomainDispatcher(EngineHost* engineHost, MeteringService* mete
     domains_.emplace("metering", std::make_unique<MeteringDomain>(meteringService, engineHost_));
     domains_.emplace("parameter", std::make_unique<ParameterDomain>(engineHost_));
     domains_.emplace("plugin", std::make_unique<PluginDomain>(engineHost_));
+    domains_.emplace("recording", std::make_unique<RecordingDomain>(engineHost_));
 }
 
 void DomainDispatcher::handleEnvelope(

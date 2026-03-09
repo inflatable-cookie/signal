@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <shared_mutex>
+#include <utility>
 
 // Forward declaration
 class AudioBus;
@@ -112,11 +113,23 @@ public:
     /// Set arm state for a lane (control thread)
     void setArmState(const std::string& laneId, bool armed);
 
+    /// Replace the full armed-lane set atomically on the control thread.
+    void replaceArmedLanes(const std::vector<std::string>& laneIds);
+
     /// Check if a lane is armed (audio thread safe)
     bool isLaneArmed(const std::string& laneId) const;
 
+    /// Snapshot the current armed lane ids (control thread).
+    std::vector<std::string> getArmedLaneIds() const;
+
     /// Bind input node to target lane (control thread)
     void bindInputToLane(const std::string& inputNodeId, const std::string& laneId);
+
+    /// Clear all input bindings (control thread).
+    void clearInputBindings();
+
+    /// Replace all input bindings atomically on the control thread.
+    void replaceInputBindings(const std::vector<std::pair<std::string, std::string>>& bindings);
 
     /// Get target lane for an input node (audio thread safe)
     std::string getTargetLaneForInput(const std::string& inputNodeId) const;
@@ -171,4 +184,3 @@ private:
     LockFreeQueue<RecordedAudioChunk> _audioChunkQueue;
     LockFreeQueue<RecordedMidiChunk> _midiChunkQueue;
 };
-
