@@ -163,6 +163,29 @@ TEST_CASE("RecordingSession - No capture when not recording", "[recording][captu
     REQUIRE(!captured);
 }
 
+TEST_CASE("RecordingSession - Capture final output preserves runtime sample rate", "[recording][capture]") {
+    RecordingSession session;
+    session.setArmState("master", true);
+    session.startRecording(256);
+
+    std::vector<float> samples = {
+        0.1f, 0.2f,
+        0.3f, 0.4f,
+    };
+    AudioBus output(samples.data(), 2, 2, true);
+
+    bool captured = session.captureFinalOutput(output, 256, "master", 48000);
+    REQUIRE(captured);
+
+    std::vector<RecordedAudioChunk> consumed;
+    size_t count = session.consumeAudioChunks(consumed);
+    REQUIRE(count == 1);
+    REQUIRE(consumed[0].sampleRate == 48000);
+    REQUIRE(consumed[0].startSample == 256);
+    REQUIRE(consumed[0].laneId == "master");
+    REQUIRE(consumed[0].interleaved == samples);
+}
+
 // TODO: EngineHost input node integration test needs refinement
 // The test was causing segfaults due to EngineHost lifecycle/initialization order.
 // Core functionality is verified via unit tests above (node creation, recording session, capture).

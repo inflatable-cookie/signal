@@ -155,7 +155,8 @@ size_t RecordingSession::consumeMidiChunks(std::vector<RecordedMidiChunk>& out) 
 bool RecordingSession::captureFinalOutput(
     const AudioBus& output,
     uint64_t blockStartSamples,
-    const std::string& laneId
+    const std::string& laneId,
+    int sampleRate
 ) {
     if (!_isRecording.load(std::memory_order_acquire)) {
         return false;
@@ -165,11 +166,15 @@ bool RecordingSession::captureFinalOutput(
         return false;
     }
 
+    if (sampleRate <= 0) {
+        return false;
+    }
+
     // Convert interleaved AudioBus to RecordedAudioChunk
     RecordedAudioChunk chunk;
     chunk.laneId = laneId;
     chunk.numChannels = output.numChannels();
-    chunk.sampleRate = 44100; // TODO: Get from context
+    chunk.sampleRate = sampleRate;
     chunk.startSample = blockStartSamples;
     chunk.provisionalAssetId = "temp-master-" + std::to_string(blockStartSamples);
 

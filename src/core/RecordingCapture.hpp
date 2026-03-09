@@ -151,7 +151,8 @@ public:
     bool captureFinalOutput(
         const class AudioBus& output,
         uint64_t blockStartSamples,
-        const std::string& laneId = "master"
+        const std::string& laneId = "master",
+        int sampleRate = 0
     );
 
     /// Consume captured audio chunks (control thread)

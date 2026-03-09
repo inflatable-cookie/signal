@@ -292,7 +292,12 @@ void EngineHost::renderBlock(
 
         // Step 6: Capture final output for recording (if recording is active)
         if (_recordingSession->isRecording()) {
-            _recordingSession->captureFinalOutput(output, ctx.playheadSamples, mixId);
+            _recordingSession->captureFinalOutput(
+                output,
+                ctx.playheadSamples,
+                mixId,
+                static_cast<int>(ctx.sampleRate)
+            );
         }
     } else {
         // No hardware output node - output will be silence
