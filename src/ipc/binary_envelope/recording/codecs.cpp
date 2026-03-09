@@ -80,6 +80,14 @@ void appendRecordingPayloadCodecs(std::vector<PayloadCodec>& out) {
         .decode = nullptr,
         .encode = &encodeJsonPayload,
     });
+
+    out.push_back(PayloadCodec{
+        .domain = "recording",
+        .name = "recordingFinished",
+        .kind = IpcKind::Event,
+        .decode = nullptr,
+        .encode = &encodeJsonPayload,
+    });
 }
 
 } // namespace loophole::signal::ipc::binary_envelope

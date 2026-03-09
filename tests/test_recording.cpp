@@ -90,7 +90,7 @@ TEST_CASE("RecordingSession - Capture audio chunk", "[recording][capture]") {
     RecordingSession session;
 
     // Start recording
-    session.startRecording();
+    session.startRecording(0);
     REQUIRE(session.isRecording());
 
     // Create test audio chunk
@@ -117,7 +117,7 @@ TEST_CASE("RecordingSession - Capture audio chunk", "[recording][capture]") {
 TEST_CASE("RecordingSession - Capture MIDI chunk", "[recording][capture]") {
     RecordingSession session;
 
-    session.startRecording();
+    session.startRecording(0);
 
     // Create test MIDI chunk
     RecordedMidiChunk chunk;

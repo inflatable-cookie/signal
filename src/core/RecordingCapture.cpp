@@ -18,13 +18,13 @@ RecordingSession::~RecordingSession() {
     LOG_DEBUG({"RecordingSession"}, "Destroyed");
 }
 
-void RecordingSession::startRecording() {
+void RecordingSession::startRecording(uint64_t startSample) {
     if (_isRecording.load(std::memory_order_acquire)) {
         LOG_DEBUG({"RecordingSession"}, "Already recording");
         return;
     }
 
-    _recordingStartSample.store(0, std::memory_order_release); // Will be set by EngineHost
+    _recordingStartSample.store(startSample, std::memory_order_release);
     _isRecording.store(true, std::memory_order_release);
     LOG_INFO({"RecordingSession"}, "Recording started");
 }

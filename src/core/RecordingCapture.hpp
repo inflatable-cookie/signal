@@ -99,8 +99,8 @@ public:
     RecordingSession();
     ~RecordingSession();
 
-    /// Start recording (control thread)
-    void startRecording();
+    /// Start recording at a specific playhead sample (control thread)
+    void startRecording(uint64_t startSample);
 
     /// Stop recording (control thread)
     void stopRecording();
