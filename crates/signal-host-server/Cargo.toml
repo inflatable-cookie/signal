@@ -9,7 +9,9 @@ description = "Headless or remote runtime host assembly for Signal."
 
 [dependencies]
 signal-hardware = { path = "../signal-hardware" }
+signal-graph = { path = "../signal-graph" }
 signal-ipc = { path = "../signal-ipc" }
 signal-plugin = { path = "../signal-plugin" }
 signal-plugin-clap = { path = "../signal-plugin-clap" }
+signal-primitives = { path = "../signal-primitives" }
 signal-runtime = { path = "../signal-runtime" }

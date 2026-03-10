@@ -1,10 +1,17 @@
 //! Typed runtime-host interfaces for embedded Signal assemblies.
 
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
 
+use signal_graph::{
+    GraphExecutionContext, GraphExecutionLane, GraphNodeExecutionClass, GraphNodePlanningGroup,
+    GraphStageSpec,
+};
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
-use signal_plugin::BlockSequenceContinuityReport;
-use signal_primitives::SampleRate;
+use signal_plugin::{BlockSequenceContinuityReport, CompletionState};
+use signal_primitives::{AudioBuffer, SampleRate};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeErrorKind {
@@ -81,6 +88,12 @@ pub enum StopReason {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RecoveryRestartIntent {
+    CrashRecovery,
+    WatchdogRecovery,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RestartRequest {
     pub reconfigure: Option<RuntimeConfigRequest>,
 }
@@ -90,10 +103,330 @@ pub struct SafeModeRequest {
     pub enabled: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct GraphNodeProjection {
+    pub node_id: String,
+    pub execution_class: GraphNodeExecutionClass,
+    pub latency_samples: u32,
+    pub stages: Vec<GraphStageSpec>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct GraphProjection {
     pub graph_id: String,
     pub node_count: usize,
+    pub nodes: Vec<GraphNodeProjection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginBackedNodeBinding {
+    pub node_id: String,
+    pub sandbox_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginBackedNodeBindingProjection {
+    pub graph_id: String,
+    pub bindings: Vec<PluginBackedNodeBinding>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkCacheState {
+    Disabled,
+    Empty,
+    Admitted,
+    Consumed,
+    Invalidated,
+}
+
+impl Default for RuntimePreworkCacheState {
+    fn default() -> Self {
+        Self::Disabled
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkInvalidationReason {
+    RuntimeReconfigured,
+    RuntimeStopped,
+    PlanningDisabled,
+    ForecastPlanChanged,
+    GraphProjectionChanged,
+    TransportChanged,
+    ParameterBatchApplied,
+    InputSignatureChanged,
+    ProcessingEpochExpired,
+    BlockSequenceExpired,
+    SupersededByAdmission,
+    PlanningWindowRevised,
+    QueueCapacityExceeded,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkRetirementReason {
+    RuntimeReconfigured,
+    RuntimeStopped,
+    ForecastPlanChanged,
+    GraphProjectionChanged,
+    TransportChanged,
+    ParameterBatchApplied,
+    InputSignatureChanged,
+    ProcessingEpochExpired,
+    BlockSequenceExpired,
+    PlanningDisabled,
+    SupersededByAdmission,
+    PlanningWindowRevised,
+    QueueCapacityExceeded,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkFreshnessState {
+    Disabled,
+    Empty,
+    Fresh,
+    Expiring,
+    Exhausted,
+    Invalidated,
+}
+
+impl Default for RuntimePreworkFreshnessState {
+    fn default() -> Self {
+        Self::Disabled
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkServiceState {
+    Disabled,
+    Idle,
+    Pending,
+    Servicing,
+    Yielding,
+    Paused,
+    Starved,
+}
+
+impl Default for RuntimePreworkServiceState {
+    fn default() -> Self {
+        Self::Disabled
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkServicePressure {
+    Normal,
+    Elevated,
+    Critical,
+}
+
+impl Default for RuntimePreworkServicePressure {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkServiceSemanticPolicy {
+    Balanced,
+    LatencyFocused,
+    PluginConstrained,
+}
+
+impl Default for RuntimePreworkServiceSemanticPolicy {
+    fn default() -> Self {
+        Self::Balanced
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RuntimePreworkBacklogClass {
+    Immediate,
+    NearTerm,
+    Deferred,
+}
+
+impl Default for RuntimePreworkBacklogClass {
+    fn default() -> Self {
+        Self::Immediate
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeEngineBlockSnapshot {
+    pub graph_id: Option<String>,
+    pub node_count: usize,
+    pub stateful_node_count: usize,
+    pub latency_node_count: usize,
+    pub plugin_backed_node_count: usize,
+    pub anticipative_planning_enabled: bool,
+    pub inline_realtime_node_count: usize,
+    pub stateful_realtime_node_count: usize,
+    pub anticipative_eligible_node_count: usize,
+    pub phase_count: usize,
+    pub anticipative_phase_count: usize,
+    pub phase_order: Vec<GraphNodePlanningGroup>,
+    pub lane_count: usize,
+    pub anticipative_lane_count: usize,
+    pub lane_order: Vec<GraphExecutionLane>,
+    pub dispatch_count: usize,
+    pub dispatch_boundary_count: usize,
+    pub dispatch_order: Vec<GraphExecutionLane>,
+    pub prepared_dispatch_count: usize,
+    pub realtime_dispatch_count: usize,
+    pub dispatch_handoff_count: usize,
+    pub prework_cache_enabled: bool,
+    pub prework_cache_state: RuntimePreworkCacheState,
+    pub prework_cache_queue_capacity: usize,
+    pub prework_cache_queue_depth: usize,
+    pub prework_cache_peak_queue_depth: usize,
+    pub prework_pending_target_count: usize,
+    pub prework_pending_immediate_target_count: usize,
+    pub prework_pending_near_term_target_count: usize,
+    pub prework_pending_deferred_target_count: usize,
+    pub prework_next_pending_target_block_sequence: Option<u64>,
+    pub prework_service_state: RuntimePreworkServiceState,
+    pub prework_service_pressure: RuntimePreworkServicePressure,
+    pub prework_service_semantic_policy: RuntimePreworkServiceSemanticPolicy,
+    pub prework_service_active_plugin_sandboxes: u32,
+    pub prework_service_bound_plugin_sandboxes: usize,
+    pub prework_service_active_bound_plugin_sandboxes: usize,
+    pub prework_service_degraded_bound_plugin_sandboxes: usize,
+    pub prework_service_missing_bound_plugin_sandboxes: usize,
+    pub prework_service_plugin_gate_active: bool,
+    pub prework_service_cycle_count: u64,
+    pub prework_service_prepared_targets: u64,
+    pub prework_service_pause_count: u64,
+    pub prework_service_resume_count: u64,
+    pub prework_service_starvation_count: u64,
+    pub prework_service_throttle_count: u64,
+    pub prework_service_yield_count: u64,
+    pub last_prework_service_processing_epoch: Option<u64>,
+    pub last_prework_service_requested_cycles: usize,
+    pub last_prework_service_effective_cycles: usize,
+    pub last_prework_service_cycle_count: usize,
+    pub last_prework_service_budget_per_cycle: Option<usize>,
+    pub last_prework_service_effective_budget_per_cycle: Option<usize>,
+    pub last_prework_service_prepared_targets: usize,
+    pub last_prework_serviced_target_block_sequence: Option<u64>,
+    pub last_prework_serviced_backlog_class: Option<RuntimePreworkBacklogClass>,
+    pub prework_forecast_requested_mode: RuntimePreworkForecastMode,
+    pub prework_forecast_mode: RuntimePreworkForecastMode,
+    pub prework_forecast_policy_configured: bool,
+    pub prework_forecast_profile: Option<RuntimePreworkForecastProfile>,
+    pub prework_forecast_profile_source: Option<RuntimePreworkForecastProfileSource>,
+    pub prework_forecast_profile_target_window_override: Option<usize>,
+    pub prework_forecast_policy_target_window_blocks: Option<usize>,
+    pub prework_cache_window_target_count: usize,
+    pub prework_cache_window_target_block_sequences: Vec<u64>,
+    pub prework_cache_admissions: u64,
+    pub prework_cache_consumptions: u64,
+    pub prework_cache_queued_admissions: u64,
+    pub prework_cache_queued_consumptions: u64,
+    pub prework_cache_hits: u64,
+    pub prework_cache_misses: u64,
+    pub prework_cache_invalidation_count: u64,
+    pub prework_cache_retirement_count: u64,
+    pub prework_cache_unconsumed_retirement_count: u64,
+    pub prework_cache_consumed_retirement_count: u64,
+    pub last_prework_cache_hit: bool,
+    pub last_prework_invalidation_reason: Option<RuntimePreworkInvalidationReason>,
+    pub last_prework_retirement_reason: Option<RuntimePreworkRetirementReason>,
+    pub last_prework_retired_unconsumed: Option<bool>,
+    pub prework_cache_freshness_state: RuntimePreworkFreshnessState,
+    pub prework_cache_block_freshness_window: u64,
+    pub prework_cache_remaining_valid_blocks: Option<u64>,
+    pub prework_cache_valid_until_processing_epoch: Option<u64>,
+    pub prework_cache_valid_until_block_sequence: Option<u64>,
+    pub last_prework_source_processing_epoch: Option<u64>,
+    pub last_prework_source_block_sequence: Option<u64>,
+    pub last_prework_admission_processing_epoch: Option<u64>,
+    pub last_prework_admission_block_sequence: Option<u64>,
+    pub last_prework_admitted_from_block_sequence: Option<u64>,
+    pub last_prework_consumption_processing_epoch: Option<u64>,
+    pub last_prework_consumption_block_sequence: Option<u64>,
+    pub last_prework_consumed_from_block_sequence: Option<u64>,
+    pub last_prework_retirement_processing_epoch: Option<u64>,
+    pub last_prework_retirement_block_sequence: Option<u64>,
+    pub planned_nodes: Vec<RuntimePlannedGraphNode>,
+    pub stage_count: usize,
+    pub total_latency_samples: u32,
+    pub max_node_latency_samples: u32,
+    pub processed_blocks: u64,
+    pub last_processing_epoch: Option<u64>,
+    pub last_block_sequence: Option<u64>,
+    pub last_frame_count: usize,
+    pub last_channel_count: usize,
+    pub last_input_peak: Option<f32>,
+    pub last_prework_output_peak: Option<f32>,
+    pub last_realtime_input_peak: Option<f32>,
+    pub last_output_peak: Option<f32>,
+    pub last_output_rms: Option<f32>,
+    pub last_first_output_sample: Option<f32>,
+    pub last_execution_context: Option<GraphExecutionContext>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimePreworkWindowTarget {
+    pub target_block_sequence: u64,
+    pub admitted_from_block_sequence: u64,
+    pub buffer: AudioBuffer,
+    pub parameter_epoch_override: Option<u64>,
+    pub transport_override: Option<TransportProjection>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimePreworkForecastPolicy {
+    pub target_window_blocks: usize,
+    pub prepare_budget_per_cycle: usize,
+    pub buffer_seed_offset: u64,
+    pub transport_playing: bool,
+    pub transport_tempo_bpm: f64,
+    pub transport_loop_length_blocks: usize,
+    pub parameter_target: String,
+    pub parameter_cycle_length: u64,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreworkForecastMode {
+    #[default]
+    Disabled,
+    RuntimeRoleDefault,
+    ExplicitProfile,
+    RawPolicyOverride,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkForecastProfile {
+    Local,
+    Server,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePreworkForecastProfileSource {
+    RuntimeRoleDefault,
+    ExplicitSelection,
+    RawPolicyOverride,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RuntimePreworkForecastProfileSelection {
+    pub profile: RuntimePreworkForecastProfile,
+    pub target_window_blocks_override: Option<usize>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePlannedGraphNode {
+    pub node_id: String,
+    pub execution_class: GraphNodeExecutionClass,
+    pub group: GraphNodePlanningGroup,
+    pub latency_samples: u32,
+    pub plugin_sandbox_id: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeEngineBlockResult {
+    pub snapshot: RuntimeEngineBlockSnapshot,
+    pub output: AudioBuffer,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -189,6 +522,114 @@ pub struct RuntimeAutomationSnapshot {
     pub lease_rollovers: usize,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportAttachIntent {
+    SteadyState,
+    RecoveryOverlap,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportSessionProvenance {
+    SteadyOrigin,
+    RecoveryReplacement,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LingeringCleanupMode {
+    StrictPreAttach,
+    BestEffortPostStart,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LingeringCleanupTrigger {
+    RecoveryPreAttach,
+    PostStartReconciliation,
+    DeferredRetry,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ActiveTransportConcurrencySession {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub region_id: String,
+    pub intent: TransportAttachIntent,
+    pub provenance: TransportSessionProvenance,
+    pub attach_sequence: u64,
+    pub attach_processing_epoch: Option<u64>,
+    pub state: TransportSessionState,
+    pub backing_path: Option<String>,
+    pub total_bytes: Option<u32>,
+    pub cleanup_attempt_count: u32,
+    pub last_cleanup_mode: Option<LingeringCleanupMode>,
+    pub last_cleanup_wave: Option<u64>,
+    pub cleanup_in_progress: bool,
+    pub last_cleanup_epoch: Option<u64>,
+    pub last_cleanup_error: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LingeringCleanupQueueReceipt {
+    pub work_id: u64,
+    pub cleanup_epoch: u64,
+    pub cleanup_wave: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LingeringCleanupPlan {
+    pub work_id: u64,
+    pub cleanup_epoch: u64,
+    pub cleanup_wave: u64,
+    pub sandbox_id: String,
+    pub mode: LingeringCleanupMode,
+    pub trigger: LingeringCleanupTrigger,
+    pub retry_count: u32,
+    pub processing_epoch: u64,
+    pub ready_at_processing_epoch: u64,
+    pub exclude_lease_id: Option<String>,
+    pub exclude_region_id: Option<String>,
+    pub candidates: Vec<ActiveTransportConcurrencySession>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PendingLingeringCleanupWaveSummary {
+    pub sandbox_id: String,
+    pub cleanup_wave: u64,
+    pub mode: LingeringCleanupMode,
+    pub first_trigger: LingeringCleanupTrigger,
+    pub latest_trigger: LingeringCleanupTrigger,
+    pub pending_work_items: usize,
+    pub deferred_retry_work_items: usize,
+    pub first_cleanup_epoch: u64,
+    pub latest_cleanup_epoch: u64,
+    pub first_processing_epoch: u64,
+    pub latest_processing_epoch: u64,
+    pub oldest_ready_at_processing_epoch: u64,
+    pub newest_ready_at_processing_epoch: u64,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeTransportConcurrencySnapshot {
+    pub steady_session_limit: usize,
+    pub recovery_session_limit: usize,
+    pub current_attached_sessions: usize,
+    pub peak_attached_sessions: usize,
+    pub current_recovery_overlap_sessions: usize,
+    pub peak_recovery_overlap_sessions: usize,
+    pub current_lingering_sessions: usize,
+    pub peak_lingering_sessions: usize,
+    pub current_detach_requested_sessions: usize,
+    pub current_detach_faulted_sessions: usize,
+    pub pending_cleanup_work_items: usize,
+    pub pending_deferred_retry_work_items: usize,
+    pub next_cleanup_epoch: u64,
+    pub oldest_pending_cleanup_ready_epoch: Option<u64>,
+    pub pending_cleanup_waves: Vec<PendingLingeringCleanupWaveSummary>,
+    pub active_sessions: Vec<ActiveTransportConcurrencySession>,
+    pub last_admitted_sandbox_id: Option<String>,
+    pub last_rejected_sandbox_id: Option<String>,
+    pub last_rejection_reason: Option<String>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimeControlSnapshot {
     pub handshaken: bool,
@@ -232,6 +673,777 @@ pub struct RuntimeDiagnosticsSnapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RecoveryRecord {
+    pub sandbox_id: String,
+    pub intent: RecoveryRestartIntent,
+    pub stop_reason: StopReason,
+    pub processing_epoch: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginSandboxLifecycleStage {
+    SandboxEnsured,
+    SandboxHandshaken,
+    PluginTypeLoaded,
+    InstanceCreated,
+    InstancePrepared,
+    TransportAttached,
+    InstanceActivated,
+    InstanceDeactivated,
+    InstanceReset,
+    InstanceDestroyed,
+    SandboxTeardown,
+    TransportTornDown,
+    SandboxRestarted,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginSandboxLifecycleRecord {
+    pub sandbox_id: String,
+    pub stage: PluginSandboxLifecycleStage,
+    pub processing_epoch: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginSandboxTransportStage {
+    Attached,
+    DetachRequested,
+    Detached,
+    DetachFault,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginSandboxTransportRecord {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub region_id: String,
+    pub stage: PluginSandboxTransportStage,
+    pub processing_epoch: Option<u64>,
+    pub detail: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HeartbeatCycleStage {
+    Requested,
+    Responded,
+    Missed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HeartbeatCycleRecord {
+    pub sandbox_id: String,
+    pub stage: HeartbeatCycleStage,
+    pub processing_epoch: Option<u64>,
+    pub block_sequence: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BlockDispatchStage {
+    Requested,
+    Completed,
+    TimedOut,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BlockDispatchRecord {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub processing_epoch: u64,
+    pub block_sequence: u64,
+    pub frame_count: u32,
+    pub stage: BlockDispatchStage,
+    pub completion_state: Option<CompletionState>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LeaseRolloverRecord {
+    pub sandbox_id: String,
+    pub previous_lease_id: String,
+    pub lease_id: String,
+    pub processing_epoch: u64,
+    pub first_block_sequence: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BrokerInvalidationStage {
+    CompletionRegionInvalidated,
+    LeaseEpochInvalidated,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BrokerInvalidationRecord {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub processing_epoch: u64,
+    pub block_sequence: Option<u64>,
+    pub stage: BrokerInvalidationStage,
+    pub reason: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CompletionSlotStage {
+    ReadyForProcessing,
+    Processing,
+    Completed,
+    TimedOut,
+    Invalidated,
+    FallbackApplied,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompletionSlotRecord {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub processing_epoch: u64,
+    pub block_sequence: u64,
+    pub stage: CompletionSlotStage,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BrokerFailureStage {
+    PreparePlanCreate,
+    PayloadWrite,
+    PayloadRead,
+    TransportDestroy,
+    TransportTeardown,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BrokerFailureRecord {
+    pub sandbox_id: String,
+    pub lease_id: Option<String>,
+    pub processing_epoch: Option<u64>,
+    pub block_sequence: Option<u64>,
+    pub stage: BrokerFailureStage,
+    pub detail: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SandboxOperationFailureStage {
+    PrepareAttach,
+    ProcessAttach,
+    ProcessFlush,
+    ProcessProtocolViolation,
+    ControlProtocolViolation,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SandboxOperationFailureRecord {
+    pub sandbox_id: String,
+    pub lease_id: Option<String>,
+    pub processing_epoch: Option<u64>,
+    pub operation: String,
+    pub error_kind: String,
+    pub stage: SandboxOperationFailureStage,
+    pub detail: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportFaultSource {
+    HostBroker,
+    SandboxOperation,
+    RuntimeDispatch,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportFaultStage {
+    PreparePlanCreate,
+    PayloadWrite,
+    PayloadRead,
+    TransportDestroy,
+    TransportTeardown,
+    TransportDetachRequested,
+    TransportDetached,
+    PrepareAttach,
+    ProcessAttach,
+    ProcessFlush,
+    ProcessProtocolViolation,
+    ControlProtocolViolation,
+    TransportDetachFault,
+    CompletionRegionInvalidated,
+    LeaseEpochInvalidated,
+    CompletionSlotTimedOut,
+    CompletionSlotInvalidated,
+    FallbackApplied,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportFaultPhase {
+    Prepare,
+    Dispatch,
+    Teardown,
+    Control,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportFaultResource {
+    PreparePlan,
+    SharedMemoryPayload,
+    SharedMemoryLease,
+    CompletionSlot,
+    ProcessProtocol,
+    ControlProtocol,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TransportFaultRecord {
+    pub sandbox_id: String,
+    pub lease_id: Option<String>,
+    pub processing_epoch: Option<u64>,
+    pub block_sequence: Option<u64>,
+    pub source: TransportFaultSource,
+    pub stage: TransportFaultStage,
+    pub phase: TransportFaultPhase,
+    pub resource: TransportFaultResource,
+    pub operation: String,
+    pub error_kind: Option<String>,
+    pub detail: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportFaultBoundaryMode {
+    FaultAdjacentOnly,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TransportFaultSummary {
+    pub boundary_mode: TransportFaultBoundaryMode,
+    pub total_events: usize,
+    pub host_broker_events: usize,
+    pub sandbox_operation_events: usize,
+    pub runtime_dispatch_events: usize,
+    pub prepare_events: usize,
+    pub dispatch_events: usize,
+    pub teardown_events: usize,
+    pub control_events: usize,
+    pub first_processing_epoch: Option<u64>,
+    pub last_processing_epoch: Option<u64>,
+    pub first_block_sequence: Option<u64>,
+    pub last_block_sequence: Option<u64>,
+}
+
+impl TransportFaultSummary {
+    pub fn from_records(records: &[TransportFaultRecord]) -> Self {
+        let mut summary = Self {
+            boundary_mode: TransportFaultBoundaryMode::FaultAdjacentOnly,
+            total_events: records.len(),
+            host_broker_events: 0,
+            sandbox_operation_events: 0,
+            runtime_dispatch_events: 0,
+            prepare_events: 0,
+            dispatch_events: 0,
+            teardown_events: 0,
+            control_events: 0,
+            first_processing_epoch: None,
+            last_processing_epoch: None,
+            first_block_sequence: None,
+            last_block_sequence: None,
+        };
+
+        for record in records {
+            match record.source {
+                TransportFaultSource::HostBroker => {
+                    summary.host_broker_events = summary.host_broker_events.saturating_add(1)
+                }
+                TransportFaultSource::SandboxOperation => {
+                    summary.sandbox_operation_events =
+                        summary.sandbox_operation_events.saturating_add(1)
+                }
+                TransportFaultSource::RuntimeDispatch => {
+                    summary.runtime_dispatch_events =
+                        summary.runtime_dispatch_events.saturating_add(1)
+                }
+            }
+            match record.phase {
+                TransportFaultPhase::Prepare => {
+                    summary.prepare_events = summary.prepare_events.saturating_add(1)
+                }
+                TransportFaultPhase::Dispatch => {
+                    summary.dispatch_events = summary.dispatch_events.saturating_add(1)
+                }
+                TransportFaultPhase::Teardown => {
+                    summary.teardown_events = summary.teardown_events.saturating_add(1)
+                }
+                TransportFaultPhase::Control => {
+                    summary.control_events = summary.control_events.saturating_add(1)
+                }
+            }
+
+            if let Some(epoch) = record.processing_epoch {
+                summary.first_processing_epoch = Some(
+                    summary
+                        .first_processing_epoch
+                        .map_or(epoch, |current| current.min(epoch)),
+                );
+                summary.last_processing_epoch = Some(
+                    summary
+                        .last_processing_epoch
+                        .map_or(epoch, |current| current.max(epoch)),
+                );
+            }
+            if let Some(block_sequence) = record.block_sequence {
+                summary.first_block_sequence = Some(
+                    summary
+                        .first_block_sequence
+                        .map_or(block_sequence, |current| current.min(block_sequence)),
+                );
+                summary.last_block_sequence = Some(
+                    summary
+                        .last_block_sequence
+                        .map_or(block_sequence, |current| current.max(block_sequence)),
+                );
+            }
+        }
+
+        summary
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportSessionBoundaryMode {
+    HealthyPathVisible,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportSessionState {
+    Detached,
+    AttachActive,
+    DetachRequested,
+    DetachFaulted,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportHeartbeatFreshness {
+    Unknown,
+    Requested,
+    Fresh,
+    Missed,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TransportDispatchState {
+    Idle,
+    Requested,
+    Completed,
+    TimedOut,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ActiveTransportSessionRecord {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub region_id: String,
+    pub state: TransportSessionState,
+    pub currently_attached: bool,
+    pub heartbeat_freshness: TransportHeartbeatFreshness,
+    pub dispatch_state: TransportDispatchState,
+    pub processing_epoch: Option<u64>,
+    pub active_block_sequence: Option<u64>,
+    pub transport_fault_count: usize,
+    pub last_transport_fault_source: Option<TransportFaultSource>,
+    pub last_transport_fault_stage: Option<TransportFaultStage>,
+    pub last_transport_fault_phase: Option<TransportFaultPhase>,
+    pub last_transport_fault_processing_epoch: Option<u64>,
+    pub last_transport_fault_block_sequence: Option<u64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TransportSessionSummary {
+    pub boundary_mode: TransportSessionBoundaryMode,
+    pub current_state: TransportSessionState,
+    pub currently_attached: bool,
+    pub heartbeat_freshness: TransportHeartbeatFreshness,
+    pub dispatch_state: TransportDispatchState,
+    pub current_attached_session_count: usize,
+    pub max_concurrent_attached_sessions: usize,
+    pub attach_events: usize,
+    pub detach_requested_events: usize,
+    pub detached_events: usize,
+    pub detach_fault_events: usize,
+    pub heartbeat_requested_events: usize,
+    pub heartbeat_responded_events: usize,
+    pub heartbeat_missed_events: usize,
+    pub dispatch_requested_events: usize,
+    pub dispatch_completed_events: usize,
+    pub dispatch_timed_out_events: usize,
+    pub first_processing_epoch: Option<u64>,
+    pub last_processing_epoch: Option<u64>,
+    pub first_block_sequence: Option<u64>,
+    pub last_block_sequence: Option<u64>,
+    pub active_sandbox_id: Option<String>,
+    pub active_lease_id: Option<String>,
+    pub active_region_id: Option<String>,
+    pub active_block_sequence: Option<u64>,
+    pub active_sessions: Vec<ActiveTransportSessionRecord>,
+    pub last_sandbox_id: Option<String>,
+    pub last_lease_id: Option<String>,
+    pub last_region_id: Option<String>,
+}
+
+impl TransportSessionSummary {
+    pub fn from_diagnostics(diagnostics: &RuntimeObservationDiagnostics) -> Self {
+        let mut summary = Self {
+            boundary_mode: TransportSessionBoundaryMode::HealthyPathVisible,
+            current_state: TransportSessionState::Detached,
+            currently_attached: false,
+            heartbeat_freshness: TransportHeartbeatFreshness::Unknown,
+            dispatch_state: TransportDispatchState::Idle,
+            current_attached_session_count: 0,
+            max_concurrent_attached_sessions: 0,
+            attach_events: 0,
+            detach_requested_events: 0,
+            detached_events: 0,
+            detach_fault_events: 0,
+            heartbeat_requested_events: 0,
+            heartbeat_responded_events: 0,
+            heartbeat_missed_events: 0,
+            dispatch_requested_events: 0,
+            dispatch_completed_events: 0,
+            dispatch_timed_out_events: 0,
+            first_processing_epoch: None,
+            last_processing_epoch: None,
+            first_block_sequence: None,
+            last_block_sequence: None,
+            active_sandbox_id: None,
+            active_lease_id: None,
+            active_region_id: None,
+            active_block_sequence: None,
+            active_sessions: Vec::new(),
+            last_sandbox_id: None,
+            last_lease_id: None,
+            last_region_id: None,
+        };
+        let mut active_sessions: BTreeMap<(String, String, String), ActiveTransportSessionRecord> =
+            BTreeMap::new();
+        let mut last_transport_key: Option<(String, String, String)> = None;
+
+        for record in &diagnostics.transport_events {
+            match record.stage {
+                PluginSandboxTransportStage::Attached => {
+                    summary.attach_events = summary.attach_events.saturating_add(1)
+                }
+                PluginSandboxTransportStage::DetachRequested => {
+                    summary.detach_requested_events =
+                        summary.detach_requested_events.saturating_add(1)
+                }
+                PluginSandboxTransportStage::Detached => {
+                    summary.detached_events = summary.detached_events.saturating_add(1)
+                }
+                PluginSandboxTransportStage::DetachFault => {
+                    summary.detach_fault_events = summary.detach_fault_events.saturating_add(1)
+                }
+            }
+            update_transport_session_epoch_bounds(&mut summary, record.processing_epoch);
+            last_transport_key = Some(apply_transport_session_state(
+                &mut summary,
+                &mut active_sessions,
+                record,
+            ));
+            summary.last_sandbox_id = Some(record.sandbox_id.clone());
+            summary.last_lease_id = Some(record.lease_id.clone());
+            summary.last_region_id = Some(record.region_id.clone());
+        }
+
+        for record in &diagnostics.heartbeat_events {
+            match record.stage {
+                HeartbeatCycleStage::Requested => {
+                    summary.heartbeat_requested_events =
+                        summary.heartbeat_requested_events.saturating_add(1);
+                    summary.heartbeat_freshness = TransportHeartbeatFreshness::Requested;
+                }
+                HeartbeatCycleStage::Responded => {
+                    summary.heartbeat_responded_events =
+                        summary.heartbeat_responded_events.saturating_add(1);
+                    summary.heartbeat_freshness = TransportHeartbeatFreshness::Fresh;
+                }
+                HeartbeatCycleStage::Missed => {
+                    summary.heartbeat_missed_events =
+                        summary.heartbeat_missed_events.saturating_add(1);
+                    summary.heartbeat_freshness = TransportHeartbeatFreshness::Missed;
+                }
+            }
+            update_transport_session_epoch_bounds(&mut summary, record.processing_epoch);
+            update_transport_session_block_bounds(&mut summary, record.block_sequence);
+            if let Some(session) = resolve_active_session_mut(
+                &mut active_sessions,
+                &record.sandbox_id,
+                None,
+                last_transport_key.as_ref(),
+            ) {
+                session.heartbeat_freshness = summary.heartbeat_freshness;
+                session.processing_epoch = record.processing_epoch.or(session.processing_epoch);
+            }
+            summary.last_sandbox_id = Some(record.sandbox_id.clone());
+        }
+
+        for record in &diagnostics.block_dispatch_events {
+            match record.stage {
+                BlockDispatchStage::Requested => {
+                    summary.dispatch_requested_events =
+                        summary.dispatch_requested_events.saturating_add(1);
+                    summary.dispatch_state = TransportDispatchState::Requested;
+                }
+                BlockDispatchStage::Completed => {
+                    summary.dispatch_completed_events =
+                        summary.dispatch_completed_events.saturating_add(1);
+                    summary.dispatch_state = TransportDispatchState::Completed;
+                }
+                BlockDispatchStage::TimedOut => {
+                    summary.dispatch_timed_out_events =
+                        summary.dispatch_timed_out_events.saturating_add(1);
+                    summary.dispatch_state = TransportDispatchState::TimedOut;
+                }
+            }
+            update_transport_session_epoch_bounds(&mut summary, Some(record.processing_epoch));
+            update_transport_session_block_bounds(&mut summary, Some(record.block_sequence));
+            summary.last_sandbox_id = Some(record.sandbox_id.clone());
+            summary.last_lease_id = Some(record.lease_id.clone());
+            summary.active_block_sequence = Some(record.block_sequence);
+            if let Some(session) = resolve_active_session_mut(
+                &mut active_sessions,
+                &record.sandbox_id,
+                Some(&record.lease_id),
+                last_transport_key.as_ref(),
+            ) {
+                session.dispatch_state = summary.dispatch_state;
+                session.processing_epoch = Some(record.processing_epoch);
+                session.active_block_sequence = Some(record.block_sequence);
+            }
+        }
+
+        for record in &diagnostics.transport_fault_events {
+            if let Some(session) = resolve_active_session_mut(
+                &mut active_sessions,
+                &record.sandbox_id,
+                record.lease_id.as_deref(),
+                last_transport_key.as_ref(),
+            ) {
+                session.transport_fault_count = session.transport_fault_count.saturating_add(1);
+                session.last_transport_fault_source = Some(record.source);
+                session.last_transport_fault_stage = Some(record.stage);
+                session.last_transport_fault_phase = Some(record.phase);
+                session.last_transport_fault_processing_epoch = record.processing_epoch;
+                session.last_transport_fault_block_sequence = record.block_sequence;
+                session.processing_epoch = record.processing_epoch.or(session.processing_epoch);
+                if let Some(block_sequence) = record.block_sequence {
+                    session.active_block_sequence = Some(block_sequence);
+                }
+            }
+        }
+
+        summary.current_attached_session_count = active_sessions.len();
+        summary.active_sessions = active_sessions.into_values().collect();
+
+        summary
+    }
+}
+
+fn apply_transport_session_state(
+    summary: &mut TransportSessionSummary,
+    active_sessions: &mut BTreeMap<(String, String, String), ActiveTransportSessionRecord>,
+    record: &PluginSandboxTransportRecord,
+) -> (String, String, String) {
+    let key = (
+        record.sandbox_id.clone(),
+        record.lease_id.clone(),
+        record.region_id.clone(),
+    );
+    let prior_session = active_sessions.remove(&key);
+    match record.stage {
+        PluginSandboxTransportStage::Attached => {
+            summary.current_state = TransportSessionState::AttachActive;
+            summary.currently_attached = true;
+            summary.active_sandbox_id = Some(record.sandbox_id.clone());
+            summary.active_lease_id = Some(record.lease_id.clone());
+            summary.active_region_id = Some(record.region_id.clone());
+            active_sessions.insert(
+                key.clone(),
+                ActiveTransportSessionRecord {
+                    sandbox_id: record.sandbox_id.clone(),
+                    lease_id: record.lease_id.clone(),
+                    region_id: record.region_id.clone(),
+                    state: TransportSessionState::AttachActive,
+                    currently_attached: true,
+                    heartbeat_freshness: prior_session
+                        .as_ref()
+                        .map_or(TransportHeartbeatFreshness::Unknown, |session| {
+                            session.heartbeat_freshness
+                        }),
+                    dispatch_state: prior_session
+                        .as_ref()
+                        .map_or(TransportDispatchState::Idle, |session| {
+                            session.dispatch_state
+                        }),
+                    processing_epoch: record.processing_epoch.or(prior_session
+                        .as_ref()
+                        .and_then(|session| session.processing_epoch)),
+                    active_block_sequence: prior_session
+                        .as_ref()
+                        .and_then(|session| session.active_block_sequence),
+                    transport_fault_count: prior_session
+                        .as_ref()
+                        .map_or(0, |session| session.transport_fault_count),
+                    last_transport_fault_source: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_source),
+                    last_transport_fault_stage: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_stage),
+                    last_transport_fault_phase: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_phase),
+                    last_transport_fault_processing_epoch: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_processing_epoch),
+                    last_transport_fault_block_sequence: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_block_sequence),
+                },
+            );
+        }
+        PluginSandboxTransportStage::DetachRequested => {
+            summary.current_state = TransportSessionState::DetachRequested;
+            summary.currently_attached = true;
+            summary.active_sandbox_id = Some(record.sandbox_id.clone());
+            summary.active_lease_id = Some(record.lease_id.clone());
+            summary.active_region_id = Some(record.region_id.clone());
+            active_sessions.insert(
+                key.clone(),
+                ActiveTransportSessionRecord {
+                    sandbox_id: record.sandbox_id.clone(),
+                    lease_id: record.lease_id.clone(),
+                    region_id: record.region_id.clone(),
+                    state: TransportSessionState::DetachRequested,
+                    currently_attached: true,
+                    heartbeat_freshness: prior_session
+                        .as_ref()
+                        .map_or(TransportHeartbeatFreshness::Unknown, |session| {
+                            session.heartbeat_freshness
+                        }),
+                    dispatch_state: prior_session
+                        .as_ref()
+                        .map_or(TransportDispatchState::Idle, |session| {
+                            session.dispatch_state
+                        }),
+                    processing_epoch: record.processing_epoch.or(prior_session
+                        .as_ref()
+                        .and_then(|session| session.processing_epoch)),
+                    active_block_sequence: prior_session
+                        .as_ref()
+                        .and_then(|session| session.active_block_sequence),
+                    transport_fault_count: prior_session
+                        .as_ref()
+                        .map_or(0, |session| session.transport_fault_count),
+                    last_transport_fault_source: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_source),
+                    last_transport_fault_stage: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_stage),
+                    last_transport_fault_phase: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_phase),
+                    last_transport_fault_processing_epoch: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_processing_epoch),
+                    last_transport_fault_block_sequence: prior_session
+                        .as_ref()
+                        .and_then(|session| session.last_transport_fault_block_sequence),
+                },
+            );
+        }
+        PluginSandboxTransportStage::Detached => {
+            summary.current_state = TransportSessionState::Detached;
+            summary.currently_attached = false;
+            summary.active_sandbox_id = None;
+            summary.active_lease_id = None;
+            summary.active_region_id = None;
+            summary.active_block_sequence = None;
+            active_sessions.remove(&key);
+        }
+        PluginSandboxTransportStage::DetachFault => {
+            summary.current_state = TransportSessionState::DetachFaulted;
+            summary.currently_attached = false;
+            summary.active_sandbox_id = None;
+            summary.active_lease_id = None;
+            summary.active_region_id = None;
+            summary.active_block_sequence = None;
+            active_sessions.remove(&key);
+        }
+    }
+    summary.max_concurrent_attached_sessions = summary
+        .max_concurrent_attached_sessions
+        .max(active_sessions.len());
+    key
+}
+
+fn resolve_active_session_mut<'a>(
+    active_sessions: &'a mut BTreeMap<(String, String, String), ActiveTransportSessionRecord>,
+    sandbox_id: &str,
+    lease_id: Option<&str>,
+    last_transport_key: Option<&(String, String, String)>,
+) -> Option<&'a mut ActiveTransportSessionRecord> {
+    if let Some(lease_id) = lease_id {
+        if let Some(key) = active_sessions
+            .keys()
+            .find(|(sandbox, lease, _)| sandbox == sandbox_id && lease == lease_id)
+            .cloned()
+        {
+            return active_sessions.get_mut(&key);
+        }
+    }
+
+    if let Some(key) = last_transport_key {
+        if key.0 == sandbox_id {
+            return active_sessions.get_mut(key);
+        }
+    }
+
+    let fallback_key = active_sessions
+        .keys()
+        .rev()
+        .find(|(sandbox, _, _)| sandbox == sandbox_id)
+        .cloned()?;
+    active_sessions.get_mut(&fallback_key)
+}
+
+fn update_transport_session_epoch_bounds(
+    summary: &mut TransportSessionSummary,
+    epoch: Option<u64>,
+) {
+    if let Some(epoch) = epoch {
+        summary.first_processing_epoch = Some(
+            summary
+                .first_processing_epoch
+                .map_or(epoch, |current| current.min(epoch)),
+        );
+        summary.last_processing_epoch = Some(
+            summary
+                .last_processing_epoch
+                .map_or(epoch, |current| current.max(epoch)),
+        );
+    }
+}
+
+fn update_transport_session_block_bounds(
+    summary: &mut TransportSessionSummary,
+    block_sequence: Option<u64>,
+) {
+    if let Some(block_sequence) = block_sequence {
+        summary.first_block_sequence = Some(
+            summary
+                .first_block_sequence
+                .map_or(block_sequence, |current| current.min(block_sequence)),
+        );
+        summary.last_block_sequence = Some(
+            summary
+                .last_block_sequence
+                .map_or(block_sequence, |current| current.max(block_sequence)),
+        );
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeEvent {
     ReadinessChanged(RuntimeReadiness),
     EffectiveConfigChanged(EffectiveRuntimeConfig),
@@ -244,6 +1456,79 @@ pub enum RuntimeEvent {
         kind: PluginFaultKind,
         detail: String,
         processing_epoch: Option<u64>,
+    },
+    RecoveryCycle {
+        sandbox_id: String,
+        intent: RecoveryRestartIntent,
+        stop_reason: StopReason,
+        processing_epoch: Option<u64>,
+    },
+    PluginSandboxLifecycle {
+        sandbox_id: String,
+        stage: PluginSandboxLifecycleStage,
+        processing_epoch: Option<u64>,
+    },
+    PluginSandboxTransport {
+        sandbox_id: String,
+        lease_id: String,
+        region_id: String,
+        stage: PluginSandboxTransportStage,
+        processing_epoch: Option<u64>,
+        detail: Option<String>,
+    },
+    HeartbeatCycle {
+        sandbox_id: String,
+        stage: HeartbeatCycleStage,
+        processing_epoch: Option<u64>,
+        block_sequence: Option<u64>,
+    },
+    BlockDispatch {
+        sandbox_id: String,
+        lease_id: String,
+        processing_epoch: u64,
+        block_sequence: u64,
+        frame_count: u32,
+        stage: BlockDispatchStage,
+        completion_state: Option<CompletionState>,
+    },
+    LeaseRollover {
+        sandbox_id: String,
+        previous_lease_id: String,
+        lease_id: String,
+        processing_epoch: u64,
+        first_block_sequence: u64,
+    },
+    BrokerInvalidation {
+        sandbox_id: String,
+        lease_id: String,
+        processing_epoch: u64,
+        block_sequence: Option<u64>,
+        stage: BrokerInvalidationStage,
+        reason: String,
+    },
+    CompletionSlotTransition {
+        sandbox_id: String,
+        lease_id: String,
+        processing_epoch: u64,
+        block_sequence: u64,
+        stage: CompletionSlotStage,
+    },
+    BrokerFailure {
+        sandbox_id: String,
+        lease_id: Option<String>,
+        processing_epoch: Option<u64>,
+        block_sequence: Option<u64>,
+        stage: BrokerFailureStage,
+        detail: String,
+    },
+    SandboxOperationFailure {
+        sandbox_id: String,
+        lease_id: Option<String>,
+        processing_epoch: Option<u64>,
+        operation: String,
+        error_kind: String,
+        stage: SandboxOperationFailureStage,
+        detail: String,
     },
     HardwareDeviceChanged {
         device_id: Option<String>,
@@ -267,6 +1552,17 @@ pub struct RuntimeObservationDiagnostics {
     pub total_events: usize,
     pub supervision_updates: Vec<RuntimeSupervisionSnapshot>,
     pub plugin_faults: Vec<PluginFaultRecord>,
+    pub recovery_events: Vec<RecoveryRecord>,
+    pub lifecycle_events: Vec<PluginSandboxLifecycleRecord>,
+    pub transport_events: Vec<PluginSandboxTransportRecord>,
+    pub heartbeat_events: Vec<HeartbeatCycleRecord>,
+    pub block_dispatch_events: Vec<BlockDispatchRecord>,
+    pub lease_rollover_events: Vec<LeaseRolloverRecord>,
+    pub invalidation_events: Vec<BrokerInvalidationRecord>,
+    pub completion_slot_events: Vec<CompletionSlotRecord>,
+    pub transport_fault_events: Vec<TransportFaultRecord>,
+    pub broker_failure_events: Vec<BrokerFailureRecord>,
+    pub sandbox_operation_failure_events: Vec<SandboxOperationFailureRecord>,
 }
 
 impl RuntimeObservationDiagnostics {
@@ -276,6 +1572,50 @@ impl RuntimeObservationDiagnostics {
 
     pub fn plugin_fault_count(&self) -> usize {
         self.plugin_faults.len()
+    }
+
+    pub fn recovery_event_count(&self) -> usize {
+        self.recovery_events.len()
+    }
+
+    pub fn lifecycle_event_count(&self) -> usize {
+        self.lifecycle_events.len()
+    }
+
+    pub fn transport_event_count(&self) -> usize {
+        self.transport_events.len()
+    }
+
+    pub fn heartbeat_event_count(&self) -> usize {
+        self.heartbeat_events.len()
+    }
+
+    pub fn block_dispatch_event_count(&self) -> usize {
+        self.block_dispatch_events.len()
+    }
+
+    pub fn lease_rollover_event_count(&self) -> usize {
+        self.lease_rollover_events.len()
+    }
+
+    pub fn invalidation_event_count(&self) -> usize {
+        self.invalidation_events.len()
+    }
+
+    pub fn completion_slot_event_count(&self) -> usize {
+        self.completion_slot_events.len()
+    }
+
+    pub fn transport_fault_event_count(&self) -> usize {
+        self.transport_fault_events.len()
+    }
+
+    pub fn broker_failure_event_count(&self) -> usize {
+        self.broker_failure_events.len()
+    }
+
+    pub fn sandbox_operation_failure_event_count(&self) -> usize {
+        self.sandbox_operation_failure_events.len()
     }
 
     pub fn fault_detail_count_containing(&self, needle: &str) -> usize {
@@ -289,6 +1629,50 @@ impl RuntimeObservationDiagnostics {
         self.supervision_updates.last()
     }
 
+    pub fn last_recovery_event(&self) -> Option<&RecoveryRecord> {
+        self.recovery_events.last()
+    }
+
+    pub fn last_lifecycle_event(&self) -> Option<&PluginSandboxLifecycleRecord> {
+        self.lifecycle_events.last()
+    }
+
+    pub fn last_transport_event(&self) -> Option<&PluginSandboxTransportRecord> {
+        self.transport_events.last()
+    }
+
+    pub fn last_heartbeat_event(&self) -> Option<&HeartbeatCycleRecord> {
+        self.heartbeat_events.last()
+    }
+
+    pub fn last_block_dispatch_event(&self) -> Option<&BlockDispatchRecord> {
+        self.block_dispatch_events.last()
+    }
+
+    pub fn last_lease_rollover_event(&self) -> Option<&LeaseRolloverRecord> {
+        self.lease_rollover_events.last()
+    }
+
+    pub fn last_invalidation_event(&self) -> Option<&BrokerInvalidationRecord> {
+        self.invalidation_events.last()
+    }
+
+    pub fn last_completion_slot_event(&self) -> Option<&CompletionSlotRecord> {
+        self.completion_slot_events.last()
+    }
+
+    pub fn last_transport_fault_event(&self) -> Option<&TransportFaultRecord> {
+        self.transport_fault_events.last()
+    }
+
+    pub fn last_broker_failure_event(&self) -> Option<&BrokerFailureRecord> {
+        self.broker_failure_events.last()
+    }
+
+    pub fn last_sandbox_operation_failure_event(&self) -> Option<&SandboxOperationFailureRecord> {
+        self.sandbox_operation_failure_events.last()
+    }
+
     pub fn render_compact(&self) -> String {
         let last_trigger = self
             .last_supervision_update()
@@ -300,14 +1684,176 @@ impl RuntimeObservationDiagnostics {
             .last()
             .map(|fault| format!("{}:{:?}", fault.sandbox_id, fault.kind))
             .unwrap_or_else(|| "none".into());
+        let last_recovery = self
+            .last_recovery_event()
+            .map(|recovery| {
+                format!(
+                    "{}:{:?}:{:?}@{:?}",
+                    recovery.sandbox_id,
+                    recovery.intent,
+                    recovery.stop_reason,
+                    recovery.processing_epoch
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_lifecycle = self
+            .last_lifecycle_event()
+            .map(|lifecycle| {
+                format!(
+                    "{}:{:?}@{:?}",
+                    lifecycle.sandbox_id, lifecycle.stage, lifecycle.processing_epoch
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_transport = self
+            .last_transport_event()
+            .map(|transport| {
+                format!(
+                    "{}:{}:{}:{:?}@{:?}",
+                    transport.sandbox_id,
+                    transport.lease_id,
+                    transport.region_id,
+                    transport.stage,
+                    transport.processing_epoch
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_heartbeat = self
+            .last_heartbeat_event()
+            .map(|heartbeat| {
+                format!(
+                    "{}:{:?}@{:?}/block={:?}",
+                    heartbeat.sandbox_id,
+                    heartbeat.stage,
+                    heartbeat.processing_epoch,
+                    heartbeat.block_sequence
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_dispatch = self
+            .last_block_dispatch_event()
+            .map(|dispatch| {
+                format!(
+                    "{}:{}:{:?}/block={}@{}",
+                    dispatch.sandbox_id,
+                    dispatch.lease_id,
+                    dispatch.stage,
+                    dispatch.block_sequence,
+                    dispatch.processing_epoch
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_rollover = self
+            .last_lease_rollover_event()
+            .map(|rollover| {
+                format!(
+                    "{}:{}->{}@{}/block={}",
+                    rollover.sandbox_id,
+                    rollover.previous_lease_id,
+                    rollover.lease_id,
+                    rollover.processing_epoch,
+                    rollover.first_block_sequence
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_invalidation = self
+            .last_invalidation_event()
+            .map(|invalidation| {
+                format!(
+                    "{}:{}:{:?}@{}/block={:?}",
+                    invalidation.sandbox_id,
+                    invalidation.lease_id,
+                    invalidation.stage,
+                    invalidation.processing_epoch,
+                    invalidation.block_sequence
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_completion_slot = self
+            .last_completion_slot_event()
+            .map(|completion| {
+                format!(
+                    "{}:{}:{:?}@{}/block={}",
+                    completion.sandbox_id,
+                    completion.lease_id,
+                    completion.stage,
+                    completion.processing_epoch,
+                    completion.block_sequence
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_transport_fault = self
+            .last_transport_fault_event()
+            .map(|failure| {
+                format!(
+                    "{}:{:?}:{:?}:{:?}:{:?}:lease={:?}@{:?}/block={:?}",
+                    failure.sandbox_id,
+                    failure.source,
+                    failure.stage,
+                    failure.phase,
+                    failure.resource,
+                    failure.lease_id,
+                    failure.processing_epoch,
+                    failure.block_sequence
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_broker_failure = self
+            .last_broker_failure_event()
+            .map(|failure| {
+                format!(
+                    "{}:{:?}:lease={:?}@{:?}/block={:?}",
+                    failure.sandbox_id,
+                    failure.stage,
+                    failure.lease_id,
+                    failure.processing_epoch,
+                    failure.block_sequence
+                )
+            })
+            .unwrap_or_else(|| "none".into());
+        let last_sandbox_operation_failure = self
+            .last_sandbox_operation_failure_event()
+            .map(|failure| {
+                format!(
+                    "{}:{}:{:?}:lease={:?}@{:?}",
+                    failure.sandbox_id,
+                    failure.operation,
+                    failure.stage,
+                    failure.lease_id,
+                    failure.processing_epoch
+                )
+            })
+            .unwrap_or_else(|| "none".into());
 
         format!(
-            "events={} supervision_updates={} plugin_faults={} last_watchdog={} last_fault={}",
+            "events={} supervision_updates={} plugin_faults={} recovery_events={} lifecycle_events={} transport_events={} heartbeat_events={} block_dispatch_events={} lease_rollover_events={} invalidation_events={} completion_slot_events={} transport_fault_events={} broker_failure_events={} sandbox_operation_failure_events={} last_watchdog={} last_fault={} last_recovery={} last_lifecycle={} last_transport={} last_heartbeat={} last_dispatch={} last_rollover={} last_invalidation={} last_completion_slot={} last_transport_fault={} last_broker_failure={} last_sandbox_operation_failure={}",
             self.total_events,
             self.supervision_update_count(),
             self.plugin_fault_count(),
+            self.recovery_event_count(),
+            self.lifecycle_event_count(),
+            self.transport_event_count(),
+            self.heartbeat_event_count(),
+            self.block_dispatch_event_count(),
+            self.lease_rollover_event_count(),
+            self.invalidation_event_count(),
+            self.completion_slot_event_count(),
+            self.transport_fault_event_count(),
+            self.broker_failure_event_count(),
+            self.sandbox_operation_failure_event_count(),
             last_trigger,
-            last_fault
+            last_fault,
+            last_recovery,
+            last_lifecycle,
+            last_transport,
+            last_heartbeat,
+            last_dispatch,
+            last_rollover,
+            last_invalidation,
+            last_completion_slot,
+            last_transport_fault,
+            last_broker_failure,
+            last_sandbox_operation_failure,
         )
     }
 }
@@ -321,11 +1867,16 @@ pub struct RuntimeObservationReport {
     pub supervision_snapshot: RuntimeSupervisionSnapshot,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
     pub automation_snapshot: RuntimeAutomationSnapshot,
+    pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
+    pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
+    pub transport_fault_summary: TransportFaultSummary,
+    pub transport_session_summary: TransportSessionSummary,
     pub observation: RuntimeObservationDiagnostics,
 }
 
 impl RuntimeObservationReport {
     pub fn capture(runtime: &impl RuntimeObservationApi, recorder: &RuntimeEventRecorder) -> Self {
+        let observation = recorder.diagnostics();
         Self {
             readiness: runtime.get_readiness(),
             effective_config: runtime.get_effective_config(),
@@ -334,7 +1885,13 @@ impl RuntimeObservationReport {
             supervision_snapshot: runtime.get_supervision_snapshot(),
             timeline_snapshot: runtime.get_timeline_snapshot(),
             automation_snapshot: runtime.get_automation_snapshot(),
-            observation: recorder.diagnostics(),
+            engine_block_snapshot: runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: runtime.get_transport_concurrency_snapshot(),
+            transport_fault_summary: TransportFaultSummary::from_records(
+                &observation.transport_fault_events,
+            ),
+            transport_session_summary: TransportSessionSummary::from_diagnostics(&observation),
+            observation,
         }
     }
 
@@ -353,7 +1910,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -377,7 +1934,191 @@ impl RuntimeObservationReport {
                 .block_sequence_continuity
                 .last_block_sequence(),
             automation,
-            self.observation.render_compact()
+            self.engine_block_snapshot.graph_id,
+            self.engine_block_snapshot.node_count,
+            self.engine_block_snapshot.stateful_node_count,
+            self.engine_block_snapshot.latency_node_count,
+            self.engine_block_snapshot.plugin_backed_node_count,
+            self.engine_block_snapshot.anticipative_planning_enabled,
+            self.engine_block_snapshot.inline_realtime_node_count,
+            self.engine_block_snapshot.stateful_realtime_node_count,
+            self.engine_block_snapshot.anticipative_eligible_node_count,
+            self.engine_block_snapshot.phase_count,
+            self.engine_block_snapshot.anticipative_phase_count,
+            self.engine_block_snapshot.phase_order,
+            self.engine_block_snapshot.lane_count,
+            self.engine_block_snapshot.anticipative_lane_count,
+            self.engine_block_snapshot.lane_order,
+            self.engine_block_snapshot.dispatch_count,
+            self.engine_block_snapshot.dispatch_boundary_count,
+            self.engine_block_snapshot.dispatch_order,
+            self.engine_block_snapshot.prepared_dispatch_count,
+            self.engine_block_snapshot.realtime_dispatch_count,
+            self.engine_block_snapshot.dispatch_handoff_count,
+            self.engine_block_snapshot.prework_cache_enabled,
+            self.engine_block_snapshot.prework_cache_state,
+            self.engine_block_snapshot.prework_service_state,
+            self.engine_block_snapshot.prework_service_pressure,
+            self.engine_block_snapshot.prework_service_semantic_policy,
+            self.engine_block_snapshot.prework_service_active_plugin_sandboxes,
+            self.engine_block_snapshot.prework_service_bound_plugin_sandboxes,
+            self.engine_block_snapshot
+                .prework_service_active_bound_plugin_sandboxes,
+            self.engine_block_snapshot
+                .prework_service_degraded_bound_plugin_sandboxes,
+            self.engine_block_snapshot
+                .prework_service_missing_bound_plugin_sandboxes,
+            self.engine_block_snapshot.prework_service_plugin_gate_active,
+            self.engine_block_snapshot.prework_pending_target_count,
+            self.engine_block_snapshot
+                .prework_pending_immediate_target_count,
+            self.engine_block_snapshot
+                .prework_pending_near_term_target_count,
+            self.engine_block_snapshot
+                .prework_pending_deferred_target_count,
+            self.engine_block_snapshot
+                .prework_next_pending_target_block_sequence,
+            self.engine_block_snapshot.prework_service_cycle_count,
+            self.engine_block_snapshot.prework_service_prepared_targets,
+            self.engine_block_snapshot.prework_service_pause_count,
+            self.engine_block_snapshot.prework_service_resume_count,
+            self.engine_block_snapshot.prework_service_starvation_count,
+            self.engine_block_snapshot.prework_service_throttle_count,
+            self.engine_block_snapshot.prework_service_yield_count,
+            self.engine_block_snapshot.last_prework_service_processing_epoch,
+            self.engine_block_snapshot
+                .last_prework_serviced_target_block_sequence,
+            self.engine_block_snapshot.last_prework_serviced_backlog_class,
+            self.engine_block_snapshot.prework_forecast_requested_mode,
+            self.engine_block_snapshot.prework_forecast_mode,
+            self.engine_block_snapshot.prework_forecast_policy_configured,
+            self.engine_block_snapshot.prework_forecast_profile,
+            self.engine_block_snapshot.prework_forecast_profile_source,
+            self.engine_block_snapshot
+                .prework_forecast_profile_target_window_override,
+            self.engine_block_snapshot
+                .prework_forecast_policy_target_window_blocks,
+            self.engine_block_snapshot.prework_cache_queue_capacity,
+            self.engine_block_snapshot.prework_cache_queue_depth,
+            self.engine_block_snapshot.prework_cache_peak_queue_depth,
+            self.engine_block_snapshot.prework_cache_window_target_count,
+            self.engine_block_snapshot.prework_cache_window_target_block_sequences,
+            self.engine_block_snapshot.prework_cache_freshness_state,
+            self.engine_block_snapshot.prework_cache_block_freshness_window,
+            self.engine_block_snapshot.prework_cache_remaining_valid_blocks,
+            self.engine_block_snapshot.prework_cache_admissions,
+            self.engine_block_snapshot.prework_cache_consumptions,
+            self.engine_block_snapshot.prework_cache_queued_admissions,
+            self.engine_block_snapshot.prework_cache_queued_consumptions,
+            self.engine_block_snapshot.prework_cache_hits,
+            self.engine_block_snapshot.prework_cache_misses,
+            self.engine_block_snapshot.prework_cache_invalidation_count,
+            self.engine_block_snapshot.prework_cache_retirement_count,
+            self.engine_block_snapshot.prework_cache_unconsumed_retirement_count,
+            self.engine_block_snapshot.prework_cache_consumed_retirement_count,
+            self.engine_block_snapshot.last_prework_cache_hit,
+            self.engine_block_snapshot.last_prework_invalidation_reason,
+            self.engine_block_snapshot.last_prework_retirement_reason,
+            self.engine_block_snapshot.last_prework_retired_unconsumed,
+            self.engine_block_snapshot
+                .prework_cache_valid_until_processing_epoch,
+            self.engine_block_snapshot.prework_cache_valid_until_block_sequence,
+            self.engine_block_snapshot
+                .last_prework_source_processing_epoch,
+            self.engine_block_snapshot.last_prework_source_block_sequence,
+            self.engine_block_snapshot
+                .last_prework_admission_processing_epoch,
+            self.engine_block_snapshot
+                .last_prework_admission_block_sequence,
+            self.engine_block_snapshot
+                .last_prework_admitted_from_block_sequence,
+            self.engine_block_snapshot
+                .last_prework_consumption_processing_epoch,
+            self.engine_block_snapshot
+                .last_prework_consumption_block_sequence,
+            self.engine_block_snapshot
+                .last_prework_consumed_from_block_sequence,
+            self.engine_block_snapshot
+                .last_prework_retirement_processing_epoch,
+            self.engine_block_snapshot
+                .last_prework_retirement_block_sequence,
+            self.engine_block_snapshot.stage_count,
+            self.engine_block_snapshot.total_latency_samples,
+            self.engine_block_snapshot.max_node_latency_samples,
+            self.engine_block_snapshot.processed_blocks,
+            self.engine_block_snapshot.last_block_sequence,
+            self.engine_block_snapshot.last_prework_output_peak,
+            self.engine_block_snapshot.last_realtime_input_peak,
+            self.engine_block_snapshot.last_output_peak,
+            self.engine_block_snapshot.last_output_rms,
+            self.engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.projection_epoch),
+            self.engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.parameter_epoch),
+            self.engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.anticipative_enabled),
+            self.engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.transport_playing),
+            self.engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.transport_tempo_bpm),
+            self.engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.timeline_position_samples),
+            self.transport_concurrency_snapshot.steady_session_limit,
+            self.transport_concurrency_snapshot.recovery_session_limit,
+            self.transport_concurrency_snapshot.current_attached_sessions,
+            self.transport_concurrency_snapshot.peak_attached_sessions,
+            self.transport_concurrency_snapshot
+                .current_recovery_overlap_sessions,
+            self.transport_concurrency_snapshot
+                .peak_recovery_overlap_sessions,
+            self.transport_concurrency_snapshot.pending_cleanup_work_items,
+            self.transport_concurrency_snapshot
+                .pending_deferred_retry_work_items,
+            self.transport_concurrency_snapshot.next_cleanup_epoch,
+            self.transport_concurrency_snapshot
+                .oldest_pending_cleanup_ready_epoch,
+            self.transport_fault_summary.boundary_mode,
+            self.transport_fault_summary.host_broker_events,
+            self.transport_fault_summary.sandbox_operation_events,
+            self.transport_fault_summary.runtime_dispatch_events,
+            self.transport_fault_summary.prepare_events,
+            self.transport_fault_summary.dispatch_events,
+            self.transport_fault_summary.teardown_events,
+            self.transport_fault_summary.control_events,
+            self.transport_session_summary.boundary_mode,
+            self.transport_session_summary.current_state,
+            self.transport_session_summary.currently_attached,
+            self.transport_session_summary.heartbeat_freshness,
+            self.transport_session_summary.dispatch_state,
+            self.transport_session_summary.current_attached_session_count,
+            self.transport_session_summary.max_concurrent_attached_sessions,
+            self.transport_session_summary.attach_events,
+            self.transport_session_summary.detach_requested_events,
+            self.transport_session_summary.detached_events,
+            self.transport_session_summary.detach_fault_events,
+            self.transport_session_summary.heartbeat_requested_events,
+            self.transport_session_summary.heartbeat_responded_events,
+            self.transport_session_summary.heartbeat_missed_events,
+            self.transport_session_summary.dispatch_requested_events,
+            self.transport_session_summary.dispatch_completed_events,
+            self.transport_session_summary.dispatch_timed_out_events,
+            format!(
+                "{} transport_concurrency_cleanup_waves={}",
+                self.observation.render_compact(),
+                self.transport_concurrency_snapshot.pending_cleanup_waves.len()
+            )
         )
     }
 }
@@ -406,6 +2147,52 @@ impl RuntimeSupervisorReport {
 
     pub fn plugin_fault_count(&self) -> usize {
         self.observation.observation.plugin_fault_count()
+    }
+
+    pub fn recovery_event_count(&self) -> usize {
+        self.observation.observation.recovery_event_count()
+    }
+
+    pub fn lifecycle_event_count(&self) -> usize {
+        self.observation.observation.lifecycle_event_count()
+    }
+
+    pub fn transport_event_count(&self) -> usize {
+        self.observation.observation.transport_event_count()
+    }
+
+    pub fn heartbeat_event_count(&self) -> usize {
+        self.observation.observation.heartbeat_event_count()
+    }
+
+    pub fn block_dispatch_event_count(&self) -> usize {
+        self.observation.observation.block_dispatch_event_count()
+    }
+
+    pub fn lease_rollover_event_count(&self) -> usize {
+        self.observation.observation.lease_rollover_event_count()
+    }
+
+    pub fn invalidation_event_count(&self) -> usize {
+        self.observation.observation.invalidation_event_count()
+    }
+
+    pub fn completion_slot_event_count(&self) -> usize {
+        self.observation.observation.completion_slot_event_count()
+    }
+
+    pub fn transport_fault_event_count(&self) -> usize {
+        self.observation.observation.transport_fault_event_count()
+    }
+
+    pub fn broker_failure_event_count(&self) -> usize {
+        self.observation.observation.broker_failure_event_count()
+    }
+
+    pub fn sandbox_operation_failure_event_count(&self) -> usize {
+        self.observation
+            .observation
+            .sandbox_operation_failure_event_count()
     }
 
     pub fn last_watchdog_trigger(&self) -> Option<RuntimeWatchdogTrigger> {
@@ -446,7 +2233,7 @@ impl RuntimeSupervisorReport {
             })
             .unwrap_or_default();
         format!(
-            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nlast_watchdog={}\nlast_fault={}",
+            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
             self.observation.readiness,
             self.observation.effective_config.sample_rate.0,
             self.observation.effective_config.block_size,
@@ -490,9 +2277,340 @@ impl RuntimeSupervisorReport {
                 .block_sequence_continuity
                 .lease_rollovers,
             automation,
+            self.observation.engine_block_snapshot.graph_id,
+            self.observation.engine_block_snapshot.node_count,
+            self.observation.engine_block_snapshot.stateful_node_count,
+            self.observation.engine_block_snapshot.latency_node_count,
+            self.observation.engine_block_snapshot.plugin_backed_node_count,
+            self.observation
+                .engine_block_snapshot
+                .anticipative_planning_enabled,
+            self.observation.engine_block_snapshot.inline_realtime_node_count,
+            self.observation.engine_block_snapshot.stateful_realtime_node_count,
+            self.observation
+                .engine_block_snapshot
+                .anticipative_eligible_node_count,
+            self.observation.engine_block_snapshot.phase_count,
+            self.observation
+                .engine_block_snapshot
+                .anticipative_phase_count,
+            self.observation.engine_block_snapshot.phase_order,
+            self.observation.engine_block_snapshot.lane_count,
+            self.observation.engine_block_snapshot.anticipative_lane_count,
+            self.observation.engine_block_snapshot.lane_order,
+            self.observation.engine_block_snapshot.dispatch_count,
+            self.observation
+                .engine_block_snapshot
+                .dispatch_boundary_count,
+            self.observation.engine_block_snapshot.dispatch_order,
+            self.observation.engine_block_snapshot.prepared_dispatch_count,
+            self.observation.engine_block_snapshot.realtime_dispatch_count,
+            self.observation.engine_block_snapshot.dispatch_handoff_count,
+            self.observation.engine_block_snapshot.prework_cache_enabled,
+            self.observation.engine_block_snapshot.prework_cache_state,
+            self.observation.engine_block_snapshot.prework_service_state,
+            self.observation.engine_block_snapshot.prework_service_pressure,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_semantic_policy,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_active_plugin_sandboxes,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_bound_plugin_sandboxes,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_active_bound_plugin_sandboxes,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_degraded_bound_plugin_sandboxes,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_missing_bound_plugin_sandboxes,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_plugin_gate_active,
+            self.observation
+                .engine_block_snapshot
+                .prework_pending_target_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_pending_immediate_target_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_pending_near_term_target_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_pending_deferred_target_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_next_pending_target_block_sequence,
+            self.observation.engine_block_snapshot.prework_service_cycle_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_prepared_targets,
+            self.observation.engine_block_snapshot.prework_service_pause_count,
+            self.observation.engine_block_snapshot.prework_service_resume_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_starvation_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_service_throttle_count,
+            self.observation.engine_block_snapshot.prework_service_yield_count,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_processing_epoch,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_requested_cycles,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_effective_cycles,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_cycle_count,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_budget_per_cycle,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_effective_budget_per_cycle,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_service_prepared_targets,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_serviced_target_block_sequence,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_serviced_backlog_class,
+            self.observation
+                .engine_block_snapshot
+                .prework_forecast_requested_mode,
+            self.observation.engine_block_snapshot.prework_forecast_mode,
+            self.observation
+                .engine_block_snapshot
+                .prework_forecast_policy_configured,
+            self.observation
+                .engine_block_snapshot
+                .prework_forecast_profile,
+            self.observation
+                .engine_block_snapshot
+                .prework_forecast_profile_source,
+            self.observation
+                .engine_block_snapshot
+                .prework_forecast_profile_target_window_override,
+            self.observation
+                .engine_block_snapshot
+                .prework_forecast_policy_target_window_blocks,
+            self.observation.engine_block_snapshot.prework_cache_queue_capacity,
+            self.observation.engine_block_snapshot.prework_cache_queue_depth,
+            self.observation.engine_block_snapshot.prework_cache_peak_queue_depth,
+            self.observation.engine_block_snapshot.prework_cache_window_target_count,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_window_target_block_sequences,
+            self.observation.engine_block_snapshot.prework_cache_freshness_state,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_block_freshness_window,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_remaining_valid_blocks,
+            self.observation.engine_block_snapshot.prework_cache_admissions,
+            self.observation.engine_block_snapshot.prework_cache_consumptions,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_queued_admissions,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_queued_consumptions,
+            self.observation.engine_block_snapshot.prework_cache_hits,
+            self.observation.engine_block_snapshot.prework_cache_misses,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_invalidation_count,
+            self.observation.engine_block_snapshot.last_prework_cache_hit,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_invalidation_reason,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_valid_until_processing_epoch,
+            self.observation
+                .engine_block_snapshot
+                .prework_cache_valid_until_block_sequence,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_source_processing_epoch,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_source_block_sequence,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_admission_processing_epoch,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_admission_block_sequence,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_admitted_from_block_sequence,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_consumption_processing_epoch,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_consumption_block_sequence,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_consumed_from_block_sequence,
+            self.observation.engine_block_snapshot.planned_nodes,
+            self.observation.engine_block_snapshot.stage_count,
+            self.observation.engine_block_snapshot.total_latency_samples,
+            self.observation.engine_block_snapshot.max_node_latency_samples,
+            self.observation.engine_block_snapshot.processed_blocks,
+            self.observation.engine_block_snapshot.last_processing_epoch,
+            self.observation.engine_block_snapshot.last_block_sequence,
+            self.observation.engine_block_snapshot.last_frame_count,
+            self.observation.engine_block_snapshot.last_channel_count,
+            self.observation.engine_block_snapshot.last_input_peak,
+            self.observation
+                .engine_block_snapshot
+                .last_prework_output_peak,
+            self.observation
+                .engine_block_snapshot
+                .last_realtime_input_peak,
+            self.observation.engine_block_snapshot.last_output_peak,
+            self.observation.engine_block_snapshot.last_output_rms,
+            self.observation.engine_block_snapshot.last_first_output_sample,
+            self.observation
+                .engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.projection_epoch),
+            self.observation
+                .engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.parameter_epoch),
+            self.observation
+                .engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.anticipative_enabled),
+            self.observation
+                .engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.transport_playing),
+            self.observation
+                .engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.transport_tempo_bpm),
+            self.observation
+                .engine_block_snapshot
+                .last_execution_context
+                .as_ref()
+                .map(|context| context.timeline_position_samples),
+            self.observation
+                .transport_concurrency_snapshot
+                .steady_session_limit,
+            self.observation
+                .transport_concurrency_snapshot
+                .recovery_session_limit,
+            self.observation
+                .transport_concurrency_snapshot
+                .current_attached_sessions,
+            self.observation.transport_concurrency_snapshot.peak_attached_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .current_recovery_overlap_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .peak_recovery_overlap_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .current_lingering_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .peak_lingering_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .current_detach_requested_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .current_detach_faulted_sessions,
+            self.observation.transport_concurrency_snapshot.active_sessions,
+            self.observation
+                .transport_concurrency_snapshot
+                .pending_cleanup_waves,
+            self.observation
+                .transport_concurrency_snapshot
+                .last_admitted_sandbox_id,
+            self.observation
+                .transport_concurrency_snapshot
+                .last_rejected_sandbox_id,
+            self.observation
+                .transport_concurrency_snapshot
+                .last_rejection_reason,
+            self.observation.transport_fault_summary.boundary_mode,
+            self.observation.transport_fault_summary.host_broker_events,
+            self.observation.transport_fault_summary.sandbox_operation_events,
+            self.observation.transport_fault_summary.runtime_dispatch_events,
+            self.observation.transport_fault_summary.prepare_events,
+            self.observation.transport_fault_summary.dispatch_events,
+            self.observation.transport_fault_summary.teardown_events,
+            self.observation.transport_fault_summary.control_events,
+            self.observation.transport_fault_summary.first_processing_epoch,
+            self.observation.transport_fault_summary.last_processing_epoch,
+            self.observation.transport_fault_summary.first_block_sequence,
+            self.observation.transport_fault_summary.last_block_sequence,
+            self.observation.transport_session_summary.boundary_mode,
+            self.observation.transport_session_summary.current_state,
+            self.observation.transport_session_summary.currently_attached,
+            self.observation.transport_session_summary.heartbeat_freshness,
+            self.observation.transport_session_summary.dispatch_state,
+            self.observation.transport_session_summary.current_attached_session_count,
+            self.observation.transport_session_summary.max_concurrent_attached_sessions,
+            self.observation.transport_session_summary.attach_events,
+            self.observation.transport_session_summary.detach_requested_events,
+            self.observation.transport_session_summary.detached_events,
+            self.observation.transport_session_summary.detach_fault_events,
+            self.observation.transport_session_summary.heartbeat_requested_events,
+            self.observation.transport_session_summary.heartbeat_responded_events,
+            self.observation.transport_session_summary.heartbeat_missed_events,
+            self.observation.transport_session_summary.dispatch_requested_events,
+            self.observation.transport_session_summary.dispatch_completed_events,
+            self.observation.transport_session_summary.dispatch_timed_out_events,
+            self.observation.transport_session_summary.first_processing_epoch,
+            self.observation.transport_session_summary.last_processing_epoch,
+            self.observation.transport_session_summary.first_block_sequence,
+            self.observation.transport_session_summary.last_block_sequence,
+            self.observation.transport_session_summary.active_sandbox_id,
+            self.observation.transport_session_summary.active_lease_id,
+            self.observation.transport_session_summary.active_region_id,
+            self.observation.transport_session_summary.active_block_sequence,
+            self.observation.transport_session_summary.active_sessions,
+            self.observation.transport_session_summary.last_sandbox_id,
+            self.observation.transport_session_summary.last_lease_id,
+            self.observation.transport_session_summary.last_region_id,
             self.event_count(),
             self.supervision_update_count(),
             self.plugin_fault_count(),
+            self.recovery_event_count(),
+            self.lifecycle_event_count(),
+            self.transport_event_count(),
+            self.heartbeat_event_count(),
+            self.block_dispatch_event_count(),
+            self.lease_rollover_event_count(),
+            self.invalidation_event_count(),
+            self.completion_slot_event_count(),
+            self.transport_fault_event_count(),
+            self.broker_failure_event_count(),
+            self.sandbox_operation_failure_event_count(),
             self.last_watchdog_trigger()
                 .map(|trigger| format!("{trigger:?}"))
                 .unwrap_or_else(|| "none".into()),
@@ -501,7 +2619,29 @@ impl RuntimeSupervisorReport {
                 .plugin_faults
                 .last()
                 .map(|fault| format!("{}:{:?}", fault.sandbox_id, fault.kind))
-                .unwrap_or_else(|| "none".into())
+                .unwrap_or_else(|| "none".into()),
+            self.observation.observation.last_recovery_event(),
+            self.observation.observation.last_lifecycle_event(),
+            self.observation.observation.last_transport_event(),
+            self.observation.observation.last_heartbeat_event(),
+            self.observation.observation.last_block_dispatch_event(),
+            self.observation.observation.last_lease_rollover_event(),
+            self.observation.observation.last_invalidation_event(),
+            self.observation.observation.last_completion_slot_event(),
+            self.observation.observation.last_transport_fault_event(),
+            self.observation.observation.last_broker_failure_event(),
+            self.observation.observation.last_sandbox_operation_failure_event(),
+            self.observation.observation.recovery_events,
+            self.observation.observation.lifecycle_events,
+            self.observation.observation.transport_events,
+            self.observation.observation.heartbeat_events,
+            self.observation.observation.block_dispatch_events,
+            self.observation.observation.lease_rollover_events,
+            self.observation.observation.invalidation_events,
+            self.observation.observation.completion_slot_events,
+            self.observation.observation.transport_fault_events,
+            self.observation.observation.broker_failure_events,
+            self.observation.observation.sandbox_operation_failure_events,
         )
     }
 
@@ -531,11 +2671,48 @@ impl RuntimeSupervisorReport {
                 "\"sequence_last_block\":{},",
                 "\"sequence_gaps\":{},",
                 "\"sequence_lease_rollovers\":{},",
+                "\"engine_block_snapshot\":{},",
+                "\"transport_concurrency_snapshot\":{},",
+                "\"transport_fault_summary\":{},",
+                "\"transport_session_summary\":{},",
                 "\"event_stream\":{},",
                 "\"supervision_updates\":{},",
                 "\"plugin_faults\":{},",
+                "\"recovery_events\":{},",
+                "\"lifecycle_events\":{},",
+                "\"transport_events\":{},",
+                "\"heartbeat_events\":{},",
+                "\"block_dispatch_events\":{},",
+                "\"lease_rollover_events\":{},",
+                "\"invalidation_events\":{},",
+                "\"completion_slot_events\":{},",
+                "\"transport_fault_events\":{},",
+                "\"broker_failure_events\":{},",
+                "\"sandbox_operation_failure_events\":{},",
                 "\"last_watchdog\":{},",
                 "\"last_fault\":{},",
+                "\"last_recovery\":{},",
+                "\"last_lifecycle\":{},",
+                "\"last_transport\":{},",
+                "\"last_heartbeat\":{},",
+                "\"last_dispatch\":{},",
+                "\"last_rollover\":{},",
+                "\"last_invalidation\":{},",
+                "\"last_completion_slot\":{},",
+                "\"last_transport_fault\":{},",
+                "\"last_broker_failure\":{},",
+                "\"last_sandbox_operation_failure\":{},",
+                "\"recovery_sequence\":{},",
+                "\"lifecycle_sequence\":{},",
+                "\"transport_sequence\":{},",
+                "\"heartbeat_sequence\":{},",
+                "\"block_dispatch_sequence\":{},",
+                "\"lease_rollover_sequence\":{},",
+                "\"invalidation_sequence\":{},",
+                "\"completion_slot_sequence\":{},",
+                "\"transport_fault_sequence\":{},",
+                "\"broker_failure_sequence\":{},",
+                "\"sandbox_operation_failure_sequence\":{},",
                 "\"automation\":{}",
                 "}}"
             ),
@@ -555,9 +2732,26 @@ impl RuntimeSupervisorReport {
             json_option_u64(timeline.last_block_sequence()),
             timeline.sequence_gaps,
             timeline.lease_rollovers,
+            json_runtime_engine_block_snapshot(&self.observation.engine_block_snapshot),
+            json_runtime_transport_concurrency_snapshot(
+                &self.observation.transport_concurrency_snapshot,
+            ),
+            json_transport_fault_summary(&self.observation.transport_fault_summary),
+            json_transport_session_summary(&self.observation.transport_session_summary),
             self.event_count(),
             self.supervision_update_count(),
             self.plugin_fault_count(),
+            self.recovery_event_count(),
+            self.lifecycle_event_count(),
+            self.transport_event_count(),
+            self.heartbeat_event_count(),
+            self.block_dispatch_event_count(),
+            self.lease_rollover_event_count(),
+            self.invalidation_event_count(),
+            self.completion_slot_event_count(),
+            self.transport_fault_event_count(),
+            self.broker_failure_event_count(),
+            self.sandbox_operation_failure_event_count(),
             json_option_string(
                 self.last_watchdog_trigger()
                     .map(|trigger| format!("{trigger:?}"))
@@ -567,6 +2761,37 @@ impl RuntimeSupervisorReport {
                 last_fault
                     .map(|fault| format!("{}:{:?}", fault.sandbox_id, fault.kind))
                     .as_deref(),
+            ),
+            json_recovery_record(self.observation.observation.last_recovery_event()),
+            json_lifecycle_record(self.observation.observation.last_lifecycle_event()),
+            json_transport_record(self.observation.observation.last_transport_event()),
+            json_heartbeat_record(self.observation.observation.last_heartbeat_event()),
+            json_block_dispatch_record(self.observation.observation.last_block_dispatch_event()),
+            json_lease_rollover_record(self.observation.observation.last_lease_rollover_event()),
+            json_broker_invalidation_record(self.observation.observation.last_invalidation_event()),
+            json_completion_slot_record(self.observation.observation.last_completion_slot_event(),),
+            json_transport_fault_record(self.observation.observation.last_transport_fault_event()),
+            json_broker_failure_record(self.observation.observation.last_broker_failure_event()),
+            json_sandbox_operation_failure_record(
+                self.observation
+                    .observation
+                    .last_sandbox_operation_failure_event(),
+            ),
+            json_recovery_record_vec(&self.observation.observation.recovery_events),
+            json_lifecycle_record_vec(&self.observation.observation.lifecycle_events),
+            json_transport_record_vec(&self.observation.observation.transport_events),
+            json_heartbeat_record_vec(&self.observation.observation.heartbeat_events),
+            json_block_dispatch_record_vec(&self.observation.observation.block_dispatch_events),
+            json_lease_rollover_record_vec(&self.observation.observation.lease_rollover_events),
+            json_broker_invalidation_record_vec(&self.observation.observation.invalidation_events),
+            json_completion_slot_record_vec(&self.observation.observation.completion_slot_events,),
+            json_transport_fault_record_vec(&self.observation.observation.transport_fault_events),
+            json_broker_failure_record_vec(&self.observation.observation.broker_failure_events),
+            json_sandbox_operation_failure_record_vec(
+                &self
+                    .observation
+                    .observation
+                    .sandbox_operation_failure_events,
             ),
             automation,
         )
@@ -589,6 +2814,20 @@ fn json_option_string(value: Option<&str>) -> String {
 }
 
 fn json_option_u64(value: Option<u64>) -> String {
+    match value {
+        Some(value) => value.to_string(),
+        None => "null".into(),
+    }
+}
+
+fn json_option_i64(value: Option<i64>) -> String {
+    match value {
+        Some(value) => value.to_string(),
+        None => "null".into(),
+    }
+}
+
+fn json_option_f64(value: Option<f64>) -> String {
     match value {
         Some(value) => value.to_string(),
         None => "null".into(),
@@ -646,6 +2885,372 @@ fn json_runtime_automation_snapshot(snapshot: &RuntimeAutomationSnapshot) -> Str
     )
 }
 
+fn json_runtime_engine_block_snapshot(snapshot: &RuntimeEngineBlockSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"graph_id\":{},",
+            "\"node_count\":{},",
+            "\"stateful_node_count\":{},",
+            "\"latency_node_count\":{},",
+            "\"plugin_backed_node_count\":{},",
+            "\"anticipative_planning_enabled\":{},",
+            "\"inline_realtime_node_count\":{},",
+            "\"stateful_realtime_node_count\":{},",
+            "\"anticipative_eligible_node_count\":{},",
+            "\"phase_count\":{},",
+            "\"anticipative_phase_count\":{},",
+            "\"phase_order\":{},",
+            "\"lane_count\":{},",
+            "\"anticipative_lane_count\":{},",
+            "\"lane_order\":{},",
+            "\"dispatch_count\":{},",
+            "\"dispatch_boundary_count\":{},",
+            "\"dispatch_order\":{},",
+            "\"prepared_dispatch_count\":{},",
+            "\"realtime_dispatch_count\":{},",
+            "\"dispatch_handoff_count\":{},",
+            "\"prework_cache_enabled\":{},",
+            "\"prework_cache_state\":\"{:?}\",",
+            "\"prework_cache_queue_capacity\":{},",
+            "\"prework_cache_queue_depth\":{},",
+            "\"prework_cache_peak_queue_depth\":{},",
+            "\"prework_pending_target_count\":{},",
+            "\"prework_pending_immediate_target_count\":{},",
+            "\"prework_pending_near_term_target_count\":{},",
+            "\"prework_pending_deferred_target_count\":{},",
+            "\"prework_next_pending_target_block_sequence\":{},",
+            "\"prework_service_state\":\"{:?}\",",
+            "\"prework_service_pressure\":\"{:?}\",",
+            "\"prework_service_semantic_policy\":\"{:?}\",",
+            "\"prework_service_active_plugin_sandboxes\":{},",
+            "\"prework_service_bound_plugin_sandboxes\":{},",
+            "\"prework_service_active_bound_plugin_sandboxes\":{},",
+            "\"prework_service_degraded_bound_plugin_sandboxes\":{},",
+            "\"prework_service_missing_bound_plugin_sandboxes\":{},",
+            "\"prework_service_plugin_gate_active\":{},",
+            "\"prework_service_cycle_count\":{},",
+            "\"prework_service_prepared_targets\":{},",
+            "\"prework_service_pause_count\":{},",
+            "\"prework_service_resume_count\":{},",
+            "\"prework_service_starvation_count\":{},",
+            "\"prework_service_throttle_count\":{},",
+            "\"prework_service_yield_count\":{},",
+            "\"last_prework_service_processing_epoch\":{},",
+            "\"last_prework_service_requested_cycles\":{},",
+            "\"last_prework_service_effective_cycles\":{},",
+            "\"last_prework_service_cycle_count\":{},",
+            "\"last_prework_service_budget_per_cycle\":{},",
+            "\"last_prework_service_effective_budget_per_cycle\":{},",
+            "\"last_prework_service_prepared_targets\":{},",
+            "\"last_prework_serviced_target_block_sequence\":{},",
+            "\"last_prework_serviced_backlog_class\":{},",
+            "\"prework_forecast_requested_mode\":\"{:?}\",",
+            "\"prework_forecast_mode\":\"{:?}\",",
+            "\"prework_forecast_policy_configured\":{},",
+            "\"prework_forecast_profile\":{},",
+            "\"prework_forecast_profile_source\":{},",
+            "\"prework_forecast_profile_target_window_override\":{},",
+            "\"prework_forecast_policy_target_window_blocks\":{},",
+            "\"prework_cache_freshness_state\":\"{:?}\",",
+            "\"prework_cache_block_freshness_window\":{},",
+            "\"prework_cache_remaining_valid_blocks\":{},",
+            "\"prework_cache_admissions\":{},",
+            "\"prework_cache_consumptions\":{},",
+            "\"prework_cache_queued_admissions\":{},",
+            "\"prework_cache_queued_consumptions\":{},",
+            "\"prework_cache_hits\":{},",
+            "\"prework_cache_misses\":{},",
+            "\"prework_cache_invalidation_count\":{},",
+            "\"prework_cache_retirement_count\":{},",
+            "\"prework_cache_unconsumed_retirement_count\":{},",
+            "\"prework_cache_consumed_retirement_count\":{},",
+            "\"last_prework_cache_hit\":{},",
+            "\"last_prework_invalidation_reason\":{},",
+            "\"last_prework_retirement_reason\":{},",
+            "\"last_prework_retired_unconsumed\":{},",
+            "\"prework_cache_valid_until_processing_epoch\":{},",
+            "\"prework_cache_valid_until_block_sequence\":{},",
+            "\"last_prework_source_processing_epoch\":{},",
+            "\"last_prework_source_block_sequence\":{},",
+            "\"last_prework_admission_processing_epoch\":{},",
+            "\"last_prework_admission_block_sequence\":{},",
+            "\"last_prework_admitted_from_block_sequence\":{},",
+            "\"last_prework_consumption_processing_epoch\":{},",
+            "\"last_prework_consumption_block_sequence\":{},",
+            "\"last_prework_consumed_from_block_sequence\":{},",
+            "\"last_prework_retirement_processing_epoch\":{},",
+            "\"last_prework_retirement_block_sequence\":{},",
+            "\"planned_nodes\":{},",
+            "\"stage_count\":{},",
+            "\"total_latency_samples\":{},",
+            "\"max_node_latency_samples\":{},",
+            "\"processed_blocks\":{},",
+            "\"last_processing_epoch\":{},",
+            "\"last_block_sequence\":{},",
+            "\"last_frame_count\":{},",
+            "\"last_channel_count\":{},",
+            "\"last_input_peak\":{},",
+            "\"last_prework_output_peak\":{},",
+            "\"last_realtime_input_peak\":{},",
+            "\"last_output_peak\":{},",
+            "\"last_output_rms\":{},",
+            "\"last_first_output_sample\":{},",
+            "\"last_execution_context\":{}",
+            "}}"
+        ),
+        json_option_string(snapshot.graph_id.as_deref()),
+        snapshot.node_count,
+        snapshot.stateful_node_count,
+        snapshot.latency_node_count,
+        snapshot.plugin_backed_node_count,
+        snapshot.anticipative_planning_enabled,
+        snapshot.inline_realtime_node_count,
+        snapshot.stateful_realtime_node_count,
+        snapshot.anticipative_eligible_node_count,
+        snapshot.phase_count,
+        snapshot.anticipative_phase_count,
+        json_runtime_planning_group_order(&snapshot.phase_order),
+        snapshot.lane_count,
+        snapshot.anticipative_lane_count,
+        json_runtime_execution_lane_order(&snapshot.lane_order),
+        snapshot.dispatch_count,
+        snapshot.dispatch_boundary_count,
+        json_runtime_execution_lane_order(&snapshot.dispatch_order),
+        snapshot.prepared_dispatch_count,
+        snapshot.realtime_dispatch_count,
+        snapshot.dispatch_handoff_count,
+        snapshot.prework_cache_enabled,
+        snapshot.prework_cache_state,
+        snapshot.prework_cache_queue_capacity,
+        snapshot.prework_cache_queue_depth,
+        snapshot.prework_cache_peak_queue_depth,
+        snapshot.prework_pending_target_count,
+        snapshot.prework_pending_immediate_target_count,
+        snapshot.prework_pending_near_term_target_count,
+        snapshot.prework_pending_deferred_target_count,
+        json_option_u64(snapshot.prework_next_pending_target_block_sequence),
+        snapshot.prework_service_state,
+        snapshot.prework_service_pressure,
+        snapshot.prework_service_semantic_policy,
+        snapshot.prework_service_active_plugin_sandboxes,
+        snapshot.prework_service_bound_plugin_sandboxes,
+        snapshot.prework_service_active_bound_plugin_sandboxes,
+        snapshot.prework_service_degraded_bound_plugin_sandboxes,
+        snapshot.prework_service_missing_bound_plugin_sandboxes,
+        snapshot.prework_service_plugin_gate_active,
+        snapshot.prework_service_cycle_count,
+        snapshot.prework_service_prepared_targets,
+        snapshot.prework_service_pause_count,
+        snapshot.prework_service_resume_count,
+        snapshot.prework_service_starvation_count,
+        snapshot.prework_service_throttle_count,
+        snapshot.prework_service_yield_count,
+        json_option_u64(snapshot.last_prework_service_processing_epoch),
+        snapshot.last_prework_service_requested_cycles,
+        snapshot.last_prework_service_effective_cycles,
+        snapshot.last_prework_service_cycle_count,
+        match snapshot.last_prework_service_budget_per_cycle {
+            Some(value) => value.to_string(),
+            None => "null".into(),
+        },
+        match snapshot.last_prework_service_effective_budget_per_cycle {
+            Some(value) => value.to_string(),
+            None => "null".into(),
+        },
+        snapshot.last_prework_service_prepared_targets,
+        json_option_u64(snapshot.last_prework_serviced_target_block_sequence),
+        json_option_string(
+            snapshot
+                .last_prework_serviced_backlog_class
+                .map(|backlog| format!("{backlog:?}"))
+                .as_deref(),
+        ),
+        snapshot.prework_forecast_requested_mode,
+        snapshot.prework_forecast_mode,
+        snapshot.prework_forecast_policy_configured,
+        json_option_string(
+            snapshot
+                .prework_forecast_profile
+                .map(|profile| format!("{profile:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            snapshot
+                .prework_forecast_profile_source
+                .map(|source| format!("{source:?}"))
+                .as_deref(),
+        ),
+        match snapshot.prework_forecast_profile_target_window_override {
+            Some(value) => value.to_string(),
+            None => "null".into(),
+        },
+        match snapshot.prework_forecast_policy_target_window_blocks {
+            Some(value) => value.to_string(),
+            None => "null".into(),
+        },
+        snapshot.prework_cache_freshness_state,
+        snapshot.prework_cache_block_freshness_window,
+        json_option_u64(snapshot.prework_cache_remaining_valid_blocks),
+        snapshot.prework_cache_admissions,
+        snapshot.prework_cache_consumptions,
+        snapshot.prework_cache_queued_admissions,
+        snapshot.prework_cache_queued_consumptions,
+        snapshot.prework_cache_hits,
+        snapshot.prework_cache_misses,
+        snapshot.prework_cache_invalidation_count,
+        snapshot.prework_cache_retirement_count,
+        snapshot.prework_cache_unconsumed_retirement_count,
+        snapshot.prework_cache_consumed_retirement_count,
+        snapshot.last_prework_cache_hit,
+        json_option_string(
+            snapshot
+                .last_prework_invalidation_reason
+                .map(|reason| format!("{reason:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            snapshot
+                .last_prework_retirement_reason
+                .map(|reason| format!("{reason:?}"))
+                .as_deref(),
+        ),
+        match snapshot.last_prework_retired_unconsumed {
+            Some(value) => value.to_string(),
+            None => "null".into(),
+        },
+        json_option_u64(snapshot.prework_cache_valid_until_processing_epoch),
+        json_option_u64(snapshot.prework_cache_valid_until_block_sequence),
+        json_option_u64(snapshot.last_prework_source_processing_epoch),
+        json_option_u64(snapshot.last_prework_source_block_sequence),
+        json_option_u64(snapshot.last_prework_admission_processing_epoch),
+        json_option_u64(snapshot.last_prework_admission_block_sequence),
+        json_option_u64(snapshot.last_prework_admitted_from_block_sequence),
+        json_option_u64(snapshot.last_prework_consumption_processing_epoch),
+        json_option_u64(snapshot.last_prework_consumption_block_sequence),
+        json_option_u64(snapshot.last_prework_consumed_from_block_sequence),
+        json_option_u64(snapshot.last_prework_retirement_processing_epoch),
+        json_option_u64(snapshot.last_prework_retirement_block_sequence),
+        json_runtime_planned_graph_nodes(&snapshot.planned_nodes),
+        snapshot.stage_count,
+        snapshot.total_latency_samples,
+        snapshot.max_node_latency_samples,
+        snapshot.processed_blocks,
+        json_option_u64(snapshot.last_processing_epoch),
+        json_option_u64(snapshot.last_block_sequence),
+        snapshot.last_frame_count,
+        snapshot.last_channel_count,
+        json_option_f32(snapshot.last_input_peak),
+        json_option_f32(snapshot.last_prework_output_peak),
+        json_option_f32(snapshot.last_realtime_input_peak),
+        json_option_f32(snapshot.last_output_peak),
+        json_option_f32(snapshot.last_output_rms),
+        json_option_f32(snapshot.last_first_output_sample),
+        snapshot
+            .last_execution_context
+            .as_ref()
+            .map(json_graph_execution_context)
+            .unwrap_or_else(|| "null".into()),
+    )
+}
+
+fn json_runtime_planned_graph_nodes(nodes: &[RuntimePlannedGraphNode]) -> String {
+    format!(
+        "[{}]",
+        nodes
+            .iter()
+            .map(|node| {
+                format!(
+                    concat!(
+                        "{{",
+                        "\"node_id\":{},",
+                        "\"plugin_sandbox_id\":{},",
+                        "\"execution_class\":{},",
+                        "\"group\":{},",
+                        "\"latency_samples\":{}",
+                        "}}"
+                    ),
+                    json_option_string(Some(node.node_id.as_str())),
+                    json_option_string(node.plugin_sandbox_id.as_deref()),
+                    json_option_string(Some(match node.execution_class {
+                        GraphNodeExecutionClass::PureTransform => "PureTransform",
+                        GraphNodeExecutionClass::Stateful => "Stateful",
+                        GraphNodeExecutionClass::LatencyBearing => "LatencyBearing",
+                        GraphNodeExecutionClass::PluginBacked => "PluginBacked",
+                    })),
+                    json_option_string(Some(match node.group {
+                        GraphNodePlanningGroup::InlineRealtime => "InlineRealtime",
+                        GraphNodePlanningGroup::StatefulRealtime => "StatefulRealtime",
+                        GraphNodePlanningGroup::AnticipativeEligible => "AnticipativeEligible",
+                    })),
+                    node.latency_samples,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_planning_group_order(groups: &[GraphNodePlanningGroup]) -> String {
+    format!(
+        "[{}]",
+        groups
+            .iter()
+            .map(|group| {
+                json_option_string(Some(match group {
+                    GraphNodePlanningGroup::InlineRealtime => "InlineRealtime",
+                    GraphNodePlanningGroup::StatefulRealtime => "StatefulRealtime",
+                    GraphNodePlanningGroup::AnticipativeEligible => "AnticipativeEligible",
+                }))
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_execution_lane_order(lanes: &[GraphExecutionLane]) -> String {
+    format!(
+        "[{}]",
+        lanes
+            .iter()
+            .map(|lane| {
+                json_option_string(Some(match lane {
+                    GraphExecutionLane::Realtime => "Realtime",
+                    GraphExecutionLane::Anticipative => "Anticipative",
+                }))
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_graph_execution_context(context: &GraphExecutionContext) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"processing_epoch\":{},",
+            "\"block_sequence\":{},",
+            "\"projection_epoch\":{},",
+            "\"parameter_epoch\":{},",
+            "\"configured_block_size\":{},",
+            "\"anticipative_enabled\":{},",
+            "\"transport_playing\":{},",
+            "\"transport_tempo_bpm\":{},",
+            "\"timeline_position_samples\":{}",
+            "}}"
+        ),
+        context.processing_epoch,
+        context.block_sequence,
+        context.projection_epoch,
+        context.parameter_epoch,
+        context.configured_block_size,
+        context.anticipative_enabled,
+        context.transport_playing,
+        json_option_f64(Some(context.transport_tempo_bpm)),
+        json_option_i64(Some(context.timeline_position_samples)),
+    )
+}
+
 fn json_runtime_control_snapshot(snapshot: &RuntimeControlSnapshot) -> String {
     let last_stop_reason = snapshot
         .last_stop_reason
@@ -687,6 +3292,687 @@ fn json_runtime_control_snapshot(snapshot: &RuntimeControlSnapshot) -> String {
         json_option_string(last_stop_reason.as_deref()),
         json_option_string(last_reconfigure.as_deref()),
     )
+}
+
+fn json_transport_fault_summary(summary: &TransportFaultSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"boundary_mode\":{},",
+            "\"total_events\":{},",
+            "\"host_broker_events\":{},",
+            "\"sandbox_operation_events\":{},",
+            "\"runtime_dispatch_events\":{},",
+            "\"prepare_events\":{},",
+            "\"dispatch_events\":{},",
+            "\"teardown_events\":{},",
+            "\"control_events\":{},",
+            "\"first_processing_epoch\":{},",
+            "\"last_processing_epoch\":{},",
+            "\"first_block_sequence\":{},",
+            "\"last_block_sequence\":{}",
+            "}}"
+        ),
+        json_escape_string(&format!("{:?}", summary.boundary_mode)),
+        summary.total_events,
+        summary.host_broker_events,
+        summary.sandbox_operation_events,
+        summary.runtime_dispatch_events,
+        summary.prepare_events,
+        summary.dispatch_events,
+        summary.teardown_events,
+        summary.control_events,
+        json_option_u64(summary.first_processing_epoch),
+        json_option_u64(summary.last_processing_epoch),
+        json_option_u64(summary.first_block_sequence),
+        json_option_u64(summary.last_block_sequence),
+    )
+}
+
+fn json_runtime_transport_concurrency_snapshot(
+    snapshot: &RuntimeTransportConcurrencySnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"steady_session_limit\":{},",
+            "\"recovery_session_limit\":{},",
+            "\"current_attached_sessions\":{},",
+            "\"peak_attached_sessions\":{},",
+            "\"current_recovery_overlap_sessions\":{},",
+            "\"peak_recovery_overlap_sessions\":{},",
+            "\"current_lingering_sessions\":{},",
+            "\"peak_lingering_sessions\":{},",
+            "\"current_detach_requested_sessions\":{},",
+            "\"current_detach_faulted_sessions\":{},",
+            "\"pending_cleanup_work_items\":{},",
+            "\"pending_deferred_retry_work_items\":{},",
+            "\"next_cleanup_epoch\":{},",
+            "\"oldest_pending_cleanup_ready_epoch\":{},",
+            "\"pending_cleanup_waves\":{},",
+            "\"active_sessions\":{},",
+            "\"last_admitted_sandbox_id\":{},",
+            "\"last_rejected_sandbox_id\":{},",
+            "\"last_rejection_reason\":{}",
+            "}}"
+        ),
+        snapshot.steady_session_limit,
+        snapshot.recovery_session_limit,
+        snapshot.current_attached_sessions,
+        snapshot.peak_attached_sessions,
+        snapshot.current_recovery_overlap_sessions,
+        snapshot.peak_recovery_overlap_sessions,
+        snapshot.current_lingering_sessions,
+        snapshot.peak_lingering_sessions,
+        snapshot.current_detach_requested_sessions,
+        snapshot.current_detach_faulted_sessions,
+        snapshot.pending_cleanup_work_items,
+        snapshot.pending_deferred_retry_work_items,
+        snapshot.next_cleanup_epoch,
+        json_option_u64(snapshot.oldest_pending_cleanup_ready_epoch),
+        json_pending_lingering_cleanup_wave_summary_vec(&snapshot.pending_cleanup_waves),
+        json_active_transport_concurrency_session_vec(&snapshot.active_sessions),
+        json_option_string(snapshot.last_admitted_sandbox_id.as_deref()),
+        json_option_string(snapshot.last_rejected_sandbox_id.as_deref()),
+        json_option_string(snapshot.last_rejection_reason.as_deref()),
+    )
+}
+
+fn json_transport_session_summary(summary: &TransportSessionSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"boundary_mode\":{},",
+            "\"current_state\":{},",
+            "\"currently_attached\":{},",
+            "\"heartbeat_freshness\":{},",
+            "\"dispatch_state\":{},",
+            "\"current_attached_session_count\":{},",
+            "\"max_concurrent_attached_sessions\":{},",
+            "\"attach_events\":{},",
+            "\"detach_requested_events\":{},",
+            "\"detached_events\":{},",
+            "\"detach_fault_events\":{},",
+            "\"heartbeat_requested_events\":{},",
+            "\"heartbeat_responded_events\":{},",
+            "\"heartbeat_missed_events\":{},",
+            "\"dispatch_requested_events\":{},",
+            "\"dispatch_completed_events\":{},",
+            "\"dispatch_timed_out_events\":{},",
+            "\"first_processing_epoch\":{},",
+            "\"last_processing_epoch\":{},",
+            "\"first_block_sequence\":{},",
+            "\"last_block_sequence\":{},",
+            "\"active_sandbox_id\":{},",
+            "\"active_lease_id\":{},",
+            "\"active_region_id\":{},",
+            "\"active_block_sequence\":{},",
+            "\"active_sessions\":{},",
+            "\"last_sandbox_id\":{},",
+            "\"last_lease_id\":{},",
+            "\"last_region_id\":{}",
+            "}}"
+        ),
+        json_escape_string(&format!("{:?}", summary.boundary_mode)),
+        json_escape_string(&format!("{:?}", summary.current_state)),
+        summary.currently_attached,
+        json_escape_string(&format!("{:?}", summary.heartbeat_freshness)),
+        json_escape_string(&format!("{:?}", summary.dispatch_state)),
+        summary.current_attached_session_count,
+        summary.max_concurrent_attached_sessions,
+        summary.attach_events,
+        summary.detach_requested_events,
+        summary.detached_events,
+        summary.detach_fault_events,
+        summary.heartbeat_requested_events,
+        summary.heartbeat_responded_events,
+        summary.heartbeat_missed_events,
+        summary.dispatch_requested_events,
+        summary.dispatch_completed_events,
+        summary.dispatch_timed_out_events,
+        json_option_u64(summary.first_processing_epoch),
+        json_option_u64(summary.last_processing_epoch),
+        json_option_u64(summary.first_block_sequence),
+        json_option_u64(summary.last_block_sequence),
+        json_option_string(summary.active_sandbox_id.as_deref()),
+        json_option_string(summary.active_lease_id.as_deref()),
+        json_option_string(summary.active_region_id.as_deref()),
+        json_option_u64(summary.active_block_sequence),
+        json_active_transport_session_record_vec(&summary.active_sessions),
+        json_option_string(summary.last_sandbox_id.as_deref()),
+        json_option_string(summary.last_lease_id.as_deref()),
+        json_option_string(summary.last_region_id.as_deref()),
+    )
+}
+
+fn json_active_transport_concurrency_session(
+    session: &ActiveTransportConcurrencySession,
+) -> String {
+    let last_cleanup_mode = session.last_cleanup_mode.map(|mode| format!("{mode:?}"));
+    format!(
+        concat!(
+            "{{",
+            "\"sandbox_id\":{},",
+            "\"lease_id\":{},",
+            "\"region_id\":{},",
+            "\"intent\":{},",
+            "\"provenance\":{},",
+            "\"attach_sequence\":{},",
+            "\"attach_processing_epoch\":{},",
+            "\"state\":{},",
+            "\"backing_path\":{},",
+            "\"total_bytes\":{},",
+            "\"cleanup_attempt_count\":{},",
+            "\"last_cleanup_mode\":{},",
+            "\"last_cleanup_wave\":{},",
+            "\"cleanup_in_progress\":{},",
+            "\"last_cleanup_epoch\":{},",
+            "\"last_cleanup_error\":{}",
+            "}}"
+        ),
+        json_escape_string(&session.sandbox_id),
+        json_escape_string(&session.lease_id),
+        json_escape_string(&session.region_id),
+        json_escape_string(&format!("{:?}", session.intent)),
+        json_escape_string(&format!("{:?}", session.provenance)),
+        session.attach_sequence,
+        json_option_u64(session.attach_processing_epoch),
+        json_escape_string(&format!("{:?}", session.state)),
+        json_option_string(session.backing_path.as_deref()),
+        json_option_u64(session.total_bytes.map(u64::from)),
+        session.cleanup_attempt_count,
+        json_option_string(last_cleanup_mode.as_deref()),
+        json_option_u64(session.last_cleanup_wave),
+        session.cleanup_in_progress,
+        json_option_u64(session.last_cleanup_epoch),
+        json_option_string(session.last_cleanup_error.as_deref()),
+    )
+}
+
+fn json_active_transport_concurrency_session_vec(
+    sessions: &[ActiveTransportConcurrencySession],
+) -> String {
+    let joined = sessions
+        .iter()
+        .map(json_active_transport_concurrency_session)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_pending_lingering_cleanup_wave_summary(
+    wave: &PendingLingeringCleanupWaveSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"sandbox_id\":{},",
+            "\"cleanup_wave\":{},",
+            "\"mode\":{},",
+            "\"first_trigger\":{},",
+            "\"latest_trigger\":{},",
+            "\"pending_work_items\":{},",
+            "\"deferred_retry_work_items\":{},",
+            "\"first_cleanup_epoch\":{},",
+            "\"latest_cleanup_epoch\":{},",
+            "\"first_processing_epoch\":{},",
+            "\"latest_processing_epoch\":{},",
+            "\"oldest_ready_at_processing_epoch\":{},",
+            "\"newest_ready_at_processing_epoch\":{}",
+            "}}"
+        ),
+        json_escape_string(&wave.sandbox_id),
+        wave.cleanup_wave,
+        json_escape_string(&format!("{:?}", wave.mode)),
+        json_escape_string(&format!("{:?}", wave.first_trigger)),
+        json_escape_string(&format!("{:?}", wave.latest_trigger)),
+        wave.pending_work_items,
+        wave.deferred_retry_work_items,
+        wave.first_cleanup_epoch,
+        wave.latest_cleanup_epoch,
+        wave.first_processing_epoch,
+        wave.latest_processing_epoch,
+        wave.oldest_ready_at_processing_epoch,
+        wave.newest_ready_at_processing_epoch,
+    )
+}
+
+fn json_pending_lingering_cleanup_wave_summary_vec(
+    waves: &[PendingLingeringCleanupWaveSummary],
+) -> String {
+    let joined = waves
+        .iter()
+        .map(json_pending_lingering_cleanup_wave_summary)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_active_transport_session_record(record: &ActiveTransportSessionRecord) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"sandbox_id\":{},",
+            "\"lease_id\":{},",
+            "\"region_id\":{},",
+            "\"state\":{},",
+            "\"currently_attached\":{},",
+            "\"heartbeat_freshness\":{},",
+            "\"dispatch_state\":{},",
+            "\"processing_epoch\":{},",
+            "\"active_block_sequence\":{},",
+            "\"transport_fault_count\":{},",
+            "\"last_transport_fault_source\":{},",
+            "\"last_transport_fault_stage\":{},",
+            "\"last_transport_fault_phase\":{},",
+            "\"last_transport_fault_processing_epoch\":{},",
+            "\"last_transport_fault_block_sequence\":{}",
+            "}}"
+        ),
+        json_escape_string(&record.sandbox_id),
+        json_escape_string(&record.lease_id),
+        json_escape_string(&record.region_id),
+        json_escape_string(&format!("{:?}", record.state)),
+        record.currently_attached,
+        json_escape_string(&format!("{:?}", record.heartbeat_freshness)),
+        json_escape_string(&format!("{:?}", record.dispatch_state)),
+        json_option_u64(record.processing_epoch),
+        json_option_u64(record.active_block_sequence),
+        record.transport_fault_count,
+        json_option_string(
+            record
+                .last_transport_fault_source
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            record
+                .last_transport_fault_stage
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            record
+                .last_transport_fault_phase
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_u64(record.last_transport_fault_processing_epoch),
+        json_option_u64(record.last_transport_fault_block_sequence),
+    )
+}
+
+fn json_active_transport_session_record_vec(records: &[ActiveTransportSessionRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(json_active_transport_session_record)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_recovery_record(record: Option<&RecoveryRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"intent\":{},",
+                "\"stop_reason\":{},",
+                "\"processing_epoch\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&format!("{:?}", record.intent)),
+            json_escape_string(&format!("{:?}", record.stop_reason)),
+            json_option_u64(record.processing_epoch),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_recovery_record_vec(records: &[RecoveryRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_recovery_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_lifecycle_record(record: Option<&PluginSandboxLifecycleRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"stage\":{},",
+                "\"processing_epoch\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_option_u64(record.processing_epoch),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_lifecycle_record_vec(records: &[PluginSandboxLifecycleRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_lifecycle_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_transport_record(record: Option<&PluginSandboxTransportRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"region_id\":{},",
+                "\"stage\":{},",
+                "\"processing_epoch\":{},",
+                "\"detail\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&record.lease_id),
+            json_escape_string(&record.region_id),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_option_u64(record.processing_epoch),
+            json_option_string(record.detail.as_deref()),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_transport_record_vec(records: &[PluginSandboxTransportRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_transport_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_heartbeat_record(record: Option<&HeartbeatCycleRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"stage\":{},",
+                "\"processing_epoch\":{},",
+                "\"block_sequence\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_option_u64(record.processing_epoch),
+            json_option_u64(record.block_sequence),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_heartbeat_record_vec(records: &[HeartbeatCycleRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_heartbeat_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_block_dispatch_record(record: Option<&BlockDispatchRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"block_sequence\":{},",
+                "\"frame_count\":{},",
+                "\"stage\":{},",
+                "\"completion_state\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&record.lease_id),
+            record.processing_epoch,
+            record.block_sequence,
+            record.frame_count,
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_option_string(
+                record
+                    .completion_state
+                    .map(|state| format!("{state:?}"))
+                    .as_deref()
+            ),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_block_dispatch_record_vec(records: &[BlockDispatchRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_block_dispatch_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_lease_rollover_record(record: Option<&LeaseRolloverRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"previous_lease_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"first_block_sequence\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&record.previous_lease_id),
+            json_escape_string(&record.lease_id),
+            record.processing_epoch,
+            record.first_block_sequence,
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_lease_rollover_record_vec(records: &[LeaseRolloverRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_lease_rollover_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_broker_invalidation_record(record: Option<&BrokerInvalidationRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"block_sequence\":{},",
+                "\"stage\":{},",
+                "\"reason\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&record.lease_id),
+            record.processing_epoch,
+            json_option_u64(record.block_sequence),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_escape_string(&record.reason),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_broker_invalidation_record_vec(records: &[BrokerInvalidationRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_broker_invalidation_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_completion_slot_record(record: Option<&CompletionSlotRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"block_sequence\":{},",
+                "\"stage\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_escape_string(&record.lease_id),
+            record.processing_epoch,
+            record.block_sequence,
+            json_escape_string(&format!("{:?}", record.stage)),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_completion_slot_record_vec(records: &[CompletionSlotRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_completion_slot_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_transport_fault_record(record: Option<&TransportFaultRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"block_sequence\":{},",
+                "\"source\":{},",
+                "\"stage\":{},",
+                "\"phase\":{},",
+                "\"resource\":{},",
+                "\"operation\":{},",
+                "\"error_kind\":{},",
+                "\"detail\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_option_string(record.lease_id.as_deref()),
+            json_option_u64(record.processing_epoch),
+            json_option_u64(record.block_sequence),
+            json_escape_string(&format!("{:?}", record.source)),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_escape_string(&format!("{:?}", record.phase)),
+            json_escape_string(&format!("{:?}", record.resource)),
+            json_escape_string(&record.operation),
+            json_option_string(record.error_kind.as_deref()),
+            json_escape_string(&record.detail),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_transport_fault_record_vec(records: &[TransportFaultRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_transport_fault_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_broker_failure_record(record: Option<&BrokerFailureRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"block_sequence\":{},",
+                "\"stage\":{},",
+                "\"detail\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_option_string(record.lease_id.as_deref()),
+            json_option_u64(record.processing_epoch),
+            json_option_u64(record.block_sequence),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_escape_string(&record.detail),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_broker_failure_record_vec(records: &[BrokerFailureRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_broker_failure_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_sandbox_operation_failure_record(record: Option<&SandboxOperationFailureRecord>) -> String {
+    match record {
+        Some(record) => format!(
+            concat!(
+                "{{",
+                "\"sandbox_id\":{},",
+                "\"lease_id\":{},",
+                "\"processing_epoch\":{},",
+                "\"operation\":{},",
+                "\"error_kind\":{},",
+                "\"stage\":{},",
+                "\"detail\":{}",
+                "}}"
+            ),
+            json_escape_string(&record.sandbox_id),
+            json_option_string(record.lease_id.as_deref()),
+            json_option_u64(record.processing_epoch),
+            json_escape_string(&record.operation),
+            json_escape_string(&record.error_kind),
+            json_escape_string(&format!("{:?}", record.stage)),
+            json_escape_string(&record.detail),
+        ),
+        None => "null".into(),
+    }
+}
+
+fn json_sandbox_operation_failure_record_vec(records: &[SandboxOperationFailureRecord]) -> String {
+    let joined = records
+        .iter()
+        .map(|record| json_sandbox_operation_failure_record(Some(record)))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
 }
 
 #[derive(Clone, Default)]
@@ -739,11 +4025,546 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    pub fn recovery_events(&self) -> Vec<RecoveryRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::RecoveryCycle {
+                    sandbox_id,
+                    intent,
+                    stop_reason,
+                    processing_epoch,
+                } => Some(RecoveryRecord {
+                    sandbox_id,
+                    intent,
+                    stop_reason,
+                    processing_epoch,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn lifecycle_events(&self) -> Vec<PluginSandboxLifecycleRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::PluginSandboxLifecycle {
+                    sandbox_id,
+                    stage,
+                    processing_epoch,
+                } => Some(PluginSandboxLifecycleRecord {
+                    sandbox_id,
+                    stage,
+                    processing_epoch,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn transport_events(&self) -> Vec<PluginSandboxTransportRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::PluginSandboxTransport {
+                    sandbox_id,
+                    lease_id,
+                    region_id,
+                    stage,
+                    processing_epoch,
+                    detail,
+                } => Some(PluginSandboxTransportRecord {
+                    sandbox_id,
+                    lease_id,
+                    region_id,
+                    stage,
+                    processing_epoch,
+                    detail,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn heartbeat_events(&self) -> Vec<HeartbeatCycleRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::HeartbeatCycle {
+                    sandbox_id,
+                    stage,
+                    processing_epoch,
+                    block_sequence,
+                } => Some(HeartbeatCycleRecord {
+                    sandbox_id,
+                    stage,
+                    processing_epoch,
+                    block_sequence,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn block_dispatch_events(&self) -> Vec<BlockDispatchRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::BlockDispatch {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    frame_count,
+                    stage,
+                    completion_state,
+                } => Some(BlockDispatchRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    frame_count,
+                    stage,
+                    completion_state,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn lease_rollover_events(&self) -> Vec<LeaseRolloverRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::LeaseRollover {
+                    sandbox_id,
+                    previous_lease_id,
+                    lease_id,
+                    processing_epoch,
+                    first_block_sequence,
+                } => Some(LeaseRolloverRecord {
+                    sandbox_id,
+                    previous_lease_id,
+                    lease_id,
+                    processing_epoch,
+                    first_block_sequence,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn invalidation_events(&self) -> Vec<BrokerInvalidationRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::BrokerInvalidation {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                    reason,
+                } => Some(BrokerInvalidationRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                    reason,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn completion_slot_events(&self) -> Vec<CompletionSlotRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::CompletionSlotTransition {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                } => Some(CompletionSlotRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn broker_failure_events(&self) -> Vec<BrokerFailureRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::BrokerFailure {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                    detail,
+                } => Some(BrokerFailureRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                    detail,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn transport_fault_events(&self) -> Vec<TransportFaultRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::BrokerFailure {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                    detail,
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    source: TransportFaultSource::HostBroker,
+                    stage: map_broker_failure_stage(stage),
+                    phase: map_broker_failure_phase(stage),
+                    resource: map_broker_failure_resource(stage),
+                    operation: broker_failure_operation(stage).into(),
+                    error_kind: None,
+                    detail,
+                }),
+                RuntimeEvent::SandboxOperationFailure {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    operation,
+                    error_kind,
+                    stage,
+                    detail,
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence: None,
+                    source: TransportFaultSource::SandboxOperation,
+                    stage: map_sandbox_operation_failure_stage(stage),
+                    phase: map_sandbox_operation_failure_phase(stage),
+                    resource: map_sandbox_operation_failure_resource(stage),
+                    operation,
+                    error_kind: Some(error_kind),
+                    detail,
+                }),
+                RuntimeEvent::PluginSandboxTransport {
+                    sandbox_id,
+                    lease_id,
+                    stage: PluginSandboxTransportStage::DetachRequested,
+                    processing_epoch,
+                    detail,
+                    ..
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch,
+                    block_sequence: None,
+                    source: TransportFaultSource::HostBroker,
+                    stage: TransportFaultStage::TransportDetachRequested,
+                    phase: TransportFaultPhase::Teardown,
+                    resource: TransportFaultResource::SharedMemoryLease,
+                    operation: "transport.detach_request".into(),
+                    error_kind: None,
+                    detail: detail.unwrap_or_else(|| "transport detach requested".into()),
+                }),
+                RuntimeEvent::PluginSandboxTransport {
+                    sandbox_id,
+                    lease_id,
+                    stage: PluginSandboxTransportStage::Detached,
+                    processing_epoch,
+                    detail,
+                    ..
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch,
+                    block_sequence: None,
+                    source: TransportFaultSource::HostBroker,
+                    stage: TransportFaultStage::TransportDetached,
+                    phase: TransportFaultPhase::Teardown,
+                    resource: TransportFaultResource::SharedMemoryLease,
+                    operation: "transport.detached".into(),
+                    error_kind: None,
+                    detail: detail.unwrap_or_else(|| "transport detached".into()),
+                }),
+                RuntimeEvent::PluginSandboxTransport {
+                    sandbox_id,
+                    lease_id,
+                    stage: PluginSandboxTransportStage::DetachFault,
+                    processing_epoch,
+                    detail,
+                    ..
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch,
+                    block_sequence: None,
+                    source: TransportFaultSource::HostBroker,
+                    stage: TransportFaultStage::TransportDetachFault,
+                    phase: TransportFaultPhase::Teardown,
+                    resource: TransportFaultResource::SharedMemoryLease,
+                    operation: "transport.detach_fault".into(),
+                    error_kind: None,
+                    detail: detail.unwrap_or_else(|| "transport detach fault".into()),
+                }),
+                RuntimeEvent::BrokerInvalidation {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage,
+                    reason,
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch: Some(processing_epoch),
+                    block_sequence,
+                    source: TransportFaultSource::RuntimeDispatch,
+                    stage: map_broker_invalidation_stage(stage),
+                    phase: TransportFaultPhase::Teardown,
+                    resource: map_broker_invalidation_resource(stage),
+                    operation: broker_invalidation_operation(stage).into(),
+                    error_kind: None,
+                    detail: reason,
+                }),
+                RuntimeEvent::CompletionSlotTransition {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage: CompletionSlotStage::TimedOut,
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch: Some(processing_epoch),
+                    block_sequence: Some(block_sequence),
+                    source: TransportFaultSource::RuntimeDispatch,
+                    stage: TransportFaultStage::CompletionSlotTimedOut,
+                    phase: TransportFaultPhase::Dispatch,
+                    resource: TransportFaultResource::CompletionSlot,
+                    operation: "completion_slot.timeout".into(),
+                    error_kind: None,
+                    detail: "completion slot timed out".into(),
+                }),
+                RuntimeEvent::CompletionSlotTransition {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage: CompletionSlotStage::Invalidated,
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch: Some(processing_epoch),
+                    block_sequence: Some(block_sequence),
+                    source: TransportFaultSource::RuntimeDispatch,
+                    stage: TransportFaultStage::CompletionSlotInvalidated,
+                    phase: TransportFaultPhase::Dispatch,
+                    resource: TransportFaultResource::CompletionSlot,
+                    operation: "completion_slot.invalidate".into(),
+                    error_kind: None,
+                    detail: "completion slot invalidated".into(),
+                }),
+                RuntimeEvent::CompletionSlotTransition {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    block_sequence,
+                    stage: CompletionSlotStage::FallbackApplied,
+                } => Some(TransportFaultRecord {
+                    sandbox_id,
+                    lease_id: Some(lease_id),
+                    processing_epoch: Some(processing_epoch),
+                    block_sequence: Some(block_sequence),
+                    source: TransportFaultSource::RuntimeDispatch,
+                    stage: TransportFaultStage::FallbackApplied,
+                    phase: TransportFaultPhase::Dispatch,
+                    resource: TransportFaultResource::CompletionSlot,
+                    operation: "completion_slot.fallback_apply".into(),
+                    error_kind: None,
+                    detail: "fallback applied after invalidation".into(),
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    pub fn sandbox_operation_failure_events(&self) -> Vec<SandboxOperationFailureRecord> {
+        self.snapshot()
+            .into_iter()
+            .filter_map(|event| match event {
+                RuntimeEvent::SandboxOperationFailure {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    operation,
+                    error_kind,
+                    stage,
+                    detail,
+                } => Some(SandboxOperationFailureRecord {
+                    sandbox_id,
+                    lease_id,
+                    processing_epoch,
+                    operation,
+                    error_kind,
+                    stage,
+                    detail,
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
     pub fn diagnostics(&self) -> RuntimeObservationDiagnostics {
         RuntimeObservationDiagnostics {
             total_events: self.count(),
             supervision_updates: self.supervision_updates(),
             plugin_faults: self.plugin_faults(),
+            recovery_events: self.recovery_events(),
+            lifecycle_events: self.lifecycle_events(),
+            transport_events: self.transport_events(),
+            heartbeat_events: self.heartbeat_events(),
+            block_dispatch_events: self.block_dispatch_events(),
+            lease_rollover_events: self.lease_rollover_events(),
+            invalidation_events: self.invalidation_events(),
+            completion_slot_events: self.completion_slot_events(),
+            transport_fault_events: self.transport_fault_events(),
+            broker_failure_events: self.broker_failure_events(),
+            sandbox_operation_failure_events: self.sandbox_operation_failure_events(),
+        }
+    }
+}
+
+fn map_broker_failure_stage(stage: BrokerFailureStage) -> TransportFaultStage {
+    match stage {
+        BrokerFailureStage::PreparePlanCreate => TransportFaultStage::PreparePlanCreate,
+        BrokerFailureStage::PayloadWrite => TransportFaultStage::PayloadWrite,
+        BrokerFailureStage::PayloadRead => TransportFaultStage::PayloadRead,
+        BrokerFailureStage::TransportDestroy => TransportFaultStage::TransportDestroy,
+        BrokerFailureStage::TransportTeardown => TransportFaultStage::TransportTeardown,
+    }
+}
+
+fn map_broker_failure_phase(stage: BrokerFailureStage) -> TransportFaultPhase {
+    match stage {
+        BrokerFailureStage::PreparePlanCreate => TransportFaultPhase::Prepare,
+        BrokerFailureStage::PayloadWrite | BrokerFailureStage::PayloadRead => {
+            TransportFaultPhase::Dispatch
+        }
+        BrokerFailureStage::TransportDestroy | BrokerFailureStage::TransportTeardown => {
+            TransportFaultPhase::Teardown
+        }
+    }
+}
+
+fn map_broker_failure_resource(stage: BrokerFailureStage) -> TransportFaultResource {
+    match stage {
+        BrokerFailureStage::PreparePlanCreate => TransportFaultResource::PreparePlan,
+        BrokerFailureStage::PayloadWrite | BrokerFailureStage::PayloadRead => {
+            TransportFaultResource::SharedMemoryPayload
+        }
+        BrokerFailureStage::TransportDestroy | BrokerFailureStage::TransportTeardown => {
+            TransportFaultResource::SharedMemoryLease
+        }
+    }
+}
+
+fn broker_failure_operation(stage: BrokerFailureStage) -> &'static str {
+    match stage {
+        BrokerFailureStage::PreparePlanCreate => "prepare_plan.create",
+        BrokerFailureStage::PayloadWrite => "block_payload.write",
+        BrokerFailureStage::PayloadRead => "block_payload.read",
+        BrokerFailureStage::TransportDestroy => "lease.destroy_region",
+        BrokerFailureStage::TransportTeardown => "lease.teardown_transport",
+    }
+}
+
+fn map_broker_invalidation_stage(stage: BrokerInvalidationStage) -> TransportFaultStage {
+    match stage {
+        BrokerInvalidationStage::CompletionRegionInvalidated => {
+            TransportFaultStage::CompletionRegionInvalidated
+        }
+        BrokerInvalidationStage::LeaseEpochInvalidated => {
+            TransportFaultStage::LeaseEpochInvalidated
+        }
+    }
+}
+
+fn map_broker_invalidation_resource(stage: BrokerInvalidationStage) -> TransportFaultResource {
+    match stage {
+        BrokerInvalidationStage::CompletionRegionInvalidated => {
+            TransportFaultResource::SharedMemoryPayload
+        }
+        BrokerInvalidationStage::LeaseEpochInvalidated => TransportFaultResource::SharedMemoryLease,
+    }
+}
+
+fn broker_invalidation_operation(stage: BrokerInvalidationStage) -> &'static str {
+    match stage {
+        BrokerInvalidationStage::CompletionRegionInvalidated => "completion_region.invalidate",
+        BrokerInvalidationStage::LeaseEpochInvalidated => "lease_epoch.invalidate",
+    }
+}
+
+fn map_sandbox_operation_failure_stage(stage: SandboxOperationFailureStage) -> TransportFaultStage {
+    match stage {
+        SandboxOperationFailureStage::PrepareAttach => TransportFaultStage::PrepareAttach,
+        SandboxOperationFailureStage::ProcessAttach => TransportFaultStage::ProcessAttach,
+        SandboxOperationFailureStage::ProcessFlush => TransportFaultStage::ProcessFlush,
+        SandboxOperationFailureStage::ProcessProtocolViolation => {
+            TransportFaultStage::ProcessProtocolViolation
+        }
+        SandboxOperationFailureStage::ControlProtocolViolation => {
+            TransportFaultStage::ControlProtocolViolation
+        }
+    }
+}
+
+fn map_sandbox_operation_failure_phase(stage: SandboxOperationFailureStage) -> TransportFaultPhase {
+    match stage {
+        SandboxOperationFailureStage::PrepareAttach => TransportFaultPhase::Prepare,
+        SandboxOperationFailureStage::ProcessAttach
+        | SandboxOperationFailureStage::ProcessFlush
+        | SandboxOperationFailureStage::ProcessProtocolViolation => TransportFaultPhase::Dispatch,
+        SandboxOperationFailureStage::ControlProtocolViolation => TransportFaultPhase::Control,
+    }
+}
+
+fn map_sandbox_operation_failure_resource(
+    stage: SandboxOperationFailureStage,
+) -> TransportFaultResource {
+    match stage {
+        SandboxOperationFailureStage::PrepareAttach
+        | SandboxOperationFailureStage::ProcessAttach => TransportFaultResource::SharedMemoryLease,
+        SandboxOperationFailureStage::ProcessFlush => TransportFaultResource::SharedMemoryPayload,
+        SandboxOperationFailureStage::ProcessProtocolViolation => {
+            TransportFaultResource::ProcessProtocol
+        }
+        SandboxOperationFailureStage::ControlProtocolViolation => {
+            TransportFaultResource::ControlProtocol
         }
     }
 }
@@ -791,6 +4612,31 @@ pub trait RuntimeLifecycleApi {
 }
 
 pub trait RuntimeProjectionApi {
+    fn set_prework_service_pressure(
+        &mut self,
+        pressure: RuntimePreworkServicePressure,
+    ) -> Result<(), RuntimeError>;
+    fn set_prework_forecast_mode(
+        &mut self,
+        mode: RuntimePreworkForecastMode,
+    ) -> Result<(), RuntimeError>;
+    fn set_prework_forecast_profile(
+        &mut self,
+        selection: RuntimePreworkForecastProfileSelection,
+    ) -> Result<(), RuntimeError>;
+    fn set_prework_forecast_policy(
+        &mut self,
+        policy: RuntimePreworkForecastPolicy,
+    ) -> Result<(), RuntimeError>;
+    fn service_prework_lane(
+        &mut self,
+        processing_epoch: u64,
+        cycles: usize,
+    ) -> Result<usize, RuntimeError>;
+    fn apply_plugin_backed_node_bindings(
+        &mut self,
+        projection: PluginBackedNodeBindingProjection,
+    ) -> Result<ProjectionReceipt, RuntimeError>;
     fn apply_graph_projection(
         &mut self,
         projection: GraphProjection,
@@ -817,6 +4663,8 @@ pub trait RuntimeObservationApi {
     fn get_supervision_snapshot(&self) -> RuntimeSupervisionSnapshot;
     fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot;
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
+    fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
+    fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot;
 }
 
 pub trait RuntimeSupervisorApi {

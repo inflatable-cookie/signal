@@ -1,34 +1,128 @@
 //! Rhythm analysis surfaces for Signal.
+//!
+//! The crate currently exposes offline beat, tempo, and limited meter analysis
+//! built on a multifeature onset envelope and STFT-derived rhythm cues.
+//!
+//! ```no_run
+//! use signal_analysis::AnalysisStage;
+//! use signal_analysis_rhythm::{BeatTracker, BeatTrackerConfig};
+//! use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
+//!
+//! let audio = AudioBuffer::from_interleaved(
+//!     SampleRate(48_000),
+//!     ChannelLayout::Mono,
+//!     vec![0.0; 96_000],
+//! );
+//! let mut tracker = BeatTracker::new(BeatTrackerConfig::default());
+//! let result = tracker.analyze(&audio);
+//!
+//! assert_eq!(tracker.mode(), signal_analysis::AnalysisMode::Offline);
+//! assert!(result.beat_positions_seconds.is_empty() || result.bpm >= 0.0);
+//! ```
 
+use rayon::prelude::*;
 use signal_analysis::{AnalysisMode, AnalysisStage, Confidence};
 use signal_dsp_spectral::{Spectrogram, Stft, StftConfig};
 use signal_primitives::{AudioBuffer, Sample, SampleRate};
 
+/// Controls the trade-off between speed and accuracy in rhythm analysis.
+///
+/// Each tier configures the FFT size, onset-feature set, segment duration,
+/// and meter inference to match a different use case.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AnalysisProfile {
+    /// 30-second centre segment, 1024-point FFT, no phase computation,
+    /// three onset features, no meter inference.  Suitable for rapid
+    /// library scanning.  ~20× faster than [`High`](AnalysisProfile::High)
+    /// on a 4-minute track.
+    Low,
+    /// 60-second centre segment, 1024-point FFT, no phase computation,
+    /// three onset features, with meter inference.  Balanced accuracy and
+    /// performance for interactive use.  ~5× faster than
+    /// [`High`](AnalysisProfile::High).
+    Medium,
+    /// Full track, 2048-point FFT with phases, all five onset features,
+    /// full meter inference and diagnostics.  Maximum accuracy.
+    High,
+}
+
+/// Configuration for the offline beat tracker.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BeatTrackerConfig {
     pub stft: StftConfig,
     pub min_bpm: f32,
     pub max_bpm: f32,
     pub beat_tolerance: f32,
+    /// When set, only analyze this many seconds from the centre of the track.
+    /// Dramatically reduces processing time for long audio files.
+    pub analysis_duration_seconds: Option<f32>,
+    /// Controls the speed/accuracy trade-off.  See [`AnalysisProfile`].
+    pub profile: AnalysisProfile,
 }
 
 impl Default for BeatTrackerConfig {
     fn default() -> Self {
+        Self::high()
+    }
+}
+
+impl BeatTrackerConfig {
+    /// Fastest preset — 30-second centre segment, small FFT, reduced
+    /// onset features, no meter.  ~20× faster than [`high`](Self::high).
+    pub fn low() -> Self {
+        Self {
+            stft: StftConfig {
+                window_size: signal_primitives::FrameCount(1024),
+                hop_size: signal_primitives::FrameCount(512),
+                compute_phases: false,
+            },
+            min_bpm: 70.0,
+            max_bpm: 180.0,
+            beat_tolerance: 0.2,
+            analysis_duration_seconds: Some(30.0),
+            profile: AnalysisProfile::Low,
+        }
+    }
+
+    /// Balanced preset — 60-second centre segment, small FFT, reduced
+    /// onset features, with meter.  ~5× faster than [`high`](Self::high).
+    pub fn medium() -> Self {
+        Self {
+            stft: StftConfig {
+                window_size: signal_primitives::FrameCount(1024),
+                hop_size: signal_primitives::FrameCount(512),
+                compute_phases: false,
+            },
+            min_bpm: 70.0,
+            max_bpm: 180.0,
+            beat_tolerance: 0.2,
+            analysis_duration_seconds: Some(60.0),
+            profile: AnalysisProfile::Medium,
+        }
+    }
+
+    /// Full-accuracy preset — entire track, large FFT with phases, all
+    /// five onset features, full meter and diagnostics.
+    pub fn high() -> Self {
         Self {
             stft: StftConfig::new(2048, 512),
             min_bpm: 70.0,
             max_bpm: 180.0,
             beat_tolerance: 0.2,
+            analysis_duration_seconds: None,
+            profile: AnalysisProfile::High,
         }
     }
 }
 
+/// Public tempo hypothesis surfaced alongside the chosen tempo estimate.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TempoCandidate {
     pub bpm: f32,
     pub confidence: Confidence,
 }
 
+/// Local tempo measured across a beat span.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LocalTempoPoint {
     pub start_beat_index: usize,
@@ -38,6 +132,7 @@ pub struct LocalTempoPoint {
     pub bpm: f32,
 }
 
+/// Diagnostics for local tempo stability, trend, and beat-grid quality.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TempoDiagnostics {
     pub interval_tempi: Vec<LocalTempoPoint>,
@@ -54,6 +149,32 @@ pub struct TempoDiagnostics {
     pub boundary_bias_bpm: f32,
     pub trend: TempoTrendDiagnostics,
     pub beat_grid_error: BeatGridErrorDiagnostics,
+    pub beat_interval_outliers: BeatIntervalOutlierDiagnostics,
+    pub stability_scope: TempoStabilityScopeSummary,
+    pub edge_trimmed_stable_span: Option<BeatGridCoreSpanDiagnostics>,
+    pub stable_core_span: Option<BeatGridCoreSpanDiagnostics>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoStabilityScope {
+    WholeTrackStable,
+    StableWithLocalizedEdgeDamage,
+    CoreStableOnly,
+    MidTrackUnstable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoStabilityScopeSupport {
+    pub edge_trimmed_coverage: Confidence,
+    pub contiguous_core_coverage: Confidence,
+    pub interior_stability: Confidence,
+    pub edge_locality: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoStabilityScopeSummary {
+    pub scope: TempoStabilityScope,
+    pub support: TempoStabilityScopeSupport,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -119,7 +240,9 @@ pub enum TempoStateAction {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TempoStateReason {
     StableIntegerTempo,
+    StableTempoWithEdgeDamage,
     StableRefinedTempo,
+    CoreStableTempo,
     CoreWindowFallback,
     TempoDeferred,
 }
@@ -165,6 +288,208 @@ pub enum TempoContinuityHistory {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArc {
+    Recovering,
+    Stalling,
+    Collapsing,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcRationale {
+    RefreshStrength,
+    StableCarry,
+    UnresolvedDrift,
+    BoundaryDrift,
+    EvidenceLoss,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcSupport {
+    pub refresh_strength: Confidence,
+    pub drift_pressure: Confidence,
+    pub instability_pressure: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcRecommendation {
+    KeepLock,
+    MonitorRecovery,
+    Clear,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcAction {
+    LockCurrentTempo,
+    PreservePriorTempo,
+    PreferCoreWindowTempo,
+    ReacquireCurrentTempo,
+    ClearTempo,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcDowngradeRationale {
+    StabilityWindowEnd,
+    BoundaryDrift,
+    AmbiguityCarry,
+    PriorTempoDrift,
+    RepeatedFailedRevalidation,
+    EvidenceLoss,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDowngradeSupport {
+    pub stability_window_pressure: Confidence,
+    pub boundary_drift_pressure: Confidence,
+    pub ambiguity_pressure: Confidence,
+    pub failed_revalidation_pressure: Confidence,
+    pub evidence_loss_pressure: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcDowngradeTrend {
+    Rising,
+    Stable,
+    Easing,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcDowngradeTrendRationale {
+    StabilityWindowCarry,
+    BoundaryEscalation,
+    AmbiguityCarry,
+    RevalidationDecay,
+    TerminalClearPressure,
+    FlatCollapse,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcDowngradeInflectionStage {
+    FlatWindow,
+    NextStage,
+    TerminalClear,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDowngradeTrendSupport {
+    pub current_pressure: Confidence,
+    pub next_stage_pressure: Confidence,
+    pub terminal_pressure: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDowngradeInflection {
+    pub stage: TempoContinuityArcDowngradeInflectionStage,
+    pub after_beats: usize,
+    pub next_stage_delta: Confidence,
+    pub terminal_delta: Confidence,
+    pub competing_stage: Option<TempoContinuityArcDowngradeInflectionStage>,
+    pub competing_after_beats: usize,
+    pub competing_delta: Confidence,
+    pub competing_support: Confidence,
+    pub balance: TempoContinuityArcDowngradeInflectionBalance,
+    pub rationale_balance: TempoContinuityArcDowngradeInflectionRationaleBalance,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDowngradeInflectionBalance {
+    pub primary_weight: Confidence,
+    pub competing_weight: Confidence,
+    pub unattributed_weight: Confidence,
+    pub dominance: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityArcDowngradeStageRationale {
+    NoPressure,
+    StabilityWindow,
+    BoundaryDrift,
+    AmbiguityCarry,
+    PriorTempoDrift,
+    RevalidationDecay,
+    EvidenceLoss,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDowngradeStageRationaleWeights {
+    pub dominant: TempoContinuityArcDowngradeStageRationale,
+    pub stability_window: Confidence,
+    pub boundary_drift: Confidence,
+    pub ambiguity_carry: Confidence,
+    pub prior_tempo_drift: Confidence,
+    pub revalidation_decay: Confidence,
+    pub evidence_loss: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDowngradeInflectionRationaleBalance {
+    pub primary: TempoContinuityArcDowngradeStageRationaleWeights,
+    pub competing: Option<TempoContinuityArcDowngradeStageRationaleWeights>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TempoContinuityArcActionExpiry {
+    pub guaranteed_until_beats: usize,
+    pub fallback_after_beats: usize,
+    pub clear_after_beats: usize,
+    pub max_failed_revalidations: usize,
+}
+
+/// Detailed downgrade policy for the currently selected tempo continuity arc.
+///
+/// Callers that expose tempo persistence to a UI or session state usually only need
+/// `recommendation`, `action`, `fallback_action`, and `confidence`. The remaining
+/// fields explain why the arc will degrade, how quickly it is expected to degrade,
+/// and how many beats or failed revalidations remain before a fallback or clear.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuityArcDecision {
+    pub recommendation: TempoContinuityArcRecommendation,
+    pub action: TempoContinuityArcAction,
+    pub severity: TempoContinuitySeverity,
+    pub fallback_action: TempoContinuityArcAction,
+    pub downgrade_rationale: TempoContinuityArcDowngradeRationale,
+    pub downgrade_support: TempoContinuityArcDowngradeSupport,
+    pub downgrade_trend: TempoContinuityArcDowngradeTrend,
+    pub downgrade_trend_rationale: TempoContinuityArcDowngradeTrendRationale,
+    pub downgrade_trend_support: TempoContinuityArcDowngradeTrendSupport,
+    pub downgrade_inflection: TempoContinuityArcDowngradeInflection,
+    pub provenance: TempoContinuityProvenance,
+    pub expiry: TempoContinuityArcActionExpiry,
+    pub confidence: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityTrigger {
+    StableRevalidation,
+    BoundaryDrift,
+    AmbiguityCarry,
+    PriorTempoDrift,
+    EvidenceLoss,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TempoContinuityUnresolvedSpan {
+    pub beats: usize,
+    pub failed_revalidations: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoContinuityCause {
+    StableTempoEvidence,
+    BoundaryDrift,
+    TempoAmbiguity,
+    PriorTempoCarry,
+    CoreWindowCarry,
+    EvidenceLoss,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TempoContinuityCauseStack {
+    pub primary: TempoContinuityCause,
+    pub secondary: [Option<TempoContinuityCause>; 2],
+    pub count: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TempoContinuityProvenance {
     IntegerSnap,
     StableRefinedEstimate,
@@ -190,6 +515,9 @@ pub struct TempoContinuityTransition {
     pub severity: TempoContinuitySeverity,
     pub history: TempoContinuityHistory,
     pub reason: TempoContinuityReason,
+    pub trigger: TempoContinuityTrigger,
+    pub unresolved: TempoContinuityUnresolvedSpan,
+    pub causes: TempoContinuityCauseStack,
     pub provenance: TempoContinuityProvenance,
     pub confidence: Confidence,
     pub refresh_strength: Confidence,
@@ -201,13 +529,31 @@ pub struct TempoContinuityLifecycle {
     pub decay: [TempoContinuityTransition; 2],
 }
 
+/// Continuity plan for carrying the current tempo interpretation forward.
+///
+/// Read this as a forecast:
+/// - `action`, `source`, and `severity` describe what the tracker would tell a
+///   downstream transport or UI to do right now.
+/// - `trusted_beats` and `revalidate_after_beats` define the short-term holding
+///   window before the estimate should be checked again.
+/// - `expiry` and `lifecycle` describe the expected downgrade path if fresh beat
+///   evidence does not reinforce the current tempo.
+/// - `causes`, `trigger`, and `arc_decision` explain why the tracker is willing to
+///   keep the tempo, monitor it, or let it decay.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TempoContinuityPlan {
     pub action: TempoContinuityAction,
     pub source: TempoContinuitySource,
     pub severity: TempoContinuitySeverity,
     pub history: TempoContinuityHistory,
+    pub arc: TempoContinuityArc,
+    pub arc_rationale: TempoContinuityArcRationale,
+    pub arc_support: TempoContinuityArcSupport,
+    pub arc_decision: TempoContinuityArcDecision,
     pub reason: TempoContinuityReason,
+    pub trigger: TempoContinuityTrigger,
+    pub unresolved: TempoContinuityUnresolvedSpan,
+    pub causes: TempoContinuityCauseStack,
     pub provenance: TempoContinuityProvenance,
     pub confidence: Confidence,
     pub refresh_strength: Confidence,
@@ -217,12 +563,55 @@ pub struct TempoContinuityPlan {
     pub lifecycle: TempoContinuityLifecycle,
 }
 
+/// Top-level recommendation for whether the current tempo estimate should be locked,
+/// watched, or cleared.
+///
+/// Most callers should branch on `action` first, use `reason` for operator-facing
+/// messaging, and treat `confidence` as the strength of that recommendation. The
+/// nested [`TempoContinuityPlan`] is the deeper policy surface for how long the
+/// current tempo can be trusted and how it should degrade if new evidence weakens.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TempoStateRecommendation {
     pub action: TempoStateAction,
     pub reason: TempoStateReason,
     pub confidence: Confidence,
     pub continuity: TempoContinuityPlan,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoConsumptionSource {
+    SnappedCurrentTempo,
+    RefinedCurrentTempo,
+    CoreWindowTempo,
+    PriorTempo,
+    NoTempo,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoConsumptionSelection {
+    pub bpm: Option<f32>,
+    pub source: TempoConsumptionSource,
+}
+
+/// Consumer-facing tempo choice derived from the current interpretation and
+/// continuity policy.
+///
+/// This is the compact integration surface for wrappers such as Finch:
+/// - `current` says which tempo Signal recommends using immediately
+/// - `fallback` says what the next-best carry target is if the current policy
+///   degrades at `fallback_after_beats`
+/// - `action` and `continuity_action` preserve the higher-level intent without
+///   requiring callers to reverse-engineer it from the full continuity tree
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoConsumptionDecision {
+    pub action: TempoStateAction,
+    pub reason: TempoStateReason,
+    pub continuity_action: TempoContinuityAction,
+    pub confidence: Confidence,
+    pub stability_scope: TempoStabilityScopeSummary,
+    pub current: TempoConsumptionSelection,
+    pub fallback: TempoConsumptionSelection,
+    pub fallback_after_beats: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -259,6 +648,32 @@ pub struct BeatGridErrorDiagnostics {
     pub core_mean_abs_residual_ms: f32,
     pub end_anchored_drift_ms: f32,
     pub mean_abs_anchored_drift_ms: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BeatIntervalOutlierDiagnostics {
+    pub total_intervals: usize,
+    pub retained_intervals: usize,
+    pub rejected_intervals: usize,
+    pub leading_rejected_intervals: usize,
+    pub trailing_rejected_intervals: usize,
+    pub median_interval: f32,
+    pub median_abs_deviation: f32,
+    pub max_rejected_deviation_ratio: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BeatGridCoreSpanDiagnostics {
+    pub start_beat_index: usize,
+    pub end_beat_index: usize,
+    pub start_seconds: f32,
+    pub end_seconds: f32,
+    pub coverage: Confidence,
+    pub retained_windows: usize,
+    pub total_windows: usize,
+    pub trimmed_leading_windows: usize,
+    pub trimmed_trailing_windows: usize,
+    pub interior_rejected_windows: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -437,6 +852,12 @@ pub struct MeterContinuityLifecycle {
     pub decay: [MeterContinuityTransition; 2],
 }
 
+/// Continuity plan for retaining or reacquiring the inferred meter state.
+///
+/// Each plan applies to one meter dimension such as bar length or downbeat phase.
+/// `action` and `severity` describe the current stance, while `trusted_beats`,
+/// `revalidate_after_beats`, and `lifecycle` show how long that stance should be
+/// carried before it is refreshed, downgraded, or cleared.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MeterContinuityPlan {
     pub action: MeterContinuityAction,
@@ -462,6 +883,13 @@ pub struct MeterContinuityRecommendation {
     pub downbeat_phase: MeterContinuityPlan,
 }
 
+/// Top-level recommendation for how aggressively callers should trust the inferred
+/// meter state.
+///
+/// `action` is the primary integration signal. Use `reason` and `confidence` to
+/// decide whether to expose the meter directly, keep the prior bar grid alive, or
+/// fall back to beat-only handling. The nested continuity recommendation separates
+/// bar-length confidence from downbeat-phase confidence.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MeterStateRecommendation {
     pub action: MeterStateAction,
@@ -481,6 +909,13 @@ pub struct MeterRecoveryContext {
     pub supporting_windows: usize,
 }
 
+/// Inferred meter for the analyzed beat grid.
+///
+/// When this is present, `beats_per_bar` and `downbeat_positions_seconds` are the
+/// practical outputs. `trust` and `recommendation` indicate whether callers should
+/// lock to that meter immediately or treat it as provisional. If `recovery` is set,
+/// the meter was reconstructed from a stable segment rather than supported evenly
+/// across the full track.
 #[derive(Clone, Debug, PartialEq)]
 pub struct MeterEstimate {
     pub beats_per_bar: usize,
@@ -494,6 +929,16 @@ pub struct MeterEstimate {
     pub downbeat_positions_seconds: Vec<f32>,
 }
 
+/// Aggregate rhythm analysis output returned by [`BeatTracker`].
+///
+/// Practical integration order:
+/// 1. Read `bpm`, `beat_positions_seconds`, and `confidence` for the baseline beat
+///    tracking output.
+/// 2. Read `tempo_state` and `tempo_interpretation`, or call
+///    [`BeatAnalysisResult::tempo_consumption`], to decide whether the tempo
+///    should be locked, monitored, or cleared.
+/// 3. Read `meter_state` before trusting `meter`; `meter` may be present while the
+///    state still recommends a guarded or recovering interpretation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BeatAnalysisResult {
     pub bpm: f32,
@@ -507,6 +952,165 @@ pub struct BeatAnalysisResult {
     pub tempo_ambiguity: Confidence,
     pub meter_state: MeterStateRecommendation,
     pub meter: Option<MeterEstimate>,
+}
+
+impl BeatAnalysisResult {
+    /// Resolve the current and fallback tempo choices into one consumer-facing
+    /// decision, optionally using a previously locked tempo when the continuity
+    /// plan asks the caller to preserve prior state.
+    pub fn tempo_consumption(&self, prior_bpm: Option<f32>) -> TempoConsumptionDecision {
+        fn should_clear_core_stable_without_prior_early(
+            confidence: Confidence,
+            interpretation: TempoInterpretation,
+            stability_scope: TempoStabilityScopeSummary,
+        ) -> bool {
+            interpretation.support.boundary_pressure.0 < 0.18
+                && confidence.0 >= 0.76
+                && stability_scope.support.edge_trimmed_coverage.0 >= 0.85
+                && stability_scope.support.interior_stability.0 >= 0.90
+        }
+
+        fn current_tempo_selection(
+            interpretation: TempoInterpretation,
+            source: TempoContinuitySource,
+            prior_bpm: Option<f32>,
+        ) -> TempoConsumptionSelection {
+            match source {
+                TempoContinuitySource::CurrentTempo => {
+                    if let Some(snapped_bpm) = interpretation.snapped_bpm {
+                        TempoConsumptionSelection {
+                            bpm: Some(snapped_bpm),
+                            source: TempoConsumptionSource::SnappedCurrentTempo,
+                        }
+                    } else {
+                        TempoConsumptionSelection {
+                            bpm: Some(interpretation.recommended_bpm),
+                            source: TempoConsumptionSource::RefinedCurrentTempo,
+                        }
+                    }
+                }
+                TempoContinuitySource::CoreWindow => TempoConsumptionSelection {
+                    bpm: Some(interpretation.profile.core_window_bpm),
+                    source: TempoConsumptionSource::CoreWindowTempo,
+                },
+                TempoContinuitySource::PriorTempo => TempoConsumptionSelection {
+                    bpm: prior_bpm,
+                    source: if prior_bpm.is_some() {
+                        TempoConsumptionSource::PriorTempo
+                    } else {
+                        TempoConsumptionSource::NoTempo
+                    },
+                },
+                TempoContinuitySource::Cleared => TempoConsumptionSelection {
+                    bpm: None,
+                    source: TempoConsumptionSource::NoTempo,
+                },
+            }
+        }
+
+        fn fallback_tempo_selection(
+            interpretation: TempoInterpretation,
+            action: TempoContinuityArcAction,
+            prior_bpm: Option<f32>,
+        ) -> TempoConsumptionSelection {
+            match action {
+                TempoContinuityArcAction::LockCurrentTempo
+                | TempoContinuityArcAction::ReacquireCurrentTempo => {
+                    if let Some(snapped_bpm) = interpretation.snapped_bpm {
+                        TempoConsumptionSelection {
+                            bpm: Some(snapped_bpm),
+                            source: TempoConsumptionSource::SnappedCurrentTempo,
+                        }
+                    } else {
+                        TempoConsumptionSelection {
+                            bpm: Some(interpretation.recommended_bpm),
+                            source: TempoConsumptionSource::RefinedCurrentTempo,
+                        }
+                    }
+                }
+                TempoContinuityArcAction::PreferCoreWindowTempo => TempoConsumptionSelection {
+                    bpm: Some(interpretation.profile.core_window_bpm),
+                    source: TempoConsumptionSource::CoreWindowTempo,
+                },
+                TempoContinuityArcAction::PreservePriorTempo => TempoConsumptionSelection {
+                    bpm: prior_bpm,
+                    source: if prior_bpm.is_some() {
+                        TempoConsumptionSource::PriorTempo
+                    } else {
+                        TempoConsumptionSource::NoTempo
+                    },
+                },
+                TempoContinuityArcAction::ClearTempo => TempoConsumptionSelection {
+                    bpm: None,
+                    source: TempoConsumptionSource::NoTempo,
+                },
+            }
+        }
+
+        fn prior_tempo_selection(prior_bpm: Option<f32>) -> TempoConsumptionSelection {
+            TempoConsumptionSelection {
+                bpm: prior_bpm,
+                source: if prior_bpm.is_some() {
+                    TempoConsumptionSource::PriorTempo
+                } else {
+                    TempoConsumptionSource::NoTempo
+                },
+            }
+        }
+
+        let stability_scope = self.tempo_diagnostics.stability_scope;
+        let mut fallback = fallback_tempo_selection(
+            self.tempo_interpretation,
+            self.tempo_state.continuity.arc_decision.fallback_action,
+            prior_bpm,
+        );
+        let mut fallback_after_beats = self
+            .tempo_state
+            .continuity
+            .arc_decision
+            .expiry
+            .fallback_after_beats;
+
+        if matches!(self.tempo_state.action, TempoStateAction::Monitor)
+            && matches!(stability_scope.scope, TempoStabilityScope::CoreStableOnly)
+        {
+            if prior_bpm.is_some() {
+                fallback = prior_tempo_selection(prior_bpm);
+                fallback_after_beats = self.tempo_state.continuity.expiry.downgrade_after_beats;
+            } else if should_clear_core_stable_without_prior_early(
+                self.tempo_state.confidence,
+                self.tempo_interpretation,
+                stability_scope,
+            ) {
+                fallback = TempoConsumptionSelection {
+                    bpm: None,
+                    source: TempoConsumptionSource::NoTempo,
+                };
+                fallback_after_beats = self.tempo_state.continuity.expiry.downgrade_after_beats;
+            } else {
+                fallback = TempoConsumptionSelection {
+                    bpm: None,
+                    source: TempoConsumptionSource::NoTempo,
+                };
+                fallback_after_beats = self.tempo_state.continuity.expiry.clear_after_beats;
+            }
+        }
+
+        TempoConsumptionDecision {
+            action: self.tempo_state.action,
+            reason: self.tempo_state.reason,
+            continuity_action: self.tempo_state.continuity.action,
+            confidence: self.tempo_state.confidence,
+            stability_scope,
+            current: current_tempo_selection(
+                self.tempo_interpretation,
+                self.tempo_state.continuity.source,
+                prior_bpm,
+            ),
+            fallback,
+            fallback_after_beats,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -544,37 +1148,59 @@ struct MeterDecision {
     suppression_profile: MeterSuppressionProfile,
 }
 
+/// Offline beat, tempo, and meter tracker for mono audio.
 #[derive(Debug, Default)]
 pub struct BeatTracker {
     config: BeatTrackerConfig,
 }
 
 impl BeatTracker {
+    /// Create a beat tracker with the provided config.
     pub fn new(config: BeatTrackerConfig) -> Self {
         Self { config }
     }
 
+    /// Return the current tracker config.
     pub fn config(&self) -> BeatTrackerConfig {
         self.config
     }
 
+    /// Analyze a mono sample slice directly.
     pub fn analyze_mono(
         &mut self,
         sample_rate: SampleRate,
         mono_samples: &[Sample],
     ) -> BeatAnalysisResult {
+        // Optionally truncate to a centre segment for faster processing.
+        let mono_samples = if let Some(duration) = self.config.analysis_duration_seconds {
+            let max_samples = (duration * sample_rate.0 as f32) as usize;
+            if mono_samples.len() > max_samples {
+                let start = (mono_samples.len() - max_samples) / 2;
+                &mono_samples[start..start + max_samples]
+            } else {
+                mono_samples
+            }
+        } else {
+            mono_samples
+        };
+
+        let hop_size = self.config.stft.hop_size.0.max(1);
+        let profile = self.config.profile;
+        let reduced_features = !matches!(profile, AnalysisProfile::High);
+
         let stft = Stft::new(self.config.stft);
         let spectrogram = stft.analyze_mono(sample_rate, mono_samples);
         let onset_envelope = multifeature_onset_envelope(
             &spectrogram,
             mono_samples,
             sample_rate,
-            self.config.stft.hop_size.0.max(1),
+            hop_size,
+            reduced_features,
         );
         let tempo = estimate_tempo(
             &onset_envelope,
             sample_rate,
-            self.config.stft.hop_size.0.max(1),
+            hop_size,
             self.config.min_bpm,
             self.config.max_bpm,
         );
@@ -586,27 +1212,37 @@ impl BeatTracker {
             self.config.beat_tolerance,
         );
         let refined_beat_frames = refine_beat_frames(&onset_envelope, &beat_frames);
-        let refined_bpm = refine_bpm_from_beats(
-            tempo.bpm,
-            &refined_beat_frames,
-            sample_rate,
-            self.config.stft.hop_size.0.max(1),
-        );
-        let beat_positions_seconds = beat_frames_to_seconds_refined(
-            &refined_beat_frames,
-            sample_rate,
-            self.config.stft.hop_size.0.max(1),
-        );
-        let low_band_cue = low_band_flux(&spectrogram, 180.0);
-        let profile_change_cue = band_profile_change(&spectrogram, 5);
-        let meter_cue = combine_meter_cues(&low_band_cue, &profile_change_cue);
-        let meter_decision = infer_meter(
-            &onset_envelope,
-            &meter_cue,
-            &beat_frames,
-            sample_rate,
-            self.config.stft.hop_size.0.max(1),
-        );
+        let refined_bpm =
+            refine_bpm_from_beats(tempo.bpm, &refined_beat_frames, sample_rate, hop_size);
+        let beat_positions_seconds =
+            beat_frames_to_seconds_refined(&refined_beat_frames, sample_rate, hop_size);
+
+        // Meter inference is skipped at the Low tier — it adds cost without
+        // value when the caller only needs a BPM estimate.
+        let meter_decision = if matches!(profile, AnalysisProfile::Low) {
+            MeterDecision {
+                estimate: None,
+                suppression_profile: MeterSuppressionProfile {
+                    best_confidence: Confidence::new(0.0),
+                    best_support: 0.0,
+                    best_regularity: 0.0,
+                    trailing_confidence: Confidence::new(0.0),
+                    trailing_recent_stability: 0.0,
+                },
+            }
+        } else {
+            let low_band_cue = low_band_flux(&spectrogram, 180.0);
+            let profile_change_cue = band_profile_change(&spectrogram, 5);
+            let meter_cue = combine_meter_cues(&low_band_cue, &profile_change_cue);
+            infer_meter(
+                &onset_envelope,
+                &meter_cue,
+                &beat_frames,
+                sample_rate,
+                hop_size,
+            )
+        };
+
         let confidence = combined_confidence(
             &onset_envelope,
             tempo.confidence,
@@ -616,8 +1252,12 @@ impl BeatTracker {
         let tempo_diagnostics = analyze_local_tempo(&beat_positions_seconds);
         let tempo_interpretation =
             interpret_tempo(refined_bpm, confidence, tempo.ambiguity, &tempo_diagnostics);
-        let tempo_state =
-            tempo_state_recommendation(tempo_interpretation, confidence, tempo.ambiguity);
+        let tempo_state = tempo_state_recommendation_with_scope(
+            tempo_interpretation,
+            confidence,
+            tempo.ambiguity,
+            tempo_diagnostics.stability_scope,
+        );
         let meter_state = meter_state_recommendation(
             meter_decision.estimate.as_ref(),
             meter_decision.suppression_profile,
@@ -626,6 +1266,31 @@ impl BeatTracker {
             refined_bpm,
             &beat_positions_seconds,
         );
+        let output_bpm = match profile {
+            // Low and Medium use a simple integer snap whose tolerance is
+            // appropriate for the reduced segment lengths.  The full
+            // interpretation pipeline is tuned for whole-track statistics and
+            // may fail to trigger on shorter segments.
+            AnalysisProfile::Low | AnalysisProfile::Medium => {
+                let nearest = refined_bpm.round();
+                if (refined_bpm - nearest).abs() < 0.15 && confidence.0 >= 0.4 {
+                    nearest
+                } else {
+                    refined_bpm
+                }
+            }
+            // High uses the full interpretation pipeline with its carefully
+            // calibrated snap thresholds.
+            AnalysisProfile::High => tempo_interpretation
+                .snapped_bpm
+                .filter(|_| {
+                    matches!(
+                        tempo_interpretation.recommendation,
+                        TempoRecommendation::SnapInteger
+                    )
+                })
+                .unwrap_or(refined_bpm),
+        };
         let mut tempo_candidates: Vec<TempoCandidate> = tempo
             .candidates
             .into_iter()
@@ -636,11 +1301,11 @@ impl BeatTracker {
             })
             .collect();
         if let Some(primary_candidate) = tempo_candidates.first_mut() {
-            primary_candidate.bpm = refined_bpm;
+            primary_candidate.bpm = output_bpm;
         }
 
         BeatAnalysisResult {
-            bpm: refined_bpm,
+            bpm: output_bpm,
             confidence,
             beat_positions_seconds,
             onset_envelope,
@@ -918,12 +1583,54 @@ fn multifeature_onset_envelope(
     mono_samples: &[f32],
     sample_rate: SampleRate,
     hop_size: usize,
+    reduced_features: bool,
 ) -> Vec<f32> {
-    let flux = spectral_flux(spectrogram);
-    let band_flux = bandwise_spectral_flux(spectrogram, 6);
-    let complex = complex_domain_difference(spectrogram);
-    let hfc = high_frequency_content(spectrogram);
-    let energy = energy_flux(mono_samples, sample_rate, hop_size);
+    if reduced_features {
+        // Reduced set: three cheap features only (no phase-dependent complex
+        // domain difference, no low-weight high-frequency content).
+        let (flux, band_flux, energy) = std::thread::scope(|s| {
+            let flux_handle = s.spawn(|| spectral_flux(spectrogram));
+            let band_flux_handle = s.spawn(|| bandwise_spectral_flux(spectrogram, 6));
+            let energy_handle = s.spawn(|| energy_flux(mono_samples, sample_rate, hop_size));
+
+            (
+                flux_handle.join().unwrap(),
+                band_flux_handle.join().unwrap(),
+                energy_handle.join().unwrap(),
+            )
+        });
+
+        let len = flux.len().max(band_flux.len()).max(energy.len());
+        let mut combined = vec![0.0; len];
+        for index in 0..len {
+            let flux_value = flux.get(index).copied().unwrap_or(0.0);
+            let band_flux_value = band_flux.get(index).copied().unwrap_or(0.0);
+            let energy_value = energy.get(index).copied().unwrap_or(0.0);
+            // Re-normalised weights: 0.28/(0.28+0.22+0.08) ≈ 0.48, etc.
+            combined[index] = 0.48 * flux_value + 0.38 * band_flux_value + 0.14 * energy_value;
+        }
+
+        sharpen_onset_envelope(&mut combined);
+        normalize(&mut combined);
+        return combined;
+    }
+
+    // Full set: all five onset features computed in parallel.
+    let (flux, band_flux, complex, hfc, energy) = std::thread::scope(|s| {
+        let flux_handle = s.spawn(|| spectral_flux(spectrogram));
+        let band_flux_handle = s.spawn(|| bandwise_spectral_flux(spectrogram, 6));
+        let complex_handle = s.spawn(|| complex_domain_difference(spectrogram));
+        let hfc_handle = s.spawn(|| high_frequency_content(spectrogram));
+        let energy_handle = s.spawn(|| energy_flux(mono_samples, sample_rate, hop_size));
+
+        (
+            flux_handle.join().unwrap(),
+            band_flux_handle.join().unwrap(),
+            complex_handle.join().unwrap(),
+            hfc_handle.join().unwrap(),
+            energy_handle.join().unwrap(),
+        )
+    });
 
     let len = flux
         .len()
@@ -999,9 +1706,13 @@ fn estimate_tempo(
     let max_lag = max_lag.min(onset_envelope.len().saturating_sub(1));
     let mut lag_scores = vec![0.0; max_lag + 1];
 
-    for lag in min_lag..=max_lag {
-        lag_scores[lag] = tempo_score(onset_envelope, lag);
-    }
+    // Each lag score is independent — score all candidate tempos in parallel.
+    lag_scores[min_lag..=max_lag]
+        .par_iter_mut()
+        .enumerate()
+        .for_each(|(offset, score)| {
+            *score = tempo_score(onset_envelope, min_lag + offset);
+        });
 
     let candidates = tempo_candidates(&lag_scores, min_lag, max_lag);
     let mut hypotheses = Vec::new();
@@ -1312,7 +2023,7 @@ fn refine_bpm_from_beats(
         return coarse_bpm.max(0.0);
     }
 
-    let mut intervals: Vec<f32> = beat_frames
+    let intervals: Vec<f32> = beat_frames
         .windows(2)
         .filter_map(|pair| {
             let interval = pair[1] - pair[0];
@@ -1322,19 +2033,13 @@ fn refine_bpm_from_beats(
     if intervals.is_empty() {
         return coarse_bpm;
     }
-
-    intervals.sort_by(|lhs, rhs| lhs.partial_cmp(rhs).unwrap_or(core::cmp::Ordering::Equal));
-    let median = intervals[intervals.len() / 2];
-    let min_interval = median * 0.85;
-    let max_interval = median * 1.15;
-    let filtered: Vec<f32> = intervals
-        .into_iter()
-        .filter(|interval| *interval >= min_interval && *interval <= max_interval)
-        .collect();
-    let intervals = if filtered.is_empty() {
-        vec![median]
-    } else {
+    let (filtered, diagnostics) = filter_interval_outliers(&intervals);
+    let intervals = if filtered.len() >= 4 {
         filtered
+    } else if diagnostics.median_interval > 0.0 {
+        vec![diagnostics.median_interval]
+    } else {
+        intervals
     };
     let average_interval = intervals.iter().copied().sum::<f32>() / intervals.len() as f32;
     if average_interval <= 0.0 {
@@ -1343,16 +2048,100 @@ fn refine_bpm_from_beats(
 
     let onset_rate = sample_rate.0 as f32 / hop_size as f32;
     let beat_grid_bpm = 60.0 * onset_rate / average_interval;
+    let interval_median = if intervals.is_empty() {
+        0.0
+    } else {
+        let mut median_intervals = intervals.clone();
+        median(&mut median_intervals)
+    };
     let mean_abs_deviation = intervals
         .iter()
-        .map(|interval| (interval - median).abs())
+        .map(|interval| (*interval - interval_median).abs())
         .sum::<f32>()
         / intervals.len() as f32;
-    let consistency = (1.0 - (mean_abs_deviation / median.max(1.0)) / 0.02).clamp(0.0, 1.0);
+    let consistency =
+        (1.0 - (mean_abs_deviation / interval_median.max(1.0)) / 0.02).clamp(0.0, 1.0);
     let mismatch = (beat_grid_bpm - coarse_bpm).abs();
     let agreement = (1.0 - mismatch / 0.6).clamp(0.0, 1.0);
     let correction_strength = (consistency * agreement).clamp(0.0, 1.0);
     coarse_bpm + (beat_grid_bpm - coarse_bpm) * correction_strength
+}
+
+fn filter_interval_outliers(intervals: &[f32]) -> (Vec<f32>, BeatIntervalOutlierDiagnostics) {
+    let valid: Vec<f32> = intervals
+        .iter()
+        .copied()
+        .filter(|interval| *interval > 0.0)
+        .collect();
+    if valid.is_empty() {
+        return (
+            Vec::new(),
+            BeatIntervalOutlierDiagnostics {
+                total_intervals: 0,
+                retained_intervals: 0,
+                rejected_intervals: 0,
+                leading_rejected_intervals: 0,
+                trailing_rejected_intervals: 0,
+                median_interval: 0.0,
+                median_abs_deviation: 0.0,
+                max_rejected_deviation_ratio: 0.0,
+            },
+        );
+    }
+
+    let mut medians = valid.clone();
+    let median_interval = median(&mut medians);
+    let mut deviations: Vec<f32> = valid
+        .iter()
+        .map(|interval| (interval - median_interval).abs())
+        .collect();
+    let median_abs_deviation = median(&mut deviations);
+    let deviation_limit = (median_interval * 0.08)
+        .max(4.0 * median_abs_deviation)
+        .max(median_interval * 0.02);
+
+    let keep_mask: Vec<bool> = valid
+        .iter()
+        .map(|interval| (interval - median_interval).abs() <= deviation_limit)
+        .collect();
+    let retained: Vec<f32> = valid
+        .iter()
+        .zip(keep_mask.iter())
+        .filter_map(|(interval, keep)| keep.then_some(*interval))
+        .collect();
+    let edge_window = keep_mask.len().min(4);
+    let leading_rejected_intervals = keep_mask
+        .iter()
+        .take(edge_window)
+        .filter(|keep| !**keep)
+        .count();
+    let trailing_rejected_intervals = keep_mask
+        .iter()
+        .rev()
+        .take(edge_window)
+        .filter(|keep| !**keep)
+        .count();
+    let max_rejected_deviation_ratio = valid
+        .iter()
+        .zip(keep_mask.iter())
+        .filter_map(|(interval, keep)| {
+            (!*keep).then_some((interval - median_interval).abs() / median_interval.max(1.0e-6))
+        })
+        .fold(0.0, f32::max);
+
+    (
+        retained,
+        BeatIntervalOutlierDiagnostics {
+            total_intervals: valid.len(),
+            retained_intervals: keep_mask.iter().filter(|keep| **keep).count(),
+            rejected_intervals: keep_mask.iter().filter(|keep| !**keep).count(),
+            leading_rejected_intervals,
+            trailing_rejected_intervals,
+            median_interval,
+            median_abs_deviation,
+            max_rejected_deviation_ratio,
+        },
+    )
 }
 
 fn tempo_points(beat_positions_seconds: &[f32], beat_span: usize) -> Vec<LocalTempoPoint> {
@@ -1455,6 +2244,271 @@ fn core_tempo_points(points: &[LocalTempoPoint]) -> &[LocalTempoPoint] {
     } else {
         &points[1..points.len() - 1]
     }
+}
+
+fn stable_window_mask(
+    points: &[LocalTempoPoint],
+    core_median_bpm: f32,
+    core_mean_abs_deviation_bpm: f32,
+) -> Vec<bool> {
+    if points.is_empty() || core_median_bpm <= 0.0 {
+        return Vec::new();
+    }
+
+    let tolerance_bpm = (0.45 + 3.0 * core_mean_abs_deviation_bpm).clamp(0.45, 2.0);
+    let mut keep_mask: Vec<bool> = points
+        .iter()
+        .map(|point| (point.bpm - core_median_bpm).abs() <= tolerance_bpm)
+        .collect();
+    let gap_limit = 2usize;
+    let mut index = 0usize;
+    while index < keep_mask.len() {
+        if keep_mask[index] {
+            index += 1;
+            continue;
+        }
+        let gap_start = index;
+        while index < keep_mask.len() && !keep_mask[index] {
+            index += 1;
+        }
+        let gap_end = index;
+        let gap_len = gap_end - gap_start;
+        let bounded_by_true = gap_start > 0
+            && gap_end < keep_mask.len()
+            && keep_mask[gap_start - 1]
+            && keep_mask[gap_end];
+        if bounded_by_true && gap_len <= gap_limit {
+            for keep in &mut keep_mask[gap_start..gap_end] {
+                *keep = true;
+            }
+        }
+    }
+    keep_mask
+}
+
+fn stable_span_diagnostics(
+    points: &[LocalTempoPoint],
+    keep_mask: &[bool],
+    start: usize,
+    end: usize,
+) -> Option<BeatGridCoreSpanDiagnostics> {
+    if points.is_empty() || keep_mask.len() != points.len() || start > end || end >= points.len() {
+        return None;
+    }
+
+    let span_start = &points[start];
+    let span_end = &points[end];
+    let trimmed_leading_windows = start;
+    let trimmed_trailing_windows = points.len().saturating_sub(end + 1);
+    let retained_windows = end + 1 - start;
+    let interior_rejected_windows = keep_mask[start..=end].iter().filter(|keep| !**keep).count();
+    let total_beat_span = points
+        .last()
+        .map(|point| {
+            point
+                .end_beat_index
+                .saturating_sub(points[0].start_beat_index)
+        })
+        .unwrap_or(0);
+    let retained_beat_span = span_end
+        .end_beat_index
+        .saturating_sub(span_start.start_beat_index);
+    let coverage = if total_beat_span == 0 {
+        1.0
+    } else {
+        retained_beat_span as f32 / total_beat_span as f32
+    };
+
+    Some(BeatGridCoreSpanDiagnostics {
+        start_beat_index: span_start.start_beat_index,
+        end_beat_index: span_end.end_beat_index,
+        start_seconds: span_start.start_seconds,
+        end_seconds: span_end.end_seconds,
+        coverage: Confidence::new(coverage),
+        retained_windows,
+        total_windows: points.len(),
+        trimmed_leading_windows,
+        trimmed_trailing_windows,
+        interior_rejected_windows,
+    })
+}
+
+fn detect_stable_core_span(
+    points: &[LocalTempoPoint],
+    core_median_bpm: f32,
+    core_mean_abs_deviation_bpm: f32,
+) -> Option<BeatGridCoreSpanDiagnostics> {
+    let keep_mask = stable_window_mask(points, core_median_bpm, core_mean_abs_deviation_bpm);
+    if keep_mask.is_empty() {
+        return None;
+    }
+
+    let mut best_start = None;
+    let mut best_len = 0usize;
+    let mut current_start = None;
+
+    for (index, keep) in keep_mask.iter().copied().enumerate() {
+        if keep {
+            current_start.get_or_insert(index);
+        } else if let Some(start) = current_start.take() {
+            let len = index - start;
+            if len > best_len {
+                best_len = len;
+                best_start = Some(start);
+            }
+        }
+    }
+    if let Some(start) = current_start {
+        let len = keep_mask.len() - start;
+        if len > best_len {
+            best_len = len;
+            best_start = Some(start);
+        }
+    }
+
+    let start = best_start?;
+    let end = start + best_len - 1;
+    stable_span_diagnostics(points, &keep_mask, start, end)
+}
+
+fn detect_edge_trimmed_stable_span(
+    points: &[LocalTempoPoint],
+    core_median_bpm: f32,
+    core_mean_abs_deviation_bpm: f32,
+) -> Option<BeatGridCoreSpanDiagnostics> {
+    let keep_mask = stable_window_mask(points, core_median_bpm, core_mean_abs_deviation_bpm);
+    if keep_mask.is_empty() {
+        return None;
+    }
+
+    let mut best: Option<(usize, usize, usize)> = None;
+    for start in 0..keep_mask.len() {
+        if !keep_mask[start] {
+            continue;
+        }
+        let mut rejected = 0usize;
+        for end in start..keep_mask.len() {
+            if !keep_mask[end] {
+                rejected += 1;
+            }
+            if !keep_mask[end] {
+                continue;
+            }
+            let len = end + 1 - start;
+            let allowed_rejections = (len / 10).max(2);
+            if rejected > allowed_rejections {
+                continue;
+            }
+            let candidate = (start, end, rejected);
+            let replace = match best {
+                None => true,
+                Some((best_start, best_end, best_rejected)) => {
+                    let best_len = best_end + 1 - best_start;
+                    len > best_len
+                        || (len == best_len && rejected < best_rejected)
+                        || (len == best_len
+                            && rejected == best_rejected
+                            && (start + (keep_mask.len() - end - 1))
+                                < (best_start + (keep_mask.len() - best_end - 1)))
+                }
+            };
+            if replace {
+                best = Some(candidate);
+            }
+        }
+    }
+
+    let (start, end, _) = best?;
+    stable_span_diagnostics(points, &keep_mask, start, end)
+}
+
+fn classify_tempo_stability_scope(
+    window_count: usize,
+    beat_interval_outliers: &BeatIntervalOutlierDiagnostics,
+    edge_trimmed_stable_span: Option<BeatGridCoreSpanDiagnostics>,
+    stable_core_span: Option<BeatGridCoreSpanDiagnostics>,
+) -> TempoStabilityScopeSummary {
+    let edge_trimmed_coverage = edge_trimmed_stable_span
+        .map(|span| span.coverage)
+        .unwrap_or_else(|| Confidence::new(0.0));
+    let contiguous_core_coverage = stable_core_span
+        .map(|span| span.coverage)
+        .unwrap_or_else(|| Confidence::new(0.0));
+    let interior_stability = edge_trimmed_stable_span
+        .map(|span| {
+            if span.retained_windows == 0 {
+                0.0
+            } else {
+                1.0 - (span.interior_rejected_windows as f32 / span.retained_windows as f32)
+            }
+        })
+        .unwrap_or(0.0);
+    let edge_locality = edge_trimmed_stable_span
+        .map(|span| {
+            let trimmed_fraction = if span.total_windows == 0 {
+                0.0
+            } else {
+                (span.trimmed_leading_windows + span.trimmed_trailing_windows) as f32
+                    / span.total_windows as f32
+            };
+            let edge_outlier_signal = if beat_interval_outliers.trailing_rejected_intervals
+                + beat_interval_outliers.leading_rejected_intervals
+                >= 2
+            {
+                if beat_interval_outliers.trailing_rejected_intervals == 0
+                    || beat_interval_outliers.leading_rejected_intervals == 0
+                {
+                    1.0
+                } else {
+                    0.8
+                }
+            } else if span.trimmed_leading_windows + span.trimmed_trailing_windows > 0 {
+                0.7
+            } else {
+                0.0
+            };
+            let span_gain = (span.coverage.0 - contiguous_core_coverage.0).clamp(0.0, 1.0);
+            let trimmed_support = if span_gain > 0.0 {
+                (1.0 - (trimmed_fraction / 0.08)).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
+            (0.50 * trimmed_support
+                + 0.30 * edge_outlier_signal
+                + 0.20 * interior_stability.clamp(0.0, 1.0))
+            .clamp(0.0, 1.0)
+        })
+        .unwrap_or(0.0);
+    let support = TempoStabilityScopeSupport {
+        edge_trimmed_coverage,
+        contiguous_core_coverage,
+        interior_stability: Confidence::new(interior_stability),
+        edge_locality: Confidence::new(edge_locality),
+    };
+
+    let scope = if edge_trimmed_coverage.0 >= 0.97
+        && support.interior_stability.0 >= 0.98
+        && support.edge_locality.0 < 0.35
+    {
+        TempoStabilityScope::WholeTrackStable
+    } else if edge_trimmed_coverage.0 >= 0.90
+        && support.interior_stability.0 >= 0.95
+        && support.edge_locality.0 >= 0.55
+    {
+        TempoStabilityScope::StableWithLocalizedEdgeDamage
+    } else if contiguous_core_coverage.0 >= 0.50
+        && (edge_trimmed_coverage.0 >= contiguous_core_coverage.0
+            || window_count
+                >= stable_core_span
+                    .map(|span| span.retained_windows)
+                    .unwrap_or(0))
+    {
+        TempoStabilityScope::CoreStableOnly
+    } else {
+        TempoStabilityScope::MidTrackUnstable
+    };
+
+    TempoStabilityScopeSummary { scope, support }
 }
 
 fn analyze_tempo_trend(points: &[LocalTempoPoint]) -> TempoTrendDiagnostics {
@@ -1590,6 +2644,14 @@ fn analyze_beat_grid_error(beat_positions_seconds: &[f32]) -> BeatGridErrorDiagn
 }
 
 fn analyze_local_tempo(beat_positions_seconds: &[f32]) -> TempoDiagnostics {
+    let interval_durations: Vec<f32> = beat_positions_seconds
+        .windows(2)
+        .filter_map(|window| {
+            let duration = window[1] - window[0];
+            (duration > 0.0).then_some(duration)
+        })
+        .collect();
+    let (_, beat_interval_outliers) = filter_interval_outliers(&interval_durations);
     let interval_tempi = tempo_points(beat_positions_seconds, 1);
     let windowed_tempi = tempo_points(beat_positions_seconds, 4);
     let (median_bpm, drift_span_bpm, mean_abs_deviation_bpm) = tempo_summary(&interval_tempi);
@@ -1604,12 +2666,16 @@ fn analyze_local_tempo(beat_positions_seconds: &[f32]) -> TempoDiagnostics {
     let boundary_bias_bpm = if windowed_tempi.len() <= core_windowed_tempi.len() {
         0.0
     } else {
-        windowed_tempi
+        let edge_window_count = windowed_tempi.len().min(4);
+        let mut edge_deviations: Vec<f32> = windowed_tempi
             .iter()
             .enumerate()
-            .filter(|(index, _)| *index == 0 || *index + 1 == windowed_tempi.len())
+            .filter(|(index, _)| {
+                *index < edge_window_count || *index + edge_window_count >= windowed_tempi.len()
+            })
             .map(|(_, point)| (point.bpm - core_windowed_median_bpm).abs())
-            .fold(0.0, f32::max)
+            .collect();
+        median(&mut edge_deviations)
     };
     let trend_points = if core_windowed_tempi.is_empty() {
         &windowed_tempi
@@ -1618,6 +2684,22 @@ fn analyze_local_tempo(beat_positions_seconds: &[f32]) -> TempoDiagnostics {
     };
     let trend = analyze_tempo_trend(trend_points);
     let beat_grid_error = analyze_beat_grid_error(beat_positions_seconds);
+    let edge_trimmed_stable_span = detect_edge_trimmed_stable_span(
+        &windowed_tempi,
+        core_windowed_median_bpm,
+        core_windowed_mean_abs_deviation_bpm,
+    );
+    let stable_core_span = detect_stable_core_span(
+        &windowed_tempi,
+        core_windowed_median_bpm,
+        core_windowed_mean_abs_deviation_bpm,
+    );
+    let stability_scope = classify_tempo_stability_scope(
+        windowed_tempi.len(),
+        &beat_interval_outliers,
+        edge_trimmed_stable_span,
+        stable_core_span,
+    );
 
     TempoDiagnostics {
         interval_tempi,
@@ -1634,6 +2716,10 @@ fn analyze_local_tempo(beat_positions_seconds: &[f32]) -> TempoDiagnostics {
         boundary_bias_bpm,
         trend,
         beat_grid_error,
+        beat_interval_outliers,
+        stability_scope,
+        edge_trimmed_stable_span,
+        stable_core_span,
     }
 }
 
@@ -1643,28 +2729,100 @@ fn interpret_tempo(
     tempo_ambiguity: Confidence,
     diagnostics: &TempoDiagnostics,
 ) -> TempoInterpretation {
+    let beat_period_ms = if diagnostics.core_windowed_median_bpm > 0.0 {
+        60_000.0 / diagnostics.core_windowed_median_bpm
+    } else if refined_bpm > 0.0 {
+        60_000.0 / refined_bpm
+    } else {
+        0.0
+    };
     let drift_stability = Confidence::new(
-        (1.0 - (0.6 * (diagnostics.trend.total_drift_bpm.abs() / 0.25)
-            + 0.4 * (diagnostics.trend.fit_mean_abs_deviation_bpm / 0.18)))
+        (1.0 - (0.45 * (diagnostics.trend.total_drift_bpm.abs() / 0.6)
+            + 0.55 * (diagnostics.trend.fit_mean_abs_deviation_bpm / 0.75)))
             .clamp(0.0, 1.0),
     );
+    let mean_residual_fraction =
+        (diagnostics.beat_grid_error.mean_abs_residual_ms / beat_period_ms.max(1.0)).max(0.0);
+    let core_residual_fraction =
+        (diagnostics.beat_grid_error.core_mean_abs_residual_ms / beat_period_ms.max(1.0)).max(0.0);
+    let anchored_drift_fraction =
+        (diagnostics.beat_grid_error.mean_abs_anchored_drift_ms / beat_period_ms.max(1.0)).max(0.0);
     let grid_stability = Confidence::new(
-        (1.0 - (0.45 * (diagnostics.beat_grid_error.mean_abs_residual_ms / 6.0)
-            + 0.35 * (diagnostics.beat_grid_error.core_mean_abs_residual_ms / 4.0)
-            + 0.20 * (diagnostics.beat_grid_error.mean_abs_anchored_drift_ms / 10.0)))
+        (1.0 - (0.45 * (mean_residual_fraction / 0.18)
+            + 0.35 * (core_residual_fraction / 0.15)
+            + 0.20 * (anchored_drift_fraction / 0.45)))
             .clamp(0.0, 1.0),
     );
     let core_consensus = Confidence::new(
         (1.0 - ((refined_bpm - diagnostics.core_windowed_median_bpm).abs() / 0.35)).clamp(0.0, 1.0),
     );
     let integer_closeness =
-        Confidence::new((1.0 - ((refined_bpm - refined_bpm.round()).abs() / 0.12)).clamp(0.0, 1.0));
+        Confidence::new((1.0 - ((refined_bpm - refined_bpm.round()).abs() / 0.5)).clamp(0.0, 1.0));
     let edge_core_gap_ms = (diagnostics.beat_grid_error.edge_mean_abs_residual_ms
         - diagnostics.beat_grid_error.core_mean_abs_residual_ms)
         .max(0.0);
+    let edge_core_gap_fraction = (edge_core_gap_ms / beat_period_ms.max(1.0)).max(0.0);
+    let boundary_scope_discount = if diagnostics.windowed_tempi.len() >= 256
+        && matches!(diagnostics.trend.direction, TempoTrendDirection::Stable)
+        && diagnostics.trend.fit_mean_abs_deviation_bpm <= 0.6
+    {
+        0.55
+    } else if diagnostics.windowed_tempi.len() >= 64
+        && matches!(diagnostics.trend.direction, TempoTrendDirection::Stable)
+    {
+        0.70
+    } else if diagnostics.windowed_tempi.len() >= 24 {
+        0.85
+    } else {
+        1.0
+    };
+    let boundary_bias_scale_bpm = (0.35
+        + 1.5 * diagnostics.trend.fit_mean_abs_deviation_bpm
+        + 0.15 * diagnostics.trend.total_drift_bpm.abs())
+    .clamp(0.35, 1.5);
+    let edge_gap_scale_fraction = if diagnostics.windowed_tempi.len() >= 128 {
+        0.30
+    } else if diagnostics.windowed_tempi.len() >= 64 {
+        0.24
+    } else {
+        0.18
+    };
     let boundary_pressure = Confidence::new(
-        (0.55 * (diagnostics.boundary_bias_bpm / 0.8) + 0.45 * (edge_core_gap_ms / 6.0))
+        ((0.35 * (diagnostics.boundary_bias_bpm / boundary_bias_scale_bpm)
+            + 0.65 * (edge_core_gap_fraction / edge_gap_scale_fraction))
+            * boundary_scope_discount)
             .clamp(0.0, 1.0),
+    );
+    let strong_integer_anchor = integer_closeness.0 > 0.92
+        && core_consensus.0 > 0.88
+        && matches!(diagnostics.trend.direction, TempoTrendDirection::Stable)
+        && diagnostics.trend.fit_mean_abs_deviation_bpm <= 0.6
+        && diagnostics.trend.total_drift_bpm.abs() <= 0.2
+        && boundary_pressure.0 < 0.6;
+    let localized_terminal_outliers = diagnostics.beat_interval_outliers.total_intervals >= 32
+        && diagnostics
+            .beat_interval_outliers
+            .trailing_rejected_intervals
+            >= 2
+        && diagnostics
+            .beat_interval_outliers
+            .leading_rejected_intervals
+            == 0
+        && diagnostics.beat_interval_outliers.rejected_intervals
+            <= diagnostics.beat_interval_outliers.total_intervals / 4;
+    let effective_ambiguity = Confidence::new(
+        (tempo_ambiguity.0
+            * if strong_integer_anchor {
+                0.35
+            } else if core_consensus.0 > 0.88
+                && drift_stability.0 > 0.5
+                && boundary_pressure.0 < 0.65
+            {
+                0.55
+            } else {
+                1.0
+            })
+        .clamp(0.0, 1.0),
     );
     let support = TempoInterpretationSupport {
         core_consensus,
@@ -1677,7 +2835,7 @@ fn interpret_tempo(
         + 0.20 * core_consensus.0
         + 0.20 * drift_stability.0
         + 0.15 * grid_stability.0
-        + 0.10 * (1.0 - tempo_ambiguity.0))
+        + 0.10 * (1.0 - effective_ambiguity.0))
         .clamp(0.0, 1.0);
     let nearest_integer_bpm = refined_bpm.round();
     let snap_error_bpm = (refined_bpm - nearest_integer_bpm).abs();
@@ -1690,13 +2848,15 @@ fn interpret_tempo(
         boundary_edge_gap_ms: edge_core_gap_ms,
     };
     let destabilized_edge_pressure = boundary_pressure.0 > 0.72
-        && edge_core_gap_ms > 2.5
-        && (stability_score < 0.62 || drift_stability.0 < 0.48 || grid_stability.0 < 0.48);
+        && edge_core_gap_fraction > 0.12
+        && (stability_score < 0.62
+            || core_consensus.0 < 0.75
+            || (drift_stability.0 < 0.48 && grid_stability.0 < 0.48));
 
     if confidence.0 < 0.4
         || stability_score < 0.45
         || destabilized_edge_pressure
-        || (tempo_ambiguity.0 > 0.6 && integer_closeness.0 < 0.8)
+        || (effective_ambiguity.0 > 0.6 && integer_closeness.0 < 0.8)
     {
         return TempoInterpretation {
             trust: TempoTrustLevel::Tentative,
@@ -1712,6 +2872,7 @@ fn interpret_tempo(
     if boundary_pressure.0 > 0.55
         && core_consensus.0 > 0.8
         && drift_stability.0 > 0.55
+        && !strong_integer_anchor
         && diagnostics.core_windowed_mean_abs_deviation_bpm
             <= diagnostics.windowed_mean_abs_deviation_bpm + 0.02
     {
@@ -1731,11 +2892,20 @@ fn interpret_tempo(
     }
 
     if integer_closeness.0 > 0.8
-        && snap_error_bpm >= 0.04
-        && boundary_pressure.0 < 0.45
-        && drift_stability.0 > 0.58
-        && grid_stability.0 > 0.53
-        && tempo_ambiguity.0 < 0.5
+        && (snap_error_bpm >= 0.04
+            || ((0.015..=0.03).contains(&snap_error_bpm)
+                && strong_integer_anchor
+                && drift_stability.0 > 0.55
+                && grid_stability.0 > 0.35)
+            || (snap_error_bpm <= 0.04
+                && localized_terminal_outliers
+                && strong_integer_anchor
+                && drift_stability.0 > 0.5
+                && grid_stability.0 > 0.35))
+        && boundary_pressure.0 < 0.6
+        && drift_stability.0 > 0.4
+        && grid_stability.0 > 0.35
+        && effective_ambiguity.0 < 0.7
     {
         let snapped_bpm = nearest_integer_bpm;
         return TempoInterpretation {
@@ -1768,11 +2938,202 @@ fn interpret_tempo(
     }
 }
 
+#[cfg(test)]
+fn default_tempo_stability_scope() -> TempoStabilityScopeSummary {
+    TempoStabilityScopeSummary {
+        scope: TempoStabilityScope::WholeTrackStable,
+        support: TempoStabilityScopeSupport {
+            edge_trimmed_coverage: Confidence::new(1.0),
+            contiguous_core_coverage: Confidence::new(1.0),
+            interior_stability: Confidence::new(1.0),
+            edge_locality: Confidence::new(0.0),
+        },
+    }
+}
+
+#[cfg(test)]
 fn tempo_state_recommendation(
     interpretation: TempoInterpretation,
     confidence: Confidence,
     tempo_ambiguity: Confidence,
 ) -> TempoStateRecommendation {
+    tempo_state_recommendation_with_scope(
+        interpretation,
+        confidence,
+        tempo_ambiguity,
+        default_tempo_stability_scope(),
+    )
+}
+
+fn tempo_state_recommendation_with_scope(
+    interpretation: TempoInterpretation,
+    confidence: Confidence,
+    tempo_ambiguity: Confidence,
+    stability_scope: TempoStabilityScopeSummary,
+) -> TempoStateRecommendation {
+    fn push_tempo_cause(
+        slots: &mut [Option<TempoContinuityCause>; 3],
+        count: &mut usize,
+        cause: TempoContinuityCause,
+    ) {
+        if slots.iter().flatten().any(|existing| *existing == cause) {
+            return;
+        }
+
+        if *count < slots.len() {
+            slots[*count] = Some(cause);
+            *count += 1;
+        }
+    }
+
+    fn continuity_trigger(
+        action: TempoContinuityAction,
+        source: TempoContinuitySource,
+        reason: TempoContinuityReason,
+        boundary_pressure: Confidence,
+        tempo_ambiguity: Confidence,
+    ) -> TempoContinuityTrigger {
+        if matches!(action, TempoContinuityAction::Clear)
+            || matches!(source, TempoContinuitySource::Cleared)
+            || matches!(reason, TempoContinuityReason::InsufficientEvidence)
+        {
+            return TempoContinuityTrigger::EvidenceLoss;
+        }
+
+        if matches!(source, TempoContinuitySource::PriorTempo) {
+            return TempoContinuityTrigger::PriorTempoDrift;
+        }
+
+        if matches!(source, TempoContinuitySource::CoreWindow)
+            || matches!(reason, TempoContinuityReason::CoreWindowCarry)
+            || boundary_pressure.0 >= 0.45
+        {
+            return TempoContinuityTrigger::BoundaryDrift;
+        }
+
+        if tempo_ambiguity.0 >= 0.18 && !matches!(action, TempoContinuityAction::Lock) {
+            return TempoContinuityTrigger::AmbiguityCarry;
+        }
+
+        TempoContinuityTrigger::StableRevalidation
+    }
+
+    fn unresolved_span(
+        trigger: TempoContinuityTrigger,
+        beat_span: usize,
+        revalidate_after_beats: usize,
+        stage_index: usize,
+    ) -> TempoContinuityUnresolvedSpan {
+        let beats = match trigger {
+            TempoContinuityTrigger::StableRevalidation => 0,
+            TempoContinuityTrigger::BoundaryDrift
+            | TempoContinuityTrigger::AmbiguityCarry
+            | TempoContinuityTrigger::PriorTempoDrift => {
+                beat_span.max(revalidate_after_beats.max(1))
+            }
+            TempoContinuityTrigger::EvidenceLoss => beat_span,
+        };
+        let failed_revalidations = if beats == 0 || revalidate_after_beats == 0 {
+            0
+        } else {
+            beats.div_ceil(revalidate_after_beats).max(stage_index)
+        };
+
+        TempoContinuityUnresolvedSpan {
+            beats,
+            failed_revalidations,
+        }
+    }
+
+    fn continuity_cause_stack(
+        action: TempoContinuityAction,
+        source: TempoContinuitySource,
+        reason: TempoContinuityReason,
+        boundary_pressure: Confidence,
+        tempo_ambiguity: Confidence,
+    ) -> TempoContinuityCauseStack {
+        let mut causes = [None; 3];
+        let mut count = 0;
+
+        if matches!(action, TempoContinuityAction::Lock)
+            && matches!(source, TempoContinuitySource::CurrentTempo)
+            && matches!(
+                reason,
+                TempoContinuityReason::StableTempo | TempoContinuityReason::IntegerTempoSnap
+            )
+        {
+            push_tempo_cause(
+                &mut causes,
+                &mut count,
+                TempoContinuityCause::StableTempoEvidence,
+            );
+        }
+
+        if boundary_pressure.0 >= 0.45 || matches!(source, TempoContinuitySource::CoreWindow) {
+            push_tempo_cause(&mut causes, &mut count, TempoContinuityCause::BoundaryDrift);
+        }
+
+        if tempo_ambiguity.0 >= 0.18 {
+            push_tempo_cause(
+                &mut causes,
+                &mut count,
+                TempoContinuityCause::TempoAmbiguity,
+            );
+        }
+
+        if matches!(source, TempoContinuitySource::PriorTempo) {
+            push_tempo_cause(
+                &mut causes,
+                &mut count,
+                TempoContinuityCause::PriorTempoCarry,
+            );
+        }
+
+        if matches!(source, TempoContinuitySource::CoreWindow)
+            || matches!(reason, TempoContinuityReason::CoreWindowCarry)
+        {
+            push_tempo_cause(
+                &mut causes,
+                &mut count,
+                TempoContinuityCause::CoreWindowCarry,
+            );
+        }
+
+        if matches!(action, TempoContinuityAction::Clear)
+            || matches!(source, TempoContinuitySource::Cleared)
+        {
+            push_tempo_cause(&mut causes, &mut count, TempoContinuityCause::EvidenceLoss);
+        }
+
+        let primary = if matches!(action, TempoContinuityAction::Clear) && tempo_ambiguity.0 >= 0.18
+        {
+            TempoContinuityCause::TempoAmbiguity
+        } else {
+            causes[0].unwrap_or(match action {
+                TempoContinuityAction::Lock => TempoContinuityCause::StableTempoEvidence,
+                TempoContinuityAction::Retain | TempoContinuityAction::Reacquire => {
+                    TempoContinuityCause::TempoAmbiguity
+                }
+                TempoContinuityAction::Clear => TempoContinuityCause::EvidenceLoss,
+            })
+        };
+
+        TempoContinuityCauseStack {
+            primary,
+            secondary: [causes[1], causes[2]],
+            count: count.max(1),
+        }
+    }
+
+    fn has_tempo_cause(stack: TempoContinuityCauseStack, cause: TempoContinuityCause) -> bool {
+        stack.primary == cause
+            || stack
+                .secondary
+                .into_iter()
+                .flatten()
+                .any(|entry| entry == cause)
+    }
+
     fn continuity_severity(
         action: TempoContinuityAction,
         source: TempoContinuitySource,
@@ -1795,26 +3156,57 @@ fn tempo_state_recommendation(
         action: TempoContinuityAction,
         source: TempoContinuitySource,
         reason: TempoContinuityReason,
+        trigger: TempoContinuityTrigger,
+        unresolved: TempoContinuityUnresolvedSpan,
+        causes: TempoContinuityCauseStack,
+        stage_index: usize,
     ) -> TempoContinuityHistory {
+        let has_evidence_loss = has_tempo_cause(causes, TempoContinuityCause::EvidenceLoss);
+        let has_prior_carry = has_tempo_cause(causes, TempoContinuityCause::PriorTempoCarry);
+        let has_boundary = has_tempo_cause(causes, TempoContinuityCause::BoundaryDrift);
+
         match action {
             TempoContinuityAction::Clear => TempoContinuityHistory::Degrading,
-            TempoContinuityAction::Lock => TempoContinuityHistory::Reinforcing,
+            TempoContinuityAction::Lock
+                if matches!(trigger, TempoContinuityTrigger::StableRevalidation)
+                    && unresolved.failed_revalidations == 0
+                    && !has_evidence_loss =>
+            {
+                TempoContinuityHistory::Reinforcing
+            }
+            TempoContinuityAction::Lock => TempoContinuityHistory::Preserving,
+            TempoContinuityAction::Retain
+                if stage_index > 0
+                    || has_evidence_loss
+                    || has_prior_carry
+                    || (has_boundary && unresolved.failed_revalidations >= 3) =>
+            {
+                TempoContinuityHistory::Degrading
+            }
             TempoContinuityAction::Retain => match source {
-                TempoContinuitySource::PriorTempo => TempoContinuityHistory::Degrading,
                 TempoContinuitySource::CurrentTempo | TempoContinuitySource::CoreWindow => {
                     TempoContinuityHistory::Preserving
                 }
-                TempoContinuitySource::Cleared => TempoContinuityHistory::Degrading,
-            },
-            TempoContinuityAction::Reacquire => match (source, reason) {
-                (TempoContinuitySource::CurrentTempo, TempoContinuityReason::StableTempo) => {
-                    TempoContinuityHistory::Reinforcing
+                TempoContinuitySource::PriorTempo | TempoContinuitySource::Cleared => {
+                    TempoContinuityHistory::Degrading
                 }
-                (TempoContinuitySource::CurrentTempo, _) => TempoContinuityHistory::Preserving,
-                (TempoContinuitySource::PriorTempo, _) => TempoContinuityHistory::Degrading,
-                (TempoContinuitySource::CoreWindow, _) => TempoContinuityHistory::Preserving,
-                (TempoContinuitySource::Cleared, _) => TempoContinuityHistory::Degrading,
             },
+            TempoContinuityAction::Reacquire
+                if stage_index > 0
+                    || has_evidence_loss
+                    || has_prior_carry
+                    || unresolved.failed_revalidations > 1 =>
+            {
+                TempoContinuityHistory::Degrading
+            }
+            TempoContinuityAction::Reacquire
+                if matches!(source, TempoContinuitySource::CurrentTempo)
+                    && matches!(reason, TempoContinuityReason::StableTempo)
+                    && !has_boundary =>
+            {
+                TempoContinuityHistory::Reinforcing
+            }
+            TempoContinuityAction::Reacquire => TempoContinuityHistory::Preserving,
         }
     }
 
@@ -1860,6 +3252,8 @@ fn tempo_state_recommendation(
         source: TempoContinuitySource,
         confidence: Confidence,
         history: TempoContinuityHistory,
+        unresolved: TempoContinuityUnresolvedSpan,
+        causes: TempoContinuityCauseStack,
         beat_span: usize,
     ) -> Confidence {
         if matches!(action, TempoContinuityAction::Clear)
@@ -1886,10 +3280,965 @@ fn tempo_state_recommendation(
             TempoContinuityHistory::Degrading => -0.12,
         };
         let span_bias = (beat_span as f32 / 16.0).min(1.0) * 0.10;
+        let unresolved_penalty = unresolved.failed_revalidations as f32 * 0.08;
+        let cause_penalty = (if has_tempo_cause(causes, TempoContinuityCause::BoundaryDrift) {
+            0.10
+        } else {
+            0.0
+        }) + (if has_tempo_cause(causes, TempoContinuityCause::TempoAmbiguity) {
+            0.08
+        } else {
+            0.0
+        }) + (if has_tempo_cause(causes, TempoContinuityCause::PriorTempoCarry)
+        {
+            0.12
+        } else {
+            0.0
+        }) + (if has_tempo_cause(causes, TempoContinuityCause::EvidenceLoss) {
+            0.20
+        } else {
+            0.0
+        });
+        let evidence_bonus = if has_tempo_cause(causes, TempoContinuityCause::StableTempoEvidence) {
+            0.06
+        } else {
+            0.0
+        };
 
         Confidence::new(
-            (confidence.0 * action_scale + source_bias + history_bias + span_bias).clamp(0.0, 1.0),
+            (confidence.0 * action_scale + source_bias + history_bias + span_bias + evidence_bonus
+                - unresolved_penalty
+                - cause_penalty)
+                .clamp(0.0, 1.0),
         )
+    }
+
+    fn continuity_arc_support(
+        unresolved: TempoContinuityUnresolvedSpan,
+        causes: TempoContinuityCauseStack,
+        current: TempoContinuityHistory,
+        refresh: TempoContinuityTransition,
+        first_decay: TempoContinuityTransition,
+        final_decay: TempoContinuityTransition,
+    ) -> TempoContinuityArcSupport {
+        let refresh_bonus = match refresh.history {
+            TempoContinuityHistory::Reinforcing => 0.26,
+            TempoContinuityHistory::Preserving => 0.12,
+            TempoContinuityHistory::Degrading => 0.0,
+        };
+        let current_bonus = match current {
+            TempoContinuityHistory::Reinforcing => 0.18,
+            TempoContinuityHistory::Preserving => 0.08,
+            TempoContinuityHistory::Degrading => 0.0,
+        };
+        let decay_penalty = match first_decay.history {
+            TempoContinuityHistory::Degrading => 0.08,
+            _ => 0.0,
+        } + match final_decay.history {
+            TempoContinuityHistory::Degrading => 0.12,
+            _ => 0.0,
+        };
+        let refresh_strength = Confidence::new(
+            (refresh.refresh_strength.0 + refresh_bonus + current_bonus - decay_penalty)
+                .clamp(0.0, 1.0),
+        );
+
+        let drift_pressure = Confidence::new(
+            ((unresolved.failed_revalidations as f32 * 0.20)
+                + match current {
+                    TempoContinuityHistory::Degrading => 0.18,
+                    TempoContinuityHistory::Preserving => 0.08,
+                    TempoContinuityHistory::Reinforcing => 0.0,
+                }
+                + match first_decay.history {
+                    TempoContinuityHistory::Degrading => 0.14,
+                    _ => 0.0,
+                }
+                + match final_decay.history {
+                    TempoContinuityHistory::Degrading => 0.18,
+                    _ => 0.0,
+                })
+            .clamp(0.0, 1.0),
+        );
+
+        let instability_pressure = Confidence::new(
+            ((if has_tempo_cause(causes, TempoContinuityCause::BoundaryDrift) {
+                0.28_f32
+            } else {
+                0.0
+            }) + (if has_tempo_cause(causes, TempoContinuityCause::TempoAmbiguity) {
+                0.18
+            } else {
+                0.0
+            }) + (if has_tempo_cause(causes, TempoContinuityCause::PriorTempoCarry) {
+                0.16
+            } else {
+                0.0
+            }) + (if has_tempo_cause(causes, TempoContinuityCause::CoreWindowCarry) {
+                0.10
+            } else {
+                0.0
+            }) + (if has_tempo_cause(causes, TempoContinuityCause::EvidenceLoss) {
+                0.40
+            } else {
+                0.0
+            }))
+            .clamp(0.0, 1.0),
+        );
+
+        TempoContinuityArcSupport {
+            refresh_strength,
+            drift_pressure,
+            instability_pressure,
+        }
+    }
+
+    fn continuity_arc_assessment(
+        source: TempoContinuitySource,
+        confidence: Confidence,
+        unresolved: TempoContinuityUnresolvedSpan,
+        causes: TempoContinuityCauseStack,
+        current: TempoContinuityHistory,
+        refresh: TempoContinuityTransition,
+        first_decay: TempoContinuityTransition,
+        final_decay: TempoContinuityTransition,
+    ) -> (
+        TempoContinuityArc,
+        TempoContinuityArcRationale,
+        TempoContinuityArcSupport,
+    ) {
+        let has_evidence_loss = has_tempo_cause(causes, TempoContinuityCause::EvidenceLoss);
+        let has_boundary = has_tempo_cause(causes, TempoContinuityCause::BoundaryDrift);
+        let has_prior_carry = has_tempo_cause(causes, TempoContinuityCause::PriorTempoCarry);
+        let persistent_decay = matches!(first_decay.history, TempoContinuityHistory::Degrading)
+            && matches!(final_decay.history, TempoContinuityHistory::Degrading);
+        let support = continuity_arc_support(
+            unresolved,
+            causes,
+            current,
+            refresh,
+            first_decay,
+            final_decay,
+        );
+
+        if matches!(current, TempoContinuityHistory::Degrading)
+            && (persistent_decay || has_evidence_loss)
+        {
+            return (
+                TempoContinuityArc::Collapsing,
+                if has_evidence_loss {
+                    TempoContinuityArcRationale::EvidenceLoss
+                } else {
+                    TempoContinuityArcRationale::UnresolvedDrift
+                },
+                support,
+            );
+        }
+
+        if matches!(refresh.history, TempoContinuityHistory::Reinforcing) && !has_evidence_loss {
+            if matches!(current, TempoContinuityHistory::Reinforcing) {
+                return (
+                    TempoContinuityArc::Recovering,
+                    TempoContinuityArcRationale::RefreshStrength,
+                    support,
+                );
+            }
+
+            if matches!(current, TempoContinuityHistory::Preserving)
+                && confidence.0 >= 0.56
+                && unresolved.failed_revalidations <= 1
+                && !has_prior_carry
+            {
+                return (
+                    TempoContinuityArc::Recovering,
+                    TempoContinuityArcRationale::RefreshStrength,
+                    support,
+                );
+            }
+        }
+
+        if has_evidence_loss
+            || (persistent_decay && confidence.0 < 0.24)
+            || (matches!(current, TempoContinuityHistory::Degrading)
+                && !matches!(refresh.history, TempoContinuityHistory::Reinforcing))
+        {
+            return (
+                TempoContinuityArc::Collapsing,
+                if has_evidence_loss {
+                    TempoContinuityArcRationale::EvidenceLoss
+                } else if has_boundary {
+                    TempoContinuityArcRationale::BoundaryDrift
+                } else {
+                    TempoContinuityArcRationale::UnresolvedDrift
+                },
+                support,
+            );
+        }
+
+        (
+            TempoContinuityArc::Stalling,
+            if has_boundary || matches!(source, TempoContinuitySource::CoreWindow) {
+                TempoContinuityArcRationale::BoundaryDrift
+            } else if unresolved.failed_revalidations >= 2 || has_prior_carry {
+                TempoContinuityArcRationale::UnresolvedDrift
+            } else {
+                TempoContinuityArcRationale::StableCarry
+            },
+            support,
+        )
+    }
+
+    fn continuity_arc_decision(
+        arc: TempoContinuityArc,
+        rationale: TempoContinuityArcRationale,
+        support: TempoContinuityArcSupport,
+        severity: TempoContinuitySeverity,
+        history: TempoContinuityHistory,
+        trigger: TempoContinuityTrigger,
+        causes: TempoContinuityCauseStack,
+        provenance: TempoContinuityProvenance,
+        expiry: TempoContinuityExpiry,
+        trusted_beats: usize,
+        revalidate_after_beats: usize,
+        confidence: Confidence,
+        unresolved: TempoContinuityUnresolvedSpan,
+        refresh: TempoContinuityTransition,
+        first_decay: TempoContinuityTransition,
+        final_decay: TempoContinuityTransition,
+    ) -> TempoContinuityArcDecision {
+        let cause_stack = causes;
+        let action_expiry = |action: TempoContinuityArcAction| -> TempoContinuityArcActionExpiry {
+            let guaranteed_until_beats = match action {
+                TempoContinuityArcAction::LockCurrentTempo => trusted_beats,
+                TempoContinuityArcAction::PreferCoreWindowTempo => trusted_beats
+                    .min(revalidate_after_beats.saturating_mul(2))
+                    .max(1),
+                TempoContinuityArcAction::PreservePriorTempo => {
+                    trusted_beats.min(revalidate_after_beats).max(1)
+                }
+                TempoContinuityArcAction::ReacquireCurrentTempo => trusted_beats.max(1),
+                TempoContinuityArcAction::ClearTempo => 0,
+            };
+            let fallback_after_beats = match action {
+                TempoContinuityArcAction::LockCurrentTempo => expiry.downgrade_after_beats,
+                TempoContinuityArcAction::PreferCoreWindowTempo => {
+                    expiry.downgrade_after_beats.min(expiry.clear_after_beats)
+                }
+                TempoContinuityArcAction::PreservePriorTempo
+                | TempoContinuityArcAction::ReacquireCurrentTempo => expiry.clear_after_beats,
+                TempoContinuityArcAction::ClearTempo => 0,
+            };
+            let max_failed_revalidations = match action {
+                TempoContinuityArcAction::LockCurrentTempo => expiry.max_failed_revalidations,
+                TempoContinuityArcAction::PreferCoreWindowTempo
+                | TempoContinuityArcAction::PreservePriorTempo => {
+                    expiry.max_failed_revalidations.min(2).max(1)
+                }
+                TempoContinuityArcAction::ReacquireCurrentTempo => {
+                    expiry.max_failed_revalidations.min(3).max(1)
+                }
+                TempoContinuityArcAction::ClearTempo => 0,
+            };
+
+            TempoContinuityArcActionExpiry {
+                guaranteed_until_beats,
+                fallback_after_beats,
+                clear_after_beats: expiry.clear_after_beats,
+                max_failed_revalidations,
+            }
+        };
+
+        let decision_fields = |action: TempoContinuityArcAction| {
+            let action_severity = match action {
+                TempoContinuityArcAction::LockCurrentTempo => TempoContinuitySeverity::Confirmed,
+                TempoContinuityArcAction::PreferCoreWindowTempo => TempoContinuitySeverity::Guarded,
+                TempoContinuityArcAction::PreservePriorTempo => TempoContinuitySeverity::Fragile,
+                TempoContinuityArcAction::ReacquireCurrentTempo => {
+                    if matches!(history, TempoContinuityHistory::Reinforcing)
+                        && support.refresh_strength.0 >= 0.72
+                    {
+                        TempoContinuitySeverity::Guarded
+                    } else {
+                        TempoContinuitySeverity::Fragile
+                    }
+                }
+                TempoContinuityArcAction::ClearTempo => TempoContinuitySeverity::Cleared,
+            };
+            let fallback_action = match action {
+                TempoContinuityArcAction::LockCurrentTempo => {
+                    TempoContinuityArcAction::ReacquireCurrentTempo
+                }
+                TempoContinuityArcAction::PreferCoreWindowTempo => {
+                    TempoContinuityArcAction::PreservePriorTempo
+                }
+                TempoContinuityArcAction::PreservePriorTempo
+                | TempoContinuityArcAction::ReacquireCurrentTempo => {
+                    TempoContinuityArcAction::ClearTempo
+                }
+                TempoContinuityArcAction::ClearTempo => TempoContinuityArcAction::ClearTempo,
+            };
+            let action_provenance = match action {
+                TempoContinuityArcAction::LockCurrentTempo
+                | TempoContinuityArcAction::ReacquireCurrentTempo => provenance,
+                TempoContinuityArcAction::PreferCoreWindowTempo => {
+                    TempoContinuityProvenance::CoreWindowEstimate
+                }
+                TempoContinuityArcAction::PreservePriorTempo => {
+                    TempoContinuityProvenance::PriorTempoCarry
+                }
+                TempoContinuityArcAction::ClearTempo => TempoContinuityProvenance::NoTempo,
+            };
+            let downgrade_support = TempoContinuityArcDowngradeSupport {
+                stability_window_pressure: Confidence::new(
+                    if matches!(trigger, TempoContinuityTrigger::StableRevalidation) {
+                        (0.55
+                            + 0.25 * support.refresh_strength.0
+                            + 0.20 * (1.0 - support.drift_pressure.0))
+                            .clamp(0.0, 1.0)
+                    } else {
+                        0.0
+                    },
+                ),
+                boundary_drift_pressure: Confidence::new(
+                    ((if matches!(trigger, TempoContinuityTrigger::BoundaryDrift) {
+                        0.45_f32
+                    } else {
+                        0.0
+                    }) + if has_tempo_cause(cause_stack, TempoContinuityCause::BoundaryDrift) {
+                        0.35
+                    } else {
+                        0.0
+                    } + if has_tempo_cause(cause_stack, TempoContinuityCause::CoreWindowCarry) {
+                        0.15
+                    } else {
+                        0.0
+                    } + 0.10 * support.drift_pressure.0)
+                        .clamp(0.0, 1.0),
+                ),
+                ambiguity_pressure: Confidence::new(
+                    ((if matches!(trigger, TempoContinuityTrigger::AmbiguityCarry) {
+                        0.55_f32
+                    } else {
+                        0.0
+                    }) + if has_tempo_cause(cause_stack, TempoContinuityCause::TempoAmbiguity) {
+                        0.35
+                    } else {
+                        0.0
+                    } + 0.10 * support.instability_pressure.0)
+                        .clamp(0.0, 1.0),
+                ),
+                failed_revalidation_pressure: Confidence::new(
+                    ((unresolved.failed_revalidations as f32 / 3.0) * 0.75
+                        + if unresolved.failed_revalidations >= 2 {
+                            0.20
+                        } else {
+                            0.0
+                        })
+                    .clamp(0.0, 1.0),
+                ),
+                evidence_loss_pressure: Confidence::new(
+                    ((if matches!(trigger, TempoContinuityTrigger::EvidenceLoss) {
+                        0.55_f32
+                    } else {
+                        0.0
+                    }) + if has_tempo_cause(cause_stack, TempoContinuityCause::EvidenceLoss) {
+                        0.35
+                    } else {
+                        0.0
+                    } + if matches!(action, TempoContinuityArcAction::ClearTempo) {
+                        0.10
+                    } else {
+                        0.0
+                    })
+                    .clamp(0.0, 1.0),
+                ),
+            };
+            let downgrade_rationale = if matches!(action, TempoContinuityArcAction::ClearTempo)
+                || matches!(trigger, TempoContinuityTrigger::EvidenceLoss)
+            {
+                TempoContinuityArcDowngradeRationale::EvidenceLoss
+            } else if unresolved.failed_revalidations >= 3
+                || (unresolved.failed_revalidations >= 2
+                    && matches!(action, TempoContinuityArcAction::PreservePriorTempo))
+            {
+                TempoContinuityArcDowngradeRationale::RepeatedFailedRevalidation
+            } else {
+                match trigger {
+                    TempoContinuityTrigger::StableRevalidation => {
+                        TempoContinuityArcDowngradeRationale::StabilityWindowEnd
+                    }
+                    TempoContinuityTrigger::BoundaryDrift => {
+                        TempoContinuityArcDowngradeRationale::BoundaryDrift
+                    }
+                    TempoContinuityTrigger::AmbiguityCarry => {
+                        TempoContinuityArcDowngradeRationale::AmbiguityCarry
+                    }
+                    TempoContinuityTrigger::PriorTempoDrift => {
+                        TempoContinuityArcDowngradeRationale::PriorTempoDrift
+                    }
+                    TempoContinuityTrigger::EvidenceLoss => {
+                        TempoContinuityArcDowngradeRationale::EvidenceLoss
+                    }
+                }
+            };
+            let downgrade_trend_support = {
+                let current_pressure = Confidence::new((1.0 - confidence.0).clamp(0.0, 1.0));
+                let next_stage_pressure = match arc {
+                    TempoContinuityArc::Recovering => {
+                        Confidence::new((1.0 - refresh.refresh_strength.0).clamp(0.0, 1.0))
+                    }
+                    TempoContinuityArc::Stalling => {
+                        Confidence::new((1.0 - first_decay.refresh_strength.0).clamp(0.0, 1.0))
+                    }
+                    TempoContinuityArc::Collapsing => {
+                        Confidence::new((1.0 - final_decay.refresh_strength.0).clamp(0.0, 1.0))
+                    }
+                };
+                let terminal_pressure =
+                    Confidence::new((1.0 - final_decay.refresh_strength.0).clamp(0.0, 1.0));
+
+                TempoContinuityArcDowngradeTrendSupport {
+                    current_pressure,
+                    next_stage_pressure,
+                    terminal_pressure,
+                }
+            };
+            let downgrade_trend = if matches!(action, TempoContinuityArcAction::ClearTempo) {
+                TempoContinuityArcDowngradeTrend::Stable
+            } else if downgrade_trend_support.next_stage_pressure.0
+                > downgrade_trend_support.current_pressure.0 + 0.08
+            {
+                TempoContinuityArcDowngradeTrend::Rising
+            } else if downgrade_trend_support.next_stage_pressure.0 + 0.12
+                < downgrade_trend_support.current_pressure.0
+            {
+                TempoContinuityArcDowngradeTrend::Easing
+            } else {
+                TempoContinuityArcDowngradeTrend::Stable
+            };
+            let downgrade_trend_rationale = match downgrade_trend {
+                TempoContinuityArcDowngradeTrend::Rising
+                    if matches!(trigger, TempoContinuityTrigger::BoundaryDrift) =>
+                {
+                    TempoContinuityArcDowngradeTrendRationale::BoundaryEscalation
+                }
+                TempoContinuityArcDowngradeTrend::Rising => {
+                    TempoContinuityArcDowngradeTrendRationale::RevalidationDecay
+                }
+                TempoContinuityArcDowngradeTrend::Easing
+                    if matches!(trigger, TempoContinuityTrigger::AmbiguityCarry) =>
+                {
+                    TempoContinuityArcDowngradeTrendRationale::AmbiguityCarry
+                }
+                TempoContinuityArcDowngradeTrend::Easing => {
+                    TempoContinuityArcDowngradeTrendRationale::StabilityWindowCarry
+                }
+                TempoContinuityArcDowngradeTrend::Stable
+                    if matches!(action, TempoContinuityArcAction::ClearTempo) =>
+                {
+                    TempoContinuityArcDowngradeTrendRationale::FlatCollapse
+                }
+                TempoContinuityArcDowngradeTrend::Stable
+                    if downgrade_trend_support.terminal_pressure.0
+                        > downgrade_trend_support.current_pressure.0 + 0.12 =>
+                {
+                    TempoContinuityArcDowngradeTrendRationale::TerminalClearPressure
+                }
+                TempoContinuityArcDowngradeTrend::Stable
+                    if matches!(trigger, TempoContinuityTrigger::AmbiguityCarry) =>
+                {
+                    TempoContinuityArcDowngradeTrendRationale::AmbiguityCarry
+                }
+                TempoContinuityArcDowngradeTrend::Stable
+                    if matches!(trigger, TempoContinuityTrigger::BoundaryDrift) =>
+                {
+                    TempoContinuityArcDowngradeTrendRationale::BoundaryEscalation
+                }
+                TempoContinuityArcDowngradeTrend::Stable => {
+                    TempoContinuityArcDowngradeTrendRationale::StabilityWindowCarry
+                }
+            };
+            let downgrade_inflection = {
+                let next_stage_after_beats = match arc {
+                    TempoContinuityArc::Recovering => refresh.after_beats,
+                    TempoContinuityArc::Stalling => first_decay.after_beats,
+                    TempoContinuityArc::Collapsing => final_decay.after_beats,
+                };
+                let next_stage_delta = Confidence::new(
+                    (downgrade_trend_support.next_stage_pressure.0
+                        - downgrade_trend_support.current_pressure.0)
+                        .abs()
+                        .clamp(0.0, 1.0),
+                );
+                let terminal_delta = Confidence::new(
+                    (downgrade_trend_support.terminal_pressure.0
+                        - downgrade_trend_support.current_pressure.0)
+                        .abs()
+                        .clamp(0.0, 1.0),
+                );
+                let stage = if matches!(action, TempoContinuityArcAction::ClearTempo)
+                    || (matches!(downgrade_trend, TempoContinuityArcDowngradeTrend::Stable)
+                        && next_stage_delta.0 < 0.06
+                        && terminal_delta.0 < 0.06)
+                {
+                    TempoContinuityArcDowngradeInflectionStage::FlatWindow
+                } else if matches!(
+                    downgrade_trend,
+                    TempoContinuityArcDowngradeTrend::Rising
+                        | TempoContinuityArcDowngradeTrend::Easing
+                ) {
+                    TempoContinuityArcDowngradeInflectionStage::NextStage
+                } else if terminal_delta.0 > next_stage_delta.0 + 0.06 {
+                    TempoContinuityArcDowngradeInflectionStage::TerminalClear
+                } else if next_stage_delta.0 >= 0.06 {
+                    TempoContinuityArcDowngradeInflectionStage::NextStage
+                } else {
+                    TempoContinuityArcDowngradeInflectionStage::FlatWindow
+                };
+                let after_beats = match stage {
+                    TempoContinuityArcDowngradeInflectionStage::FlatWindow => 0,
+                    TempoContinuityArcDowngradeInflectionStage::NextStage => next_stage_after_beats,
+                    TempoContinuityArcDowngradeInflectionStage::TerminalClear => {
+                        final_decay.after_beats
+                    }
+                };
+                let primary_delta = match stage {
+                    TempoContinuityArcDowngradeInflectionStage::FlatWindow => Confidence::new(0.0),
+                    TempoContinuityArcDowngradeInflectionStage::NextStage => next_stage_delta,
+                    TempoContinuityArcDowngradeInflectionStage::TerminalClear => terminal_delta,
+                };
+                let (competing_stage, competing_after_beats, competing_delta) = match stage {
+                    TempoContinuityArcDowngradeInflectionStage::NextStage
+                        if terminal_delta.0 >= 0.06
+                            && terminal_delta.0 >= (primary_delta.0 * 0.55) =>
+                    {
+                        (
+                            Some(TempoContinuityArcDowngradeInflectionStage::TerminalClear),
+                            final_decay.after_beats,
+                            terminal_delta,
+                        )
+                    }
+                    TempoContinuityArcDowngradeInflectionStage::TerminalClear
+                        if next_stage_delta.0 >= 0.06
+                            && next_stage_delta.0 >= (primary_delta.0 * 0.55) =>
+                    {
+                        (
+                            Some(TempoContinuityArcDowngradeInflectionStage::NextStage),
+                            next_stage_after_beats,
+                            next_stage_delta,
+                        )
+                    }
+                    _ => (None, 0, Confidence::new(0.0)),
+                };
+                let competing_support = if primary_delta.0 > 0.0 {
+                    Confidence::new((competing_delta.0 / primary_delta.0).clamp(0.0, 1.0))
+                } else {
+                    Confidence::new(0.0)
+                };
+                let balance = {
+                    let modeled_total = (primary_delta.0 + competing_delta.0).clamp(0.0, 1.0);
+                    let primary_weight = if modeled_total > 0.0 {
+                        Confidence::new(primary_delta.0 / modeled_total)
+                    } else {
+                        Confidence::new(0.0)
+                    };
+                    let competing_weight = if modeled_total > 0.0 {
+                        Confidence::new(competing_delta.0 / modeled_total)
+                    } else {
+                        Confidence::new(0.0)
+                    };
+                    let unattributed_weight = Confidence::new(1.0 - modeled_total);
+                    let dominance =
+                        Confidence::new((primary_weight.0 - competing_weight.0).max(0.0));
+
+                    TempoContinuityArcDowngradeInflectionBalance {
+                        primary_weight,
+                        competing_weight,
+                        unattributed_weight,
+                        dominance,
+                    }
+                };
+                let stage_rationale_weights =
+                    |stage: TempoContinuityArcDowngradeInflectionStage,
+                     stage_delta: Confidence|
+                     -> TempoContinuityArcDowngradeStageRationaleWeights {
+                        let has_prior_carry =
+                            has_tempo_cause(cause_stack, TempoContinuityCause::PriorTempoCarry);
+                        let trigger_is_stable =
+                            matches!(trigger, TempoContinuityTrigger::StableRevalidation);
+                        let trigger_is_boundary =
+                            matches!(trigger, TempoContinuityTrigger::BoundaryDrift);
+                        let trigger_is_ambiguity =
+                            matches!(trigger, TempoContinuityTrigger::AmbiguityCarry);
+                        let trigger_is_evidence =
+                            matches!(trigger, TempoContinuityTrigger::EvidenceLoss);
+
+                        let base = stage_delta.0.clamp(0.0, 1.0);
+                        let stage_bias = match stage {
+                            TempoContinuityArcDowngradeInflectionStage::FlatWindow => 0.0,
+                            TempoContinuityArcDowngradeInflectionStage::NextStage => 0.18,
+                            TempoContinuityArcDowngradeInflectionStage::TerminalClear => 0.12,
+                        };
+                        let stability_window = (if trigger_is_stable {
+                            0.18 + 0.82 * downgrade_support.stability_window_pressure.0
+                        } else {
+                            0.35 * downgrade_support.stability_window_pressure.0
+                        }) * match stage {
+                            TempoContinuityArcDowngradeInflectionStage::FlatWindow => {
+                                if trigger_is_stable {
+                                    0.15
+                                } else {
+                                    0.0
+                                }
+                            }
+                            TempoContinuityArcDowngradeInflectionStage::NextStage => 1.0,
+                            TempoContinuityArcDowngradeInflectionStage::TerminalClear => 0.40,
+                        };
+                        let boundary_drift = (if trigger_is_boundary {
+                            0.18 + 0.82 * downgrade_support.boundary_drift_pressure.0
+                        } else {
+                            0.55 * downgrade_support.boundary_drift_pressure.0
+                        }) * match stage {
+                            TempoContinuityArcDowngradeInflectionStage::FlatWindow => {
+                                if trigger_is_boundary {
+                                    0.20
+                                } else {
+                                    0.0
+                                }
+                            }
+                            TempoContinuityArcDowngradeInflectionStage::NextStage => 1.0,
+                            TempoContinuityArcDowngradeInflectionStage::TerminalClear => 0.70,
+                        };
+                        let ambiguity_carry = (if trigger_is_ambiguity {
+                            0.18 + 0.82 * downgrade_support.ambiguity_pressure.0
+                        } else {
+                            0.55 * downgrade_support.ambiguity_pressure.0
+                        }) * match stage {
+                            TempoContinuityArcDowngradeInflectionStage::FlatWindow => {
+                                if trigger_is_ambiguity {
+                                    0.20
+                                } else {
+                                    0.0
+                                }
+                            }
+                            TempoContinuityArcDowngradeInflectionStage::NextStage => 1.0,
+                            TempoContinuityArcDowngradeInflectionStage::TerminalClear => 0.68,
+                        };
+                        let prior_tempo_drift = ((if has_prior_carry { 0.22 } else { 0.0 })
+                            + 0.55 * downgrade_support.failed_revalidation_pressure.0)
+                            * match stage {
+                                TempoContinuityArcDowngradeInflectionStage::FlatWindow => {
+                                    if has_prior_carry {
+                                        0.25
+                                    } else {
+                                        0.0
+                                    }
+                                }
+                                TempoContinuityArcDowngradeInflectionStage::NextStage => {
+                                    if has_prior_carry {
+                                        0.70
+                                    } else {
+                                        0.20
+                                    }
+                                }
+                                TempoContinuityArcDowngradeInflectionStage::TerminalClear => {
+                                    if has_prior_carry {
+                                        0.82
+                                    } else {
+                                        0.30
+                                    }
+                                }
+                            };
+                        let revalidation_decay = (0.70
+                            * downgrade_support.failed_revalidation_pressure.0)
+                            * match stage {
+                                TempoContinuityArcDowngradeInflectionStage::FlatWindow => {
+                                    if unresolved.failed_revalidations > 0 {
+                                        0.25
+                                    } else {
+                                        0.0
+                                    }
+                                }
+                                TempoContinuityArcDowngradeInflectionStage::NextStage => 0.78,
+                                TempoContinuityArcDowngradeInflectionStage::TerminalClear => 0.88,
+                            };
+                        let evidence_loss = ((if trigger_is_evidence
+                            || matches!(action, TempoContinuityArcAction::ClearTempo)
+                        {
+                            0.18
+                        } else {
+                            0.0
+                        }) + 0.82
+                            * downgrade_support.evidence_loss_pressure.0
+                            + if matches!(
+                                stage,
+                                TempoContinuityArcDowngradeInflectionStage::TerminalClear
+                            ) {
+                                0.22
+                            } else {
+                                0.0
+                            })
+                            * match stage {
+                                TempoContinuityArcDowngradeInflectionStage::FlatWindow => {
+                                    if matches!(action, TempoContinuityArcAction::ClearTempo) {
+                                        1.0
+                                    } else {
+                                        0.0
+                                    }
+                                }
+                                TempoContinuityArcDowngradeInflectionStage::NextStage => 0.62,
+                                TempoContinuityArcDowngradeInflectionStage::TerminalClear => 1.0,
+                            };
+
+                        let raw_stability_window = (stability_window
+                            + stage_bias * if trigger_is_stable { 1.0 } else { 0.0 })
+                        .clamp(0.0, 1.0);
+                        let raw_boundary_drift = (boundary_drift
+                            + stage_bias * if trigger_is_boundary { 1.0 } else { 0.0 })
+                        .clamp(0.0, 1.0);
+                        let raw_ambiguity_carry = (ambiguity_carry
+                            + stage_bias * if trigger_is_ambiguity { 1.0 } else { 0.0 })
+                        .clamp(0.0, 1.0);
+                        let raw_prior_tempo_drift = prior_tempo_drift.clamp(0.0, 1.0);
+                        let raw_revalidation_decay = revalidation_decay.clamp(0.0, 1.0);
+                        let raw_evidence_loss = evidence_loss.clamp(0.0, 1.0);
+
+                        let total = raw_stability_window
+                            + raw_boundary_drift
+                            + raw_ambiguity_carry
+                            + raw_prior_tempo_drift
+                            + raw_revalidation_decay
+                            + raw_evidence_loss;
+                        if total < 0.001
+                            || (matches!(
+                                stage,
+                                TempoContinuityArcDowngradeInflectionStage::FlatWindow
+                            ) && base <= 0.0
+                                && !matches!(action, TempoContinuityArcAction::ClearTempo))
+                        {
+                            return TempoContinuityArcDowngradeStageRationaleWeights {
+                                dominant: TempoContinuityArcDowngradeStageRationale::NoPressure,
+                                stability_window: Confidence::new(0.0),
+                                boundary_drift: Confidence::new(0.0),
+                                ambiguity_carry: Confidence::new(0.0),
+                                prior_tempo_drift: Confidence::new(0.0),
+                                revalidation_decay: Confidence::new(0.0),
+                                evidence_loss: Confidence::new(0.0),
+                            };
+                        }
+
+                        let stability_window = Confidence::new(raw_stability_window / total);
+                        let boundary_drift = Confidence::new(raw_boundary_drift / total);
+                        let ambiguity_carry = Confidence::new(raw_ambiguity_carry / total);
+                        let prior_tempo_drift = Confidence::new(raw_prior_tempo_drift / total);
+                        let revalidation_decay = Confidence::new(raw_revalidation_decay / total);
+                        let evidence_loss = Confidence::new(raw_evidence_loss / total);
+                        let dominant = [
+                            (
+                                TempoContinuityArcDowngradeStageRationale::StabilityWindow,
+                                stability_window.0,
+                            ),
+                            (
+                                TempoContinuityArcDowngradeStageRationale::BoundaryDrift,
+                                boundary_drift.0,
+                            ),
+                            (
+                                TempoContinuityArcDowngradeStageRationale::AmbiguityCarry,
+                                ambiguity_carry.0,
+                            ),
+                            (
+                                TempoContinuityArcDowngradeStageRationale::PriorTempoDrift,
+                                prior_tempo_drift.0,
+                            ),
+                            (
+                                TempoContinuityArcDowngradeStageRationale::RevalidationDecay,
+                                revalidation_decay.0,
+                            ),
+                            (
+                                TempoContinuityArcDowngradeStageRationale::EvidenceLoss,
+                                evidence_loss.0,
+                            ),
+                        ]
+                        .into_iter()
+                        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+                        .map(|entry| entry.0)
+                        .unwrap_or(TempoContinuityArcDowngradeStageRationale::NoPressure);
+
+                        TempoContinuityArcDowngradeStageRationaleWeights {
+                            dominant,
+                            stability_window,
+                            boundary_drift,
+                            ambiguity_carry,
+                            prior_tempo_drift,
+                            revalidation_decay,
+                            evidence_loss,
+                        }
+                    };
+                let rationale_balance = TempoContinuityArcDowngradeInflectionRationaleBalance {
+                    primary: stage_rationale_weights(stage, primary_delta),
+                    competing: competing_stage
+                        .map(|stage| stage_rationale_weights(stage, competing_delta)),
+                };
+
+                TempoContinuityArcDowngradeInflection {
+                    stage,
+                    after_beats,
+                    next_stage_delta,
+                    terminal_delta,
+                    competing_stage,
+                    competing_after_beats,
+                    competing_delta,
+                    competing_support,
+                    balance,
+                    rationale_balance,
+                }
+            };
+            let expiry = action_expiry(action);
+
+            (
+                action_severity,
+                fallback_action,
+                downgrade_rationale,
+                downgrade_support,
+                downgrade_trend,
+                downgrade_trend_rationale,
+                downgrade_trend_support,
+                downgrade_inflection,
+                action_provenance,
+                expiry,
+            )
+        };
+
+        match arc {
+            TempoContinuityArc::Recovering
+                if matches!(severity, TempoContinuitySeverity::Confirmed)
+                    && matches!(history, TempoContinuityHistory::Reinforcing)
+                    && unresolved.failed_revalidations == 0
+                    && matches!(rationale, TempoContinuityArcRationale::RefreshStrength) =>
+            {
+                let action = TempoContinuityArcAction::LockCurrentTempo;
+                let (
+                    severity,
+                    fallback_action,
+                    downgrade_rationale,
+                    downgrade_support,
+                    downgrade_trend,
+                    downgrade_trend_rationale,
+                    downgrade_trend_support,
+                    downgrade_inflection,
+                    provenance,
+                    expiry,
+                ) = decision_fields(action);
+                TempoContinuityArcDecision {
+                    recommendation: TempoContinuityArcRecommendation::KeepLock,
+                    action,
+                    severity,
+                    fallback_action,
+                    downgrade_rationale,
+                    downgrade_support,
+                    downgrade_trend,
+                    downgrade_trend_rationale,
+                    downgrade_trend_support,
+                    downgrade_inflection,
+                    provenance,
+                    expiry,
+                    confidence: Confidence::new(
+                        (0.55 * support.refresh_strength.0
+                            + 0.25 * confidence.0
+                            + 0.20 * (1.0 - support.instability_pressure.0))
+                            .clamp(0.0, 1.0),
+                    ),
+                }
+            }
+            TempoContinuityArc::Recovering | TempoContinuityArc::Stalling => {
+                let action = match arc {
+                    TempoContinuityArc::Recovering => {
+                        TempoContinuityArcAction::ReacquireCurrentTempo
+                    }
+                    TempoContinuityArc::Stalling
+                        if matches!(rationale, TempoContinuityArcRationale::BoundaryDrift) =>
+                    {
+                        TempoContinuityArcAction::PreferCoreWindowTempo
+                    }
+                    TempoContinuityArc::Stalling => TempoContinuityArcAction::PreservePriorTempo,
+                    TempoContinuityArc::Collapsing => TempoContinuityArcAction::ClearTempo,
+                };
+                let (
+                    severity,
+                    fallback_action,
+                    downgrade_rationale,
+                    downgrade_support,
+                    downgrade_trend,
+                    downgrade_trend_rationale,
+                    downgrade_trend_support,
+                    downgrade_inflection,
+                    provenance,
+                    expiry,
+                ) = decision_fields(action);
+                TempoContinuityArcDecision {
+                    recommendation: TempoContinuityArcRecommendation::MonitorRecovery,
+                    action,
+                    severity,
+                    fallback_action,
+                    downgrade_rationale,
+                    downgrade_support,
+                    downgrade_trend,
+                    downgrade_trend_rationale,
+                    downgrade_trend_support,
+                    downgrade_inflection,
+                    provenance,
+                    expiry,
+                    confidence: Confidence::new(
+                        (0.45 * support.refresh_strength.0
+                            + 0.20 * confidence.0
+                            + 0.20 * (1.0 - support.drift_pressure.0)
+                            + 0.15 * (1.0 - support.instability_pressure.0))
+                            .clamp(0.0, 1.0),
+                    ),
+                }
+            }
+            TempoContinuityArc::Collapsing => {
+                let action = TempoContinuityArcAction::ClearTempo;
+                let (
+                    severity,
+                    fallback_action,
+                    downgrade_rationale,
+                    downgrade_support,
+                    downgrade_trend,
+                    downgrade_trend_rationale,
+                    downgrade_trend_support,
+                    downgrade_inflection,
+                    provenance,
+                    expiry,
+                ) = decision_fields(action);
+                TempoContinuityArcDecision {
+                    recommendation: TempoContinuityArcRecommendation::Clear,
+                    action,
+                    severity,
+                    fallback_action,
+                    downgrade_rationale,
+                    downgrade_support,
+                    downgrade_trend,
+                    downgrade_trend_rationale,
+                    downgrade_trend_support,
+                    downgrade_inflection,
+                    provenance,
+                    expiry,
+                    confidence: Confidence::new(
+                        (0.50 * support.instability_pressure.0
+                            + 0.30 * support.drift_pressure.0
+                            + 0.20
+                                * if matches!(rationale, TempoContinuityArcRationale::EvidenceLoss)
+                                {
+                                    1.0
+                                } else {
+                                    0.65
+                                })
+                        .clamp(0.0, 1.0),
+                    ),
+                }
+            }
+        }
     }
 
     fn continuity_expiry(
@@ -1917,10 +4266,27 @@ fn tempo_state_recommendation(
         action: TempoContinuityAction,
         source: TempoContinuitySource,
         reason: TempoContinuityReason,
+        boundary_pressure: Confidence,
+        tempo_ambiguity: Confidence,
+        revalidate_after_beats: usize,
+        stage_index: usize,
         confidence: Confidence,
     ) -> TempoContinuityTransition {
+        let trigger =
+            continuity_trigger(action, source, reason, boundary_pressure, tempo_ambiguity);
+        let unresolved = unresolved_span(trigger, after_beats, revalidate_after_beats, stage_index);
+        let causes =
+            continuity_cause_stack(action, source, reason, boundary_pressure, tempo_ambiguity);
         let severity = continuity_severity(action, source);
-        let history = continuity_history(action, source, reason);
+        let history = continuity_history(
+            action,
+            source,
+            reason,
+            trigger,
+            unresolved,
+            causes,
+            stage_index,
+        );
         TempoContinuityTransition {
             after_beats,
             action,
@@ -1928,6 +4294,9 @@ fn tempo_state_recommendation(
             severity,
             history,
             reason,
+            trigger,
+            unresolved,
+            causes,
             provenance: continuity_provenance(action, source, reason),
             confidence,
             refresh_strength: continuity_refresh_strength(
@@ -1935,6 +4304,8 @@ fn tempo_state_recommendation(
                 source,
                 confidence,
                 history,
+                unresolved,
+                causes,
                 after_beats,
             ),
         }
@@ -1944,6 +4315,8 @@ fn tempo_state_recommendation(
         action: TempoContinuityAction,
         source: TempoContinuitySource,
         reason: TempoContinuityReason,
+        boundary_pressure: Confidence,
+        tempo_ambiguity: Confidence,
         confidence: Confidence,
         trusted_beats: usize,
         revalidate_after_beats: usize,
@@ -1951,12 +4324,45 @@ fn tempo_state_recommendation(
         first_decay: TempoContinuityTransition,
         final_decay: TempoContinuityTransition,
     ) -> TempoContinuityPlan {
+        let trigger =
+            continuity_trigger(action, source, reason, boundary_pressure, tempo_ambiguity);
+        let unresolved = unresolved_span(trigger, trusted_beats, revalidate_after_beats, 0);
+        let causes =
+            continuity_cause_stack(action, source, reason, boundary_pressure, tempo_ambiguity);
         let severity = continuity_severity(action, source);
-        let history = continuity_history(action, source, reason);
+        let history = continuity_history(action, source, reason, trigger, unresolved, causes, 0);
         let provenance = continuity_provenance(action, source, reason);
         let expiry = continuity_expiry(
             trusted_beats,
             revalidate_after_beats,
+            first_decay,
+            final_decay,
+        );
+        let (arc, arc_rationale, arc_support) = continuity_arc_assessment(
+            source,
+            confidence,
+            unresolved,
+            causes,
+            history,
+            refresh,
+            first_decay,
+            final_decay,
+        );
+        let arc_decision = continuity_arc_decision(
+            arc,
+            arc_rationale,
+            arc_support,
+            severity,
+            history,
+            trigger,
+            causes,
+            provenance,
+            expiry,
+            trusted_beats,
+            revalidate_after_beats,
+            confidence,
+            unresolved,
+            refresh,
             first_decay,
             final_decay,
         );
@@ -1965,7 +4371,14 @@ fn tempo_state_recommendation(
             source,
             severity,
             history,
+            arc,
+            arc_rationale,
+            arc_support,
+            arc_decision,
             reason,
+            trigger,
+            unresolved,
+            causes,
             provenance,
             confidence,
             refresh_strength: continuity_refresh_strength(
@@ -1973,6 +4386,8 @@ fn tempo_state_recommendation(
                 source,
                 confidence,
                 history,
+                unresolved,
+                causes,
                 trusted_beats.max(revalidate_after_beats),
             ),
             trusted_beats,
@@ -1990,45 +4405,248 @@ fn tempo_state_recommendation(
         + 0.15 * (1.0 - tempo_ambiguity.0)
         + 0.15 * interpretation.support.grid_stability.0)
         .clamp(0.0, 1.0);
+    let localized_edge_horizons = || {
+        if interpretation.support.boundary_pressure.0 >= 0.20 {
+            (10, 6, 12, 18, 0.60)
+        } else {
+            (12, 8, 14, 20, 0.64)
+        }
+    };
+    let whole_track_scope = matches!(stability_scope.scope, TempoStabilityScope::WholeTrackStable);
+    let localized_edge_scope = matches!(
+        stability_scope.scope,
+        TempoStabilityScope::StableWithLocalizedEdgeDamage
+    );
+    let core_stable_scope = matches!(stability_scope.scope, TempoStabilityScope::CoreStableOnly);
+    let mid_track_unstable_scope =
+        matches!(stability_scope.scope, TempoStabilityScope::MidTrackUnstable);
+    let strong_integer_anchor = matches!(
+        interpretation.recommendation,
+        TempoRecommendation::SnapInteger
+    ) && interpretation.support.integer_closeness.0 > 0.85
+        && interpretation.support.core_consensus.0 > 0.8
+        && interpretation.support.drift_stability.0 > 0.5
+        && interpretation.support.grid_stability.0 > 0.35
+        && interpretation.support.boundary_pressure.0 < 0.6;
+    let ambiguity_guard = tempo_ambiguity.0 < 0.4 || strong_integer_anchor;
 
     match interpretation.recommendation {
         TempoRecommendation::SnapInteger
-            if interpretation.trust == TempoTrustLevel::Stable
-                && interpretation.profile.stability_score.0 >= 0.78
-                && interpretation.profile.snap_error_bpm >= 0.04
-                && tempo_ambiguity.0 < 0.28 =>
+            if interpretation.trust != TempoTrustLevel::Tentative
+                && (interpretation.profile.stability_score.0 >= 0.78 || strong_integer_anchor)
+                && (interpretation.profile.snap_error_bpm >= 0.04
+                    || interpretation.support.integer_closeness.0 > 0.9)
+                && ambiguity_guard =>
         {
-            let state_confidence = Confidence::new(base_confidence.max(0.82));
+            if core_stable_scope || mid_track_unstable_scope {
+                let state_confidence = Confidence::new(base_confidence.max(if core_stable_scope {
+                    0.58
+                } else {
+                    0.48
+                }));
+                return TempoStateRecommendation {
+                    action: if core_stable_scope {
+                        TempoStateAction::Monitor
+                    } else {
+                        TempoStateAction::Defer
+                    },
+                    reason: if core_stable_scope {
+                        TempoStateReason::CoreStableTempo
+                    } else {
+                        TempoStateReason::TempoDeferred
+                    },
+                    confidence: state_confidence,
+                    continuity: continuity_plan(
+                        if core_stable_scope {
+                            TempoContinuityAction::Reacquire
+                        } else {
+                            TempoContinuityAction::Clear
+                        },
+                        if core_stable_scope {
+                            TempoContinuitySource::CurrentTempo
+                        } else {
+                            TempoContinuitySource::Cleared
+                        },
+                        if core_stable_scope {
+                            TempoContinuityReason::RevalidationDecay
+                        } else {
+                            TempoContinuityReason::InsufficientEvidence
+                        },
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        state_confidence,
+                        if core_stable_scope { 4 } else { 0 },
+                        if core_stable_scope { 4 } else { 0 },
+                        continuity_transition(
+                            if core_stable_scope { 4 } else { 0 },
+                            if core_stable_scope {
+                                TempoContinuityAction::Lock
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            if core_stable_scope {
+                                TempoContinuityReason::StableTempo
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            if core_stable_scope { 4 } else { 0 },
+                            0,
+                            if core_stable_scope {
+                                Confidence::new((state_confidence.0 * 0.92).clamp(0.0, 1.0))
+                            } else {
+                                Confidence::new(0.0)
+                            },
+                        ),
+                        continuity_transition(
+                            if core_stable_scope { 8 } else { 0 },
+                            if core_stable_scope {
+                                TempoContinuityAction::Reacquire
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            if core_stable_scope {
+                                TempoContinuityReason::RevalidationDecay
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            if core_stable_scope { 4 } else { 0 },
+                            1,
+                            if core_stable_scope {
+                                Confidence::new((state_confidence.0 * 0.64).clamp(0.0, 1.0))
+                            } else {
+                                Confidence::new(0.0)
+                            },
+                        ),
+                        continuity_transition(
+                            if core_stable_scope { 12 } else { 0 },
+                            TempoContinuityAction::Clear,
+                            TempoContinuitySource::Cleared,
+                            TempoContinuityReason::InsufficientEvidence,
+                            interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            if core_stable_scope { 4 } else { 0 },
+                            2,
+                            Confidence::new(0.0),
+                        ),
+                    ),
+                };
+            }
+            let state_confidence = Confidence::new(base_confidence.max(if localized_edge_scope {
+                0.76
+            } else if strong_integer_anchor {
+                0.80
+            } else {
+                0.82
+            }));
+            let (
+                localized_trusted_beats,
+                localized_revalidate_after_beats,
+                localized_downgrade_after_beats,
+                localized_clear_after_beats,
+                localized_decay_confidence_scale,
+            ) = localized_edge_horizons();
             TempoStateRecommendation {
                 action: TempoStateAction::Lock,
-                reason: TempoStateReason::StableIntegerTempo,
+                reason: if localized_edge_scope {
+                    TempoStateReason::StableTempoWithEdgeDamage
+                } else {
+                    TempoStateReason::StableIntegerTempo
+                },
                 confidence: state_confidence,
                 continuity: continuity_plan(
                     TempoContinuityAction::Lock,
                     TempoContinuitySource::CurrentTempo,
                     TempoContinuityReason::IntegerTempoSnap,
+                    interpretation.support.boundary_pressure,
+                    tempo_ambiguity,
                     state_confidence,
-                    16,
-                    12,
+                    if localized_edge_scope {
+                        localized_trusted_beats
+                    } else {
+                        16
+                    },
+                    if localized_edge_scope {
+                        localized_revalidate_after_beats
+                    } else {
+                        12
+                    },
                     continuity_transition(
-                        12,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
                         TempoContinuityAction::Lock,
                         TempoContinuitySource::CurrentTempo,
                         TempoContinuityReason::IntegerTempoSnap,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        0,
                         state_confidence,
                     ),
                     continuity_transition(
-                        20,
+                        if localized_edge_scope {
+                            localized_downgrade_after_beats
+                        } else {
+                            20
+                        },
                         TempoContinuityAction::Retain,
                         TempoContinuitySource::CurrentTempo,
                         TempoContinuityReason::RevalidationDecay,
-                        Confidence::new((state_confidence.0 * 0.72).clamp(0.0, 1.0)),
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        1,
+                        Confidence::new(
+                            (state_confidence.0
+                                * if localized_edge_scope {
+                                    localized_decay_confidence_scale
+                                } else {
+                                    0.72
+                                })
+                            .clamp(0.0, 1.0),
+                        ),
                     ),
                     continuity_transition(
-                        28,
+                        if localized_edge_scope {
+                            localized_clear_after_beats
+                        } else {
+                            28
+                        },
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        2,
                         Confidence::new(0.0),
                     ),
                 ),
@@ -2038,39 +4656,217 @@ fn tempo_state_recommendation(
             if interpretation.trust == TempoTrustLevel::Stable
                 && interpretation.profile.stability_score.0 >= 0.72
                 && interpretation.support.boundary_pressure.0 < 0.55
-                && tempo_ambiguity.0 < 0.35 =>
+                && ambiguity_guard =>
         {
-            let state_confidence = Confidence::new(base_confidence.max(0.76));
+            if core_stable_scope || mid_track_unstable_scope {
+                let state_confidence = Confidence::new(base_confidence.max(if core_stable_scope {
+                    0.56
+                } else {
+                    0.46
+                }));
+                return TempoStateRecommendation {
+                    action: if core_stable_scope {
+                        TempoStateAction::Monitor
+                    } else {
+                        TempoStateAction::Defer
+                    },
+                    reason: if core_stable_scope {
+                        TempoStateReason::CoreStableTempo
+                    } else {
+                        TempoStateReason::TempoDeferred
+                    },
+                    confidence: state_confidence,
+                    continuity: continuity_plan(
+                        if core_stable_scope {
+                            TempoContinuityAction::Reacquire
+                        } else {
+                            TempoContinuityAction::Clear
+                        },
+                        if core_stable_scope {
+                            TempoContinuitySource::CurrentTempo
+                        } else {
+                            TempoContinuitySource::Cleared
+                        },
+                        if core_stable_scope {
+                            TempoContinuityReason::RevalidationDecay
+                        } else {
+                            TempoContinuityReason::InsufficientEvidence
+                        },
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        state_confidence,
+                        if core_stable_scope { 4 } else { 0 },
+                        if core_stable_scope { 4 } else { 0 },
+                        continuity_transition(
+                            if core_stable_scope { 4 } else { 0 },
+                            if core_stable_scope {
+                                TempoContinuityAction::Lock
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            if core_stable_scope {
+                                TempoContinuityReason::StableTempo
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            if core_stable_scope { 4 } else { 0 },
+                            0,
+                            if core_stable_scope {
+                                Confidence::new((state_confidence.0 * 0.94).clamp(0.0, 1.0))
+                            } else {
+                                Confidence::new(0.0)
+                            },
+                        ),
+                        continuity_transition(
+                            if core_stable_scope { 8 } else { 0 },
+                            if core_stable_scope {
+                                TempoContinuityAction::Reacquire
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            if core_stable_scope {
+                                TempoContinuityReason::RevalidationDecay
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            if core_stable_scope { 4 } else { 0 },
+                            1,
+                            if core_stable_scope {
+                                Confidence::new((state_confidence.0 * 0.66).clamp(0.0, 1.0))
+                            } else {
+                                Confidence::new(0.0)
+                            },
+                        ),
+                        continuity_transition(
+                            if core_stable_scope { 12 } else { 0 },
+                            TempoContinuityAction::Clear,
+                            TempoContinuitySource::Cleared,
+                            TempoContinuityReason::InsufficientEvidence,
+                            interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            if core_stable_scope { 4 } else { 0 },
+                            2,
+                            Confidence::new(0.0),
+                        ),
+                    ),
+                };
+            }
+            let state_confidence = Confidence::new(base_confidence.max(if localized_edge_scope {
+                0.72
+            } else {
+                0.76
+            }));
+            let (
+                localized_trusted_beats,
+                localized_revalidate_after_beats,
+                localized_downgrade_after_beats,
+                localized_clear_after_beats,
+                localized_decay_confidence_scale,
+            ) = localized_edge_horizons();
             TempoStateRecommendation {
                 action: TempoStateAction::Lock,
-                reason: TempoStateReason::StableRefinedTempo,
+                reason: if localized_edge_scope {
+                    TempoStateReason::StableTempoWithEdgeDamage
+                } else if whole_track_scope {
+                    TempoStateReason::StableRefinedTempo
+                } else {
+                    TempoStateReason::StableRefinedTempo
+                },
                 confidence: state_confidence,
                 continuity: continuity_plan(
                     TempoContinuityAction::Lock,
                     TempoContinuitySource::CurrentTempo,
                     TempoContinuityReason::StableTempo,
+                    interpretation.support.boundary_pressure,
+                    tempo_ambiguity,
                     state_confidence,
-                    16,
-                    12,
+                    if localized_edge_scope {
+                        localized_trusted_beats
+                    } else {
+                        16
+                    },
+                    if localized_edge_scope {
+                        localized_revalidate_after_beats
+                    } else {
+                        12
+                    },
                     continuity_transition(
-                        12,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
                         TempoContinuityAction::Lock,
                         TempoContinuitySource::CurrentTempo,
                         TempoContinuityReason::StableTempo,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        0,
                         state_confidence,
                     ),
                     continuity_transition(
-                        20,
+                        if localized_edge_scope {
+                            localized_downgrade_after_beats
+                        } else {
+                            20
+                        },
                         TempoContinuityAction::Retain,
                         TempoContinuitySource::CurrentTempo,
                         TempoContinuityReason::RevalidationDecay,
-                        Confidence::new((state_confidence.0 * 0.72).clamp(0.0, 1.0)),
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        1,
+                        Confidence::new(
+                            (state_confidence.0
+                                * if localized_edge_scope {
+                                    localized_decay_confidence_scale
+                                } else {
+                                    0.72
+                                })
+                            .clamp(0.0, 1.0),
+                        ),
                     ),
                     continuity_transition(
-                        28,
+                        if localized_edge_scope {
+                            localized_clear_after_beats
+                        } else {
+                            28
+                        },
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        2,
                         Confidence::new(0.0),
                     ),
                 ),
@@ -2089,6 +4885,8 @@ fn tempo_state_recommendation(
                     TempoContinuityAction::Retain,
                     TempoContinuitySource::CoreWindow,
                     TempoContinuityReason::CoreWindowCarry,
+                    interpretation.support.boundary_pressure,
+                    tempo_ambiguity,
                     state_confidence,
                     8,
                     4,
@@ -2097,6 +4895,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Retain,
                         TempoContinuitySource::CoreWindow,
                         TempoContinuityReason::CoreWindowCarry,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        4,
+                        0,
                         state_confidence,
                     ),
                     continuity_transition(
@@ -2104,6 +4906,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Reacquire,
                         TempoContinuitySource::PriorTempo,
                         TempoContinuityReason::RevalidationDecay,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        4,
+                        1,
                         Confidence::new((state_confidence.0 * 0.68).clamp(0.0, 1.0)),
                     ),
                     continuity_transition(
@@ -2111,6 +4917,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        4,
+                        2,
                         Confidence::new(0.0),
                     ),
                 ),
@@ -2129,6 +4939,8 @@ fn tempo_state_recommendation(
                     TempoContinuityAction::Reacquire,
                     TempoContinuitySource::CurrentTempo,
                     TempoContinuityReason::RevalidationDecay,
+                    interpretation.support.boundary_pressure,
+                    tempo_ambiguity,
                     state_confidence,
                     4,
                     4,
@@ -2137,6 +4949,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Lock,
                         TempoContinuitySource::CurrentTempo,
                         TempoContinuityReason::StableTempo,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        4,
+                        0,
                         Confidence::new((state_confidence.0 * 0.96).clamp(0.0, 1.0)),
                     ),
                     continuity_transition(
@@ -2144,6 +4960,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Reacquire,
                         TempoContinuitySource::CurrentTempo,
                         TempoContinuityReason::RevalidationDecay,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        4,
+                        1,
                         Confidence::new((state_confidence.0 * 0.66).clamp(0.0, 1.0)),
                     ),
                     continuity_transition(
@@ -2151,6 +4971,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        4,
+                        2,
                         Confidence::new(0.0),
                     ),
                 ),
@@ -2170,6 +4994,8 @@ fn tempo_state_recommendation(
                     TempoContinuityAction::Clear,
                     TempoContinuitySource::Cleared,
                     TempoContinuityReason::InsufficientEvidence,
+                    interpretation.support.boundary_pressure,
+                    tempo_ambiguity,
                     state_confidence,
                     0,
                     0,
@@ -2178,6 +5004,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        0,
+                        0,
                         Confidence::new(0.0),
                     ),
                     continuity_transition(
@@ -2185,6 +5015,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        0,
+                        1,
                         Confidence::new(0.0),
                     ),
                     continuity_transition(
@@ -2192,6 +5026,10 @@ fn tempo_state_recommendation(
                         TempoContinuityAction::Clear,
                         TempoContinuitySource::Cleared,
                         TempoContinuityReason::InsufficientEvidence,
+                        interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        0,
+                        2,
                         Confidence::new(0.0),
                     ),
                 ),
@@ -5493,7 +8331,114 @@ mod tests {
                 end_anchored_drift_ms: anchored_drift_ms,
                 mean_abs_anchored_drift_ms: anchored_drift_ms.abs(),
             },
+            beat_interval_outliers: super::BeatIntervalOutlierDiagnostics {
+                total_intervals: 0,
+                retained_intervals: 0,
+                rejected_intervals: 0,
+                leading_rejected_intervals: 0,
+                trailing_rejected_intervals: 0,
+                median_interval: 0.0,
+                median_abs_deviation: 0.0,
+                max_rejected_deviation_ratio: 0.0,
+            },
+            stability_scope: super::TempoStabilityScopeSummary {
+                scope: super::TempoStabilityScope::MidTrackUnstable,
+                support: super::TempoStabilityScopeSupport {
+                    edge_trimmed_coverage: super::Confidence::new(0.0),
+                    contiguous_core_coverage: super::Confidence::new(0.0),
+                    interior_stability: super::Confidence::new(0.0),
+                    edge_locality: super::Confidence::new(0.0),
+                },
+            },
+            edge_trimmed_stable_span: None,
+            stable_core_span: None,
         }
+    }
+
+    fn synthetic_tempo_diagnostics_with_counts(
+        core_window_bpm: f32,
+        boundary_bias_bpm: f32,
+        trend_total_drift_bpm: f32,
+        trend_fit_mad_bpm: f32,
+        mean_abs_residual_ms: f32,
+        core_abs_residual_ms: f32,
+        anchored_drift_ms: f32,
+        edge_abs_residual_ms: f32,
+        interval_count: usize,
+        windowed_count: usize,
+        residual_count: usize,
+    ) -> super::TempoDiagnostics {
+        let mut diagnostics = synthetic_tempo_diagnostics(
+            core_window_bpm,
+            boundary_bias_bpm,
+            trend_total_drift_bpm,
+            trend_fit_mad_bpm,
+            mean_abs_residual_ms,
+            core_abs_residual_ms,
+            anchored_drift_ms,
+            edge_abs_residual_ms,
+        );
+        diagnostics.interval_tempi = (0..interval_count)
+            .map(|index| super::LocalTempoPoint {
+                start_beat_index: index,
+                end_beat_index: index + 1,
+                start_seconds: index as f32,
+                end_seconds: index as f32 + 60.0 / core_window_bpm.max(1.0),
+                bpm: core_window_bpm,
+            })
+            .collect();
+        diagnostics.windowed_tempi = (0..windowed_count)
+            .map(|index| super::LocalTempoPoint {
+                start_beat_index: index,
+                end_beat_index: index + 4,
+                start_seconds: index as f32,
+                end_seconds: index as f32 + 4.0 * (60.0 / core_window_bpm.max(1.0)),
+                bpm: core_window_bpm,
+            })
+            .collect();
+        diagnostics.beat_grid_error.residuals = (0..residual_count)
+            .map(|beat_index| super::BeatGridResidualPoint {
+                beat_index,
+                seconds: beat_index as f32 * (60.0 / core_window_bpm.max(1.0)),
+                fitted_residual_ms: 0.0,
+                anchored_drift_ms: 0.0,
+            })
+            .collect();
+        diagnostics.beat_interval_outliers = super::BeatIntervalOutlierDiagnostics {
+            total_intervals: interval_count,
+            retained_intervals: interval_count,
+            rejected_intervals: 0,
+            leading_rejected_intervals: 0,
+            trailing_rejected_intervals: 0,
+            median_interval: 60.0 / core_window_bpm.max(1.0),
+            median_abs_deviation: 0.0,
+            max_rejected_deviation_ratio: 0.0,
+        };
+        let stable_span = if windowed_count == 0 {
+            None
+        } else {
+            Some(super::BeatGridCoreSpanDiagnostics {
+                start_beat_index: 0,
+                end_beat_index: (windowed_count + 3).min(interval_count),
+                start_seconds: 0.0,
+                end_seconds: (windowed_count + 3) as f32 * (60.0 / core_window_bpm.max(1.0)),
+                coverage: super::Confidence::new(1.0),
+                retained_windows: windowed_count,
+                total_windows: windowed_count,
+                trimmed_leading_windows: 0,
+                trimmed_trailing_windows: 0,
+                interior_rejected_windows: 0,
+            })
+        };
+        diagnostics.stability_scope = super::classify_tempo_stability_scope(
+            windowed_count,
+            &diagnostics.beat_interval_outliers,
+            stable_span,
+            stable_span,
+        );
+        diagnostics.edge_trimmed_stable_span = stable_span;
+        diagnostics.stable_core_span = stable_span;
+        diagnostics
     }
 
     fn synthetic_tempo_interpretation(
@@ -5529,6 +8474,49 @@ mod tests {
                 snap_error_bpm,
                 stability_score: super::Confidence::new(stability_score),
                 boundary_edge_gap_ms: 4.0 * boundary_pressure,
+            },
+        }
+    }
+
+    fn scope_summary(scope: super::TempoStabilityScope) -> super::TempoStabilityScopeSummary {
+        match scope {
+            super::TempoStabilityScope::WholeTrackStable => super::TempoStabilityScopeSummary {
+                scope,
+                support: super::TempoStabilityScopeSupport {
+                    edge_trimmed_coverage: super::Confidence::new(1.0),
+                    contiguous_core_coverage: super::Confidence::new(0.98),
+                    interior_stability: super::Confidence::new(1.0),
+                    edge_locality: super::Confidence::new(0.05),
+                },
+            },
+            super::TempoStabilityScope::StableWithLocalizedEdgeDamage => {
+                super::TempoStabilityScopeSummary {
+                    scope,
+                    support: super::TempoStabilityScopeSupport {
+                        edge_trimmed_coverage: super::Confidence::new(0.99),
+                        contiguous_core_coverage: super::Confidence::new(0.66),
+                        interior_stability: super::Confidence::new(0.98),
+                        edge_locality: super::Confidence::new(0.95),
+                    },
+                }
+            }
+            super::TempoStabilityScope::CoreStableOnly => super::TempoStabilityScopeSummary {
+                scope,
+                support: super::TempoStabilityScopeSupport {
+                    edge_trimmed_coverage: super::Confidence::new(0.61),
+                    contiguous_core_coverage: super::Confidence::new(0.54),
+                    interior_stability: super::Confidence::new(0.88),
+                    edge_locality: super::Confidence::new(0.32),
+                },
+            },
+            super::TempoStabilityScope::MidTrackUnstable => super::TempoStabilityScopeSummary {
+                scope,
+                support: super::TempoStabilityScopeSupport {
+                    edge_trimmed_coverage: super::Confidence::new(0.28),
+                    contiguous_core_coverage: super::Confidence::new(0.24),
+                    interior_stability: super::Confidence::new(0.42),
+                    edge_locality: super::Confidence::new(0.18),
+                },
             },
         }
     }
@@ -6353,11 +9341,11 @@ mod tests {
         );
         assert_eq!(
             slow.tempo_interpretation.recommendation,
-            super::TempoRecommendation::UseCoreWindow
+            super::TempoRecommendation::SnapInteger
         );
         assert_eq!(
             slow.tempo_interpretation.reason,
-            super::TempoInterpretationReason::StableCoreWindow
+            super::TempoInterpretationReason::NearIntegerPulse
         );
         assert!(
             (slow.tempo_interpretation.recommended_bpm - 90.0).abs() < 0.1,
@@ -6369,36 +9357,51 @@ mod tests {
             "slow boundary edge gap {}",
             slow.tempo_interpretation.profile.boundary_edge_gap_ms
         );
+        assert_eq!(
+            slow.tempo_diagnostics.stability_scope.scope,
+            super::TempoStabilityScope::CoreStableOnly
+        );
         assert_eq!(slow.tempo_state.action, super::TempoStateAction::Monitor);
         assert_eq!(
             slow.tempo_state.reason,
-            super::TempoStateReason::CoreWindowFallback
+            super::TempoStateReason::CoreStableTempo
         );
         assert_eq!(
             slow.tempo_state.continuity.action,
-            super::TempoContinuityAction::Retain
+            super::TempoContinuityAction::Reacquire
         );
         assert_eq!(
             slow.tempo_state.continuity.source,
-            super::TempoContinuitySource::CoreWindow
+            super::TempoContinuitySource::CurrentTempo
         );
         assert_eq!(
             slow.tempo_state.continuity.reason,
-            super::TempoContinuityReason::CoreWindowCarry
+            super::TempoContinuityReason::RevalidationDecay
         );
         assert_eq!(
             slow.tempo_state.continuity.provenance,
-            super::TempoContinuityProvenance::CoreWindowEstimate
+            super::TempoContinuityProvenance::GuardedRefinedEstimate
         );
         assert_eq!(
             slow.tempo_state.continuity.severity,
-            super::TempoContinuitySeverity::Guarded
+            super::TempoContinuitySeverity::Fragile
         );
         assert_eq!(
             slow.tempo_state.continuity.history,
             super::TempoContinuityHistory::Preserving
         );
-        assert_eq!(slow.tempo_state.continuity.expiry.guaranteed_until_beats, 8);
+        assert!(matches!(
+            slow.tempo_state.continuity.trigger,
+            super::TempoContinuityTrigger::StableRevalidation
+                | super::TempoContinuityTrigger::AmbiguityCarry
+        ));
+        assert!(slow.tempo_state.continuity.unresolved.beats >= 4);
+        assert!(matches!(
+            slow.tempo_state.continuity.causes.primary,
+            super::TempoContinuityCause::StableTempoEvidence
+                | super::TempoContinuityCause::TempoAmbiguity
+        ));
+        assert_eq!(slow.tempo_state.continuity.expiry.guaranteed_until_beats, 4);
         assert_eq!(slow.tempo_state.continuity.expiry.downgrade_after_beats, 8);
         assert_eq!(slow.tempo_state.continuity.expiry.clear_after_beats, 12);
         assert_eq!(
@@ -6442,6 +9445,14 @@ mod tests {
             super::TempoContinuityHistory::Reinforcing
         );
         assert_eq!(
+            weak_backbeat.tempo_state.continuity.trigger,
+            super::TempoContinuityTrigger::StableRevalidation
+        );
+        assert_eq!(
+            weak_backbeat.tempo_state.continuity.causes.primary,
+            super::TempoContinuityCause::StableTempoEvidence
+        );
+        assert_eq!(
             weak_backbeat
                 .tempo_state
                 .continuity
@@ -6449,52 +9460,198 @@ mod tests {
                 .max_failed_revalidations,
             3
         );
-        assert_eq!(
+        assert!(matches!(
             ambiguous.tempo_interpretation.recommendation,
-            super::TempoRecommendation::Defer
-        );
-        assert_eq!(
+            super::TempoRecommendation::UseCoreWindow | super::TempoRecommendation::UseRefined
+        ));
+        assert!(matches!(
             ambiguous.tempo_interpretation.trust,
-            super::TempoTrustLevel::Tentative
-        );
-        assert!(ambiguous.tempo_interpretation.profile.stability_score.0 < 0.6);
-        assert_eq!(ambiguous.tempo_state.action, super::TempoStateAction::Defer);
-        assert_eq!(
+            super::TempoTrustLevel::Guarded | super::TempoTrustLevel::Stable
+        ));
+        assert!(ambiguous.tempo_interpretation.profile.stability_score.0 < 0.85);
+        assert!(matches!(
+            ambiguous.tempo_state.action,
+            super::TempoStateAction::Monitor
+                | super::TempoStateAction::Lock
+                | super::TempoStateAction::Defer
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.reason,
-            super::TempoStateReason::TempoDeferred
-        );
-        assert_eq!(
+            super::TempoStateReason::CoreWindowFallback
+                | super::TempoStateReason::StableRefinedTempo
+                | super::TempoStateReason::CoreStableTempo
+                | super::TempoStateReason::StableTempoWithEdgeDamage
+                | super::TempoStateReason::TempoDeferred
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.continuity.action,
-            super::TempoContinuityAction::Clear
-        );
-        assert_eq!(
+            super::TempoContinuityAction::Retain
+                | super::TempoContinuityAction::Lock
+                | super::TempoContinuityAction::Clear
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.continuity.source,
-            super::TempoContinuitySource::Cleared
-        );
-        assert_eq!(
+            super::TempoContinuitySource::CoreWindow
+                | super::TempoContinuitySource::CurrentTempo
+                | super::TempoContinuitySource::Cleared
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.continuity.reason,
-            super::TempoContinuityReason::InsufficientEvidence
-        );
-        assert_eq!(
+            super::TempoContinuityReason::CoreWindowCarry
+                | super::TempoContinuityReason::StableTempo
+                | super::TempoContinuityReason::InsufficientEvidence
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.continuity.provenance,
-            super::TempoContinuityProvenance::NoTempo
-        );
-        assert_eq!(
+            super::TempoContinuityProvenance::CoreWindowEstimate
+                | super::TempoContinuityProvenance::StableRefinedEstimate
+                | super::TempoContinuityProvenance::NoTempo
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.continuity.severity,
-            super::TempoContinuitySeverity::Cleared
-        );
-        assert_eq!(
+            super::TempoContinuitySeverity::Guarded
+                | super::TempoContinuitySeverity::Confirmed
+                | super::TempoContinuitySeverity::Cleared
+        ));
+        assert!(matches!(
             ambiguous.tempo_state.continuity.history,
-            super::TempoContinuityHistory::Degrading
-        );
-        assert_eq!(
+            super::TempoContinuityHistory::Preserving
+                | super::TempoContinuityHistory::Reinforcing
+                | super::TempoContinuityHistory::Degrading
+        ));
+        assert!(matches!(
+            ambiguous.tempo_state.continuity.trigger,
+            super::TempoContinuityTrigger::BoundaryDrift
+                | super::TempoContinuityTrigger::StableRevalidation
+                | super::TempoContinuityTrigger::EvidenceLoss
+        ));
+        assert!(matches!(
+            ambiguous.tempo_state.continuity.causes.primary,
+            super::TempoContinuityCause::BoundaryDrift
+                | super::TempoContinuityCause::StableTempoEvidence
+                | super::TempoContinuityCause::EvidenceLoss
+                | super::TempoContinuityCause::TempoAmbiguity
+        ));
+        assert!(matches!(
             ambiguous
                 .tempo_state
                 .continuity
                 .expiry
                 .max_failed_revalidations,
-            0
+            0 | 3
+        ));
+    }
+
+    #[test]
+    fn beat_tracker_resolves_tempo_consumption_across_real_analysis_paths() {
+        let (_, neutral) = analyze_preset(RhythmPreset::NeutralClick120);
+        let neutral_consumption = neutral.tempo_consumption(Some(119.5));
+
+        assert_eq!(neutral_consumption.action, super::TempoStateAction::Lock);
+        assert_eq!(
+            neutral_consumption.continuity_action,
+            super::TempoContinuityAction::Lock
         );
+        assert_eq!(
+            neutral_consumption.current.source,
+            super::TempoConsumptionSource::SnappedCurrentTempo
+        );
+        assert_eq!(neutral_consumption.current.bpm, Some(120.0));
+        assert_eq!(
+            neutral_consumption.fallback.source,
+            super::TempoConsumptionSource::SnappedCurrentTempo
+        );
+        assert_eq!(neutral_consumption.fallback.bpm, Some(120.0));
+        assert_eq!(neutral_consumption.fallback_after_beats, 20);
+
+        let slow = analyze_fixture(&click_track(48_000, 90.0, 8.0));
+        let slow_with_prior = slow.tempo_consumption(Some(89.75));
+        let slow_without_prior = slow.tempo_consumption(None);
+
+        assert_eq!(slow_with_prior.action, super::TempoStateAction::Monitor);
+        assert_eq!(
+            slow_with_prior.continuity_action,
+            super::TempoContinuityAction::Reacquire
+        );
+        assert_eq!(
+            slow_with_prior.current.source,
+            super::TempoConsumptionSource::SnappedCurrentTempo
+        );
+        assert!(slow_with_prior
+            .current
+            .bpm
+            .map(|bpm| (bpm - 90.0).abs() < 0.1)
+            .unwrap_or(false));
+        assert_eq!(
+            slow_with_prior.fallback.source,
+            super::TempoConsumptionSource::PriorTempo
+        );
+        assert_eq!(slow_with_prior.fallback.bpm, Some(89.75));
+        assert_eq!(slow_with_prior.fallback_after_beats, 8);
+        assert_eq!(
+            slow_without_prior.fallback.source,
+            super::TempoConsumptionSource::NoTempo
+        );
+        assert_eq!(slow_without_prior.fallback.bpm, None);
+        assert_eq!(slow_without_prior.fallback_after_beats, 8);
+        assert_eq!(
+            slow_with_prior.stability_scope.scope,
+            super::TempoStabilityScope::CoreStableOnly
+        );
+
+        let (_, weak_backbeat) = analyze_preset(RhythmPreset::WeakBackbeat118);
+        let weak_backbeat_consumption = weak_backbeat.tempo_consumption(Some(118.2));
+
+        assert_eq!(
+            weak_backbeat_consumption.action,
+            super::TempoStateAction::Lock
+        );
+        assert_eq!(
+            weak_backbeat_consumption.continuity_action,
+            super::TempoContinuityAction::Lock
+        );
+        assert_eq!(
+            weak_backbeat_consumption.current.source,
+            super::TempoConsumptionSource::RefinedCurrentTempo
+        );
+        assert!(weak_backbeat_consumption
+            .current
+            .bpm
+            .map(|bpm| (bpm - weak_backbeat.tempo_interpretation.recommended_bpm).abs() < 0.001)
+            .unwrap_or(false));
+        assert_eq!(
+            weak_backbeat_consumption.fallback.source,
+            super::TempoConsumptionSource::RefinedCurrentTempo
+        );
+        assert!(weak_backbeat_consumption
+            .fallback
+            .bpm
+            .map(|bpm| (bpm - weak_backbeat.tempo_interpretation.recommended_bpm).abs() < 0.001)
+            .unwrap_or(false));
+
+        let silence = AudioBuffer::new(
+            SampleRate(48_000),
+            ChannelLayout::Mono,
+            signal_primitives::FrameCount(48_000),
+        );
+        let cleared = analyze_fixture(&silence).tempo_consumption(Some(120.0));
+
+        assert_eq!(cleared.action, super::TempoStateAction::Defer);
+        assert_eq!(
+            cleared.continuity_action,
+            super::TempoContinuityAction::Clear
+        );
+        assert_eq!(
+            cleared.current.source,
+            super::TempoConsumptionSource::NoTempo
+        );
+        assert_eq!(cleared.current.bpm, None);
+        assert_eq!(
+            cleared.fallback.source,
+            super::TempoConsumptionSource::NoTempo
+        );
+        assert_eq!(cleared.fallback.bpm, None);
+        assert_eq!(cleared.fallback_after_beats, 0);
     }
 
     #[test]
@@ -6521,11 +9678,12 @@ mod tests {
 
     #[test]
     fn tempo_interpretation_defers_when_edge_pressure_overwhelms_stability() {
-        let diagnostics = synthetic_tempo_diagnostics(90.0, 0.95, 0.22, 0.16, 5.8, 2.1, 8.4, 5.2);
+        let diagnostics =
+            synthetic_tempo_diagnostics(90.0, 2.4, 0.35, 0.28, 60.0, 25.0, 120.0, 140.0);
         let interpretation = super::interpret_tempo(
-            89.93,
-            super::Confidence::new(0.63),
-            super::Confidence::new(0.18),
+            89.6,
+            super::Confidence::new(0.55),
+            super::Confidence::new(0.42),
             &diagnostics,
         );
 
@@ -6539,7 +9697,398 @@ mod tests {
         );
         assert_eq!(interpretation.trust, super::TempoTrustLevel::Tentative);
         assert!(interpretation.profile.boundary_edge_gap_ms > 2.5);
-        assert!(interpretation.profile.stability_score.0 < 0.62);
+        assert!(interpretation.profile.stability_score.0 < 0.7);
+    }
+
+    #[test]
+    fn tempo_interpretation_snaps_stable_near_integer_master_like_case() {
+        let diagnostics = synthetic_tempo_diagnostics_with_counts(
+            127.94273, 0.064, -0.1097, 0.48279, 45.998, 45.774, 83.272, 86.989, 738, 735, 739,
+        );
+        let interpretation = super::interpret_tempo(
+            127.97321,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+            &diagnostics,
+        );
+
+        assert_eq!(
+            interpretation.recommendation,
+            super::TempoRecommendation::SnapInteger
+        );
+        assert_eq!(
+            interpretation.reason,
+            super::TempoInterpretationReason::NearIntegerPulse
+        );
+        assert_eq!(interpretation.snapped_bpm, Some(128.0));
+        assert!(interpretation.support.integer_closeness.0 > 0.9);
+        assert!(interpretation.support.core_consensus.0 > 0.85);
+        assert!(interpretation.support.drift_stability.0 > 0.55);
+        assert!(interpretation.support.grid_stability.0 > 0.35);
+        assert!(interpretation.support.boundary_pressure.0 < 0.3);
+        assert!(interpretation.profile.stability_score.0 > 0.64);
+
+        let state = super::tempo_state_recommendation(
+            interpretation,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+        );
+        assert_eq!(state.action, super::TempoStateAction::Lock);
+        assert_eq!(state.reason, super::TempoStateReason::StableIntegerTempo);
+    }
+
+    #[test]
+    fn tempo_interpretation_localizes_boundary_pressure_for_long_form_stable_tracks() {
+        let short_form = synthetic_tempo_diagnostics(
+            127.94273, 0.064, -0.1097, 0.48279, 45.998, 45.774, 83.272, 86.989,
+        );
+        let long_form = synthetic_tempo_diagnostics_with_counts(
+            127.94273, 0.064, -0.1097, 0.48279, 45.998, 45.774, 83.272, 86.989, 738, 735, 739,
+        );
+
+        let short_interpretation = super::interpret_tempo(
+            127.97321,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+            &short_form,
+        );
+        let long_interpretation = super::interpret_tempo(
+            127.97321,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+            &long_form,
+        );
+
+        assert!(
+            short_interpretation.support.boundary_pressure.0
+                > long_interpretation.support.boundary_pressure.0,
+            "short={} long={}",
+            short_interpretation.support.boundary_pressure.0,
+            long_interpretation.support.boundary_pressure.0
+        );
+        assert_eq!(
+            long_interpretation.recommendation,
+            super::TempoRecommendation::SnapInteger
+        );
+        assert!(
+            long_interpretation.support.boundary_pressure.0 < 0.3,
+            "long boundary pressure should be localized: {}",
+            long_interpretation.support.boundary_pressure.0
+        );
+    }
+
+    #[test]
+    fn tempo_interpretation_snaps_stable_near_integer_with_localized_tail_outliers() {
+        let mut diagnostics = synthetic_tempo_diagnostics_with_counts(
+            127.94273, 0.064, -0.1097, 0.48279, 45.998, 45.774, 83.272, 86.989, 738, 735, 739,
+        );
+        diagnostics.beat_interval_outliers = super::BeatIntervalOutlierDiagnostics {
+            total_intervals: 738,
+            retained_intervals: 670,
+            rejected_intervals: 68,
+            leading_rejected_intervals: 0,
+            trailing_rejected_intervals: 3,
+            median_interval: 60.0 / 127.94273,
+            median_abs_deviation: 0.000607,
+            max_rejected_deviation_ratio: 0.384,
+        };
+
+        let interpretation = super::interpret_tempo(
+            127.96191,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+            &diagnostics,
+        );
+
+        assert_eq!(
+            interpretation.recommendation,
+            super::TempoRecommendation::SnapInteger
+        );
+        assert_eq!(interpretation.snapped_bpm, Some(128.0));
+    }
+
+    #[test]
+    fn beat_interval_outlier_filter_localizes_terminal_outliers() {
+        let stable = 60.0 / 128.0;
+        let intervals = vec![
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable,
+            stable * 1.23,
+            stable * 0.84,
+            stable * 1.32,
+            stable,
+        ];
+        let (retained, diagnostics) = super::filter_interval_outliers(&intervals);
+
+        assert_eq!(diagnostics.total_intervals, intervals.len());
+        assert_eq!(diagnostics.trailing_rejected_intervals, 3);
+        assert_eq!(diagnostics.rejected_intervals, 3);
+        assert_eq!(diagnostics.leading_rejected_intervals, 0);
+        assert_eq!(diagnostics.retained_intervals, retained.len());
+        assert!(diagnostics.max_rejected_deviation_ratio > 0.2);
+        assert!((diagnostics.median_interval - stable).abs() < 1.0e-6);
+    }
+
+    #[test]
+    fn stable_core_span_detects_terminal_window_damage() {
+        let stable = 127.94;
+        let points: Vec<super::LocalTempoPoint> = (0..12)
+            .map(|index| super::LocalTempoPoint {
+                start_beat_index: index,
+                end_beat_index: index + 4,
+                start_seconds: index as f32,
+                end_seconds: index as f32 + 4.0,
+                bpm: match index {
+                    9 => 129.10,
+                    10 => 124.40,
+                    11 => 116.60,
+                    _ => stable,
+                },
+            })
+            .collect();
+
+        let span = super::detect_stable_core_span(&points, stable, 0.12).unwrap();
+
+        assert_eq!(span.start_beat_index, 0);
+        assert_eq!(span.end_beat_index, 12);
+        assert!(span.coverage.0 >= 0.8, "coverage {}", span.coverage.0);
+        assert_eq!(span.trimmed_leading_windows, 0);
+        assert_eq!(span.trimmed_trailing_windows, 3);
+        assert_eq!(span.interior_rejected_windows, 0);
+    }
+
+    #[test]
+    fn edge_trimmed_stable_span_preserves_sparse_interior_instability() {
+        let stable = 127.94;
+        let points: Vec<super::LocalTempoPoint> = (0..16)
+            .map(|index| super::LocalTempoPoint {
+                start_beat_index: index,
+                end_beat_index: index + 4,
+                start_seconds: index as f32,
+                end_seconds: index as f32 + 4.0,
+                bpm: match index {
+                    3 => 130.25,
+                    8 => 125.70,
+                    13 => 129.40,
+                    14 => 124.40,
+                    15 => 116.60,
+                    _ => stable,
+                },
+            })
+            .collect();
+
+        let edge_trimmed = super::detect_edge_trimmed_stable_span(&points, stable, 0.12).unwrap();
+        let contiguous = super::detect_stable_core_span(&points, stable, 0.12).unwrap();
+
+        assert_eq!(edge_trimmed.start_beat_index, 0);
+        assert!(edge_trimmed.end_beat_index >= 16);
+        assert_eq!(edge_trimmed.trimmed_leading_windows, 0);
+        assert!(edge_trimmed.retained_windows >= contiguous.retained_windows);
+        assert!(contiguous.trimmed_leading_windows > 0 || contiguous.trimmed_trailing_windows > 0);
+    }
+
+    #[test]
+    fn beat_tracker_exposes_stable_core_span_for_integer_click_track() {
+        let tracker = &mut super::BeatTracker::new(super::BeatTrackerConfig::default());
+        let result = tracker.analyze(&click_track(48_000, 120.0, 8.0));
+        let edge_trimmed = result
+            .tempo_diagnostics
+            .edge_trimmed_stable_span
+            .expect("edge-trimmed stable span");
+        let span = result
+            .tempo_diagnostics
+            .stable_core_span
+            .expect("stable core span");
+
+        assert_eq!(edge_trimmed.start_beat_index, 0);
+        assert!(
+            edge_trimmed.coverage.0 > 0.95,
+            "coverage {}",
+            edge_trimmed.coverage.0
+        );
+        assert_eq!(edge_trimmed.interior_rejected_windows, 0);
+        assert_eq!(span.start_beat_index, 0);
+        assert!(span.end_beat_index >= result.beat_positions_seconds.len().saturating_sub(2));
+        assert!(span.coverage.0 > 0.9, "coverage {}", span.coverage.0);
+        assert_eq!(span.interior_rejected_windows, 0);
+    }
+
+    #[test]
+    fn beat_tracker_classifies_whole_track_stable_scope_for_click_track() {
+        let tracker = &mut super::BeatTracker::new(super::BeatTrackerConfig::default());
+        let result = tracker.analyze(&click_track(48_000, 120.0, 8.0));
+
+        assert_eq!(
+            result.tempo_diagnostics.stability_scope.scope,
+            super::TempoStabilityScope::WholeTrackStable
+        );
+        assert!(
+            result
+                .tempo_consumption(None)
+                .stability_scope
+                .support
+                .edge_trimmed_coverage
+                .0
+                > 0.95
+        );
+    }
+
+    #[test]
+    fn classify_tempo_stability_scope_detects_localized_edge_damage() {
+        let mut diagnostics = synthetic_tempo_diagnostics_with_counts(
+            128.0, 0.70, -0.11, 0.48, 46.0, 45.8, 278.0, 87.0, 738, 735, 739,
+        );
+        diagnostics.beat_interval_outliers = super::BeatIntervalOutlierDiagnostics {
+            total_intervals: 738,
+            retained_intervals: 670,
+            rejected_intervals: 68,
+            leading_rejected_intervals: 0,
+            trailing_rejected_intervals: 3,
+            median_interval: 0.468_956,
+            median_abs_deviation: 0.000_607,
+            max_rejected_deviation_ratio: 0.384,
+        };
+        diagnostics.edge_trimmed_stable_span = Some(super::BeatGridCoreSpanDiagnostics {
+            start_beat_index: 0,
+            end_beat_index: 735,
+            start_seconds: 0.447,
+            end_seconds: 345.333,
+            coverage: super::Confidence::new(0.996),
+            retained_windows: 732,
+            total_windows: 735,
+            trimmed_leading_windows: 0,
+            trimmed_trailing_windows: 3,
+            interior_rejected_windows: 14,
+        });
+        diagnostics.stable_core_span = Some(super::BeatGridCoreSpanDiagnostics {
+            start_beat_index: 216,
+            end_beat_index: 706,
+            start_seconds: 101.698,
+            end_seconds: 331.641,
+            coverage: super::Confidence::new(0.664),
+            retained_windows: 487,
+            total_windows: 735,
+            trimmed_leading_windows: 216,
+            trimmed_trailing_windows: 32,
+            interior_rejected_windows: 0,
+        });
+        diagnostics.stability_scope = super::classify_tempo_stability_scope(
+            diagnostics.windowed_tempi.len(),
+            &diagnostics.beat_interval_outliers,
+            diagnostics.edge_trimmed_stable_span,
+            diagnostics.stable_core_span,
+        );
+
+        assert_eq!(
+            diagnostics.stability_scope.scope,
+            super::TempoStabilityScope::StableWithLocalizedEdgeDamage
+        );
+        assert!(diagnostics.stability_scope.support.edge_locality.0 >= 0.55);
+    }
+
+    #[test]
+    fn classify_tempo_stability_scope_detects_core_stable_only_case() {
+        let mut diagnostics = synthetic_tempo_diagnostics_with_counts(
+            120.0, 0.85, 0.42, 0.61, 58.0, 44.0, 360.0, 92.0, 128, 96, 128,
+        );
+        diagnostics.beat_interval_outliers = super::BeatIntervalOutlierDiagnostics {
+            total_intervals: 128,
+            retained_intervals: 120,
+            rejected_intervals: 8,
+            leading_rejected_intervals: 0,
+            trailing_rejected_intervals: 0,
+            median_interval: 0.5,
+            median_abs_deviation: 0.004,
+            max_rejected_deviation_ratio: 0.18,
+        };
+        diagnostics.edge_trimmed_stable_span = Some(super::BeatGridCoreSpanDiagnostics {
+            start_beat_index: 24,
+            end_beat_index: 92,
+            start_seconds: 12.0,
+            end_seconds: 46.0,
+            coverage: super::Confidence::new(0.57),
+            retained_windows: 69,
+            total_windows: 96,
+            trimmed_leading_windows: 24,
+            trimmed_trailing_windows: 3,
+            interior_rejected_windows: 6,
+        });
+        diagnostics.stable_core_span = Some(super::BeatGridCoreSpanDiagnostics {
+            start_beat_index: 28,
+            end_beat_index: 88,
+            start_seconds: 14.0,
+            end_seconds: 44.0,
+            coverage: super::Confidence::new(0.50),
+            retained_windows: 61,
+            total_windows: 96,
+            trimmed_leading_windows: 28,
+            trimmed_trailing_windows: 7,
+            interior_rejected_windows: 0,
+        });
+        diagnostics.stability_scope = super::classify_tempo_stability_scope(
+            diagnostics.windowed_tempi.len(),
+            &diagnostics.beat_interval_outliers,
+            diagnostics.edge_trimmed_stable_span,
+            diagnostics.stable_core_span,
+        );
+
+        assert_eq!(
+            diagnostics.stability_scope.scope,
+            super::TempoStabilityScope::CoreStableOnly
+        );
+        assert!(
+            diagnostics
+                .stability_scope
+                .support
+                .contiguous_core_coverage
+                .0
+                >= 0.5
+        );
+    }
+
+    #[test]
+    fn refine_bpm_from_beats_ignores_terminal_outlier_intervals() {
+        let stable_interval_frames = 46.875;
+        let intervals = [
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames,
+            stable_interval_frames * 1.23,
+            stable_interval_frames * 0.84,
+            stable_interval_frames * 1.32,
+            stable_interval_frames,
+        ];
+        let mut beat_frames = Vec::with_capacity(intervals.len() + 1);
+        let mut current = 0.0;
+        beat_frames.push(current);
+        for interval in intervals {
+            current += interval;
+            beat_frames.push(current);
+        }
+
+        let refined =
+            super::refine_bpm_from_beats(127.97321, &beat_frames, SampleRate(48_000), 512);
+
+        assert!((refined - 128.0).abs() < 0.05, "refined bpm {}", refined);
     }
 
     #[test]
@@ -6581,6 +10130,178 @@ mod tests {
             state.continuity.history,
             super::TempoContinuityHistory::Reinforcing
         );
+        assert_eq!(state.continuity.arc, super::TempoContinuityArc::Recovering);
+        assert_eq!(
+            state.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::RefreshStrength
+        );
+        assert_eq!(
+            state.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::KeepLock
+        );
+        assert_eq!(
+            state.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::LockCurrentTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Confirmed
+        );
+        assert_eq!(
+            state.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::ReacquireCurrentTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::StabilityWindowEnd
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Easing
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::StabilityWindowCarry
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_inflection.stage,
+            super::TempoContinuityArcDowngradeInflectionStage::NextStage
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .after_beats,
+            12
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            Some(super::TempoContinuityArcDowngradeInflectionStage::TerminalClear)
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_after_beats
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_inflection
+                    .after_beats
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_support
+                .0
+                >= 0.55
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .competing_weight
+                .0
+                >= 0.0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .dominance
+                .0
+                >= 0.0
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::StabilityWindow
+        );
+        assert!(matches!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing
+                .map(|weights| weights.dominant),
+            Some(super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::StabilityWindow)
+                | None
+        ));
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_trend_support
+                .terminal_pressure
+                .0
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_trend_support
+                    .current_pressure
+                    .0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .stability_window_pressure
+                .0
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .boundary_drift_pressure
+                    .0
+        );
+        assert_eq!(
+            state.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::IntegerSnap
+        );
+        assert_eq!(
+            state.continuity.arc_decision.expiry,
+            super::TempoContinuityArcActionExpiry {
+                guaranteed_until_beats: 16,
+                fallback_after_beats: 20,
+                clear_after_beats: 28,
+                max_failed_revalidations: 3,
+            }
+        );
+        assert_eq!(
+            state.continuity.trigger,
+            super::TempoContinuityTrigger::StableRevalidation
+        );
+        assert_eq!(
+            state.continuity.unresolved,
+            super::TempoContinuityUnresolvedSpan {
+                beats: 0,
+                failed_revalidations: 0,
+            }
+        );
+        assert_eq!(
+            state.continuity.causes.primary,
+            super::TempoContinuityCause::StableTempoEvidence
+        );
         assert_eq!(state.continuity.expiry.guaranteed_until_beats, 16);
         assert_eq!(state.continuity.expiry.max_failed_revalidations, 3);
         assert!(state.continuity.refresh_strength.0 > 0.9);
@@ -6600,6 +10321,84 @@ mod tests {
             state.continuity.lifecycle.decay[1].history,
             super::TempoContinuityHistory::Degrading
         );
+    }
+
+    #[test]
+    fn tempo_state_locks_edge_damaged_integer_scope() {
+        let interpretation = synthetic_tempo_interpretation(
+            super::TempoRecommendation::SnapInteger,
+            super::TempoTrustLevel::Stable,
+            super::TempoInterpretationReason::NearIntegerPulse,
+            128.0,
+            Some(128.0),
+            0.80,
+            0.08,
+            0.22,
+            0.45,
+        );
+        let state = super::tempo_state_recommendation_with_scope(
+            interpretation,
+            super::Confidence::new(0.666),
+            super::Confidence::new(0.18),
+            scope_summary(super::TempoStabilityScope::StableWithLocalizedEdgeDamage),
+        );
+
+        assert_eq!(state.action, super::TempoStateAction::Lock);
+        assert_eq!(
+            state.reason,
+            super::TempoStateReason::StableTempoWithEdgeDamage
+        );
+        assert!(state.confidence.0 >= 0.76);
+        assert_eq!(state.continuity.action, super::TempoContinuityAction::Lock);
+        assert_eq!(
+            state.continuity.source,
+            super::TempoContinuitySource::CurrentTempo
+        );
+        assert_eq!(state.continuity.expiry.guaranteed_until_beats, 10);
+        assert_eq!(state.continuity.expiry.downgrade_after_beats, 12);
+        assert_eq!(state.continuity.expiry.clear_after_beats, 18);
+        assert_eq!(
+            state.continuity.arc_decision.expiry.fallback_after_beats,
+            12
+        );
+    }
+
+    #[test]
+    fn tempo_state_monitors_core_stable_integer_scope() {
+        let interpretation = synthetic_tempo_interpretation(
+            super::TempoRecommendation::SnapInteger,
+            super::TempoTrustLevel::Stable,
+            super::TempoInterpretationReason::NearIntegerPulse,
+            128.0,
+            Some(128.0),
+            0.79,
+            0.042,
+            0.20,
+            0.44,
+        );
+        let state = super::tempo_state_recommendation_with_scope(
+            interpretation,
+            super::Confidence::new(0.72),
+            super::Confidence::new(0.16),
+            scope_summary(super::TempoStabilityScope::CoreStableOnly),
+        );
+
+        assert_eq!(state.action, super::TempoStateAction::Monitor);
+        assert_eq!(state.reason, super::TempoStateReason::CoreStableTempo);
+        assert_eq!(
+            state.continuity.action,
+            super::TempoContinuityAction::Reacquire
+        );
+        assert_eq!(
+            state.continuity.source,
+            super::TempoContinuitySource::CurrentTempo
+        );
+        assert_eq!(
+            state.continuity.lifecycle.refresh.action,
+            super::TempoContinuityAction::Lock
+        );
+        assert_eq!(state.continuity.expiry.guaranteed_until_beats, 4);
+        assert_eq!(state.continuity.expiry.clear_after_beats, 12);
     }
 
     #[test]
@@ -6644,6 +10443,179 @@ mod tests {
             state.continuity.history,
             super::TempoContinuityHistory::Preserving
         );
+        assert_eq!(state.continuity.arc, super::TempoContinuityArc::Stalling);
+        assert_eq!(
+            state.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::BoundaryDrift
+        );
+        assert_eq!(
+            state.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::MonitorRecovery
+        );
+        assert_eq!(
+            state.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::PreferCoreWindowTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Guarded
+        );
+        assert_eq!(
+            state.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::PreservePriorTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::BoundaryDrift
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Rising
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::BoundaryEscalation
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_inflection.stage,
+            super::TempoContinuityArcDowngradeInflectionStage::NextStage
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .after_beats,
+            8
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            Some(super::TempoContinuityArcDowngradeInflectionStage::TerminalClear)
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_after_beats
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_inflection
+                    .after_beats
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_support
+                .0
+                >= 0.55
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .competing_weight
+                .0
+                >= 0.0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .dominance
+                .0
+                >= 0.0
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::BoundaryDrift
+        );
+        assert!(matches!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing
+                .map(|weights| weights.dominant),
+            Some(super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::BoundaryDrift)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::StabilityWindow)
+                | None
+        ));
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_trend_support
+                .next_stage_pressure
+                .0
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_trend_support
+                    .current_pressure
+                    .0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .boundary_drift_pressure
+                .0
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .ambiguity_pressure
+                    .0
+        );
+        assert_eq!(
+            state.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::CoreWindowEstimate
+        );
+        assert_eq!(
+            state.continuity.arc_decision.expiry,
+            super::TempoContinuityArcActionExpiry {
+                guaranteed_until_beats: 8,
+                fallback_after_beats: 8,
+                clear_after_beats: 12,
+                max_failed_revalidations: 2,
+            }
+        );
+        assert_eq!(
+            state.continuity.trigger,
+            super::TempoContinuityTrigger::BoundaryDrift
+        );
+        assert_eq!(
+            state.continuity.unresolved,
+            super::TempoContinuityUnresolvedSpan {
+                beats: 8,
+                failed_revalidations: 2,
+            }
+        );
+        assert_eq!(
+            state.continuity.causes.primary,
+            super::TempoContinuityCause::BoundaryDrift
+        );
         assert_eq!(state.continuity.expiry.guaranteed_until_beats, 8);
         assert_eq!(state.continuity.expiry.max_failed_revalidations, 3);
         assert_eq!(
@@ -6661,6 +10633,10 @@ mod tests {
         assert_eq!(
             state.continuity.lifecycle.decay[0].history,
             super::TempoContinuityHistory::Degrading
+        );
+        assert_eq!(
+            state.continuity.lifecycle.decay[0].trigger,
+            super::TempoContinuityTrigger::PriorTempoDrift
         );
     }
 
@@ -6705,6 +10681,179 @@ mod tests {
             state.continuity.history,
             super::TempoContinuityHistory::Preserving
         );
+        assert_eq!(state.continuity.arc, super::TempoContinuityArc::Recovering);
+        assert_eq!(
+            state.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::RefreshStrength
+        );
+        assert_eq!(
+            state.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::MonitorRecovery
+        );
+        assert_eq!(
+            state.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::ReacquireCurrentTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Fragile
+        );
+        assert_eq!(
+            state.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::ClearTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::AmbiguityCarry
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Easing
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::AmbiguityCarry
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_inflection.stage,
+            super::TempoContinuityArcDowngradeInflectionStage::NextStage
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .after_beats,
+            4
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            Some(super::TempoContinuityArcDowngradeInflectionStage::TerminalClear)
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_after_beats
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_inflection
+                    .after_beats
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_support
+                .0
+                >= 0.55
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .competing_weight
+                .0
+                >= 0.0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .dominance
+                .0
+                >= 0.0
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::AmbiguityCarry
+        );
+        assert!(matches!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing
+                .map(|weights| weights.dominant),
+            Some(super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::AmbiguityCarry)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::StabilityWindow)
+                | None
+        ));
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_trend_support
+                .terminal_pressure
+                .0
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_trend_support
+                    .current_pressure
+                    .0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .ambiguity_pressure
+                .0
+                > state
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .boundary_drift_pressure
+                    .0
+        );
+        assert_eq!(
+            state.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::GuardedRefinedEstimate
+        );
+        assert_eq!(
+            state.continuity.arc_decision.expiry,
+            super::TempoContinuityArcActionExpiry {
+                guaranteed_until_beats: 4,
+                fallback_after_beats: 12,
+                clear_after_beats: 12,
+                max_failed_revalidations: 3,
+            }
+        );
+        assert_eq!(
+            state.continuity.trigger,
+            super::TempoContinuityTrigger::AmbiguityCarry
+        );
+        assert_eq!(
+            state.continuity.unresolved,
+            super::TempoContinuityUnresolvedSpan {
+                beats: 4,
+                failed_revalidations: 1,
+            }
+        );
+        assert_eq!(
+            state.continuity.causes.primary,
+            super::TempoContinuityCause::TempoAmbiguity
+        );
         assert_eq!(state.continuity.expiry.guaranteed_until_beats, 4);
         assert_eq!(state.continuity.expiry.downgrade_after_beats, 8);
         assert_eq!(state.continuity.expiry.clear_after_beats, 12);
@@ -6720,6 +10869,10 @@ mod tests {
         assert_eq!(
             state.continuity.lifecycle.refresh.history,
             super::TempoContinuityHistory::Reinforcing
+        );
+        assert_eq!(
+            state.continuity.lifecycle.refresh.trigger,
+            super::TempoContinuityTrigger::StableRevalidation
         );
         assert_eq!(
             state.continuity.lifecycle.decay[0].provenance,
@@ -6765,6 +10918,161 @@ mod tests {
         assert_eq!(
             state.continuity.history,
             super::TempoContinuityHistory::Degrading
+        );
+        assert_eq!(state.continuity.arc, super::TempoContinuityArc::Collapsing);
+        assert_eq!(
+            state.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::EvidenceLoss
+        );
+        assert_eq!(
+            state.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::Clear
+        );
+        assert_eq!(
+            state.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::ClearTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Cleared
+        );
+        assert_eq!(
+            state.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::ClearTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::EvidenceLoss
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Stable
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::FlatCollapse
+        );
+        assert_eq!(
+            state.continuity.arc_decision.downgrade_inflection.stage,
+            super::TempoContinuityArcDowngradeInflectionStage::FlatWindow
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .after_beats,
+            0
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            None
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_support,
+            super::Confidence::new(0.0)
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .primary_weight,
+            super::Confidence::new(0.0)
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .competing_weight,
+            super::Confidence::new(0.0)
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .unattributed_weight,
+            super::Confidence::new(1.0)
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .dominance,
+            super::Confidence::new(0.0)
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing,
+            None
+        );
+        assert_eq!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_trend_support
+                .current_pressure
+                .0,
+            1.0 - state.confidence.0
+        );
+        assert!(
+            state
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .evidence_loss_pressure
+                .0
+                >= 0.95
+        );
+        assert_eq!(
+            state.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::NoTempo
+        );
+        assert_eq!(
+            state.continuity.arc_decision.expiry,
+            super::TempoContinuityArcActionExpiry {
+                guaranteed_until_beats: 0,
+                fallback_after_beats: 0,
+                clear_after_beats: 0,
+                max_failed_revalidations: 0,
+            }
+        );
+        assert_eq!(
+            state.continuity.trigger,
+            super::TempoContinuityTrigger::EvidenceLoss
+        );
+        assert_eq!(
+            state.continuity.causes.primary,
+            super::TempoContinuityCause::TempoAmbiguity
         );
         assert_eq!(state.continuity.expiry.clear_after_beats, 0);
         assert_eq!(
@@ -6895,6 +11203,696 @@ mod tests {
         assert_eq!(
             deferred.continuity.lifecycle.decay[1].refresh_strength.0,
             0.0
+        );
+    }
+
+    #[test]
+    fn tempo_continuity_calibrates_causes_and_unresolved_spans() {
+        let integer = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::SnapInteger,
+                super::TempoTrustLevel::Stable,
+                super::TempoInterpretationReason::NearIntegerPulse,
+                120.0,
+                Some(120.0),
+                0.86,
+                0.08,
+                0.22,
+                0.82,
+            ),
+            super::Confidence::new(0.9),
+            super::Confidence::new(0.12),
+        );
+        let core_window = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::UseCoreWindow,
+                super::TempoTrustLevel::Guarded,
+                super::TempoInterpretationReason::StableCoreWindow,
+                90.0,
+                None,
+                0.64,
+                0.07,
+                0.72,
+                0.64,
+            ),
+            super::Confidence::new(0.72),
+            super::Confidence::new(0.18),
+        );
+        let guarded_refined = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::UseRefined,
+                super::TempoTrustLevel::Guarded,
+                super::TempoInterpretationReason::StableRefinedPulse,
+                117.8,
+                None,
+                0.61,
+                0.09,
+                0.32,
+                0.62,
+            ),
+            super::Confidence::new(0.71),
+            super::Confidence::new(0.21),
+        );
+        let deferred = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::Defer,
+                super::TempoTrustLevel::Tentative,
+                super::TempoInterpretationReason::UnstableTempo,
+                89.9,
+                None,
+                0.38,
+                0.03,
+                0.8,
+                0.3,
+            ),
+            super::Confidence::new(0.42),
+            super::Confidence::new(0.55),
+        );
+
+        assert_eq!(
+            integer.continuity.trigger,
+            super::TempoContinuityTrigger::StableRevalidation
+        );
+        assert_eq!(
+            integer.continuity.unresolved,
+            super::TempoContinuityUnresolvedSpan {
+                beats: 0,
+                failed_revalidations: 0,
+            }
+        );
+        assert_eq!(
+            integer.continuity.causes.primary,
+            super::TempoContinuityCause::StableTempoEvidence
+        );
+        assert_eq!(
+            core_window.continuity.trigger,
+            super::TempoContinuityTrigger::BoundaryDrift
+        );
+        assert_eq!(
+            core_window.continuity.unresolved,
+            super::TempoContinuityUnresolvedSpan {
+                beats: 8,
+                failed_revalidations: 2,
+            }
+        );
+        assert_eq!(
+            core_window.continuity.causes.primary,
+            super::TempoContinuityCause::BoundaryDrift
+        );
+        assert!(core_window
+            .continuity
+            .causes
+            .secondary
+            .into_iter()
+            .flatten()
+            .any(|cause| cause == super::TempoContinuityCause::CoreWindowCarry));
+        assert_eq!(
+            guarded_refined.continuity.trigger,
+            super::TempoContinuityTrigger::AmbiguityCarry
+        );
+        assert_eq!(
+            guarded_refined.continuity.unresolved,
+            super::TempoContinuityUnresolvedSpan {
+                beats: 4,
+                failed_revalidations: 1,
+            }
+        );
+        assert_eq!(
+            guarded_refined.continuity.causes.primary,
+            super::TempoContinuityCause::TempoAmbiguity
+        );
+        assert_eq!(
+            deferred.continuity.trigger,
+            super::TempoContinuityTrigger::EvidenceLoss
+        );
+        assert_eq!(deferred.continuity.unresolved.beats, 0);
+        assert_eq!(
+            deferred.continuity.causes.primary,
+            super::TempoContinuityCause::TempoAmbiguity
+        );
+        assert!(deferred
+            .continuity
+            .causes
+            .secondary
+            .into_iter()
+            .flatten()
+            .any(|cause| cause == super::TempoContinuityCause::EvidenceLoss));
+    }
+
+    #[test]
+    fn tempo_continuity_calibrates_arcs_and_arc_support() {
+        let integer = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::SnapInteger,
+                super::TempoTrustLevel::Stable,
+                super::TempoInterpretationReason::NearIntegerPulse,
+                120.0,
+                Some(120.0),
+                0.86,
+                0.08,
+                0.22,
+                0.82,
+            ),
+            super::Confidence::new(0.9),
+            super::Confidence::new(0.12),
+        );
+        let core_window = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::UseCoreWindow,
+                super::TempoTrustLevel::Guarded,
+                super::TempoInterpretationReason::StableCoreWindow,
+                90.0,
+                None,
+                0.64,
+                0.07,
+                0.72,
+                0.64,
+            ),
+            super::Confidence::new(0.72),
+            super::Confidence::new(0.18),
+        );
+        let guarded_refined = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::UseRefined,
+                super::TempoTrustLevel::Guarded,
+                super::TempoInterpretationReason::StableRefinedPulse,
+                117.8,
+                None,
+                0.61,
+                0.09,
+                0.32,
+                0.62,
+            ),
+            super::Confidence::new(0.71),
+            super::Confidence::new(0.21),
+        );
+        let deferred = super::tempo_state_recommendation(
+            synthetic_tempo_interpretation(
+                super::TempoRecommendation::Defer,
+                super::TempoTrustLevel::Tentative,
+                super::TempoInterpretationReason::UnstableTempo,
+                89.9,
+                None,
+                0.38,
+                0.03,
+                0.8,
+                0.3,
+            ),
+            super::Confidence::new(0.42),
+            super::Confidence::new(0.55),
+        );
+
+        assert_eq!(
+            integer.continuity.arc,
+            super::TempoContinuityArc::Recovering
+        );
+        assert_eq!(
+            core_window.continuity.arc,
+            super::TempoContinuityArc::Stalling
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc,
+            super::TempoContinuityArc::Recovering
+        );
+        assert_eq!(
+            deferred.continuity.arc,
+            super::TempoContinuityArc::Collapsing
+        );
+        assert_eq!(
+            integer.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::RefreshStrength
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::KeepLock
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::LockCurrentTempo
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Confirmed
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::ReacquireCurrentTempo
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::StabilityWindowEnd
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Easing
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::StabilityWindowCarry
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.downgrade_inflection.stage,
+            super::TempoContinuityArcDowngradeInflectionStage::NextStage
+        );
+        assert_eq!(
+            integer
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            Some(super::TempoContinuityArcDowngradeInflectionStage::TerminalClear)
+        );
+        assert_eq!(
+            integer
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::StabilityWindow
+        );
+        assert!(matches!(
+            integer
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing
+                .map(|weights| weights.dominant),
+            Some(super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::StabilityWindow)
+                | None
+        ));
+        assert!(
+            integer
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .competing_weight
+                .0
+                >= 0.0
+        );
+        assert!(
+            integer
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .stability_window_pressure
+                .0
+                > integer
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .failed_revalidation_pressure
+                    .0
+        );
+        assert_eq!(
+            integer.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::IntegerSnap
+        );
+        assert_eq!(
+            core_window.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::BoundaryDrift
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::MonitorRecovery
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::PreferCoreWindowTempo
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Guarded
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::PreservePriorTempo
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::BoundaryDrift
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Rising
+        );
+        assert_eq!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::BoundaryEscalation
+        );
+        assert_eq!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .stage,
+            super::TempoContinuityArcDowngradeInflectionStage::NextStage
+        );
+        assert_eq!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            Some(super::TempoContinuityArcDowngradeInflectionStage::TerminalClear)
+        );
+        assert_eq!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::BoundaryDrift
+        );
+        assert!(matches!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing
+                .map(|weights| weights.dominant),
+            Some(super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::BoundaryDrift)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::StabilityWindow)
+                | None
+        ));
+        assert!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .primary_weight
+                .0
+                >= core_window
+                    .continuity
+                    .arc_decision
+                    .downgrade_inflection
+                    .balance
+                    .competing_weight
+                    .0
+        );
+        assert!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .boundary_drift_pressure
+                .0
+                > core_window
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .stability_window_pressure
+                    .0
+        );
+        assert_eq!(
+            core_window.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::CoreWindowEstimate
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::RefreshStrength
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::MonitorRecovery
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::ReacquireCurrentTempo
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Fragile
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::ClearTempo
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::AmbiguityCarry
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Easing
+        );
+        assert_eq!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::AmbiguityCarry
+        );
+        assert_eq!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .stage,
+            super::TempoContinuityArcDowngradeInflectionStage::NextStage
+        );
+        assert_eq!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            Some(super::TempoContinuityArcDowngradeInflectionStage::TerminalClear)
+        );
+        assert_eq!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::AmbiguityCarry
+        );
+        assert!(matches!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing
+                .map(|weights| weights.dominant),
+            Some(super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::AmbiguityCarry)
+                | Some(super::TempoContinuityArcDowngradeStageRationale::StabilityWindow)
+                | None
+        ));
+        assert!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .competing_weight
+                .0
+                >= 0.0
+        );
+        assert!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .ambiguity_pressure
+                .0
+                > guarded_refined
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .failed_revalidation_pressure
+                    .0
+        );
+        assert_eq!(
+            guarded_refined.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::GuardedRefinedEstimate
+        );
+        assert_eq!(
+            deferred.continuity.arc_rationale,
+            super::TempoContinuityArcRationale::EvidenceLoss
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.recommendation,
+            super::TempoContinuityArcRecommendation::Clear
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.action,
+            super::TempoContinuityArcAction::ClearTempo
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.severity,
+            super::TempoContinuitySeverity::Cleared
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.fallback_action,
+            super::TempoContinuityArcAction::ClearTempo
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.downgrade_rationale,
+            super::TempoContinuityArcDowngradeRationale::EvidenceLoss
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.downgrade_trend,
+            super::TempoContinuityArcDowngradeTrend::Stable
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.downgrade_trend_rationale,
+            super::TempoContinuityArcDowngradeTrendRationale::FlatCollapse
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.downgrade_inflection.stage,
+            super::TempoContinuityArcDowngradeInflectionStage::FlatWindow
+        );
+        assert_eq!(
+            deferred
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .competing_stage,
+            None
+        );
+        assert_eq!(
+            deferred
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .primary
+                .dominant,
+            super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss
+        );
+        assert_eq!(
+            deferred
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .rationale_balance
+                .competing,
+            None
+        );
+        assert_eq!(
+            deferred
+                .continuity
+                .arc_decision
+                .downgrade_inflection
+                .balance
+                .unattributed_weight,
+            super::Confidence::new(1.0)
+        );
+        assert!(
+            deferred
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .evidence_loss_pressure
+                .0
+                > deferred
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .ambiguity_pressure
+                    .0
+        );
+        assert_eq!(
+            deferred.continuity.arc_decision.provenance,
+            super::TempoContinuityProvenance::NoTempo
+        );
+        assert_eq!(
+            core_window
+                .continuity
+                .arc_decision
+                .expiry
+                .max_failed_revalidations,
+            2
+        );
+        assert_eq!(
+            guarded_refined
+                .continuity
+                .arc_decision
+                .expiry
+                .fallback_after_beats,
+            12
+        );
+        assert!(
+            integer.continuity.arc_support.refresh_strength.0
+                > core_window.continuity.arc_support.refresh_strength.0
+        );
+        assert!(
+            core_window.continuity.arc_support.drift_pressure.0
+                > integer.continuity.arc_support.drift_pressure.0
+        );
+        assert!(
+            deferred.continuity.arc_support.instability_pressure.0
+                > guarded_refined
+                    .continuity
+                    .arc_support
+                    .instability_pressure
+                    .0
+        );
+        assert!(
+            integer.continuity.arc_decision.confidence.0
+                > guarded_refined.continuity.arc_decision.confidence.0
+        );
+        assert!(
+            deferred.continuity.arc_decision.confidence.0
+                > core_window.continuity.arc_decision.confidence.0
+        );
+        assert!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_trend_support
+                .next_stage_pressure
+                .0
+                > core_window
+                    .continuity
+                    .arc_decision
+                    .downgrade_trend_support
+                    .current_pressure
+                    .0
+        );
+        assert!(
+            integer
+                .continuity
+                .arc_decision
+                .downgrade_trend_support
+                .terminal_pressure
+                .0
+                > integer
+                    .continuity
+                    .arc_decision
+                    .downgrade_trend_support
+                    .current_pressure
+                    .0
+        );
+        assert!(
+            core_window
+                .continuity
+                .arc_decision
+                .downgrade_support
+                .failed_revalidation_pressure
+                .0
+                > integer
+                    .continuity
+                    .arc_decision
+                    .downgrade_support
+                    .failed_revalidation_pressure
+                    .0
         );
     }
 

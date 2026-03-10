@@ -16,6 +16,7 @@ research authority for Signal.
 
 - Vision: [`vision/001-signal-vision.md`](./vision/001-signal-vision.md)
 - Architecture: [`architecture/system-architecture.md`](./architecture/system-architecture.md)
+- DSP and analysis current state: [`architecture/dsp-analysis-feature-reference.md`](./architecture/dsp-analysis-feature-reference.md)
 - Package map: [`architecture/package-map.md`](./architecture/package-map.md)
 - Core boundary: [`contracts/001-shared-dsp-and-host-boundary.md`](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export: [`contracts/002-supervisor-export-schema-and-report-boundary.md`](./contracts/002-supervisor-export-schema-and-report-boundary.md)

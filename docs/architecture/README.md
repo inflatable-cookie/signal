@@ -6,6 +6,7 @@ They set constraints roadmap batches must honor.
 ## Files
 
 - `system-architecture.md`
+- `dsp-analysis-feature-reference.md`
 - `package-map.md`
 - `docs/contracts/001-shared-dsp-and-host-boundary.md`
 - future `docs/contracts/00n-<slug>.md` files as needed

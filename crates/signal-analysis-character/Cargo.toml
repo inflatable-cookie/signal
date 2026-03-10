@@ -1,0 +1,13 @@
+[package]
+name = "signal-analysis-character"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Character analysis surfaces for Signal — spectral centroid, onset density, ZCR, and RMS energy."
+
+[dependencies]
+signal-analysis = { path = "../signal-analysis" }
+signal-dsp-spectral = { path = "../signal-dsp-spectral" }
+signal-primitives = { path = "../signal-primitives" }

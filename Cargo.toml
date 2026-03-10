@@ -8,6 +8,7 @@ members = [
   "crates/signal-analysis-rhythm",
   "crates/signal-analysis-tonal",
   "crates/signal-analysis-loudness",
+  "crates/signal-analysis-character",
   "crates/signal-graph",
   "crates/signal-runtime",
   "crates/signal-ipc",

@@ -1152,6 +1152,20 @@ impl ClapSandboxLifecycleHarness {
         self.heartbeat_count
     }
 
+    pub fn invalidate_active_epoch(&mut self, processing_epoch: u64) -> (bool, bool) {
+        let lease_invalidated = self
+            .active_lease
+            .as_mut()
+            .map(|lease| lease.invalidate_epoch(processing_epoch))
+            .unwrap_or(false);
+        let completion_invalidated =
+            self.prepared_epoch.is_some() || self.active_lease.is_some() || self.active;
+        if completion_invalidated {
+            self.block_machine.invalidate_epoch(processing_epoch);
+        }
+        (completion_invalidated, lease_invalidated)
+    }
+
     pub fn teardown_active_transport(&mut self) -> io::Result<()> {
         if let Some(transport) = self
             .active_lease
@@ -1755,6 +1769,81 @@ pub fn sandbox_failure_event(
     )
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ClapSandboxFailureStage {
+    PrepareAttach,
+    ProcessAttach,
+    ProcessFlush,
+    ProcessProtocolViolation,
+    ControlProtocolViolation,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClapSandboxFailureClassification {
+    pub sandbox_id: String,
+    pub lease_id: Option<String>,
+    pub processing_epoch: Option<u64>,
+    pub operation: String,
+    pub error_kind: String,
+    pub stage: ClapSandboxFailureStage,
+    pub detail: String,
+}
+
+pub fn classify_sandbox_failure(
+    envelope: &PluginMessageEnvelope,
+) -> Option<ClapSandboxFailureClassification> {
+    let PluginMessagePayload::SandboxFailure {
+        sandbox_id,
+        stage,
+        error_kind,
+        detail,
+        processing_epoch,
+        shared_memory_lease_id,
+        ..
+    } = &envelope.payload
+    else {
+        return None;
+    };
+
+    let stage = match (stage.as_str(), error_kind.as_str()) {
+        ("prepareInstance", "resourceUnavailable")
+            if detail.contains("attach shared-memory region") =>
+        {
+            ClapSandboxFailureStage::PrepareAttach
+        }
+        ("processBlock", "resourceUnavailable")
+            if detail.contains("attach shared-memory region") =>
+        {
+            ClapSandboxFailureStage::ProcessAttach
+        }
+        ("processBlock", "resourceUnavailable")
+            if detail.contains("flush shared-memory region") =>
+        {
+            ClapSandboxFailureStage::ProcessFlush
+        }
+        ("processBlock", "protocolViolation") => ClapSandboxFailureStage::ProcessProtocolViolation,
+        (_, "protocolViolation") => ClapSandboxFailureStage::ControlProtocolViolation,
+        _ => return None,
+    };
+
+    Some(ClapSandboxFailureClassification {
+        sandbox_id: sandbox_id.clone(),
+        lease_id: shared_memory_lease_id.clone(),
+        processing_epoch: *processing_epoch,
+        operation: stage_string(stage, &envelope.payload),
+        error_kind: error_kind.clone(),
+        stage,
+        detail: detail.clone(),
+    })
+}
+
+fn stage_string(stage: ClapSandboxFailureStage, payload: &PluginMessagePayload) -> String {
+    match payload {
+        PluginMessagePayload::SandboxFailure { stage, .. } => stage.clone(),
+        _ => format!("{stage:?}"),
+    }
+}
+
 fn failure_event(
     sandbox_id: &str,
     instance_id: Option<String>,
@@ -1783,9 +1872,10 @@ fn failure_event(
 #[cfg(test)]
 mod tests {
     use super::{
-        sandbox_failure_event, ClapBlockProtocol, ClapEvent, ClapHostExtension,
-        ClapNoteExpressionEvent, ClapNoteExpressionKind, ClapParamGestureEvent,
-        ClapParamGesturePhase, ClapPluginHostAdapter, ClapSandboxLifecycleHarness,
+        classify_sandbox_failure, sandbox_failure_event, ClapBlockProtocol, ClapEvent,
+        ClapHostExtension, ClapNoteExpressionEvent, ClapNoteExpressionKind, ClapParamGestureEvent,
+        ClapParamGesturePhase, ClapPluginHostAdapter, ClapSandboxFailureStage,
+        ClapSandboxLifecycleHarness,
     };
     use signal_ipc::{
         PluginMessageName, PluginMessagePayload, SharedMemoryBroker, SharedMemoryTransportKind,
@@ -1913,6 +2003,47 @@ mod tests {
             .lease()
             .and_then(|lease| lease.transport())
             .is_some());
+        harness
+            .teardown_active_transport()
+            .expect("teardown transport");
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn clap_lifecycle_harness_can_invalidate_active_epoch() {
+        let root = test_broker_root("invalidate");
+        let broker = SharedMemoryBroker::new(&root);
+        let protocol = ClapBlockProtocol::new(
+            "plugin:clap:test",
+            "instance-invalidate",
+            PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+            1024,
+        );
+        let mut harness = ClapSandboxLifecycleHarness::default();
+        let messages = protocol
+            .lifecycle_sequence(&broker, "sandbox-invalidate", 48_000, 512, 3)
+            .expect("build lifecycle sequence");
+
+        for message in messages {
+            harness.handle(message).expect("accepted request");
+        }
+
+        let (completion_invalidated, lease_invalidated) = harness.invalidate_active_epoch(3);
+        assert!(completion_invalidated);
+        assert!(lease_invalidated);
+        assert_eq!(
+            harness
+                .lease()
+                .expect("prepared lease")
+                .invalidated_epochs(),
+            &[3]
+        );
+
         harness
             .teardown_active_transport()
             .expect("teardown transport");
@@ -2344,5 +2475,24 @@ mod tests {
             }
             other => panic!("expected sandbox failure, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn classify_sandbox_failure_maps_process_attach_errors() {
+        let failure = sandbox_failure_event(
+            "sandbox-a",
+            Some("instance-a".into()),
+            "processBlock",
+            "resourceUnavailable",
+            "failed to attach shared-memory region: stale mapping",
+            Some(3),
+            Some("lease-a".into()),
+            None,
+        );
+
+        let classification = classify_sandbox_failure(&failure).expect("classification");
+        assert_eq!(classification.stage, ClapSandboxFailureStage::ProcessAttach);
+        assert_eq!(classification.operation, "processBlock");
+        assert_eq!(classification.lease_id.as_deref(), Some("lease-a"));
     }
 }

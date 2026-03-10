@@ -1,14 +1,63 @@
 //! Loudness analysis surfaces for Signal.
+//!
+//! The crate currently exposes an offline mono loudness meter with integrated
+//! loudness, loudness range, true-peak estimation, and confidence reporting.
+//!
+//! ```no_run
+//! use signal_analysis::AnalysisStage;
+//! use signal_analysis_loudness::{LoudnessMeter, LoudnessMeterConfig};
+//! use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
+//!
+//! let audio = AudioBuffer::from_interleaved(
+//!     SampleRate(48_000),
+//!     ChannelLayout::Mono,
+//!     vec![0.0; 48_000],
+//! );
+//! let mut meter = LoudnessMeter::new(LoudnessMeterConfig::default());
+//! let result = meter.analyze(&audio);
+//!
+//! assert_eq!(meter.mode(), signal_analysis::AnalysisMode::Offline);
+//! assert_eq!(result.loudness_range_lu, 0.0);
+//! ```
 
 use signal_analysis::{AnalysisMode, AnalysisStage, Confidence};
 use signal_primitives::{AudioBuffer, Sample, SampleRate};
 
+/// Configuration for the offline loudness meter.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct LoudnessMeterConfig {
     pub target_lufs: f32,
     pub block_seconds: f32,
     pub hop_seconds: f32,
     pub short_term_seconds: f32,
+    /// Maximum duration to analyse, taken from the centre of the track.
+    /// `None` means the entire track is processed (spec-compliant integrated
+    /// LUFS).  Setting a value gives a faster estimate that may differ from
+    /// the true whole-programme loudness.
+    pub analysis_duration_seconds: Option<u32>,
+}
+
+impl LoudnessMeterConfig {
+    /// Quick scanning profile — analyses a 30-second centre segment.
+    pub fn low() -> Self {
+        Self {
+            analysis_duration_seconds: Some(30),
+            ..Self::default()
+        }
+    }
+
+    /// Balanced profile — analyses a 60-second centre segment.
+    pub fn medium() -> Self {
+        Self {
+            analysis_duration_seconds: Some(60),
+            ..Self::default()
+        }
+    }
+
+    /// Full-accuracy profile — analyses the entire track.
+    pub fn high() -> Self {
+        Self::default()
+    }
 }
 
 impl Default for LoudnessMeterConfig {
@@ -18,10 +67,19 @@ impl Default for LoudnessMeterConfig {
             block_seconds: 0.400,
             hop_seconds: 0.100,
             short_term_seconds: 3.0,
+            analysis_duration_seconds: None,
         }
     }
 }
 
+/// Summary loudness metrics for one analyzed buffer.
+///
+/// Practical integration order:
+/// 1. Read `integrated_lufs` as the program-level loudness figure.
+/// 2. Read `loudness_range_lu` to gauge macro dynamics across the analyzed span.
+/// 3. Read `true_peak_dbtp` before applying delivery or limiter decisions.
+/// 4. Read `confidence` to determine whether the buffer was long and energetic
+///    enough for the reported numbers to be treated as stable.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LoudnessAnalysisResult {
     pub integrated_lufs: f32,
@@ -30,20 +88,24 @@ pub struct LoudnessAnalysisResult {
     pub confidence: Confidence,
 }
 
+/// Offline mono loudness meter.
 #[derive(Debug, Default)]
 pub struct LoudnessMeter {
     config: LoudnessMeterConfig,
 }
 
 impl LoudnessMeter {
+    /// Create a meter with the provided config.
     pub fn new(config: LoudnessMeterConfig) -> Self {
         Self { config }
     }
 
+    /// Return the current loudness config.
     pub fn config(&self) -> LoudnessMeterConfig {
         self.config
     }
 
+    /// Analyze a mono sample slice directly.
     pub fn analyze_mono(
         &mut self,
         sample_rate: SampleRate,
@@ -57,6 +119,19 @@ impl LoudnessMeter {
                 confidence: Confidence::new(0.0),
             };
         }
+
+        // Truncate to configured duration from the centre of the track.
+        let mono_samples = if let Some(duration) = self.config.analysis_duration_seconds {
+            let max_samples = duration as usize * sample_rate.0 as usize;
+            if mono_samples.len() > max_samples {
+                let start = (mono_samples.len() - max_samples) / 2;
+                &mono_samples[start..start + max_samples]
+            } else {
+                mono_samples
+            }
+        } else {
+            mono_samples
+        };
 
         let weighted = k_weight(sample_rate, mono_samples);
         let has_signal = weighted.iter().any(|sample| sample.abs() > 0.0);
@@ -334,5 +409,16 @@ mod tests {
         let unsupported_result = meter.analyze(&unsupported);
 
         assert!(supported_result.confidence.0 > unsupported_result.confidence.0);
+    }
+
+    #[test]
+    fn low_profile_produces_finite_results() {
+        let audio = sine(48_000, 440.0, 0.3, 4.0);
+        let mut meter = LoudnessMeter::new(LoudnessMeterConfig::low());
+        let result = meter.analyze(&audio);
+
+        assert!(result.integrated_lufs.is_finite());
+        assert!(result.true_peak_dbtp.is_finite());
+        assert!(result.confidence.0 > 0.0);
     }
 }

@@ -8,13 +8,17 @@ fn main() {
     let supervisor = host.supervisor_report();
 
     println!(
-        "signal-host-server profile={:?} sandbox={:?} control_requests={} control_responses={} heartbeat_responses={} processed_blocks={} completion={:?} last_block_sequence={} deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?} last_control_message={:?} epoch={} lease_id={:?} region_id={:?} shared_memory_bytes={} restarts={} teardowns={} observation={}",
+        "signal-host-server profile={:?} sandbox={:?} control_requests={} control_responses={} heartbeat_responses={} processed_blocks={} engine_processed_blocks={} engine_graph_id={:?} engine_output_peak={:?} engine_output_rms={:?} completion={:?} last_block_sequence={} deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?} last_control_message={:?} epoch={} lease_id={:?} region_id={:?} shared_memory_bytes={} restarts={} teardowns={} observation={}",
         host.runtime().config().profile,
         summary.transport.sandbox_id,
         summary.execution.control_requests,
         summary.execution.control_responses,
         summary.execution.heartbeat_responses,
         summary.execution.processed_blocks,
+        summary.execution.engine_processed_blocks,
+        summary.execution.last_engine_graph_id,
+        summary.execution.last_engine_output_peak,
+        summary.execution.last_engine_output_rms,
         summary.execution.last_completion_state,
         summary.execution.last_block_sequence,
         summary.faults.deadline_misses,

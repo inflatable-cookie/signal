@@ -212,7 +212,7 @@ fn render_server_payload_text(summary: &ServerRuntimeHostSummary) -> String {
 
 fn render_local_summary(summary: &LocalRuntimeHostSummary, debug: ExportDebugOptions) -> String {
     let mut rendered = format!(
-        "profile=Local backend={}\n{}{}{}execution: sandbox={:?} processed_blocks={} completion={:?} last_block={} control_requests={} control_responses={} heartbeat_responses={} last_control_message={:?} epoch={} restarts={} teardowns={}\ntransport: lease_id={:?} region_id={:?} shared_memory_bytes={}\nfaults: deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?}",
+        "profile=Local backend={}\n{}{}{}execution: sandbox={:?} processed_blocks={} completion={:?} last_block={} control_requests={} control_responses={} heartbeat_responses={} last_control_message={:?} epoch={} restarts={} teardowns={} last_recovery_intent={:?} last_stop_reason={:?}\ntransport: lease_id={:?} region_id={:?} shared_memory_bytes={}\nfaults: deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?}",
         summary.backend_name,
         render_host_summary_sections_text(debug),
         render_supported_debug_sections_text(),
@@ -228,6 +228,8 @@ fn render_local_summary(summary: &LocalRuntimeHostSummary, debug: ExportDebugOpt
         summary.execution.processing_epoch,
         summary.execution.restart_count,
         summary.execution.teardown_count,
+        summary.execution.last_recovery_intent,
+        summary.execution.last_stop_reason,
         summary.transport.shared_memory_lease_id,
         summary.transport.shared_memory_region_id,
         summary.transport.shared_memory_bytes,
@@ -236,6 +238,13 @@ fn render_local_summary(summary: &LocalRuntimeHostSummary, debug: ExportDebugOpt
         summary.faults.watchdog_triggered,
         summary.faults.watchdog_trigger_reason,
     );
+    rendered.push_str(&format!(
+        "\nengine: processed_blocks={} graph_id={:?} output_peak={:?} output_rms={:?}",
+        summary.execution.engine_processed_blocks,
+        summary.execution.last_engine_graph_id,
+        summary.execution.last_engine_output_peak,
+        summary.execution.last_engine_output_rms,
+    ));
     if debug.supports(HostSummaryDebugSection::Payload) {
         rendered.push_str(&render_local_payload_text(summary));
     }
@@ -244,7 +253,7 @@ fn render_local_summary(summary: &LocalRuntimeHostSummary, debug: ExportDebugOpt
 
 fn render_server_summary(summary: &ServerRuntimeHostSummary, debug: ExportDebugOptions) -> String {
     let mut rendered = format!(
-        "profile=Server\n{}{}{}execution: sandbox={:?} processed_blocks={} completion={:?} last_block={} control_requests={} control_responses={} heartbeat_responses={} last_control_message={:?} epoch={} restarts={} teardowns={}\ntransport: lease_id={:?} region_id={:?} shared_memory_bytes={}\nfaults: deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?}",
+        "profile=Server\n{}{}{}execution: sandbox={:?} processed_blocks={} completion={:?} last_block={} control_requests={} control_responses={} heartbeat_responses={} last_control_message={:?} epoch={} restarts={} teardowns={} last_recovery_intent={:?} last_stop_reason={:?}\ntransport: lease_id={:?} region_id={:?} shared_memory_bytes={}\nfaults: deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?}",
         render_host_summary_sections_text(debug),
         render_supported_debug_sections_text(),
         render_enabled_debug_sections_text(debug),
@@ -259,6 +268,8 @@ fn render_server_summary(summary: &ServerRuntimeHostSummary, debug: ExportDebugO
         summary.execution.processing_epoch,
         summary.execution.restart_count,
         summary.execution.teardown_count,
+        summary.execution.last_recovery_intent,
+        summary.execution.last_stop_reason,
         summary.transport.shared_memory_lease_id,
         summary.transport.shared_memory_region_id,
         summary.transport.shared_memory_bytes,
@@ -267,6 +278,13 @@ fn render_server_summary(summary: &ServerRuntimeHostSummary, debug: ExportDebugO
         summary.faults.watchdog_triggered,
         summary.faults.watchdog_trigger_reason,
     );
+    rendered.push_str(&format!(
+        "\nengine: processed_blocks={} graph_id={:?} output_peak={:?} output_rms={:?}",
+        summary.execution.engine_processed_blocks,
+        summary.execution.last_engine_graph_id,
+        summary.execution.last_engine_output_peak,
+        summary.execution.last_engine_output_rms,
+    ));
     if debug.supports(HostSummaryDebugSection::Payload) {
         rendered.push_str(&render_server_payload_text(summary));
     }
@@ -345,12 +363,18 @@ fn render_local_summary_json(
             "\"control_responses\":{},",
             "\"heartbeat_responses\":{},",
             "\"processed_blocks\":{},",
+            "\"engine_processed_blocks\":{},",
             "\"last_completion_state\":{},",
             "\"last_block_sequence\":{},",
             "\"last_control_message\":{},",
+            "\"last_engine_graph_id\":{},",
+            "\"last_engine_output_peak\":{},",
+            "\"last_engine_output_rms\":{},",
             "\"processing_epoch\":{},",
             "\"restart_count\":{},",
-            "\"teardown_count\":{}",
+            "\"teardown_count\":{},",
+            "\"last_recovery_intent\":{},",
+            "\"last_stop_reason\":{}",
             "}},",
             "\"transport\":{{",
             "\"lease_id\":{},",
@@ -374,12 +398,23 @@ fn render_local_summary_json(
         summary.execution.control_responses,
         summary.execution.heartbeat_responses,
         summary.execution.processed_blocks,
+        summary.execution.engine_processed_blocks,
         json_string(&format!("{:?}", summary.execution.last_completion_state)),
         summary.execution.last_block_sequence,
         json_string(&summary.execution.last_control_message),
+        summary
+            .execution
+            .last_engine_graph_id
+            .as_deref()
+            .map(json_string)
+            .unwrap_or_else(|| "null".into()),
+        json_option_f32(summary.execution.last_engine_output_peak),
+        json_option_f32(summary.execution.last_engine_output_rms),
         summary.execution.processing_epoch,
         summary.execution.restart_count,
         summary.execution.teardown_count,
+        json_option_debug(summary.execution.last_recovery_intent),
+        json_option_debug(summary.execution.last_stop_reason),
         json_string(&summary.transport.shared_memory_lease_id),
         json_string(&summary.transport.shared_memory_region_id),
         json_string(&summary.transport.shared_memory_path),
@@ -414,12 +449,18 @@ fn render_server_summary_json(
             "\"control_responses\":{},",
             "\"heartbeat_responses\":{},",
             "\"processed_blocks\":{},",
+            "\"engine_processed_blocks\":{},",
             "\"last_completion_state\":{},",
             "\"last_block_sequence\":{},",
             "\"last_control_message\":{},",
+            "\"last_engine_graph_id\":{},",
+            "\"last_engine_output_peak\":{},",
+            "\"last_engine_output_rms\":{},",
             "\"processing_epoch\":{},",
             "\"restart_count\":{},",
-            "\"teardown_count\":{}",
+            "\"teardown_count\":{},",
+            "\"last_recovery_intent\":{},",
+            "\"last_stop_reason\":{}",
             "}},",
             "\"transport\":{{",
             "\"lease_id\":{},",
@@ -442,12 +483,23 @@ fn render_server_summary_json(
         summary.execution.control_responses,
         summary.execution.heartbeat_responses,
         summary.execution.processed_blocks,
+        summary.execution.engine_processed_blocks,
         json_string(&format!("{:?}", summary.execution.last_completion_state)),
         summary.execution.last_block_sequence,
         json_string(&summary.execution.last_control_message),
+        summary
+            .execution
+            .last_engine_graph_id
+            .as_deref()
+            .map(json_string)
+            .unwrap_or_else(|| "null".into()),
+        json_option_f32(summary.execution.last_engine_output_peak),
+        json_option_f32(summary.execution.last_engine_output_rms),
         summary.execution.processing_epoch,
         summary.execution.restart_count,
         summary.execution.teardown_count,
+        json_option_debug(summary.execution.last_recovery_intent),
+        json_option_debug(summary.execution.last_stop_reason),
         json_string(&summary.transport.shared_memory_lease_id),
         json_string(&summary.transport.shared_memory_region_id),
         json_string(&summary.transport.shared_memory_path),
@@ -729,9 +781,15 @@ mod tests {
     use signal_host_local::host::{
         LocalExecutionSummary, LocalFaultSummary, LocalPayloadSummary, LocalTransportSummary,
     };
-    use signal_host_local::LocalRuntimeHostSummary;
+    use signal_host_local::{LocalRuntimeHostSummary, RecoveryRestartIntent};
     use signal_plugin::{CompletionState, WatchdogTriggerReason};
-    use signal_runtime::{RuntimeConfig, RuntimeSupervisorReport, SignalRuntime};
+    use signal_runtime::{
+        BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
+        HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
+        RuntimeConfig, RuntimeEvent, RuntimeEventRecorder, RuntimeEventSink,
+        RuntimeSupervisorReport, SandboxOperationFailureStage, SignalRuntime, StopReason,
+        TransportDispatchState, TransportHeartbeatFreshness, TransportSessionState,
+    };
 
     fn sample_local_summary() -> LocalRuntimeHostSummary {
         LocalRuntimeHostSummary {
@@ -742,12 +800,18 @@ mod tests {
                 control_responses: 4,
                 heartbeat_responses: 2,
                 processed_blocks: 3,
+                engine_processed_blocks: 3,
                 last_control_message: "activateInstance".into(),
                 last_completion_state: CompletionState::Completed,
                 last_block_sequence: 7,
+                last_engine_graph_id: Some("signal.host.local.demo".into()),
+                last_engine_output_peak: Some(0.8),
+                last_engine_output_rms: Some(0.42),
                 processing_epoch: 2,
                 restart_count: 1,
                 teardown_count: 1,
+                last_recovery_intent: Some(RecoveryRestartIntent::WatchdogRecovery),
+                last_stop_reason: Some(StopReason::DegradedModeRecovery),
             },
             transport: LocalTransportSummary {
                 sandbox_id: "sandbox-1".into(),
@@ -905,6 +969,407 @@ mod tests {
     }
 
     #[test]
+    fn export_json_carries_runtime_recovery_sequence() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut recorder = RuntimeEventRecorder::default();
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::RecoveryCycle {
+                sandbox_id: "sandbox-1".into(),
+                intent: RecoveryRestartIntent::WatchdogRecovery,
+                stop_reason: StopReason::DegradedModeRecovery,
+                processing_epoch: Some(4),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxLifecycle {
+                sandbox_id: "sandbox-1".into(),
+                stage: PluginSandboxLifecycleStage::TransportAttached,
+                processing_epoch: Some(4),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                region_id: "region-4".into(),
+                stage: PluginSandboxTransportStage::Attached,
+                processing_epoch: Some(4),
+                detail: None,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::HeartbeatCycle {
+                sandbox_id: "sandbox-1".into(),
+                stage: HeartbeatCycleStage::Responded,
+                processing_epoch: Some(4),
+                block_sequence: Some(9),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::BlockDispatch {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                processing_epoch: 4,
+                block_sequence: 9,
+                frame_count: 512,
+                stage: BlockDispatchStage::Completed,
+                completion_state: Some(CompletionState::Completed),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::LeaseRollover {
+                sandbox_id: "sandbox-1".into(),
+                previous_lease_id: "lease-3".into(),
+                lease_id: "lease-4".into(),
+                processing_epoch: 4,
+                first_block_sequence: 9,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::BrokerInvalidation {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                processing_epoch: 4,
+                block_sequence: Some(9),
+                stage: BrokerInvalidationStage::CompletionRegionInvalidated,
+                reason: "watchdog recovery teardown".into(),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::CompletionSlotTransition {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                processing_epoch: 4,
+                block_sequence: 9,
+                stage: CompletionSlotStage::TimedOut,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::CompletionSlotTransition {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                processing_epoch: 4,
+                block_sequence: 9,
+                stage: CompletionSlotStage::FallbackApplied,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::BrokerFailure {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: Some("lease-4".into()),
+                processing_epoch: Some(4),
+                block_sequence: Some(9),
+                stage: BrokerFailureStage::PayloadRead,
+                detail: "failed to attach shared-memory region: stale mapping".into(),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                region_id: "region-4".into(),
+                stage: PluginSandboxTransportStage::DetachRequested,
+                processing_epoch: Some(4),
+                detail: None,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                region_id: "region-4".into(),
+                stage: PluginSandboxTransportStage::Detached,
+                processing_epoch: Some(4),
+                detail: None,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: "lease-4".into(),
+                region_id: "region-4".into(),
+                stage: PluginSandboxTransportStage::DetachFault,
+                processing_epoch: Some(4),
+                detail: Some("broker detach fault: stale region mapping".into()),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::SandboxOperationFailure {
+                sandbox_id: "sandbox-1".into(),
+                lease_id: Some("lease-4".into()),
+                processing_epoch: Some(4),
+                operation: "processBlock".into(),
+                error_kind: "resourceUnavailable".into(),
+                stage: SandboxOperationFailureStage::ProcessAttach,
+                detail: "failed to attach shared-memory region: stale mapping".into(),
+            },
+        );
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let export =
+            render_supervisor_export_json(HostProfile::Local, Scenario::Soak, "{}".into(), &report);
+        assert!(export.contains("\"recovery_events\":1"));
+        assert!(export.contains("\"recovery_sequence\":[{"));
+        assert!(export.contains("\"intent\":\"WatchdogRecovery\""));
+        assert!(export.contains("\"lifecycle_events\":1"));
+        assert!(export.contains("\"lifecycle_sequence\":[{"));
+        assert!(export.contains("\"stage\":\"TransportAttached\""));
+        assert!(export.contains("\"transport_events\":4"));
+        assert!(export.contains("\"transport_sequence\":[{"));
+        assert!(export.contains("\"region_id\":\"region-4\""));
+        assert!(export.contains("\"heartbeat_events\":1"));
+        assert!(export.contains("\"heartbeat_sequence\":[{"));
+        assert!(export.contains("\"block_sequence\":9"));
+        assert!(export.contains("\"block_dispatch_events\":1"));
+        assert!(export.contains("\"block_dispatch_sequence\":[{"));
+        assert!(export.contains("\"completion_state\":\"Completed\""));
+        assert!(export.contains("\"lease_rollover_events\":1"));
+        assert!(export.contains("\"lease_rollover_sequence\":[{"));
+        assert!(export.contains("\"previous_lease_id\":\"lease-3\""));
+        assert!(export.contains("\"invalidation_events\":1"));
+        assert!(export.contains("\"invalidation_sequence\":[{"));
+        assert!(export.contains("\"stage\":\"CompletionRegionInvalidated\""));
+        assert!(export.contains("\"completion_slot_events\":2"));
+        assert!(export.contains("\"completion_slot_sequence\":[{"));
+        assert!(export.contains("\"stage\":\"FallbackApplied\""));
+        assert!(export.contains("\"transport_fault_events\":8"));
+        assert!(export.contains("\"last_transport_fault\":{"));
+        assert!(export.contains("\"transport_fault_sequence\":[{"));
+        assert!(export.contains("\"source\":\"HostBroker\""));
+        assert!(export.contains("\"source\":\"SandboxOperation\""));
+        assert!(export.contains("\"source\":\"RuntimeDispatch\""));
+        assert!(export.contains("\"phase\":\"Dispatch\""));
+        assert!(export.contains("\"phase\":\"Teardown\""));
+        assert!(export.contains("\"resource\":\"SharedMemoryPayload\""));
+        assert!(export.contains("\"resource\":\"SharedMemoryLease\""));
+        assert!(export.contains("\"resource\":\"CompletionSlot\""));
+        assert!(export.contains("\"operation\":\"block_payload.read\""));
+        assert!(export.contains("\"operation\":\"transport.detach_request\""));
+        assert!(export.contains("\"operation\":\"transport.detached\""));
+        assert!(export.contains("\"operation\":\"transport.detach_fault\""));
+        assert!(export.contains("\"operation\":\"completion_region.invalidate\""));
+        assert!(export.contains("\"operation\":\"completion_slot.timeout\""));
+        assert!(export.contains("\"operation\":\"completion_slot.fallback_apply\""));
+        assert!(export.contains("\"operation\":\"processBlock\""));
+        assert!(export.contains("\"stage\":\"TransportDetachRequested\""));
+        assert!(export.contains("\"stage\":\"TransportDetached\""));
+        assert!(export.contains("\"stage\":\"DetachFault\""));
+        assert!(export.contains("\"stage\":\"CompletionRegionInvalidated\""));
+        assert!(export.contains("\"stage\":\"CompletionSlotTimedOut\""));
+        assert!(export.contains("\"stage\":\"FallbackApplied\""));
+        assert!(export.contains("\"transport_fault_summary\":{"));
+        assert!(export.contains("\"boundary_mode\":\"FaultAdjacentOnly\""));
+        assert!(export.contains("\"host_broker_events\":4"));
+        assert!(export.contains("\"sandbox_operation_events\":1"));
+        assert!(export.contains("\"runtime_dispatch_events\":3"));
+        assert!(export.contains("\"dispatch_events\":5"));
+        assert!(export.contains("\"teardown_events\":3"));
+        assert!(export.contains("\"transport_concurrency_snapshot\":{"));
+        assert!(export.contains("\"steady_session_limit\":1"));
+        assert!(export.contains("\"recovery_session_limit\":2"));
+        assert!(export.contains("\"current_attached_sessions\":0"));
+        assert!(export.contains("\"current_lingering_sessions\":0"));
+        assert!(export.contains("\"peak_lingering_sessions\":0"));
+        assert!(export.contains("\"current_detach_requested_sessions\":0"));
+        assert!(export.contains("\"current_detach_faulted_sessions\":0"));
+        assert!(export.contains("\"transport_session_summary\":{"));
+        assert!(export.contains("\"boundary_mode\":\"HealthyPathVisible\""));
+        assert!(export.contains("\"current_state\":\"DetachFaulted\""));
+        assert!(export.contains("\"currently_attached\":false"));
+        assert!(export.contains("\"heartbeat_freshness\":\"Fresh\""));
+        assert!(export.contains("\"dispatch_state\":\"Completed\""));
+        assert!(export.contains("\"current_attached_session_count\":0"));
+        assert!(export.contains("\"max_concurrent_attached_sessions\":1"));
+        assert!(export.contains("\"attach_events\":1"));
+        assert!(export.contains("\"detach_requested_events\":1"));
+        assert!(export.contains("\"detached_events\":1"));
+        assert!(export.contains("\"detach_fault_events\":1"));
+        assert!(export.contains("\"heartbeat_responded_events\":1"));
+        assert!(export.contains("\"dispatch_completed_events\":1"));
+        assert!(export.contains("\"active_sandbox_id\":null"));
+        assert!(export.contains("\"active_lease_id\":null"));
+        assert!(export.contains("\"active_region_id\":null"));
+        assert!(export.contains("\"active_block_sequence\":null"));
+        assert!(export.contains("\"active_sessions\":[]"));
+        assert!(export.contains("\"last_region_id\":\"region-4\""));
+        assert!(export.contains("\"broker_failure_events\":1"));
+        assert!(export.contains("\"broker_failure_sequence\":[{"));
+        assert!(export.contains("\"stage\":\"PayloadRead\""));
+        assert!(export.contains("\"sandbox_operation_failure_events\":1"));
+        assert!(export.contains("\"sandbox_operation_failure_sequence\":[{"));
+        assert!(export.contains("\"stage\":\"ProcessAttach\""));
+    }
+
+    #[test]
+    fn export_json_serializes_per_session_transport_liveness() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut recorder = RuntimeEventRecorder::default();
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-a".into(),
+                lease_id: "lease-a".into(),
+                region_id: "region-a".into(),
+                stage: PluginSandboxTransportStage::Attached,
+                processing_epoch: Some(2),
+                detail: None,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-b".into(),
+                lease_id: "lease-b".into(),
+                region_id: "region-b".into(),
+                stage: PluginSandboxTransportStage::Attached,
+                processing_epoch: Some(3),
+                detail: None,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::PluginSandboxTransport {
+                sandbox_id: "sandbox-a".into(),
+                lease_id: "lease-a".into(),
+                region_id: "region-a".into(),
+                stage: PluginSandboxTransportStage::DetachRequested,
+                processing_epoch: Some(4),
+                detail: None,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::HeartbeatCycle {
+                sandbox_id: "sandbox-a".into(),
+                stage: HeartbeatCycleStage::Missed,
+                processing_epoch: Some(4),
+                block_sequence: Some(11),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::HeartbeatCycle {
+                sandbox_id: "sandbox-b".into(),
+                stage: HeartbeatCycleStage::Responded,
+                processing_epoch: Some(5),
+                block_sequence: Some(12),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::BlockDispatch {
+                sandbox_id: "sandbox-a".into(),
+                lease_id: "lease-a".into(),
+                processing_epoch: 4,
+                block_sequence: 11,
+                frame_count: 512,
+                stage: BlockDispatchStage::TimedOut,
+                completion_state: Some(CompletionState::TimedOut),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::BlockDispatch {
+                sandbox_id: "sandbox-b".into(),
+                lease_id: "lease-b".into(),
+                processing_epoch: 5,
+                block_sequence: 12,
+                frame_count: 512,
+                stage: BlockDispatchStage::Completed,
+                completion_state: Some(CompletionState::Completed),
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::CompletionSlotTransition {
+                sandbox_id: "sandbox-a".into(),
+                lease_id: "lease-a".into(),
+                processing_epoch: 4,
+                block_sequence: 11,
+                stage: CompletionSlotStage::TimedOut,
+            },
+        );
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::BrokerFailure {
+                sandbox_id: "sandbox-b".into(),
+                lease_id: Some("lease-b".into()),
+                processing_epoch: Some(5),
+                block_sequence: Some(12),
+                stage: BrokerFailureStage::PayloadRead,
+                detail: "stale shared-memory mapping".into(),
+            },
+        );
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        assert_eq!(
+            report.observation.transport_session_summary.active_sessions[0].state,
+            TransportSessionState::DetachRequested
+        );
+        assert_eq!(
+            report.observation.transport_session_summary.active_sessions[0].heartbeat_freshness,
+            TransportHeartbeatFreshness::Missed
+        );
+        assert_eq!(
+            report.observation.transport_session_summary.active_sessions[0].dispatch_state,
+            TransportDispatchState::TimedOut
+        );
+        assert_eq!(
+            report.observation.transport_session_summary.active_sessions[1].heartbeat_freshness,
+            TransportHeartbeatFreshness::Fresh
+        );
+        assert_eq!(
+            report.observation.transport_session_summary.active_sessions[0].transport_fault_count,
+            1
+        );
+        assert_eq!(
+            report.observation.transport_session_summary.active_sessions[1].transport_fault_count,
+            1
+        );
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report,
+        );
+        assert!(export.contains("\"active_sessions\":[{"));
+        assert!(export.contains("\"sandbox_id\":\"sandbox-a\""));
+        assert!(export.contains("\"state\":\"DetachRequested\""));
+        assert!(export.contains("\"currently_attached\":true"));
+        assert!(export.contains("\"heartbeat_freshness\":\"Missed\""));
+        assert!(export.contains("\"dispatch_state\":\"TimedOut\""));
+        assert!(export.contains("\"active_block_sequence\":11"));
+        assert!(export.contains("\"transport_fault_count\":1"));
+        assert!(export.contains("\"last_transport_fault_source\":\"RuntimeDispatch\""));
+        assert!(export.contains("\"last_transport_fault_stage\":\"CompletionSlotTimedOut\""));
+        assert!(export.contains("\"last_transport_fault_phase\":\"Dispatch\""));
+        assert!(export.contains("\"last_transport_fault_processing_epoch\":4"));
+        assert!(export.contains("\"last_transport_fault_block_sequence\":11"));
+        assert!(export.contains("\"sandbox_id\":\"sandbox-b\""));
+        assert!(export.contains("\"heartbeat_freshness\":\"Fresh\""));
+        assert!(export.contains("\"dispatch_state\":\"Completed\""));
+        assert!(export.contains("\"active_block_sequence\":12"));
+        assert!(export.contains("\"last_transport_fault_source\":\"HostBroker\""));
+        assert!(export.contains("\"last_transport_fault_stage\":\"PayloadRead\""));
+        assert!(export.contains("\"last_transport_fault_processing_epoch\":5"));
+        assert!(export.contains("\"last_transport_fault_block_sequence\":12"));
+    }
+
+    #[test]
     fn local_summary_json_excludes_payload_by_default() {
         let summary = sample_local_summary();
         let rendered =
@@ -913,6 +1378,8 @@ mod tests {
         assert!(rendered.contains("\"sections\":[\"execution\",\"transport\",\"faults\"]"));
         assert!(rendered.contains("\"debug_sections_supported\":[\"payload\"]"));
         assert!(rendered.contains("\"debug_sections_enabled\":[]"));
+        assert!(rendered.contains("\"last_recovery_intent\":\"WatchdogRecovery\""));
+        assert!(rendered.contains("\"last_stop_reason\":\"DegradedModeRecovery\""));
     }
 
     #[test]
@@ -939,6 +1406,8 @@ mod tests {
         assert!(default_rendered.contains("sections: execution,transport,faults"));
         assert!(default_rendered.contains("debug_sections_supported: payload"));
         assert!(default_rendered.contains("debug_sections_enabled: none"));
+        assert!(default_rendered.contains("last_recovery_intent=Some(WatchdogRecovery)"));
+        assert!(default_rendered.contains("last_stop_reason=Some(DegradedModeRecovery)"));
         assert!(payload_rendered.contains("sections: execution,transport,faults,payload"));
         assert!(payload_rendered.contains("debug_sections_supported: payload"));
         assert!(payload_rendered.contains("debug_sections_enabled: payload"));

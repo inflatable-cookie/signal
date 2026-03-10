@@ -8,7 +8,10 @@ publish = false
 description = "Rhythm analysis surfaces for Signal, including onset, tempo, and beat tracking."
 
 [dependencies]
+rayon = "1.10"
 signal-analysis = { path = "../signal-analysis" }
 signal-dsp-spectral = { path = "../signal-dsp-spectral" }
 signal-primitives = { path = "../signal-primitives" }
 
+[dev-dependencies]
+hound = "3.5"
