@@ -39,11 +39,140 @@ pub enum GraphExecutionLane {
     Anticipative,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GraphNodeSilencePolicy {
+    Process,
+    Bypass,
+    ClearOutput,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GraphChannelAdaptationMode {
+    MatchOnly,
+    AdaptiveMonoStereo,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GraphNodeResetPolicy {
+    RetainAcrossBlocks,
+    ResetOnGraphRebuild,
+    ResetOnTransportStop,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GraphNodeTopologyRole {
+    Utility,
+    TrackLane,
+    Bus,
+    Send,
+    Return,
+    ConsoleNode,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GraphNodeBusEndpoint {
+    pub bus_id: String,
+    pub channels: ChannelLayout,
+}
+
+impl GraphNodeBusEndpoint {
+    pub fn new(bus_id: impl Into<String>, channels: ChannelLayout) -> Self {
+        Self {
+            bus_id: bus_id.into(),
+            channels,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GraphNodeBufferContract {
+    pub input: GraphNodeBusEndpoint,
+    pub output: GraphNodeBusEndpoint,
+    pub scratch_buffers: usize,
+    pub silence_policy: GraphNodeSilencePolicy,
+    pub channel_adaptation: GraphChannelAdaptationMode,
+    pub reset_policy: GraphNodeResetPolicy,
+}
+
+impl Default for GraphNodeBufferContract {
+    fn default() -> Self {
+        Self {
+            input: GraphNodeBusEndpoint::new("main:in", ChannelLayout::Stereo),
+            output: GraphNodeBusEndpoint::new("main:out", ChannelLayout::Stereo),
+            scratch_buffers: 0,
+            silence_policy: GraphNodeSilencePolicy::Process,
+            channel_adaptation: GraphChannelAdaptationMode::AdaptiveMonoStereo,
+            reset_policy: GraphNodeResetPolicy::RetainAcrossBlocks,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GraphNodeTopologyMetadata {
+    pub role: Option<GraphNodeTopologyRole>,
+    pub lane_id: Option<String>,
+    pub bus_group_id: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GraphChannelAdaptationResult {
+    Exact,
+    MonoToStereo,
+    StereoToMono,
+    Unsupported,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GraphContractIssue {
+    EmptyInputBusId { node_id: String },
+    EmptyOutputBusId { node_id: String },
+    UnsupportedChannelAdaptation {
+        node_id: String,
+        input: ChannelLayout,
+        output: ChannelLayout,
+        mode: GraphChannelAdaptationMode,
+    },
+    SendRequiresDistinctBuses { node_id: String },
+    ReturnRequiresDistinctBuses { node_id: String },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GraphNodeContractSummary {
+    pub node_id: String,
+    pub input_bus_id: String,
+    pub output_bus_id: String,
+    pub input_channels: ChannelLayout,
+    pub output_channels: ChannelLayout,
+    pub silence_policy: GraphNodeSilencePolicy,
+    pub channel_adaptation: GraphChannelAdaptationMode,
+    pub adaptation_result: GraphChannelAdaptationResult,
+    pub scratch_buffers: usize,
+    pub reset_policy: GraphNodeResetPolicy,
+    pub topology_role: GraphNodeTopologyRole,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GraphContractSummary {
+    pub issue_count: usize,
+    pub issues: Vec<GraphContractIssue>,
+    pub silence_clear_node_count: usize,
+    pub adaptive_channel_node_count: usize,
+    pub resettable_node_count: usize,
+    pub scratch_buffer_count: usize,
+    pub track_lane_node_count: usize,
+    pub bus_node_count: usize,
+    pub send_return_node_count: usize,
+    pub console_node_count: usize,
+    pub node_contracts: Vec<GraphNodeContractSummary>,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct GraphNodeSpec {
     pub node_id: String,
     pub execution_class: GraphNodeExecutionClass,
     pub latency_samples: u32,
+    pub buffer_contract: GraphNodeBufferContract,
+    pub topology: GraphNodeTopologyMetadata,
     pub stages: Vec<GraphStageSpec>,
 }
 
@@ -131,6 +260,15 @@ pub struct GraphBlockReport {
     pub stateful_node_count: usize,
     pub latency_node_count: usize,
     pub plugin_backed_node_count: usize,
+    pub contract_issue_count: usize,
+    pub silence_clear_node_count: usize,
+    pub adaptive_channel_node_count: usize,
+    pub resettable_node_count: usize,
+    pub scratch_buffer_count: usize,
+    pub track_lane_node_count: usize,
+    pub bus_node_count: usize,
+    pub send_return_node_count: usize,
+    pub console_node_count: usize,
     pub phase_count: usize,
     pub anticipative_phase_count: usize,
     pub phase_order: Vec<GraphNodePlanningGroup>,
@@ -231,6 +369,99 @@ impl ExecutableGraph {
             .count()
     }
 
+    pub fn contract_summary(&self) -> GraphContractSummary {
+        let mut summary = GraphContractSummary::default();
+
+        for node in &self.plan.nodes {
+            let role = node
+                .topology
+                .role
+                .unwrap_or(GraphNodeTopologyRole::Utility);
+            let adaptation_result = classify_channel_adaptation(
+                node.buffer_contract.input.channels,
+                node.buffer_contract.output.channels,
+                node.buffer_contract.channel_adaptation,
+            );
+
+            if node.buffer_contract.input.bus_id.trim().is_empty() {
+                summary.issues.push(GraphContractIssue::EmptyInputBusId {
+                    node_id: node.node_id.clone(),
+                });
+            }
+            if node.buffer_contract.output.bus_id.trim().is_empty() {
+                summary.issues.push(GraphContractIssue::EmptyOutputBusId {
+                    node_id: node.node_id.clone(),
+                });
+            }
+            if adaptation_result == GraphChannelAdaptationResult::Unsupported {
+                summary
+                    .issues
+                    .push(GraphContractIssue::UnsupportedChannelAdaptation {
+                        node_id: node.node_id.clone(),
+                        input: node.buffer_contract.input.channels,
+                        output: node.buffer_contract.output.channels,
+                        mode: node.buffer_contract.channel_adaptation,
+                    });
+            }
+            if role == GraphNodeTopologyRole::Send
+                && node.buffer_contract.input.bus_id == node.buffer_contract.output.bus_id
+            {
+                summary
+                    .issues
+                    .push(GraphContractIssue::SendRequiresDistinctBuses {
+                        node_id: node.node_id.clone(),
+                    });
+            }
+            if role == GraphNodeTopologyRole::Return
+                && node.buffer_contract.input.bus_id == node.buffer_contract.output.bus_id
+            {
+                summary
+                    .issues
+                    .push(GraphContractIssue::ReturnRequiresDistinctBuses {
+                        node_id: node.node_id.clone(),
+                    });
+            }
+
+            if node.buffer_contract.silence_policy == GraphNodeSilencePolicy::ClearOutput {
+                summary.silence_clear_node_count += 1;
+            }
+            if adaptation_result != GraphChannelAdaptationResult::Exact {
+                summary.adaptive_channel_node_count += 1;
+            }
+            if node.buffer_contract.reset_policy != GraphNodeResetPolicy::RetainAcrossBlocks {
+                summary.resettable_node_count += 1;
+            }
+            summary.scratch_buffer_count += node.buffer_contract.scratch_buffers;
+
+            match role {
+                GraphNodeTopologyRole::Utility => {}
+                GraphNodeTopologyRole::TrackLane => summary.track_lane_node_count += 1,
+                GraphNodeTopologyRole::Bus => summary.bus_node_count += 1,
+                GraphNodeTopologyRole::Send | GraphNodeTopologyRole::Return => {
+                    summary.send_return_node_count += 1
+                }
+                GraphNodeTopologyRole::ConsoleNode => summary.console_node_count += 1,
+            }
+
+            summary.node_contracts.push(GraphNodeContractSummary {
+                node_id: node.node_id.clone(),
+                input_bus_id: node.buffer_contract.input.bus_id.clone(),
+                output_bus_id: node.buffer_contract.output.bus_id.clone(),
+                input_channels: node.buffer_contract.input.channels,
+                output_channels: node.buffer_contract.output.channels,
+                silence_policy: node.buffer_contract.silence_policy,
+                channel_adaptation: node.buffer_contract.channel_adaptation,
+                adaptation_result,
+                scratch_buffers: node.buffer_contract.scratch_buffers,
+                reset_policy: node.buffer_contract.reset_policy,
+                topology_role: role,
+            });
+        }
+
+        summary.issue_count = summary.issues.len();
+        summary
+    }
+
     pub fn planning_summary(&self, anticipative_enabled: bool) -> GraphPlanningSummary {
         let planned_nodes = self
             .plan
@@ -327,9 +558,17 @@ impl ExecutableGraph {
     ) -> GraphBlockReport {
         let input_peak = peak_abs(buffer.samples());
         let planning = self.planning_summary(context.anticipative_enabled);
+        let contract = self.contract_summary();
         let prepared = self.prepare_anticipative(buffer, &context);
         let (working_buffer, report) =
-            self.execute_realtime_from_prepared(buffer, input_peak, prepared, context, &planning);
+            self.execute_realtime_from_prepared(
+                buffer,
+                input_peak,
+                prepared,
+                context,
+                &planning,
+                &contract,
+            );
         *buffer = working_buffer;
         report
     }
@@ -370,6 +609,7 @@ impl ExecutableGraph {
         prepared: Option<GraphPreparedDispatch>,
         context: GraphExecutionContext,
         planning: &GraphPlanningSummary,
+        contract: &GraphContractSummary,
     ) -> (AudioBuffer, GraphBlockReport) {
         let realtime_dispatches = planning
             .dispatches
@@ -403,6 +643,15 @@ impl ExecutableGraph {
                 stateful_node_count: self.stateful_node_count(),
                 latency_node_count: self.latency_node_count(),
                 plugin_backed_node_count: self.plugin_backed_node_count(),
+                contract_issue_count: contract.issue_count,
+                silence_clear_node_count: contract.silence_clear_node_count,
+                adaptive_channel_node_count: contract.adaptive_channel_node_count,
+                resettable_node_count: contract.resettable_node_count,
+                scratch_buffer_count: contract.scratch_buffer_count,
+                track_lane_node_count: contract.track_lane_node_count,
+                bus_node_count: contract.bus_node_count,
+                send_return_node_count: contract.send_return_node_count,
+                console_node_count: contract.console_node_count,
                 phase_count: planning.phase_count,
                 anticipative_phase_count: planning.anticipative_phase_count,
                 phase_order: planning.phase_order.clone(),
@@ -451,6 +700,10 @@ impl ExecutableGraph {
                         planning_group_for_node(node, anticipative_enabled) == *phase
                     })
                 {
+                    if !apply_node_contract(buffer, node) {
+                        continue;
+                    }
+
                     for stage in &node.stages {
                         apply_stage(buffer, stage);
                     }
@@ -487,6 +740,42 @@ fn apply_stage(buffer: &mut AudioBuffer, stage: &GraphStageSpec) {
                 *sample = sample.clamp(-threshold, threshold);
             }
         }
+    }
+}
+
+fn apply_node_contract(buffer: &mut AudioBuffer, node: &GraphNodeSpec) -> bool {
+    let input_silent = peak_abs(buffer.samples()) == 0.0;
+    if !input_silent {
+        return true;
+    }
+
+    match node.buffer_contract.silence_policy {
+        GraphNodeSilencePolicy::Process => true,
+        GraphNodeSilencePolicy::Bypass => false,
+        GraphNodeSilencePolicy::ClearOutput => {
+            buffer.clear();
+            false
+        }
+    }
+}
+
+fn classify_channel_adaptation(
+    input: ChannelLayout,
+    output: ChannelLayout,
+    mode: GraphChannelAdaptationMode,
+) -> GraphChannelAdaptationResult {
+    if input == output {
+        return GraphChannelAdaptationResult::Exact;
+    }
+
+    if mode != GraphChannelAdaptationMode::AdaptiveMonoStereo {
+        return GraphChannelAdaptationResult::Unsupported;
+    }
+
+    match (input, output) {
+        (ChannelLayout::Mono, ChannelLayout::Stereo) => GraphChannelAdaptationResult::MonoToStereo,
+        (ChannelLayout::Stereo, ChannelLayout::Mono) => GraphChannelAdaptationResult::StereoToMono,
+        _ => GraphChannelAdaptationResult::Unsupported,
     }
 }
 
@@ -599,9 +888,28 @@ fn rms(samples: &[f32]) -> f32 {
 mod tests {
     use super::{
         synthetic_stereo_block, AudioBuffer, ChannelLayout, ExecutableGraph, FrameCount,
-        GraphExecutionContext, GraphExecutionLane, GraphExecutionRequest, GraphNodeExecutionClass,
-        GraphNodePlanningGroup, GraphNodeSpec, GraphStageSpec, SampleRate,
+        GraphChannelAdaptationMode, GraphChannelAdaptationResult, GraphContractIssue,
+        GraphExecutionContext, GraphExecutionLane, GraphExecutionRequest, GraphNodeBufferContract,
+        GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodeResetPolicy,
+        GraphNodePlanningGroup, GraphNodeSilencePolicy, GraphNodeSpec, GraphNodeTopologyMetadata,
+        GraphNodeTopologyRole, GraphStageSpec, SampleRate,
     };
+
+    fn test_node(
+        node_id: &str,
+        execution_class: GraphNodeExecutionClass,
+        latency_samples: u32,
+        stages: Vec<GraphStageSpec>,
+    ) -> GraphNodeSpec {
+        GraphNodeSpec {
+            node_id: node_id.into(),
+            execution_class,
+            latency_samples,
+            buffer_contract: GraphNodeBufferContract::default(),
+            topology: GraphNodeTopologyMetadata::default(),
+            stages,
+        }
+    }
 
     #[test]
     fn mono_mixdown_averages_channels() {
@@ -620,25 +928,25 @@ mod tests {
         let graph = ExecutableGraph::new(
             "graph:test",
             vec![
-                GraphNodeSpec {
-                    node_id: "pre".into(),
-                    execution_class: GraphNodeExecutionClass::PureTransform,
-                    latency_samples: 0,
-                    stages: vec![
+                test_node(
+                    "pre",
+                    GraphNodeExecutionClass::PureTransform,
+                    0,
+                    vec![
                         GraphStageSpec::Gain { linear: 0.5 },
                         GraphStageSpec::Bias { amount: 0.25 },
                         GraphStageSpec::TanhDrive { drive: 1.5 },
                     ],
-                },
-                GraphNodeSpec {
-                    node_id: "post".into(),
-                    execution_class: GraphNodeExecutionClass::LatencyBearing,
-                    latency_samples: 24,
-                    stages: vec![
+                ),
+                test_node(
+                    "post",
+                    GraphNodeExecutionClass::LatencyBearing,
+                    24,
+                    vec![
                         GraphStageSpec::StereoBalance { balance: -0.25 },
                         GraphStageSpec::HardClip { threshold: 0.4 },
                     ],
-                },
+                ),
             ],
         );
 
@@ -648,6 +956,11 @@ mod tests {
         assert_eq!(report.node_count, 2);
         assert_eq!(report.stateful_node_count, 1);
         assert_eq!(report.latency_node_count, 1);
+        assert_eq!(report.contract_issue_count, 0);
+        assert_eq!(report.silence_clear_node_count, 0);
+        assert_eq!(report.adaptive_channel_node_count, 0);
+        assert_eq!(report.resettable_node_count, 0);
+        assert_eq!(report.scratch_buffer_count, 0);
         assert_eq!(report.phase_count, 2);
         assert_eq!(report.anticipative_phase_count, 0);
         assert_eq!(report.lane_count, 1);
@@ -687,12 +1000,12 @@ mod tests {
         );
         let graph = ExecutableGraph::new(
             "graph:stereo-balance",
-            vec![GraphNodeSpec {
-                node_id: "balance".into(),
-                execution_class: GraphNodeExecutionClass::PureTransform,
-                latency_samples: 0,
-                stages: vec![GraphStageSpec::StereoBalance { balance: 0.5 }],
-            }],
+            vec![test_node(
+                "balance",
+                GraphNodeExecutionClass::PureTransform,
+                0,
+                vec![GraphStageSpec::StereoBalance { balance: 0.5 }],
+            )],
         );
 
         let report = graph.process(&mut buffer);
@@ -712,12 +1025,12 @@ mod tests {
     fn executable_graph_carries_execution_context() {
         let graph = ExecutableGraph::new(
             "graph:context",
-            vec![GraphNodeSpec {
-                node_id: "gain".into(),
-                execution_class: GraphNodeExecutionClass::Stateful,
-                latency_samples: 0,
-                stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
-            }],
+            vec![test_node(
+                "gain",
+                GraphNodeExecutionClass::Stateful,
+                0,
+                vec![GraphStageSpec::Gain { linear: 0.5 }],
+            )],
         );
         let context = GraphExecutionContext {
             processing_epoch: 3,
@@ -750,18 +1063,18 @@ mod tests {
         let graph = ExecutableGraph::new(
             "graph:planning",
             vec![
-                GraphNodeSpec {
-                    node_id: "inline".into(),
-                    execution_class: GraphNodeExecutionClass::PureTransform,
-                    latency_samples: 0,
-                    stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
-                },
-                GraphNodeSpec {
-                    node_id: "latency".into(),
-                    execution_class: GraphNodeExecutionClass::LatencyBearing,
-                    latency_samples: 32,
-                    stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
-                },
+                test_node(
+                    "inline",
+                    GraphNodeExecutionClass::PureTransform,
+                    0,
+                    vec![GraphStageSpec::Gain { linear: 1.0 }],
+                ),
+                test_node(
+                    "latency",
+                    GraphNodeExecutionClass::LatencyBearing,
+                    32,
+                    vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                ),
             ],
         );
 
@@ -819,24 +1132,24 @@ mod tests {
         let graph = ExecutableGraph::new(
             "graph:planning:plugin-backed",
             vec![
-                GraphNodeSpec {
-                    node_id: "inline".into(),
-                    execution_class: GraphNodeExecutionClass::PureTransform,
-                    latency_samples: 0,
-                    stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
-                },
-                GraphNodeSpec {
-                    node_id: "plugin".into(),
-                    execution_class: GraphNodeExecutionClass::PluginBacked,
-                    latency_samples: 0,
-                    stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
-                },
-                GraphNodeSpec {
-                    node_id: "latency".into(),
-                    execution_class: GraphNodeExecutionClass::LatencyBearing,
-                    latency_samples: 32,
-                    stages: vec![GraphStageSpec::HardClip { threshold: 0.4 }],
-                },
+                test_node(
+                    "inline",
+                    GraphNodeExecutionClass::PureTransform,
+                    0,
+                    vec![GraphStageSpec::Gain { linear: 1.0 }],
+                ),
+                test_node(
+                    "plugin",
+                    GraphNodeExecutionClass::PluginBacked,
+                    0,
+                    vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                ),
+                test_node(
+                    "latency",
+                    GraphNodeExecutionClass::LatencyBearing,
+                    32,
+                    vec![GraphStageSpec::HardClip { threshold: 0.4 }],
+                ),
             ],
         );
 
@@ -861,18 +1174,18 @@ mod tests {
         let graph = ExecutableGraph::new(
             "graph:prework",
             vec![
-                GraphNodeSpec {
-                    node_id: "anticipative".into(),
-                    execution_class: GraphNodeExecutionClass::LatencyBearing,
-                    latency_samples: 16,
-                    stages: vec![GraphStageSpec::HardClip { threshold: 0.2 }],
-                },
-                GraphNodeSpec {
-                    node_id: "realtime".into(),
-                    execution_class: GraphNodeExecutionClass::PureTransform,
-                    latency_samples: 0,
-                    stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
-                },
+                test_node(
+                    "anticipative",
+                    GraphNodeExecutionClass::LatencyBearing,
+                    16,
+                    vec![GraphStageSpec::HardClip { threshold: 0.2 }],
+                ),
+                test_node(
+                    "realtime",
+                    GraphNodeExecutionClass::PureTransform,
+                    0,
+                    vec![GraphStageSpec::Gain { linear: 0.5 }],
+                ),
             ],
         );
 
@@ -897,5 +1210,125 @@ mod tests {
         assert!(report.prework_output_peak.is_some());
         assert_eq!(report.prework_output_peak, report.realtime_input_peak);
         assert!(report.output_peak <= report.prework_output_peak.unwrap_or_default());
+    }
+
+    #[test]
+    fn contract_summary_surfaces_topology_and_adaptation_metadata() {
+        let graph = ExecutableGraph::new(
+            "graph:contract",
+            vec![
+                GraphNodeSpec {
+                    buffer_contract: GraphNodeBufferContract {
+                        input: GraphNodeBusEndpoint::new("track:vox", ChannelLayout::Mono),
+                        output: GraphNodeBusEndpoint::new("bus:mix", ChannelLayout::Stereo),
+                        scratch_buffers: 2,
+                        silence_policy: GraphNodeSilencePolicy::ClearOutput,
+                        channel_adaptation: GraphChannelAdaptationMode::AdaptiveMonoStereo,
+                        reset_policy: GraphNodeResetPolicy::ResetOnTransportStop,
+                    },
+                    topology: GraphNodeTopologyMetadata {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        lane_id: Some("track:vox".into()),
+                        bus_group_id: Some("mix".into()),
+                    },
+                    ..test_node(
+                        "track",
+                        GraphNodeExecutionClass::Stateful,
+                        0,
+                        vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    )
+                },
+                GraphNodeSpec {
+                    buffer_contract: GraphNodeBufferContract {
+                        input: GraphNodeBusEndpoint::new("bus:mix", ChannelLayout::Stereo),
+                        output: GraphNodeBusEndpoint::new("console:main", ChannelLayout::Stereo),
+                        ..GraphNodeBufferContract::default()
+                    },
+                    topology: GraphNodeTopologyMetadata {
+                        role: Some(GraphNodeTopologyRole::ConsoleNode),
+                        lane_id: None,
+                        bus_group_id: Some("console:main".into()),
+                    },
+                    ..test_node(
+                        "console",
+                        GraphNodeExecutionClass::PureTransform,
+                        0,
+                        vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                    )
+                },
+            ],
+        );
+
+        let summary = graph.contract_summary();
+
+        assert_eq!(summary.issue_count, 0);
+        assert_eq!(summary.silence_clear_node_count, 1);
+        assert_eq!(summary.adaptive_channel_node_count, 1);
+        assert_eq!(summary.resettable_node_count, 1);
+        assert_eq!(summary.scratch_buffer_count, 2);
+        assert_eq!(summary.track_lane_node_count, 1);
+        assert_eq!(summary.console_node_count, 1);
+        assert_eq!(
+            summary.node_contracts[0].adaptation_result,
+            GraphChannelAdaptationResult::MonoToStereo
+        );
+    }
+
+    #[test]
+    fn contract_summary_rejects_send_nodes_that_loop_back_to_same_bus() {
+        let graph = ExecutableGraph::new(
+            "graph:send-loop",
+            vec![GraphNodeSpec {
+                buffer_contract: GraphNodeBufferContract {
+                    input: GraphNodeBusEndpoint::new("bus:drums", ChannelLayout::Stereo),
+                    output: GraphNodeBusEndpoint::new("bus:drums", ChannelLayout::Stereo),
+                    ..GraphNodeBufferContract::default()
+                },
+                topology: GraphNodeTopologyMetadata {
+                    role: Some(GraphNodeTopologyRole::Send),
+                    lane_id: None,
+                    bus_group_id: Some("fx".into()),
+                },
+                ..test_node(
+                    "send",
+                    GraphNodeExecutionClass::Stateful,
+                    0,
+                    vec![GraphStageSpec::Gain { linear: 0.5 }],
+                )
+            }],
+        );
+
+        let summary = graph.contract_summary();
+
+        assert_eq!(summary.issue_count, 1);
+        assert!(matches!(
+            summary.issues[0],
+            GraphContractIssue::SendRequiresDistinctBuses { .. }
+        ));
+    }
+
+    #[test]
+    fn silence_clear_policy_keeps_silent_blocks_zeroed() {
+        let mut buffer = AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(8));
+        let graph = ExecutableGraph::new(
+            "graph:silence-clear",
+            vec![GraphNodeSpec {
+                buffer_contract: GraphNodeBufferContract {
+                    silence_policy: GraphNodeSilencePolicy::ClearOutput,
+                    ..GraphNodeBufferContract::default()
+                },
+                ..test_node(
+                    "bias",
+                    GraphNodeExecutionClass::Stateful,
+                    0,
+                    vec![GraphStageSpec::Bias { amount: 0.75 }],
+                )
+            }],
+        );
+
+        let report = graph.process(&mut buffer);
+
+        assert!(buffer.samples().iter().all(|sample| *sample == 0.0));
+        assert_eq!(report.silence_clear_node_count, 1);
     }
 }

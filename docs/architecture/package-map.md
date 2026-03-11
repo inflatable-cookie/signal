@@ -12,6 +12,9 @@ Freeze the first naming proposal for the extracted Signal workspace so research,
 architecture, and implementation can converge on stable package and host names.
 The Rust workspace now lives under `signal/crates/`, so package names remain
 stable while their on-disk layout is grouped under one explicit workspace root.
+The legacy C++ implementation now sits behind `signal/legacy/cpp/` as a
+reference surface rather than sharing the active repo root with the Rust
+workspace.
 
 The main naming rule is:
 
@@ -85,6 +88,10 @@ The main naming rule is:
   - LUFS
   - true peak
   - loudness-range and related dynamics measurements
+- `signal-analysis-character`
+  - timbral descriptor extraction
+  - energy and transient summary metrics
+  - offline cataloging-oriented audio character summaries
 - `signal-analysis-embed`
   - embedding inference
   - future classifier support

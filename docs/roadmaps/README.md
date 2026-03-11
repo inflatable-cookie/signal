@@ -1,34 +1,46 @@
 # Roadmaps
 
-Roadmaps are executable milestone plans derived from vision and architecture.
+Status: active
+Updated: 2026-03-10
 
-## Generation model
+## Why this section matters now
 
-- Use generation folders: `g01`, `g02`, `g03`.
-- Use milestone files inside each generation: `001-<slug>.md`.
-- Reference milestones as `gNN.NNN` (example: `g01.001`).
-- Trigger generation rollover manually; do not use automatic file-count limits.
+Roadmaps turn the Signal library/runtime strategy into executable batches.
+
+## Scope
+
+Use this section for:
+
+- active implementation milestones
+- generation control
+- backlog and deferred work
 
 ## Layout
 
-- `g01/` first generation milestones
-- `generation-index.md` active generation and rollover history
-- `backlog/` deferred items with promotion criteria
-- `templates/roadmap-milestone-template.md` milestone starter contract
+- `g01/`: current active generation
+- `generation-index.md`: generation history and rollover notes
+- `backlog/`: deferred work only
+- `templates/`: roadmap authoring support
 
-## Batch and logging rule
+## Current posture
 
-- Execute milestones in meaningful batches.
-- Create logs per completed batch/update cycle, not per individual task.
+`g01` is no longer just a shell-bootstrap queue. It now has a defined next-stage
+engine and DSP runway so a dedicated Signal implementation thread can work in
+parallel on:
 
-## Lean governance rule
+- core DSP/control kernels
+- executable graph routing and parameter timing
+- runtime transport and scheduler ownership
+- host/device-backed audio execution
+- plugin and sandbox processing
 
-- Keep one active queue and use backlog for deferred scope.
-- Run currentness triage only when queue clarity degrades.
-- Prefer manual evidence over new checker scripts unless repetition clearly justifies automation.
+## Working Rule
 
-## Next task
+- keep one active queue
+- log by meaningful batch
+- move deferred scope into backlog instead of leaving it half-active
 
-Use `g01.004` as the active implementation-shaping milestone now that crate
-names, runtime-host entrypoints, and the trust-edge package set are frozen
-enough for workspace expansion.
+## Next Task
+
+Advance `g01.004`, then open `g01.005` as the first algorithm/engine-heavy
+milestone in the new detailed Signal runtime runway.

@@ -1,24 +1,33 @@
 # Architecture
 
-Architecture docs define the system shape and invariants derived from vision.
-They set constraints roadmap batches must honor.
+Status: active
+Updated: 2026-03-10
 
-## Files
+## Why this section matters now
+
+Architecture defines Signal as a reusable library system rather than a
+Loophole-specific engine app.
+
+## Scope
+
+Use this section for:
+
+- crate and package boundaries
+- embeddable runtime shape
+- trust-edge adapter boundaries
+- generic library invariants
+
+Keep milestone sequencing in `roadmaps/`.
+
+## Active Entry Points
 
 - `system-architecture.md`
-- `dsp-analysis-feature-reference.md`
 - `package-map.md`
-- `docs/contracts/001-shared-dsp-and-host-boundary.md`
-- future `docs/contracts/00n-<slug>.md` files as needed
+- `dsp-analysis-feature-reference.md`
+- related contracts under `docs/contracts/`
 
-## Writing rules
+## Next Task
 
-- Link architecture updates to current vision artifact(s).
-- Keep milestone execution lists in roadmap files, not architecture files.
-- Use contract docs for explicit technical boundaries that need validation and migration notes.
-
-## Next task
-
-Keep `system-architecture.md` current as Signal crate and runtime-host
-boundaries firm up, then add focused contracts only where ambiguity would
-otherwise create duplicate DSP ownership or unstable host boundaries.
+Keep `system-architecture.md` and `package-map.md` aligned with the clean
+library posture, then move legacy implementation-shaped material behind a
+reference boundary instead of leaving it in the active path.

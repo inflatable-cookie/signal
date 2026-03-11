@@ -14,12 +14,12 @@ build = [
 ]
 dev = [
   { task = "build" },
-  { run = "./build/src/loophole-signal {args}" },
+  { run = "./legacy/cpp/build/src/loophole-signal {args}" },
 ]
 test = [
   { task = "build" },
-  { run = "ctest --test-dir build --output-on-failure {args}" },
+  { run = "ctest --test-dir legacy/cpp/build --output-on-failure {args}" },
 ]
-"configure:debug" = "cmake -S . -B build"
-"compile:debug" = "cmake --build build --config Debug"
+"configure:debug" = "cmake -S legacy/cpp -B legacy/cpp/build"
+"compile:debug" = "cmake --build legacy/cpp/build --config Debug"
 "audit:god-files" = "python3 ../chorus/meta/tools/check_god_file_audit.py --workspace-root .. --fail-on high"

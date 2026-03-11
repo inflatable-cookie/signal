@@ -13,9 +13,9 @@
 # Shared audio-systems runtime and DSP workspace
 
 Signal is the shared audio-systems repo for Loophole, Finch, and future apps.
-It currently contains the legacy C++ engine/runtime implementation, and it will
-also become the home of the shared Rust DSP, analysis, graph, and runtime
-components that those products reuse.
+Its active surface is the Rust library/runtime workspace under `crates/`.
+The legacy C++ engine/runtime implementation now lives behind a reference
+boundary under `legacy/cpp/`.
 
 Signal may run out-of-process where isolation is the right trade, but the repo
 itself is no longer defined by one mandatory standalone process topology.
@@ -56,21 +56,32 @@ crates/
   signal-host-local/        # Local desktop runtime host shell
   signal-host-server/       # Headless runtime host shell
   signal-supervisor-tools/  # Live supervisor and soak-reporting CLI
-src/
-  backend/          # Engine runtime/backend glue
-  clap/             # CLAP backend integration
-  core/             # Core engine primitives
-  domains/          # Domain-level command handling
-  ipc/              # Envelope and domain codecs
-  logging/          # Logging and diagnostics plumbing
-  vst3/             # VST3 backend integration
-tests/              # Engine tests
 docs/               # Local docs/spec notes
-CMakeLists.txt
+legacy/
+  README.md         # Legacy/reference boundary notes
+  cpp/
+    src/            # Legacy C++ engine/runtime source tree
+    tests/          # Legacy C++ engine tests
+    CMakeLists.txt  # Legacy C++ build surface
+CMakeLists.txt      # Root compatibility wrapper for legacy/cpp
 Cargo.toml
 ```
 
 Northstar-aligned planning and research docs now live under `docs/`.
+
+## Active vs Legacy
+
+Active implementation direction:
+
+- Rust crates under `crates/`
+- Northstar-shaped docs under `docs/`
+
+Reference-only implementation surface:
+
+- legacy C++ runtime under `legacy/cpp/`
+
+That C++ tree still builds and remains useful for migration/reference work, but
+it is no longer the primary repo surface.
 
 ## Development
 
@@ -86,10 +97,13 @@ effigy validate --repo .
 Equivalent raw CMake flow:
 
 ```bash
-cmake -S . -B build
-cmake --build build --config Debug
-ctest --test-dir build --output-on-failure
+cmake -S legacy/cpp -B legacy/cpp/build
+cmake --build legacy/cpp/build --config Debug
+ctest --test-dir legacy/cpp/build --output-on-failure
 ```
+
+The root CMake entrypoint now wraps `legacy/cpp/`. New Rust work should prefer
+the Cargo workspace and repo-owned Effigy tasks.
 
 Rust workspace bootstrap:
 

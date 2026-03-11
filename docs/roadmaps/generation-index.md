@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-08
+Updated: 2026-03-10
 
 ## Active generation
 
@@ -22,4 +22,5 @@ Create a new generation when:
 ## Next task
 
 Keep `g01` active until the first Signal crate/runtime-host package sequence is
-complete enough to justify a new generation boundary.
+complete enough to justify a new generation boundary, using the new `g01.005`
+through `g01.009` engine/DSP runway as the dependency-ordered follow-on spine.

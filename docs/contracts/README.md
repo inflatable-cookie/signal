@@ -1,22 +1,33 @@
 # Contracts
 
-Use this folder for explicit non-code contracts that constrain behavior.
+Status: active
+Updated: 2026-03-10
 
-Examples:
-- protocol contracts
-- API behavior contracts
-- policy contracts
+## Why this section matters now
 
-Current baseline:
+Contracts freeze the reusable boundaries that Signal consumers should be able to
+rely on.
+
+## Scope
+
+Use this section for:
+
+- stable reusable-DSP and runtime boundary contracts
+- export/report contracts
+- host-edge and policy contracts when prose architecture is not precise enough
+
+## Current Baseline
+
 - `001-shared-dsp-and-host-boundary.md`
 - `002-supervisor-export-schema-and-report-boundary.md`
 
 ## Rule
 
-Contracts should be stable reference artifacts and link to relevant roadmap/log evidence.
+Add a new contract only when the boundary needs stronger guarantees than
+`architecture/` alone can provide.
 
-## Next task
+## Next Task
 
-Use `001-shared-dsp-and-host-boundary.md` as the initial rule set, then add
-new contracts only where a boundary needs explicit guarantees beyond what the
-architecture doc already states.
+Keep the current contracts stable while Signal is reoriented as a polished
+generic library system, then add new contracts only for boundaries that
+actually need validation-grade precision.

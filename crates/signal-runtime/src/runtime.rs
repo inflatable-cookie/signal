@@ -4,7 +4,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 
 use signal_graph::{
     synthetic_stereo_block, ExecutableGraph, GraphBlockReport, GraphConfig, GraphExecutionContext,
-    GraphNodeExecutionClass, GraphNodeSpec, GraphPreparedDispatch,
+    GraphNodeBufferContract, GraphNodeExecutionClass, GraphNodeSpec, GraphNodeTopologyMetadata,
+    GraphPreparedDispatch,
 };
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
@@ -1043,8 +1044,8 @@ impl RuntimeEngineState {
         self.snapshot.prework_service_active_plugin_sandboxes = active_plugin_sandboxes;
         self.snapshot.prework_service_bound_plugin_sandboxes = bound_plugin_sandboxes;
         self.snapshot.prework_service_active_bound_plugin_sandboxes = active_bound_plugin_sandboxes;
-        self.snapshot.prework_service_degraded_bound_plugin_sandboxes =
-            degraded_bound_plugin_sandboxes;
+        self.snapshot
+            .prework_service_degraded_bound_plugin_sandboxes = degraded_bound_plugin_sandboxes;
         self.snapshot.prework_service_missing_bound_plugin_sandboxes =
             missing_bound_plugin_sandboxes;
         self.snapshot.prework_service_plugin_gate_active = plugin_gate_active;
@@ -1505,6 +1506,8 @@ impl RuntimeEngineState {
                     node_id: node.node_id.clone(),
                     execution_class: node.execution_class,
                     latency_samples: node.latency_samples,
+                    buffer_contract: GraphNodeBufferContract::default(),
+                    topology: GraphNodeTopologyMetadata::default(),
                     stages: node.stages.clone(),
                 })
                 .collect(),
@@ -1845,6 +1848,7 @@ impl RuntimeEngineState {
             )
         })?;
         let planning = graph.planning_summary(context.anticipative_enabled);
+        let contract = graph.contract_summary();
 
         let (
             output,
@@ -1878,6 +1882,7 @@ impl RuntimeEngineState {
                 output_peak,
                 output_rms,
                 first_output_sample,
+                ..
             },
         ) = graph.execute_realtime_from_prepared(
             &buffer,
@@ -1885,6 +1890,7 @@ impl RuntimeEngineState {
             prepared,
             context,
             &planning,
+            &contract,
         );
 
         self.snapshot.graph_id = Some(graph_id);
@@ -2351,7 +2357,8 @@ impl SignalRuntime {
         let plugin_gate_active = matches!(
             semantic_policy,
             RuntimePreworkServiceSemanticPolicy::PluginConstrained
-        ) && self.engine.snapshot.prework_service_pressure != RuntimePreworkServicePressure::Normal
+        ) && self.engine.snapshot.prework_service_pressure
+            != RuntimePreworkServicePressure::Normal
             && if !binding_summary.bound_sandbox_ids.is_empty() {
                 binding_summary.degraded_bound_sandboxes > 0
                     || binding_summary.missing_bound_sandboxes > 0
@@ -4289,10 +4296,10 @@ mod tests {
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
         GraphNodeProjection, GraphProjection, HandshakeRequest, HeartbeatCycleStage,
         LingeringCleanupMode, LingeringCleanupTrigger, ParameterBatch, ParameterEvent,
-        PluginBackedNodeBinding, PluginBackedNodeBindingProjection,
-        PluginSandboxLifecycleStage, PluginSandboxTransportStage, RecoveryRestartIntent,
-        RestartRequest, RuntimeConfigRequest, RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder,
-        RuntimeEventSink, RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport,
+        PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage,
+        PluginSandboxTransportStage, RecoveryRestartIntent, RestartRequest, RuntimeConfigRequest,
+        RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder, RuntimeEventSink,
+        RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport,
         RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
         RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
         RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
@@ -6370,17 +6377,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            runtime.get_engine_block_snapshot().prework_service_semantic_policy,
+            runtime
+                .get_engine_block_snapshot()
+                .prework_service_semantic_policy,
             RuntimePreworkServiceSemanticPolicy::LatencyFocused
         );
         runtime.set_active_plugin_sandboxes(1);
         assert_eq!(
-            runtime.get_engine_block_snapshot().prework_service_semantic_policy,
+            runtime
+                .get_engine_block_snapshot()
+                .prework_service_semantic_policy,
             RuntimePreworkServiceSemanticPolicy::PluginConstrained
         );
         runtime.set_active_plugin_sandboxes(0);
         assert_eq!(
-            runtime.get_engine_block_snapshot().prework_service_semantic_policy,
+            runtime
+                .get_engine_block_snapshot()
+                .prework_service_semantic_policy,
             RuntimePreworkServiceSemanticPolicy::LatencyFocused
         );
     }
@@ -6498,8 +6511,7 @@ mod tests {
         assert_eq!(snapshot.prework_service_degraded_bound_plugin_sandboxes, 0);
         assert_eq!(snapshot.prework_service_missing_bound_plugin_sandboxes, 1);
         assert!(snapshot.planned_nodes.iter().any(|node| {
-            node.node_id == "plugin"
-                && node.plugin_sandbox_id.as_deref() == Some("sandbox-bound")
+            node.node_id == "plugin" && node.plugin_sandbox_id.as_deref() == Some("sandbox-bound")
         }));
 
         runtime

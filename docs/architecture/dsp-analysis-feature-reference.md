@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-09
+Updated: 2026-03-11
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -24,6 +24,7 @@ The implemented DSP and analysis surface currently lives in these crates:
 - `signal-analysis-rhythm`
 - `signal-analysis-tonal`
 - `signal-analysis-loudness`
+- `signal-analysis-character`
 
 Everything in this document is based on the current crate implementations under
 `crates/`, not on roadmap intent.
@@ -35,17 +36,23 @@ Everything in this document is based on the current crate implementations under
 Current features:
 
 - `Sample = f32`
-- `SampleRate`, `FrameCount`, and `ChannelCount` newtypes
+- `SampleRate`, `FrameCount`, `ChannelCount`, `Seconds`, `FrequencyHz`, and
+  `GainLinear` newtypes
+- sample-rate helpers for seconds-to-frames and frames-to-seconds conversion
 - `ChannelLayout` with `Mono`, `Stereo`, and arbitrary counted layouts
+- `StepSegment` for simple sample-accurate range/value tagging
 - `AudioBuffer` with interleaved sample storage
 - buffer construction via zeroed allocation or `from_interleaved`
+- direct sample slice access with mutable and immutable views
+- channel-count introspection
+- buffer clearing
 - mono mixdown via channel averaging
 - `seconds_per_frame()` helper
 
 Current constraints:
 
 - no planar buffer type
-- no explicit timestamp/range abstractions beyond frame and sample-rate helpers
+- no timestamped transport/range model beyond frame/sample-rate helpers
 - analysis code typically converts buffers to mono before processing
 
 ### `signal-analysis`
@@ -67,22 +74,48 @@ Current constraints:
 
 Current features:
 
-- `DspKernel` trait with `reset()` and `process_in_place()`
-- one implemented kernel: `Gain`
-- `Gain` stores a scalar gain value and multiplies every sample in-place
+- `DspKernel` trait with `reset()`, bypass control, and in-place block
+  processing
+- mix helpers:
+  - `Gain`
+  - `apply_gain_in_place()`
+  - `sum_in_place()`
+  - `mix_in_place()`
+  - `clear_block()`
+- control helpers:
+  - `LinearRamp`
+  - `ExponentialRamp`
+  - `SmoothedValue`
+  - `ControlSegment`
+  - `ControlSegmentShape`
+  - `ControlPlan`
+  - `ControlSegmentPlayer`
+- stateful kernels:
+  - `DelayLine`
+  - `OnePoleLowPass`
+  - `PeakMeter`
+  - `RmsMeter`
+  - `EnvelopeFollower`
+- block helpers that apply sample-accurate control streams to kernels:
+  - `apply_gain_control()`
+  - `process_low_pass_with_cutoff_control()`
+  - `process_delay_with_feedback_control()`
+- deterministic signal fixtures for tests and examples through `SignalFixture`
+- denormal flushing helpers
 
 Current constraints:
 
-- no filters, envelopes, meters, resamplers, or dynamics kernels yet
-- no block-to-block state beyond what individual kernels may carry
-
-This crate is still a shell plus one minimal kernel.
+- no EQ families beyond a one-pole low-pass
+- no dynamics processors such as compressors, gates, or limiters
+- no resampling, convolution, oscillators, or nonlinear transfer kernels
+- block helpers assume the caller manages channel layout and multichannel
+  routing externally
 
 ### `signal-dsp-spectral`
 
 Current features:
 
-- `StftConfig { window_size, hop_size }`
+- `StftConfig { window_size, hop_size, compute_phases }`
 - `hann_window(size)` helper
 - `Stft::analyze_mono()` forward STFT over mono audio
 - zero-padded final frame handling
@@ -93,23 +126,42 @@ Current features:
   - per-frame phases
 - `Spectrogram::bins()` convenience method
 - `Spectrogram::chroma()` pitch-class energy summary over all frames
+- `Spectrogram::chroma_with_reference(reference_hz)` for non-440 tuning
+  references
+- `Spectrogram::spectral_centroid()` for median framewise brightness
+- mel-scale helpers:
+  - `MelScale`
+  - `LogCompression`
+  - `MelFilterNorm`
+  - `MelFilterbankConfig`
+  - `MelSpectrogramConfig`
+  - `MelSpectrogram`
+  - `Spectrogram::to_mel_spectrogram()`
 
 Implementation details that are part of the current behavior:
 
 - FFT is provided by `rustfft`
 - analysis uses a Hann window
 - only the non-redundant positive-frequency bins are retained
-- chroma maps bins to pitch classes by converting bin frequency to rounded MIDI
-  note number, then folding to 12 pitch classes
+- phase extraction can be skipped entirely when `compute_phases` is `false`
+- chroma uses a `1/frequency` weighting so higher octaves do not dominate the
+  pitch-class profile
+- chroma can shift pitch-class boundaries around an explicit tuning reference
+- chroma skips bins that are too low-frequency for reliable semitone
+  resolution and bins above `5 kHz`
 - chroma is globally normalized so the 12 bins sum to `1.0` when energy exists
+- spectral centroid is reduced by median across frames for transient-robust
+  brightness reporting
+- mel conversion is an offline projection from the linear spectrogram, not a
+  separate transform implementation
 
 Current constraints:
 
 - mono-only analysis surface
 - no inverse STFT
 - no streaming/incremental STFT API
-- no spectral centroid, rolloff, flux, or mel-style helpers in this crate
-- no tuning estimation or detuning compensation before pitch-class mapping
+- no spectral rolloff, flux, contrast, or MFCC surface
+- no tuning estimator beyond caller-supplied chroma reference
 
 ## Rhythm Analysis
 
@@ -575,41 +627,104 @@ Current constraints:
 - no short-term loudness timeline output
 - no per-channel or surround loudness handling
 
+## Character Analysis
+
+### `signal-analysis-character`
+
+Primary surface:
+
+- `CharacterAnalyzer`
+- `CharacterAnalyzerConfig`
+- `CharacterAnalysisResult`
+
+Current configuration surface:
+
+- STFT window and hop size through `StftConfig`
+- optional centered analysis-duration cap
+- onset-threshold multiplier for spectral-flux peak counting
+- convenience presets:
+  - `CharacterAnalyzerConfig::low()`
+  - `CharacterAnalyzerConfig::medium()`
+  - `CharacterAnalyzerConfig::high()`
+
+Current features:
+
+- offline mono character analysis over the full track or a centered excerpt
+- spectral centroid as a brightness descriptor
+- onset density derived from spectral-flux peak counts
+- zero-crossing rate as a noisiness proxy
+- RMS energy and peak amplitude
+- transient density from sample-slope event counting
+- sustain ratio using a fixed silence threshold
+- dynamic range as peak-minus-RMS crest headroom
+- confidence scoring based on analyzed duration and sample-rate support
+
+Implementation details that are part of the current behavior:
+
+- excerpted analysis is taken from the center of the track rather than the
+  beginning
+- onset density uses the STFT spectrogram and counts flux peaks above
+  `onset_threshold * mean_flux`
+- transient density uses direct time-domain slope checks with a minimum event
+  spacing
+- RMS energy is clamped into `0.0..=1.0`
+- dynamic range is reported as a simple amplitude-domain crest difference, not
+  a loudness-domain range metric
+
+Current constraints:
+
+- offline only
+- mono mixdown only
+- no per-frame descriptor timeline output
+- no learned embeddings or classification labels
+- no multiband timbral descriptors such as rolloff, flatness, or contrast
+- no stereo-width or spatial character metrics
+
 ## What Is Implemented Versus Planned
 
 Implemented now:
 
-- shared audio-buffer primitives
-- one basic in-place gain kernel
-- STFT, spectral magnitudes/phases, and chroma accumulation
+- shared audio/time/channel primitives and simple control-segment helpers
+- reusable DSP kernels for gain, smoothing, low-pass filtering, delay, level
+  tracking, block mixing, and deterministic signal fixtures
+- STFT, spectral magnitudes/phases, tuned chroma, spectral centroid, and mel
+  spectrogram projection
 - offline rhythm analysis with beat, tempo, diagnostics, interpretation,
   continuity, and limited meter inference
 - offline global key detection
 - offline loudness summary metrics
+- offline audio character descriptors
 
 Planned elsewhere but not implemented in these crates yet:
 
-- broad reusable DSP kernel library
 - streaming analysis implementations
 - richer meter families
 - tuning/chord/modulation analysis
+- learned embedding and classifier analysis surfaces
 - richer loudness timelines and standards-complete weighting coverage
+- broader DSP families such as resampling, dynamics, convolution, and
+  oscillator kernels
 
 ## Current Entry Points
 
 Useful entry points for readers who want the implementation after this doc:
 
+- `crates/signal-primitives/src/lib.rs`
 - `crates/signal-dsp/src/lib.rs`
 - `crates/signal-dsp-spectral/src/lib.rs`
 - `crates/signal-analysis/src/lib.rs`
 - `crates/signal-analysis-rhythm/src/lib.rs`
 - `crates/signal-analysis-tonal/src/lib.rs`
 - `crates/signal-analysis-loudness/src/lib.rs`
+- `crates/signal-analysis-character/src/lib.rs`
 - `crates/signal-analysis-rhythm/examples/offline_rhythm_demo.rs`
+- `crates/signal-analysis-rhythm/examples/file_rhythm_probe.rs`
 - `crates/signal-analysis-tonal/examples/offline_tonal_demo.rs`
+- `crates/signal-analysis-loudness/examples/offline_loudness_demo.rs`
 
 ## Next Task
 
-Add crate-level rustdoc and small usage examples for the public DSP and
-analysis APIs so this feature reference is backed by API-local guidance, not
-just architecture docs.
+Add deeper API-local docs and examples for the new low-level DSP module types
+such as `ControlPlan`, mel spectrogram configuration, and the character
+analyzer presets so the current feature reference stays synchronized with the
+growing implementation surface.

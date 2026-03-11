@@ -259,7 +259,8 @@ impl ServerRuntimeHost {
         })?;
         self.runtime.configure(runtime_config)?;
         let assembly = server_demo_runtime_assembly();
-        self.runtime.apply_graph_projection(assembly.graph.clone())?;
+        self.runtime
+            .apply_graph_projection(assembly.graph.clone())?;
 
         let hardware_request = HardwareConfigRequest::new(
             self.runtime.config().sample_rate.0,
@@ -2882,8 +2883,8 @@ mod tests {
         PluginSandboxLifecycleStage, PluginSandboxTransportStage, PluginScanRequest,
         RecoveryRestartIntent, RuntimeConfig, RuntimeConfigRequest, RuntimeErrorKind,
         RuntimeLifecycleApi, RuntimeObservationApi, RuntimeProjectionApi, RuntimeReadiness,
-        RuntimeSupervisorApi, RuntimeSupervisorReport, SandboxOperationFailureStage,
-        SignalRuntime, StopReason, TransportAttachIntent,
+        RuntimeSupervisorApi, RuntimeSupervisorReport, SandboxOperationFailureStage, SignalRuntime,
+        StopReason, TransportAttachIntent,
     };
     use std::path::Path;
 

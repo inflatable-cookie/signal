@@ -1,42 +1,33 @@
 # Logs
 
-Logs capture dated evidence and assessments.
+Status: active
+Updated: 2026-03-10
 
-## Segmentation model
+## Why this section matters now
 
-- Group logs by month directory: `YYYY-MM/`
-- Name each log: `DD-HHMMSS-<slug>.md`
+Logs are the evidence layer for Signal’s library/runtime rebuild.
 
-## Cadence rule
+## Scope
 
-- Create logs per completed batch or update cycle.
-- Do not create a separate log for every task.
+Use this section for:
 
-## Lean evidence rule
+- batch evidence
+- decision logs
+- reset-era cleanup and archive notes
+- implementation validation records
 
-- Manual validation notes and commands run are the default evidence format.
-- Add checker scripts only when recurring pain justifies automation.
-- If a checker is added, include an automation adoption note with owner/cadence/sunset trigger.
+## Segmentation Model
 
-## Decision policy
+- `logs/YYYY-MM/`
+- `logs/templates/`
 
-- Do not maintain a separate `decisions/` folder by default.
-- Capture major decisions as dedicated decision logs in this folder.
-- For legacy migrations, rewrite references and remove old `decisions/` files in the same batch (no compatibility shim files).
+## Working Rule
 
-## Current seed
+- log by meaningful batch
+- keep evidence concise and explicit
+- prefer manual validation notes unless repeated pain justifies automation
 
-- `2026-03/08-131500-signal-docs-bootstrap-and-research-migration.md`
+## Next Task
 
-## Templates
-
-- `templates/roadmap-contract-delta-template.md`
-- `templates/roadmap-gate-log-template.md`
-- `templates/decision-log-template.md`
-- `templates/automation-adoption-note-template.md` (optional)
-- `templates/roadmap-currentness-triage-template.md` (optional)
-
-## Next task
-
-Keep logging at the batch level and add the next Signal log only when a
-meaningful docs, architecture, or implementation slice closes.
+Keep logging the reset and implementation work here while the Signal docs and
+workspace are cleaned up into a polished generic library system.

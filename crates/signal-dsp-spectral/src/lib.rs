@@ -1,7 +1,8 @@
 //! Spectral DSP helpers for the Signal workspace.
 //!
 //! The crate currently provides a forward mono STFT, Hann window generation,
-//! and a spectrogram helper for global chroma accumulation.
+//! spectrogram helpers for chroma and spectral centroid extraction, and
+//! mel-spectrogram projection.
 //!
 //! ```no_run
 //! use signal_dsp_spectral::{Stft, StftConfig};
