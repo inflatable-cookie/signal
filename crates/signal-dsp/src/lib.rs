@@ -36,8 +36,8 @@ mod mix;
 pub use block::{
     apply_gain_control, process_delay_with_feedback_control, process_low_pass_with_cutoff_control,
 };
-pub use control::{ExponentialRamp, LinearRamp, SmoothedValue};
 pub use control::{ControlPlan, ControlSegment, ControlSegmentPlayer, ControlSegmentShape};
+pub use control::{ExponentialRamp, LinearRamp, SmoothedValue};
 pub use delay::DelayLine;
 pub use filter::OnePoleLowPass;
 pub use fixtures::SignalFixture;

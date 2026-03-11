@@ -1,7 +1,8 @@
 use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_ipc::{
-    PluginMessageEnvelope, PluginMessagePayload, SharedMemoryBroker, SharedMemoryTransportPayload,
+    PluginInstanceStatePayload, PluginMessageEnvelope, PluginMessagePayload, SharedMemoryBroker,
+    SharedMemoryTransportPayload,
 };
 use signal_plugin::{
     CompletionState, PluginFormat, PluginSandboxRequest, SandboxPolicy, SandboxWatchdogState,
@@ -16,13 +17,14 @@ use signal_runtime::{
     BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
     CompletionSlotStage, GraphNodeProjection, GraphProjection, HandshakeRequest,
     HeartbeatCycleStage, LingeringCleanupMode, PluginBackedNodeBinding,
-    PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
-    RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder, RuntimeLifecycleApi,
-    RuntimeObservationApi, RuntimeObservationDiagnostics, RuntimeObservationReport,
-    RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeSupervisorApi,
-    RuntimeSupervisorReport, RuntimeWatchdogTrigger, SandboxOperationFailureStage, SignalRuntime,
-    StopReason, TransportAttachIntent, WatchdogRestartRecord,
+    PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxInstanceFaultRecord,
+    PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
+    PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RuntimeConfigRequest,
+    RuntimeError, RuntimeEventRecorder, RuntimeLifecycleApi, RuntimeObservationApi,
+    RuntimeObservationDiagnostics, RuntimeObservationReport, RuntimePreworkServicePressure,
+    RuntimeProjectionApi, RuntimeSupervisorApi, RuntimeSupervisorReport, RuntimeWatchdogTrigger,
+    SandboxOperationFailureStage, SignalRuntime, StopReason, TransportAttachIntent,
+    WatchdogRestartRecord,
 };
 
 const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
@@ -99,6 +101,7 @@ pub struct ServerExecutionSummary {
     pub teardown_count: u64,
     pub last_recovery_intent: Option<RecoveryRestartIntent>,
     pub last_stop_reason: Option<StopReason>,
+    pub last_plugin_state: Option<PluginSandboxInstanceStateRecord>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -885,6 +888,7 @@ impl ServerRuntimeHost {
                 teardown_count: self.supervisor.teardowns,
                 last_recovery_intent: self.supervisor.last_recovery_intent,
                 last_stop_reason: self.supervisor.last_stop_reason,
+                last_plugin_state: run.last_plugin_state.clone(),
             },
             transport: ServerTransportSummary {
                 sandbox_id: self
@@ -962,6 +966,14 @@ impl ServerRuntimeHost {
             }
             match lifecycle.handle(request) {
                 Ok(response) => {
+                    if let Some(instance_state) = plugin_instance_state_record_from_response(
+                        sandbox_id,
+                        Some(processing_epoch),
+                        &response,
+                    ) {
+                        self.runtime
+                            .record_plugin_sandbox_instance_state(instance_state);
+                    }
                     responses.push(response);
                 }
                 Err(failure) => {
@@ -982,6 +994,14 @@ impl ServerRuntimeHost {
                 record_runtime_fault(&mut self.runtime, &failure);
                 runtime_error_from_failure(&failure)
             })?;
+        if let Some(instance_state) = plugin_instance_state_record_from_response(
+            sandbox_id,
+            Some(processing_epoch),
+            &heartbeat,
+        ) {
+            self.runtime
+                .record_plugin_sandbox_instance_state(instance_state);
+        }
         self.runtime.record_heartbeat_cycle(
             sandbox_id,
             HeartbeatCycleStage::Responded,
@@ -1072,6 +1092,16 @@ impl ServerRuntimeHost {
             processing_epoch,
             shared_memory_lease_id,
             transport,
+            last_plugin_state: responses
+                .iter()
+                .filter_map(|response| {
+                    plugin_instance_state_record_from_response(
+                        sandbox_id,
+                        Some(processing_epoch),
+                        response,
+                    )
+                })
+                .last(),
         })
     }
 
@@ -1292,6 +1322,15 @@ impl ServerRuntimeHost {
                 record_runtime_fault(&mut self.runtime, &failure);
                 runtime_error_from_failure(&failure)
             })?;
+        if let Some(instance_state) = plugin_instance_state_record_from_response(
+            run.sandbox_id.as_str(),
+            Some(run.processing_epoch),
+            &heartbeat,
+        ) {
+            self.runtime
+                .record_plugin_sandbox_instance_state(instance_state.clone());
+            run.last_plugin_state = Some(instance_state);
+        }
         self.runtime.record_heartbeat_cycle(
             run.sandbox_id.as_str(),
             HeartbeatCycleStage::Responded,
@@ -2466,6 +2505,7 @@ struct LifecycleRunSummary {
     processing_epoch: u64,
     shared_memory_lease_id: String,
     transport: Option<SharedMemoryTransportPayload>,
+    last_plugin_state: Option<PluginSandboxInstanceStateRecord>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -2675,23 +2715,27 @@ fn lifecycle_stage_for_request(
 fn record_runtime_fault(runtime: &mut SignalRuntime, failure: &signal_ipc::PluginMessageEnvelope) {
     if let signal_ipc::PluginMessagePayload::SandboxFailure {
         sandbox_id,
-        error_kind,
         detail,
         processing_epoch,
+        fault,
+        instance_state,
         ..
     } = &failure.payload
     {
-        let kind = match error_kind.as_str() {
-            "timeout" => PluginFaultKind::Timeout,
-            "crash" => PluginFaultKind::Crash,
-            _ => PluginFaultKind::ProtocolViolation,
-        };
+        let kind = runtime_plugin_fault_kind(Some(fault));
         runtime.record_plugin_sandbox_fault(
             sandbox_id.clone(),
             kind,
             detail.clone(),
             *processing_epoch,
         );
+        if let Some(instance_state) = instance_state.as_ref() {
+            runtime.record_plugin_sandbox_instance_state(plugin_instance_state_record(
+                sandbox_id,
+                *processing_epoch,
+                instance_state,
+            ));
+        }
         if let Some(classification) = classify_sandbox_failure(failure) {
             runtime.record_sandbox_operation_failure(
                 classification.sandbox_id,
@@ -2703,6 +2747,80 @@ fn record_runtime_fault(runtime: &mut SignalRuntime, failure: &signal_ipc::Plugi
                 classification.detail,
             );
         }
+    }
+}
+
+fn runtime_plugin_fault_kind(fault: Option<&signal_ipc::PluginFaultPayload>) -> PluginFaultKind {
+    match fault.map(|fault| fault.kind.as_str()) {
+        Some("timeout") => PluginFaultKind::Timeout,
+        Some("crash") => PluginFaultKind::Crash,
+        _ => PluginFaultKind::ProtocolViolation,
+    }
+}
+
+fn plugin_instance_state_record(
+    sandbox_id: &str,
+    processing_epoch: Option<u64>,
+    state: &PluginInstanceStatePayload,
+) -> PluginSandboxInstanceStateRecord {
+    let processing = state.processing.as_ref();
+    PluginSandboxInstanceStateRecord {
+        sandbox_id: sandbox_id.to_string(),
+        plugin_type_id: state.plugin_type_id.clone(),
+        instance_id: state.instance_id.clone(),
+        lifecycle_state: state.lifecycle_state.clone(),
+        readiness_state: state.readiness_state.clone(),
+        degraded_reasons: state.degraded_reasons.clone(),
+        active: state.active,
+        processing_epoch,
+        processing_sample_rate_hz: processing.map(|processing| processing.sample_rate_hz),
+        processing_max_block_frames: processing.map(|processing| processing.max_block_frames),
+        audio_inputs: processing.map(|processing| processing.io_layout.audio_inputs),
+        audio_outputs: processing.map(|processing| processing.io_layout.audio_outputs),
+        midi_inputs: processing.map(|processing| processing.io_layout.midi_inputs),
+        midi_outputs: processing.map(|processing| processing.io_layout.midi_outputs),
+        last_fault: state
+            .last_fault
+            .as_ref()
+            .map(|fault| PluginSandboxInstanceFaultRecord {
+                kind: fault.kind.clone(),
+                severity: fault.severity.clone(),
+                message: fault.message.clone(),
+            }),
+    }
+}
+
+fn plugin_instance_state_record_from_response(
+    sandbox_id: &str,
+    processing_epoch: Option<u64>,
+    response: &PluginMessageEnvelope,
+) -> Option<PluginSandboxInstanceStateRecord> {
+    match &response.payload {
+        PluginMessagePayload::CreateInstanceResponse { instance_state, .. }
+        | PluginMessagePayload::PrepareInstanceResponse { instance_state, .. }
+        | PluginMessagePayload::ActivateInstanceResponse { instance_state, .. }
+        | PluginMessagePayload::DeactivateInstanceResponse { instance_state, .. }
+        | PluginMessagePayload::ResetInstanceResponse { instance_state, .. }
+        | PluginMessagePayload::DestroyInstanceResponse { instance_state, .. } => Some(
+            plugin_instance_state_record(sandbox_id, processing_epoch, instance_state),
+        ),
+        PluginMessagePayload::HeartbeatResponse {
+            instance_state: Some(instance_state),
+            ..
+        } => Some(plugin_instance_state_record(
+            sandbox_id,
+            processing_epoch,
+            instance_state,
+        )),
+        PluginMessagePayload::SandboxFailure {
+            instance_state: Some(instance_state),
+            ..
+        } => Some(plugin_instance_state_record(
+            sandbox_id,
+            processing_epoch,
+            instance_state,
+        )),
+        _ => None,
     }
 }
 
@@ -2778,8 +2896,12 @@ fn extract_prepare_metadata(
 
 fn runtime_error_from_failure(failure: &signal_ipc::PluginMessageEnvelope) -> RuntimeError {
     match &failure.payload {
-        signal_ipc::PluginMessagePayload::SandboxFailure { detail, .. } => RuntimeError {
-            kind: signal_runtime::RuntimeErrorKind::PluginFailure,
+        signal_ipc::PluginMessagePayload::SandboxFailure { detail, fault, .. } => RuntimeError {
+            kind: match Some(fault).map(|fault| fault.kind.as_str()) {
+                Some("timeout") => signal_runtime::RuntimeErrorKind::Timeout,
+                Some("crash") | Some("fatal") => signal_runtime::RuntimeErrorKind::Fatal,
+                _ => signal_runtime::RuntimeErrorKind::PluginFailure,
+            },
             message: detail.clone(),
         },
         _ => RuntimeError {
@@ -3132,6 +3254,30 @@ mod tests {
             summary.execution.last_engine_graph_id.as_deref(),
             Some("signal.host.server.demo")
         );
+        let plugin_state = summary
+            .execution
+            .last_plugin_state
+            .as_ref()
+            .expect("plugin instance state should be projected into server summary");
+        assert_eq!(plugin_state.plugin_type_id, "plugin:clap:server");
+        assert_eq!(plugin_state.instance_id, "instance:server:default");
+        assert_eq!(plugin_state.lifecycle_state, "Active");
+        assert_eq!(plugin_state.readiness_state, "Ready");
+        assert!(plugin_state.active);
+        assert_eq!(plugin_state.processing_sample_rate_hz, Some(48_000));
+        assert_eq!(plugin_state.processing_max_block_frames, Some(512));
+        assert!(plugin_state.last_fault.is_none());
+        let observed_plugin_state = supervisor
+            .observation
+            .observation
+            .last_plugin_instance_state()
+            .expect("runtime observation should retain typed plugin state");
+        assert_eq!(observed_plugin_state.instance_id, "instance:server:default");
+        assert_eq!(observed_plugin_state.lifecycle_state, "Active");
+        assert_eq!(observed_plugin_state.readiness_state, "Ready");
+        assert!(supervisor
+            .render_json()
+            .contains("\"plugin_instance_state_events\":"));
         assert!(
             summary
                 .execution

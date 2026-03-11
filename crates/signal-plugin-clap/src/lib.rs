@@ -3,16 +3,20 @@
 use std::io;
 
 use signal_ipc::{
-    CorrelationId, PluginDescriptorPayload, PluginIoLayoutPayload, PluginMessageEnvelope,
-    PluginMessageName, PluginMessagePayload, SharedMemoryBroker, SharedMemoryLayoutPayload,
+    CorrelationId, PluginDescriptorPayload, PluginFaultPayload, PluginInstanceStatePayload,
+    PluginIoLayoutPayload, PluginMessageEnvelope, PluginMessageName, PluginMessagePayload,
+    PluginProcessConfigurationPayload, SharedMemoryBroker, SharedMemoryLayoutPayload,
     SharedMemoryRegionPayload, SharedMemoryTransportPayload,
 };
 use signal_plugin::{
     AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, BlockProcessingHeader,
     CompletionState, EventPacket, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent,
     NoteExpressionKind, ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent,
-    ParameterValueEvent, PluginDescriptor, PluginEvent, PluginFormat, PluginInstanceId,
-    PluginIoLayout, PluginRenderContext, PluginSandboxCapabilities, PluginTypeId,
+    ParameterValueEvent, PluginDescriptor, PluginEvent, PluginFault, PluginFaultKind,
+    PluginFaultSeverity, PluginFeature, PluginFormat, PluginInstanceId, PluginIoLayout,
+    PluginLifecycleContract, PluginLifecycleState, PluginParameterDescriptor,
+    PluginParameterDomain, PluginParameterFlags, PluginProcessingContract, PluginReadiness,
+    PluginRenderContext, PluginSandboxCapabilities, PluginStateContract, PluginTypeId,
     SandboxStateMachine, SandboxTransport, SharedMemoryLayout, SharedMemoryLease,
     SharedMemoryRegion,
 };
@@ -81,6 +85,40 @@ impl ClapPluginHostAdapter {
             max_block_frames,
         }
     }
+
+    pub fn discover_plugin_type(&self, plugin_type_id: &str) -> Option<ClapDiscoveredPluginType> {
+        clap_discovered_plugin_type(plugin_type_id)
+    }
+
+    pub fn instantiate_plugin(
+        &self,
+        discovered: &ClapDiscoveredPluginType,
+        instance_id: &str,
+    ) -> ClapInstanceControlSurface {
+        ClapInstanceControlSurface {
+            plugin_type_id: discovered.plugin_type_id.clone(),
+            instance_id: PluginInstanceId(instance_id.to_string()),
+            descriptor: discovered.descriptor.clone(),
+            lifecycle_contract: discovered.descriptor.lifecycle_contract,
+            processing_contract: discovered.descriptor.processing_contract,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClapDiscoveredPluginType {
+    pub plugin_type_id: PluginTypeId,
+    pub descriptor: PluginDescriptor,
+    pub default_io_layout: PluginIoLayout,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClapInstanceControlSurface {
+    pub plugin_type_id: PluginTypeId,
+    pub instance_id: PluginInstanceId,
+    pub descriptor: PluginDescriptor,
+    pub lifecycle_contract: PluginLifecycleContract,
+    pub processing_contract: PluginProcessingContract,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -225,12 +263,7 @@ impl ClapBlockProtocol {
     }
 
     pub fn descriptor(&self) -> PluginDescriptor {
-        PluginDescriptor {
-            plugin_id: self.plugin_type_id.0.clone(),
-            vendor: "Signal".into(),
-            name: "CLAP Sandbox Fixture".into(),
-            format: PluginFormat::Clap,
-        }
+        clap_fixture_descriptor(self.plugin_type_id.0.as_str(), self.io_layout)
     }
 
     pub fn prepare_plan(
@@ -828,12 +861,15 @@ pub struct ClapSandboxLifecycleHarness {
     adapter: ClapPluginHostAdapter,
     broker: SharedMemoryBroker,
     sandbox_id: Option<String>,
-    loaded_plugin_type_id: Option<String>,
-    active_instance_id: Option<String>,
+    loaded_plugin: Option<ClapDiscoveredPluginType>,
+    active_instance: Option<ClapInstanceControlSurface>,
     active_io_layout: Option<PluginIoLayout>,
     active_lease: Option<SharedMemoryLease>,
     prepared_epoch: Option<u64>,
+    prepared_sample_rate_hz: Option<u32>,
+    prepared_max_block_frames: Option<u32>,
     active: bool,
+    last_fault: Option<PluginFault>,
     block_machine: SandboxStateMachine,
     heartbeat_count: u64,
 }
@@ -844,12 +880,15 @@ impl Default for ClapSandboxLifecycleHarness {
             adapter: ClapPluginHostAdapter::default(),
             broker: SharedMemoryBroker::default(),
             sandbox_id: None,
-            loaded_plugin_type_id: None,
-            active_instance_id: None,
+            loaded_plugin: None,
+            active_instance: None,
             active_io_layout: None,
             active_lease: None,
             prepared_epoch: None,
+            prepared_sample_rate_hz: None,
+            prepared_max_block_frames: None,
             active: false,
+            last_fault: None,
             block_machine: SandboxStateMachine::new(),
             heartbeat_count: 0,
         }
@@ -857,6 +896,78 @@ impl Default for ClapSandboxLifecycleHarness {
 }
 
 impl ClapSandboxLifecycleHarness {
+    fn current_instance_id(&self) -> Option<String> {
+        self.active_instance
+            .as_ref()
+            .map(|instance| instance.instance_id.0.clone())
+    }
+
+    fn current_lifecycle_state(&self) -> Option<PluginLifecycleState> {
+        if self.active {
+            Some(PluginLifecycleState::Active)
+        } else if self.prepared_epoch.is_some() {
+            Some(PluginLifecycleState::Prepared)
+        } else if self.active_instance.is_some() {
+            Some(PluginLifecycleState::InstanceCreated)
+        } else if self.loaded_plugin.is_some() {
+            Some(PluginLifecycleState::TypeLoaded)
+        } else if self.sandbox_id.is_some() {
+            Some(PluginLifecycleState::Discovered)
+        } else {
+            None
+        }
+    }
+
+    fn current_readiness(&self) -> PluginReadiness {
+        match self.last_fault.clone() {
+            Some(fault) => PluginReadiness::from_fault(fault),
+            None if self.active => PluginReadiness::Ready,
+            None if self.sandbox_id.is_some() => PluginReadiness::Starting,
+            None => PluginReadiness::Stopped,
+        }
+    }
+
+    fn process_configuration_payload(&self) -> Option<PluginProcessConfigurationPayload> {
+        Some(PluginProcessConfigurationPayload {
+            sample_rate_hz: self.prepared_sample_rate_hz?,
+            max_block_frames: self.prepared_max_block_frames?,
+            io_layout: io_layout_payload(self.active_io_layout?),
+        })
+    }
+
+    fn instance_state_payload(
+        &self,
+        instance_id: &str,
+        lifecycle_state: PluginLifecycleState,
+    ) -> Option<PluginInstanceStatePayload> {
+        let plugin_type_id = self.loaded_plugin.as_ref()?.plugin_type_id.0.clone();
+        let readiness = self.current_readiness();
+        let (readiness_state, degraded_reasons) = match readiness {
+            PluginReadiness::Starting => ("Starting".to_string(), Vec::new()),
+            PluginReadiness::Ready => ("Ready".to_string(), Vec::new()),
+            PluginReadiness::Stopped => ("Stopped".to_string(), Vec::new()),
+            PluginReadiness::Degraded { reasons } => (
+                "Degraded".to_string(),
+                reasons
+                    .into_iter()
+                    .map(|reason| reason.0.to_string())
+                    .collect(),
+            ),
+            PluginReadiness::Failed { .. } => ("Failed".to_string(), Vec::new()),
+        };
+
+        Some(PluginInstanceStatePayload {
+            plugin_type_id,
+            instance_id: instance_id.to_string(),
+            lifecycle_state: lifecycle_state_string(lifecycle_state).into(),
+            readiness_state,
+            degraded_reasons,
+            active: self.active,
+            processing: self.process_configuration_payload(),
+            last_fault: self.last_fault.as_ref().map(plugin_fault_payload),
+        })
+    }
+
     pub fn handle(
         &mut self,
         request: PluginMessageEnvelope,
@@ -904,14 +1015,50 @@ impl ClapSandboxLifecycleHarness {
             PluginMessagePayload::LoadPluginTypeRequest {
                 sandbox_id,
                 plugin_type_id,
-                ..
+                descriptor,
             } => {
                 self.require_sandbox(&sandbox_id, "loadPluginType", Some(correlation.clone()))?;
-                self.loaded_plugin_type_id = Some(plugin_type_id.clone());
+                let discovered = self
+                    .adapter
+                    .discover_plugin_type(&plugin_type_id)
+                    .ok_or_else(|| {
+                        failure_event(
+                            &sandbox_id,
+                            None,
+                            "loadPluginType",
+                            "unsupported",
+                            "requested CLAP plugin type is not available in the local catalog",
+                            None,
+                            None,
+                            Some(correlation.clone()),
+                        )
+                    })?;
+                if descriptor.plugin_id != discovered.descriptor.plugin_id
+                    || descriptor.vendor != discovered.descriptor.vendor
+                    || descriptor.name != discovered.descriptor.name
+                    || descriptor.format != "clap"
+                {
+                    return Err(failure_event(
+                        &sandbox_id,
+                        None,
+                        "loadPluginType",
+                        "protocolViolation",
+                        "loadPluginType descriptor hint does not match discovered CLAP descriptor",
+                        None,
+                        None,
+                        Some(correlation),
+                    ));
+                }
+                self.loaded_plugin = Some(discovered.clone());
+                self.active_instance = None;
+                self.last_fault = None;
                 Ok(PluginMessageEnvelope::response(
                     PluginMessageName::SandboxLoadPluginType,
                     correlation,
-                    PluginMessagePayload::LoadPluginTypeResponse { plugin_type_id },
+                    PluginMessagePayload::LoadPluginTypeResponse {
+                        plugin_type_id,
+                        descriptor: descriptor_payload(&discovered.descriptor),
+                    },
                 ))
             }
             PluginMessagePayload::CreateInstanceRequest {
@@ -920,7 +1067,19 @@ impl ClapSandboxLifecycleHarness {
                 instance_id,
             } => {
                 self.require_sandbox(&sandbox_id, "createInstance", Some(correlation.clone()))?;
-                if self.loaded_plugin_type_id.as_deref() != Some(plugin_type_id.as_str()) {
+                let loaded_plugin = self.loaded_plugin.as_ref().ok_or_else(|| {
+                    failure_event(
+                        &sandbox_id,
+                        Some(instance_id.clone()),
+                        "createInstance",
+                        "invalidState",
+                        "instance creation requested before plugin type load",
+                        None,
+                        None,
+                        Some(correlation.clone()),
+                    )
+                })?;
+                if loaded_plugin.plugin_type_id.0 != plugin_type_id {
                     return Err(failure_event(
                         &sandbox_id,
                         Some(instance_id.clone()),
@@ -932,11 +1091,23 @@ impl ClapSandboxLifecycleHarness {
                         Some(correlation),
                     ));
                 }
-                self.active_instance_id = Some(instance_id.clone());
+                self.active_instance = Some(
+                    self.adapter
+                        .instantiate_plugin(loaded_plugin, instance_id.as_str()),
+                );
+                self.last_fault = None;
                 Ok(PluginMessageEnvelope::response(
                     PluginMessageName::SandboxCreateInstance,
                     correlation,
-                    PluginMessagePayload::CreateInstanceResponse { instance_id },
+                    PluginMessagePayload::CreateInstanceResponse {
+                        instance_id: instance_id.clone(),
+                        instance_state: self
+                            .instance_state_payload(
+                                &instance_id,
+                                PluginLifecycleState::InstanceCreated,
+                            )
+                            .expect("instance state after create"),
+                    },
                 ))
             }
             PluginMessagePayload::PrepareInstanceRequest {
@@ -945,12 +1116,39 @@ impl ClapSandboxLifecycleHarness {
                 processing_epoch,
                 shared_memory_lease_id,
                 shared_memory_transport,
+                sample_rate_hz,
+                max_block_frames,
                 io_layout,
                 shared_memory,
                 ..
             } => {
                 self.require_sandbox(&sandbox_id, "prepareInstance", Some(correlation.clone()))?;
                 self.require_instance(&instance_id, "prepareInstance", Some(correlation.clone()))?;
+                let instance = self.active_instance.as_ref().expect("validated instance");
+                if !instance.lifecycle_contract.supports_prepare {
+                    return Err(failure_event(
+                        &sandbox_id,
+                        Some(instance_id.clone()),
+                        "prepareInstance",
+                        "unsupported",
+                        "loaded CLAP instance does not support prepare",
+                        Some(processing_epoch),
+                        Some(shared_memory_lease_id.clone()),
+                        Some(correlation),
+                    ));
+                }
+                if max_block_frames > instance.processing_contract.max_block_frames {
+                    return Err(failure_event(
+                        &sandbox_id,
+                        Some(instance_id.clone()),
+                        "prepareInstance",
+                        "resourceUnavailable",
+                        "requested block size exceeds discovered CLAP processing contract",
+                        Some(processing_epoch),
+                        Some(shared_memory_lease_id.clone()),
+                        Some(correlation),
+                    ));
+                }
                 let attached = self
                     .broker
                     .attach_region(&shared_memory_transport)
@@ -979,7 +1177,10 @@ impl ClapSandboxLifecycleHarness {
                     ));
                 }
                 self.prepared_epoch = Some(processing_epoch);
+                self.prepared_sample_rate_hz = Some(sample_rate_hz);
+                self.prepared_max_block_frames = Some(max_block_frames);
                 self.active = false;
+                self.last_fault = None;
                 self.active_io_layout = Some(io_layout_from_payload(io_layout));
                 self.block_machine = SandboxStateMachine::new();
                 self.active_lease = Some(
@@ -994,11 +1195,14 @@ impl ClapSandboxLifecycleHarness {
                     PluginMessageName::SandboxPrepareInstance,
                     correlation,
                     PluginMessagePayload::PrepareInstanceResponse {
-                        instance_id,
+                        instance_id: instance_id.clone(),
                         processing_epoch,
                         shared_memory_lease_id,
                         shared_memory_transport,
                         shared_memory_bytes: shared_memory.total_bytes(),
+                        instance_state: self
+                            .instance_state_payload(&instance_id, PluginLifecycleState::Prepared)
+                            .expect("instance state after prepare"),
                     },
                 ))
             }
@@ -1009,6 +1213,26 @@ impl ClapSandboxLifecycleHarness {
             } => {
                 self.require_sandbox(&sandbox_id, "activateInstance", Some(correlation.clone()))?;
                 self.require_instance(&instance_id, "activateInstance", Some(correlation.clone()))?;
+                if !self
+                    .active_instance
+                    .as_ref()
+                    .expect("validated instance")
+                    .lifecycle_contract
+                    .supports_activate
+                {
+                    return Err(failure_event(
+                        &sandbox_id,
+                        Some(instance_id),
+                        "activateInstance",
+                        "unsupported",
+                        "loaded CLAP instance does not support activate",
+                        Some(processing_epoch),
+                        self.active_lease
+                            .as_ref()
+                            .map(|lease| lease.lease_id.clone()),
+                        Some(correlation),
+                    ));
+                }
                 if self.prepared_epoch != Some(processing_epoch) {
                     if let Some(lease) = &mut self.active_lease {
                         lease.invalidate_epoch(processing_epoch);
@@ -1027,12 +1251,16 @@ impl ClapSandboxLifecycleHarness {
                     ));
                 }
                 self.active = true;
+                self.last_fault = None;
                 Ok(PluginMessageEnvelope::response(
                     PluginMessageName::SandboxActivateInstance,
                     correlation,
                     PluginMessagePayload::ActivateInstanceResponse {
-                        instance_id,
+                        instance_id: instance_id.clone(),
                         processing_epoch,
+                        instance_state: self
+                            .instance_state_payload(&instance_id, PluginLifecycleState::Active)
+                            .expect("instance state after activate"),
                     },
                 ))
             }
@@ -1051,9 +1279,19 @@ impl ClapSandboxLifecycleHarness {
                     correlation,
                     PluginMessagePayload::HeartbeatResponse {
                         sandbox_id,
-                        instance_id: self.active_instance_id.clone(),
+                        instance_id: self
+                            .active_instance
+                            .as_ref()
+                            .map(|instance| instance.instance_id.0.clone()),
                         processing_epoch: processing_epoch.or(self.prepared_epoch),
                         active: self.active,
+                        instance_state: self.active_instance.as_ref().and_then(|instance| {
+                            self.instance_state_payload(
+                                instance.instance_id.0.as_str(),
+                                self.current_lifecycle_state()
+                                    .unwrap_or(PluginLifecycleState::Discovered),
+                            )
+                        }),
                     },
                 ))
             }
@@ -1068,10 +1306,16 @@ impl ClapSandboxLifecycleHarness {
                     Some(correlation.clone()),
                 )?;
                 self.active = false;
+                self.last_fault = None;
                 Ok(PluginMessageEnvelope::response(
                     PluginMessageName::SandboxDeactivateInstance,
                     correlation,
-                    PluginMessagePayload::DeactivateInstanceResponse { instance_id },
+                    PluginMessagePayload::DeactivateInstanceResponse {
+                        instance_id: instance_id.clone(),
+                        instance_state: self
+                            .instance_state_payload(&instance_id, PluginLifecycleState::Inactive)
+                            .expect("instance state after deactivate"),
+                    },
                 ))
             }
             PluginMessagePayload::ResetInstanceRequest {
@@ -1081,6 +1325,27 @@ impl ClapSandboxLifecycleHarness {
             } => {
                 self.require_sandbox(&sandbox_id, "resetInstance", Some(correlation.clone()))?;
                 self.require_instance(&instance_id, "resetInstance", Some(correlation.clone()))?;
+                if self.active
+                    && !self
+                        .active_instance
+                        .as_ref()
+                        .expect("validated instance")
+                        .lifecycle_contract
+                        .supports_reset_while_active
+                {
+                    return Err(failure_event(
+                        &sandbox_id,
+                        Some(instance_id),
+                        "resetInstance",
+                        "invalidState",
+                        "loaded CLAP instance does not support reset while active",
+                        Some(processing_epoch),
+                        self.active_lease
+                            .as_ref()
+                            .map(|lease| lease.lease_id.clone()),
+                        Some(correlation),
+                    ));
+                }
                 if let Some(lease) = &mut self.active_lease {
                     if lease.processing_epoch != processing_epoch {
                         lease.invalidate_epoch(lease.processing_epoch);
@@ -1089,13 +1354,17 @@ impl ClapSandboxLifecycleHarness {
                 }
                 self.prepared_epoch = Some(processing_epoch);
                 self.active = false;
+                self.last_fault = None;
                 self.block_machine = SandboxStateMachine::new();
                 Ok(PluginMessageEnvelope::response(
                     PluginMessageName::SandboxResetInstance,
                     correlation,
                     PluginMessagePayload::ResetInstanceResponse {
-                        instance_id,
+                        instance_id: instance_id.clone(),
                         processing_epoch,
+                        instance_state: self
+                            .instance_state_payload(&instance_id, PluginLifecycleState::Prepared)
+                            .expect("instance state after reset"),
                     },
                 ))
             }
@@ -1106,20 +1375,42 @@ impl ClapSandboxLifecycleHarness {
                 self.require_sandbox(&sandbox_id, "destroyInstance", Some(correlation.clone()))?;
                 self.require_instance(&instance_id, "destroyInstance", Some(correlation.clone()))?;
                 self.active = false;
-                self.active_instance_id = None;
+                self.active_instance = None;
                 self.active_io_layout = None;
                 self.active_lease = None;
                 self.prepared_epoch = None;
+                self.prepared_sample_rate_hz = None;
+                self.prepared_max_block_frames = None;
+                self.last_fault = None;
                 self.block_machine = SandboxStateMachine::new();
                 Ok(PluginMessageEnvelope::response(
                     PluginMessageName::SandboxDestroyInstance,
                     correlation,
-                    PluginMessagePayload::DestroyInstanceResponse { instance_id },
+                    PluginMessagePayload::DestroyInstanceResponse {
+                        instance_id: instance_id.clone(),
+                        instance_state: PluginInstanceStatePayload {
+                            plugin_type_id: self
+                                .loaded_plugin
+                                .as_ref()
+                                .map(|plugin| plugin.plugin_type_id.0.clone())
+                                .unwrap_or_default(),
+                            instance_id,
+                            lifecycle_state: lifecycle_state_string(PluginLifecycleState::Released)
+                                .into(),
+                            readiness_state: "Stopped".into(),
+                            degraded_reasons: Vec::new(),
+                            active: false,
+                            processing: None,
+                            last_fault: None,
+                        },
+                    },
                 ))
             }
             PluginMessagePayload::SandboxFailure { .. } => Err(failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "failure",
                 "protocolViolation",
                 "sandbox received sandbox.failure as a request",
@@ -1131,7 +1422,9 @@ impl ClapSandboxLifecycleHarness {
             )),
             other => Err(failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "unsupported",
                 "protocolViolation",
                 format!("unsupported CLAP lifecycle request: {other:?}"),
@@ -1188,7 +1481,7 @@ impl ClapSandboxLifecycleHarness {
         if completion.slot.state != CompletionState::ReadyForProcessing {
             return Err(failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 "processBlock",
                 "protocolViolation",
                 "completion slot was not ready for processing",
@@ -1211,7 +1504,7 @@ impl ClapSandboxLifecycleHarness {
         {
             return Err(failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 "processBlock",
                 "invalidState",
                 "sandbox state machine rejected block processing transition",
@@ -1253,7 +1546,9 @@ impl ClapSandboxLifecycleHarness {
         if !self.active {
             return Err(failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 stage,
                 "invalidState",
                 "block processing requested while sandbox instance is not active",
@@ -1268,7 +1563,7 @@ impl ClapSandboxLifecycleHarness {
         let lease = self.active_lease.clone().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 stage,
                 "invalidState",
                 "sandbox instance has no prepared lease",
@@ -1280,7 +1575,7 @@ impl ClapSandboxLifecycleHarness {
         let transport = lease.transport().cloned().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 stage,
                 "resourceUnavailable",
                 "sandbox instance has no attached shared-memory transport",
@@ -1289,7 +1584,7 @@ impl ClapSandboxLifecycleHarness {
                 None,
             )
         })?;
-        let instance_id = self.active_instance_id.clone().ok_or_else(|| {
+        let instance_id = self.current_instance_id().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
                 None,
@@ -1350,7 +1645,7 @@ impl ClapSandboxLifecycleHarness {
         {
             return Err(failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 stage,
                 "protocolViolation",
                 "shared-memory block dispatch epoch is stale or unprepared",
@@ -1370,7 +1665,9 @@ impl ClapSandboxLifecycleHarness {
         let lease = self.active_lease.as_ref().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "invalidState",
                 "sandbox instance has no active lease",
@@ -1382,7 +1679,9 @@ impl ClapSandboxLifecycleHarness {
         let transport = lease.transport().cloned().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 "sandbox instance has no attached shared-memory transport",
@@ -1394,7 +1693,7 @@ impl ClapSandboxLifecycleHarness {
         let region = self.broker.attach_region(&transport).map_err(|error| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 "processBlock",
                 "resourceUnavailable",
                 format!("failed to attach shared-memory region: {error}"),
@@ -1408,7 +1707,9 @@ impl ClapSandboxLifecycleHarness {
             |detail| {
                 failure_event(
                     self.sandbox_id.as_deref().unwrap_or("unknown"),
-                    self.active_instance_id.clone(),
+                    self.active_instance
+                        .as_ref()
+                        .map(|instance| instance.instance_id.0.clone()),
                     "processBlock",
                     "protocolViolation",
                     detail,
@@ -1427,7 +1728,9 @@ impl ClapSandboxLifecycleHarness {
         let lease = self.active_lease.as_ref().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "invalidState",
                 "sandbox instance has no active lease",
@@ -1439,7 +1742,9 @@ impl ClapSandboxLifecycleHarness {
         let transport = lease.transport().cloned().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 "sandbox instance has no attached shared-memory transport",
@@ -1451,7 +1756,9 @@ impl ClapSandboxLifecycleHarness {
         let region = self.broker.attach_region(&transport).map_err(|error| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 format!("failed to attach shared-memory region: {error}"),
@@ -1466,7 +1773,9 @@ impl ClapSandboxLifecycleHarness {
             .map_err(|detail| {
                 failure_event(
                     self.sandbox_id.as_deref().unwrap_or("unknown"),
-                    self.active_instance_id.clone(),
+                    self.active_instance
+                        .as_ref()
+                        .map(|instance| instance.instance_id.0.clone()),
                     "processBlock",
                     "protocolViolation",
                     detail,
@@ -1484,7 +1793,9 @@ impl ClapSandboxLifecycleHarness {
         let lease = self.active_lease.clone().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "invalidState",
                 "sandbox instance has no active lease",
@@ -1496,7 +1807,9 @@ impl ClapSandboxLifecycleHarness {
         let transport = lease.transport().cloned().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 "sandbox instance has no attached shared-memory transport",
@@ -1508,7 +1821,9 @@ impl ClapSandboxLifecycleHarness {
         let mut region = self.broker.attach_region(&transport).map_err(|error| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 format!("failed to attach shared-memory region: {error}"),
@@ -1522,7 +1837,9 @@ impl ClapSandboxLifecycleHarness {
             .map_err(|detail| {
                 failure_event(
                     self.sandbox_id.as_deref().unwrap_or("unknown"),
-                    self.active_instance_id.clone(),
+                    self.active_instance
+                        .as_ref()
+                        .map(|instance| instance.instance_id.0.clone()),
                     "processBlock",
                     "protocolViolation",
                     detail,
@@ -1534,7 +1851,9 @@ impl ClapSandboxLifecycleHarness {
         region.flush().map_err(|error| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 format!("failed to flush shared-memory region: {error}"),
@@ -1555,7 +1874,9 @@ impl ClapSandboxLifecycleHarness {
         let lease = self.active_lease.clone().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "invalidState",
                 "sandbox instance has no active lease",
@@ -1567,7 +1888,9 @@ impl ClapSandboxLifecycleHarness {
         let transport = lease.transport().cloned().ok_or_else(|| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 "sandbox instance has no attached shared-memory transport",
@@ -1579,7 +1902,7 @@ impl ClapSandboxLifecycleHarness {
         let mut region = self.broker.attach_region(&transport).map_err(|error| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.current_instance_id(),
                 "processBlock",
                 "resourceUnavailable",
                 format!("failed to attach shared-memory region: {error}"),
@@ -1593,7 +1916,9 @@ impl ClapSandboxLifecycleHarness {
             .map_err(|detail| {
                 failure_event(
                     self.sandbox_id.as_deref().unwrap_or("unknown"),
-                    self.active_instance_id.clone(),
+                    self.active_instance
+                        .as_ref()
+                        .map(|instance| instance.instance_id.0.clone()),
                     "processBlock",
                     "protocolViolation",
                     detail,
@@ -1607,7 +1932,7 @@ impl ClapSandboxLifecycleHarness {
             .map_err(|detail| {
                 failure_event(
                     self.sandbox_id.as_deref().unwrap_or("unknown"),
-                    self.active_instance_id.clone(),
+                    self.current_instance_id(),
                     "processBlock",
                     "protocolViolation",
                     detail,
@@ -1619,7 +1944,9 @@ impl ClapSandboxLifecycleHarness {
         region.flush().map_err(|error| {
             failure_event(
                 self.sandbox_id.as_deref().unwrap_or("unknown"),
-                self.active_instance_id.clone(),
+                self.active_instance
+                    .as_ref()
+                    .map(|instance| instance.instance_id.0.clone()),
                 "processBlock",
                 "resourceUnavailable",
                 format!("failed to flush shared-memory region: {error}"),
@@ -1642,7 +1969,7 @@ impl ClapSandboxLifecycleHarness {
         }
         Err(failure_event(
             sandbox_id,
-            self.active_instance_id.clone(),
+            self.current_instance_id(),
             stage,
             "invalidState",
             "sandbox id does not match established handshake",
@@ -1660,7 +1987,12 @@ impl ClapSandboxLifecycleHarness {
         stage: &str,
         correlation: Option<signal_ipc::CorrelationId>,
     ) -> Result<(), PluginMessageEnvelope> {
-        if self.active_instance_id.as_deref() == Some(instance_id) {
+        if self
+            .active_instance
+            .as_ref()
+            .map(|instance| instance.instance_id.0.as_str())
+            == Some(instance_id)
+        {
             return Ok(());
         }
         Err(failure_event(
@@ -1678,6 +2010,120 @@ impl ClapSandboxLifecycleHarness {
     }
 }
 
+fn clap_default_io_layout(plugin_type_id: &str) -> Option<PluginIoLayout> {
+    match plugin_type_id {
+        "plugin:clap:default" | "plugin:clap:test" => Some(PluginIoLayout {
+            audio_inputs: 2,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 1,
+        }),
+        "plugin:clap:server" => Some(PluginIoLayout {
+            audio_inputs: 2,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        }),
+        "plugin:clap:sandbox" => Some(PluginIoLayout {
+            audio_inputs: 2,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 1,
+        }),
+        plugin_type_id if plugin_type_id.starts_with("plugin:clap:") => Some(PluginIoLayout {
+            audio_inputs: 2,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        }),
+        _ => None,
+    }
+}
+
+fn clap_descriptor_name(plugin_type_id: &str) -> &'static str {
+    match plugin_type_id {
+        "plugin:clap:default" => "Signal Default CLAP Plugin",
+        "plugin:clap:server" => "Signal Server CLAP Plugin",
+        "plugin:clap:sandbox" => "Signal Sandbox CLAP Plugin",
+        "plugin:clap:test" => "Signal Test CLAP Plugin",
+        _ => "Signal Generic CLAP Plugin",
+    }
+}
+
+fn clap_descriptor_features(plugin_type_id: &str) -> Vec<PluginFeature> {
+    match plugin_type_id {
+        "plugin:clap:sandbox" => vec![PluginFeature::AudioEffect, PluginFeature::Utility],
+        _ => vec![PluginFeature::AudioEffect],
+    }
+}
+
+fn clap_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> PluginDescriptor {
+    let mut descriptor = PluginDescriptor::new(
+        plugin_type_id.to_string(),
+        "Signal",
+        clap_descriptor_name(plugin_type_id),
+        PluginFormat::Clap,
+    )
+    .with_version("0.1.0")
+    .with_audio_buses(io_layout.main_audio_buses())
+    .with_parameters(vec![
+        PluginParameterDescriptor {
+            parameter_id: 4_096,
+            name: "Gain Automation".into(),
+            unit: Some("normalized".into()),
+            domain: PluginParameterDomain::GenericNormalized,
+            default_normalized: 0.5,
+            min_plain: 0.0,
+            max_plain: 1.0,
+            flags: PluginParameterFlags::automatable(),
+        },
+        PluginParameterDescriptor {
+            parameter_id: 0,
+            name: "Bypass".into(),
+            unit: None,
+            domain: PluginParameterDomain::Bypass,
+            default_normalized: 0.0,
+            min_plain: 0.0,
+            max_plain: 1.0,
+            flags: PluginParameterFlags::bypass(),
+        },
+    ])
+    .with_state_contract(PluginStateContract {
+        supports_snapshot: true,
+        supports_reset: true,
+        supports_bypass: true,
+        exposes_latency: true,
+        exposes_tail: true,
+    })
+    .with_processing_contract(PluginProcessingContract {
+        max_block_frames: 4_096,
+        sample_accurate_automation: true,
+        accepts_midi: io_layout.midi_inputs > 0,
+        accepts_note_events: true,
+        produces_midi: io_layout.midi_outputs > 0,
+        silence_aware: true,
+    })
+    .with_lifecycle_contract(PluginLifecycleContract {
+        requires_main_thread_for_state: false,
+        supports_prepare: true,
+        supports_activate: true,
+        supports_reset_while_active: true,
+    });
+    for feature in clap_descriptor_features(plugin_type_id) {
+        descriptor = descriptor.with_feature(feature);
+    }
+    descriptor
+}
+
+fn clap_discovered_plugin_type(plugin_type_id: &str) -> Option<ClapDiscoveredPluginType> {
+    let default_io_layout = clap_default_io_layout(plugin_type_id)?;
+    Some(ClapDiscoveredPluginType {
+        plugin_type_id: PluginTypeId(plugin_type_id.to_string()),
+        descriptor: clap_fixture_descriptor(plugin_type_id, default_io_layout),
+        default_io_layout,
+    })
+}
+
 fn descriptor_payload(descriptor: &PluginDescriptor) -> PluginDescriptorPayload {
     PluginDescriptorPayload {
         plugin_id: descriptor.plugin_id.clone(),
@@ -1691,6 +2137,69 @@ fn descriptor_payload(descriptor: &PluginDescriptor) -> PluginDescriptorPayload 
         }
         .into(),
     }
+}
+
+fn lifecycle_state_string(state: PluginLifecycleState) -> &'static str {
+    match state {
+        PluginLifecycleState::Discovered => "Discovered",
+        PluginLifecycleState::TypeLoaded => "TypeLoaded",
+        PluginLifecycleState::InstanceCreated => "InstanceCreated",
+        PluginLifecycleState::Prepared => "Prepared",
+        PluginLifecycleState::Active => "Active",
+        PluginLifecycleState::Inactive => "Inactive",
+        PluginLifecycleState::Released => "Released",
+        PluginLifecycleState::Faulted => "Faulted",
+    }
+}
+
+fn plugin_fault_payload(fault: &PluginFault) -> PluginFaultPayload {
+    PluginFaultPayload {
+        kind: match fault.kind {
+            PluginFaultKind::InvalidRequest => "invalidRequest",
+            PluginFaultKind::UnsupportedCapability => "unsupportedCapability",
+            PluginFaultKind::InvalidState => "invalidState",
+            PluginFaultKind::ResourceUnavailable => "resourceUnavailable",
+            PluginFaultKind::ProcessingFailure => "processingFailure",
+            PluginFaultKind::ProtocolViolation => "protocolViolation",
+            PluginFaultKind::Timeout => "timeout",
+            PluginFaultKind::Crash => "crash",
+            PluginFaultKind::Fatal => "fatal",
+        }
+        .into(),
+        severity: match fault.severity {
+            PluginFaultSeverity::Warning => "warning",
+            PluginFaultSeverity::Recoverable => "recoverable",
+            PluginFaultSeverity::Critical => "critical",
+            PluginFaultSeverity::Fatal => "fatal",
+        }
+        .into(),
+        message: fault.message.clone(),
+    }
+}
+
+fn plugin_fault_for_error_kind(error_kind: &str, detail: &str) -> PluginFault {
+    let kind = match error_kind {
+        "invalidRequest" => PluginFaultKind::InvalidRequest,
+        "invalidState" => PluginFaultKind::InvalidState,
+        "unsupported" => PluginFaultKind::UnsupportedCapability,
+        "resourceUnavailable" => PluginFaultKind::ResourceUnavailable,
+        "protocolViolation" => PluginFaultKind::ProtocolViolation,
+        "timeout" => PluginFaultKind::Timeout,
+        "processingFailure" => PluginFaultKind::ProcessingFailure,
+        "crashed" => PluginFaultKind::Crash,
+        _ => PluginFaultKind::Fatal,
+    };
+    let severity = match kind {
+        PluginFaultKind::InvalidRequest
+        | PluginFaultKind::InvalidState
+        | PluginFaultKind::UnsupportedCapability => PluginFaultSeverity::Warning,
+        PluginFaultKind::ResourceUnavailable
+        | PluginFaultKind::ProcessingFailure
+        | PluginFaultKind::Timeout => PluginFaultSeverity::Recoverable,
+        PluginFaultKind::ProtocolViolation => PluginFaultSeverity::Critical,
+        PluginFaultKind::Crash | PluginFaultKind::Fatal => PluginFaultSeverity::Fatal,
+    };
+    PluginFault::new(kind, severity, detail)
 }
 
 fn io_layout_payload(io_layout: PluginIoLayout) -> PluginIoLayoutPayload {
@@ -1757,7 +2266,7 @@ pub fn sandbox_failure_event(
     shared_memory_lease_id: Option<String>,
     correlation_id: Option<CorrelationId>,
 ) -> PluginMessageEnvelope {
-    failure_event(
+    failure_event_with_state(
         sandbox_id,
         instance_id,
         stage,
@@ -1766,6 +2275,7 @@ pub fn sandbox_failure_event(
         processing_epoch,
         shared_memory_lease_id,
         correlation_id,
+        None,
     )
 }
 
@@ -1854,15 +2364,45 @@ fn failure_event(
     shared_memory_lease_id: Option<String>,
     correlation_id: Option<signal_ipc::CorrelationId>,
 ) -> PluginMessageEnvelope {
+    failure_event_with_state(
+        sandbox_id,
+        instance_id,
+        stage,
+        error_kind,
+        detail,
+        processing_epoch,
+        shared_memory_lease_id,
+        correlation_id,
+        None,
+    )
+}
+
+fn failure_event_with_state(
+    sandbox_id: &str,
+    instance_id: Option<String>,
+    stage: impl Into<String>,
+    error_kind: impl Into<String>,
+    detail: impl Into<String>,
+    processing_epoch: Option<u64>,
+    shared_memory_lease_id: Option<String>,
+    correlation_id: Option<signal_ipc::CorrelationId>,
+    instance_state: Option<PluginInstanceStatePayload>,
+) -> PluginMessageEnvelope {
+    let stage = stage.into();
+    let error_kind = error_kind.into();
+    let detail = detail.into();
+    let fault = plugin_fault_for_error_kind(&error_kind, &detail);
     PluginMessageEnvelope::event(
         PluginMessageName::SandboxFailure,
         correlation_id,
         PluginMessagePayload::SandboxFailure {
             sandbox_id: sandbox_id.into(),
             instance_id,
-            stage: stage.into(),
-            error_kind: error_kind.into(),
-            detail: detail.into(),
+            stage,
+            error_kind,
+            detail,
+            fault: plugin_fault_payload(&fault),
+            instance_state,
             processing_epoch,
             shared_memory_lease_id,
         },
@@ -1878,7 +2418,8 @@ mod tests {
         ClapSandboxLifecycleHarness,
     };
     use signal_ipc::{
-        PluginMessageName, PluginMessagePayload, SharedMemoryBroker, SharedMemoryTransportKind,
+        PluginDescriptorPayload, PluginMessageName, PluginMessagePayload, SharedMemoryBroker,
+        SharedMemoryTransportKind,
     };
     use signal_plugin::{CompletionState, EventPacket, PluginFormat, PluginIoLayout};
     use std::{
@@ -1908,6 +2449,48 @@ mod tests {
             .iter()
             .any(|extension| *extension == ClapHostExtension::Params));
         assert_eq!(adapter.minimum_extension_set()[0].as_str(), "audio-ports");
+    }
+
+    #[test]
+    fn clap_adapter_discovers_concrete_plugin_type_metadata() {
+        let adapter = ClapPluginHostAdapter::default();
+        let discovered = adapter
+            .discover_plugin_type("plugin:clap:sandbox")
+            .expect("discovered sandbox plugin");
+
+        assert_eq!(discovered.plugin_type_id.0, "plugin:clap:sandbox");
+        assert_eq!(discovered.descriptor.plugin_id, "plugin:clap:sandbox");
+        assert_eq!(discovered.descriptor.name, "Signal Sandbox CLAP Plugin");
+        assert_eq!(discovered.descriptor.format, PluginFormat::Clap);
+        assert_eq!(discovered.default_io_layout.audio_inputs, 2);
+        assert_eq!(discovered.default_io_layout.audio_outputs, 2);
+        assert_eq!(discovered.default_io_layout.midi_inputs, 1);
+        assert_eq!(discovered.default_io_layout.midi_outputs, 1);
+    }
+
+    #[test]
+    fn clap_protocol_descriptor_projects_plugin_neutral_contract_surface() {
+        let protocol = ClapBlockProtocol::new(
+            "plugin:clap:test",
+            "instance-a",
+            PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 1,
+            },
+            2048,
+        );
+
+        let descriptor = protocol.descriptor();
+        assert_eq!(descriptor.plugin_id, "plugin:clap:test");
+        assert_eq!(descriptor.version.as_deref(), Some("0.1.0"));
+        assert_eq!(descriptor.audio_buses.len(), 2);
+        assert_eq!(descriptor.parameters.len(), 2);
+        assert!(descriptor.processing_contract.sample_accurate_automation);
+        assert!(descriptor.processing_contract.accepts_midi);
+        assert!(descriptor.state_contract.supports_snapshot);
+        assert!(descriptor.lifecycle_contract.supports_reset_while_active);
     }
 
     #[test]
@@ -1991,6 +2574,15 @@ mod tests {
             responses.last().expect("last response").message.name,
             PluginMessageName::SandboxActivateInstance.as_str()
         );
+        match &responses.last().expect("last response").payload {
+            PluginMessagePayload::ActivateInstanceResponse { instance_state, .. } => {
+                assert_eq!(instance_state.lifecycle_state, "Active");
+                assert_eq!(instance_state.readiness_state, "Ready");
+                assert!(instance_state.active);
+                assert!(instance_state.processing.is_some());
+            }
+            other => panic!("expected activate response, got {other:?}"),
+        }
         assert_eq!(
             harness
                 .lease()
@@ -2006,6 +2598,64 @@ mod tests {
         harness
             .teardown_active_transport()
             .expect("teardown transport");
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn clap_lifecycle_harness_rejects_unknown_plugin_type_requests() {
+        let root = test_broker_root("unknown-plugin");
+        let broker = SharedMemoryBroker::new(&root);
+        let protocol = ClapBlockProtocol::new(
+            "plugin:clap:test",
+            "instance-unknown",
+            PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+            1024,
+        );
+        let mut harness = ClapSandboxLifecycleHarness::default();
+        let mut messages = protocol
+            .lifecycle_sequence(&broker, "sandbox-unknown", 48_000, 512, 1)
+            .expect("build lifecycle sequence");
+        if let Some(load) = messages.get_mut(1) {
+            load.payload = PluginMessagePayload::LoadPluginTypeRequest {
+                sandbox_id: "sandbox-unknown".into(),
+                plugin_type_id: "plugin:vst:missing".into(),
+                descriptor: PluginDescriptorPayload {
+                    plugin_id: "plugin:vst:missing".into(),
+                    vendor: "Signal".into(),
+                    name: "Missing Plugin".into(),
+                    format: "clap".into(),
+                },
+            };
+        }
+
+        harness
+            .handle(messages.remove(0))
+            .expect("accepted handshake");
+
+        match harness
+            .handle(messages.remove(0))
+            .expect_err("missing plugin failure")
+            .payload
+        {
+            PluginMessagePayload::SandboxFailure {
+                error_kind,
+                detail,
+                fault,
+                ..
+            } => {
+                assert_eq!(error_kind, "unsupported");
+                assert!(detail.contains("not available in the local catalog"));
+                assert_eq!(fault.kind, "unsupportedCapability");
+                assert_eq!(fault.severity, "warning");
+            }
+            other => panic!("expected sandbox failure, got {other:?}"),
+        }
+
         let _ = fs::remove_dir_all(root);
     }
 
@@ -2051,6 +2701,90 @@ mod tests {
     }
 
     #[test]
+    fn clap_lifecycle_harness_rejects_prepare_requests_above_contract_limit() {
+        let root = test_broker_root("prepare-limit");
+        let broker = SharedMemoryBroker::new(&root);
+        let protocol = ClapBlockProtocol::new(
+            "plugin:clap:test",
+            "instance-prepare-limit",
+            PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+            1024,
+        );
+        let mut harness = ClapSandboxLifecycleHarness::default();
+        let mut messages = protocol
+            .lifecycle_sequence(&broker, "sandbox-prepare-limit", 48_000, 512, 1)
+            .expect("build lifecycle sequence");
+        if let Some(prepare) = messages.get_mut(3) {
+            let original_payload = prepare.payload.clone();
+            match original_payload {
+                PluginMessagePayload::PrepareInstanceRequest {
+                    sandbox_id,
+                    instance_id,
+                    processing_epoch,
+                    shared_memory_lease_id,
+                    shared_memory_transport,
+                    sample_rate_hz,
+                    io_layout,
+                    shared_memory,
+                    ..
+                } => {
+                    prepare.payload = PluginMessagePayload::PrepareInstanceRequest {
+                        sandbox_id,
+                        instance_id,
+                        processing_epoch,
+                        shared_memory_lease_id,
+                        shared_memory_transport,
+                        sample_rate_hz,
+                        max_block_frames: 8_192,
+                        io_layout,
+                        shared_memory,
+                    };
+                }
+                other => panic!("expected prepare request, got {other:?}"),
+            }
+        }
+        let mut messages = messages.into_iter();
+        harness
+            .handle(messages.next().expect("handshake request"))
+            .expect("accepted handshake");
+        harness
+            .handle(messages.next().expect("load request"))
+            .expect("accepted load");
+        harness
+            .handle(messages.next().expect("create request"))
+            .expect("accepted create");
+
+        match harness.handle(messages.next().expect("prepare request")) {
+            Ok(_) => panic!("expected prepare failure"),
+            Err(failure) => match failure.payload {
+                PluginMessagePayload::SandboxFailure {
+                    error_kind,
+                    detail,
+                    processing_epoch,
+                    shared_memory_lease_id,
+                    fault,
+                    ..
+                } => {
+                    assert_eq!(error_kind, "resourceUnavailable");
+                    assert!(detail.contains("exceeds discovered CLAP processing contract"));
+                    assert_eq!(processing_epoch, Some(1));
+                    assert!(shared_memory_lease_id.is_some());
+                    assert_eq!(fault.kind, "resourceUnavailable");
+                    assert_eq!(fault.severity, "recoverable");
+                }
+                other => panic!("expected sandbox failure, got {other:?}"),
+            },
+        }
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn clap_lifecycle_harness_emits_failure_and_invalidates_epoch() {
         let root = test_broker_root("failure");
         let broker = SharedMemoryBroker::new(&root);
@@ -2091,10 +2825,13 @@ mod tests {
         match last_failure.expect("failure envelope").payload {
             PluginMessagePayload::SandboxFailure {
                 error_kind,
+                fault,
                 processing_epoch,
                 ..
             } => {
                 assert_eq!(error_kind, "protocolViolation");
+                assert_eq!(fault.kind, "protocolViolation");
+                assert_eq!(fault.severity, "critical");
                 assert_eq!(processing_epoch, Some(9));
             }
             other => panic!("expected sandbox failure envelope, got {other:?}"),

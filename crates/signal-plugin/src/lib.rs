@@ -23,12 +23,208 @@ pub struct PluginTypeId(pub String);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PluginInstanceId(pub String);
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginFeature {
+    AudioEffect,
+    Instrument,
+    Analyzer,
+    Utility,
+    NoteEffect,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginAudioBusDirection {
+    Input,
+    Output,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginAudioBusDescriptor {
+    pub bus_id: String,
+    pub name: String,
+    pub direction: PluginAudioBusDirection,
+    pub channels: u16,
+    pub is_main: bool,
+    pub active: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginParameterDomain {
+    GenericNormalized,
+    Decibels,
+    Hertz,
+    Seconds,
+    Bypass,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PluginParameterFlags {
+    pub automatable: bool,
+    pub modulatable: bool,
+    pub supports_gesture: bool,
+    pub stepped: bool,
+    pub hidden: bool,
+    pub read_only: bool,
+}
+
+impl PluginParameterFlags {
+    pub fn automatable() -> Self {
+        Self {
+            automatable: true,
+            modulatable: true,
+            supports_gesture: true,
+            stepped: false,
+            hidden: false,
+            read_only: false,
+        }
+    }
+
+    pub fn bypass() -> Self {
+        Self {
+            automatable: true,
+            modulatable: false,
+            supports_gesture: false,
+            stepped: true,
+            hidden: false,
+            read_only: false,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PluginParameterDescriptor {
+    pub parameter_id: u32,
+    pub name: String,
+    pub unit: Option<String>,
+    pub domain: PluginParameterDomain,
+    pub default_normalized: f32,
+    pub min_plain: f32,
+    pub max_plain: f32,
+    pub flags: PluginParameterFlags,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PluginStateContract {
+    pub supports_snapshot: bool,
+    pub supports_reset: bool,
+    pub supports_bypass: bool,
+    pub exposes_latency: bool,
+    pub exposes_tail: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PluginProcessingContract {
+    pub max_block_frames: u32,
+    pub sample_accurate_automation: bool,
+    pub accepts_midi: bool,
+    pub accepts_note_events: bool,
+    pub produces_midi: bool,
+    pub silence_aware: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PluginLifecycleContract {
+    pub requires_main_thread_for_state: bool,
+    pub supports_prepare: bool,
+    pub supports_activate: bool,
+    pub supports_reset_while_active: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginLifecycleState {
+    Discovered,
+    TypeLoaded,
+    InstanceCreated,
+    Prepared,
+    Active,
+    Inactive,
+    Released,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginFaultKind {
+    InvalidRequest,
+    UnsupportedCapability,
+    InvalidState,
+    ResourceUnavailable,
+    ProcessingFailure,
+    ProtocolViolation,
+    Timeout,
+    Crash,
+    Fatal,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginFaultSeverity {
+    Warning,
+    Recoverable,
+    Critical,
+    Fatal,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginFault {
+    pub kind: PluginFaultKind,
+    pub severity: PluginFaultSeverity,
+    pub message: String,
+}
+
+impl PluginFault {
+    pub fn new(
+        kind: PluginFaultKind,
+        severity: PluginFaultSeverity,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            kind,
+            severity,
+            message: message.into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginDegradedReason(pub &'static str);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PluginReadiness {
+    Starting,
+    Ready,
+    Degraded { reasons: Vec<PluginDegradedReason> },
+    Stopped,
+    Failed { fatal: PluginFault },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PluginProcessConfiguration {
+    pub sample_rate_hz: u32,
+    pub max_block_frames: u32,
+    pub io_layout: PluginIoLayout,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PluginInstanceSnapshot {
+    pub plugin_type_id: PluginTypeId,
+    pub instance_id: PluginInstanceId,
+    pub lifecycle_state: PluginLifecycleState,
+    pub readiness: PluginReadiness,
+    pub processing: Option<PluginProcessConfiguration>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct PluginDescriptor {
     pub plugin_id: String,
     pub vendor: String,
     pub name: String,
     pub format: PluginFormat,
+    pub version: Option<String>,
+    pub features: Vec<PluginFeature>,
+    pub audio_buses: Vec<PluginAudioBusDescriptor>,
+    pub parameters: Vec<PluginParameterDescriptor>,
+    pub state_contract: PluginStateContract,
+    pub processing_contract: PluginProcessingContract,
+    pub lifecycle_contract: PluginLifecycleContract,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,6 +242,110 @@ impl PluginIoLayout {
 
     pub fn midi_ports(self) -> u16 {
         self.midi_inputs.max(self.midi_outputs)
+    }
+
+    pub fn main_audio_buses(self) -> Vec<PluginAudioBusDescriptor> {
+        let mut buses = Vec::new();
+        if self.audio_inputs > 0 {
+            buses.push(PluginAudioBusDescriptor {
+                bus_id: "audio:main-in".into(),
+                name: "Main Input".into(),
+                direction: PluginAudioBusDirection::Input,
+                channels: self.audio_inputs,
+                is_main: true,
+                active: true,
+            });
+        }
+        if self.audio_outputs > 0 {
+            buses.push(PluginAudioBusDescriptor {
+                bus_id: "audio:main-out".into(),
+                name: "Main Output".into(),
+                direction: PluginAudioBusDirection::Output,
+                channels: self.audio_outputs,
+                is_main: true,
+                active: true,
+            });
+        }
+        buses
+    }
+}
+
+impl PluginDescriptor {
+    pub fn new(
+        plugin_id: impl Into<String>,
+        vendor: impl Into<String>,
+        name: impl Into<String>,
+        format: PluginFormat,
+    ) -> Self {
+        Self {
+            plugin_id: plugin_id.into(),
+            vendor: vendor.into(),
+            name: name.into(),
+            format,
+            version: None,
+            features: Vec::new(),
+            audio_buses: Vec::new(),
+            parameters: Vec::new(),
+            state_contract: PluginStateContract {
+                supports_snapshot: false,
+                supports_reset: false,
+                supports_bypass: false,
+                exposes_latency: false,
+                exposes_tail: false,
+            },
+            processing_contract: PluginProcessingContract {
+                max_block_frames: 0,
+                sample_accurate_automation: false,
+                accepts_midi: false,
+                accepts_note_events: false,
+                produces_midi: false,
+                silence_aware: false,
+            },
+            lifecycle_contract: PluginLifecycleContract {
+                requires_main_thread_for_state: false,
+                supports_prepare: true,
+                supports_activate: true,
+                supports_reset_while_active: false,
+            },
+        }
+    }
+
+    pub fn with_version(mut self, version: impl Into<String>) -> Self {
+        self.version = Some(version.into());
+        self
+    }
+
+    pub fn with_feature(mut self, feature: PluginFeature) -> Self {
+        self.features.push(feature);
+        self
+    }
+
+    pub fn with_audio_buses(mut self, audio_buses: Vec<PluginAudioBusDescriptor>) -> Self {
+        self.audio_buses = audio_buses;
+        self
+    }
+
+    pub fn with_parameters(mut self, parameters: Vec<PluginParameterDescriptor>) -> Self {
+        self.parameters = parameters;
+        self
+    }
+
+    pub fn with_state_contract(mut self, state_contract: PluginStateContract) -> Self {
+        self.state_contract = state_contract;
+        self
+    }
+
+    pub fn with_processing_contract(
+        mut self,
+        processing_contract: PluginProcessingContract,
+    ) -> Self {
+        self.processing_contract = processing_contract;
+        self
+    }
+
+    pub fn with_lifecycle_contract(mut self, lifecycle_contract: PluginLifecycleContract) -> Self {
+        self.lifecycle_contract = lifecycle_contract;
+        self
     }
 }
 
@@ -96,6 +396,53 @@ impl PluginSandboxError {
             message: message.into(),
         }
     }
+
+    pub fn as_fault(&self) -> PluginFault {
+        PluginFault::new(
+            PluginFaultKind::from(self.kind),
+            PluginFaultSeverity::from(self.kind),
+            self.message.clone(),
+        )
+    }
+}
+
+impl From<PluginSandboxErrorKind> for PluginFaultKind {
+    fn from(value: PluginSandboxErrorKind) -> Self {
+        match value {
+            PluginSandboxErrorKind::InvalidRequest => Self::InvalidRequest,
+            PluginSandboxErrorKind::InvalidState => Self::InvalidState,
+            PluginSandboxErrorKind::Unsupported => Self::UnsupportedCapability,
+            PluginSandboxErrorKind::Timeout => Self::Timeout,
+            PluginSandboxErrorKind::ProtocolViolation => Self::ProtocolViolation,
+            PluginSandboxErrorKind::Crashed => Self::Crash,
+        }
+    }
+}
+
+impl From<PluginSandboxErrorKind> for PluginFaultSeverity {
+    fn from(value: PluginSandboxErrorKind) -> Self {
+        match value {
+            PluginSandboxErrorKind::InvalidRequest
+            | PluginSandboxErrorKind::InvalidState
+            | PluginSandboxErrorKind::Unsupported => Self::Warning,
+            PluginSandboxErrorKind::Timeout => Self::Recoverable,
+            PluginSandboxErrorKind::ProtocolViolation => Self::Critical,
+            PluginSandboxErrorKind::Crashed => Self::Fatal,
+        }
+    }
+}
+
+impl PluginReadiness {
+    pub fn from_fault(fault: PluginFault) -> Self {
+        match fault.severity {
+            PluginFaultSeverity::Warning | PluginFaultSeverity::Recoverable => Self::Degraded {
+                reasons: vec![PluginDegradedReason("plugin-fault")],
+            },
+            PluginFaultSeverity::Critical | PluginFaultSeverity::Fatal => {
+                Self::Failed { fatal: fault }
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -106,7 +453,7 @@ pub struct PluginSandboxCapabilities {
     pub max_block_frames: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum SandboxControlCommand {
     Handshake,
     LoadPluginType {
@@ -141,7 +488,7 @@ pub enum SandboxControlCommand {
     Shutdown,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SandboxControlRequest {
     pub sandbox_id: String,
     pub format: PluginFormat,
@@ -1755,11 +2102,14 @@ mod tests {
         BlockSequenceContinuityReport, CompletionSlot, CompletionState, EventPacket, LoopRange,
         MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
         ParameterAutomationSummary, ParameterGestureEvent, ParameterGesturePhase,
-        ParameterModulationEvent, ParameterValueEvent, PluginEvent, PluginFormat, PluginInstanceId,
-        PluginIoLayout, PluginRenderContext, PluginSandboxCapabilities, RestartEscalationPolicy,
-        RestartEscalationState, SandboxControlRequest, SandboxControlResponse, SandboxStateMachine,
-        SandboxTransport, SandboxWatchdogPolicy, SandboxWatchdogState, SharedMemoryLayout,
-        SharedMemoryLease, WatchdogOutcome, WatchdogTriggerReason,
+        ParameterModulationEvent, ParameterValueEvent, PluginDescriptor, PluginEvent,
+        PluginFaultKind, PluginFaultSeverity, PluginFormat, PluginInstanceId, PluginIoLayout,
+        PluginLifecycleState, PluginParameterDomain, PluginParameterFlags, PluginReadiness,
+        PluginRenderContext, PluginSandboxCapabilities, PluginSandboxError, PluginSandboxErrorKind,
+        RestartEscalationPolicy, RestartEscalationState, SandboxControlRequest,
+        SandboxControlResponse, SandboxStateMachine, SandboxTransport, SandboxWatchdogPolicy,
+        SandboxWatchdogState, SharedMemoryLayout, SharedMemoryLease, WatchdogOutcome,
+        WatchdogTriggerReason,
     };
     use signal_ipc::{SharedMemoryTransportKind, SharedMemoryTransportPayload};
 
@@ -1902,6 +2252,101 @@ mod tests {
             response,
             SandboxControlResponse::HandshakeAccepted { .. }
         ));
+    }
+
+    #[test]
+    fn plugin_descriptor_carries_neutral_contract_metadata() {
+        let descriptor =
+            PluginDescriptor::new("plugin:test", "Signal", "Test Plugin", PluginFormat::Clap)
+                .with_version("1.2.3")
+                .with_feature(super::PluginFeature::AudioEffect)
+                .with_audio_buses(
+                    PluginIoLayout {
+                        audio_inputs: 2,
+                        audio_outputs: 2,
+                        midi_inputs: 1,
+                        midi_outputs: 0,
+                    }
+                    .main_audio_buses(),
+                )
+                .with_parameters(vec![super::PluginParameterDescriptor {
+                    parameter_id: 9,
+                    name: "Cutoff".into(),
+                    unit: Some("Hz".into()),
+                    domain: PluginParameterDomain::Hertz,
+                    default_normalized: 0.5,
+                    min_plain: 20.0,
+                    max_plain: 20_000.0,
+                    flags: PluginParameterFlags::automatable(),
+                }])
+                .with_state_contract(super::PluginStateContract {
+                    supports_snapshot: true,
+                    supports_reset: true,
+                    supports_bypass: true,
+                    exposes_latency: false,
+                    exposes_tail: false,
+                })
+                .with_processing_contract(super::PluginProcessingContract {
+                    max_block_frames: 2048,
+                    sample_accurate_automation: true,
+                    accepts_midi: true,
+                    accepts_note_events: true,
+                    produces_midi: false,
+                    silence_aware: true,
+                })
+                .with_lifecycle_contract(super::PluginLifecycleContract {
+                    requires_main_thread_for_state: true,
+                    supports_prepare: true,
+                    supports_activate: true,
+                    supports_reset_while_active: false,
+                });
+
+        assert_eq!(descriptor.version.as_deref(), Some("1.2.3"));
+        assert_eq!(descriptor.audio_buses.len(), 2);
+        assert_eq!(descriptor.parameters.len(), 1);
+        assert!(descriptor.state_contract.supports_snapshot);
+        assert!(descriptor.processing_contract.sample_accurate_automation);
+        assert!(descriptor.lifecycle_contract.requires_main_thread_for_state);
+    }
+
+    #[test]
+    fn plugin_sandbox_errors_map_into_plugin_fault_readiness_taxonomy() {
+        let protocol_error = PluginSandboxError::new(
+            PluginSandboxErrorKind::ProtocolViolation,
+            "sandbox protocol mismatch",
+        )
+        .as_fault();
+        let crash_error =
+            PluginSandboxError::new(PluginSandboxErrorKind::Crashed, "sandbox process exited")
+                .as_fault();
+
+        assert_eq!(protocol_error.kind, PluginFaultKind::ProtocolViolation);
+        assert_eq!(protocol_error.severity, PluginFaultSeverity::Critical);
+        assert!(matches!(
+            PluginReadiness::from_fault(protocol_error),
+            PluginReadiness::Failed { .. }
+        ));
+
+        assert_eq!(crash_error.kind, PluginFaultKind::Crash);
+        assert_eq!(crash_error.severity, PluginFaultSeverity::Fatal);
+
+        let snapshot = super::PluginInstanceSnapshot {
+            plugin_type_id: super::PluginTypeId("plugin:test".into()),
+            instance_id: PluginInstanceId("instance:test".into()),
+            lifecycle_state: PluginLifecycleState::Prepared,
+            readiness: PluginReadiness::Starting,
+            processing: Some(super::PluginProcessConfiguration {
+                sample_rate_hz: 48_000,
+                max_block_frames: 512,
+                io_layout: PluginIoLayout {
+                    audio_inputs: 2,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 0,
+                },
+            }),
+        };
+        assert_eq!(snapshot.lifecycle_state, PluginLifecycleState::Prepared);
     }
 
     #[test]

@@ -123,6 +123,32 @@ pub struct PluginDescriptorPayload {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PluginProcessConfigurationPayload {
+    pub sample_rate_hz: u32,
+    pub max_block_frames: u32,
+    pub io_layout: PluginIoLayoutPayload,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginFaultPayload {
+    pub kind: String,
+    pub severity: String,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PluginInstanceStatePayload {
+    pub plugin_type_id: String,
+    pub instance_id: String,
+    pub lifecycle_state: String,
+    pub readiness_state: String,
+    pub degraded_reasons: Vec<String>,
+    pub active: bool,
+    pub processing: Option<PluginProcessConfigurationPayload>,
+    pub last_fault: Option<PluginFaultPayload>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PluginIoLayoutPayload {
     pub audio_inputs: u16,
     pub audio_outputs: u16,
@@ -349,6 +375,7 @@ pub enum PluginMessagePayload {
     },
     LoadPluginTypeResponse {
         plugin_type_id: String,
+        descriptor: PluginDescriptorPayload,
     },
     CreateInstanceRequest {
         sandbox_id: String,
@@ -357,6 +384,7 @@ pub enum PluginMessagePayload {
     },
     CreateInstanceResponse {
         instance_id: String,
+        instance_state: PluginInstanceStatePayload,
     },
     PrepareInstanceRequest {
         sandbox_id: String,
@@ -375,6 +403,7 @@ pub enum PluginMessagePayload {
         shared_memory_lease_id: String,
         shared_memory_transport: SharedMemoryTransportPayload,
         shared_memory_bytes: u32,
+        instance_state: PluginInstanceStatePayload,
     },
     ActivateInstanceRequest {
         sandbox_id: String,
@@ -384,6 +413,7 @@ pub enum PluginMessagePayload {
     ActivateInstanceResponse {
         instance_id: String,
         processing_epoch: u64,
+        instance_state: PluginInstanceStatePayload,
     },
     HeartbeatRequest {
         sandbox_id: String,
@@ -395,6 +425,7 @@ pub enum PluginMessagePayload {
         instance_id: Option<String>,
         processing_epoch: Option<u64>,
         active: bool,
+        instance_state: Option<PluginInstanceStatePayload>,
     },
     DeactivateInstanceRequest {
         sandbox_id: String,
@@ -402,6 +433,7 @@ pub enum PluginMessagePayload {
     },
     DeactivateInstanceResponse {
         instance_id: String,
+        instance_state: PluginInstanceStatePayload,
     },
     ResetInstanceRequest {
         sandbox_id: String,
@@ -411,6 +443,7 @@ pub enum PluginMessagePayload {
     ResetInstanceResponse {
         instance_id: String,
         processing_epoch: u64,
+        instance_state: PluginInstanceStatePayload,
     },
     DestroyInstanceRequest {
         sandbox_id: String,
@@ -418,6 +451,7 @@ pub enum PluginMessagePayload {
     },
     DestroyInstanceResponse {
         instance_id: String,
+        instance_state: PluginInstanceStatePayload,
     },
     SandboxFailure {
         sandbox_id: String,
@@ -425,6 +459,8 @@ pub enum PluginMessagePayload {
         stage: String,
         error_kind: String,
         detail: String,
+        fault: PluginFaultPayload,
+        instance_state: Option<PluginInstanceStatePayload>,
         processing_epoch: Option<u64>,
         shared_memory_lease_id: Option<String>,
     },
@@ -536,6 +572,25 @@ mod tests {
             PluginMessagePayload::ActivateInstanceResponse {
                 instance_id: "instance-a".into(),
                 processing_epoch: 1,
+                instance_state: super::PluginInstanceStatePayload {
+                    plugin_type_id: "plugin-a".into(),
+                    instance_id: "instance-a".into(),
+                    lifecycle_state: "Active".into(),
+                    readiness_state: "Ready".into(),
+                    degraded_reasons: Vec::new(),
+                    active: true,
+                    processing: Some(super::PluginProcessConfigurationPayload {
+                        sample_rate_hz: 48_000,
+                        max_block_frames: 512,
+                        io_layout: super::PluginIoLayoutPayload {
+                            audio_inputs: 2,
+                            audio_outputs: 2,
+                            midi_inputs: 1,
+                            midi_outputs: 1,
+                        },
+                    }),
+                    last_fault: None,
+                },
             },
         );
 

@@ -1,6 +1,6 @@
 # Roadmap g01.007: Runtime Transport, Scheduler, and Engine Processing Baseline
 
-Status: queued
+Status: complete
 Owner: core-product
 Created: 2026-03-10
 Depends on: g01.006
@@ -45,36 +45,36 @@ and scheduler behavior into one coherent runtime contract. Without that:
 
 ### 007.1 Transport truth and engine clock
 
-- [ ] define the runtime-owned block clock and transport progression rules for
+- [x] define the runtime-owned block clock and transport progression rules for
       play, stop, seek, and loop transitions
-- [ ] make transport epoch changes explicit invalidation boundaries for queued
+- [x] make transport epoch changes explicit invalidation boundaries for queued
       prework and cached engine state
-- [ ] extend engine block context/reporting so transport state is visible at the
+- [x] extend engine block context/reporting so transport state is visible at the
       exact point processing occurs
-- [ ] keep transport progression attached to node-oriented graph execution
+- [x] keep transport progression attached to node-oriented graph execution
       context so later lane and console work does not need a second timing model
 
 ### 007.2 Scheduler enforcement on real engine work
 
-- [ ] ensure the prework service lane and realtime lane are exercised against
+- [x] ensure the prework service lane and realtime lane are exercised against
       real engine blocks rather than only scheduler metadata
-- [ ] tighten scheduler-state transitions, backlog classes, and pressure policy
+- [x] tighten scheduler-state transitions, backlog classes, and pressure policy
       around observed engine and recovery conditions
-- [ ] prove that reconfigure, restart, recovery, and role/profile changes leave
+- [x] prove that reconfigure, restart, recovery, and role/profile changes leave
       the scheduler and engine in a consistent state
-- [ ] validate that scheduler phases and lane ordering can represent future
+- [x] validate that scheduler phases and lane ordering can represent future
       track-lane and console-node execution groups without host-specific
       reinterpretation
 
 ### 007.3 Diagnostics and supervisor surfaces
 
-- [ ] expose transport, block, scheduler, and degradation state through shared
+- [x] expose transport, block, scheduler, and degradation state through shared
       runtime snapshots and supervisor exports
-- [ ] add tests that cover seek, loop wrap, restart, degraded recovery, and
+- [x] add tests that cover seek, loop wrap, restart, degraded recovery, and
       prework invalidation against real engine-processing paths
-- [ ] document any remaining host-only behavior that still needs to be promoted
+- [x] document any remaining host-only behavior that still needs to be promoted
       into runtime authority before host/device work deepens
-- [ ] expose enough node/lane execution detail that later mixer-topology
+- [x] expose enough node/lane execution detail that later mixer-topology
       debugging does not require host-local reconstruction
 
 ## Acceptance Signals
@@ -98,14 +98,31 @@ and scheduler behavior into one coherent runtime contract. Without that:
 
 ## Evidence Requirements
 
-- [ ] every transport/scheduler tranche logged under `docs/logs/YYYY-MM/`
-- [ ] validation evidence must include runtime-focused tests, not only host
+- [x] every transport/scheduler tranche logged under `docs/logs/YYYY-MM/`
+- [x] validation evidence must include runtime-focused tests, not only host
       smoke runs
-- [ ] closure log must state which scheduler behaviors remain deliberately
+- [x] closure log must state which scheduler behaviors remain deliberately
       deferred to later milestones
+
+## Remaining Host-Owned Behavior Before g01.008
+
+Runtime now owns transport progression, scheduler state, engine block
+execution, and the shared diagnostics/export surface for those behaviors.
+The remaining host-owned work is deliberately outside this milestone and must
+stay at the trust edge until `g01.008` deepens device-backed execution:
+
+- physical device enumeration, format negotiation, and callback lifecycle
+- host/device buffer transfer and callback pacing around runtime block calls
+- xrun, device-loss, and callback-overrun handling tied to concrete hardware
+- device-facing restart policy and stream reattachment on top of runtime-owned
+  control and degradation state
+
+Those responsibilities should project runtime-owned summaries rather than
+reconstructing scheduler, topology, or transport meaning locally.
 
 ## Next Task
 
-Open `g01.008` once runtime owns the engine-processing and transport/scheduler
-truth cleanly enough to attach real device-backed host execution and runtime
-diagnostics without reshaping core authority boundaries.
+Open `g01.008` by freezing the host/device contract in `signal-hardware`,
+including enumeration, stream configuration, diagnostics, and simulation seams,
+so real device-backed execution can attach to the now-complete runtime authority
+surface without reshaping core engine ownership.

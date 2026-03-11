@@ -42,6 +42,33 @@ fn main() {
         })
         .map(|(lease_id, region_id, transport)| (Some(lease_id), Some(region_id), Some(transport)))
         .unwrap_or((None, None, None));
+    let loaded_descriptor = responses
+        .iter()
+        .find_map(|response| match &response.payload {
+            signal_ipc::PluginMessagePayload::LoadPluginTypeResponse { descriptor, .. } => {
+                Some(descriptor.clone())
+            }
+            _ => None,
+        });
+    let last_instance_state = responses
+        .last()
+        .and_then(|response| match &response.payload {
+            signal_ipc::PluginMessagePayload::ActivateInstanceResponse {
+                instance_state, ..
+            }
+            | signal_ipc::PluginMessagePayload::ResetInstanceResponse { instance_state, .. }
+            | signal_ipc::PluginMessagePayload::DeactivateInstanceResponse {
+                instance_state, ..
+            }
+            | signal_ipc::PluginMessagePayload::CreateInstanceResponse { instance_state, .. }
+            | signal_ipc::PluginMessagePayload::PrepareInstanceResponse {
+                instance_state, ..
+            }
+            | signal_ipc::PluginMessagePayload::DestroyInstanceResponse {
+                instance_state, ..
+            } => Some(instance_state.clone()),
+            _ => None,
+        });
     let _ = harness
         .handle(protocol.heartbeat_request(sandbox_id, Some(1)))
         .expect("heartbeat");
@@ -86,14 +113,32 @@ fn main() {
     }
 
     println!(
-        "signal-plugin-sandbox sandbox_id={:?} requests={} responses={} first_request={:?} last_response={:?} lease_id={:?} region_id={:?} heartbeats={} processed_blocks={} output_events={} parameter_events={} parameter_gesture_events={} parameter_modulation_events={} note_events={} note_expression_events={} midi_events={} first_output_sample={:?} completion={:?}",
+        "signal-plugin-sandbox sandbox_id={:?} requests={} responses={} first_request={:?} last_response={:?} descriptor={:?}/{:?}/{:?}/{:?} lease_id={:?} region_id={:?} state={:?}/{:?} heartbeats={} processed_blocks={} output_events={} parameter_events={} parameter_gesture_events={} parameter_modulation_events={} note_events={} note_expression_events={} midi_events={} first_output_sample={:?} completion={:?}",
         sandbox_id,
         requests.len(),
         responses.len(),
         requests.first().map(|request| request.message.name.clone()),
         responses.last().map(|response| response.message.name.clone()),
+        loaded_descriptor
+            .as_ref()
+            .map(|descriptor| descriptor.plugin_id.as_str()),
+        loaded_descriptor
+            .as_ref()
+            .map(|descriptor| descriptor.vendor.as_str()),
+        loaded_descriptor
+            .as_ref()
+            .map(|descriptor| descriptor.name.as_str()),
+        loaded_descriptor
+            .as_ref()
+            .map(|descriptor| descriptor.format.as_str()),
         lease_id,
         region_id,
+        last_instance_state
+            .as_ref()
+            .map(|state| state.lifecycle_state.as_str()),
+        last_instance_state
+            .as_ref()
+            .map(|state| state.readiness_state.as_str()),
         harness.heartbeat_count(),
         processed_blocks,
         last_output_event_count,

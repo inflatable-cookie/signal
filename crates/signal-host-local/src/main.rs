@@ -5,10 +5,11 @@ fn main() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     let summary = host.boot_default().expect("local host boot");
-    let supervisor = host.supervisor_report();
+    let report = host.host_supervisor_report();
+    let topology = &report.observation.observation.execution_topology_summary;
 
     println!(
-        "signal-host-local profile={:?} backend={} clap_supported={} sandbox={:?} control_requests={} control_responses={} heartbeat_responses={} processed_blocks={} completion={:?} last_block_sequence={} deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?} last_control_message={:?} epoch={} lease_id={:?} region_id={:?} shared_memory_bytes={} restarts={} teardowns={} observation={}",
+        "signal-host-local profile={:?} backend={} clap_supported={} sandbox={:?} control_requests={} control_responses={} heartbeat_responses={} processed_blocks={} completion={:?} last_block_sequence={} deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?} last_control_message={:?} epoch={} lease_id={:?} region_id={:?} shared_memory_bytes={} restarts={} teardowns={} audio_state={:?} audio_callbacks={} audio_frames={} audio_copied_samples={} audio_zero_filled_samples={} audio_dropped_samples={} audio_peak={:?} audio_graph={:?} topology_nodes={} topology_roles={}/{}/{} topology_groups={}/{}/{} observation={}",
         host.runtime().config().profile,
         summary.backend_name,
         host.clap_supported(),
@@ -30,6 +31,21 @@ fn main() {
         summary.transport.shared_memory_bytes,
         summary.execution.restart_count,
         summary.execution.teardown_count,
-        supervisor.render_compact()
+        summary.audio_pump.stream_state,
+        summary.audio_pump.callback_count,
+        summary.audio_pump.total_callback_frames,
+        summary.audio_pump.copied_output_samples,
+        summary.audio_pump.zero_filled_output_samples,
+        summary.audio_pump.dropped_output_samples,
+        summary.audio_pump.last_callback_output_peak,
+        summary.audio_pump.last_runtime_graph_id,
+        topology.node_count,
+        topology.track_lane_node_count,
+        topology.bus_node_count,
+        topology.console_node_count,
+        topology.track_lane_group_count,
+        topology.bus_group_count,
+        topology.console_group_count,
+        report.render_compact()
     );
 }

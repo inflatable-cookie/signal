@@ -1,6 +1,6 @@
 # Roadmap g01.005: Core DSP Kernel and Control-Signal Baseline
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-10
 Depends on: g01.004
@@ -94,12 +94,11 @@ still too thin for serious engine work. Without a stronger `signal-dsp` and
 
 ## Evidence Requirements
 
-- [ ] one log entry per meaningful DSP/kernel tranche under `docs/logs/YYYY-MM/`
-- [ ] validation notes must include the algorithm-focused tests actually run
-- [ ] any legacy-reference dependency called out explicitly in the closure log
+- [x] one log entry per meaningful DSP/kernel tranche under `docs/logs/YYYY-MM/`
+- [x] validation notes must include the algorithm-focused tests actually run
+- [x] any legacy-reference dependency called out explicitly in the closure log
 
 ## Next Task
 
-Open `g01.006` once the core kernels are credible enough to route through a
-real executable graph contract with deterministic routing, latency, and
-parameter timing semantics.
+`g01.005` is complete. Reopen only if Signal needs another foundational DSP
+kernel tranche before a later generation milestone.

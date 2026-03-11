@@ -1,6 +1,6 @@
 # Roadmap g01.001: Docs Foundation and DSP Research Migration
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-08
 Vision tags: RES, RT, AUTH
@@ -73,5 +73,5 @@ That split made the shared-DSP direction incoherent:
 
 ## Next Task
 
-Freeze the first concrete Signal package names and runtime-host entrypoints so
-the research corpus can align on stable implementation targets.
+`g01.001` is complete. Reopen only if Signal needs another docs-authority or
+research-migration pass.

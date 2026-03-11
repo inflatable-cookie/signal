@@ -1,6 +1,6 @@
 # Roadmap g01.009: Plugin Hosting, Sandbox Processing, and Graph-Node Baseline
 
-Status: queued
+Status: complete
 Owner: core-product
 Created: 2026-03-10
 Depends on: g01.008
@@ -45,30 +45,30 @@ supervisor boundaries into a real plugin-processing lane. Without that:
 
 ### 009.1 Plugin-neutral contract
 
-- [ ] define descriptor, parameter, audio bus, state, and processing contracts
+- [x] define descriptor, parameter, audio bus, state, and processing contracts
       in `signal-plugin`
-- [ ] freeze the minimal lifecycle states needed by runtime and sandbox control
+- [x] freeze the minimal lifecycle states needed by runtime and sandbox control
       paths
-- [ ] align plugin fault and readiness taxonomy with runtime-owned diagnostics
+- [x] align plugin fault and readiness taxonomy with runtime-owned diagnostics
 
 ### 009.2 CLAP and sandbox execution lane
 
-- [ ] implement descriptor discovery, instance lifecycle, prepare/activate/
+- [x] implement descriptor discovery, instance lifecycle, prepare/activate/
       process/deactivate/reset behavior for the first CLAP path
-- [ ] connect sandbox transport, heartbeat, and control boundaries to real
+- [x] connect sandbox transport, heartbeat, and control boundaries to real
       plugin processing rather than only lifecycle supervision
-- [ ] ensure fault envelopes emitted by the CLAP/sandbox layers stay typed and
+- [x] ensure fault envelopes emitted by the CLAP/sandbox layers stay typed and
       consumable by runtime recovery policy
 
 ### 009.3 Graph/runtime integration
 
-- [ ] add plugin-backed node execution to the graph/runtime path with explicit
+- [x] add plugin-backed node execution to the graph/runtime path with explicit
       latency, tail, and bypass behavior
-- [ ] route parameter and transport updates into plugin processing on the same
+- [x] route parameter and transport updates into plugin processing on the same
       timing contract used by native graph nodes
-- [ ] validate degraded recovery, sandbox restart, and fallback behavior while
+- [x] validate degraded recovery, sandbox restart, and fallback behavior while
       real plugin work is attached to the engine
-- [ ] prove plugin-backed nodes can participate in the same emerging
+- [x] prove plugin-backed nodes can participate in the same emerging
       track-lane, console-node, and bus-oriented graph semantics as native nodes
 
 ## Acceptance Signals
@@ -91,14 +91,13 @@ supervisor boundaries into a real plugin-processing lane. Without that:
 
 ## Evidence Requirements
 
-- [ ] meaningful plugin/sandbox batches logged under `docs/logs/YYYY-MM/`
-- [ ] closure evidence must include at least one real plugin-backed execution
+- [x] meaningful plugin/sandbox batches logged under `docs/logs/YYYY-MM/`
+- [x] closure evidence must include at least one real plugin-backed execution
       scenario, not only descriptor scan or lifecycle smoke tests
-- [ ] any remaining format-specific gaps recorded explicitly for follow-on
+- [x] any remaining format-specific gaps recorded explicitly for follow-on
       generations
 
 ## Next Task
 
-Use the closure of `g01.009` to decide whether `g02` should split by deeper
-engine specialization, broader platform/device support, or analysis/media
-expansion now that the first end-to-end shared Signal processing stack is real.
+`g01.009` is complete. Select the next active generation milestone before
+opening another implementation batch.

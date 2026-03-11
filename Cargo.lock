@@ -193,6 +193,7 @@ dependencies = [
 name = "signal-graph"
 version = "0.1.0"
 dependencies = [
+ "signal-dsp",
  "signal-primitives",
 ]
 

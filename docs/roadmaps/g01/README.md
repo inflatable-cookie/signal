@@ -1,6 +1,6 @@
 # g01 Milestones
 
-Status: active
+Status: complete
 Updated: 2026-03-11
 
 ## Why this generation matters now
@@ -23,30 +23,29 @@ first:
 
 ## Milestone map
 
-- `g01.001` `active`
+- `g01.001` `complete`
   - docs foundation and DSP research migration
 - `g01.002` `complete`
   - package map and runtime entrypoint naming
 - `g01.003` `complete`
   - Rust workspace shell bootstrap
-- `g01.004` `active`
+- `g01.004` `complete`
   - trust-edge package shell expansion
-- `g01.005` `active`
+- `g01.005` `complete`
   - core DSP kernel and control-signal baseline
-- `g01.006` `active`
+- `g01.006` `complete`
   - executable graph routing, latency, and parameter application baseline
-- `g01.007` `queued`
+- `g01.007` `complete`
   - runtime transport, scheduler, and engine processing baseline
-- `g01.008` `queued`
+- `g01.008` `complete`
   - device-backed host audio I/O and diagnostics baseline
-- `g01.009` `queued`
+- `g01.009` `complete`
   - plugin hosting, sandbox processing, and graph-node baseline
 
 ## Current sequencing rule
 
-`g01.006` is now the active engine-substrate milestone for this thread. The
-next four milestones remain sequenced and detailed enough that a dedicated
-Signal thread can keep moving without inventing its own order of operations.
+`g01` is complete for this thread. The surrounding milestone sequence remains
+useful as closure evidence and as a reference spine for future generations.
 
 The dependency spine is:
 
@@ -87,6 +86,5 @@ Working rules for that thread:
 
 ## Next Task
 
-Continue `g01.006` by landing deterministic routing, latency, and
-parameter-application behavior on top of the newly explicit graph node/buffer
-contract before pushing deeper into `g01.007` runtime policy.
+`g01` is complete. Choose or author the next generation roadmap before
+starting another implementation batch.

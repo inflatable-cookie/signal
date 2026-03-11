@@ -1,6 +1,6 @@
 # Roadmap g01.008: Device-Backed Host Audio I/O and Diagnostics Baseline
 
-Status: queued
+Status: complete
 Owner: core-product
 Created: 2026-03-10
 Depends on: g01.007
@@ -47,34 +47,34 @@ baseline:
 
 ### 008.1 Hardware contract freeze
 
-- [ ] define the host/device contract for enumeration, stream configuration,
+- [x] define the host/device contract for enumeration, stream configuration,
       format negotiation, and lifecycle ownership
-- [ ] establish test doubles or simulation seams so host logic can be exercised
+- [x] establish test doubles or simulation seams so host logic can be exercised
       without requiring physical hardware for every validation step
-- [ ] make diagnostics contracts explicit for xruns, callback overruns, device
+- [x] make diagnostics contracts explicit for xruns, callback overruns, device
       disappearance, and restart attempts
 
 ### 008.2 Local host execution path
 
-- [ ] implement the first concrete CoreAudio-backed stream path at the trust
+- [x] implement the first concrete CoreAudio-backed stream path at the trust
       edge with explicit start/stop/error behavior
-- [ ] connect `signal-host-local` to runtime block processing with a clear audio
+- [x] connect `signal-host-local` to runtime block processing with a clear audio
       callback or pump boundary
-- [ ] add bounded data-transfer rules between host/device buffers and runtime
+- [x] add bounded data-transfer rules between host/device buffers and runtime
       buffers so realtime safety remains inspectable
-- [ ] prove the host path can run at least one node-oriented mixer shape such as
+- [x] prove the host path can run at least one node-oriented mixer shape such as
       track lane to bus to output or console-node to output without reshaping
       generic runtime contracts
 
 ### 008.3 Diagnostics and failure handling
 
-- [ ] expose host/device diagnostics through shared runtime reports and any
+- [x] expose host/device diagnostics through shared runtime reports and any
       host-local summaries that remain justified
-- [ ] handle restart and device-loss scenarios without bypassing runtime control
+- [x] handle restart and device-loss scenarios without bypassing runtime control
       state
-- [ ] validate the local host path with smoke scenarios that include device
+- [x] validate the local host path with smoke scenarios that include device
       startup, steady-state processing, and fault/degraded behavior
-- [ ] include at least one topology-aware validation scenario so diagnostics are
+- [x] include at least one topology-aware validation scenario so diagnostics are
       known to remain meaningful once richer mixer graphs are attached
 
 ## Acceptance Signals
@@ -98,13 +98,15 @@ baseline:
 
 ## Evidence Requirements
 
-- [ ] meaningful host/device batches logged under `docs/logs/YYYY-MM/`
-- [ ] closure evidence must separate simulated validation from real hardware
+- [x] meaningful host/device batches logged under `docs/logs/YYYY-MM/`
+- [x] closure evidence separates simulated validation from real hardware
       smoke checks
-- [ ] any backend-specific compromises recorded explicitly with ownership notes
+- [x] backend-specific compromises recorded explicitly with ownership notes
 
 ## Next Task
 
-Open `g01.009` once the runtime engine can run against a real device-backed host
-path and the trust-edge device boundary is stable enough to integrate plugin
-processing without reworking hardware ownership.
+Milestone complete. Start `g01.009` by freezing the first plugin-neutral
+processing contract across `signal-plugin`, `signal-plugin-clap`, and
+`signal-plugin-sandbox`, with typed lifecycle/fault semantics that can attach
+to the already-complete graph/runtime/host seams without leaking format detail
+back into generic runtime crates.

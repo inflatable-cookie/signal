@@ -248,9 +248,7 @@ impl AudioBuffer {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        AudioBuffer, ChannelLayout, FrequencyHz, SampleRate, Seconds, StepSegment,
-    };
+    use super::{AudioBuffer, ChannelLayout, FrequencyHz, SampleRate, Seconds, StepSegment};
 
     #[test]
     fn mono_mixdown_averages_channels() {

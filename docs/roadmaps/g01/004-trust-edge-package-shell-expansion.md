@@ -1,6 +1,6 @@
 # Roadmap g01.004: Trust-Edge Package Shell Expansion
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-08
 Depends on: g01.003
@@ -71,53 +71,8 @@ implementation terms:
 
 ## Next Task
 
-Push the executable engine slice beyond requested/effective forecast mode
-reconciliation by teaching `signal-runtime` to propagate those transitions into
-the real scheduler path, especially queued prework retirement or reuse when
-mode changes, recovery crosses an anticipative-disabled epoch, or runtime role
-defaults are revised while future work is already primed. The next concrete
-step after that is to let runtime rebuild the future window proactively after
-forecast-plan changes instead of only preserving compatible queued entries and
-retiring the rest.
-now explicit runtime behavior instead of silent overwrite.
-The next practical step is no longer "make queued prework exist" but "make the
-bounded queue behave more like a scheduler": hosts now keep a small future
-priming horizon, and runtime already distinguishes identical future-state reuse
-from changed future-state replacement for the same target block.
-That has now moved one step further: the host horizon is expressed to runtime
-as an explicit planning window, and runtime can retire queued future targets
-that fall out of that window with `PlanningWindowRevised` instead of relying
-on host-local queue replacement alone.
-That queue reconciliation is now proactive rather than passive: when forecast
-mode/profile/policy changes revise the future plan, runtime preserves
-compatible queued work, retires incompatible entries, and re-primes any
-missing future targets immediately.
-That lifecycle ownership has now widened too: runtime can rebuild the current
-forecast window on graph apply and start/restart, so host boot no longer needs
-its own one-off forecast priming call to seed anticipative work.
-The next scheduler seam after that was whether the future window represented
-immediately prepared work or a real bounded background-lane queue. That is now
-moving into runtime too: future targets can remain pending inside the runtime
-window until the bounded prework runner prepares them.
-That runner is now also separated from current-block forecast application:
-forecast application reconciles the future window, while an explicit
-runtime-owned prework service lane advances pending future targets.
-That lane now also exposes runtime-owned paused, pending, servicing, idle,
-disabled, and starved states, so the next scheduler work can build on a
-stateful background service boundary rather than a blind repeated drain call.
-That stateful lane now also has explicit pressure hints and adaptive service
-behavior, so timeout/watchdog paths can make runtime throttle or yield
-anticipative work instead of servicing it with a fixed drain policy.
-It now also has backlog-aware prioritization, so elevated pressure keeps
-servicing immediate and near-term pending targets while deferred future work
-stays queued instead of being drained in plain block order.
-That elevated-pressure policy is now also graph-semantic-aware, so latency-
-focused anticipative graphs can widen that service scope without changing the
-host block loop or introducing host-local scheduler branching. Mixed graphs
-with plugin-backed realtime nodes now also narrow that service scope into a
-plugin-constrained path without pushing scheduler exceptions back into hosts.
-That plugin-constrained path is now also sandbox-aware, so active plugin
-sandbox count can fully gate the background prework lane under non-normal
+`g01.004` is complete. Reopen only if the trust-edge package boundary itself
+needs another structural expansion.
 pressure and the shared engine snapshot/export surface now reports both the
 active plugin sandbox count and whether that gate is active.
 That boundary now also carries plugin-backed node bindings, so runtime can

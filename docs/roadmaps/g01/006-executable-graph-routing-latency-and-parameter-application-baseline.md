@@ -1,6 +1,6 @@
 # Roadmap g01.006: Executable Graph Routing, Latency, and Parameter Application Baseline
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-10
 Depends on: g01.005
@@ -57,31 +57,48 @@ how time-sensitive control changes are applied. Without that:
 
 ### 006.2 Routing and latency semantics
 
-- [ ] implement deterministic routing/mix rules for direct edges, fan-in, and
+- [x] implement deterministic routing/mix rules for direct edges, fan-in, and
       fan-out paths
-- [ ] make graph validation reject or explicitly classify unsupported cycles and
+- [x] make graph validation reject or explicitly classify unsupported cycles and
       feedback cases
-- [ ] calculate and surface latency/tail contribution through graph-owned
+- [x] calculate and surface latency/tail contribution through graph-owned
       structures instead of leaving that as host-local lore
-- [ ] extend block reports so graph execution outcomes expose enough detail for
+- [x] extend block reports so graph execution outcomes expose enough detail for
       runtime diagnostics and scheduling decisions
-- [ ] add fixtures that prove node-oriented routing shapes such as track-lane to
+- [x] add fixtures that prove node-oriented routing shapes such as track-lane to
       bus, bus to console-node, and send/return-style fan-out can be expressed
       without redefining core routing rules
 
 ### 006.3 Parameter-event application
 
-- [ ] define the graph-side parameter event shape and its relationship to
+- [x] define the graph-side parameter event shape and its relationship to
       runtime batches
-- [ ] support sub-block splitting or another explicit bounded strategy for
+- [x] support sub-block splitting or another explicit bounded strategy for
       applying time-sensitive events inside a processing block
-- [ ] add fixtures that exercise gain/filter/delay-style nodes under parameter
+- [x] add fixtures that exercise gain/filter/delay-style nodes under parameter
       movement rather than testing only static steady-state processing
-- [ ] record how transport-facing state and parameter events share timing rules
+- [x] record how transport-facing state and parameter events share timing rules
       so runtime can remain the authority above a deterministic graph seam
-- [ ] record which node-oriented mixer semantics are deliberately deferred after
+- [x] record which node-oriented mixer semantics are deliberately deferred after
       this batch, so later console and lane work builds on declared graph
       assumptions rather than folklore
+
+Timing note:
+- runtime remains authoritative for transport state, block selection, and
+  parameter batch epoch assignment
+- graph owns only block-local parameter-event interpretation, including sample
+  offsets relative to the current block and the bounded sub-block application
+  strategy used inside node processing
+
+Deferred mixer and node semantics:
+- console-node, lane-strip, and bus-level mix policies such as pan law, solo,
+  mute, and stem ownership are still deferred; `signal-graph` only establishes
+  the topology and processing contract they will sit on
+- plugin-backed node parameter interpretation remains a runtime/trust-edge
+  concern until plugin processing is deepened in later milestones
+- dynamic filter and delay kernels are currently rebuilt per graph block; cross
+  block state retention is deferred because prework and prepared-dispatch
+  handoff would need explicit state snapshot semantics, not just routed buffers
 
 ## Acceptance Signals
 
@@ -106,16 +123,16 @@ how time-sensitive control changes are applied. Without that:
 
 ## Evidence Requirements
 
-- [ ] meaningful graph-contract or routing batches logged under `docs/logs/YYYY-MM/`
-- [ ] closure evidence must name the fixtures or tests used to prove routing and
+- [x] meaningful graph-contract or routing batches logged under `docs/logs/YYYY-MM/`
+- [x] closure evidence must name the fixtures or tests used to prove routing and
       parameter timing behavior
-- [ ] any deferred graph cases such as feedback or multibus complexity recorded
+- [x] any deferred graph cases such as feedback or multibus complexity recorded
       explicitly instead of silently omitted
-- [ ] closure evidence must state how future node-oriented mixer concepts fit
+- [x] closure evidence must state how future node-oriented mixer concepts fit
       the graph seam established here
 
 ## Next Task
 
-Continue `g01.006` with deterministic routing and latency semantics across
-direct edges, fan-in, fan-out, and send/return-style fixtures now that node
-contracts, silence rules, and topology metadata are explicit.
+Begin `g01.007` by making `signal-runtime` the explicit authority for transport
+progression, block-clock truth, and scheduler invalidation on top of the now
+completed graph routing and parameter-application seam.

@@ -53,7 +53,10 @@ impl SignalFixture {
             .map(|frame| ((angular * frame as Sample) + phase_radians).sin() * amplitude)
             .collect();
 
-        Self { sample_rate, samples }
+        Self {
+            sample_rate,
+            samples,
+        }
     }
 
     pub fn sample_rate(&self) -> SampleRate {
@@ -88,7 +91,14 @@ mod tests {
     fn impulse_fixture_sets_single_sample() {
         let fixture = SignalFixture::impulse(SampleRate(48_000), FrameCount(8), 3, 0.75);
         assert_eq!(fixture.samples()[3], 0.75);
-        assert_eq!(fixture.samples().iter().filter(|sample| **sample != 0.0).count(), 1);
+        assert_eq!(
+            fixture
+                .samples()
+                .iter()
+                .filter(|sample| **sample != 0.0)
+                .count(),
+            1
+        );
     }
 
     #[test]
@@ -100,13 +110,7 @@ mod tests {
 
     #[test]
     fn sine_fixture_matches_expected_quadrature_points() {
-        let fixture = SignalFixture::sine(
-            SampleRate(8),
-            FrameCount(8),
-            FrequencyHz(1.0),
-            1.0,
-            0.0,
-        );
+        let fixture = SignalFixture::sine(SampleRate(8), FrameCount(8), FrequencyHz(1.0), 1.0, 0.0);
         let expected = [
             0.0,
             0.70710677,
