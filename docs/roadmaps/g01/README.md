@@ -86,5 +86,5 @@ Working rules for that thread:
 
 ## Next Task
 
-`g01` is complete. Choose or author the next generation roadmap before
-starting another implementation batch.
+`g01` is complete. Open `g02` and start with `g02.001` so the next Signal
+thread deepens DSP and analysis on top of the now-stable runtime foundation.

@@ -25,6 +25,7 @@ The implemented DSP and analysis surface currently lives in these crates:
 - `signal-analysis-tonal`
 - `signal-analysis-loudness`
 - `signal-analysis-character`
+- `signal-analysis-embed`
 
 Everything in this document is based on the current crate implementations under
 `crates/`, not on roadmap intent.
@@ -62,11 +63,32 @@ Current features:
 - `AnalysisMode::{Offline, Streaming}`
 - `Confidence(f32)` with clamped `0.0..=1.0` construction
 - `AnalysisStage<Output>` trait with `mode()` and `analyze()`
+- shared mono analyzer preparation through:
+  - `AnalysisInputConfig`
+  - `AnalysisChannelPolicy`
+  - `PreparedAnalysisBuffer`
+  - `prepare_audio_analysis()`
+  - `prepare_mono_analysis()`
+- shared corpus and acceptance/regression harness contracts through:
+  - `AnalysisCorpusFamily`
+  - `AnalysisCorpusCaseMetadata`
+  - `AnalysisCorpusCase`
+  - `AnalysisMetricValue`
+  - `AcceptanceThreshold`
+  - `RegressionDriftLimit`
+  - `AcceptanceHarnessReport`
+  - `RegressionHarnessReport`
+  - `run_audio_acceptance_harness()`
+  - `compare_audio_analyzers()`
+- first frozen family policy manifest under:
+  - `fixtures/analysis-corpus/manifests/frozen-family-policies-v1.md`
 
 Current constraints:
 
 - all implemented analysis stages currently report `AnalysisMode::Offline`
 - the crate is a shared contract layer, not an algorithm host
+- the harness layer currently assumes whole-buffer offline comparisons rather
+  than streaming or per-segment evaluation
 
 ## DSP Crates
 
@@ -533,41 +555,61 @@ Primary surface:
 
 Default configuration:
 
-- STFT window size: `4096`
-- STFT hop size: `2048`
+- STFT window size: `8192`
+- STFT hop size: `4096`
 - key profile: `Krumhansl`
+- tuning reference mode: `Estimate`
+- target analysis sample rate: `48 kHz`
 
 Current features:
 
-- mono STFT analysis
-- spectrogram chroma extraction through `signal-dsp-spectral`
+- offline mono-prepared analysis through the shared `signal-analysis` input
+  substrate
+- tuning-aware spectrogram chroma extraction through `signal-dsp-spectral`
 - two profile families:
   - `Krumhansl`
   - `Temperley`
+- explicit tuning-reference modes:
+  - standard `A440`
+  - fixed reference
+  - estimated reference with runner-up reporting
 - 24 key correlations:
   - 12 major
   - 12 minor
 - best-key selection from the strongest correlation
-- confidence based on margin between best and second-best correlation
+- confidence and runner-up scoring based on the margin between best and
+  second-best correlation
+- section-local tonal tracking with configurable window and hop defaults
+- harmonic-change events between adjacent tonal segments
+- explicit ambiguity reporting for:
+  - weak tonal centres
+  - confirmed modulation
+  - mixed-tonality recurrence
 
 Returned tonal outputs:
 
 - optional detected key
 - confidence
+- tuning estimate and source
 - normalized 12-bin chroma vector
 - full 24-bin correlation array
+- compact global scoring diagnostics
+- section-local tonal segments with local scoring and ambiguity evidence
+- harmonic-change summaries
+- local ambiguity summaries
 
 Current constraints:
 
 - offline only
 - mono mixdown only
-- no tuning estimation
 - no chord detection
-- no modulation timeline
+- no chord or harmonic-function transcription
 - no scale-degree or harmonic-function surface
+- local tracking is windowed rather than truly streaming or beat-aligned
 
-The current tonal feature set is therefore: global chroma plus whole-track key
-detection.
+The current tonal feature set is therefore: tuning-aware global key analysis
+plus section-local tonal tracking, harmonic-change evidence, and explicit local
+ambiguity reporting.
 
 ## Loudness Analysis
 
@@ -585,47 +627,78 @@ Default configuration:
 - block size: `400 ms`
 - hop size: `100 ms`
 - short-term window: `3.0 s`
+- target analysis sample rate: `48 kHz`
 
 Current features:
 
-- mono loudness analysis
+- offline loudness analysis with explicit per-channel aggregation
 - integrated loudness estimate
 - loudness range estimate
 - true-peak estimate
 - confidence score
+- momentary and short-term loudness traces
+- compact dynamics summary derived from the trace surfaces
+- bounded runtime-diagnostics summary derived from the trace and dynamics
+  surfaces
+- per-channel loudness and true-peak summaries
+- aggregation metadata describing:
+  - channel-weight source
+  - sample-rate support mode
+  - true-peak oversample factor
 
 ### Implemented Loudness Algorithm Behavior
 
 Current loudness behavior includes:
 
-- optional K-weighting stage, but only for `48 kHz`
+- channel-preserving analysis for mono, stereo, and counted multichannel
+  buffers
+- equal-weight aggregation for mono and stereo inputs
+- deterministic equal-weight fallback for generic counted multichannel layouts
+- optional K-weighting stage for `48 kHz` analysis
 - two hardcoded biquad stages for the `48 kHz` K-weighting path
-- fallback to unweighted samples for all other sample rates
+- resampled `48 kHz` weighting when the frozen analysis rate is kept at `48 kHz`
+- fallback to unweighted samples for other configured analysis rates
 - block mean-square measurement
 - absolute gating at `-70 LUFS`
 - relative gating at `10 LU` below the absolute-gated mean
 - integrated loudness from the surviving gated blocks
-- short-term loudness range from the `10th` to `95th` percentile
-- true peak estimated by `4x` linear interpolation between adjacent samples
+- momentary trace from aggregated `400 ms` windows
+- short-term loudness range from the `10th` to `95th` percentile over the
+  aggregated short-term windows
+- short-term trace from aggregated `3.0 s` windows
+- dynamics summary including:
+  - target offset
+  - peak-to-loudness spread
+  - momentary and short-term maxima
+  - momentary and short-term trace ranges
+- bounded runtime-diagnostics summary including:
+  - current momentary and short-term loudness
+  - recent momentary and short-term trace tails
+  - top-line delivery metrics needed by runtime monitoring
+- true peak estimated by linear interpolation with:
+  - `4x` oversampling up to `48 kHz`
+  - `2x` oversampling up to `96 kHz`
+  - `1x` passthrough above `96 kHz`
 
 Current confidence behavior:
 
 - confidence is `0.0` for silence or invalid input
-- `48 kHz` analysis gets full sample-rate credit
-- non-`48 kHz` analysis is down-weighted
+- native `48 kHz` weighted analysis gets full sample-rate credit
+- resampled-to-`48 kHz` weighted analysis is slightly down-weighted
+- unweighted sample-rate fallback is down-weighted more aggressively
+- generic counted-layout fallback is slightly down-weighted
 - longer material increases confidence through block coverage
 
 Current constraints:
 
 - offline only
-- mono mixdown only
 - K-weighting coefficients only for `48 kHz`
 - non-`48 kHz` paths are approximations, not equivalent-weighted implementations
 - true peak is an approximate interpolated estimate, not a band-limited
   oversampled reconstruction
-- no momentary loudness output
-- no short-term loudness timeline output
-- no per-channel or surround loudness handling
+- no speaker-role-aware surround weighting beyond mono/stereo and generic
+  counted-layout fallback
+- no speaker-role-aware surround weighting for named multichannel layouts yet
 
 ## Character Analysis
 
@@ -636,6 +709,13 @@ Primary surface:
 - `CharacterAnalyzer`
 - `CharacterAnalyzerConfig`
 - `CharacterAnalysisResult`
+- `SpectralShapeDescriptorPack`
+- `SpectralContrastDescriptorPack`
+- `SpectralProfileDescriptorPack`
+- `TemporalDescriptorPack`
+- `TemporalShapeDescriptorPack`
+- `DynamicsDescriptorPack`
+- `CharacterDescriptorReductionPolicy`
 
 Current configuration surface:
 
@@ -650,21 +730,41 @@ Current configuration surface:
 Current features:
 
 - offline mono character analysis over the full track or a centered excerpt
-- spectral centroid as a brightness descriptor
-- onset density derived from spectral-flux peak counts
-- zero-crossing rate as a noisiness proxy
-- RMS energy and peak amplitude
-- transient density from sample-slope event counting
-- sustain ratio using a fixed silence threshold
-- dynamic range as peak-minus-RMS crest headroom
+- grouped descriptor-pack result surface instead of one flat summary payload
+- spectral shape pack with:
+  - centroid
+  - spread
+  - 85 percent rolloff
+  - 95 percent rolloff
+  - flatness
+- spectral contrast pack with percentile-based broadband contrast in dB
+- spectral profile pack with an 8-band normalized Slaney mel profile
+- temporal pack with onset density, zero-crossing rate, transient density, and
+  sustain ratio
+- temporal-shape pack with:
+  - peak transient strength
+  - median transient strength
+  - attack time
+  - decay time
+  - sustain-plateau ratio
+- dynamics pack with RMS energy, peak amplitude, and crest-style dynamic range
+- explicit per-descriptor reduction policy metadata
 - confidence scoring based on analyzed duration and sample-rate support
 
 Implementation details that are part of the current behavior:
 
 - excerpted analysis is taken from the center of the track rather than the
   beginning
-- onset density uses the STFT spectrogram and counts flux peaks above
-  `onset_threshold * mean_flux`
+- spectral shape and contrast descriptors are computed per STFT frame and
+  reduced by the frame median
+- the coarse mel profile is projected from the shared spectrogram through 8
+  Slaney mel bands over `30 Hz..=min(Nyquist, 12 kHz)`, mean-reduced, then
+  normalized to sum to `1.0` when energy exists
+- onset density and temporal-shape event markers use spectral-flux peaks above
+  `onset_threshold * mean_flux`, with nearby peaks collapsed into one event
+- temporal-shape attack and decay summaries are derived from a frame RMS
+  envelope using bounded `10 percent -> 90 percent` rise/fall spans around each
+  detected event
 - transient density uses direct time-domain slope checks with a minimum event
   spacing
 - RMS energy is clamped into `0.0..=1.0`
@@ -676,9 +776,82 @@ Current constraints:
 - offline only
 - mono mixdown only
 - no per-frame descriptor timeline output
+- no per-event marker timeline is exposed yet, only aggregate temporal-shape
+  summaries
 - no learned embeddings or classification labels
-- no multiband timbral descriptors such as rolloff, flatness, or contrast
+- no multiband contrast family beyond the current broadband summary and coarse
+  mel profile
 - no stereo-width or spatial character metrics
+
+## Embedding And Semantic Inference
+
+### `signal-analysis-embed`
+
+Primary surface:
+
+- `SemanticEmbedder`
+- `SemanticEmbedderConfig`
+- `SemanticAnalysisResult`
+- `DescriptorEmbedding`
+- `SemanticTag`
+- `SemanticAnalysisDiagnostics`
+- `SemanticModelSpec`
+
+Current configuration surface:
+
+- embedded `CharacterAnalyzerConfig` for shared descriptor extraction
+- requested model id
+- fallback behavior through `ModelFallbackBehavior`
+- output cap for ranked semantic tags
+
+Current features:
+
+- offline descriptor-based semantic inference built on
+  `signal-analysis-character`
+- deterministic built-in model id:
+  - `signal:descriptor-embed:v1`
+- explicit model contract metadata for:
+  - version
+  - source family
+  - fallback behavior
+  - embedding dimensions
+  - determinism and network expectations
+  - estimated heap usage
+- 8-dimensional descriptor embedding projected from:
+  - spectral shape
+  - spectral contrast
+  - spectral profile
+  - temporal activity
+  - temporal shape
+  - dynamics
+- ranked semantic tags with confidence for:
+  - `TonalFocus`
+  - `TexturalNoise`
+  - `PulseDriven`
+  - `SustainedBody`
+  - `DynamicPunch`
+- diagnostics including descriptor confidence, semantic confidence, top-tag
+  margin, embedding norm, active dimensions, and fallback use
+
+Implementation details that are part of the current behavior:
+
+- the crate does not own a separate front-end feature extractor; it reuses the
+  shared character analyzer and preserves the source descriptor result in every
+  semantic analysis output
+- the built-in model is a deterministic handcrafted projection, not an ONNX or
+  learned neural model
+- unknown model ids can fail closed or fall back to the built-in model
+  depending on configuration
+- semantic tags are sorted by descending score and truncated by the configured
+  `max_tag_count`
+
+Current constraints:
+
+- offline only
+- built-in model only; no external weight loading yet
+- no per-segment or timeline embedding output
+- no taxonomy mapping layer beyond the five built-in semantic tags
+- no learned classifier or nearest-neighbor retrieval surface yet
 
 ## What Is Implemented Versus Planned
 
@@ -694,13 +867,14 @@ Implemented now:
 - offline global key detection
 - offline loudness summary metrics
 - offline audio character descriptors
+- offline descriptor-based embedding and semantic inference baseline
 
 Planned elsewhere but not implemented in these crates yet:
 
 - streaming analysis implementations
 - richer meter families
 - tuning/chord/modulation analysis
-- learned embedding and classifier analysis surfaces
+- learned embedding models and richer classifier analysis surfaces
 - richer loudness timelines and standards-complete weighting coverage
 - broader DSP families such as resampling, dynamics, convolution, and
   oscillator kernels
@@ -717,6 +891,9 @@ Useful entry points for readers who want the implementation after this doc:
 - `crates/signal-analysis-tonal/src/lib.rs`
 - `crates/signal-analysis-loudness/src/lib.rs`
 - `crates/signal-analysis-character/src/lib.rs`
+- `crates/signal-analysis-embed/src/lib.rs`
+- `fixtures/analysis-corpus/README.md`
+- `fixtures/analysis-corpus/manifests/frozen-family-policies-v1.md`
 - `crates/signal-analysis-rhythm/examples/offline_rhythm_demo.rs`
 - `crates/signal-analysis-rhythm/examples/file_rhythm_probe.rs`
 - `crates/signal-analysis-tonal/examples/offline_tonal_demo.rs`
@@ -724,7 +901,6 @@ Useful entry points for readers who want the implementation after this doc:
 
 ## Next Task
 
-Add deeper API-local docs and examples for the new low-level DSP module types
-such as `ControlPlan`, mel spectrogram configuration, and the character
-analyzer presets so the current feature reference stays synchronized with the
-growing implementation surface.
+The `g02` DSP and analysis spine is complete. Open a new generation only when
+future work needs another sequenced expansion beyond the current shipped
+surface and acceptance harness.

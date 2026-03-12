@@ -8,6 +8,7 @@ publish = false
 description = "Embeddable runtime orchestration and diagnostics surfaces for Signal."
 
 [dependencies]
+hound = "3.5"
 signal-analysis = { path = "../signal-analysis" }
 signal-graph = { path = "../signal-graph" }
 signal-hardware = { path = "../signal-hardware" }

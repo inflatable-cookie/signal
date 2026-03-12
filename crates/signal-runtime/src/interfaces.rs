@@ -10,7 +10,10 @@ use signal_graph::{
     GraphExecutionLane, GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeResetPolicy,
     GraphNodeSilencePolicy, GraphNodeTopologyRole, GraphStageSpec,
 };
-use signal_hardware::{AudioSampleFormat, BackendHealth, BackendPolicyTier, HardwareConfigRequest};
+use signal_hardware::{
+    AudioSampleFormat, BackendHealth, BackendPolicyTier, HardwareClockSource,
+    HardwareConfigRequest, HardwareLifecycleOwnership, HardwareRestartPolicy,
+};
 use signal_plugin::{BlockSequenceContinuityReport, CompletionState};
 use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
 
@@ -358,6 +361,12 @@ pub enum RuntimeSchedulerTopologyIssue {
     },
 }
 
+/// Scheduler-facing topology summary derived from the active graph projection
+/// and schedule view.
+///
+/// This tells hosts whether the runtime-owned planning shape lines up with the
+/// declared track/bus/send/console topology or whether a host would need to
+/// reinterpret the current plan boundary.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimeSchedulerTopologySummary {
     pub track_lane_node_count: usize,
@@ -398,6 +407,12 @@ impl Default for RuntimePreworkBacklogClass {
     }
 }
 
+/// Supervisor-facing snapshot of the most recent engine block.
+///
+/// This is the primary integration surface for understanding how runtime is
+/// currently executing the graph: planning shape, dispatch behavior, prework
+/// service state, forecast policy, and per-block output telemetry all land
+/// here.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RuntimeEngineBlockSnapshot {
     pub graph_id: Option<String>,
@@ -623,6 +638,10 @@ pub struct ParameterEvent {
     pub normalized_value: f32,
 }
 
+/// Runtime-owned batch of parameter changes accepted for one automation epoch.
+///
+/// Runtime stays authoritative for epoch assignment and block-boundary
+/// application; callers supply only the logical event payload.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParameterBatch {
     pub epoch: u64,
@@ -683,6 +702,179 @@ pub struct RuntimeTimelineSnapshot {
     pub last_engine_block_start_samples: Option<i64>,
     pub last_engine_block_end_samples: Option<i64>,
     pub loop_wrap_count: u64,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeTransportObservationSnapshot {
+    pub transport_epoch: u64,
+    pub projected_playing: Option<bool>,
+    pub projected_tempo_bpm: Option<f64>,
+    pub projected_timeline_position_samples: Option<i64>,
+    pub projected_loop_start_samples: Option<i64>,
+    pub projected_loop_end_samples: Option<i64>,
+    pub observed_playing: Option<bool>,
+    pub observed_tempo_bpm: Option<f64>,
+    pub observed_timeline_position_samples: Option<i64>,
+    pub observed_loop_start_samples: Option<i64>,
+    pub observed_loop_end_samples: Option<i64>,
+    pub last_transition: Option<RuntimeTransportTransitionKind>,
+    pub last_transition_processing_epoch: Option<u64>,
+    pub last_transition_block_sequence: Option<u64>,
+    pub last_engine_block_start_samples: Option<i64>,
+    pub last_engine_block_end_samples: Option<i64>,
+    pub loop_wrap_count: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeRecordingCaptureState {
+    Idle,
+    Capturing,
+    Failed,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeRecordingCaptureStartRequest {
+    pub take_id: String,
+    pub track_id: String,
+    pub start_samples: i64,
+    pub capture_path: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeRecordingCaptureCommitReceipt {
+    pub take_id: String,
+    pub track_id: String,
+    pub start_samples: i64,
+    pub duration_samples: u32,
+    pub channel_count: usize,
+    pub peak_level: f32,
+    pub capture_path: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeRecordingCaptureSnapshot {
+    pub capture_ready: bool,
+    pub state: Option<RuntimeRecordingCaptureState>,
+    pub active_take_id: Option<String>,
+    pub active_track_id: Option<String>,
+    pub capture_start_samples: Option<i64>,
+    pub active_capture_path: Option<String>,
+    pub buffered_block_count: u64,
+    pub buffered_frame_count: u64,
+    pub captured_channel_count: usize,
+    pub peak_level: Option<f32>,
+    pub pressure_event_count: u64,
+    pub last_committed_take_id: Option<String>,
+    pub last_committed_path: Option<String>,
+    pub last_committed_duration_samples: Option<u32>,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeMediaAssetState {
+    Ingesting,
+    Conforming,
+    Ready,
+    Invalid,
+    Rebuilding,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMediaAssetRegistration {
+    pub asset_id: String,
+    pub content_hash: String,
+    pub source_path: String,
+    pub file_name: String,
+    pub byte_size: u64,
+    pub sample_rate_hz: u32,
+    pub channel_count: u16,
+    pub duration_samples: u64,
+    pub waveform_bin_count: usize,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeMediaAssetSnapshot {
+    pub asset_id: String,
+    pub content_hash: String,
+    pub source_path: String,
+    pub file_name: String,
+    pub byte_size: u64,
+    pub sample_rate_hz: u32,
+    pub channel_count: u16,
+    pub duration_samples: u64,
+    pub waveform_bin_count: usize,
+    pub state: Option<RuntimeMediaAssetState>,
+    pub cache_path: Option<String>,
+    pub cache_byte_size: Option<u64>,
+    pub rebuild_count: u32,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeMediaPipelineSnapshot {
+    pub cache_root_path: String,
+    pub asset_count: usize,
+    pub ready_asset_count: usize,
+    pub invalid_asset_count: usize,
+    pub ingesting_asset_count: usize,
+    pub conforming_asset_count: usize,
+    pub rebuilding_asset_count: usize,
+    pub assets: Vec<RuntimeMediaAssetSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeWarpMode {
+    Off,
+    Repitch,
+    ElastiqueDraft,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeWarpReadiness {
+    Bypassed,
+    Ready,
+    Degraded,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeWarpClipRegistration {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub mode: RuntimeWarpMode,
+    pub source_tempo_bpm: Option<f64>,
+    pub anchor_timeline_samples: i64,
+    pub start_samples: i64,
+    pub duration_samples: u32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeWarpClipSnapshot {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub mode: RuntimeWarpMode,
+    pub source_tempo_bpm: Option<f64>,
+    pub project_tempo_bpm: f64,
+    pub realized_ratio: f64,
+    pub anchor_timeline_samples: i64,
+    pub start_samples: i64,
+    pub duration_samples: u32,
+    pub readiness: RuntimeWarpReadiness,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeWarpPipelineSnapshot {
+    pub clip_count: usize,
+    pub ready_clip_count: usize,
+    pub degraded_clip_count: usize,
+    pub bypassed_clip_count: usize,
+    pub active_warp_count: usize,
+    pub clips: Vec<RuntimeWarpClipSnapshot>,
+    pub summary: String,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -810,6 +1002,12 @@ pub struct RuntimeTransportConcurrencySnapshot {
     pub last_rejection_reason: Option<String>,
 }
 
+/// Runtime control-plane summary.
+///
+/// Callers typically pair this with `RuntimeReadiness` and
+/// `EffectiveRuntimeConfig` to decide whether the runtime has been handshaken,
+/// configured, started, or restarted and which control request most recently
+/// changed that state.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimeControlSnapshot {
     pub handshaken: bool,
@@ -823,6 +1021,43 @@ pub struct RuntimeControlSnapshot {
     pub last_client_version: Option<String>,
     pub last_stop_reason: Option<StopReason>,
     pub last_reconfigure: Option<RuntimeConfigRequest>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSchedulerState {
+    #[default]
+    Stopped,
+    Configured,
+    ReadyIdle,
+    RealtimeOnly,
+    Anticipative,
+    Degraded,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeExecutionPhase {
+    #[default]
+    Idle,
+    Priming,
+    Prework,
+    Realtime,
+    Degraded,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeSchedulerSnapshot {
+    pub state: RuntimeSchedulerState,
+    pub phase: RuntimeExecutionPhase,
+    pub graph_applied: bool,
+    pub schedule_applied: bool,
+    pub transport_projected: bool,
+    pub anticipative_enabled: bool,
+    pub active_graph_id: Option<String>,
+    pub phase_count: usize,
+    pub lane_count: usize,
+    pub dispatch_count: usize,
+    pub pending_prework_target_count: usize,
+    pub processed_block_count: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1633,6 +1868,48 @@ pub struct RuntimeHostAudioTransferPolicy {
     pub zero_fill_unwritten_output: bool,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostLifecycleOwnership {
+    HostDrivenCallback,
+    BackendManagedCallback,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostRestartPolicy {
+    HostMustRestart,
+    BackendMayRestart,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostClockSource {
+    Internal,
+    ExternalWordClock,
+    DigitalInput,
+    Virtual,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RuntimeHostClockingSummary {
+    pub clock_source: RuntimeHostClockSource,
+    pub ownership: RuntimeHostLifecycleOwnership,
+    pub restart_policy: RuntimeHostRestartPolicy,
+    pub callback_interval_ms: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RuntimeHostLatencySummary {
+    pub input_latency_samples: Option<u32>,
+    pub output_latency_samples: u32,
+    pub round_trip_latency_samples: Option<u32>,
+    pub graph_latency_samples: u32,
+    pub estimated_output_latency_samples: u32,
+    pub estimated_round_trip_latency_samples: Option<u32>,
+    pub output_latency_ms: f32,
+    pub graph_latency_ms: f32,
+    pub estimated_output_latency_ms: f32,
+    pub estimated_round_trip_latency_ms: Option<f32>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeHostHardwareSummary {
     pub backend_name: String,
@@ -1669,6 +1946,8 @@ pub struct RuntimeHostAudioPumpSummary {
 pub struct RuntimeHostIoSummary {
     pub hardware: RuntimeHostHardwareSummary,
     pub audio_pump: RuntimeHostAudioPumpSummary,
+    pub clocking: RuntimeHostClockingSummary,
+    pub latency: RuntimeHostLatencySummary,
     pub runtime_graph_id_matches_pump: bool,
 }
 
@@ -1688,11 +1967,18 @@ impl RuntimeHostObservationReport {
 
     pub fn render_compact(&self) -> String {
         format!(
-            "{} host_backend={} host_device={} host_stream_state={:?} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
+            "{} host_backend={} host_device={} host_stream_state={:?} host_clock_source={:?} host_clock_ownership={:?} host_clock_restart_policy={:?} host_callback_interval_ms={:.3} host_output_latency_samples={} host_graph_latency_samples={} host_estimated_output_latency_samples={} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
             self.observation.render_compact(),
             self.host_io.hardware.backend_name,
             self.host_io.hardware.device_id,
             self.host_io.audio_pump.stream_state,
+            self.host_io.clocking.clock_source,
+            self.host_io.clocking.ownership,
+            self.host_io.clocking.restart_policy,
+            self.host_io.clocking.callback_interval_ms,
+            self.host_io.latency.output_latency_samples,
+            self.host_io.latency.graph_latency_samples,
+            self.host_io.latency.estimated_output_latency_samples,
             self.host_io.hardware.backend_health,
             self.host_io.hardware.xrun_count,
             self.host_io.hardware.device_loss_count,
@@ -1721,6 +2007,20 @@ impl RuntimeHostObservationReport {
                 "\nhost_output_channels={}",
                 "\nhost_sample_format={:?}",
                 "\nhost_simulated={}",
+                "\nhost_clock_source={:?}",
+                "\nhost_clock_ownership={:?}",
+                "\nhost_clock_restart_policy={:?}",
+                "\nhost_callback_interval_ms={:.3}",
+                "\nhost_input_latency_samples={:?}",
+                "\nhost_output_latency_samples={}",
+                "\nhost_round_trip_latency_samples={:?}",
+                "\nhost_graph_latency_samples={}",
+                "\nhost_estimated_output_latency_samples={}",
+                "\nhost_estimated_round_trip_latency_samples={:?}",
+                "\nhost_output_latency_ms={:.3}",
+                "\nhost_graph_latency_ms={:.3}",
+                "\nhost_estimated_output_latency_ms={:.3}",
+                "\nhost_estimated_round_trip_latency_ms={:?}",
                 "\nhost_backend_health={:?}",
                 "\nhost_backend_xruns={}",
                 "\nhost_backend_callback_overruns={}",
@@ -1747,6 +2047,20 @@ impl RuntimeHostObservationReport {
             self.host_io.hardware.output_channels,
             self.host_io.hardware.sample_format,
             self.host_io.hardware.simulated,
+            self.host_io.clocking.clock_source,
+            self.host_io.clocking.ownership,
+            self.host_io.clocking.restart_policy,
+            self.host_io.clocking.callback_interval_ms,
+            self.host_io.latency.input_latency_samples,
+            self.host_io.latency.output_latency_samples,
+            self.host_io.latency.round_trip_latency_samples,
+            self.host_io.latency.graph_latency_samples,
+            self.host_io.latency.estimated_output_latency_samples,
+            self.host_io.latency.estimated_round_trip_latency_samples,
+            self.host_io.latency.output_latency_ms,
+            self.host_io.latency.graph_latency_ms,
+            self.host_io.latency.estimated_output_latency_ms,
+            self.host_io.latency.estimated_round_trip_latency_ms,
             self.host_io.hardware.backend_health,
             self.host_io.hardware.xrun_count,
             self.host_io.hardware.callback_overrun_count,
@@ -1787,6 +2101,24 @@ impl RuntimeHostObservationReport {
                 "\"output_channels\":{},",
                 "\"sample_format\":{},",
                 "\"simulated\":{},",
+                "\"clocking\":{{",
+                "\"clock_source\":{},",
+                "\"ownership\":{},",
+                "\"restart_policy\":{},",
+                "\"callback_interval_ms\":{}",
+                "}},",
+                "\"latency\":{{",
+                "\"input_latency_samples\":{},",
+                "\"output_latency_samples\":{},",
+                "\"round_trip_latency_samples\":{},",
+                "\"graph_latency_samples\":{},",
+                "\"estimated_output_latency_samples\":{},",
+                "\"estimated_round_trip_latency_samples\":{},",
+                "\"output_latency_ms\":{},",
+                "\"graph_latency_ms\":{},",
+                "\"estimated_output_latency_ms\":{},",
+                "\"estimated_round_trip_latency_ms\":{}",
+                "}},",
                 "\"backend_health\":{},",
                 "\"xrun_count\":{},",
                 "\"callback_overrun_count\":{},",
@@ -1835,6 +2167,33 @@ impl RuntimeHostObservationReport {
                 AudioSampleFormat::I32 => "I32",
             })),
             self.host_io.hardware.simulated,
+            json_option_string(Some(match self.host_io.clocking.clock_source {
+                RuntimeHostClockSource::Internal => "Internal",
+                RuntimeHostClockSource::ExternalWordClock => "ExternalWordClock",
+                RuntimeHostClockSource::DigitalInput => "DigitalInput",
+                RuntimeHostClockSource::Virtual => "Virtual",
+            })),
+            json_option_string(Some(match self.host_io.clocking.ownership {
+                RuntimeHostLifecycleOwnership::HostDrivenCallback => "HostDrivenCallback",
+                RuntimeHostLifecycleOwnership::BackendManagedCallback => {
+                    "BackendManagedCallback"
+                }
+            })),
+            json_option_string(Some(match self.host_io.clocking.restart_policy {
+                RuntimeHostRestartPolicy::HostMustRestart => "HostMustRestart",
+                RuntimeHostRestartPolicy::BackendMayRestart => "BackendMayRestart",
+            })),
+            self.host_io.clocking.callback_interval_ms,
+            json_option_u32(self.host_io.latency.input_latency_samples),
+            self.host_io.latency.output_latency_samples,
+            json_option_u32(self.host_io.latency.round_trip_latency_samples),
+            self.host_io.latency.graph_latency_samples,
+            self.host_io.latency.estimated_output_latency_samples,
+            json_option_u32(self.host_io.latency.estimated_round_trip_latency_samples),
+            self.host_io.latency.output_latency_ms,
+            self.host_io.latency.graph_latency_ms,
+            self.host_io.latency.estimated_output_latency_ms,
+            json_option_f32(self.host_io.latency.estimated_round_trip_latency_ms),
             json_option_string(Some(match self.host_io.hardware.backend_health {
                 BackendHealth::Healthy => "Healthy",
                 BackendHealth::Degraded => "Degraded",
@@ -1869,6 +2228,35 @@ impl RuntimeHostObservationReport {
             json_option_string(self.host_io.audio_pump.last_runtime_graph_id.as_deref()),
             self.host_io.runtime_graph_id_matches_pump,
         )
+    }
+}
+
+impl From<HardwareLifecycleOwnership> for RuntimeHostLifecycleOwnership {
+    fn from(value: HardwareLifecycleOwnership) -> Self {
+        match value {
+            HardwareLifecycleOwnership::HostDrivenCallback => Self::HostDrivenCallback,
+            HardwareLifecycleOwnership::BackendManagedCallback => Self::BackendManagedCallback,
+        }
+    }
+}
+
+impl From<HardwareRestartPolicy> for RuntimeHostRestartPolicy {
+    fn from(value: HardwareRestartPolicy) -> Self {
+        match value {
+            HardwareRestartPolicy::HostMustRestart => Self::HostMustRestart,
+            HardwareRestartPolicy::BackendMayRestart => Self::BackendMayRestart,
+        }
+    }
+}
+
+impl From<HardwareClockSource> for RuntimeHostClockSource {
+    fn from(value: HardwareClockSource) -> Self {
+        match value {
+            HardwareClockSource::Internal => Self::Internal,
+            HardwareClockSource::ExternalWordClock => Self::ExternalWordClock,
+            HardwareClockSource::DigitalInput => Self::DigitalInput,
+            HardwareClockSource::Virtual => Self::Virtual,
+        }
     }
 }
 
@@ -2721,6 +3109,7 @@ pub struct RuntimeObservationReport {
     pub readiness: RuntimeReadiness,
     pub effective_config: EffectiveRuntimeConfig,
     pub control_snapshot: RuntimeControlSnapshot,
+    pub scheduler_snapshot: RuntimeSchedulerSnapshot,
     pub diagnostics_snapshot: RuntimeDiagnosticsSnapshot,
     pub supervision_snapshot: RuntimeSupervisionSnapshot,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
@@ -2742,6 +3131,7 @@ impl RuntimeObservationReport {
         let readiness = runtime.get_readiness();
         let effective_config = runtime.get_effective_config();
         let control_snapshot = runtime.get_control_snapshot();
+        let scheduler_snapshot = runtime.get_scheduler_snapshot();
         let diagnostics_snapshot = runtime.get_diagnostics_snapshot();
         let supervision_snapshot = runtime.get_supervision_snapshot();
         let timeline_snapshot = runtime.get_timeline_snapshot();
@@ -2752,6 +3142,7 @@ impl RuntimeObservationReport {
             readiness: readiness.clone(),
             effective_config,
             control_snapshot,
+            scheduler_snapshot,
             diagnostics_snapshot,
             supervision_snapshot: supervision_snapshot.clone(),
             timeline_snapshot,
@@ -2818,6 +3209,8 @@ impl RuntimeObservationReport {
         );
         let scheduler_topology =
             format_scheduler_topology_compact(&self.engine_block_snapshot.scheduler_topology);
+        let scheduler_snapshot =
+            format_runtime_scheduler_snapshot_compact(&self.scheduler_snapshot);
         let scheduler_summary = format_runtime_scheduler_summary_compact(&self.scheduler_summary);
         let block_summary = format_runtime_block_summary_compact(&self.block_summary);
         let degradation_summary =
@@ -2825,7 +3218,7 @@ impl RuntimeObservationReport {
         let execution_topology_summary =
             format_runtime_execution_topology_summary_compact(&self.execution_topology_summary);
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -2850,6 +3243,7 @@ impl RuntimeObservationReport {
                 .last_block_sequence(),
             automation,
             transport_timeline,
+            scheduler_snapshot,
             scheduler_summary,
             block_summary,
             degradation_summary,
@@ -3200,6 +3594,8 @@ impl RuntimeSupervisorReport {
         let scheduler_topology = format_scheduler_topology_multiline(
             &self.observation.engine_block_snapshot.scheduler_topology,
         );
+        let scheduler_snapshot =
+            format_runtime_scheduler_snapshot_multiline(&self.observation.scheduler_snapshot);
         let scheduler_summary =
             format_runtime_scheduler_summary_multiline(&self.observation.scheduler_summary);
         let block_summary = format_runtime_block_summary_multiline(&self.observation.block_summary);
@@ -3209,7 +3605,7 @@ impl RuntimeSupervisorReport {
             &self.observation.execution_topology_summary,
         );
         let multiline = format!(
-            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
+            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
             self.observation.readiness,
             self.observation.effective_config.sample_rate.0,
             self.observation.effective_config.block_size,
@@ -3254,6 +3650,7 @@ impl RuntimeSupervisorReport {
                 .lease_rollovers,
             automation,
             transport_timeline,
+            scheduler_snapshot,
             scheduler_summary,
             block_summary,
             degradation_summary,
@@ -3675,6 +4072,7 @@ impl RuntimeSupervisorReport {
                 "\"transport_last_block_end_samples\":{},",
                 "\"transport_loop_wrap_count\":{},",
                 "\"engine_block_snapshot\":{},",
+                "\"scheduler_snapshot\":{},",
                 "\"scheduler_summary\":{},",
                 "\"block_summary\":{},",
                 "\"degradation_summary\":{},",
@@ -3792,6 +4190,7 @@ impl RuntimeSupervisorReport {
             ),
             self.observation.timeline_snapshot.loop_wrap_count,
             json_runtime_engine_block_snapshot(&self.observation.engine_block_snapshot),
+            json_runtime_scheduler_snapshot(&self.observation.scheduler_snapshot),
             json_runtime_scheduler_export_summary(&self.observation.scheduler_summary),
             json_runtime_block_execution_summary(&self.observation.block_summary),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
@@ -3882,6 +4281,13 @@ fn json_option_string(value: Option<&str>) -> String {
 }
 
 fn json_option_u64(value: Option<u64>) -> String {
+    match value {
+        Some(value) => value.to_string(),
+        None => "null".into(),
+    }
+}
+
+fn json_option_u32(value: Option<u32>) -> String {
     match value {
         Some(value) => value.to_string(),
         None => "null".into(),
@@ -3987,6 +4393,24 @@ fn format_runtime_scheduler_summary_compact(summary: &RuntimeSchedulerExportSumm
     )
 }
 
+fn format_runtime_scheduler_snapshot_compact(snapshot: &RuntimeSchedulerSnapshot) -> String {
+    format!(
+        " scheduler_snapshot_state={:?} scheduler_snapshot_phase={:?} scheduler_snapshot_graph_applied={} scheduler_snapshot_schedule_applied={} scheduler_snapshot_transport_projected={} scheduler_snapshot_anticipative_enabled={} scheduler_snapshot_graph_id={:?} scheduler_snapshot_phase_count={} scheduler_snapshot_lane_count={} scheduler_snapshot_dispatch_count={} scheduler_snapshot_pending_prework_targets={} scheduler_snapshot_processed_blocks={}",
+        snapshot.state,
+        snapshot.phase,
+        snapshot.graph_applied,
+        snapshot.schedule_applied,
+        snapshot.transport_projected,
+        snapshot.anticipative_enabled,
+        snapshot.active_graph_id,
+        snapshot.phase_count,
+        snapshot.lane_count,
+        snapshot.dispatch_count,
+        snapshot.pending_prework_target_count,
+        snapshot.processed_block_count,
+    )
+}
+
 fn format_runtime_scheduler_summary_multiline(summary: &RuntimeSchedulerExportSummary) -> String {
     format!(
         "\nscheduler_summary_phase_count={}\nscheduler_summary_anticipative_phase_count={}\nscheduler_summary_lane_count={}\nscheduler_summary_anticipative_lane_count={}\nscheduler_summary_dispatch_count={}\nscheduler_summary_prepared_dispatch_count={}\nscheduler_summary_realtime_dispatch_count={}\nscheduler_summary_dispatch_handoffs={}\nscheduler_summary_prework_state={:?}\nscheduler_summary_prework_pressure={:?}\nscheduler_summary_prework_policy={:?}\nscheduler_summary_pending_targets={}\nscheduler_summary_pending_deferred_targets={}\nscheduler_summary_topology_compatible={}\nscheduler_summary_topology_requires_host_reinterpretation={}\nscheduler_summary_topology_issue_count={}\nscheduler_summary_lane_order={:?}\nscheduler_summary_dispatch_order={:?}",
@@ -4008,6 +4432,24 @@ fn format_runtime_scheduler_summary_multiline(summary: &RuntimeSchedulerExportSu
         summary.topology_issue_count,
         summary.lane_order,
         summary.dispatch_order,
+    )
+}
+
+fn format_runtime_scheduler_snapshot_multiline(snapshot: &RuntimeSchedulerSnapshot) -> String {
+    format!(
+        "\nscheduler_snapshot_state={:?}\nscheduler_snapshot_phase={:?}\nscheduler_snapshot_graph_applied={}\nscheduler_snapshot_schedule_applied={}\nscheduler_snapshot_transport_projected={}\nscheduler_snapshot_anticipative_enabled={}\nscheduler_snapshot_graph_id={:?}\nscheduler_snapshot_phase_count={}\nscheduler_snapshot_lane_count={}\nscheduler_snapshot_dispatch_count={}\nscheduler_snapshot_pending_prework_target_count={}\nscheduler_snapshot_processed_block_count={}",
+        snapshot.state,
+        snapshot.phase,
+        snapshot.graph_applied,
+        snapshot.schedule_applied,
+        snapshot.transport_projected,
+        snapshot.anticipative_enabled,
+        snapshot.active_graph_id,
+        snapshot.phase_count,
+        snapshot.lane_count,
+        snapshot.dispatch_count,
+        snapshot.pending_prework_target_count,
+        snapshot.processed_block_count,
     )
 }
 
@@ -4234,6 +4676,39 @@ fn json_runtime_scheduler_export_summary(summary: &RuntimeSchedulerExportSummary
         summary.topology_issue_count,
         json_runtime_execution_lane_order(&summary.lane_order),
         json_runtime_execution_lane_order(&summary.dispatch_order),
+    )
+}
+
+fn json_runtime_scheduler_snapshot(snapshot: &RuntimeSchedulerSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"state\":{},",
+            "\"phase\":{},",
+            "\"graph_applied\":{},",
+            "\"schedule_applied\":{},",
+            "\"transport_projected\":{},",
+            "\"anticipative_enabled\":{},",
+            "\"active_graph_id\":{},",
+            "\"phase_count\":{},",
+            "\"lane_count\":{},",
+            "\"dispatch_count\":{},",
+            "\"pending_prework_target_count\":{},",
+            "\"processed_block_count\":{}",
+            "}}"
+        ),
+        json_escape_string(&format!("{:?}", snapshot.state)),
+        json_escape_string(&format!("{:?}", snapshot.phase)),
+        snapshot.graph_applied,
+        snapshot.schedule_applied,
+        snapshot.transport_projected,
+        snapshot.anticipative_enabled,
+        json_option_string(snapshot.active_graph_id.as_deref()),
+        snapshot.phase_count,
+        snapshot.lane_count,
+        snapshot.dispatch_count,
+        snapshot.pending_prework_target_count,
+        snapshot.processed_block_count,
     )
 }
 
@@ -6535,9 +7010,14 @@ pub trait RuntimeObservationApi {
     fn get_readiness(&self) -> RuntimeReadiness;
     fn get_effective_config(&self) -> EffectiveRuntimeConfig;
     fn get_control_snapshot(&self) -> RuntimeControlSnapshot;
+    fn get_scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot;
     fn get_diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot;
     fn get_supervision_snapshot(&self) -> RuntimeSupervisionSnapshot;
     fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot;
+    fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot;
+    fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot;
+    fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot;
+    fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
     fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot;
@@ -6550,6 +7030,22 @@ pub trait RuntimeSupervisorApi {
         &mut self,
         request: PluginSandboxSpec,
     ) -> Result<SandboxHandle, RuntimeError>;
+    fn start_recording_capture(
+        &mut self,
+        request: RuntimeRecordingCaptureStartRequest,
+    ) -> Result<(), RuntimeError>;
+    fn finish_recording_capture(
+        &mut self,
+    ) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError>;
+    fn cancel_recording_capture(&mut self) -> Result<(), RuntimeError>;
+    fn reconcile_media_assets(
+        &mut self,
+        assets: Vec<RuntimeMediaAssetRegistration>,
+    ) -> Result<(), RuntimeError>;
+    fn reconcile_warp_clips(
+        &mut self,
+        clips: Vec<RuntimeWarpClipRegistration>,
+    ) -> Result<(), RuntimeError>;
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     fn restart_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     fn set_backend_policy(&mut self, request: BackendPolicyOverride) -> Result<(), RuntimeError>;

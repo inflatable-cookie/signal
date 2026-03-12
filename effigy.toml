@@ -8,6 +8,14 @@ validate = [
   { task = "test" },
 ]
 qa = [{ task = "validate" }]
+"acceptance:analysis" = [
+  { run = "cargo test -p signal-analysis harness -- --nocapture" },
+  { run = "cargo test -p signal-analysis-rhythm harness -- --nocapture" },
+  { run = "cargo test -p signal-analysis-tonal harness -- --nocapture" },
+  { run = "cargo test -p signal-analysis-character harness -- --nocapture" },
+  { run = "cargo test -p signal-analysis-loudness harness -- --nocapture" },
+  { run = "cargo test -p signal-analysis-embed harness -- --nocapture" },
+]
 build = [
   { task = "configure:debug" },
   { task = "compile:debug" },

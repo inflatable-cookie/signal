@@ -1,7 +1,12 @@
 //! Runtime configuration and shell implementation for Signal.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, VecDeque},
+    fs,
+    path::{Path, PathBuf},
+};
 
+use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
 use signal_graph::{
     synthetic_stereo_block, ExecutableGraph, GraphBlockReport, GraphConfig, GraphExecutionContext,
     GraphNodeBufferContract, GraphNodeExecutionClass, GraphNodeRenderOverride, GraphNodeSpec,
@@ -24,18 +29,25 @@ use crate::interfaces::{
     ProjectionReceipt, RecoveryRestartIntent, RestartRequest, RuntimeAutomationSnapshot,
     RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDiagnosticsSnapshot,
     RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind,
-    RuntimeEvent, RuntimeEventSink, RuntimeLifecycleApi, RuntimeObservationApi,
-    RuntimePluginDispatchState, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
-    RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+    RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
+    RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
+    RuntimeMediaPipelineSnapshot, RuntimeObservationApi, RuntimePluginDispatchState,
+    RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
+    RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
     RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
     RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
     RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
-    RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary, RuntimeSupervisionSnapshot,
-    RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot, RuntimeTransportTransitionKind,
-    RuntimeWatchdogTrigger, SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection,
-    StopReason, SubscriptionHandle, TransportAttachIntent, TransportProjection,
-    TransportSessionProvenance, TransportSessionState, WatchdogRestartRecord,
+    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureSnapshot,
+    RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeSchedulerSnapshot,
+    RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary,
+    RuntimeSupervisionSnapshot, RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot,
+    RuntimeTransportObservationSnapshot, RuntimeTransportTransitionKind, RuntimeWarpClipRegistration,
+    RuntimeWarpClipSnapshot, RuntimeWarpMode, RuntimeWarpPipelineSnapshot,
+    RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
+    SandboxOperationFailureStage, ScheduleProjection, StopReason, SubscriptionHandle,
+    TransportAttachIntent, TransportProjection, TransportSessionProvenance,
+    TransportSessionState, WatchdogRestartRecord,
 };
 
 const PREWORK_LATENCY_FOCUSED_THRESHOLD_SAMPLES: u32 = 64;
@@ -92,6 +104,9 @@ pub struct SignalRuntime {
     automation: RuntimeAutomationState,
     engine: RuntimeEngineState,
     transport_concurrency: RuntimeTransportConcurrencyState,
+    recording_capture: RuntimeRecordingCaptureStateModel,
+    media_pipeline: RuntimeMediaPipelineStateModel,
+    warp_pipeline: RuntimeWarpPipelineStateModel,
     diagnostics: RuntimeDiagnosticsSnapshot,
     supervision: RuntimeSupervisionState,
     next_subscription: u64,
@@ -148,6 +163,689 @@ impl Default for RuntimeSupervisionState {
             last_watchdog_trigger: None,
             last_sandbox_id: None,
             last_processing_epoch: None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct RuntimeRecordingCapturePolicy {
+    pressure_threshold_frames: u64,
+}
+
+impl Default for RuntimeRecordingCapturePolicy {
+    fn default() -> Self {
+        Self {
+            pressure_threshold_frames: 16_384,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct RuntimeMediaPipelinePolicy {
+    cache_root: PathBuf,
+}
+
+impl Default for RuntimeMediaPipelinePolicy {
+    fn default() -> Self {
+        Self {
+            cache_root: std::env::temp_dir().join("loophole-signal-media-cache"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct RuntimeMediaPipelineAsset {
+    registration: RuntimeMediaAssetRegistration,
+    state: RuntimeMediaAssetState,
+    cache_path: Option<String>,
+    cache_byte_size: Option<u64>,
+    rebuild_count: u32,
+    last_error: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct RuntimeMediaPipelineStateModel {
+    policy: RuntimeMediaPipelinePolicy,
+    assets: BTreeMap<String, RuntimeMediaPipelineAsset>,
+}
+
+impl RuntimeMediaPipelineStateModel {
+    fn snapshot(&self) -> RuntimeMediaPipelineSnapshot {
+        let assets = self
+            .assets
+            .values()
+            .map(|asset| RuntimeMediaAssetSnapshot {
+                asset_id: asset.registration.asset_id.clone(),
+                content_hash: asset.registration.content_hash.clone(),
+                source_path: asset.registration.source_path.clone(),
+                file_name: asset.registration.file_name.clone(),
+                byte_size: asset.registration.byte_size,
+                sample_rate_hz: asset.registration.sample_rate_hz,
+                channel_count: asset.registration.channel_count,
+                duration_samples: asset.registration.duration_samples,
+                waveform_bin_count: asset.registration.waveform_bin_count,
+                state: Some(asset.state),
+                cache_path: asset.cache_path.clone(),
+                cache_byte_size: asset.cache_byte_size,
+                rebuild_count: asset.rebuild_count,
+                last_error: asset.last_error.clone(),
+                summary: format!(
+                    "state={:?} cache={} rebuilds={} error={}",
+                    asset.state,
+                    asset.cache_path.as_deref().unwrap_or("none"),
+                    asset.rebuild_count,
+                    asset.last_error.as_deref().unwrap_or("none"),
+                ),
+            })
+            .collect::<Vec<_>>();
+        let ready_asset_count = assets
+            .iter()
+            .filter(|asset| asset.state == Some(RuntimeMediaAssetState::Ready))
+            .count();
+        let invalid_asset_count = assets
+            .iter()
+            .filter(|asset| asset.state == Some(RuntimeMediaAssetState::Invalid))
+            .count();
+        let ingesting_asset_count = assets
+            .iter()
+            .filter(|asset| asset.state == Some(RuntimeMediaAssetState::Ingesting))
+            .count();
+        let conforming_asset_count = assets
+            .iter()
+            .filter(|asset| asset.state == Some(RuntimeMediaAssetState::Conforming))
+            .count();
+        let rebuilding_asset_count = assets
+            .iter()
+            .filter(|asset| asset.state == Some(RuntimeMediaAssetState::Rebuilding))
+            .count();
+
+        RuntimeMediaPipelineSnapshot {
+            cache_root_path: self.policy.cache_root.display().to_string(),
+            asset_count: assets.len(),
+            ready_asset_count,
+            invalid_asset_count,
+            ingesting_asset_count,
+            conforming_asset_count,
+            rebuilding_asset_count,
+            assets,
+            summary: format!(
+                "assets={} ready={} invalid={} rebuilding={} cache_root={}",
+                self.assets.len(),
+                ready_asset_count,
+                invalid_asset_count,
+                rebuilding_asset_count,
+                self.policy.cache_root.display(),
+            ),
+        }
+    }
+
+    fn reconcile_assets(
+        &mut self,
+        registrations: Vec<RuntimeMediaAssetRegistration>,
+    ) -> Result<(), RuntimeError> {
+        fs::create_dir_all(&self.policy.cache_root).map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to create media cache root {}: {error}",
+                    self.policy.cache_root.display()
+                ),
+            )
+        })?;
+
+        let retained_ids = registrations
+            .iter()
+            .map(|asset| asset.asset_id.clone())
+            .collect::<BTreeSet<_>>();
+        self.assets
+            .retain(|asset_id, _| retained_ids.contains(asset_id));
+
+        for registration in registrations {
+            let cache_path = self.cache_path_for(&registration);
+            let cache_exists = cache_path.is_file();
+            let rebuild = self
+                .assets
+                .get(&registration.asset_id)
+                .map(|existing| {
+                    existing.registration.content_hash != registration.content_hash
+                        || existing.registration.source_path != registration.source_path
+                        || !cache_exists
+                })
+                .unwrap_or(false);
+            let mut asset =
+                self.assets
+                    .remove(&registration.asset_id)
+                    .unwrap_or(RuntimeMediaPipelineAsset {
+                        registration: registration.clone(),
+                        state: RuntimeMediaAssetState::Ingesting,
+                        cache_path: None,
+                        cache_byte_size: None,
+                        rebuild_count: 0,
+                        last_error: None,
+                    });
+            asset.registration = registration;
+            if rebuild {
+                asset.rebuild_count = asset.rebuild_count.saturating_add(1);
+                asset.state = RuntimeMediaAssetState::Rebuilding;
+            } else if asset.cache_path.is_none() {
+                asset.state = RuntimeMediaAssetState::Ingesting;
+            }
+            self.materialize_asset(&mut asset, &cache_path);
+            self.assets
+                .insert(asset.registration.asset_id.clone(), asset);
+        }
+
+        Ok(())
+    }
+
+    fn materialize_asset(&self, asset: &mut RuntimeMediaPipelineAsset, cache_path: &Path) {
+        if asset.registration.source_path.trim().is_empty() {
+            asset.state = RuntimeMediaAssetState::Invalid;
+            asset.cache_path = None;
+            asset.cache_byte_size = None;
+            asset.last_error = Some("source path must not be empty".to_string());
+            return;
+        }
+        let source_path = Path::new(&asset.registration.source_path);
+        if !source_path.is_file() {
+            asset.state = RuntimeMediaAssetState::Invalid;
+            asset.cache_path = None;
+            asset.cache_byte_size = None;
+            asset.last_error = Some(format!("source media missing at {}", source_path.display()));
+            return;
+        }
+        asset.state = if asset.rebuild_count > 0 {
+            RuntimeMediaAssetState::Rebuilding
+        } else {
+            RuntimeMediaAssetState::Ingesting
+        };
+        asset.state = RuntimeMediaAssetState::Conforming;
+        match fs::copy(source_path, cache_path) {
+            Ok(_) => match fs::metadata(cache_path) {
+                Ok(metadata) => {
+                    asset.state = RuntimeMediaAssetState::Ready;
+                    asset.cache_path = Some(cache_path.display().to_string());
+                    asset.cache_byte_size = Some(metadata.len());
+                    asset.last_error = None;
+                }
+                Err(error) => {
+                    asset.state = RuntimeMediaAssetState::Invalid;
+                    asset.cache_path = None;
+                    asset.cache_byte_size = None;
+                    asset.last_error = Some(format!(
+                        "cached media written but metadata lookup failed: {error}"
+                    ));
+                }
+            },
+            Err(error) => {
+                asset.state = RuntimeMediaAssetState::Invalid;
+                asset.cache_path = None;
+                asset.cache_byte_size = None;
+                asset.last_error = Some(format!("cache conform failed: {error}"));
+            }
+        }
+    }
+
+    fn cache_path_for(&self, registration: &RuntimeMediaAssetRegistration) -> PathBuf {
+        let extension = Path::new(&registration.file_name)
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("wav");
+        self.policy.cache_root.join(format!(
+            "{}-{}.{}",
+            sanitize_asset_id(&registration.asset_id),
+            registration.content_hash,
+            extension
+        ))
+    }
+}
+
+impl Default for RuntimeMediaPipelineStateModel {
+    fn default() -> Self {
+        Self {
+            policy: RuntimeMediaPipelinePolicy::default(),
+            assets: BTreeMap::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct RuntimeWarpPipelineStateModel {
+    clips: BTreeMap<String, RuntimeWarpClipRegistration>,
+}
+
+impl RuntimeWarpPipelineStateModel {
+    fn snapshot(
+        &self,
+        project_tempo_bpm: f64,
+        media_pipeline: &RuntimeMediaPipelineStateModel,
+    ) -> RuntimeWarpPipelineSnapshot {
+        let project_tempo_bpm = if project_tempo_bpm.is_finite() && project_tempo_bpm > 0.0 {
+            project_tempo_bpm
+        } else {
+            120.0
+        };
+        let clips = self
+            .clips
+            .values()
+            .map(|registration| {
+                self.snapshot_clip(registration, project_tempo_bpm, &media_pipeline.assets)
+            })
+            .collect::<Vec<_>>();
+        let ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeWarpReadiness::Ready)
+            .count();
+        let degraded_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeWarpReadiness::Degraded)
+            .count();
+        let bypassed_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeWarpReadiness::Bypassed)
+            .count();
+        let active_warp_count = clips
+            .iter()
+            .filter(|clip| clip.mode != RuntimeWarpMode::Off)
+            .count();
+
+        RuntimeWarpPipelineSnapshot {
+            clip_count: clips.len(),
+            ready_clip_count,
+            degraded_clip_count,
+            bypassed_clip_count,
+            active_warp_count,
+            clips,
+            summary: format!(
+                "warp clips={} active={} ready={} degraded={} bypassed={} project_tempo={project_tempo_bpm:.2}",
+                self.clips.len(),
+                active_warp_count,
+                ready_clip_count,
+                degraded_clip_count,
+                bypassed_clip_count,
+            ),
+        }
+    }
+
+    fn snapshot_clip(
+        &self,
+        registration: &RuntimeWarpClipRegistration,
+        project_tempo_bpm: f64,
+        media_assets: &BTreeMap<String, RuntimeMediaPipelineAsset>,
+    ) -> RuntimeWarpClipSnapshot {
+        let mut realized_ratio = 1.0;
+        let (readiness, last_error) = match registration.mode {
+            RuntimeWarpMode::Off => (RuntimeWarpReadiness::Bypassed, None),
+            RuntimeWarpMode::Repitch | RuntimeWarpMode::ElastiqueDraft => {
+                match registration.source_tempo_bpm {
+                    Some(source_tempo_bpm)
+                        if source_tempo_bpm.is_finite() && source_tempo_bpm > 0.0 =>
+                    {
+                        realized_ratio = project_tempo_bpm / source_tempo_bpm;
+                        if !realized_ratio.is_finite() || realized_ratio <= 0.0 {
+                            (
+                                RuntimeWarpReadiness::Degraded,
+                                Some("warp ratio is invalid".to_string()),
+                            )
+                        } else if let Some(media_asset_id) = registration.media_asset_id.as_deref()
+                        {
+                            match media_assets.get(media_asset_id) {
+                                Some(asset) if asset.state == RuntimeMediaAssetState::Ready => {
+                                    if registration.mode == RuntimeWarpMode::ElastiqueDraft
+                                        && !(0.5..=2.0).contains(&realized_ratio)
+                                    {
+                                        (
+                                            RuntimeWarpReadiness::Degraded,
+                                            Some(format!(
+                                                "elastique draft ratio {realized_ratio:.3} outside baseline support"
+                                            )),
+                                        )
+                                    } else {
+                                        (RuntimeWarpReadiness::Ready, None)
+                                    }
+                                }
+                                Some(asset) => (
+                                    RuntimeWarpReadiness::Degraded,
+                                    Some(format!("media asset not ready: {:?}", asset.state)),
+                                ),
+                                None => (
+                                    RuntimeWarpReadiness::Degraded,
+                                    Some(format!(
+                                        "media asset `{media_asset_id}` missing from runtime cache"
+                                    )),
+                                ),
+                            }
+                        } else {
+                            (
+                                RuntimeWarpReadiness::Degraded,
+                                Some("warp clip missing media asset".to_string()),
+                            )
+                        }
+                    }
+                    Some(_) => (
+                        RuntimeWarpReadiness::Degraded,
+                        Some("warp source tempo must be positive".to_string()),
+                    ),
+                    None => (
+                        RuntimeWarpReadiness::Degraded,
+                        Some("warp source tempo missing".to_string()),
+                    ),
+                }
+            }
+        };
+
+        RuntimeWarpClipSnapshot {
+            clip_id: registration.clip_id.clone(),
+            media_asset_id: registration.media_asset_id.clone(),
+            mode: registration.mode,
+            source_tempo_bpm: registration.source_tempo_bpm,
+            project_tempo_bpm,
+            realized_ratio,
+            anchor_timeline_samples: registration.anchor_timeline_samples,
+            start_samples: registration.start_samples,
+            duration_samples: registration.duration_samples,
+            readiness,
+            last_error: last_error.clone(),
+            summary: format!(
+                "clip={} mode={:?} readiness={:?} ratio={realized_ratio:.3} source_tempo={} project_tempo={project_tempo_bpm:.2} error={}",
+                registration.clip_id,
+                registration.mode,
+                readiness,
+                registration
+                    .source_tempo_bpm
+                    .map(|tempo| format!("{tempo:.2}"))
+                    .unwrap_or_else(|| "none".to_string()),
+                last_error.as_deref().unwrap_or("none"),
+            ),
+        }
+    }
+
+    fn reconcile_clips(&mut self, clips: Vec<RuntimeWarpClipRegistration>) {
+        let retained_ids = clips
+            .iter()
+            .map(|clip| clip.clip_id.clone())
+            .collect::<BTreeSet<_>>();
+        self.clips.retain(|clip_id, _| retained_ids.contains(clip_id));
+        for clip in clips {
+            self.clips.insert(clip.clip_id.clone(), clip);
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimeRecordingCaptureActiveSession {
+    take_id: String,
+    track_id: String,
+    start_samples: i64,
+    capture_path: String,
+    sample_rate_hz: u32,
+    channel_count: usize,
+    samples: Vec<f32>,
+    buffered_block_count: u64,
+    buffered_frame_count: u64,
+    peak_level: f32,
+    pressure_event_count: u64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimeRecordingCaptureStateModel {
+    policy: RuntimeRecordingCapturePolicy,
+    active: Option<RuntimeRecordingCaptureActiveSession>,
+    last_committed_take_id: Option<String>,
+    last_committed_path: Option<String>,
+    last_committed_duration_samples: Option<u32>,
+    last_error: Option<String>,
+}
+
+impl RuntimeRecordingCaptureStateModel {
+    fn capture_ready(&self, configured: bool, readiness: &RuntimeReadiness) -> bool {
+        configured
+            && !matches!(
+                readiness,
+                RuntimeReadiness::Stopped | RuntimeReadiness::Failed { .. }
+            )
+    }
+
+    fn snapshot(
+        &self,
+        configured: bool,
+        readiness: &RuntimeReadiness,
+    ) -> RuntimeRecordingCaptureSnapshot {
+        let state = if self.last_error.is_some() {
+            Some(RuntimeRecordingCaptureState::Failed)
+        } else if self.active.is_some() {
+            Some(RuntimeRecordingCaptureState::Capturing)
+        } else {
+            Some(RuntimeRecordingCaptureState::Idle)
+        };
+        let summary = if let Some(active) = self.active.as_ref() {
+            format!(
+                "state=capturing ready={} take={} track={} frames={} blocks={} pressure={} path={}",
+                self.capture_ready(configured, readiness),
+                active.take_id,
+                active.track_id,
+                active.buffered_frame_count,
+                active.buffered_block_count,
+                active.pressure_event_count,
+                active.capture_path
+            )
+        } else {
+            format!(
+                "state={} ready={} last_take={} last_path={} duration={} error={}",
+                if self.last_error.is_some() {
+                    "failed"
+                } else {
+                    "idle"
+                },
+                self.capture_ready(configured, readiness),
+                self.last_committed_take_id.as_deref().unwrap_or("none"),
+                self.last_committed_path.as_deref().unwrap_or("none"),
+                self.last_committed_duration_samples.unwrap_or(0),
+                self.last_error.as_deref().unwrap_or("none"),
+            )
+        };
+
+        RuntimeRecordingCaptureSnapshot {
+            capture_ready: self.capture_ready(configured, readiness),
+            state,
+            active_take_id: self.active.as_ref().map(|active| active.take_id.clone()),
+            active_track_id: self.active.as_ref().map(|active| active.track_id.clone()),
+            capture_start_samples: self.active.as_ref().map(|active| active.start_samples),
+            active_capture_path: self
+                .active
+                .as_ref()
+                .map(|active| active.capture_path.clone()),
+            buffered_block_count: self
+                .active
+                .as_ref()
+                .map(|active| active.buffered_block_count)
+                .unwrap_or(0),
+            buffered_frame_count: self
+                .active
+                .as_ref()
+                .map(|active| active.buffered_frame_count)
+                .unwrap_or(0),
+            captured_channel_count: self
+                .active
+                .as_ref()
+                .map(|active| active.channel_count)
+                .unwrap_or(0),
+            peak_level: self.active.as_ref().map(|active| active.peak_level),
+            pressure_event_count: self
+                .active
+                .as_ref()
+                .map(|active| active.pressure_event_count)
+                .unwrap_or(0),
+            last_committed_take_id: self.last_committed_take_id.clone(),
+            last_committed_path: self.last_committed_path.clone(),
+            last_committed_duration_samples: self.last_committed_duration_samples,
+            last_error: self.last_error.clone(),
+            summary,
+        }
+    }
+
+    fn start_capture(
+        &mut self,
+        request: RuntimeRecordingCaptureStartRequest,
+        sample_rate_hz: u32,
+        configured: bool,
+        readiness: &RuntimeReadiness,
+    ) -> Result<(), RuntimeError> {
+        if !self.capture_ready(configured, readiness) {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "runtime is not ready to begin recording capture",
+            ));
+        }
+        if self.active.is_some() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "recording capture is already active",
+            ));
+        }
+        self.last_error = None;
+        self.active = Some(RuntimeRecordingCaptureActiveSession {
+            take_id: request.take_id,
+            track_id: request.track_id,
+            start_samples: request.start_samples,
+            capture_path: request.capture_path,
+            sample_rate_hz,
+            channel_count: 0,
+            samples: Vec::new(),
+            buffered_block_count: 0,
+            buffered_frame_count: 0,
+            peak_level: 0.0,
+            pressure_event_count: 0,
+        });
+        Ok(())
+    }
+
+    fn record_output_block(&mut self, output: &AudioBuffer) {
+        let Some(active) = self.active.as_mut() else {
+            return;
+        };
+
+        let channel_count = output.channel_count().0;
+        let frame_count = output.frames().0 as u64;
+        if active.channel_count == 0 {
+            active.channel_count = channel_count;
+        } else if active.channel_count != channel_count {
+            self.last_error = Some(format!(
+                "capture channel-count mismatch: expected {} got {}",
+                active.channel_count, channel_count
+            ));
+            return;
+        }
+
+        active.samples.extend_from_slice(output.samples());
+        active.buffered_block_count = active.buffered_block_count.saturating_add(1);
+        active.buffered_frame_count = active.buffered_frame_count.saturating_add(frame_count);
+        let block_peak = output
+            .samples()
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        active.peak_level = active.peak_level.max(block_peak);
+        if active.buffered_frame_count >= self.policy.pressure_threshold_frames {
+            active.pressure_event_count = active.pressure_event_count.saturating_add(1);
+        }
+    }
+
+    fn finish_capture(&mut self) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError> {
+        let active = self.active.as_ref().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "recording capture is not active",
+            )
+        })?;
+        if active.channel_count == 0 || active.samples.is_empty() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "recording capture has no buffered audio to commit",
+            ));
+        }
+
+        let duration_samples = active.buffered_frame_count.min(u32::MAX as u64) as u32;
+        let capture_path = active.capture_path.clone();
+        if let Some(parent) = Path::new(&capture_path).parent() {
+            fs::create_dir_all(parent).map_err(|error| {
+                self.last_error = Some(error.to_string());
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("failed to create recording capture directory: {error}"),
+                )
+            })?;
+        }
+
+        let spec = WavSpec {
+            channels: active.channel_count as u16,
+            sample_rate: active.sample_rate_hz,
+            bits_per_sample: 32,
+            sample_format: HoundSampleFormat::Float,
+        };
+        let mut writer = WavWriter::create(&capture_path, spec).map_err(|error| {
+            self.last_error = Some(error.to_string());
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!("failed to create recording capture wav: {error}"),
+            )
+        })?;
+        for sample in &active.samples {
+            writer.write_sample(*sample).map_err(|error| {
+                self.last_error = Some(error.to_string());
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!("failed to write recording capture sample: {error}"),
+                )
+            })?;
+        }
+        writer.finalize().map_err(|error| {
+            self.last_error = Some(error.to_string());
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!("failed to finalize recording capture wav: {error}"),
+            )
+        })?;
+
+        let receipt = RuntimeRecordingCaptureCommitReceipt {
+            take_id: active.take_id.clone(),
+            track_id: active.track_id.clone(),
+            start_samples: active.start_samples,
+            duration_samples,
+            channel_count: active.channel_count,
+            peak_level: active.peak_level,
+            capture_path,
+        };
+
+        self.last_error = None;
+        self.last_committed_take_id = Some(receipt.take_id.clone());
+        self.last_committed_path = Some(receipt.capture_path.clone());
+        self.last_committed_duration_samples = Some(receipt.duration_samples);
+        self.active = None;
+        Ok(receipt)
+    }
+
+    fn cancel_capture(&mut self) -> Result<(), RuntimeError> {
+        if self.active.is_none() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "recording capture is not active",
+            ));
+        }
+        self.last_error = None;
+        self.active = None;
+        Ok(())
+    }
+}
+
+impl Default for RuntimeRecordingCaptureStateModel {
+    fn default() -> Self {
+        Self {
+            policy: RuntimeRecordingCapturePolicy::default(),
+            active: None,
+            last_committed_take_id: None,
+            last_committed_path: None,
+            last_committed_duration_samples: None,
+            last_error: None,
         }
     }
 }
@@ -1095,6 +1793,16 @@ impl RuntimeTimelineState {
             loop_wrap_count: self.loop_wrap_count,
         }
     }
+}
+
+fn sanitize_asset_id(asset_id: &str) -> String {
+    asset_id
+        .chars()
+        .map(|character| match character {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => character,
+            _ => '_',
+        })
+        .collect()
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -3078,6 +3786,9 @@ impl SignalRuntime {
             automation: RuntimeAutomationState::default(),
             engine: RuntimeEngineState::default(),
             transport_concurrency: RuntimeTransportConcurrencyState::default(),
+            recording_capture: RuntimeRecordingCaptureStateModel::default(),
+            media_pipeline: RuntimeMediaPipelineStateModel::default(),
+            warp_pipeline: RuntimeWarpPipelineStateModel::default(),
             diagnostics: RuntimeDiagnosticsSnapshot {
                 cpu_load_percent: 0.0,
                 xruns: 0,
@@ -3835,6 +4546,7 @@ impl SignalRuntime {
         self.engine.snapshot.transport_block_end_samples =
             result.snapshot.transport_block_end_samples;
         self.engine.snapshot.transport_loop_wrapped = result.snapshot.transport_loop_wrapped;
+        self.recording_capture.record_output_block(&result.output);
         let _ = self.enforce_scheduler_after_engine_block(processing_epoch, block_sequence)?;
         self.refresh_scheduler_topology_summary();
         result.snapshot = self.engine.snapshot.clone();
@@ -4783,6 +5495,173 @@ impl SignalRuntime {
         }
     }
 
+    fn scheduler_state(&self) -> RuntimeSchedulerState {
+        match self.readiness {
+            RuntimeReadiness::Failed { .. } | RuntimeReadiness::Stopped => {
+                RuntimeSchedulerState::Stopped
+            }
+            RuntimeReadiness::Degraded { .. } => RuntimeSchedulerState::Degraded,
+            RuntimeReadiness::Starting => RuntimeSchedulerState::Configured,
+            RuntimeReadiness::Ready => {
+                if !self.control.running {
+                    RuntimeSchedulerState::Configured
+                } else if self.engine.snapshot.graph_id.is_none()
+                    || self.engine.snapshot.node_count == 0
+                {
+                    RuntimeSchedulerState::ReadyIdle
+                } else if !self.anticipative_enabled
+                    || !self.engine.snapshot.prework_cache_enabled
+                    || self.engine.snapshot.anticipative_phase_count == 0
+                {
+                    RuntimeSchedulerState::RealtimeOnly
+                } else {
+                    RuntimeSchedulerState::Anticipative
+                }
+            }
+        }
+    }
+
+    fn scheduler_phase(&self, state: RuntimeSchedulerState) -> RuntimeExecutionPhase {
+        if matches!(
+            state,
+            RuntimeSchedulerState::Stopped | RuntimeSchedulerState::Configured
+        ) {
+            return RuntimeExecutionPhase::Idle;
+        }
+        if matches!(state, RuntimeSchedulerState::Degraded) {
+            return RuntimeExecutionPhase::Degraded;
+        }
+        let last_prework_epoch = self
+            .engine
+            .snapshot
+            .last_prework_service_processing_epoch
+            .unwrap_or(0);
+        let last_realtime_epoch = self.engine.snapshot.last_processing_epoch.unwrap_or(0);
+        if last_prework_epoch > 0 && last_prework_epoch > last_realtime_epoch {
+            return RuntimeExecutionPhase::Prework;
+        }
+        if self.engine.snapshot.processed_blocks == 0 {
+            return if self.engine.snapshot.graph_id.is_some()
+                || self.engine.snapshot.prework_pending_target_count > 0
+            {
+                RuntimeExecutionPhase::Priming
+            } else {
+                RuntimeExecutionPhase::Idle
+            };
+        }
+        RuntimeExecutionPhase::Realtime
+    }
+
+    fn scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot {
+        let state = self.scheduler_state();
+        RuntimeSchedulerSnapshot {
+            state,
+            phase: self.scheduler_phase(state),
+            graph_applied: self.applied_graph.is_some(),
+            schedule_applied: self.applied_schedule.is_some(),
+            transport_projected: self.applied_transport.is_some(),
+            anticipative_enabled: self.anticipative_enabled,
+            active_graph_id: self.engine.snapshot.graph_id.clone(),
+            phase_count: self.engine.snapshot.phase_count,
+            lane_count: self.engine.snapshot.lane_count,
+            dispatch_count: self.engine.snapshot.dispatch_count,
+            pending_prework_target_count: self.engine.snapshot.prework_pending_target_count,
+            processed_block_count: self.engine.snapshot.processed_blocks,
+        }
+    }
+
+    fn transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot {
+        let timeline = self.timeline.snapshot();
+        RuntimeTransportObservationSnapshot {
+            transport_epoch: timeline.transport_epoch,
+            projected_playing: self.applied_transport.map(|transport| transport.playing),
+            projected_tempo_bpm: self.applied_transport.map(|transport| transport.tempo_bpm),
+            projected_timeline_position_samples: self
+                .applied_transport
+                .map(|transport| transport.timeline_position_samples),
+            projected_loop_start_samples: self.applied_transport.and_then(|transport| {
+                transport
+                    .loop_state
+                    .map(|loop_state| loop_state.start_samples)
+            }),
+            projected_loop_end_samples: self.applied_transport.and_then(|transport| {
+                transport
+                    .loop_state
+                    .map(|loop_state| loop_state.end_samples)
+            }),
+            observed_playing: timeline.last_transport_playing,
+            observed_tempo_bpm: timeline.last_transport_tempo_bpm,
+            observed_timeline_position_samples: timeline.last_transport_timeline_position_samples,
+            observed_loop_start_samples: timeline.last_transport_loop_start_samples,
+            observed_loop_end_samples: timeline.last_transport_loop_end_samples,
+            last_transition: timeline.last_transport_transition,
+            last_transition_processing_epoch: timeline.last_transport_transition_processing_epoch,
+            last_transition_block_sequence: timeline.last_transport_transition_block_sequence,
+            last_engine_block_start_samples: timeline.last_engine_block_start_samples,
+            last_engine_block_end_samples: timeline.last_engine_block_end_samples,
+            loop_wrap_count: timeline.loop_wrap_count,
+        }
+    }
+
+    fn recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot {
+        self.recording_capture
+            .snapshot(self.control.configured, &self.readiness)
+    }
+
+    fn media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot {
+        self.media_pipeline.snapshot()
+    }
+
+    fn current_project_tempo_bpm(&self) -> f64 {
+        self.applied_transport
+            .map(|transport| transport.tempo_bpm)
+            .or(self.timeline.last_transport_tempo_bpm)
+            .filter(|tempo| tempo.is_finite() && *tempo > 0.0)
+            .unwrap_or(120.0)
+    }
+
+    fn warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot {
+        self.warp_pipeline
+            .snapshot(self.current_project_tempo_bpm(), &self.media_pipeline)
+    }
+
+    pub fn start_recording_capture(
+        &mut self,
+        request: RuntimeRecordingCaptureStartRequest,
+    ) -> Result<(), RuntimeError> {
+        self.recording_capture.start_capture(
+            request,
+            self.config.sample_rate.0,
+            self.control.configured,
+            &self.readiness,
+        )
+    }
+
+    pub fn finish_recording_capture(
+        &mut self,
+    ) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError> {
+        self.recording_capture.finish_capture()
+    }
+
+    pub fn cancel_recording_capture(&mut self) -> Result<(), RuntimeError> {
+        self.recording_capture.cancel_capture()
+    }
+
+    pub fn reconcile_media_assets(
+        &mut self,
+        assets: Vec<RuntimeMediaAssetRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.media_pipeline.reconcile_assets(assets)
+    }
+
+    pub fn reconcile_warp_clips(
+        &mut self,
+        clips: Vec<RuntimeWarpClipRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.warp_pipeline.reconcile_clips(clips);
+        Ok(())
+    }
+
     fn refresh_runtime_state(&mut self) {
         match self.readiness {
             RuntimeReadiness::Failed { .. } | RuntimeReadiness::Stopped => {}
@@ -4864,6 +5743,9 @@ impl RuntimeLifecycleApi for SignalRuntime {
         self.timeline.reset();
         self.automation.reset();
         self.transport_concurrency.reset();
+        self.recording_capture = RuntimeRecordingCaptureStateModel::default();
+        self.media_pipeline = RuntimeMediaPipelineStateModel::default();
+        self.warp_pipeline = RuntimeWarpPipelineStateModel::default();
         self.readiness = RuntimeReadiness::Starting;
         self.refresh_runtime_state();
         self.refresh_prework_service_policy_and_state(None);
@@ -4910,6 +5792,7 @@ impl RuntimeLifecycleApi for SignalRuntime {
             .invalidate_prework_cache(RuntimePreworkInvalidationReason::RuntimeStopped);
         self.readiness = RuntimeReadiness::Stopped;
         self.control.running = false;
+        self.recording_capture.active = None;
         self.engine
             .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.stop_count = self.control.stop_count.saturating_add(1);
@@ -5230,6 +6113,10 @@ impl RuntimeObservationApi for SignalRuntime {
         self.control.clone()
     }
 
+    fn get_scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot {
+        self.scheduler_snapshot()
+    }
+
     fn get_diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot {
         self.diagnostics
     }
@@ -5240,6 +6127,22 @@ impl RuntimeObservationApi for SignalRuntime {
 
     fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot {
         self.timeline.snapshot()
+    }
+
+    fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot {
+        self.transport_observation_snapshot()
+    }
+
+    fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot {
+        self.recording_capture_snapshot()
+    }
+
+    fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot {
+        self.media_pipeline_snapshot()
+    }
+
+    fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot {
+        self.warp_pipeline_snapshot()
     }
 
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot {
@@ -5257,6 +6160,12 @@ impl RuntimeObservationApi for SignalRuntime {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        env, fs,
+        path::{Path, PathBuf},
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
     use super::{RuntimeConfig, RuntimeProfile, SignalRuntime};
     use crate::interfaces::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
@@ -5267,19 +6176,22 @@ mod tests {
         PluginBackedNodeBindingProjection, PluginNodeRender, PluginNodeRenderBatch,
         PluginSandboxLifecycleStage, PluginSandboxTransportStage, RecoveryRestartIntent,
         RestartRequest, RuntimeConfigRequest, RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder,
-        RuntimeEventSink, RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport,
-        RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
-        RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+        RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
+        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeObservationApi,
+        RuntimeObservationReport, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
+        RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
         RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
         RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason,
         RuntimePreworkRetirementReason, RuntimePreworkServicePressure,
         RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
         RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
-        RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport, RuntimeWatchdogTrigger,
-        SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection, StopReason,
-        TransportAttachIntent, TransportProjection, TransportSessionProvenance,
-        WatchdogRestartRecord,
+        RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeSchedulerState,
+        RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport, RuntimeWarpClipRegistration,
+        RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
+        SandboxOperationFailureStage, ScheduleProjection, StopReason, TransportAttachIntent,
+        TransportProjection, TransportSessionProvenance, WatchdogRestartRecord,
     };
+    use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
     use signal_graph::{
         synthetic_stereo_block, ExecutableGraph, GraphNodeBufferContract, GraphNodeBusEndpoint,
         GraphNodeExecutionClass, GraphNodeSpec, GraphNodeTopologyMetadata, GraphNodeTopologyRole,
@@ -5318,6 +6230,31 @@ mod tests {
         let mut request = RuntimeConfigRequest::new(48_000, 256);
         request.anticipative_enabled = anticipative_enabled;
         runtime.configure(request).unwrap();
+    }
+
+    fn temp_capture_path(label: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should be monotonic enough for temp files")
+            .as_nanos();
+        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}.wav"))
+    }
+
+    fn write_test_wav(path: &Path) {
+        let spec = WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 32,
+            sample_format: HoundSampleFormat::Float,
+        };
+        let mut writer = WavWriter::create(path, spec).expect("test wav should be created");
+        for frame in 0..128 {
+            let sample = ((frame as f32 / 128.0) * 2.0) - 1.0;
+            writer
+                .write_sample(sample)
+                .expect("test wav sample should be written");
+        }
+        writer.finalize().expect("test wav should finalize");
     }
 
     fn handshake_and_configure_with_disabled_forecast(
@@ -6396,6 +7333,17 @@ mod tests {
         assert_eq!(observation.scheduler_summary.lane_count, 2);
         assert_eq!(observation.scheduler_summary.dispatch_count, 2);
         assert_eq!(
+            observation.scheduler_snapshot.state,
+            RuntimeSchedulerState::Anticipative
+        );
+        assert_eq!(
+            observation.scheduler_snapshot.phase,
+            RuntimeExecutionPhase::Realtime
+        );
+        assert!(observation.scheduler_snapshot.graph_applied);
+        assert!(!observation.scheduler_snapshot.schedule_applied);
+        assert!(observation.scheduler_snapshot.transport_projected);
+        assert_eq!(
             observation.scheduler_summary.prework_service_state,
             RuntimePreworkServiceState::Disabled
         );
@@ -6467,6 +7415,111 @@ mod tests {
                 .map(|context| context.transport_tempo_bpm),
             Some(120.0)
         );
+    }
+
+    #[test]
+    fn scheduler_snapshot_tracks_state_and_phase_transitions() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let configured = runtime.get_scheduler_snapshot();
+        assert_eq!(configured.state, RuntimeSchedulerState::Configured);
+        assert_eq!(configured.phase, RuntimeExecutionPhase::Idle);
+        assert!(!configured.graph_applied);
+
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:scheduler".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "track".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.85 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "master".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 16,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.9 }],
+                    },
+                ],
+            })
+            .unwrap();
+        runtime.start().unwrap();
+
+        let primed = runtime.get_scheduler_snapshot();
+        assert_eq!(primed.state, RuntimeSchedulerState::Anticipative);
+        assert_eq!(primed.phase, RuntimeExecutionPhase::Prework);
+        assert!(primed.graph_applied);
+
+        runtime
+            .set_prework_forecast_profile(RuntimePreworkForecastProfileSelection {
+                profile: RuntimePreworkForecastProfile::Local,
+                target_window_blocks_override: Some(2),
+            })
+            .unwrap();
+        seed_pending_prework_targets(&mut runtime, 1, &[2, 3]);
+
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: true,
+                timeline_position_samples: 0,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            })
+            .unwrap();
+        runtime.service_prework_lane(1, 1).unwrap();
+
+        let prework = runtime.get_scheduler_snapshot();
+        assert_eq!(prework.state, RuntimeSchedulerState::Anticipative);
+        assert_eq!(prework.phase, RuntimeExecutionPhase::Prework);
+        assert!(prework.transport_projected);
+
+        runtime
+            .process_engine_block(
+                2,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(256)),
+            )
+            .unwrap();
+
+        let realtime = runtime.get_scheduler_snapshot();
+        assert_eq!(realtime.state, RuntimeSchedulerState::Anticipative);
+        assert_eq!(realtime.phase, RuntimeExecutionPhase::Realtime);
+        assert_eq!(realtime.processed_block_count, 1);
+    }
+
+    #[test]
+    fn scheduler_snapshot_surfaces_realtime_only_and_degraded_runtime_states() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, false);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:realtime-only".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "track".into(),
+                    execution_class: GraphNodeExecutionClass::LatencyBearing,
+                    latency_samples: 32,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                }],
+            })
+            .unwrap();
+        runtime.start().unwrap();
+
+        let realtime_only = runtime.get_scheduler_snapshot();
+        assert_eq!(realtime_only.state, RuntimeSchedulerState::RealtimeOnly);
+        assert_eq!(realtime_only.phase, RuntimeExecutionPhase::Priming);
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .unwrap();
+
+        let degraded = runtime.get_scheduler_snapshot();
+        assert_eq!(degraded.state, RuntimeSchedulerState::Degraded);
+        assert_eq!(degraded.phase, RuntimeExecutionPhase::Degraded);
     }
 
     #[test]
@@ -10103,6 +11156,23 @@ mod tests {
         .render_json();
         assert!(json.contains("\"transport_epoch\":1"));
         assert!(json.contains("\"transport_transition\":\"Started\""));
+
+        let transport = runtime.get_transport_observation_snapshot();
+        assert_eq!(transport.transport_epoch, 1);
+        assert_eq!(transport.projected_playing, Some(true));
+        assert_eq!(transport.projected_tempo_bpm, Some(120.0));
+        assert_eq!(transport.projected_timeline_position_samples, Some(72));
+        assert_eq!(transport.observed_playing, Some(true));
+        assert_eq!(transport.observed_tempo_bpm, Some(120.0));
+        assert_eq!(transport.observed_timeline_position_samples, Some(72));
+        assert_eq!(
+            transport.last_transition,
+            Some(crate::interfaces::RuntimeTransportTransitionKind::Started)
+        );
+        assert_eq!(transport.last_transition_block_sequence, Some(2));
+        assert_eq!(transport.last_engine_block_start_samples, Some(64));
+        assert_eq!(transport.last_engine_block_end_samples, Some(72));
+        assert_eq!(transport.loop_wrap_count, 0);
     }
 
     #[test]
@@ -10220,6 +11290,20 @@ mod tests {
         assert_eq!(timeline.last_engine_block_end_samples, Some(32));
         assert_eq!(timeline.loop_wrap_count, 1);
 
+        let transport = runtime.get_transport_observation_snapshot();
+        assert_eq!(transport.transport_epoch, 2);
+        assert_eq!(transport.projected_timeline_position_samples, Some(32));
+        assert_eq!(transport.observed_timeline_position_samples, Some(32));
+        assert_eq!(
+            transport.last_transition,
+            Some(crate::interfaces::RuntimeTransportTransitionKind::LoopWrapped)
+        );
+        assert_eq!(transport.last_transition_processing_epoch, Some(2));
+        assert_eq!(transport.last_transition_block_sequence, Some(2));
+        assert_eq!(transport.last_engine_block_start_samples, Some(60));
+        assert_eq!(transport.last_engine_block_end_samples, Some(32));
+        assert_eq!(transport.loop_wrap_count, 1);
+
         let report = crate::interfaces::RuntimeObservationReport::capture(
             &runtime,
             &RuntimeEventRecorder::default(),
@@ -10240,6 +11324,256 @@ mod tests {
         let json = supervisor.render_json();
         assert!(json.contains("\"block_summary\":{"));
         assert!(json.contains("\"transport_loop_wrapped\":true"));
+    }
+
+    #[test]
+    fn runtime_recording_capture_buffers_output_and_commits_wav() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:recording-capture");
+
+        let capture_path = temp_capture_path("recording-capture");
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: true,
+                timeline_position_samples: 2_048,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            })
+            .unwrap();
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                take_id: "take:test:0001".to_string(),
+                track_id: "track:test:0001".to_string(),
+                start_samples: 2_048,
+                capture_path: capture_path.display().to_string(),
+            })
+            .unwrap();
+
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(16), 77),
+            )
+            .unwrap();
+
+        let recording = runtime.get_recording_capture_snapshot();
+        assert!(recording.capture_ready);
+        assert_eq!(
+            recording.state,
+            Some(RuntimeRecordingCaptureState::Capturing)
+        );
+        assert_eq!(recording.active_take_id.as_deref(), Some("take:test:0001"));
+        assert_eq!(recording.buffered_block_count, 1);
+        assert_eq!(recording.buffered_frame_count, 16);
+        assert_eq!(recording.captured_channel_count, 2);
+
+        let receipt = runtime.finish_recording_capture().unwrap();
+        assert_eq!(receipt.take_id, "take:test:0001");
+        assert_eq!(receipt.duration_samples, 16);
+        assert_eq!(receipt.channel_count, 2);
+        assert!(capture_path.exists());
+
+        let committed = runtime.get_recording_capture_snapshot();
+        assert_eq!(committed.state, Some(RuntimeRecordingCaptureState::Idle));
+        assert_eq!(
+            committed.last_committed_path.as_deref(),
+            Some(capture_path.to_string_lossy().as_ref())
+        );
+        assert_eq!(committed.last_committed_duration_samples, Some(16));
+
+        let _ = fs::remove_file(capture_path);
+    }
+
+    #[test]
+    fn runtime_recording_capture_cancels_without_committing_file() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:recording-cancel");
+
+        let capture_path = temp_capture_path("recording-cancel");
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                take_id: "take:test:cancel".to_string(),
+                track_id: "track:test:cancel".to_string(),
+                start_samples: 512,
+                capture_path: capture_path.display().to_string(),
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(8), 33),
+            )
+            .unwrap();
+        runtime.cancel_recording_capture().unwrap();
+
+        let recording = runtime.get_recording_capture_snapshot();
+        assert_eq!(recording.state, Some(RuntimeRecordingCaptureState::Idle));
+        assert_eq!(recording.active_take_id, None);
+        assert_eq!(recording.last_committed_path, None);
+        assert!(!capture_path.exists());
+    }
+
+    #[test]
+    fn runtime_reconciles_media_assets_into_shared_ready_cache_state() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("media-imported");
+        let recorded_path = temp_capture_path("media-recorded");
+        write_test_wav(&imported_path);
+        write_test_wav(&recorded_path);
+
+        runtime
+            .reconcile_media_assets(vec![
+                RuntimeMediaAssetRegistration {
+                    asset_id: "asset:sha256:imported".to_string(),
+                    content_hash: "imported".to_string(),
+                    source_path: imported_path.display().to_string(),
+                    file_name: "imported.wav".to_string(),
+                    byte_size: fs::metadata(&imported_path).unwrap().len(),
+                    sample_rate_hz: 48_000,
+                    channel_count: 1,
+                    duration_samples: 128,
+                    waveform_bin_count: 8,
+                },
+                RuntimeMediaAssetRegistration {
+                    asset_id: "asset:sha256:recorded".to_string(),
+                    content_hash: "recorded".to_string(),
+                    source_path: recorded_path.display().to_string(),
+                    file_name: "recorded.wav".to_string(),
+                    byte_size: fs::metadata(&recorded_path).unwrap().len(),
+                    sample_rate_hz: 48_000,
+                    channel_count: 1,
+                    duration_samples: 128,
+                    waveform_bin_count: 8,
+                },
+            ])
+            .unwrap();
+
+        let snapshot = runtime.get_media_pipeline_snapshot();
+        assert_eq!(snapshot.asset_count, 2);
+        assert_eq!(snapshot.ready_asset_count, 2);
+        assert_eq!(snapshot.invalid_asset_count, 0);
+        assert!(snapshot.assets.iter().all(|asset| {
+            asset.state == Some(RuntimeMediaAssetState::Ready)
+                && asset.cache_path.as_deref().is_some()
+        }));
+
+        let cached_path = PathBuf::from(
+            snapshot.assets[0]
+                .cache_path
+                .as_deref()
+                .expect("cached media should exist"),
+        );
+        fs::remove_file(&cached_path).unwrap();
+
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:imported".to_string(),
+                content_hash: "imported".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "imported.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+
+        let rebuilt = runtime.get_media_pipeline_snapshot();
+        assert_eq!(rebuilt.asset_count, 1);
+        assert_eq!(rebuilt.ready_asset_count, 1);
+        assert_eq!(rebuilt.assets[0].state, Some(RuntimeMediaAssetState::Ready));
+        assert!(rebuilt.assets[0].rebuild_count >= 1);
+
+        let _ = fs::remove_file(imported_path);
+        let _ = fs::remove_file(recorded_path);
+        if let Some(path) = rebuilt.assets[0].cache_path.as_deref() {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_reconciles_warp_clips_against_media_readiness_and_project_tempo() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("warp-ready");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:warp-ready".to_string(),
+                content_hash: "warp-ready".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "warp-ready.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:warp-ready".to_string(),
+                media_asset_id: Some("asset:sha256:warp-ready".to_string()),
+                mode: RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let ready = runtime.get_warp_pipeline_snapshot();
+        assert_eq!(ready.clip_count, 1);
+        assert_eq!(ready.ready_clip_count, 1);
+        assert_eq!(ready.degraded_clip_count, 0);
+        assert_eq!(ready.clips[0].readiness, RuntimeWarpReadiness::Ready);
+        assert!((ready.clips[0].realized_ratio - 1.5).abs() < 0.000_1);
+
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 300.0,
+                loop_state: None,
+            })
+            .unwrap();
+        let degraded = runtime.get_warp_pipeline_snapshot();
+        assert_eq!(degraded.ready_clip_count, 0);
+        assert_eq!(degraded.degraded_clip_count, 1);
+        assert_eq!(degraded.clips[0].readiness, RuntimeWarpReadiness::Degraded);
+        assert!(
+            degraded.clips[0]
+                .last_error
+                .as_deref()
+                .unwrap_or_default()
+                .contains("outside baseline support")
+        );
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]

@@ -24,6 +24,14 @@ pub enum AudioSampleFormat {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HardwareClockSource {
+    Internal,
+    ExternalWordClock,
+    DigitalInput,
+    Virtual,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HardwareLifecycleOwnership {
     HostDrivenCallback,
     BackendManagedCallback,
@@ -126,6 +134,23 @@ impl Default for HardwareLifecycleContract {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HardwareLatencyProfile {
+    pub input_latency_samples: Option<u32>,
+    pub output_latency_samples: u32,
+    pub round_trip_latency_samples: Option<u32>,
+}
+
+impl HardwareLatencyProfile {
+    pub fn output_only(output_latency_samples: u32) -> Self {
+        Self {
+            input_latency_samples: None,
+            output_latency_samples,
+            round_trip_latency_samples: None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HardwareStreamConfig {
     pub device: AudioDeviceDescriptor,
@@ -136,7 +161,9 @@ pub struct HardwareStreamConfig {
     pub output_channels: u16,
     pub sample_format: AudioSampleFormat,
     pub interleaved: bool,
+    pub clock_source: HardwareClockSource,
     pub lifecycle: HardwareLifecycleContract,
+    pub latency: HardwareLatencyProfile,
     pub simulated: bool,
 }
 
@@ -381,7 +408,9 @@ impl HardwareBackend for SimulatedHardwareBackend {
             output_channels: request.output_channels,
             sample_format: request.sample_format,
             interleaved: request.interleaved,
+            clock_source: HardwareClockSource::Virtual,
             lifecycle: self.lifecycle,
+            latency: HardwareLatencyProfile::output_only(request.buffer_size as u32),
             simulated: true,
         })
     }
@@ -423,6 +452,7 @@ mod tests {
         assert_eq!(stream.output_channels, 2);
         assert_eq!(stream.sample_format, AudioSampleFormat::F32);
         assert!(stream.interleaved);
+        assert_eq!(stream.clock_source, HardwareClockSource::Virtual);
         assert_eq!(
             stream.lifecycle,
             HardwareLifecycleContract {
@@ -430,6 +460,7 @@ mod tests {
                 restart_policy: HardwareRestartPolicy::BackendMayRestart,
             }
         );
+        assert_eq!(stream.latency, HardwareLatencyProfile::output_only(256));
         assert!(stream.simulated);
 
         let runtime_request =

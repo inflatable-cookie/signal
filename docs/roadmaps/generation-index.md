@@ -1,17 +1,18 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-10
+Updated: 2026-03-11
 
 ## Active generation
 
-- `g01`
+- none currently selected
 
 ## Generation log
 
 | Generation | Started | Reason | Notes |
 | --- | --- | --- | --- |
 | `g01` | 2026-03-08 | Initial Signal docs and migration sequence | Seeded after Northstar bootstrap and Finch research migration |
+| `g02` | 2026-03-11 | Continue beyond the runtime baseline with reusable DSP and analysis depth | Closed on 2026-03-11 after shared spectral/resampling, rhythm, tonal, loudness, descriptor, embedding, and acceptance-spine work landed |
 
 ## Rollover policy
 
@@ -21,6 +22,5 @@ Create a new generation when:
 
 ## Next task
 
-Keep `g01` active until the first Signal crate/runtime-host package sequence is
-complete enough to justify a new generation boundary, using the new `g01.005`
-through `g01.009` engine/DSP runway as the dependency-ordered follow-on spine.
+No generation is active right now. Open `g03` only when the next reusable
+DSP/analysis sequence is large enough to justify a new generation boundary.

@@ -8,5 +8,5 @@ publish = false
 description = "Shared analysis traits, result types, and confidence models for Signal."
 
 [dependencies]
+signal-dsp-resample = { path = "../signal-dsp-resample" }
 signal-primitives = { path = "../signal-primitives" }
-

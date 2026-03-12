@@ -134,6 +134,7 @@ dependencies = [
 name = "signal-analysis"
 version = "0.1.0"
 dependencies = [
+ "signal-dsp-resample",
  "signal-primitives",
 ]
 
@@ -143,6 +144,15 @@ version = "0.1.0"
 dependencies = [
  "signal-analysis",
  "signal-dsp-spectral",
+ "signal-primitives",
+]
+
+[[package]]
+name = "signal-analysis-embed"
+version = "0.1.0"
+dependencies = [
+ "signal-analysis",
+ "signal-analysis-character",
  "signal-primitives",
 ]
 
@@ -176,6 +186,13 @@ dependencies = [
 
 [[package]]
 name = "signal-dsp"
+version = "0.1.0"
+dependencies = [
+ "signal-primitives",
+]
+
+[[package]]
+name = "signal-dsp-resample"
 version = "0.1.0"
 dependencies = [
  "signal-primitives",
@@ -277,6 +294,7 @@ version = "0.1.0"
 name = "signal-runtime"
 version = "0.1.0"
 dependencies = [
+ "hound",
  "signal-analysis",
  "signal-graph",
  "signal-hardware",

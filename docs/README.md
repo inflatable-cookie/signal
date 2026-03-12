@@ -24,6 +24,7 @@ so they are intentionally absent.
 - Architecture: [architecture/system-architecture.md](./architecture/system-architecture.md)
 - Package map: [architecture/package-map.md](./architecture/package-map.md)
 - DSP and analysis feature reference: [architecture/dsp-analysis-feature-reference.md](./architecture/dsp-analysis-feature-reference.md)
+- Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Research index: [research/master-index.md](./research/master-index.md)

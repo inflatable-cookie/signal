@@ -1,4 +1,29 @@
 //! Graph model and execution semantics for Signal.
+//!
+//! The crate owns the executable block path that sits between reusable DSP
+//! kernels and runtime orchestration. It models node contracts, routed buses,
+//! planning groups, execution lanes, and block-local parameter-event
+//! application.
+//!
+//! ```no_run
+//! use signal_graph::{
+//!     synthetic_stereo_block, ExecutableGraph, GraphExecutionContext,
+//! };
+//! use signal_primitives::{FrameCount, SampleRate};
+//!
+//! let graph = ExecutableGraph::new("demo", Vec::new());
+//! let mut buffer = synthetic_stereo_block(SampleRate(48_000), FrameCount(64), 1);
+//! let report = graph.process_with_context(
+//!     &mut buffer,
+//!     GraphExecutionContext {
+//!         configured_block_size: 64,
+//!         ..GraphExecutionContext::default()
+//!     },
+//! );
+//!
+//! assert_eq!(report.graph_id, "demo");
+//! assert_eq!(report.frame_count, 64);
+//! ```
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -335,6 +360,11 @@ pub struct GraphPlanningSummary {
     pub planned_nodes: Vec<GraphPlannedNode>,
 }
 
+/// Per-block execution context supplied by runtime.
+///
+/// The graph does not invent processing epochs, projection epochs, transport
+/// state, or parameter epochs itself; it consumes the runtime-owned context and
+/// reports it back through [`GraphBlockReport`].
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GraphExecutionContext {
     pub processing_epoch: u64,
@@ -364,6 +394,8 @@ pub struct GraphNodeRenderOverride {
     pub bypassed: bool,
 }
 
+/// Prepared anticipative dispatch output that can be handed into the later
+/// realtime dispatch path.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GraphPreparedDispatch {
     pub buses: Vec<GraphPreparedBus>,
@@ -384,6 +416,12 @@ pub struct ExecutableGraph {
     plan: GraphExecutionPlan,
 }
 
+/// Summary of one processed graph block.
+///
+/// This is the main current-state observation surface for graph execution. It
+/// combines contract/routing/planning counts with parameter-event application
+/// stats and basic output telemetry so runtime can snapshot graph behavior
+/// without re-deriving scheduler details itself.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GraphBlockReport {
     pub graph_id: String,
@@ -1876,6 +1914,10 @@ fn planning_lane_for_group(group: GraphNodePlanningGroup) -> GraphExecutionLane 
     }
 }
 
+/// Graph-level execution config.
+///
+/// Today this is intentionally narrow and only carries block size because the
+/// richer execution authority lives in [`GraphExecutionContext`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GraphConfig {
     pub block_size: usize,

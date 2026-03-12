@@ -16,8 +16,9 @@
 //! assert_eq!(spectrogram.bins(), 513);
 //! ```
 
-use rustfft::{num_complex::Complex32, FftPlanner};
+use rustfft::{num_complex::Complex32, Fft, FftPlanner};
 use signal_primitives::{FrameCount, Sample, SampleRate};
+use std::sync::Arc;
 
 /// Configuration for a forward short-time Fourier transform.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -188,12 +189,14 @@ impl Stft {
         self.config
     }
 
+    /// Create a stateful chunked STFT analyzer with the same configuration.
+    pub fn streaming(&self) -> StreamingStft {
+        StreamingStft::new(self.config)
+    }
+
     /// Analyze a mono sample slice and produce a spectrogram.
     pub fn analyze_mono(&self, sample_rate: SampleRate, samples: &[Sample]) -> Spectrogram {
-        let window_size = self.config.window_size.0;
-        let hop_size = self.config.hop_size.0.max(1);
-
-        if window_size == 0 || samples.is_empty() {
+        if self.config.window_size.0 == 0 || samples.is_empty() {
             return Spectrogram {
                 sample_rate,
                 config: self.config,
@@ -201,44 +204,9 @@ impl Stft {
             };
         }
 
-        let mut planner = FftPlanner::<f32>::new();
-        let fft = planner.plan_fft_forward(window_size);
-        let mut frames = Vec::new();
-        let mut start = 0usize;
-
-        loop {
-            let mut buffer = vec![Complex32::new(0.0, 0.0); window_size];
-            for (index, slot) in buffer.iter_mut().enumerate() {
-                let sample = samples.get(start + index).copied().unwrap_or(0.0);
-                *slot = Complex32::new(sample * self.window[index], 0.0);
-            }
-
-            fft.process(&mut buffer);
-
-            let positive_bins = window_size / 2 + 1;
-            let mut magnitudes = Vec::with_capacity(positive_bins);
-            let phases = if self.config.compute_phases {
-                let mut phases = Vec::with_capacity(positive_bins);
-                for bin in buffer.iter().take(positive_bins) {
-                    magnitudes.push(bin.norm());
-                    phases.push(bin.arg());
-                }
-                phases
-            } else {
-                for bin in buffer.iter().take(positive_bins) {
-                    magnitudes.push(bin.norm());
-                }
-                Vec::new()
-            };
-
-            frames.push(SpectrumFrame { magnitudes, phases });
-
-            if start + window_size >= samples.len() {
-                break;
-            }
-
-            start = start.saturating_add(hop_size);
-        }
+        let mut streaming = StreamingStft::with_window(self.config, self.window.clone());
+        let mut frames = streaming.process_chunk(samples);
+        frames.extend(streaming.finish());
 
         Spectrogram {
             sample_rate,
@@ -246,6 +214,137 @@ impl Stft {
             frames,
         }
     }
+}
+
+/// Stateful chunked STFT analyzer that matches [`Stft::analyze_mono`] framing.
+pub struct StreamingStft {
+    config: StftConfig,
+    window: Vec<f32>,
+    fft: Arc<dyn Fft<f32>>,
+    pending: Vec<Sample>,
+    frames_emitted: usize,
+}
+
+impl StreamingStft {
+    /// Create a chunked STFT analyzer with a precomputed Hann window.
+    pub fn new(config: StftConfig) -> Self {
+        Self::with_window(config, hann_window(config.window_size.0))
+    }
+
+    fn with_window(config: StftConfig, window: Vec<f32>) -> Self {
+        let mut planner = FftPlanner::<f32>::new();
+        let fft = planner.plan_fft_forward(config.window_size.0.max(1));
+
+        Self {
+            config,
+            window,
+            fft,
+            pending: Vec::new(),
+            frames_emitted: 0,
+        }
+    }
+
+    pub fn config(&self) -> StftConfig {
+        self.config
+    }
+
+    pub fn reset(&mut self) {
+        self.pending.clear();
+        self.frames_emitted = 0;
+    }
+
+    /// Feed one chunk of mono audio and return every newly available full frame.
+    pub fn process_chunk(&mut self, samples: &[Sample]) -> Vec<SpectrumFrame> {
+        let window_size = self.config.window_size.0;
+        let hop_size = self.config.hop_size.0.max(1);
+        if window_size == 0 || samples.is_empty() {
+            return Vec::new();
+        }
+
+        self.pending.extend_from_slice(samples);
+
+        let mut frames = Vec::new();
+        while self.pending.len() >= window_size {
+            frames.push(compute_spectrum_frame(
+                self.config,
+                &self.window,
+                &self.fft,
+                &self.pending[..window_size],
+            ));
+            self.frames_emitted += 1;
+
+            let drain_count = hop_size.min(self.pending.len());
+            self.pending.drain(..drain_count);
+        }
+
+        frames
+    }
+
+    /// Flush a final zero-padded frame when the remaining samples still imply
+    /// another hop position that has not been emitted yet.
+    pub fn finish(&mut self) -> Vec<SpectrumFrame> {
+        let window_size = self.config.window_size.0;
+        let hop_size = self.config.hop_size.0.max(1);
+        if window_size == 0 || self.pending.is_empty() {
+            self.reset();
+            return Vec::new();
+        }
+
+        let overlap_tail = window_size.saturating_sub(hop_size);
+        let should_emit_partial = if self.frames_emitted == 0 {
+            true
+        } else {
+            self.pending.len() > overlap_tail
+        };
+
+        let frames = if should_emit_partial {
+            vec![compute_spectrum_frame(
+                self.config,
+                &self.window,
+                &self.fft,
+                &self.pending,
+            )]
+        } else {
+            Vec::new()
+        };
+
+        self.reset();
+        frames
+    }
+}
+
+fn compute_spectrum_frame(
+    config: StftConfig,
+    window: &[f32],
+    fft: &Arc<dyn Fft<f32>>,
+    samples: &[Sample],
+) -> SpectrumFrame {
+    let window_size = config.window_size.0;
+    let mut buffer = vec![Complex32::new(0.0, 0.0); window_size];
+    for (index, slot) in buffer.iter_mut().enumerate() {
+        let sample = samples.get(index).copied().unwrap_or(0.0);
+        *slot = Complex32::new(sample * window[index], 0.0);
+    }
+
+    fft.process(&mut buffer);
+
+    let positive_bins = window_size / 2 + 1;
+    let mut magnitudes = Vec::with_capacity(positive_bins);
+    let phases = if config.compute_phases {
+        let mut phases = Vec::with_capacity(positive_bins);
+        for bin in buffer.iter().take(positive_bins) {
+            magnitudes.push(bin.norm());
+            phases.push(bin.arg());
+        }
+        phases
+    } else {
+        for bin in buffer.iter().take(positive_bins) {
+            magnitudes.push(bin.norm());
+        }
+        Vec::new()
+    };
+
+    SpectrumFrame { magnitudes, phases }
 }
 
 /// Generate a Hann window of `size` samples.
@@ -526,6 +625,41 @@ mod tests {
         assert_eq!(spectrogram.bins(), 5);
         assert_eq!(spectrogram.frames.len(), 3);
         assert_eq!(spectrogram.frames[0].phases.len(), 5);
+    }
+
+    #[test]
+    fn streaming_stft_matches_offline_across_irregular_chunks() {
+        let config = StftConfig::new(32, 12);
+        let stft = Stft::new(config);
+        let samples: Vec<f32> = (0..137).map(|index| (index as f32 * 0.071).sin()).collect();
+
+        let offline = stft.analyze_mono(SampleRate(48_000), &samples);
+
+        let mut streaming = stft.streaming();
+        let mut frames = Vec::new();
+        frames.extend(streaming.process_chunk(&samples[..7]));
+        frames.extend(streaming.process_chunk(&samples[7..29]));
+        frames.extend(streaming.process_chunk(&samples[29..74]));
+        frames.extend(streaming.process_chunk(&samples[74..]));
+        frames.extend(streaming.finish());
+
+        assert_eq!(frames, offline.frames);
+    }
+
+    #[test]
+    fn streaming_stft_flushes_final_zero_padded_frame() {
+        let config = StftConfig::new(8, 4);
+        let stft = Stft::new(config);
+        let samples = vec![1.0f32; 10];
+
+        let offline = stft.analyze_mono(SampleRate(8_000), &samples);
+
+        let mut streaming = stft.streaming();
+        let mut frames = streaming.process_chunk(&samples);
+        frames.extend(streaming.finish());
+
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames, offline.frames);
     }
 
     #[test]

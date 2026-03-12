@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-10
+Updated: 2026-03-11
 
 ## Why this section matters now
 
@@ -17,22 +17,26 @@ Use this section for:
 
 ## Layout
 
-- `g01/`: current active generation
+- `g*/`: generation roadmaps and closure records
 - `generation-index.md`: generation history and rollover notes
 - `backlog/`: deferred work only
 - `templates/`: roadmap authoring support
 
 ## Current posture
 
-`g01` is no longer just a shell-bootstrap queue. It now has a defined next-stage
-engine and DSP runway so a dedicated Signal implementation thread can work in
-parallel on:
+There is no active Signal generation right now. `g01` established the Rust
+workspace, engine, host/device path, and plugin/runtime baseline; `g02`
+completed the first reusable DSP and deep-analysis expansion on top of that
+foundation.
 
-- core DSP/control kernels
-- executable graph routing and parameter timing
-- runtime transport and scheduler ownership
-- host/device-backed audio execution
-- plugin and sandbox processing
+The most recently completed continuation runway was:
+
+- shared streaming spectral and resampling substrate
+- rhythm structure and tempo continuity depth
+- tonal and harmonic analysis depth
+- loudness and dynamics depth
+- transient/timbral descriptor packs
+- embedding and benchmark hardening
 
 ## Working Rule
 
@@ -42,5 +46,5 @@ parallel on:
 
 ## Next Task
 
-Advance `g01.004`, then open `g01.005` as the first algorithm/engine-heavy
-milestone in the new detailed Signal runtime runway.
+The current roadmap generation queue is complete. Open `g03` only when a new
+sequenced continuation boundary is preferable to a backlog item.

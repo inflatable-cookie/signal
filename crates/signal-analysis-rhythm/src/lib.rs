@@ -21,9 +21,12 @@
 //! ```
 
 use rayon::prelude::*;
-use signal_analysis::{AnalysisMode, AnalysisStage, Confidence};
+use signal_analysis::{
+    prepare_audio_analysis, prepare_mono_analysis, AnalysisInputConfig, AnalysisMode,
+    AnalysisStage, Confidence,
+};
 use signal_dsp_spectral::{Spectrogram, Stft, StftConfig};
-use signal_primitives::{AudioBuffer, Sample, SampleRate};
+use signal_primitives::{AudioBuffer, Sample, SampleRate, Seconds};
 
 /// Controls the trade-off between speed and accuracy in rhythm analysis.
 ///
@@ -53,6 +56,11 @@ pub struct BeatTrackerConfig {
     pub min_bpm: f32,
     pub max_bpm: f32,
     pub beat_tolerance: f32,
+    /// Sample rate used by the rhythm analysis path after input prep.
+    ///
+    /// Freezing the analysis rate keeps onset framing and tempo heuristics on
+    /// one stable domain across source material with different native rates.
+    pub analysis_sample_rate: SampleRate,
     /// When set, only analyze this many seconds from the centre of the track.
     /// Dramatically reduces processing time for long audio files.
     pub analysis_duration_seconds: Option<f32>,
@@ -79,6 +87,7 @@ impl BeatTrackerConfig {
             min_bpm: 70.0,
             max_bpm: 180.0,
             beat_tolerance: 0.2,
+            analysis_sample_rate: SampleRate(48_000),
             analysis_duration_seconds: Some(30.0),
             profile: AnalysisProfile::Low,
         }
@@ -96,6 +105,7 @@ impl BeatTrackerConfig {
             min_bpm: 70.0,
             max_bpm: 180.0,
             beat_tolerance: 0.2,
+            analysis_sample_rate: SampleRate(48_000),
             analysis_duration_seconds: Some(60.0),
             profile: AnalysisProfile::Medium,
         }
@@ -109,6 +119,7 @@ impl BeatTrackerConfig {
             min_bpm: 70.0,
             max_bpm: 180.0,
             beat_tolerance: 0.2,
+            analysis_sample_rate: SampleRate(48_000),
             analysis_duration_seconds: None,
             profile: AnalysisProfile::High,
         }
@@ -615,6 +626,67 @@ pub struct TempoConsumptionDecision {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TempoSegmentKind {
+    WholeTrack,
+    EdgeTrimmedStable,
+    StableCore,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoSegmentSummary {
+    pub kind: TempoSegmentKind,
+    pub start_beat_index: usize,
+    pub end_beat_index: usize,
+    pub start_seconds: f32,
+    pub end_seconds: f32,
+    pub representative_bpm: f32,
+    pub drift_span_bpm: f32,
+    pub mean_abs_deviation_bpm: f32,
+    pub coverage: Confidence,
+    pub retained_windows: usize,
+    pub total_windows: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TempoContinuitySummary {
+    pub action: TempoStateAction,
+    pub reason: TempoStateReason,
+    pub confidence: Confidence,
+    pub trust: TempoTrustLevel,
+    pub recommendation: TempoRecommendation,
+    pub continuity_action: TempoContinuityAction,
+    pub source: TempoContinuitySource,
+    pub severity: TempoContinuitySeverity,
+    pub history: TempoContinuityHistory,
+    pub arc: TempoContinuityArc,
+    pub arc_rationale: TempoContinuityArcRationale,
+    pub trigger: TempoContinuityTrigger,
+    pub provenance: TempoContinuityProvenance,
+    pub ambiguity: Confidence,
+    pub refresh_strength: Confidence,
+    pub trusted_beats: usize,
+    pub revalidate_after_beats: usize,
+    pub fallback_after_beats: usize,
+    pub clear_after_beats: usize,
+    pub current: TempoConsumptionSelection,
+    pub fallback: TempoConsumptionSelection,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TempoStructureSummary {
+    pub trust: TempoTrustLevel,
+    pub recommendation: TempoRecommendation,
+    pub selected_bpm: Option<f32>,
+    pub snapped_bpm: Option<f32>,
+    pub core_window_bpm: f32,
+    pub stability_scope: TempoStabilityScopeSummary,
+    pub ambiguity: Confidence,
+    pub trend: TempoTrendDiagnostics,
+    pub segments: Vec<TempoSegmentSummary>,
+    pub continuity: TempoContinuitySummary,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TempoTrendDirection {
     Stable,
     Accelerating,
@@ -929,12 +1001,105 @@ pub struct MeterEstimate {
     pub downbeat_positions_seconds: Vec<f32>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BarSupportKind {
+    WholeTrack,
+    RecoveryWindow,
+    Extrapolated,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BarSpan {
+    pub bar_index: usize,
+    pub start_seconds: f32,
+    pub end_seconds: Option<f32>,
+    pub support: BarSupportKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RhythmStructureContinuitySummary {
+    pub action: MeterStateAction,
+    pub reason: MeterStateReason,
+    pub confidence: Confidence,
+    pub bar_length_action: MeterContinuityAction,
+    pub bar_length_confidence: Confidence,
+    pub downbeat_phase_action: MeterContinuityAction,
+    pub downbeat_phase_confidence: Confidence,
+}
+
+/// Compact bar/downbeat structure summary derived from the current meter state.
+///
+/// This is the integration-oriented structure surface for timeline or grid
+/// consumers that need bar spans and continuity state without rebuilding that
+/// view from the lower-level meter diagnostics manually.
+#[derive(Clone, Debug, PartialEq)]
+pub struct RhythmStructureSummary {
+    pub beats_per_bar: usize,
+    pub detection_kind: MeterDetectionKind,
+    pub trust: MeterTrustLevel,
+    pub recommendation: MeterRecommendation,
+    pub downbeat_positions_seconds: Vec<f32>,
+    pub bars: Vec<BarSpan>,
+    pub bar_count: usize,
+    pub recovered_bar_count: usize,
+    pub recovery: Option<MeterRecoveryContext>,
+    pub continuity: RhythmStructureContinuitySummary,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RhythmStructureAmbiguityKind {
+    CompetingMeter,
+    CompetingDownbeatPhase,
+    SyncopatedDownbeatPhase,
+    WeakAccent,
+    RecoveryWindowFallback,
+    InsufficientEvidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RhythmStructureCandidate {
+    pub beats_per_bar: usize,
+    pub phase_offset_beats: usize,
+    pub confidence: Confidence,
+    pub confidence_breakdown: MeterConfidenceBreakdown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RhythmStructureAmbiguitySummary {
+    pub kind: RhythmStructureAmbiguityKind,
+    pub confidence: Confidence,
+    pub primary: Option<RhythmStructureCandidate>,
+    pub runner_up: Option<RhythmStructureCandidate>,
+    pub trailing_recovery_confidence: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RhythmStructureFallbackSummary {
+    pub action: MeterStateAction,
+    pub reason: MeterStateReason,
+    pub confidence: Confidence,
+    pub bar_length_action: MeterContinuityAction,
+    pub bar_length_source: MeterContinuitySource,
+    pub downbeat_phase_action: MeterContinuityAction,
+    pub downbeat_phase_source: MeterContinuitySource,
+    pub recovery_window_available: bool,
+    pub trailing_recovery_confidence: Confidence,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RhythmStructureAssessment {
+    pub structure: Option<RhythmStructureSummary>,
+    pub ambiguity: RhythmStructureAmbiguitySummary,
+    pub fallback: RhythmStructureFallbackSummary,
+}
+
 /// Aggregate rhythm analysis output returned by [`BeatTracker`].
 ///
 /// Practical integration order:
 /// 1. Read `bpm`, `beat_positions_seconds`, and `confidence` for the baseline beat
 ///    tracking output.
 /// 2. Read `tempo_state` and `tempo_interpretation`, or call
+///    [`BeatAnalysisResult::tempo_structure_summary`] or
 ///    [`BeatAnalysisResult::tempo_consumption`], to decide whether the tempo
 ///    should be locked, monitored, or cleared.
 /// 3. Read `meter_state` before trusting `meter`; `meter` may be present while the
@@ -952,9 +1117,155 @@ pub struct BeatAnalysisResult {
     pub tempo_ambiguity: Confidence,
     pub meter_state: MeterStateRecommendation,
     pub meter: Option<MeterEstimate>,
+    pub structure_ambiguity: RhythmStructureAmbiguitySummary,
 }
 
 impl BeatAnalysisResult {
+    /// Resolve the current meter output into a compact bar/downbeat structure
+    /// summary suitable for timeline and grid consumers.
+    pub fn rhythm_structure_summary(&self) -> Option<RhythmStructureSummary> {
+        let meter = self.meter.as_ref()?;
+        let bars = meter_bar_spans(meter);
+        let recovered_bar_count = bars
+            .iter()
+            .filter(|bar| matches!(bar.support, BarSupportKind::RecoveryWindow))
+            .count();
+
+        Some(RhythmStructureSummary {
+            beats_per_bar: meter.beats_per_bar,
+            detection_kind: meter.detection_kind,
+            trust: meter.trust,
+            recommendation: meter.recommendation,
+            downbeat_positions_seconds: meter.downbeat_positions_seconds.clone(),
+            bar_count: bars.len(),
+            bars,
+            recovered_bar_count,
+            recovery: meter.recovery.clone(),
+            continuity: RhythmStructureContinuitySummary {
+                action: self.meter_state.action,
+                reason: self.meter_state.reason,
+                confidence: self.meter_state.confidence,
+                bar_length_action: self.meter_state.continuity.bar_length.action,
+                bar_length_confidence: self.meter_state.continuity.bar_length.confidence,
+                downbeat_phase_action: self.meter_state.continuity.downbeat_phase.action,
+                downbeat_phase_confidence: self.meter_state.continuity.downbeat_phase.confidence,
+            },
+        })
+    }
+
+    /// Resolve the current structure summary, ambiguity, and fallback policy
+    /// into one always-available assessment for downstream rhythm consumers.
+    pub fn rhythm_structure_assessment(&self) -> RhythmStructureAssessment {
+        let structure = self.rhythm_structure_summary();
+        let fallback = RhythmStructureFallbackSummary {
+            action: self.meter_state.action,
+            reason: self.meter_state.reason,
+            confidence: self.meter_state.confidence,
+            bar_length_action: self.meter_state.continuity.bar_length.action,
+            bar_length_source: self.meter_state.continuity.bar_length.source,
+            downbeat_phase_action: self.meter_state.continuity.downbeat_phase.action,
+            downbeat_phase_source: self.meter_state.continuity.downbeat_phase.source,
+            recovery_window_available: self
+                .meter
+                .as_ref()
+                .and_then(|estimate| estimate.recovery.as_ref())
+                .is_some()
+                || self.structure_ambiguity.trailing_recovery_confidence.0 > 0.0,
+            trailing_recovery_confidence: self.structure_ambiguity.trailing_recovery_confidence,
+        };
+        let mut ambiguity = self.structure_ambiguity;
+
+        if structure.is_some()
+            && matches!(
+                ambiguity.kind,
+                RhythmStructureAmbiguityKind::RecoveryWindowFallback
+            )
+            && matches!(
+                fallback.bar_length_source,
+                MeterContinuitySource::CurrentMeter
+            )
+        {
+            ambiguity.kind = RhythmStructureAmbiguityKind::WeakAccent;
+        } else if structure.is_none()
+            && fallback.recovery_window_available
+            && !matches!(ambiguity.kind, RhythmStructureAmbiguityKind::CompetingMeter)
+        {
+            ambiguity.kind = RhythmStructureAmbiguityKind::RecoveryWindowFallback;
+        }
+
+        RhythmStructureAssessment {
+            structure,
+            ambiguity,
+            fallback,
+        }
+    }
+
+    /// Resolve the current tempo interpretation, local tempo regions, and
+    /// continuity policy into one compact summary for timeline or transport
+    /// consumers.
+    pub fn tempo_structure_summary(&self) -> TempoStructureSummary {
+        let consumption = self.tempo_consumption(None);
+        let mut segments = Vec::new();
+        push_tempo_segment_summary(&mut segments, whole_track_tempo_segment_summary(self));
+        push_tempo_segment_summary(
+            &mut segments,
+            stable_span_tempo_segment_summary(
+                TempoSegmentKind::EdgeTrimmedStable,
+                &self.tempo_diagnostics.windowed_tempi,
+                self.tempo_diagnostics.edge_trimmed_stable_span,
+                self.tempo_diagnostics.windowed_median_bpm,
+                self.tempo_diagnostics.windowed_drift_span_bpm,
+                self.tempo_diagnostics.windowed_mean_abs_deviation_bpm,
+            ),
+        );
+        push_tempo_segment_summary(
+            &mut segments,
+            stable_span_tempo_segment_summary(
+                TempoSegmentKind::StableCore,
+                &self.tempo_diagnostics.windowed_tempi,
+                self.tempo_diagnostics.stable_core_span,
+                self.tempo_diagnostics.core_windowed_median_bpm,
+                self.tempo_diagnostics.core_windowed_drift_span_bpm,
+                self.tempo_diagnostics.core_windowed_mean_abs_deviation_bpm,
+            ),
+        );
+
+        TempoStructureSummary {
+            trust: self.tempo_interpretation.trust,
+            recommendation: self.tempo_interpretation.recommendation,
+            selected_bpm: consumption.current.bpm,
+            snapped_bpm: self.tempo_interpretation.snapped_bpm,
+            core_window_bpm: self.tempo_interpretation.profile.core_window_bpm,
+            stability_scope: self.tempo_diagnostics.stability_scope,
+            ambiguity: self.tempo_ambiguity,
+            trend: self.tempo_diagnostics.trend,
+            segments,
+            continuity: TempoContinuitySummary {
+                action: self.tempo_state.action,
+                reason: self.tempo_state.reason,
+                confidence: self.tempo_state.confidence,
+                trust: self.tempo_interpretation.trust,
+                recommendation: self.tempo_interpretation.recommendation,
+                continuity_action: self.tempo_state.continuity.action,
+                source: self.tempo_state.continuity.source,
+                severity: self.tempo_state.continuity.severity,
+                history: self.tempo_state.continuity.history,
+                arc: self.tempo_state.continuity.arc,
+                arc_rationale: self.tempo_state.continuity.arc_rationale,
+                trigger: self.tempo_state.continuity.trigger,
+                provenance: self.tempo_state.continuity.provenance,
+                ambiguity: self.tempo_ambiguity,
+                refresh_strength: self.tempo_state.continuity.refresh_strength,
+                trusted_beats: self.tempo_state.continuity.trusted_beats,
+                revalidate_after_beats: self.tempo_state.continuity.revalidate_after_beats,
+                fallback_after_beats: consumption.fallback_after_beats,
+                clear_after_beats: self.tempo_state.continuity.expiry.clear_after_beats,
+                current: consumption.current,
+                fallback: consumption.fallback,
+            },
+        }
+    }
+
     /// Resolve the current and fallback tempo choices into one consumer-facing
     /// decision, optionally using a previously locked tempo when the continuity
     /// plan asks the caller to preserve prior state.
@@ -1113,6 +1424,297 @@ impl BeatAnalysisResult {
     }
 }
 
+fn push_tempo_segment_summary(
+    segments: &mut Vec<TempoSegmentSummary>,
+    candidate: Option<TempoSegmentSummary>,
+) {
+    let Some(candidate) = candidate else {
+        return;
+    };
+    if segments.iter().any(|existing| {
+        existing.start_beat_index == candidate.start_beat_index
+            && existing.end_beat_index == candidate.end_beat_index
+            && (existing.start_seconds - candidate.start_seconds).abs() < 1.0e-6
+            && (existing.end_seconds - candidate.end_seconds).abs() < 1.0e-6
+    }) {
+        return;
+    }
+    segments.push(candidate);
+}
+
+fn whole_track_tempo_segment_summary(result: &BeatAnalysisResult) -> Option<TempoSegmentSummary> {
+    if let Some(segment) = tempo_segment_summary_from_points(
+        TempoSegmentKind::WholeTrack,
+        &result.tempo_diagnostics.windowed_tempi,
+        Confidence::new(1.0),
+        result.tempo_diagnostics.windowed_tempi.len(),
+        result.tempo_diagnostics.windowed_tempi.len(),
+    ) {
+        return Some(segment);
+    }
+
+    if let Some(segment) = tempo_segment_summary_from_points(
+        TempoSegmentKind::WholeTrack,
+        &result.tempo_diagnostics.interval_tempi,
+        Confidence::new(1.0),
+        result.tempo_diagnostics.interval_tempi.len(),
+        result.tempo_diagnostics.interval_tempi.len(),
+    ) {
+        return Some(segment);
+    }
+
+    let start_seconds = *result.beat_positions_seconds.first()?;
+    let end_seconds = *result.beat_positions_seconds.last()?;
+    if end_seconds <= start_seconds {
+        return None;
+    }
+
+    Some(TempoSegmentSummary {
+        kind: TempoSegmentKind::WholeTrack,
+        start_beat_index: 0,
+        end_beat_index: result.beat_positions_seconds.len().saturating_sub(1),
+        start_seconds,
+        end_seconds,
+        representative_bpm: if result.tempo_diagnostics.core_windowed_median_bpm > 0.0 {
+            result.tempo_diagnostics.core_windowed_median_bpm
+        } else if result.tempo_diagnostics.windowed_median_bpm > 0.0 {
+            result.tempo_diagnostics.windowed_median_bpm
+        } else {
+            result.bpm
+        },
+        drift_span_bpm: if result.tempo_diagnostics.windowed_drift_span_bpm > 0.0 {
+            result.tempo_diagnostics.windowed_drift_span_bpm
+        } else {
+            result.tempo_diagnostics.drift_span_bpm
+        },
+        mean_abs_deviation_bpm: if result.tempo_diagnostics.windowed_mean_abs_deviation_bpm > 0.0 {
+            result.tempo_diagnostics.windowed_mean_abs_deviation_bpm
+        } else {
+            result.tempo_diagnostics.mean_abs_deviation_bpm
+        },
+        coverage: Confidence::new(1.0),
+        retained_windows: result.tempo_diagnostics.windowed_tempi.len(),
+        total_windows: result.tempo_diagnostics.windowed_tempi.len(),
+    })
+}
+
+fn stable_span_tempo_segment_summary(
+    kind: TempoSegmentKind,
+    points: &[LocalTempoPoint],
+    span: Option<BeatGridCoreSpanDiagnostics>,
+    fallback_bpm: f32,
+    fallback_drift_span_bpm: f32,
+    fallback_mean_abs_deviation_bpm: f32,
+) -> Option<TempoSegmentSummary> {
+    let span = span?;
+    let subset: Vec<LocalTempoPoint> = points
+        .iter()
+        .filter(|point| {
+            point.start_beat_index >= span.start_beat_index
+                && point.end_beat_index <= span.end_beat_index
+        })
+        .cloned()
+        .collect();
+    let stats_points = if subset.is_empty() { points } else { &subset };
+    let (representative_bpm, drift_span_bpm, mean_abs_deviation_bpm) = if stats_points.is_empty() {
+        (
+            fallback_bpm,
+            fallback_drift_span_bpm,
+            fallback_mean_abs_deviation_bpm,
+        )
+    } else {
+        tempo_summary(stats_points)
+    };
+
+    Some(TempoSegmentSummary {
+        kind,
+        start_beat_index: span.start_beat_index,
+        end_beat_index: span.end_beat_index,
+        start_seconds: span.start_seconds,
+        end_seconds: span.end_seconds,
+        representative_bpm,
+        drift_span_bpm,
+        mean_abs_deviation_bpm,
+        coverage: span.coverage,
+        retained_windows: span.retained_windows,
+        total_windows: span.total_windows,
+    })
+}
+
+fn tempo_segment_summary_from_points(
+    kind: TempoSegmentKind,
+    points: &[LocalTempoPoint],
+    coverage: Confidence,
+    retained_windows: usize,
+    total_windows: usize,
+) -> Option<TempoSegmentSummary> {
+    let first = points.first()?;
+    let last = points.last()?;
+    let (representative_bpm, drift_span_bpm, mean_abs_deviation_bpm) = tempo_summary(points);
+
+    Some(TempoSegmentSummary {
+        kind,
+        start_beat_index: first.start_beat_index,
+        end_beat_index: last.end_beat_index,
+        start_seconds: first.start_seconds,
+        end_seconds: last.end_seconds,
+        representative_bpm,
+        drift_span_bpm,
+        mean_abs_deviation_bpm,
+        coverage,
+        retained_windows,
+        total_windows,
+    })
+}
+
+fn meter_bar_spans(meter: &MeterEstimate) -> Vec<BarSpan> {
+    let mut bars = Vec::with_capacity(meter.downbeat_positions_seconds.len());
+
+    for (bar_index, start_seconds) in meter.downbeat_positions_seconds.iter().copied().enumerate() {
+        let end_seconds = meter
+            .downbeat_positions_seconds
+            .get(bar_index + 1)
+            .copied()
+            .or_else(|| estimated_final_bar_end(&meter.downbeat_positions_seconds));
+
+        bars.push(BarSpan {
+            bar_index,
+            start_seconds,
+            end_seconds,
+            support: bar_support_kind(meter.recovery.as_ref(), start_seconds, end_seconds),
+        });
+    }
+
+    bars
+}
+
+fn estimated_final_bar_end(downbeats: &[f32]) -> Option<f32> {
+    if downbeats.len() < 2 {
+        return None;
+    }
+
+    let mut intervals: Vec<f32> = downbeats
+        .windows(2)
+        .map(|pair| (pair[1] - pair[0]).max(0.0))
+        .filter(|interval| *interval > 0.0)
+        .collect();
+    if intervals.is_empty() {
+        return None;
+    }
+
+    intervals.sort_by(|lhs, rhs| lhs.partial_cmp(rhs).unwrap_or(core::cmp::Ordering::Equal));
+    let median = intervals[intervals.len() / 2];
+    downbeats.last().copied().map(|start| start + median)
+}
+
+fn bar_support_kind(
+    recovery: Option<&MeterRecoveryContext>,
+    start_seconds: f32,
+    end_seconds: Option<f32>,
+) -> BarSupportKind {
+    let Some(recovery) = recovery else {
+        return BarSupportKind::WholeTrack;
+    };
+
+    let overlaps_recovery = match end_seconds {
+        Some(end_seconds) => {
+            start_seconds < recovery.end_seconds && end_seconds > recovery.start_seconds
+        }
+        None => start_seconds >= recovery.start_seconds && start_seconds <= recovery.end_seconds,
+    };
+
+    if overlaps_recovery {
+        BarSupportKind::RecoveryWindow
+    } else {
+        BarSupportKind::Extrapolated
+    }
+}
+
+fn rhythm_structure_candidate(
+    hypothesis: MeterHypothesis,
+    runner_up_score: f32,
+) -> RhythmStructureCandidate {
+    RhythmStructureCandidate {
+        beats_per_bar: hypothesis.beats_per_bar,
+        phase_offset_beats: hypothesis.phase_offset_beats,
+        confidence: meter_hypothesis_confidence(hypothesis, runner_up_score),
+        confidence_breakdown: meter_confidence_breakdown(hypothesis, runner_up_score),
+    }
+}
+
+fn rhythm_structure_ambiguity_summary(
+    hypotheses: &[MeterHypothesis],
+    trailing_candidate: Option<MeterWindowCandidate>,
+) -> RhythmStructureAmbiguitySummary {
+    let trailing_recovery_confidence = trailing_candidate
+        .map(|candidate| candidate.confidence)
+        .unwrap_or(Confidence::new(0.0));
+
+    let Some(best) = hypotheses.first().copied() else {
+        return RhythmStructureAmbiguitySummary {
+            kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
+            confidence: Confidence::new(trailing_recovery_confidence.0),
+            primary: None,
+            runner_up: None,
+            trailing_recovery_confidence,
+        };
+    };
+
+    let runner_up = hypotheses.get(1).copied();
+    let runner_up_score = runner_up.map(|candidate| candidate.score).unwrap_or(0.0);
+    let primary = Some(rhythm_structure_candidate(best, runner_up_score));
+    let runner_up_summary = runner_up.map(|candidate| {
+        let third_score = hypotheses.get(2).map(|entry| entry.score).unwrap_or(0.0);
+        rhythm_structure_candidate(candidate, third_score)
+    });
+
+    let breakdown = meter_confidence_breakdown(best, runner_up_score);
+    let ambiguity_confidence = Confidence::new(
+        (0.45 * (1.0 - breakdown.phase_margin)
+            + 0.20 * (1.0 - best.support_ratio).clamp(0.0, 1.0)
+            + 0.15 * (1.0 - best.regularity).clamp(0.0, 1.0)
+            + 0.10 * (1.0 - best.meter_support_ratio).clamp(0.0, 1.0)
+            + 0.10 * trailing_recovery_confidence.0)
+            .clamp(0.0, 1.0),
+    );
+
+    let primary_confidence = primary
+        .map(|candidate| candidate.confidence.0)
+        .unwrap_or(0.0);
+    let kind = if trailing_recovery_confidence.0 >= 0.24
+        && (primary_confidence <= 0.32 || ambiguity_confidence.0 >= 0.45)
+    {
+        RhythmStructureAmbiguityKind::RecoveryWindowFallback
+    } else if best.support_ratio < 0.68 || best.regularity < 0.55 || best.meter_contrast_mean < 0.07
+    {
+        RhythmStructureAmbiguityKind::WeakAccent
+    } else if let Some(runner_up) = runner_up {
+        if runner_up.phase_offset_beats != best.phase_offset_beats
+            && runner_up.beats_per_bar == best.beats_per_bar
+        {
+            if best.support_ratio < 0.78 || breakdown.phase_margin < 0.35 {
+                RhythmStructureAmbiguityKind::SyncopatedDownbeatPhase
+            } else {
+                RhythmStructureAmbiguityKind::CompetingDownbeatPhase
+            }
+        } else if runner_up.beats_per_bar != best.beats_per_bar {
+            RhythmStructureAmbiguityKind::CompetingMeter
+        } else {
+            RhythmStructureAmbiguityKind::InsufficientEvidence
+        }
+    } else {
+        RhythmStructureAmbiguityKind::InsufficientEvidence
+    };
+
+    RhythmStructureAmbiguitySummary {
+        kind,
+        confidence: ambiguity_confidence,
+        primary,
+        runner_up: runner_up_summary,
+        trailing_recovery_confidence,
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct TempoHypothesis {
     bpm: f32,
@@ -1146,6 +1748,7 @@ struct MeterSuppressionProfile {
 struct MeterDecision {
     estimate: Option<MeterEstimate>,
     suppression_profile: MeterSuppressionProfile,
+    ambiguity: RhythmStructureAmbiguitySummary,
 }
 
 /// Offline beat, tempo, and meter tracker for mono audio.
@@ -1171,19 +1774,24 @@ impl BeatTracker {
         sample_rate: SampleRate,
         mono_samples: &[Sample],
     ) -> BeatAnalysisResult {
-        // Optionally truncate to a centre segment for faster processing.
-        let mono_samples = if let Some(duration) = self.config.analysis_duration_seconds {
-            let max_samples = (duration * sample_rate.0 as f32) as usize;
-            if mono_samples.len() > max_samples {
-                let start = (mono_samples.len() - max_samples) / 2;
-                &mono_samples[start..start + max_samples]
-            } else {
-                mono_samples
-            }
-        } else {
-            mono_samples
-        };
+        let prepared =
+            prepare_mono_analysis(sample_rate, mono_samples, self.analysis_input_config());
+        self.analyze_prepared(prepared.sample_rate, &prepared.samples)
+    }
 
+    fn analysis_input_config(&self) -> AnalysisInputConfig {
+        AnalysisInputConfig {
+            max_duration: self.config.analysis_duration_seconds.map(Seconds),
+            target_sample_rate: Some(self.config.analysis_sample_rate),
+            ..AnalysisInputConfig::default()
+        }
+    }
+
+    fn analyze_prepared(
+        &self,
+        sample_rate: SampleRate,
+        mono_samples: &[Sample],
+    ) -> BeatAnalysisResult {
         let hop_size = self.config.stft.hop_size.0.max(1);
         let profile = self.config.profile;
         let reduced_features = !matches!(profile, AnalysisProfile::High);
@@ -1228,6 +1836,13 @@ impl BeatTracker {
                     best_regularity: 0.0,
                     trailing_confidence: Confidence::new(0.0),
                     trailing_recent_stability: 0.0,
+                },
+                ambiguity: RhythmStructureAmbiguitySummary {
+                    kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
+                    confidence: Confidence::new(0.0),
+                    primary: None,
+                    runner_up: None,
+                    trailing_recovery_confidence: Confidence::new(0.0),
                 },
             }
         } else {
@@ -1316,6 +1931,7 @@ impl BeatTracker {
             tempo_ambiguity: tempo.ambiguity,
             meter_state,
             meter: meter_decision.estimate,
+            structure_ambiguity: meter_decision.ambiguity,
         }
     }
 }
@@ -1326,7 +1942,8 @@ impl AnalysisStage<BeatAnalysisResult> for BeatTracker {
     }
 
     fn analyze(&mut self, audio: &AudioBuffer) -> BeatAnalysisResult {
-        self.analyze_mono(audio.sample_rate(), &audio.to_mono())
+        let prepared = prepare_audio_analysis(audio, self.analysis_input_config());
+        self.analyze_prepared(prepared.sample_rate, &prepared.samples)
     }
 }
 
@@ -6999,6 +7616,13 @@ fn infer_meter(
                 trailing_confidence: Confidence::new(0.0),
                 trailing_recent_stability: 0.0,
             },
+            ambiguity: RhythmStructureAmbiguitySummary {
+                kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
+                confidence: Confidence::new(0.0),
+                primary: None,
+                runner_up: None,
+                trailing_recovery_confidence: Confidence::new(0.0),
+            },
         };
     }
 
@@ -7021,6 +7645,13 @@ fn infer_meter(
                 best_regularity: 0.0,
                 trailing_confidence: Confidence::new(0.0),
                 trailing_recent_stability: 0.0,
+            },
+            ambiguity: RhythmStructureAmbiguitySummary {
+                kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
+                confidence: Confidence::new(0.0),
+                primary: None,
+                runner_up: None,
+                trailing_recovery_confidence: Confidence::new(0.0),
             },
         };
     };
@@ -7064,6 +7695,7 @@ fn infer_meter(
 
     let segment_candidate = select_segment_meter_candidate(&beat_strengths, &meter_strengths);
     let trailing_candidate = trailing_meter_window_candidate(&beat_strengths, &meter_strengths);
+    let ambiguity = rhythm_structure_ambiguity_summary(&hypotheses, trailing_candidate);
     let support_profile = meter_support_profile(
         global_estimate
             .as_ref()
@@ -7158,6 +7790,7 @@ fn infer_meter(
                 .map(|candidate| candidate.hypothesis.recent_strength)
                 .unwrap_or(0.0),
         },
+        ambiguity,
     }
 }
 
@@ -7279,8 +7912,11 @@ fn normalize(values: &mut [f32]) {
 #[cfg(test)]
 mod tests {
     use super::{BeatTracker, BeatTrackerConfig};
-    use signal_analysis::AnalysisStage;
-    use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
+    use signal_analysis::{
+        run_audio_acceptance_harness, AcceptanceSeverity, AcceptanceStatus, AnalysisCorpusCase,
+        AnalysisCorpusCaseMetadata, AnalysisCorpusFamily, AnalysisMetricValue, AnalysisStage,
+    };
+    use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate, Seconds};
 
     const CLICK_LENGTH: usize = 64;
     const TONE_BURST_LENGTH: usize = 2_048;
@@ -8285,6 +8921,193 @@ mod tests {
         (bpm, analyze_fixture(&audio))
     }
 
+    fn rhythm_metrics(result: &super::BeatAnalysisResult) -> Vec<AnalysisMetricValue> {
+        let assessment = result.rhythm_structure_assessment();
+        let meter = result.meter.as_ref();
+        let structure = assessment.structure.as_ref();
+
+        vec![
+            AnalysisMetricValue::new("bpm", result.bpm),
+            AnalysisMetricValue::new("confidence", result.confidence.0),
+            AnalysisMetricValue::new("tempo_ambiguity", result.tempo_ambiguity.0),
+            AnalysisMetricValue::new("has_meter", if meter.is_some() { 1.0 } else { 0.0 }),
+            AnalysisMetricValue::new(
+                "beats_per_bar",
+                meter
+                    .map(|estimate| estimate.beats_per_bar as f32)
+                    .unwrap_or(0.0),
+            ),
+            AnalysisMetricValue::new(
+                "meter_confidence",
+                meter.map(|estimate| estimate.confidence.0).unwrap_or(0.0),
+            ),
+            AnalysisMetricValue::new(
+                "structure_bar_count",
+                structure
+                    .map(|summary| summary.bar_count as f32)
+                    .unwrap_or(0.0),
+            ),
+            AnalysisMetricValue::new(
+                "recovered_bar_count",
+                structure
+                    .map(|summary| summary.recovered_bar_count as f32)
+                    .unwrap_or(0.0),
+            ),
+            AnalysisMetricValue::new(
+                "recovery_window_available",
+                if assessment.fallback.recovery_window_available {
+                    1.0
+                } else {
+                    0.0
+                },
+            ),
+        ]
+    }
+
+    fn rhythm_acceptance_cases() -> Vec<AnalysisCorpusCase> {
+        let sample_rate = 48_000;
+        vec![
+            AnalysisCorpusCase::new(
+                AnalysisCorpusCaseMetadata::synthetic(
+                    "rhythm:steady-click120",
+                    AnalysisCorpusFamily::Pulse,
+                    "Stable click-track tempo reference",
+                ),
+                click_track(sample_rate, 120.0, 8.0),
+            )
+            .with_acceptance_thresholds(vec![
+                signal_analysis::AcceptanceThreshold::range(
+                    "bpm",
+                    Some(119.9),
+                    Some(120.1),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "confidence",
+                    Some(0.2),
+                    Some(1.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "tempo_ambiguity",
+                    Some(0.0),
+                    Some(0.4),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "has_meter",
+                    Some(0.0),
+                    Some(0.0),
+                    AcceptanceSeverity::Fail,
+                ),
+            ]),
+            AnalysisCorpusCase::new(
+                AnalysisCorpusCaseMetadata::synthetic(
+                    "rhythm:structured-harmony120",
+                    AnalysisCorpusFamily::Pulse,
+                    "Structured meter reference with stable whole-track bar grid",
+                ),
+                build_structured_harmony_preset(sample_rate, 120.0, HarmonicRhythmVariant::Active),
+            )
+            .with_acceptance_thresholds(vec![
+                signal_analysis::AcceptanceThreshold::range(
+                    "bpm",
+                    Some(118.0),
+                    Some(122.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "has_meter",
+                    Some(1.0),
+                    Some(1.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "beats_per_bar",
+                    Some(4.0),
+                    Some(4.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "meter_confidence",
+                    Some(0.2),
+                    Some(1.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "structure_bar_count",
+                    Some(4.0),
+                    None,
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "recovered_bar_count",
+                    Some(0.0),
+                    Some(0.0),
+                    AcceptanceSeverity::Fail,
+                ),
+            ]),
+            AnalysisCorpusCase::new(
+                AnalysisCorpusCaseMetadata::synthetic(
+                    "rhythm:ambiguous-subdivision90",
+                    AnalysisCorpusFamily::Pulse,
+                    "Subdivision-heavy ambiguity reference",
+                ),
+                grid_click_track(sample_rate, 90.0, 2, 8.0, &[1.0, 0.3], None),
+            )
+            .with_acceptance_thresholds(vec![
+                signal_analysis::AcceptanceThreshold::range(
+                    "bpm",
+                    Some(88.0),
+                    Some(92.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "confidence",
+                    Some(0.1),
+                    Some(1.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "tempo_ambiguity",
+                    Some(0.2),
+                    Some(1.0),
+                    AcceptanceSeverity::Fail,
+                ),
+                signal_analysis::AcceptanceThreshold::range(
+                    "has_meter",
+                    Some(0.0),
+                    Some(0.0),
+                    AcceptanceSeverity::Fail,
+                ),
+            ]),
+        ]
+    }
+
+    fn trailing_window_audio(audio: &AudioBuffer, seconds: f32) -> AudioBuffer {
+        let sample_rate = audio.sample_rate();
+        let channel_count = audio.channel_count().0.max(1);
+        let requested_frames = sample_rate.seconds_to_frames(Seconds(seconds)).0.max(1);
+        let frames = requested_frames.min(audio.frames().0);
+        let start_frame = audio.frames().0.saturating_sub(frames);
+        let start_sample = start_frame.saturating_mul(channel_count);
+        AudioBuffer::from_interleaved(
+            sample_rate,
+            audio.channels(),
+            audio.samples()[start_sample..].to_vec(),
+        )
+    }
+
+    fn analyze_trailing_window(
+        audio: &AudioBuffer,
+        config: super::BeatTrackerConfig,
+        seconds: f32,
+    ) -> super::BeatAnalysisResult {
+        let window = trailing_window_audio(audio, seconds);
+        let mut tracker = super::BeatTracker::new(config);
+        tracker.analyze(&window)
+    }
+
     fn synthetic_tempo_diagnostics(
         core_window_bpm: f32,
         boundary_bias_bpm: f32,
@@ -8476,6 +9299,32 @@ mod tests {
                 boundary_edge_gap_ms: 4.0 * boundary_pressure,
             },
         }
+    }
+
+    fn synthetic_tempo_structure_result(
+        diagnostics: super::TempoDiagnostics,
+        interpretation: super::TempoInterpretation,
+        confidence: super::Confidence,
+        tempo_ambiguity: super::Confidence,
+    ) -> super::BeatAnalysisResult {
+        let mut result = analyze_fixture(&click_track(
+            48_000,
+            interpretation.recommended_bpm.max(60.0),
+            8.0,
+        ));
+        let stability_scope = diagnostics.stability_scope;
+        result.bpm = interpretation.recommended_bpm;
+        result.confidence = confidence;
+        result.tempo_diagnostics = diagnostics;
+        result.tempo_interpretation = interpretation;
+        result.tempo_state = super::tempo_state_recommendation_with_scope(
+            interpretation,
+            confidence,
+            tempo_ambiguity,
+            stability_scope,
+        );
+        result.tempo_ambiguity = tempo_ambiguity;
+        result
     }
 
     fn scope_summary(scope: super::TempoStabilityScope) -> super::TempoStabilityScopeSummary {
@@ -9652,6 +10501,297 @@ mod tests {
         );
         assert_eq!(cleared.fallback.bpm, None);
         assert_eq!(cleared.fallback_after_beats, 0);
+    }
+
+    #[test]
+    fn beat_tracker_exposes_tempo_structure_summary_for_whole_track_stable_click_track() {
+        let result = analyze_fixture(&click_track(48_000, 120.0, 8.0));
+        let summary = result.tempo_structure_summary();
+
+        assert_eq!(summary.trust, super::TempoTrustLevel::Stable);
+        assert_eq!(
+            summary.recommendation,
+            super::TempoRecommendation::SnapInteger
+        );
+        assert_eq!(
+            summary.stability_scope.scope,
+            super::TempoStabilityScope::WholeTrackStable
+        );
+        assert_eq!(summary.selected_bpm, Some(120.0));
+        assert_eq!(summary.continuity.action, super::TempoStateAction::Lock);
+        assert_eq!(
+            summary.continuity.continuity_action,
+            super::TempoContinuityAction::Lock
+        );
+        assert_eq!(
+            summary.continuity.current.source,
+            super::TempoConsumptionSource::SnappedCurrentTempo
+        );
+        assert_eq!(summary.continuity.fallback_after_beats, 20);
+        assert_eq!(summary.segments.len(), 1);
+        assert_eq!(
+            summary.segments[0].kind,
+            super::TempoSegmentKind::WholeTrack
+        );
+        assert!((summary.segments[0].representative_bpm - summary.core_window_bpm).abs() < 1.0);
+        assert!(summary.segments[0].coverage.0 >= 0.99);
+    }
+
+    #[test]
+    fn tempo_structure_summary_surfaces_localized_edge_damage_segments() {
+        let mut diagnostics = synthetic_tempo_diagnostics_with_counts(
+            127.94273, 0.064, -0.1097, 0.48279, 45.998, 45.774, 83.272, 86.989, 738, 735, 739,
+        );
+        diagnostics.beat_interval_outliers = super::BeatIntervalOutlierDiagnostics {
+            total_intervals: 738,
+            retained_intervals: 670,
+            rejected_intervals: 68,
+            leading_rejected_intervals: 0,
+            trailing_rejected_intervals: 3,
+            median_interval: 60.0 / 127.94273,
+            median_abs_deviation: 0.000_607,
+            max_rejected_deviation_ratio: 0.384,
+        };
+        diagnostics.edge_trimmed_stable_span = Some(super::BeatGridCoreSpanDiagnostics {
+            start_beat_index: 0,
+            end_beat_index: 735,
+            start_seconds: 0.447,
+            end_seconds: 345.333,
+            coverage: super::Confidence::new(0.996),
+            retained_windows: 732,
+            total_windows: 735,
+            trimmed_leading_windows: 0,
+            trimmed_trailing_windows: 3,
+            interior_rejected_windows: 14,
+        });
+        diagnostics.stable_core_span = Some(super::BeatGridCoreSpanDiagnostics {
+            start_beat_index: 216,
+            end_beat_index: 706,
+            start_seconds: 101.698,
+            end_seconds: 331.641,
+            coverage: super::Confidence::new(0.664),
+            retained_windows: 487,
+            total_windows: 735,
+            trimmed_leading_windows: 216,
+            trimmed_trailing_windows: 32,
+            interior_rejected_windows: 0,
+        });
+        diagnostics.stability_scope = super::classify_tempo_stability_scope(
+            diagnostics.windowed_tempi.len(),
+            &diagnostics.beat_interval_outliers,
+            diagnostics.edge_trimmed_stable_span,
+            diagnostics.stable_core_span,
+        );
+
+        let interpretation = super::interpret_tempo(
+            127.96191,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+            &diagnostics,
+        );
+        let result = synthetic_tempo_structure_result(
+            diagnostics,
+            interpretation,
+            super::Confidence::new(0.666),
+            super::Confidence::new(1.0),
+        );
+        let summary = result.tempo_structure_summary();
+
+        assert_eq!(
+            summary.stability_scope.scope,
+            super::TempoStabilityScope::StableWithLocalizedEdgeDamage
+        );
+        assert_eq!(summary.continuity.action, super::TempoStateAction::Lock);
+        assert_eq!(summary.selected_bpm, Some(128.0));
+        assert!(summary
+            .segments
+            .iter()
+            .any(|segment| segment.kind == super::TempoSegmentKind::WholeTrack));
+        assert!(summary
+            .segments
+            .iter()
+            .any(|segment| segment.kind == super::TempoSegmentKind::EdgeTrimmedStable));
+        assert!(summary
+            .segments
+            .iter()
+            .any(|segment| segment.kind == super::TempoSegmentKind::StableCore));
+        let edge_trimmed = summary
+            .segments
+            .iter()
+            .find(|segment| segment.kind == super::TempoSegmentKind::EdgeTrimmedStable)
+            .unwrap();
+        let stable_core = summary
+            .segments
+            .iter()
+            .find(|segment| segment.kind == super::TempoSegmentKind::StableCore)
+            .unwrap();
+        assert!(edge_trimmed.coverage.0 > stable_core.coverage.0);
+        assert!(edge_trimmed.end_beat_index > stable_core.end_beat_index);
+    }
+
+    #[test]
+    fn beat_tracker_exposes_tempo_structure_summary_for_core_stable_monitoring() {
+        let result = analyze_fixture(&click_track(48_000, 90.0, 8.0));
+        let summary = result.tempo_structure_summary();
+
+        assert_eq!(
+            summary.stability_scope.scope,
+            super::TempoStabilityScope::CoreStableOnly
+        );
+        assert_eq!(summary.continuity.action, super::TempoStateAction::Monitor);
+        assert_eq!(
+            summary.continuity.continuity_action,
+            super::TempoContinuityAction::Reacquire
+        );
+        assert_eq!(
+            summary.continuity.current.source,
+            super::TempoConsumptionSource::SnappedCurrentTempo
+        );
+        assert_eq!(
+            summary.continuity.fallback.source,
+            super::TempoConsumptionSource::NoTempo
+        );
+        assert_eq!(summary.continuity.fallback_after_beats, 8);
+        assert!(!summary.segments.is_empty());
+        assert!(summary
+            .segments
+            .iter()
+            .any(|segment| segment.coverage.0 >= 0.5));
+    }
+
+    #[test]
+    fn tempo_structure_summary_surfaces_mid_track_unstable_clear_policy() {
+        let diagnostics =
+            synthetic_tempo_diagnostics(89.9, 0.42, 0.61, 0.38, 58.0, 44.0, 360.0, 92.0);
+        let interpretation = synthetic_tempo_interpretation(
+            super::TempoRecommendation::Defer,
+            super::TempoTrustLevel::Tentative,
+            super::TempoInterpretationReason::UnstableTempo,
+            89.9,
+            None,
+            0.38,
+            0.03,
+            0.8,
+            0.3,
+        );
+        let result = synthetic_tempo_structure_result(
+            diagnostics,
+            interpretation,
+            super::Confidence::new(0.42),
+            super::Confidence::new(0.55),
+        );
+        let summary = result.tempo_structure_summary();
+
+        assert_eq!(
+            summary.stability_scope.scope,
+            super::TempoStabilityScope::MidTrackUnstable
+        );
+        assert_eq!(summary.continuity.action, super::TempoStateAction::Defer);
+        assert_eq!(
+            summary.continuity.continuity_action,
+            super::TempoContinuityAction::Clear
+        );
+        assert_eq!(
+            summary.continuity.current.source,
+            super::TempoConsumptionSource::NoTempo
+        );
+        assert_eq!(
+            summary.continuity.fallback.source,
+            super::TempoConsumptionSource::NoTempo
+        );
+        assert_eq!(summary.segments.len(), 1);
+        assert_eq!(
+            summary.segments[0].kind,
+            super::TempoSegmentKind::WholeTrack
+        );
+        assert!((summary.segments[0].representative_bpm - 89.9).abs() < 0.2);
+    }
+
+    #[test]
+    fn bounded_trailing_windows_preserve_stable_structure_and_tempo_summaries() {
+        let (_, audio) = render_preset(
+            RhythmPreset::StructuredHarmony120(HarmonicRhythmVariant::Active),
+            48_000,
+        );
+        let full = analyze_fixture(&audio);
+        let full_structure = full
+            .rhythm_structure_assessment()
+            .structure
+            .expect("full structure summary");
+        let full_tempo = full.tempo_structure_summary();
+
+        for seconds in [6.0, 8.0, 10.0] {
+            let bounded =
+                analyze_trailing_window(&audio, super::BeatTrackerConfig::default(), seconds);
+            let structure = bounded
+                .rhythm_structure_assessment()
+                .structure
+                .expect("bounded structure summary");
+            let tempo = bounded.tempo_structure_summary();
+
+            assert_eq!(structure.beats_per_bar, full_structure.beats_per_bar);
+            assert!(matches!(
+                structure.continuity.action,
+                super::MeterStateAction::Lock | super::MeterStateAction::Hold
+            ));
+            assert!(matches!(
+                tempo.stability_scope.scope,
+                super::TempoStabilityScope::WholeTrackStable
+                    | super::TempoStabilityScope::StableWithLocalizedEdgeDamage
+                    | super::TempoStabilityScope::CoreStableOnly
+            ));
+            assert!(matches!(
+                tempo.continuity.action,
+                super::TempoStateAction::Lock | super::TempoStateAction::Monitor
+            ));
+            assert!(tempo.selected_bpm.is_some());
+            assert!(
+                (tempo.selected_bpm.unwrap_or(0.0) - full_tempo.selected_bpm.unwrap_or(0.0)).abs()
+                    < 1.0
+            );
+            assert!(
+                (tempo.core_window_bpm - full_tempo.core_window_bpm).abs() < 1.0,
+                "seconds={seconds} core_window={} full={}",
+                tempo.core_window_bpm,
+                full_tempo.core_window_bpm,
+            );
+        }
+    }
+
+    #[test]
+    fn bounded_trailing_windows_preserve_weak_accent_and_actionable_tempo_summary() {
+        let (_, audio) = render_preset(RhythmPreset::WeakBackbeat118, 48_000);
+        let full = analyze_fixture(&audio);
+        let full_tempo = full.tempo_structure_summary();
+
+        for seconds in [10.0, 12.0, 14.0] {
+            let bounded =
+                analyze_trailing_window(&audio, super::BeatTrackerConfig::default(), seconds);
+            let assessment = bounded.rhythm_structure_assessment();
+            let tempo = bounded.tempo_structure_summary();
+
+            assert_ne!(
+                assessment.ambiguity.kind,
+                super::RhythmStructureAmbiguityKind::InsufficientEvidence
+            );
+            assert!(assessment.ambiguity.confidence.0 > 0.1);
+            assert!(
+                assessment.structure.is_some() || assessment.fallback.recovery_window_available
+            );
+            assert!(matches!(
+                tempo.continuity.action,
+                super::TempoStateAction::Lock | super::TempoStateAction::Monitor
+            ));
+            assert!(tempo.selected_bpm.is_some());
+            assert!(
+                (tempo.selected_bpm.unwrap_or(0.0) - full_tempo.selected_bpm.unwrap_or(0.0)).abs()
+                    < 1.0
+            );
+            assert_ne!(
+                tempo.continuity.current.source,
+                super::TempoConsumptionSource::NoTempo
+            );
+        }
     }
 
     #[test]
@@ -13080,6 +14220,157 @@ mod tests {
     }
 
     #[test]
+    fn beat_tracker_exposes_whole_track_structure_summary_for_stable_meter() {
+        let (_, structured) = analyze_preset(RhythmPreset::StructuredHarmony120(
+            HarmonicRhythmVariant::Active,
+        ));
+
+        let summary = structured
+            .rhythm_structure_summary()
+            .expect("structured rhythm structure summary");
+
+        assert_eq!(summary.beats_per_bar, 4);
+        assert_eq!(
+            summary.detection_kind,
+            super::MeterDetectionKind::WholeTrack
+        );
+        assert_eq!(summary.trust, super::MeterTrustLevel::Stable);
+        assert_eq!(summary.recommendation, super::MeterRecommendation::Lock);
+        assert_eq!(summary.continuity.action, structured.meter_state.action);
+        assert_eq!(
+            summary.continuity.bar_length_action,
+            structured.meter_state.continuity.bar_length.action
+        );
+        assert_eq!(
+            summary.continuity.downbeat_phase_action,
+            structured.meter_state.continuity.downbeat_phase.action
+        );
+        assert_eq!(summary.bar_count, summary.downbeat_positions_seconds.len());
+        assert!(summary.bar_count >= 2);
+        assert_eq!(summary.recovered_bar_count, 0);
+        assert!(summary.recovery.is_none());
+        assert!(summary
+            .bars
+            .iter()
+            .all(|bar| matches!(bar.support, super::BarSupportKind::WholeTrack)));
+        assert_eq!(
+            summary.bars.first().map(|bar| bar.start_seconds),
+            summary.downbeat_positions_seconds.first().copied()
+        );
+    }
+
+    #[test]
+    fn beat_tracker_exposes_recovery_backed_structure_summary_for_segment_meter() {
+        let (_, sustained_reset) = analyze_preset(RhythmPreset::BarTransition120(
+            BarTransitionVariant::ReentryAcceleratingHarmonySustainedReset,
+        ));
+
+        let summary = sustained_reset
+            .rhythm_structure_summary()
+            .expect("recovery-backed rhythm structure summary");
+
+        assert_eq!(
+            summary.detection_kind,
+            super::MeterDetectionKind::SegmentRecovery
+        );
+        assert!(summary.recovery.is_some());
+        assert!(summary.recovered_bar_count > 0);
+        assert!(summary
+            .bars
+            .iter()
+            .any(|bar| matches!(bar.support, super::BarSupportKind::RecoveryWindow)));
+        assert_eq!(
+            summary.continuity.action,
+            sustained_reset.meter_state.action
+        );
+        assert_eq!(
+            summary.continuity.reason,
+            sustained_reset.meter_state.reason
+        );
+        let recovery = summary.recovery.as_ref().expect("recovery context");
+        assert!(summary.bars.iter().any(|bar| {
+            matches!(bar.support, super::BarSupportKind::RecoveryWindow)
+                && bar.start_seconds <= recovery.end_seconds
+        }));
+    }
+
+    #[test]
+    fn beat_tracker_structure_assessment_surfaces_weak_accent_ambiguity() {
+        let (_, weak_backbeat) = analyze_preset(RhythmPreset::WeakBackbeat118);
+
+        let assessment = weak_backbeat.rhythm_structure_assessment();
+
+        assert!(assessment.structure.is_some());
+        assert_eq!(
+            assessment.ambiguity.kind,
+            super::RhythmStructureAmbiguityKind::WeakAccent
+        );
+        assert!(assessment.ambiguity.runner_up.is_some());
+        assert!(assessment.ambiguity.confidence.0 > 0.2);
+        assert_eq!(assessment.fallback.action, super::MeterStateAction::Hold);
+        assert_eq!(
+            assessment.fallback.downbeat_phase_action,
+            super::MeterContinuityAction::Reacquire
+        );
+    }
+
+    #[test]
+    fn beat_tracker_structure_assessment_surfaces_competing_meter_ambiguity() {
+        let (_, ambiguous) = analyze_preset(RhythmPreset::AmbiguousSubdivision90);
+
+        let assessment = ambiguous.rhythm_structure_assessment();
+
+        let primary = assessment
+            .ambiguity
+            .primary
+            .expect("primary ambiguity candidate");
+        let runner_up = assessment
+            .ambiguity
+            .runner_up
+            .expect("runner-up ambiguity candidate");
+
+        assert_ne!(primary.beats_per_bar, runner_up.beats_per_bar);
+        assert!(assessment.ambiguity.confidence.0 > 0.2);
+    }
+
+    #[test]
+    fn beat_tracker_structure_assessment_surfaces_phase_fallback_for_pickup_extension() {
+        let (_, pickup_extended) = analyze_preset(RhythmPreset::BarTransition120(
+            BarTransitionVariant::PickupExtended,
+        ));
+
+        let assessment = pickup_extended.rhythm_structure_assessment();
+
+        assert!(assessment.structure.is_some());
+        assert_ne!(
+            assessment.ambiguity.kind,
+            super::RhythmStructureAmbiguityKind::InsufficientEvidence
+        );
+        assert_eq!(
+            assessment.fallback.downbeat_phase_action,
+            super::MeterContinuityAction::Reacquire
+        );
+    }
+
+    #[test]
+    fn beat_tracker_structure_assessment_surfaces_recovery_window_fallback_without_meter() {
+        let (_, accelerating_reset) = analyze_preset(RhythmPreset::BarTransition120(
+            BarTransitionVariant::ReentryAcceleratingHarmonyReset,
+        ));
+
+        let assessment = accelerating_reset.rhythm_structure_assessment();
+
+        assert!(assessment.structure.is_none());
+        assert!(assessment.fallback.recovery_window_available);
+        assert_eq!(assessment.fallback.action, super::MeterStateAction::Watch);
+        assert_eq!(
+            assessment.ambiguity.kind,
+            super::RhythmStructureAmbiguityKind::RecoveryWindowFallback
+        );
+        assert!(assessment.fallback.trailing_recovery_confidence.0 > 0.0);
+    }
+
+    #[test]
     fn beat_tracker_calibrates_meter_recommendations_across_action_categories() {
         let (_, structured) = analyze_preset(RhythmPreset::StructuredHarmony120(
             HarmonicRhythmVariant::Active,
@@ -14691,5 +15982,54 @@ mod tests {
                     .structural_pressure
                     .0
         );
+    }
+
+    #[test]
+    fn non_native_input_rate_preserves_click_track_tempo_under_frozen_analysis_rate() {
+        let native = click_track(48_000, 120.0, 8.0);
+        let non_native = click_track(44_100, 120.0, 8.0);
+        let mut tracker = BeatTracker::new(BeatTrackerConfig::default());
+
+        let native_result = tracker.analyze(&native);
+        let non_native_result = tracker.analyze(&non_native);
+
+        assert!((native_result.bpm - 120.0).abs() < 1.0);
+        assert!((non_native_result.bpm - 120.0).abs() < 1.0);
+        assert!((native_result.bpm - non_native_result.bpm).abs() < 0.5);
+        assert!(
+            (native_result.confidence.0 - non_native_result.confidence.0).abs() < 0.1,
+            "confidence drifted from {} to {}",
+            native_result.confidence.0,
+            non_native_result.confidence.0,
+        );
+    }
+
+    #[test]
+    fn harness_rhythm_cases_meet_frozen_acceptance_thresholds() {
+        let cases = rhythm_acceptance_cases();
+        let mut tracker = BeatTracker::new(BeatTrackerConfig::default());
+
+        let report =
+            run_audio_acceptance_harness(&cases, |audio| tracker.analyze(audio), rhythm_metrics);
+
+        assert_eq!(report.status, AcceptanceStatus::Pass);
+        assert!(report
+            .cases
+            .iter()
+            .all(|case| case.status == AcceptanceStatus::Pass));
+    }
+
+    #[test]
+    fn frozen_rhythm_acceptance_report_remains_interpretable_for_closeout() {
+        let cases = rhythm_acceptance_cases();
+        let mut tracker = BeatTracker::new(BeatTrackerConfig::default());
+
+        let report =
+            run_audio_acceptance_harness(&cases, |audio| tracker.analyze(audio), rhythm_metrics);
+
+        println!("rhythm_acceptance_report={:#?}", report);
+
+        assert_eq!(report.status, AcceptanceStatus::Pass);
+        assert_eq!(report.cases.len(), 3);
     }
 }

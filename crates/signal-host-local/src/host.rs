@@ -1,8 +1,8 @@
 use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
 use signal_hardware::{
-    AudioSampleFormat, BackendPolicyTier, HardwareBackend, HardwareConfigRequest,
-    HardwareDiagnosticsSnapshot, HardwareLifecycleContract, HardwareNegotiationError,
-    HardwareStreamConfig,
+    AudioSampleFormat, BackendPolicyTier, HardwareBackend, HardwareClockSource,
+    HardwareConfigRequest, HardwareDiagnosticsSnapshot, HardwareLifecycleContract,
+    HardwareNegotiationError, HardwareStreamConfig,
 };
 use signal_hardware_coreaudio::CoreAudioBackend;
 use signal_ipc::{
@@ -30,7 +30,8 @@ use signal_runtime::{
     PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RuntimeConfigRequest,
     RuntimeError, RuntimeEventRecorder, RuntimeExecutionTopologySummary,
     RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
-    RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostObservationReport,
+    RuntimeHostClockSource, RuntimeHostClockingSummary, RuntimeHostHardwareSummary,
+    RuntimeHostIoSummary, RuntimeHostLatencySummary, RuntimeHostObservationReport,
     RuntimeHostSupervisorReport, RuntimeLifecycleApi, RuntimeObservationApi,
     RuntimeObservationDiagnostics, RuntimeObservationReport, RuntimePluginDispatchState,
     RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeSupervisorApi,
@@ -3017,7 +3018,7 @@ impl LocalRuntimeHost {
 
     pub fn host_observation_report(&self) -> RuntimeHostObservationReport {
         let observation = self.observation_report();
-        let host_io = self.host_io_summary(observation.engine_block_snapshot.graph_id.as_deref());
+        let host_io = self.host_io_summary(&observation);
         RuntimeHostObservationReport::new(observation, host_io)
     }
 
@@ -3027,54 +3028,63 @@ impl LocalRuntimeHost {
 
     pub fn host_supervisor_report(&self) -> RuntimeHostSupervisorReport {
         let supervisor = self.supervisor_report();
-        let host_io = self.host_io_summary(
-            supervisor
-                .observation
-                .engine_block_snapshot
-                .graph_id
-                .as_deref(),
-        );
+        let host_io = self.host_io_summary(&supervisor.observation);
         RuntimeHostSupervisorReport::new(supervisor, host_io)
     }
 
-    fn host_io_summary(&self, runtime_graph_id: Option<&str>) -> RuntimeHostIoSummary {
+    fn host_io_summary(&self, observation: &RuntimeObservationReport) -> RuntimeHostIoSummary {
         let audio_pump = self.audio_pump.summary();
         let backend_diagnostics = self.coreaudio.diagnostics();
+        let active_stream = self.active_output_stream.as_ref();
+        let sample_rate = active_stream
+            .map(|stream| stream.sample_rate.0)
+            .unwrap_or(self.runtime.config().sample_rate.0);
+        let buffer_size = active_stream
+            .map(|stream| stream.buffer_size)
+            .unwrap_or(self.runtime.config().graph.block_size);
+        let graph_latency_samples = observation.engine_block_snapshot.total_latency_samples;
+        let output_latency_samples = active_stream
+            .map(|stream| stream.latency.output_latency_samples)
+            .unwrap_or(buffer_size as u32);
+        let input_latency_samples =
+            active_stream.and_then(|stream| stream.latency.input_latency_samples);
+        let round_trip_latency_samples =
+            active_stream.and_then(|stream| stream.latency.round_trip_latency_samples);
+        let estimated_output_latency_samples =
+            output_latency_samples.saturating_add(graph_latency_samples);
+        let estimated_round_trip_latency_samples =
+            match (input_latency_samples, round_trip_latency_samples) {
+                (_, Some(round_trip)) => Some(round_trip.saturating_add(graph_latency_samples)),
+                (Some(input_latency), None) => Some(
+                    input_latency
+                        .saturating_add(output_latency_samples)
+                        .saturating_add(graph_latency_samples),
+                ),
+                (None, None) => None,
+            };
+        let callback_interval_ms = samples_to_ms(buffer_size as u32, sample_rate);
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
                 backend_name: self.coreaudio.backend_name().into(),
-                device_id: self
-                    .active_output_stream
+                device_id: active_stream
                     .as_ref()
                     .map(|stream| stream.device.device_id.clone())
                     .unwrap_or_else(|| "coreaudio:unconfigured".into()),
-                device_name: self
-                    .active_output_stream
+                device_name: active_stream
                     .as_ref()
                     .map(|stream| stream.device.name.clone())
                     .unwrap_or_else(|| "Unconfigured Device".into()),
-                sample_rate: self
-                    .active_output_stream
-                    .as_ref()
-                    .map(|stream| stream.sample_rate.0)
-                    .unwrap_or(self.runtime.config().sample_rate.0),
-                buffer_size: self
-                    .active_output_stream
-                    .as_ref()
-                    .map(|stream| stream.buffer_size)
-                    .unwrap_or(self.runtime.config().graph.block_size),
-                output_channels: self
-                    .active_output_stream
+                sample_rate,
+                buffer_size,
+                output_channels: active_stream
                     .as_ref()
                     .map(|stream| stream.output_channels)
                     .unwrap_or_default(),
-                sample_format: self
-                    .active_output_stream
+                sample_format: active_stream
                     .as_ref()
                     .map(|stream| stream.sample_format)
                     .unwrap_or(AudioSampleFormat::F32),
-                simulated: self
-                    .active_output_stream
+                simulated: active_stream
                     .as_ref()
                     .map(|stream| stream.simulated)
                     .unwrap_or(false),
@@ -3097,10 +3107,45 @@ impl LocalRuntimeHost {
                 last_callback_output_peak: audio_pump.last_callback_output_peak,
                 last_runtime_graph_id: audio_pump.last_runtime_graph_id.clone(),
             },
+            clocking: RuntimeHostClockingSummary {
+                clock_source: active_stream
+                    .map(|stream| RuntimeHostClockSource::from(stream.clock_source))
+                    .unwrap_or(RuntimeHostClockSource::from(HardwareClockSource::Internal)),
+                ownership: active_stream
+                    .map(|stream| stream.lifecycle.ownership.into())
+                    .unwrap_or(HardwareLifecycleContract::default().ownership.into()),
+                restart_policy: active_stream
+                    .map(|stream| stream.lifecycle.restart_policy.into())
+                    .unwrap_or(HardwareLifecycleContract::default().restart_policy.into()),
+                callback_interval_ms,
+            },
+            latency: RuntimeHostLatencySummary {
+                input_latency_samples,
+                output_latency_samples,
+                round_trip_latency_samples,
+                graph_latency_samples,
+                estimated_output_latency_samples,
+                estimated_round_trip_latency_samples,
+                output_latency_ms: samples_to_ms(output_latency_samples, sample_rate),
+                graph_latency_ms: samples_to_ms(graph_latency_samples, sample_rate),
+                estimated_output_latency_ms: samples_to_ms(
+                    estimated_output_latency_samples,
+                    sample_rate,
+                ),
+                estimated_round_trip_latency_ms: estimated_round_trip_latency_samples
+                    .map(|samples| samples_to_ms(samples, sample_rate)),
+            },
             runtime_graph_id_matches_pump: audio_pump.last_runtime_graph_id.as_deref()
-                == runtime_graph_id,
+                == observation.engine_block_snapshot.graph_id.as_deref(),
         }
     }
+}
+
+fn samples_to_ms(samples: u32, sample_rate: u32) -> f32 {
+    if sample_rate == 0 {
+        return 0.0;
+    }
+    samples as f32 / sample_rate as f32 * 1000.0
 }
 
 #[derive(Clone, Debug)]
@@ -3765,12 +3810,13 @@ mod tests {
     use signal_graph::GraphNodeTopologyRole;
     use signal_hardware::{
         AudioDeviceDescriptor, AudioSampleFormat, AudioStreamDirection, BackendHealth,
-        HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareRestartPolicy,
-        HardwareStreamConfig,
+        HardwareClockSource, HardwareLatencyProfile, HardwareLifecycleContract,
+        HardwareLifecycleOwnership, HardwareRestartPolicy, HardwareStreamConfig,
     };
     use signal_plugin::{CompletionState, LoopRange, PluginEvent, WatchdogTriggerReason};
     use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
     use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, SampleRate};
+    use signal_runtime::RuntimeHostClockSource;
     use signal_runtime::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
         HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode, PluginSandboxLifecycleStage,
@@ -6412,6 +6458,34 @@ mod tests {
         assert_eq!(report.observation.host_io.hardware.buffer_size, 512);
         assert_eq!(report.observation.host_io.hardware.output_channels, 2);
         assert_eq!(
+            report.observation.host_io.clocking.clock_source,
+            RuntimeHostClockSource::Internal
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.ownership,
+            signal_runtime::RuntimeHostLifecycleOwnership::HostDrivenCallback
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.restart_policy,
+            signal_runtime::RuntimeHostRestartPolicy::HostMustRestart
+        );
+        assert!(
+            (report.observation.host_io.clocking.callback_interval_ms - 10.666667).abs() < 0.001
+        );
+        assert_eq!(
+            report.observation.host_io.latency.output_latency_samples,
+            512
+        );
+        assert_eq!(report.observation.host_io.latency.graph_latency_samples, 24);
+        assert_eq!(
+            report
+                .observation
+                .host_io
+                .latency
+                .estimated_output_latency_samples,
+            536
+        );
+        assert_eq!(
             report.observation.host_io.audio_pump.stream_state,
             RuntimeHostAudioStreamState::Running
         );
@@ -6466,6 +6540,12 @@ mod tests {
             .contains("host_audio_graph_matches_runtime=true"));
         assert!(report.render_multiline().contains("host_backend=coreaudio"));
         assert!(report.render_json().contains("\"device_loss_count\":0"));
+        assert!(report
+            .render_json()
+            .contains("\"clock_source\":\"Internal\""));
+        assert!(report
+            .render_json()
+            .contains("\"estimated_output_latency_samples\":536"));
     }
 
     #[test]
@@ -6553,6 +6633,10 @@ mod tests {
         assert_eq!(report.observation.host_io.hardware.device_loss_count, 1);
         assert_eq!(report.observation.host_io.hardware.restart_attempt_count, 1);
         assert_eq!(report.observation.host_io.hardware.restart_failure_count, 0);
+        assert_eq!(
+            report.observation.host_io.latency.output_latency_samples,
+            512
+        );
         assert!(report.observation.host_io.runtime_graph_id_matches_pump);
         assert_eq!(
             report
@@ -6589,6 +6673,10 @@ mod tests {
         assert_eq!(report.observation.host_io.hardware.device_loss_count, 1);
         assert_eq!(report.observation.host_io.hardware.restart_attempt_count, 1);
         assert_eq!(report.observation.host_io.hardware.restart_failure_count, 1);
+        assert_eq!(
+            report.observation.host_io.clocking.clock_source,
+            RuntimeHostClockSource::Internal
+        );
         assert!(!report.observation.host_io.runtime_graph_id_matches_pump);
         assert_eq!(
             report
@@ -6630,10 +6718,12 @@ mod tests {
             output_channels: 2,
             sample_format: AudioSampleFormat::F32,
             interleaved: true,
+            clock_source: HardwareClockSource::Internal,
             lifecycle: HardwareLifecycleContract {
                 ownership: HardwareLifecycleOwnership::HostDrivenCallback,
                 restart_policy: HardwareRestartPolicy::HostMustRestart,
             },
+            latency: HardwareLatencyProfile::output_only(4),
             simulated: false,
         };
         let policy = LocalAudioTransferPolicy {

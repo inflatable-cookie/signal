@@ -1,7 +1,7 @@
 # Architecture
 
 Status: active
-Updated: 2026-03-10
+Updated: 2026-03-11
 
 ## Why this section matters now
 
@@ -24,10 +24,11 @@ Keep milestone sequencing in `roadmaps/`.
 - `system-architecture.md`
 - `package-map.md`
 - `dsp-analysis-feature-reference.md`
+- `graph-runtime-feature-reference.md`
 - related contracts under `docs/contracts/`
 
 ## Next Task
 
-Keep `system-architecture.md` and `package-map.md` aligned with the clean
-library posture, then move legacy implementation-shaped material behind a
-reference boundary instead of leaving it in the active path.
+Keep the current-state architecture references aligned with the implemented
+graph/runtime and DSP/analysis surfaces as the Rust workspace grows, instead of
+letting those details drift back into roadmap-only prose.
