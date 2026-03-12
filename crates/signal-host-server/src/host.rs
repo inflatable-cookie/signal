@@ -19,12 +19,15 @@ use signal_runtime::{
     HeartbeatCycleStage, LingeringCleanupMode, PluginBackedNodeBinding,
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxInstanceFaultRecord,
     PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
-    PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RuntimeConfigRequest,
-    RuntimeError, RuntimeEventRecorder, RuntimeLifecycleApi, RuntimeObservationApi,
-    RuntimeObservationDiagnostics, RuntimeObservationReport, RuntimePreworkServicePressure,
-    RuntimeProjectionApi, RuntimeSupervisorApi, RuntimeSupervisorReport, RuntimeWatchdogTrigger,
-    SandboxOperationFailureStage, SignalRuntime, StopReason, TransportAttachIntent,
-    WatchdogRestartRecord,
+    PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
+    RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder,
+    RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeObservationApi,
+    RuntimeObservationDiagnostics, RuntimeObservationReport, RuntimeOfflineRenderRequest,
+    RuntimeOfflineRenderResult, RuntimePreworkServicePressure, RuntimeProjectionApi,
+    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureStartRequest,
+    RuntimeSupervisorApi, RuntimeSupervisorReport, RuntimeWarpClipRegistration,
+    RuntimeWatchdogTrigger, SandboxOperationFailureStage, SignalRuntime, StopReason,
+    TransportAttachIntent, WatchdogRestartRecord,
 };
 
 const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
@@ -2964,6 +2967,51 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         );
         self.supervisor.last_sandbox_id = Some(request.sandbox_id);
         Ok(signal_runtime::SandboxHandle(self.supervisor.sandboxes))
+    }
+
+    fn start_recording_capture(
+        &mut self,
+        request: RuntimeRecordingCaptureStartRequest,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.start_recording_capture(request)
+    }
+
+    fn finish_recording_capture(
+        &mut self,
+    ) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError> {
+        self.runtime.finish_recording_capture()
+    }
+
+    fn cancel_recording_capture(&mut self) -> Result<(), RuntimeError> {
+        self.runtime.cancel_recording_capture()
+    }
+
+    fn reconcile_media_assets(
+        &mut self,
+        assets: Vec<RuntimeMediaAssetRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.reconcile_media_assets(assets)
+    }
+
+    fn reconcile_warp_clips(
+        &mut self,
+        clips: Vec<RuntimeWarpClipRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.reconcile_warp_clips(clips)
+    }
+
+    fn reconcile_clip_processing_clips(
+        &mut self,
+        clips: Vec<RuntimeClipProcessingRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.reconcile_clip_processing_clips(clips)
+    }
+
+    fn render_offline(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        self.runtime.render_offline(request)
     }
 
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError> {

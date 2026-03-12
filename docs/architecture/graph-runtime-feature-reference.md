@@ -455,6 +455,39 @@ Implemented now:
   path that combines runtime media cache access, clip treatment, graph
   execution, captured bus output, and recall-backed freeze export without
   relying on supervisor/export parsing
+- runtime-owned offline render artifact/report receipt surfaces that can
+  materialize exported main-mix, stem, and freeze artifacts under a request-
+  owned artifact root while preserving runtime-frame versus exported-frame
+  accounting and export sample-rate conversion
+- runtime-owned offline media decode that can read broader cached asset
+  formats during render preparation, plus fresh-only live plugin override use
+  that falls back to the Signal-owned plugin stage model when cached plugin
+  output is stale
+- runtime-owned offline render manifest bundles plus explicit plugin execution
+  boundary export that let downstream consumers package artifacts and inspect
+  which stages remain Signal-modeled versus which ones require later
+  host-delegated offline execution
+- runtime-owned delegated offline plugin execution request/result receipts that
+  derive from the execution boundary and fold back into the same manifest
+  bundle instead of escaping into a host-local packaging model
+- runtime-owned delegated execution materialization that rewrites the same
+  report/manifest delivery bundle after delegated receipts land, keeping
+  runtime export aligned with the in-memory handoff state
+- runtime-owned delegated executor outcome/merge contracts that let later host
+  adapters feed replacement main-mix, stem, and freeze outputs back into
+  runtime-owned finalization instead of creating a parallel export path
+- `signal-host-local` delegated executor adapter wiring that prepares one
+  concrete host-side delegated outcome and round-trips it through the same
+  runtime-owned offline manifest/report finalization path without rebuilding
+  export surfaces in host code
+- runtime-owned profiling and soak receipts derived from supervisor and
+  host-observation reports so routed engine harnesses can compare timing,
+  callback, xrun, restart, and recovery counters without inventing host-local
+  benchmarking schemas
+- runtime-owned degradation-expanded live profiling/soak receipts plus typed
+  offline-render profiling/soak receipts that pin routing gates, plugin-chain
+  quarantine/unavailability, and delegated-offline degraded outcomes through
+  the same reusable runtime-owned hardening contract
 - runtime-owned routed topology summaries that carry aggregated plugin-chain
   latency/compensation state per track lane, bus group, console group, and
   send/return route, plus node-level recall payload/status and compensation
@@ -480,10 +513,11 @@ Useful implementation entry points after this doc:
 - `crates/signal-runtime/src/lib.rs`
 - `crates/signal-runtime/src/interfaces.rs`
 - `crates/signal-runtime/src/runtime.rs`
+- `crates/signal-host-local/src/host.rs`
+- `crates/signal-supervisor-tools/src/main.rs`
 - `crates/signal-runtime/examples/supervisor_report_demo.rs`
 
 ## Next Task
 
-Continue `g03.007` by hardening the current offline render path into richer
-artifact/report receipts and by closing the current sample-rate, media-format,
-and plugin-freshness parity gaps before opening `g03.008`.
+COMPLETE. `g03` closed after the runtime-owned hardening receipts were proven
+across routing, plugin-chain, and offline-render fault paths.

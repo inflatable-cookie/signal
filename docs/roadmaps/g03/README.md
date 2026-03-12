@@ -1,6 +1,6 @@
 # g03 Milestones
 
-Status: active
+Status: complete
 Updated: 2026-03-12
 
 ## Why this generation matters now
@@ -43,9 +43,9 @@ This generation stays inside Signal-owned reusable boundaries:
   - clip rendering, fades, and nondestructive processing depth
 - `g03.006` `complete`
   - plugin device-chain execution, delay compensation, and state recall
-- `g03.007` `active`
+- `g03.007` `complete`
   - offline render, freeze, and stem export pipeline
-- `g03.008` `planned`
+- `g03.008` `complete`
   - engine profiling, soak harnesses, and runtime fault hardening
 
 ## Working rules for this thread
@@ -62,6 +62,6 @@ This generation stays inside Signal-owned reusable boundaries:
 
 ## Next Task
 
-Continue `g03.007` with artifact/parity hardening now that the first offline
-render engine path exists. Hold `g03.008` until render results are packaged in
-runtime-owned receipts and the current proof-path limitations are narrowed.
+COMPLETE. `g03` closed on 2026-03-12 after `g03.008` finished the profiling,
+soak, and fault-hardening acceptance spine. Open the next generation when
+maintainers want the next reusable Signal queue.

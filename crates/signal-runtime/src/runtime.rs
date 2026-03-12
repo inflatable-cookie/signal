@@ -20,6 +20,15 @@ use signal_plugin::{
     ParameterAutomationSummary,
 };
 use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
+use symphonia::core::{
+    audio::SampleBuffer as SymphoniaSampleBuffer,
+    codecs::{DecoderOptions as SymphoniaDecoderOptions, CODEC_TYPE_NULL},
+    errors::Error as SymphoniaError,
+    formats::FormatOptions as SymphoniaFormatOptions,
+    io::MediaSourceStream,
+    meta::MetadataOptions as SymphoniaMetadataOptions,
+    probe::Hint as SymphoniaHint,
+};
 
 use crate::interfaces::{
     BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
@@ -40,7 +49,13 @@ use crate::interfaces::{
     RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
     RuntimeMediaPipelineSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
     RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
-    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
+    RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
+    RuntimeOfflinePluginDelegatedExecutionReceipt, RuntimeOfflinePluginDelegatedExecutionRequest,
+    RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
+    RuntimeOfflinePluginExecutionStageBoundary, RuntimeOfflinePluginOverrideState,
+    RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderArtifactReceipt,
+    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderManifest,
+    RuntimeOfflineRenderReportReceipt, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
     RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult, RuntimePluginChainSnapshot,
     RuntimePluginChainStageSnapshot, RuntimePluginCompensationState, RuntimePluginDispatchState,
     RuntimePluginExecutionChainSummary, RuntimePluginLifecycleSnapshot,
@@ -2922,6 +2937,37 @@ fn write_offline_render_block(
     buffer.samples_mut()[start..end].copy_from_slice(&block.samples()[..end - start]);
 }
 
+fn resample_audio_buffer_linear(
+    input: &AudioBuffer,
+    target_sample_rate: SampleRate,
+) -> AudioBuffer {
+    if input.sample_rate() == target_sample_rate {
+        return input.clone();
+    }
+    if input.frames().0 == 0 || input.sample_rate().0 == 0 || target_sample_rate.0 == 0 {
+        return AudioBuffer::new(target_sample_rate, input.channels(), FrameCount(0));
+    }
+    let output_frames = ((input.frames().0 as u64)
+        .saturating_mul(target_sample_rate.0 as u64)
+        .saturating_add(input.sample_rate().0 as u64 / 2)
+        / input.sample_rate().0 as u64) as usize;
+    let mut output = AudioBuffer::new(
+        target_sample_rate,
+        input.channels(),
+        FrameCount(output_frames),
+    );
+    let channel_count = output.channel_count().0;
+    let source_frame_ratio = input.sample_rate().0 as f64 / target_sample_rate.0 as f64;
+    for frame_index in 0..output_frames {
+        let source_frame = frame_index as f64 * source_frame_ratio;
+        for channel_index in 0..channel_count {
+            output.samples_mut()[frame_index * channel_count + channel_index] =
+                sample_audio_buffer_linear(input, source_frame, channel_index, input.frames().0);
+        }
+    }
+    output
+}
+
 fn sample_audio_buffer_linear(
     buffer: &AudioBuffer,
     source_frame: f64,
@@ -2950,7 +2996,6 @@ fn decode_runtime_media_asset(
     media_pipeline: &RuntimeMediaPipelineStateModel,
     asset_id: &str,
     decoded_assets: &mut BTreeMap<String, AudioBuffer>,
-    runtime_sample_rate: SampleRate,
 ) -> Result<AudioBuffer, RuntimeError> {
     if let Some(buffer) = decoded_assets.get(asset_id) {
         return Ok(buffer.clone());
@@ -2976,22 +3021,31 @@ fn decode_runtime_media_asset(
             format!("offline render media asset `{asset_id}` has no cache path"),
         )
     })?;
-    let mut reader = hound::WavReader::open(cache_path).map_err(|error| {
+    let path = Path::new(cache_path);
+    let buffer = if path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("wav"))
+    {
+        decode_runtime_wav_asset(path, asset_id)?
+    } else {
+        decode_runtime_media_asset_with_symphonia(path, asset_id)?
+    };
+    decoded_assets.insert(asset_id.to_string(), buffer.clone());
+    Ok(buffer)
+}
+
+fn decode_runtime_wav_asset(path: &Path, asset_id: &str) -> Result<AudioBuffer, RuntimeError> {
+    let mut reader = hound::WavReader::open(path).map_err(|error| {
         RuntimeError::new(
             RuntimeErrorKind::ResourceUnavailable,
-            format!("failed to open cached media asset `{asset_id}`: {error}"),
+            format!(
+                "failed to open cached wav media asset `{asset_id}` at {}: {error}",
+                path.display()
+            ),
         )
     })?;
     let spec = reader.spec();
-    if spec.sample_rate != runtime_sample_rate.0 {
-        return Err(RuntimeError::new(
-            RuntimeErrorKind::UnsupportedCapability,
-            format!(
-                "offline render media asset `{asset_id}` sample rate {} does not match runtime sample rate {}",
-                spec.sample_rate, runtime_sample_rate.0
-            ),
-        ));
-    }
     let samples = match spec.sample_format {
         HoundSampleFormat::Float => reader
             .samples::<f32>()
@@ -3035,9 +3089,782 @@ fn decode_runtime_media_asset(
         2 => ChannelLayout::Stereo,
         count => ChannelLayout::Count(signal_primitives::ChannelCount(count as usize)),
     };
-    let buffer = AudioBuffer::from_interleaved(runtime_sample_rate, channels, samples);
-    decoded_assets.insert(asset_id.to_string(), buffer.clone());
-    Ok(buffer)
+    Ok(AudioBuffer::from_interleaved(
+        SampleRate(spec.sample_rate),
+        channels,
+        samples,
+    ))
+}
+
+fn decode_runtime_media_asset_with_symphonia(
+    path: &Path,
+    asset_id: &str,
+) -> Result<AudioBuffer, RuntimeError> {
+    let file = fs::File::open(path).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to open cached media asset `{asset_id}` at {}: {error}",
+                path.display()
+            ),
+        )
+    })?;
+    let media_stream = MediaSourceStream::new(Box::new(file), Default::default());
+    let mut hint = SymphoniaHint::new();
+    if let Some(extension) = path.extension().and_then(|extension| extension.to_str()) {
+        hint.with_extension(extension);
+    }
+
+    let probed = symphonia::default::get_probe()
+        .format(
+            &hint,
+            media_stream,
+            &SymphoniaFormatOptions::default(),
+            &SymphoniaMetadataOptions::default(),
+        )
+        .map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to probe cached media asset `{asset_id}` at {}: {error}",
+                    path.display()
+                ),
+            )
+        })?;
+
+    let mut format = probed.format;
+    let track = format
+        .tracks()
+        .iter()
+        .find(|track| track.codec_params.codec != CODEC_TYPE_NULL)
+        .ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::UnsupportedCapability,
+                format!(
+                    "cached media asset `{asset_id}` at {} has no supported audio track",
+                    path.display()
+                ),
+            )
+        })?;
+    let track_id = track.id;
+    let mut decoder = symphonia::default::get_codecs()
+        .make(&track.codec_params, &SymphoniaDecoderOptions::default())
+        .map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to create cached media decoder for `{asset_id}` at {}: {error}",
+                    path.display()
+                ),
+            )
+        })?;
+
+    let mut sample_rate = None;
+    let mut channel_count = None;
+    let mut samples = Vec::new();
+    loop {
+        let packet = match format.next_packet() {
+            Ok(packet) => packet,
+            Err(SymphoniaError::IoError(error))
+                if error.kind() == std::io::ErrorKind::UnexpectedEof =>
+            {
+                break;
+            }
+            Err(SymphoniaError::ResetRequired) => {
+                decoder.reset();
+                continue;
+            }
+            Err(error) => {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to read cached media packet for `{asset_id}` at {}: {error}",
+                        path.display()
+                    ),
+                ));
+            }
+        };
+        if packet.track_id() != track_id {
+            continue;
+        }
+        let decoded = match decoder.decode(&packet) {
+            Ok(decoded) => decoded,
+            Err(SymphoniaError::DecodeError(_)) => continue,
+            Err(error) => {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to decode cached media asset `{asset_id}` at {}: {error}",
+                        path.display()
+                    ),
+                ));
+            }
+        };
+        let spec = *decoded.spec();
+        let actual_channels = spec.channels.count();
+        let output_channels = actual_channels.clamp(1, 2);
+        if sample_rate.is_none() {
+            sample_rate = Some(spec.rate);
+            channel_count = Some(output_channels);
+        }
+
+        let mut sample_buffer = SymphoniaSampleBuffer::<f32>::new(decoded.capacity() as u64, spec);
+        sample_buffer.copy_interleaved_ref(decoded);
+        let interleaved = sample_buffer.samples();
+        if actual_channels <= output_channels {
+            samples.extend_from_slice(interleaved);
+        } else {
+            for frame in interleaved.chunks(actual_channels) {
+                for channel_index in 0..output_channels {
+                    samples.push(frame[channel_index]);
+                }
+            }
+        }
+    }
+
+    let sample_rate = sample_rate.ok_or_else(|| {
+        RuntimeError::new(
+            RuntimeErrorKind::UnsupportedCapability,
+            format!(
+                "cached media asset `{asset_id}` at {} produced no decodable audio frames",
+                path.display()
+            ),
+        )
+    })?;
+    let channels = match channel_count.unwrap_or(1) {
+        1 => ChannelLayout::Mono,
+        2 => ChannelLayout::Stereo,
+        count => ChannelLayout::Count(signal_primitives::ChannelCount(count)),
+    };
+    Ok(AudioBuffer::from_interleaved(
+        SampleRate(sample_rate),
+        channels,
+        samples,
+    ))
+}
+
+fn write_audio_buffer_wav(path: &Path, buffer: &AudioBuffer) -> Result<(), RuntimeError> {
+    let spec = WavSpec {
+        channels: buffer.channel_count().0 as u16,
+        sample_rate: buffer.sample_rate().0,
+        bits_per_sample: 32,
+        sample_format: HoundSampleFormat::Float,
+    };
+    let mut writer = WavWriter::create(path, spec).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to create offline render wav {}: {error}",
+                path.display()
+            ),
+        )
+    })?;
+    for sample in buffer.samples() {
+        writer.write_sample(*sample).map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to write offline render wav sample {}: {error}",
+                    path.display()
+                ),
+            )
+        })?;
+    }
+    writer.finalize().map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to finalize offline render wav {}: {error}",
+                path.display()
+            ),
+        )
+    })
+}
+
+fn render_artifact_receipt(
+    artifact_id: String,
+    artifact_kind: RuntimeOfflineRenderArtifactKind,
+    output_path: String,
+    byte_size: u64,
+    buffer: &AudioBuffer,
+) -> RuntimeOfflineRenderArtifactReceipt {
+    let peak_level = peak_abs(buffer.samples());
+    let rms_level = rms(buffer.samples());
+    RuntimeOfflineRenderArtifactReceipt {
+        artifact_id: artifact_id.clone(),
+        artifact_kind,
+        output_path: output_path.clone(),
+        sample_rate_hz: buffer.sample_rate().0,
+        channel_count: buffer.channel_count().0,
+        frame_count: buffer.frames().0,
+        byte_size,
+        peak_level,
+        rms_level,
+        summary: format!(
+            "artifact={} kind={:?} path={} sample_rate={} channels={} frames={} bytes={} peak={:.3} rms={:.3}",
+            artifact_id,
+            artifact_kind,
+            output_path,
+            buffer.sample_rate().0,
+            buffer.channel_count().0,
+            buffer.frames().0,
+            byte_size,
+            peak_level,
+            rms_level,
+        ),
+    }
+}
+
+fn json_escape(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+fn offline_render_manifest(
+    request_id: &str,
+    artifact_root_path: Option<&str>,
+    artifacts: Vec<RuntimeOfflineRenderArtifactReceipt>,
+    report: Option<RuntimeOfflineRenderReportReceipt>,
+    delegated_execution_request: RuntimeOfflinePluginDelegatedExecutionRequest,
+    delegated_execution_receipt: Option<RuntimeOfflinePluginDelegatedExecutionReceipt>,
+) -> RuntimeOfflineRenderManifest {
+    let materialized = !artifacts.is_empty() || report.is_some();
+    let artifact_count = artifacts.len();
+    let mut manifest = RuntimeOfflineRenderManifest {
+        request_id: request_id.to_string(),
+        artifact_root_path: artifact_root_path.map(str::to_string),
+        materialized,
+        artifact_count,
+        artifacts,
+        report,
+        delegated_execution_request,
+        delegated_execution_receipt,
+        summary: String::new(),
+    };
+    manifest.summary = format!(
+        "request={} root={:?} materialized={} artifacts={} report={} delegated_request_stages={} delegated_receipt={}",
+        manifest.request_id,
+        manifest.artifact_root_path.as_deref(),
+        manifest.materialized,
+        manifest.artifact_count,
+        manifest.report.is_some(),
+        manifest.delegated_execution_request.stage_count,
+        manifest.delegated_execution_receipt.is_some(),
+    );
+    manifest
+}
+
+fn offline_render_report_json(
+    result: &RuntimeOfflineRenderResult,
+    artifact_receipts: &[RuntimeOfflineRenderArtifactReceipt],
+) -> String {
+    let artifacts = artifact_receipts
+        .iter()
+        .map(|artifact| {
+            format!(
+                "{{\"artifact_id\":\"{}\",\"artifact_kind\":\"{:?}\",\"output_path\":\"{}\",\"sample_rate_hz\":{},\"channel_count\":{},\"frame_count\":{},\"byte_size\":{},\"peak_level\":{:.6},\"rms_level\":{:.6}}}",
+                json_escape(&artifact.artifact_id),
+                artifact.artifact_kind,
+                json_escape(&artifact.output_path),
+                artifact.sample_rate_hz,
+                artifact.channel_count,
+                artifact.frame_count,
+                artifact.byte_size,
+                artifact.peak_level,
+                artifact.rms_level,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let delegated_request_stages = result
+        .manifest
+        .delegated_execution_request
+        .stages
+        .iter()
+        .map(|stage| {
+            format!(
+                "{{\"chain_id\":\"{}\",\"stage_index\":{},\"node_id\":\"{}\",\"sandbox_id\":{},\"recall_state\":\"{:?}\",\"override_state\":\"{:?}\"}}",
+                json_escape(&stage.chain_id),
+                stage.stage_index,
+                json_escape(&stage.node_id),
+                stage.sandbox_id.as_deref().map(|id| format!("\"{}\"", json_escape(id))).unwrap_or_else(|| "null".into()),
+                stage.recall_state,
+                stage.override_state,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let delegated_receipt = result
+        .manifest
+        .delegated_execution_receipt
+        .as_ref()
+        .map(|receipt| {
+            let stages = receipt
+                .stages
+                .iter()
+                .map(|stage| {
+                    format!(
+                        "{{\"chain_id\":\"{}\",\"stage_index\":{},\"node_id\":\"{}\",\"status\":\"{:?}\",\"delegate_label\":{},\"detail\":{}}}",
+                        json_escape(&stage.chain_id),
+                        stage.stage_index,
+                        json_escape(&stage.node_id),
+                        stage.status,
+                        stage
+                            .delegate_label
+                            .as_deref()
+                            .map(|label| format!("\"{}\"", json_escape(label)))
+                            .unwrap_or_else(|| "null".into()),
+                        stage
+                            .detail
+                            .as_deref()
+                            .map(|detail| format!("\"{}\"", json_escape(detail)))
+                            .unwrap_or_else(|| "null".into()),
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                "{{\"stage_count\":{},\"completed_stage_count\":{},\"rejected_stage_count\":{},\"unavailable_stage_count\":{},\"stages\":[{}]}}",
+                receipt.stage_count,
+                receipt.completed_stage_count,
+                receipt.rejected_stage_count,
+                receipt.unavailable_stage_count,
+                stages,
+            )
+        })
+        .unwrap_or_else(|| "null".into());
+    format!(
+        "{{\"request_id\":\"{}\",\"runtime_frame_count\":{},\"rendered_frame_count\":{},\"block_count\":{},\"export_sample_rate_hz\":{},\"artifact_count\":{},\"delegated_stage_count\":{},\"delegated_receipt_stage_count\":{},\"delegated_execution_request\":{{\"stage_count\":{},\"stages\":[{}]}},\"delegated_execution_receipt\":{},\"summary\":\"{}\",\"artifacts\":[{}]}}",
+        json_escape(&result.request_id),
+        result.runtime_frame_count,
+        result.rendered_frame_count,
+        result.block_count,
+        result.export_sample_rate_hz,
+        artifact_receipts.len(),
+        result.manifest.delegated_execution_request.stage_count,
+        result
+            .manifest
+            .delegated_execution_receipt
+            .as_ref()
+            .map_or(0, |receipt| receipt.stage_count),
+        result.manifest.delegated_execution_request.stage_count,
+        delegated_request_stages,
+        delegated_receipt,
+        json_escape(&result.summary),
+        artifacts,
+    )
+}
+
+fn write_offline_render_report(
+    path: &Path,
+    result: &RuntimeOfflineRenderResult,
+) -> Result<u64, RuntimeError> {
+    let report_body = offline_render_report_json(result, &result.manifest.artifacts);
+    fs::write(path, report_body.as_bytes()).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to write offline render report {}: {error}",
+                path.display()
+            ),
+        )
+    })?;
+    fs::metadata(path)
+        .map(|metadata| metadata.len())
+        .map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to inspect offline render report {}: {error}",
+                    path.display()
+                ),
+            )
+        })
+}
+
+fn offline_plugin_delegated_execution_request(
+    boundary: &RuntimeOfflinePluginExecutionBoundary,
+) -> RuntimeOfflinePluginDelegatedExecutionRequest {
+    boundary.delegated_execution_request()
+}
+
+fn offline_render_report_receipt(
+    request_id: &str,
+    report_path: &Path,
+    artifact_count: usize,
+) -> Result<RuntimeOfflineRenderReportReceipt, RuntimeError> {
+    let report_size = fs::metadata(report_path)
+        .map(|metadata| metadata.len())
+        .map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to inspect offline render report {}: {error}",
+                    report_path.display()
+                ),
+            )
+        })?;
+    Ok(RuntimeOfflineRenderReportReceipt {
+        request_id: request_id.to_string(),
+        report_path: report_path.display().to_string(),
+        artifact_count,
+        byte_size: report_size,
+        summary: format!(
+            "request={} report_path={} artifacts={} bytes={}",
+            request_id,
+            report_path.display(),
+            artifact_count,
+            report_size,
+        ),
+    })
+}
+
+fn materialize_offline_render_delivery(
+    result: &RuntimeOfflineRenderResult,
+) -> Result<RuntimeOfflineRenderManifest, RuntimeError> {
+    let delegated_execution_request = result.manifest.delegated_execution_request.clone();
+    let delegated_execution_receipt = result.manifest.delegated_execution_receipt.clone();
+    let Some(root_path) = result.manifest.artifact_root_path.as_deref() else {
+        return Ok(offline_render_manifest(
+            &result.request_id,
+            None,
+            Vec::new(),
+            None,
+            delegated_execution_request,
+            delegated_execution_receipt,
+        ));
+    };
+
+    let root = Path::new(root_path);
+    fs::create_dir_all(root).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!("failed to create offline render artifact directory: {error}"),
+        )
+    })?;
+    let request_slug = sanitize_asset_id(&result.request_id);
+    let mut artifact_receipts = Vec::new();
+    if let Some(main_mix) = result.main_mix.as_ref() {
+        let path = root.join(format!("{request_slug}-main-mix.wav"));
+        write_audio_buffer_wav(&path, main_mix)?;
+        let byte_size = fs::metadata(&path)
+            .map(|metadata| metadata.len())
+            .map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to inspect offline render artifact {}: {error}",
+                        path.display()
+                    ),
+                )
+            })?;
+        artifact_receipts.push(render_artifact_receipt(
+            "main_mix".into(),
+            RuntimeOfflineRenderArtifactKind::MainMix,
+            path.display().to_string(),
+            byte_size,
+            main_mix,
+        ));
+    }
+    for stem in &result.stems {
+        let path = root.join(format!(
+            "{request_slug}-stem-{}.wav",
+            sanitize_asset_id(&stem.stem_id)
+        ));
+        write_audio_buffer_wav(&path, &stem.output)?;
+        let byte_size = fs::metadata(&path)
+            .map(|metadata| metadata.len())
+            .map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to inspect offline render artifact {}: {error}",
+                        path.display()
+                    ),
+                )
+            })?;
+        artifact_receipts.push(render_artifact_receipt(
+            stem.stem_id.clone(),
+            RuntimeOfflineRenderArtifactKind::Stem,
+            path.display().to_string(),
+            byte_size,
+            &stem.output,
+        ));
+    }
+    for artifact in &result.freeze_artifacts {
+        let path = root.join(format!(
+            "{request_slug}-freeze-{}.wav",
+            sanitize_asset_id(&artifact.artifact_id)
+        ));
+        write_audio_buffer_wav(&path, &artifact.output)?;
+        let byte_size = fs::metadata(&path)
+            .map(|metadata| metadata.len())
+            .map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to inspect offline render artifact {}: {error}",
+                        path.display()
+                    ),
+                )
+            })?;
+        artifact_receipts.push(render_artifact_receipt(
+            artifact.artifact_id.clone(),
+            RuntimeOfflineRenderArtifactKind::FreezeArtifact,
+            path.display().to_string(),
+            byte_size,
+            &artifact.output,
+        ));
+    }
+
+    let report_path = root.join(format!("{request_slug}-report.json"));
+    let result_for_report = RuntimeOfflineRenderResult {
+        manifest: offline_render_manifest(
+            &result.request_id,
+            Some(root_path),
+            artifact_receipts.clone(),
+            None,
+            delegated_execution_request.clone(),
+            delegated_execution_receipt.clone(),
+        ),
+        ..result.clone()
+    };
+    write_offline_render_report(&report_path, &result_for_report)?;
+    let report_receipt =
+        offline_render_report_receipt(&result.request_id, &report_path, artifact_receipts.len())?;
+
+    Ok(offline_render_manifest(
+        &result.request_id,
+        Some(root_path),
+        artifact_receipts,
+        Some(report_receipt),
+        delegated_execution_request,
+        delegated_execution_receipt,
+    ))
+}
+
+fn ensure_offline_buffer_compatible(
+    label: &str,
+    expected: &AudioBuffer,
+    actual: &AudioBuffer,
+) -> Result<(), RuntimeError> {
+    if expected.sample_rate() != actual.sample_rate() {
+        return Err(RuntimeError::new(
+            RuntimeErrorKind::InvalidRequest,
+            format!(
+                "delegated offline merge `{label}` sample rate does not match runtime result (expected={} actual={})",
+                expected.sample_rate().0,
+                actual.sample_rate().0,
+            ),
+        ));
+    }
+    if expected.channel_count() != actual.channel_count() {
+        return Err(RuntimeError::new(
+            RuntimeErrorKind::InvalidRequest,
+            format!(
+                "delegated offline merge `{label}` channel count does not match runtime result (expected={} actual={})",
+                expected.channel_count().0,
+                actual.channel_count().0,
+            ),
+        ));
+    }
+    if expected.frames() != actual.frames() {
+        return Err(RuntimeError::new(
+            RuntimeErrorKind::InvalidRequest,
+            format!(
+                "delegated offline merge `{label}` frame count does not match runtime result (expected={} actual={})",
+                expected.frames().0,
+                actual.frames().0,
+            ),
+        ));
+    }
+    Ok(())
+}
+
+fn refresh_offline_render_stem_result(stem: &mut RuntimeOfflineRenderStemResult) {
+    stem.peak_level = peak_abs(stem.output.samples());
+    stem.rms_level = rms(stem.output.samples());
+    stem.summary = format!(
+        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
+        stem.stem_id,
+        stem.target_kind,
+        stem.target_id,
+        stem.output.frames().0,
+        stem.peak_level,
+        stem.rms_level,
+    );
+}
+
+fn refresh_offline_freeze_artifact_result(artifact: &mut RuntimeOfflineFreezeArtifactResult) {
+    artifact.peak_level = peak_abs(artifact.output.samples());
+    artifact.rms_level = rms(artifact.output.samples());
+    artifact.summary = format!(
+        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
+        artifact.artifact_id,
+        artifact.source_stem_id,
+        artifact.recall_stage_count,
+        artifact.output.frames().0,
+        artifact.peak_level,
+        artifact.rms_level,
+    );
+}
+
+fn refresh_offline_render_result(result: &mut RuntimeOfflineRenderResult) {
+    if let Some(main_mix) = result.main_mix.as_ref() {
+        result.main_mix_peak_level = Some(peak_abs(main_mix.samples()));
+        result.main_mix_rms_level = Some(rms(main_mix.samples()));
+    } else {
+        result.main_mix_peak_level = None;
+        result.main_mix_rms_level = None;
+    }
+    for stem in &mut result.stems {
+        refresh_offline_render_stem_result(stem);
+    }
+    for artifact in &mut result.freeze_artifacts {
+        refresh_offline_freeze_artifact_result(artifact);
+    }
+    result.rendered_frame_count = result
+        .main_mix
+        .as_ref()
+        .map(|buffer| buffer.frames().0)
+        .or_else(|| result.stems.first().map(|stem| stem.output.frames().0))
+        .or_else(|| {
+            result
+                .freeze_artifacts
+                .first()
+                .map(|artifact| artifact.output.frames().0)
+        })
+        .unwrap_or(0);
+    result.summary = format!(
+        "request={} runtime_frames={} rendered_frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
+        result.request_id,
+        result.runtime_frame_count,
+        result.rendered_frame_count,
+        result.block_count,
+        result.main_mix.is_some(),
+        result.stems.len(),
+        result.freeze_artifacts.len(),
+    );
+}
+
+fn apply_delegated_execution_merge(
+    result: &mut RuntimeOfflineRenderResult,
+    merge: &RuntimeOfflinePluginDelegatedExecutionMerge,
+) -> Result<(), RuntimeError> {
+    if merge.request_id != result.request_id {
+        return Err(RuntimeError::new(
+            RuntimeErrorKind::InvalidRequest,
+            format!(
+                "delegated offline merge request `{}` does not match runtime result request `{}`",
+                merge.request_id, result.request_id
+            ),
+        ));
+    }
+    if let Some(main_mix) = merge.main_mix.as_ref() {
+        let expected = result.main_mix.as_ref().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "delegated offline merge provided a main mix override for a render result without main mix output",
+            )
+        })?;
+        ensure_offline_buffer_compatible("main_mix", expected, main_mix)?;
+        result.main_mix = Some(main_mix.clone());
+    }
+
+    let mut seen_stems = BTreeSet::new();
+    for stem_merge in &merge.stems {
+        if !seen_stems.insert(stem_merge.stem_id.as_str()) {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "delegated offline merge stem `{}` is duplicated",
+                    stem_merge.stem_id
+                ),
+            ));
+        }
+        let stem = result
+            .stems
+            .iter_mut()
+            .find(|stem| stem.stem_id == stem_merge.stem_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "delegated offline merge references unknown stem `{}`",
+                        stem_merge.stem_id
+                    ),
+                )
+            })?;
+        ensure_offline_buffer_compatible(
+            &format!("stem:{}", stem_merge.stem_id),
+            &stem.output,
+            &stem_merge.output,
+        )?;
+        stem.output = stem_merge.output.clone();
+    }
+
+    let mut seen_artifacts = BTreeSet::new();
+    for artifact_merge in &merge.freeze_artifacts {
+        if !seen_artifacts.insert(artifact_merge.artifact_id.as_str()) {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "delegated offline merge freeze artifact `{}` is duplicated",
+                    artifact_merge.artifact_id
+                ),
+            ));
+        }
+        let artifact = result
+            .freeze_artifacts
+            .iter_mut()
+            .find(|artifact| artifact.artifact_id == artifact_merge.artifact_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "delegated offline merge references unknown freeze artifact `{}`",
+                        artifact_merge.artifact_id
+                    ),
+                )
+            })?;
+        ensure_offline_buffer_compatible(
+            &format!("freeze:{}", artifact_merge.artifact_id),
+            &artifact.output,
+            &artifact_merge.output,
+        )?;
+        artifact.output = artifact_merge.output.clone();
+    }
+
+    refresh_offline_render_result(result);
+    Ok(())
+}
+
+fn offline_render_plugin_override_status<'a>(
+    latest: Option<&'a RuntimePluginRenderedNodeState>,
+    bound_sandbox_id: Option<&String>,
+    sandboxes: &BTreeMap<String, RuntimePluginSandboxSnapshot>,
+    last_processing_epoch: Option<u64>,
+    last_block_sequence: Option<u64>,
+) -> (
+    RuntimeOfflinePluginOverrideState,
+    Option<&'a RuntimePluginRenderedNodeState>,
+) {
+    let Some(latest) = latest else {
+        return (RuntimeOfflinePluginOverrideState::NotAvailable, None);
+    };
+    let fresh = Some(latest.processing_epoch) == last_processing_epoch
+        && Some(latest.block_sequence) == last_block_sequence
+        && bound_sandbox_id.is_none_or(|sandbox_id| sandbox_id == &latest.sandbox_id)
+        && bound_sandbox_id
+            .and_then(|sandbox_id| sandboxes.get(sandbox_id))
+            .is_none_or(|sandbox| sandbox.state == RuntimePluginLifecycleState::Ready);
+    if fresh {
+        (
+            RuntimeOfflinePluginOverrideState::FreshLatestBlock,
+            Some(latest),
+        )
+    } else {
+        (RuntimeOfflinePluginOverrideState::StaleLatestBlock, None)
+    }
 }
 
 fn runtime_meter_source_role(role: GraphNodeTopologyRole) -> RuntimeMeterSourceRole {
@@ -6788,16 +7615,6 @@ impl SignalRuntime {
         &self,
         request: RuntimeOfflineRenderRequest,
     ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
-        if request.export_sample_rate_hz != self.config.sample_rate.0 {
-            return Err(RuntimeError::new(
-                RuntimeErrorKind::UnsupportedCapability,
-                format!(
-                    "offline render export sample rate {} must match runtime sample rate {} in the current engine path",
-                    request.export_sample_rate_hz, self.config.sample_rate.0
-                ),
-            ));
-        }
-
         let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
             &request,
             &self.execution_topology_summary(),
@@ -6805,6 +7622,10 @@ impl SignalRuntime {
             &self.tempo_map_snapshot(),
             &self.plugin_recall_handoff_snapshot(),
         )?;
+        let plugin_execution_boundary =
+            self.offline_plugin_execution_boundary_from_preview(&request, &preview);
+        let delegated_execution_request =
+            offline_plugin_delegated_execution_request(&plugin_execution_boundary);
         let input_layout = self.offline_render_input_layout()?;
         let plugin_overrides = self.offline_render_plugin_node_overrides()?;
         let captured_bus_ids = preview
@@ -6949,11 +7770,68 @@ impl SignalRuntime {
             })
             .collect::<Result<Vec<_>, RuntimeError>>()?;
 
+        let export_sample_rate = SampleRate(request.export_sample_rate_hz);
+        let main_mix =
+            main_mix.map(|buffer| resample_audio_buffer_linear(&buffer, export_sample_rate));
+        let stems = stems
+            .into_iter()
+            .map(|stem| {
+                let output = resample_audio_buffer_linear(&stem.output, export_sample_rate);
+                RuntimeOfflineRenderStemResult {
+                    peak_level: peak_abs(output.samples()),
+                    rms_level: rms(output.samples()),
+                    summary: format!(
+                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
+                        stem.stem_id,
+                        stem.target_kind,
+                        stem.target_id,
+                        output.frames().0,
+                        peak_abs(output.samples()),
+                        rms(output.samples()),
+                    ),
+                    output,
+                    ..stem
+                }
+            })
+            .collect::<Vec<_>>();
+        let freeze_artifacts = freeze_artifacts
+            .into_iter()
+            .map(|artifact| {
+                let output = resample_audio_buffer_linear(&artifact.output, export_sample_rate);
+                RuntimeOfflineFreezeArtifactResult {
+                    peak_level: peak_abs(output.samples()),
+                    rms_level: rms(output.samples()),
+                    summary: format!(
+                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
+                        artifact.artifact_id,
+                        artifact.source_stem_id,
+                        artifact.recall_stage_count,
+                        output.frames().0,
+                        peak_abs(output.samples()),
+                        rms(output.samples()),
+                    ),
+                    output,
+                    ..artifact
+                }
+            })
+            .collect::<Vec<_>>();
+
         let main_mix_peak_level = main_mix.as_ref().map(|buffer| peak_abs(buffer.samples()));
         let main_mix_rms_level = main_mix.as_ref().map(|buffer| rms(buffer.samples()));
-        let result = RuntimeOfflineRenderResult {
+        let rendered_frame_count = main_mix
+            .as_ref()
+            .map(|buffer| buffer.frames().0)
+            .or_else(|| stems.first().map(|stem| stem.output.frames().0))
+            .or_else(|| {
+                freeze_artifacts
+                    .first()
+                    .map(|artifact| artifact.output.frames().0)
+            })
+            .unwrap_or(0);
+        let mut result = RuntimeOfflineRenderResult {
             request_id: request.request_id.clone(),
-            rendered_frame_count: rendered_frames,
+            runtime_frame_count: rendered_frames,
+            rendered_frame_count,
             block_count,
             export_sample_rate_hz: request.export_sample_rate_hz,
             main_mix,
@@ -6961,18 +7839,84 @@ impl SignalRuntime {
             main_mix_rms_level,
             stems,
             freeze_artifacts,
+            manifest: offline_render_manifest(
+                &request.request_id,
+                request.artifact_root_path.as_deref(),
+                Vec::new(),
+                None,
+                delegated_execution_request.clone(),
+                None,
+            ),
+            plugin_execution_boundary,
             contract_preview: preview.clone(),
             summary: format!(
-                "request={} frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
+                "request={} runtime_frames={} rendered_frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
                 request.request_id,
                 rendered_frames,
+                rendered_frame_count,
                 block_count,
                 request.include_main_mix,
                 preview.stem_count,
                 preview.freeze_artifact_count,
             ),
         };
+        result.manifest = materialize_offline_render_delivery(&result)?;
         Ok(result)
+    }
+
+    pub fn prepare_offline_plugin_execution_boundary(
+        &self,
+        request: &RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflinePluginExecutionBoundary, RuntimeError> {
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            request,
+            &self.execution_topology_summary(),
+            &self.clip_processing_pipeline_snapshot(),
+            &self.tempo_map_snapshot(),
+            &self.plugin_recall_handoff_snapshot(),
+        )?;
+        Ok(self.offline_plugin_execution_boundary_from_preview(request, &preview))
+    }
+
+    pub fn prepare_offline_plugin_delegated_execution_request(
+        &self,
+        request: &RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflinePluginDelegatedExecutionRequest, RuntimeError> {
+        let boundary = self.prepare_offline_plugin_execution_boundary(request)?;
+        Ok(offline_plugin_delegated_execution_request(&boundary))
+    }
+
+    pub fn apply_offline_plugin_delegated_execution_receipt(
+        &self,
+        result: &RuntimeOfflineRenderResult,
+        receipt: RuntimeOfflinePluginDelegatedExecutionReceipt,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        let expected_request =
+            offline_plugin_delegated_execution_request(&result.plugin_execution_boundary);
+        let mut updated = result.clone();
+        updated.manifest.delegated_execution_request = expected_request;
+        updated
+            .manifest
+            .apply_delegated_execution_receipt(receipt)?;
+        updated.manifest = materialize_offline_render_delivery(&updated)?;
+        Ok(updated)
+    }
+
+    pub fn apply_offline_plugin_delegated_execution_outcome(
+        &self,
+        result: &RuntimeOfflineRenderResult,
+        outcome: RuntimeOfflinePluginDelegatedExecutionOutcome,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        let expected_request =
+            offline_plugin_delegated_execution_request(&result.plugin_execution_boundary);
+        let mut updated = result.clone();
+        updated.manifest.delegated_execution_request = expected_request;
+        updated
+            .manifest
+            .apply_delegated_execution_receipt(outcome.receipt)?;
+        apply_delegated_execution_merge(&mut updated, &outcome.merge)?;
+        updated.manifest = materialize_offline_render_delivery(&updated)?;
+        Ok(updated)
     }
 
     fn render_clip_processing_buffer_with_resolved_tempo(
@@ -7016,37 +7960,177 @@ impl SignalRuntime {
         Ok(layout.unwrap_or(ChannelLayout::Stereo))
     }
 
+    fn offline_plugin_execution_boundary_from_preview(
+        &self,
+        request: &RuntimeOfflineRenderRequest,
+        _preview: &RuntimeOfflineRenderContractPreview,
+    ) -> RuntimeOfflinePluginExecutionBoundary {
+        let sandboxes = self
+            .plugin_lifecycle
+            .snapshot()
+            .sandboxes
+            .into_iter()
+            .map(|sandbox| (sandbox.sandbox_id.clone(), sandbox))
+            .collect::<BTreeMap<_, _>>();
+        let node_by_id = self
+            .applied_graph
+            .as_ref()
+            .map(|graph| {
+                graph
+                    .nodes
+                    .iter()
+                    .map(|node| (node.node_id.as_str(), node))
+                    .collect::<BTreeMap<_, _>>()
+            })
+            .unwrap_or_default();
+        let handoff = self.plugin_recall_handoff_snapshot();
+        let last_processing_epoch = self.engine.snapshot.last_processing_epoch;
+        let last_block_sequence = self.engine.snapshot.last_block_sequence;
+        let block_size = self.config.graph.block_size.max(1);
+        let block_count = (request.duration_samples as usize)
+            .saturating_add(block_size.saturating_sub(1))
+            / block_size;
+
+        let stages = handoff
+            .stages
+            .iter()
+            .map(|stage| {
+                let execution_owner = match node_by_id.get(stage.node_id.as_str()) {
+                    Some(node) if node.stages.is_empty() => {
+                        RuntimeOfflinePluginExecutionOwner::HostDelegated
+                    }
+                    _ => RuntimeOfflinePluginExecutionOwner::SignalStageModel,
+                };
+                let (override_state, _) = offline_render_plugin_override_status(
+                    self.engine.latest_plugin_node_renders.get(&stage.node_id),
+                    stage.recall_payload.sandbox_id.as_ref(),
+                    &sandboxes,
+                    last_processing_epoch,
+                    last_block_sequence,
+                );
+                let latest_override = self.engine.latest_plugin_node_renders.get(&stage.node_id);
+                let host_delegate_required =
+                    execution_owner == RuntimeOfflinePluginExecutionOwner::HostDelegated;
+                let mut boundary = RuntimeOfflinePluginExecutionStageBoundary {
+                    stage_id: stage.stage_id.clone(),
+                    node_id: stage.node_id.clone(),
+                    chain_id: stage.chain_id.clone(),
+                    stage_index: stage.stage_index,
+                    sandbox_id: stage.recall_payload.sandbox_id.clone(),
+                    track_lane_id: stage.track_lane_id.clone(),
+                    bus_group_id: stage.bus_group_id.clone(),
+                    console_group_id: stage.console_group_id.clone(),
+                    send_return_id: stage.send_return_id.clone(),
+                    recall_state: stage.recall_state,
+                    recall_payload: stage.recall_payload.clone(),
+                    execution_owner,
+                    host_delegate_required,
+                    override_state,
+                    latest_override_processing_epoch: latest_override
+                        .map(|latest| latest.processing_epoch),
+                    latest_override_block_sequence: latest_override.map(|latest| latest.block_sequence),
+                    summary: String::new(),
+                };
+                boundary.summary = format!(
+                    "stage={}:{} owner={:?} host_delegate={} override={:?} sandbox={:?} recall={:?}",
+                    boundary.chain_id,
+                    boundary.stage_index,
+                    boundary.execution_owner,
+                    boundary.host_delegate_required,
+                    boundary.override_state,
+                    boundary.sandbox_id.as_deref(),
+                    boundary.recall_state,
+                );
+                boundary
+            })
+            .collect::<Vec<_>>();
+
+        let mut boundary = RuntimeOfflinePluginExecutionBoundary {
+            request_id: request.request_id.clone(),
+            timeline_start_samples: request.timeline_start_samples,
+            duration_samples: request.duration_samples,
+            runtime_sample_rate_hz: self.config.sample_rate.0,
+            export_sample_rate_hz: request.export_sample_rate_hz,
+            block_size,
+            block_count,
+            stage_count: stages.len(),
+            signal_stage_model_stage_count: stages
+                .iter()
+                .filter(|stage| {
+                    stage.execution_owner == RuntimeOfflinePluginExecutionOwner::SignalStageModel
+                })
+                .count(),
+            host_delegate_stage_count: stages
+                .iter()
+                .filter(|stage| stage.host_delegate_required)
+                .count(),
+            fresh_override_stage_count: stages
+                .iter()
+                .filter(|stage| {
+                    stage.override_state == RuntimeOfflinePluginOverrideState::FreshLatestBlock
+                })
+                .count(),
+            stale_override_stage_count: stages
+                .iter()
+                .filter(|stage| {
+                    stage.override_state == RuntimeOfflinePluginOverrideState::StaleLatestBlock
+                })
+                .count(),
+            stages,
+            summary: String::new(),
+        };
+        boundary.summary = format!(
+            "request={} stages={} signal_stage_model={} host_delegate={} fresh_overrides={} stale_overrides={} blocks={} runtime_rate={} export_rate={}",
+            boundary.request_id,
+            boundary.stage_count,
+            boundary.signal_stage_model_stage_count,
+            boundary.host_delegate_stage_count,
+            boundary.fresh_override_stage_count,
+            boundary.stale_override_stage_count,
+            boundary.block_count,
+            boundary.runtime_sample_rate_hz,
+            boundary.export_sample_rate_hz,
+        );
+        boundary
+    }
+
     fn offline_render_plugin_node_overrides(
         &self,
     ) -> Result<Vec<GraphNodeRenderOverride>, RuntimeError> {
         let Some(graph) = self.applied_graph.as_ref() else {
             return Ok(Vec::new());
         };
+        let last_processing_epoch = self.engine.snapshot.last_processing_epoch;
+        let last_block_sequence = self.engine.snapshot.last_block_sequence;
+        let sandboxes = self
+            .plugin_lifecycle
+            .snapshot()
+            .sandboxes
+            .into_iter()
+            .map(|sandbox| (sandbox.sandbox_id.clone(), sandbox))
+            .collect::<BTreeMap<_, _>>();
 
         graph
             .nodes
             .iter()
             .filter(|node| node.execution_class == GraphNodeExecutionClass::PluginBacked)
-            .map(|node| {
-                let latest = self
-                    .engine
-                    .latest_plugin_node_renders
-                    .get(&node.node_id)
-                    .ok_or_else(|| {
-                        RuntimeError::new(
-                            RuntimeErrorKind::InvalidState,
-                            format!(
-                                "offline render requires a cached plugin render for node `{}`",
-                                node.node_id
-                            ),
-                        )
-                    })?;
-                Ok(GraphNodeRenderOverride {
-                    node_id: node.node_id.clone(),
-                    buffer: latest.output.clone(),
-                    latency_samples: latest.latency_samples,
-                    tail_samples: latest.tail_samples,
-                    bypassed: latest.bypassed,
+            .filter_map(|node| {
+                let bound_sandbox_id = self.engine.plugin_node_bindings.get(&node.node_id);
+                let (_, fresh_override) = offline_render_plugin_override_status(
+                    self.engine.latest_plugin_node_renders.get(&node.node_id),
+                    bound_sandbox_id,
+                    &sandboxes,
+                    last_processing_epoch,
+                    last_block_sequence,
+                );
+                fresh_override.map(|render| {
+                    Ok(GraphNodeRenderOverride {
+                        node_id: node.node_id.clone(),
+                        buffer: render.output.clone(),
+                        latency_samples: render.latency_samples,
+                        tail_samples: render.tail_samples,
+                        bypassed: render.bypassed,
+                    })
                 })
             })
             .collect()
@@ -7176,13 +8260,10 @@ impl SignalRuntime {
                 ),
             )
         })?;
-        let asset = decode_runtime_media_asset(
-            &self.media_pipeline,
-            media_asset_id,
-            decoded_media_assets,
-            self.config.sample_rate,
-        )?;
+        let asset =
+            decode_runtime_media_asset(&self.media_pipeline, media_asset_id, decoded_media_assets)?;
         let ratio = clip.realized_warp_ratio.unwrap_or(1.0);
+        let asset_frame_ratio = asset.sample_rate().0 as f64 / self.config.sample_rate.0 as f64;
         let mut output = AudioBuffer::new(
             asset.sample_rate(),
             asset.channels(),
@@ -7200,7 +8281,7 @@ impl SignalRuntime {
             {
                 continue;
             }
-            let source_frame = (clip_offset_samples as f64 * ratio).max(0.0);
+            let source_frame = (clip_offset_samples as f64 * ratio * asset_frame_ratio).max(0.0);
             for channel_index in 0..channel_count {
                 output.samples_mut()[frame_index * channel_count + channel_index] =
                     sample_audio_buffer_linear(&asset, source_frame, channel_index, asset_frames);
@@ -9561,10 +10642,19 @@ mod tests {
         RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
         RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
         RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
-        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflineRenderContractPreview,
+        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
+        RuntimeOfflinePluginDelegatedExecutionOutcome,
+        RuntimeOfflinePluginDelegatedExecutionReceipt,
+        RuntimeOfflinePluginDelegatedExecutionStageReceipt,
+        RuntimeOfflinePluginDelegatedExecutionStatus,
+        RuntimeOfflinePluginDelegatedFreezeArtifactOutput, RuntimeOfflinePluginDelegatedStemOutput,
+        RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
+        RuntimeOfflinePluginExecutionStageBoundary, RuntimeOfflinePluginOverrideState,
+        RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderContractPreview,
         RuntimeOfflineRenderRequest, RuntimeOfflineRenderStemTarget,
         RuntimeOfflineRenderTargetKind, RuntimePluginCompensationState,
-        RuntimePluginLifecycleState, RuntimePluginRecallHandoffSelection, RuntimePluginRecallState,
+        RuntimePluginLifecycleState, RuntimePluginRecallHandoffSelection,
+        RuntimePluginRecallHandoffStageId, RuntimePluginRecallPayload, RuntimePluginRecallState,
         RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
         RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
         RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
@@ -9620,12 +10710,24 @@ mod tests {
         runtime.configure(request).unwrap();
     }
 
-    fn temp_capture_path(label: &str) -> PathBuf {
+    fn temp_media_path(label: &str, extension: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system time should be monotonic enough for temp files")
             .as_nanos();
-        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}.wav"))
+        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}.{extension}"))
+    }
+
+    fn temp_capture_path(label: &str) -> PathBuf {
+        temp_media_path(label, "wav")
+    }
+
+    fn temp_artifact_dir(label: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should be monotonic enough for temp dirs")
+            .as_nanos();
+        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}"))
     }
 
     fn write_test_wav(path: &Path) {
@@ -9643,6 +10745,353 @@ mod tests {
                 .expect("test wav sample should be written");
         }
         writer.finalize().expect("test wav should finalize");
+    }
+
+    fn write_test_aiff(path: &Path) {
+        use std::io::Write;
+
+        let frames = 128u32;
+        let sample_rate_extended = [0x40, 0x0E, 0xBB, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+        let samples = (0..frames)
+            .map(|frame| {
+                let sample = ((frame as f32 / 128.0) * 2.0) - 1.0;
+                (sample * i16::MAX as f32) as i16
+            })
+            .collect::<Vec<_>>();
+        let data_size = samples.len() as u32 * 2;
+        let ssnd_size = 8 + data_size;
+        let form_size = 4 + (8 + 18) + (8 + ssnd_size);
+        let mut file = fs::File::create(path).expect("test aiff should be created");
+        file.write_all(b"FORM").expect("write FORM");
+        file.write_all(&form_size.to_be_bytes())
+            .expect("write FORM size");
+        file.write_all(b"AIFF").expect("write AIFF signature");
+        file.write_all(b"COMM").expect("write COMM");
+        file.write_all(&18u32.to_be_bytes())
+            .expect("write COMM size");
+        file.write_all(&1u16.to_be_bytes())
+            .expect("write channel count");
+        file.write_all(&frames.to_be_bytes())
+            .expect("write frame count");
+        file.write_all(&16u16.to_be_bytes())
+            .expect("write sample size");
+        file.write_all(&sample_rate_extended)
+            .expect("write sample rate");
+        file.write_all(b"SSND").expect("write SSND");
+        file.write_all(&ssnd_size.to_be_bytes())
+            .expect("write SSND size");
+        file.write_all(&0u32.to_be_bytes()).expect("write offset");
+        file.write_all(&0u32.to_be_bytes())
+            .expect("write block size");
+        for sample in samples {
+            file.write_all(&sample.to_be_bytes())
+                .expect("write AIFF sample");
+        }
+    }
+
+    fn prepare_offline_render_engine_runtime() -> (SignalRuntime, PathBuf) {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+
+        let imported_path = temp_capture_path("offline-render-engine-proof");
+        let content_hash = imported_path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .expect("offline render helper path should have a file stem")
+            .to_string();
+        let asset_id = format!("asset:sha256:{content_hash}");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: asset_id.clone(),
+                content_hash: content_hash.clone(),
+                source_path: imported_path.display().to_string(),
+                file_name: "offline-render-engine-proof.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:offline-engine".into(),
+                media_asset_id: Some(asset_id),
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 0,
+                duration_samples: 64,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                node_count: 4,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "track".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 8,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "bus-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "console-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                contract_count: 4,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "track".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection::default(),
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection::default(),
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "bus-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Bus),
+                            track_lane_id: None,
+                            bus_group_id: Some("mix:master".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "console-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "main:out".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::ConsoleNode),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: Some("console:main".into()),
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .unwrap();
+        runtime.record_recovery_cycle(
+            "sandbox-a",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(2),
+        );
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(32),
+                    ),
+                    latency_samples: 8,
+                    tail_samples: 0,
+                    bypassed: false,
+                }],
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(32)),
+            )
+            .unwrap();
+
+        (runtime, imported_path)
+    }
+
+    fn prepare_offline_render_engine_runtime_without_cached_plugin_render(
+    ) -> (SignalRuntime, PathBuf) {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+
+        let imported_path = temp_capture_path("offline-render-engine-stage-model");
+        let content_hash = imported_path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .expect("offline render helper path should have a file stem")
+            .to_string();
+        let asset_id = format!("asset:sha256:{content_hash}");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: asset_id.clone(),
+                content_hash: content_hash.clone(),
+                source_path: imported_path.display().to_string(),
+                file_name: "offline-render-engine-stage-model.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:offline-engine-stage-model".into(),
+                media_asset_id: Some(asset_id),
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 0,
+                duration_samples: 64,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:offline-render-stage-model".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                }],
+            })
+            .unwrap();
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:offline-render-stage-model".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "plugin".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .unwrap();
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:offline-render-stage-model".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .unwrap();
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+
+        (runtime, imported_path)
+    }
+
+    fn filled_stereo_buffer(sample_rate_hz: u32, frames: usize, value: f32) -> AudioBuffer {
+        let mut buffer = AudioBuffer::new(
+            SampleRate(sample_rate_hz),
+            ChannelLayout::Stereo,
+            FrameCount(frames),
+        );
+        buffer.samples_mut().fill(value);
+        buffer
     }
 
     fn handshake_and_configure_with_disabled_forecast(
@@ -14901,6 +16350,7 @@ mod tests {
             duration_samples: 48_000,
             export_sample_rate_hz: 48_000,
             include_main_mix: true,
+            artifact_root_path: None,
             stem_targets: vec![RuntimeOfflineRenderStemTarget {
                 stem_id: "stem:track:lead".into(),
                 target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
@@ -14960,211 +16410,106 @@ mod tests {
                 RuntimePluginRecallState::Recovered
             ]
         );
+        assert_eq!(preview.chain_contract.chain_count, 1);
+        assert_eq!(preview.chain_contract.stage_count, 2);
+        assert_eq!(preview.chain_contract.pending_render_stage_count, 2);
+        assert_eq!(preview.chain_contract.settling_stage_count, 0);
+        assert_eq!(preview.chain_contract.compensated_stage_count, 0);
+        assert_eq!(preview.chain_contract.total_planned_latency_samples, 36);
+        assert_eq!(preview.chain_contract.total_realized_latency_samples, 0);
+        assert_eq!(preview.chain_contract.total_tail_samples, 0);
+        assert_eq!(preview.chain_contract.recall_stage_count, 2);
+        assert_eq!(preview.chain_contract.warm_recall_stage_count, 1);
+        assert_eq!(preview.chain_contract.recovered_recall_stage_count, 1);
+        assert_eq!(preview.chain_contract.cold_recall_stage_count, 0);
+        assert_eq!(preview.chain_contract.unavailable_recall_stage_count, 0);
+        assert!(preview.chain_contract.summary.contains("pending=2"));
+        assert!(preview.chain_contract.summary.contains("recall=2/"));
         assert!(preview.summary.contains("stems=1"));
         assert!(preview.summary.contains("freeze_artifacts=1"));
+        assert!(preview.summary.contains("chain_contract=chains=1"));
+    }
+
+    #[test]
+    fn runtime_offline_render_contract_preview_rejects_misaligned_chain_and_recall_contracts() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:offline-render-misaligned-contract".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin-a".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                }],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:offline-render-misaligned-contract".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "plugin-a".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:offline-render-misaligned-contract".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin-a".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+
+        let mut handoff = runtime.get_plugin_recall_handoff_snapshot();
+        handoff.stage_count = 0;
+        handoff.stages.clear();
+        handoff.summary = "stages=0".into();
+        let request = RuntimeOfflineRenderRequest {
+            request_id: "render:misaligned".into(),
+            timeline_start_samples: 0,
+            duration_samples: 48_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        };
+
+        let error = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &request,
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &handoff,
+        )
+        .expect_err("misaligned chain and recall contracts should fail");
+        assert_eq!(error.kind, RuntimeErrorKind::InvalidState);
+        assert!(error
+            .message
+            .contains("aligned plugin chain and recall handoff"));
     }
 
     #[test]
     fn runtime_offline_render_renders_main_mix_stem_and_freeze_from_runtime_owned_state() {
-        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
-        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
-
-        let imported_path = temp_capture_path("offline-render-engine-proof");
-        write_test_wav(&imported_path);
-        runtime
-            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
-                asset_id: "asset:sha256:offline-render-engine-proof".to_string(),
-                content_hash: "offline-render-engine-proof".to_string(),
-                source_path: imported_path.display().to_string(),
-                file_name: "offline-render-engine-proof.wav".to_string(),
-                byte_size: fs::metadata(&imported_path).unwrap().len(),
-                sample_rate_hz: 48_000,
-                channel_count: 1,
-                duration_samples: 128,
-                waveform_bin_count: 8,
-            }])
-            .unwrap();
-        runtime
-            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
-                clip_id: "clip:offline-engine".into(),
-                media_asset_id: Some("asset:sha256:offline-render-engine-proof".into()),
-                warp_mode: RuntimeWarpMode::Off,
-                start_samples: 0,
-                duration_samples: 64,
-                fade_in: RuntimeClipFadeEnvelope::default(),
-                fade_out: RuntimeClipFadeEnvelope::default(),
-                clip_gain: RuntimeClipGainEnvelope::default(),
-            }])
-            .unwrap();
-        runtime
-            .apply_graph_projection(GraphProjection {
-                graph_id: "graph:runtime:offline-render-engine".into(),
-                node_count: 4,
-                nodes: vec![
-                    GraphNodeProjection {
-                        node_id: "track".into(),
-                        execution_class: GraphNodeExecutionClass::PureTransform,
-                        latency_samples: 0,
-                        stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
-                    },
-                    GraphNodeProjection {
-                        node_id: "plugin".into(),
-                        execution_class: GraphNodeExecutionClass::PluginBacked,
-                        latency_samples: 8,
-                        stages: vec![GraphStageSpec::HardClip { threshold: 0.9 }],
-                    },
-                    GraphNodeProjection {
-                        node_id: "bus-main".into(),
-                        execution_class: GraphNodeExecutionClass::PureTransform,
-                        latency_samples: 0,
-                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
-                    },
-                    GraphNodeProjection {
-                        node_id: "console-main".into(),
-                        execution_class: GraphNodeExecutionClass::PureTransform,
-                        latency_samples: 0,
-                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
-                    },
-                ],
-            })
-            .unwrap();
-        runtime
-            .apply_graph_contract_projection(GraphContractProjection {
-                graph_id: "graph:runtime:offline-render-engine".into(),
-                contract_count: 4,
-                nodes: vec![
-                    GraphNodeContractProjection {
-                        node_id: "track".into(),
-                        buffer_contract: GraphNodeBufferContractProjection {
-                            input: GraphNodeBusEndpointProjection::default(),
-                            output: GraphNodeBusEndpointProjection {
-                                bus_id: "bus:track:lead".into(),
-                                channels: ChannelLayout::Stereo,
-                            },
-                            ..GraphNodeBufferContractProjection::default()
-                        },
-                        topology: GraphNodeTopologyProjection {
-                            role: Some(GraphNodeTopologyRole::TrackLane),
-                            track_lane_id: Some("track:lead".into()),
-                            bus_group_id: Some("mix:tracks".into()),
-                            console_group_id: None,
-                            send_return_id: None,
-                        },
-                    },
-                    GraphNodeContractProjection {
-                        node_id: "plugin".into(),
-                        buffer_contract: GraphNodeBufferContractProjection {
-                            input: GraphNodeBusEndpointProjection::default(),
-                            output: GraphNodeBusEndpointProjection {
-                                bus_id: "bus:track:lead".into(),
-                                channels: ChannelLayout::Stereo,
-                            },
-                            ..GraphNodeBufferContractProjection::default()
-                        },
-                        topology: GraphNodeTopologyProjection {
-                            role: Some(GraphNodeTopologyRole::TrackLane),
-                            track_lane_id: Some("track:lead".into()),
-                            bus_group_id: Some("mix:tracks".into()),
-                            console_group_id: None,
-                            send_return_id: None,
-                        },
-                    },
-                    GraphNodeContractProjection {
-                        node_id: "bus-main".into(),
-                        buffer_contract: GraphNodeBufferContractProjection {
-                            input: GraphNodeBusEndpointProjection {
-                                bus_id: "bus:track:lead".into(),
-                                channels: ChannelLayout::Stereo,
-                            },
-                            output: GraphNodeBusEndpointProjection {
-                                bus_id: "bus:master".into(),
-                                channels: ChannelLayout::Stereo,
-                            },
-                            ..GraphNodeBufferContractProjection::default()
-                        },
-                        topology: GraphNodeTopologyProjection {
-                            role: Some(GraphNodeTopologyRole::Bus),
-                            track_lane_id: None,
-                            bus_group_id: Some("mix:master".into()),
-                            console_group_id: None,
-                            send_return_id: None,
-                        },
-                    },
-                    GraphNodeContractProjection {
-                        node_id: "console-main".into(),
-                        buffer_contract: GraphNodeBufferContractProjection {
-                            input: GraphNodeBusEndpointProjection {
-                                bus_id: "bus:master".into(),
-                                channels: ChannelLayout::Stereo,
-                            },
-                            output: GraphNodeBusEndpointProjection {
-                                bus_id: "main:out".into(),
-                                channels: ChannelLayout::Stereo,
-                            },
-                            ..GraphNodeBufferContractProjection::default()
-                        },
-                        topology: GraphNodeTopologyProjection {
-                            role: Some(GraphNodeTopologyRole::ConsoleNode),
-                            track_lane_id: None,
-                            bus_group_id: None,
-                            console_group_id: Some("console:main".into()),
-                            send_return_id: None,
-                        },
-                    },
-                ],
-            })
-            .unwrap();
-        runtime
-            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
-                graph_id: "graph:runtime:offline-render-engine".into(),
-                bindings: vec![PluginBackedNodeBinding {
-                    node_id: "plugin".into(),
-                    sandbox_id: "sandbox-a".into(),
-                }],
-            })
-            .unwrap();
-        runtime.record_recovery_cycle(
-            "sandbox-a",
-            RecoveryRestartIntent::CrashRecovery,
-            StopReason::DegradedModeRecovery,
-            Some(1),
-        );
-        runtime.record_plugin_sandbox_lifecycle(
-            "sandbox-a",
-            PluginSandboxLifecycleStage::SandboxRestarted,
-            Some(1),
-        );
-        runtime.record_plugin_sandbox_lifecycle(
-            "sandbox-a",
-            PluginSandboxLifecycleStage::InstancePrepared,
-            Some(2),
-        );
-        runtime
-            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
-                graph_id: "graph:runtime:offline-render-engine".into(),
-                processing_epoch: 1,
-                block_sequence: 1,
-                renders: vec![PluginNodeRender {
-                    node_id: "plugin".into(),
-                    sandbox_id: "sandbox-a".into(),
-                    output: AudioBuffer::new(
-                        SampleRate(48_000),
-                        ChannelLayout::Stereo,
-                        FrameCount(32),
-                    ),
-                    latency_samples: 8,
-                    tail_samples: 0,
-                    bypassed: false,
-                }],
-            })
-            .unwrap();
-        runtime
-            .process_engine_block(
-                1,
-                1,
-                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(32)),
-            )
-            .unwrap();
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
 
         let processed_before = runtime.get_engine_block_snapshot().processed_blocks;
         let handoff = runtime.get_plugin_recall_handoff_snapshot();
@@ -15184,6 +16529,7 @@ mod tests {
                 duration_samples: 64,
                 export_sample_rate_hz: 48_000,
                 include_main_mix: true,
+                artifact_root_path: None,
                 stem_targets: vec![RuntimeOfflineRenderStemTarget {
                     stem_id: "stem:track:lead".into(),
                     target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
@@ -15205,6 +16551,19 @@ mod tests {
         assert_eq!(result.block_count, 1);
         assert_eq!(result.stems.len(), 1);
         assert_eq!(result.freeze_artifacts.len(), 1);
+        assert_eq!(result.manifest.artifact_count, 0);
+        assert!(result.manifest.artifacts.is_empty());
+        assert!(result.manifest.report.is_none());
+        assert!(!result.manifest.materialized);
+        assert_eq!(result.manifest.delegated_execution_request.stage_count, 0);
+        assert!(result.manifest.delegated_execution_receipt.is_none());
+        assert_eq!(result.plugin_execution_boundary.stage_count, 1);
+        assert_eq!(
+            result
+                .plugin_execution_boundary
+                .signal_stage_model_stage_count,
+            1
+        );
         assert_eq!(result.main_mix.as_ref().unwrap().frames().0, 64);
         assert_eq!(result.stems[0].output.frames().0, 64);
         assert_eq!(
@@ -15228,6 +16587,909 @@ mod tests {
         assert!((rendered[2] + 0.492_187_5).abs() < 1.0e-6);
         assert!(result.summary.contains("stems=1"));
         assert!(result.summary.contains("freeze_artifacts=1"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_offline_render_writes_artifact_receipts_and_resamples_export_rate() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-artifacts");
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:artifact-proof".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 24_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                    artifact_id: "freeze:track:lead".into(),
+                    source_stem_id: "stem:track:lead".into(),
+                    recall_selection: RuntimePluginRecallHandoffSelection {
+                        stage_count: handoff.stage_count,
+                        stage_ids: handoff
+                            .stages
+                            .iter()
+                            .map(|stage| stage.stage_id.clone())
+                            .collect(),
+                    },
+                }],
+            })
+            .expect("offline render with artifacts should succeed");
+
+        assert_eq!(result.runtime_frame_count, 64);
+        assert_eq!(result.rendered_frame_count, 32);
+        assert_eq!(result.main_mix.as_ref().unwrap().sample_rate().0, 24_000);
+        assert_eq!(result.main_mix.as_ref().unwrap().frames().0, 32);
+        assert_eq!(result.stems[0].output.sample_rate().0, 24_000);
+        assert_eq!(result.freeze_artifacts[0].output.sample_rate().0, 24_000);
+        assert_eq!(result.manifest.artifact_count, 3);
+        assert!(result.manifest.materialized);
+        assert_eq!(result.manifest.delegated_execution_request.stage_count, 0);
+        assert!(result.manifest.delegated_execution_receipt.is_none());
+        assert_eq!(
+            result.manifest.artifact_root_path.as_deref(),
+            Some(
+                artifact_dir
+                    .to_str()
+                    .expect("artifact dir should be valid utf-8")
+            )
+        );
+        assert_eq!(
+            result
+                .manifest
+                .report
+                .as_ref()
+                .map(|receipt| receipt.artifact_count),
+            Some(3)
+        );
+        assert!(result
+            .manifest
+            .artifacts
+            .iter()
+            .all(|receipt| receipt.sample_rate_hz == 24_000));
+
+        let main_mix_receipt = result
+            .manifest
+            .artifacts
+            .iter()
+            .find(|receipt| receipt.artifact_kind == RuntimeOfflineRenderArtifactKind::MainMix)
+            .expect("main mix receipt should exist");
+        let main_mix_reader =
+            hound::WavReader::open(&main_mix_receipt.output_path).expect("main mix wav readable");
+        assert_eq!(main_mix_reader.spec().sample_rate, 24_000);
+
+        let report_receipt = result
+            .manifest
+            .report
+            .as_ref()
+            .expect("report receipt should exist");
+        let report_body = fs::read_to_string(&report_receipt.report_path).expect("read report");
+        assert!(report_body.contains("\"artifact_count\":3"));
+        assert!(report_body.contains("\"delegated_stage_count\":0"));
+        assert!(report_body.contains("\"rendered_frame_count\":32"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &result.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &result.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_prepare_offline_plugin_execution_boundary_surfaces_runtime_owned_stage_contracts() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let boundary = runtime
+            .prepare_offline_plugin_execution_boundary(&RuntimeOfflineRenderRequest {
+                request_id: "render:boundary".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline plugin boundary should build");
+
+        assert_eq!(boundary.stage_count, 1);
+        assert_eq!(boundary.block_count, 1);
+        assert_eq!(boundary.signal_stage_model_stage_count, 1);
+        assert_eq!(boundary.host_delegate_stage_count, 0);
+        assert_eq!(boundary.fresh_override_stage_count, 1);
+        assert_eq!(boundary.stale_override_stage_count, 0);
+        assert_eq!(
+            boundary.stages[0].execution_owner,
+            RuntimeOfflinePluginExecutionOwner::SignalStageModel
+        );
+        assert!(!boundary.stages[0].host_delegate_required);
+        assert_eq!(
+            boundary.stages[0].override_state,
+            RuntimeOfflinePluginOverrideState::FreshLatestBlock
+        );
+        assert_eq!(boundary.stages[0].sandbox_id.as_deref(), Some("sandbox-a"));
+        assert_eq!(
+            boundary.stages[0].recall_state,
+            RuntimePluginRecallState::Recovered
+        );
+        let delegated_request = runtime
+            .prepare_offline_plugin_delegated_execution_request(&RuntimeOfflineRenderRequest {
+                request_id: "render:boundary".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("delegated execution request should build");
+        assert_eq!(delegated_request.stage_count, 0);
+        assert!(delegated_request.stages.is_empty());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_offline_plugin_delegated_execution_request_filters_host_stages() {
+        let boundary = RuntimeOfflinePluginExecutionBoundary {
+            request_id: "render:delegated-boundary".into(),
+            timeline_start_samples: 0,
+            duration_samples: 128,
+            runtime_sample_rate_hz: 48_000,
+            export_sample_rate_hz: 48_000,
+            block_size: 32,
+            block_count: 4,
+            stage_count: 2,
+            signal_stage_model_stage_count: 1,
+            host_delegate_stage_count: 1,
+            fresh_override_stage_count: 0,
+            stale_override_stage_count: 1,
+            stages: vec![
+                RuntimeOfflinePluginExecutionStageBoundary {
+                    stage_id: RuntimePluginRecallHandoffStageId {
+                        chain_id: "track:lead".into(),
+                        stage_index: 0,
+                        node_id: "plugin-a".into(),
+                    },
+                    node_id: "plugin-a".into(),
+                    chain_id: "track:lead".into(),
+                    stage_index: 0,
+                    sandbox_id: Some("sandbox-a".into()),
+                    track_lane_id: Some("track:lead".into()),
+                    bus_group_id: Some("mix:tracks".into()),
+                    console_group_id: None,
+                    send_return_id: None,
+                    recall_state: RuntimePluginRecallState::Recovered,
+                    recall_payload: RuntimePluginRecallPayload {
+                        sandbox_id: Some("sandbox-a".into()),
+                        recovery_count: 1,
+                        ..RuntimePluginRecallPayload::default()
+                    },
+                    execution_owner: RuntimeOfflinePluginExecutionOwner::HostDelegated,
+                    host_delegate_required: true,
+                    override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
+                    latest_override_processing_epoch: Some(7),
+                    latest_override_block_sequence: Some(12),
+                    summary: "delegated".into(),
+                },
+                RuntimeOfflinePluginExecutionStageBoundary {
+                    stage_id: RuntimePluginRecallHandoffStageId {
+                        chain_id: "track:lead".into(),
+                        stage_index: 1,
+                        node_id: "plugin-b".into(),
+                    },
+                    node_id: "plugin-b".into(),
+                    chain_id: "track:lead".into(),
+                    stage_index: 1,
+                    sandbox_id: Some("sandbox-b".into()),
+                    track_lane_id: Some("track:lead".into()),
+                    bus_group_id: Some("mix:tracks".into()),
+                    console_group_id: None,
+                    send_return_id: None,
+                    recall_state: RuntimePluginRecallState::Warm,
+                    recall_payload: RuntimePluginRecallPayload {
+                        sandbox_id: Some("sandbox-b".into()),
+                        ..RuntimePluginRecallPayload::default()
+                    },
+                    execution_owner: RuntimeOfflinePluginExecutionOwner::SignalStageModel,
+                    host_delegate_required: false,
+                    override_state: RuntimeOfflinePluginOverrideState::NotAvailable,
+                    latest_override_processing_epoch: None,
+                    latest_override_block_sequence: None,
+                    summary: "signal".into(),
+                },
+            ],
+            summary: "boundary".into(),
+        };
+
+        let delegated_request = boundary.delegated_execution_request();
+
+        assert_eq!(delegated_request.request_id, "render:delegated-boundary");
+        assert_eq!(delegated_request.stage_count, 1);
+        assert_eq!(delegated_request.stages[0].node_id, "plugin-a");
+        assert_eq!(
+            delegated_request.stages[0].override_state,
+            RuntimeOfflinePluginOverrideState::StaleLatestBlock
+        );
+        assert_eq!(
+            delegated_request.stages[0]
+                .latest_override_processing_epoch
+                .unwrap(),
+            7
+        );
+    }
+
+    #[test]
+    fn runtime_applies_delegated_execution_receipt_into_manifest_bundle() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-delegated-receipt");
+        let mut result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:delegated-receipt".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should succeed");
+        result.plugin_execution_boundary = RuntimeOfflinePluginExecutionBoundary {
+            request_id: result.request_id.clone(),
+            timeline_start_samples: 0,
+            duration_samples: 64,
+            runtime_sample_rate_hz: 48_000,
+            export_sample_rate_hz: 48_000,
+            block_size: 32,
+            block_count: 2,
+            stage_count: 1,
+            signal_stage_model_stage_count: 0,
+            host_delegate_stage_count: 1,
+            fresh_override_stage_count: 0,
+            stale_override_stage_count: 1,
+            stages: vec![RuntimeOfflinePluginExecutionStageBoundary {
+                stage_id: RuntimePluginRecallHandoffStageId {
+                    chain_id: "track:lead".into(),
+                    stage_index: 0,
+                    node_id: "plugin-a".into(),
+                },
+                node_id: "plugin-a".into(),
+                chain_id: "track:lead".into(),
+                stage_index: 0,
+                sandbox_id: Some("sandbox-a".into()),
+                track_lane_id: Some("track:lead".into()),
+                bus_group_id: Some("mix:tracks".into()),
+                console_group_id: None,
+                send_return_id: None,
+                recall_state: RuntimePluginRecallState::Recovered,
+                recall_payload: RuntimePluginRecallPayload {
+                    sandbox_id: Some("sandbox-a".into()),
+                    recovery_count: 1,
+                    ..RuntimePluginRecallPayload::default()
+                },
+                execution_owner: RuntimeOfflinePluginExecutionOwner::HostDelegated,
+                host_delegate_required: true,
+                override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
+                latest_override_processing_epoch: Some(4),
+                latest_override_block_sequence: Some(9),
+                summary: "delegated".into(),
+            }],
+            summary: "boundary".into(),
+        };
+
+        let updated = runtime
+            .apply_offline_plugin_delegated_execution_receipt(
+                &result,
+                RuntimeOfflinePluginDelegatedExecutionReceipt {
+                    request_id: result.request_id.clone(),
+                    stage_count: 1,
+                    completed_stage_count: 1,
+                    rejected_stage_count: 0,
+                    unavailable_stage_count: 0,
+                    stages: vec![RuntimeOfflinePluginDelegatedExecutionStageReceipt {
+                        stage_id: RuntimePluginRecallHandoffStageId {
+                            chain_id: "track:lead".into(),
+                            stage_index: 0,
+                            node_id: "plugin-a".into(),
+                        },
+                        node_id: "plugin-a".into(),
+                        chain_id: "track:lead".into(),
+                        stage_index: 0,
+                        status: RuntimeOfflinePluginDelegatedExecutionStatus::Completed,
+                        delegate_label: Some("host:offline-sandbox".into()),
+                        detail: Some("rendered by delegated sandbox".into()),
+                        summary: "completed".into(),
+                    }],
+                    summary: "receipt".into(),
+                },
+            )
+            .expect("delegated execution receipt should apply");
+
+        assert_eq!(updated.manifest.delegated_execution_request.stage_count, 1);
+        assert_eq!(
+            updated.manifest.delegated_execution_request.stages[0].node_id,
+            "plugin-a"
+        );
+        assert_eq!(
+            updated
+                .manifest
+                .delegated_execution_receipt
+                .as_ref()
+                .unwrap()
+                .completed_stage_count,
+            1
+        );
+        assert!(updated
+            .manifest
+            .summary
+            .contains("delegated_request_stages=1"));
+        assert!(updated.manifest.summary.contains("delegated_receipt=true"));
+        let report_receipt = updated
+            .manifest
+            .report
+            .as_ref()
+            .expect("materialized report receipt should exist");
+        let report_body = fs::read_to_string(&report_receipt.report_path).expect("read report");
+        assert!(report_body.contains("\"delegated_receipt_stage_count\":1"));
+        assert!(report_body.contains("\"delegate_label\":\"host:offline-sandbox\""));
+        assert!(report_body.contains("\"status\":\"Completed\""));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &updated.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &updated.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_receipts_pin_delegated_unavailable_boundary() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-receipt-unavailable");
+        let mut result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:delegated-unavailable".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should succeed");
+        result.plugin_execution_boundary = RuntimeOfflinePluginExecutionBoundary {
+            request_id: result.request_id.clone(),
+            timeline_start_samples: 0,
+            duration_samples: 64,
+            runtime_sample_rate_hz: 48_000,
+            export_sample_rate_hz: 48_000,
+            block_size: 32,
+            block_count: 2,
+            stage_count: 1,
+            signal_stage_model_stage_count: 0,
+            host_delegate_stage_count: 1,
+            fresh_override_stage_count: 0,
+            stale_override_stage_count: 1,
+            stages: vec![RuntimeOfflinePluginExecutionStageBoundary {
+                stage_id: RuntimePluginRecallHandoffStageId {
+                    chain_id: "track:lead".into(),
+                    stage_index: 0,
+                    node_id: "plugin-a".into(),
+                },
+                node_id: "plugin-a".into(),
+                chain_id: "track:lead".into(),
+                stage_index: 0,
+                sandbox_id: Some("sandbox-a".into()),
+                track_lane_id: Some("track:lead".into()),
+                bus_group_id: Some("mix:tracks".into()),
+                console_group_id: None,
+                send_return_id: None,
+                recall_state: RuntimePluginRecallState::Recovered,
+                recall_payload: RuntimePluginRecallPayload {
+                    sandbox_id: Some("sandbox-a".into()),
+                    recovery_count: 1,
+                    ..RuntimePluginRecallPayload::default()
+                },
+                execution_owner: RuntimeOfflinePluginExecutionOwner::HostDelegated,
+                host_delegate_required: true,
+                override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
+                latest_override_processing_epoch: Some(4),
+                latest_override_block_sequence: Some(9),
+                summary: "delegated".into(),
+            }],
+            summary: "boundary".into(),
+        };
+
+        let updated = runtime
+            .apply_offline_plugin_delegated_execution_receipt(
+                &result,
+                RuntimeOfflinePluginDelegatedExecutionReceipt {
+                    request_id: result.request_id.clone(),
+                    stage_count: 1,
+                    completed_stage_count: 0,
+                    rejected_stage_count: 0,
+                    unavailable_stage_count: 1,
+                    stages: vec![RuntimeOfflinePluginDelegatedExecutionStageReceipt {
+                        stage_id: RuntimePluginRecallHandoffStageId {
+                            chain_id: "track:lead".into(),
+                            stage_index: 0,
+                            node_id: "plugin-a".into(),
+                        },
+                        node_id: "plugin-a".into(),
+                        chain_id: "track:lead".into(),
+                        stage_index: 0,
+                        status: RuntimeOfflinePluginDelegatedExecutionStatus::Unavailable,
+                        delegate_label: Some("host:offline-sandbox".into()),
+                        detail: Some("delegate not available during degraded recovery".into()),
+                        summary: "unavailable".into(),
+                    }],
+                    summary: "receipt".into(),
+                },
+            )
+            .expect("delegated unavailable receipt should apply");
+
+        let profiling = updated.profiling_receipt();
+        let soak = updated.soak_receipt();
+        assert_eq!(profiling.delegated_stage_count, 1);
+        assert_eq!(profiling.stale_override_stage_count, 1);
+        assert_eq!(profiling.artifact_count, 1);
+        assert!(profiling.report_materialized);
+        assert!(profiling
+            .render_json()
+            .contains("\"delegated_stage_count\":1"));
+        assert_eq!(soak.delegated_stage_count, 1);
+        assert_eq!(soak.delegated_completed_stage_count, 0);
+        assert_eq!(soak.delegated_rejected_stage_count, 0);
+        assert_eq!(soak.delegated_unavailable_stage_count, 1);
+        assert!(soak
+            .render_json()
+            .contains("\"delegated_unavailable_stage_count\":1"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &updated.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &updated.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_applies_delegated_execution_outcome_into_runtime_owned_finalization() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-delegated-outcome");
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let mut result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:delegated-outcome".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                    artifact_id: "freeze:track:lead".into(),
+                    source_stem_id: "stem:track:lead".into(),
+                    recall_selection: RuntimePluginRecallHandoffSelection {
+                        stage_count: handoff.stage_count,
+                        stage_ids: handoff
+                            .stages
+                            .iter()
+                            .map(|stage| stage.stage_id.clone())
+                            .collect(),
+                    },
+                }],
+            })
+            .expect("offline render should succeed");
+        result.plugin_execution_boundary = RuntimeOfflinePluginExecutionBoundary {
+            request_id: result.request_id.clone(),
+            timeline_start_samples: 0,
+            duration_samples: 64,
+            runtime_sample_rate_hz: 48_000,
+            export_sample_rate_hz: 48_000,
+            block_size: 32,
+            block_count: 2,
+            stage_count: 1,
+            signal_stage_model_stage_count: 0,
+            host_delegate_stage_count: 1,
+            fresh_override_stage_count: 0,
+            stale_override_stage_count: 1,
+            stages: vec![RuntimeOfflinePluginExecutionStageBoundary {
+                stage_id: RuntimePluginRecallHandoffStageId {
+                    chain_id: "track:lead".into(),
+                    stage_index: 0,
+                    node_id: "plugin-a".into(),
+                },
+                node_id: "plugin-a".into(),
+                chain_id: "track:lead".into(),
+                stage_index: 0,
+                sandbox_id: Some("sandbox-a".into()),
+                track_lane_id: Some("track:lead".into()),
+                bus_group_id: Some("mix:tracks".into()),
+                console_group_id: None,
+                send_return_id: None,
+                recall_state: RuntimePluginRecallState::Recovered,
+                recall_payload: RuntimePluginRecallPayload {
+                    sandbox_id: Some("sandbox-a".into()),
+                    recovery_count: 1,
+                    ..RuntimePluginRecallPayload::default()
+                },
+                execution_owner: RuntimeOfflinePluginExecutionOwner::HostDelegated,
+                host_delegate_required: true,
+                override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
+                latest_override_processing_epoch: Some(4),
+                latest_override_block_sequence: Some(9),
+                summary: "delegated".into(),
+            }],
+            summary: "boundary".into(),
+        };
+
+        let updated = runtime
+            .apply_offline_plugin_delegated_execution_outcome(
+                &result,
+                RuntimeOfflinePluginDelegatedExecutionOutcome {
+                    receipt: RuntimeOfflinePluginDelegatedExecutionReceipt {
+                        request_id: result.request_id.clone(),
+                        stage_count: 1,
+                        completed_stage_count: 1,
+                        rejected_stage_count: 0,
+                        unavailable_stage_count: 0,
+                        stages: vec![RuntimeOfflinePluginDelegatedExecutionStageReceipt {
+                            stage_id: RuntimePluginRecallHandoffStageId {
+                                chain_id: "track:lead".into(),
+                                stage_index: 0,
+                                node_id: "plugin-a".into(),
+                            },
+                            node_id: "plugin-a".into(),
+                            chain_id: "track:lead".into(),
+                            stage_index: 0,
+                            status: RuntimeOfflinePluginDelegatedExecutionStatus::Completed,
+                            delegate_label: Some("host:offline-sandbox".into()),
+                            detail: Some("rendered by delegated sandbox".into()),
+                            summary: "completed".into(),
+                        }],
+                        summary: "receipt".into(),
+                    },
+                    merge: RuntimeOfflinePluginDelegatedExecutionMerge {
+                        request_id: result.request_id.clone(),
+                        main_mix: Some(filled_stereo_buffer(48_000, 64, 0.2)),
+                        stems: vec![RuntimeOfflinePluginDelegatedStemOutput {
+                            stem_id: "stem:track:lead".into(),
+                            output: filled_stereo_buffer(48_000, 64, 0.1),
+                            summary: "stem override".into(),
+                        }],
+                        freeze_artifacts: vec![RuntimeOfflinePluginDelegatedFreezeArtifactOutput {
+                            artifact_id: "freeze:track:lead".into(),
+                            output: filled_stereo_buffer(48_000, 64, 0.05),
+                            summary: "freeze override".into(),
+                        }],
+                        summary: "merge".into(),
+                    },
+                    summary: "outcome".into(),
+                },
+            )
+            .expect("delegated execution outcome should apply");
+
+        assert!((updated.main_mix_peak_level.unwrap() - 0.2).abs() < 1.0e-6);
+        assert!((updated.stems[0].peak_level - 0.1).abs() < 1.0e-6);
+        assert!((updated.freeze_artifacts[0].peak_level - 0.05).abs() < 1.0e-6);
+        assert_eq!(updated.main_mix.as_ref().unwrap().samples()[0], 0.2);
+        assert_eq!(updated.stems[0].output.samples()[0], 0.1);
+        assert_eq!(updated.freeze_artifacts[0].output.samples()[0], 0.05);
+        let report_receipt = updated
+            .manifest
+            .report
+            .as_ref()
+            .expect("materialized report receipt should exist");
+        let report_body = fs::read_to_string(&report_receipt.report_path).expect("read report");
+        assert!(report_body.contains("\"delegate_label\":\"host:offline-sandbox\""));
+        assert!(report_body.contains("\"peak_level\":0.200000"));
+        assert!(report_body.contains("\"peak_level\":0.100000"));
+        assert!(report_body.contains("\"peak_level\":0.050000"));
+
+        let main_mix_receipt = updated
+            .manifest
+            .artifacts
+            .iter()
+            .find(|receipt| receipt.artifact_kind == RuntimeOfflineRenderArtifactKind::MainMix)
+            .expect("main mix receipt should exist");
+        let mut main_mix_reader =
+            hound::WavReader::open(&main_mix_receipt.output_path).expect("main mix wav readable");
+        let first_sample = main_mix_reader
+            .samples::<f32>()
+            .next()
+            .expect("main mix wav should contain samples")
+            .expect("main mix wav sample should decode");
+        assert!((first_sample - 0.2).abs() < 1.0e-6);
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &updated.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &updated.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_decodes_non_wav_cached_media_assets() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+
+        let imported_path = temp_media_path("offline-render-aiff", "aiff");
+        let content_hash = imported_path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .expect("offline render AIFF helper path should have a file stem")
+            .to_string();
+        let asset_id = format!("asset:sha256:{content_hash}");
+        write_test_aiff(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: asset_id.clone(),
+                content_hash: content_hash.clone(),
+                source_path: imported_path.display().to_string(),
+                file_name: "offline-render-aiff.aiff".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:offline-render-aiff".into(),
+                media_asset_id: Some(asset_id),
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 0,
+                duration_samples: 64,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:offline-render-aiff".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "track".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                }],
+            })
+            .unwrap();
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:offline-render-aiff".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "track".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .unwrap();
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:aiff".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should decode AIFF media");
+
+        assert_eq!(result.main_mix.as_ref().unwrap().sample_rate().0, 48_000);
+        assert_eq!(result.main_mix.as_ref().unwrap().frames().0, 64);
+        assert!(result.main_mix_peak_level.unwrap() > 0.45);
+        assert!(result.main_mix_rms_level.unwrap() > 0.15);
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_offline_render_falls_back_to_plugin_stage_model_without_cached_render() {
+        let (runtime, imported_path) =
+            prepare_offline_render_engine_runtime_without_cached_plugin_render();
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:stage-model".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should fall back to the plugin stage model");
+
+        assert_eq!(result.rendered_frame_count, 64);
+        assert!(result.main_mix_peak_level.unwrap() <= 0.5 + 1.0e-6);
+        assert!(result.main_mix_peak_level.unwrap() >= 0.49);
+        let first_samples = &result.main_mix.as_ref().unwrap().samples()[..4];
+        assert!((first_samples[0] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[1] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[2] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[3] + 0.5).abs() < 1.0e-6);
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_offline_render_ignores_stale_plugin_override_and_uses_stage_model() {
+        let (mut runtime, imported_path) =
+            prepare_offline_render_engine_runtime_without_cached_plugin_render();
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:offline-render-stage-model".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(32),
+                    ),
+                    latency_samples: 0,
+                    tail_samples: 0,
+                    bypassed: false,
+                }],
+            })
+            .expect("seed a zero-valued live plugin render override");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(32)),
+            )
+            .expect("consume the seeded live plugin render override");
+        runtime
+            .process_engine_block(
+                1,
+                2,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(32)),
+            )
+            .expect("advance the live engine beyond the last plugin render override");
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:stale-plugin-override".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should fall back after the live override becomes stale");
+
+        assert_eq!(result.rendered_frame_count, 64);
+        assert!((result.main_mix_peak_level.unwrap() - 0.5).abs() < 1.0e-6);
+        assert_eq!(result.plugin_execution_boundary.stage_count, 1);
+        assert_eq!(
+            result.plugin_execution_boundary.fresh_override_stage_count,
+            0
+        );
+        assert_eq!(
+            result.plugin_execution_boundary.stale_override_stage_count,
+            1
+        );
+        assert_eq!(
+            result.plugin_execution_boundary.stages[0].override_state,
+            RuntimeOfflinePluginOverrideState::StaleLatestBlock
+        );
+        let first_samples = &result.main_mix.as_ref().unwrap().samples()[..6];
+        assert!((first_samples[0] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[1] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[2] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[3] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[4] + 0.5).abs() < 1.0e-6);
+        assert!((first_samples[5] + 0.5).abs() < 1.0e-6);
 
         let _ = fs::remove_file(imported_path);
         if let Some(path) = runtime
@@ -15339,6 +17601,25 @@ mod tests {
             RuntimePreworkServiceState::Yielding
         );
         assert!(snapshot.prework_service_yield_count >= 1);
+
+        let supervisor = crate::interfaces::RuntimeSupervisorReport::capture(
+            &runtime,
+            &RuntimeEventRecorder::default(),
+        );
+        let profiling = supervisor.profiling_receipt();
+        let soak = supervisor.soak_receipt();
+        assert!(profiling.plugin_gate_active);
+        assert_eq!(profiling.degraded_bound_plugin_sandboxes, 1);
+        assert_eq!(profiling.missing_bound_plugin_sandboxes, 0);
+        assert_eq!(profiling.plugin_chain_stage_count, 1);
+        assert!(profiling
+            .render_json()
+            .contains("\"plugin_gate_active\":true"));
+        assert!(profiling
+            .render_json()
+            .contains("\"degraded_bound_plugin_sandboxes\":1"));
+        assert_eq!(soak.plugin_fault_count, 0);
+        assert_eq!(soak.plugin_quarantined_sandbox_count, 0);
     }
 
     #[test]
@@ -15723,6 +18004,67 @@ mod tests {
         let json = supervisor.render_json();
         assert!(json.contains("\"restart_count\":1"));
         assert!(json.contains("\"scheduler_summary\":{"));
+    }
+
+    #[test]
+    fn runtime_supervisor_report_derives_profiling_and_soak_receipts() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:profiling-receipt");
+        runtime.set_cpu_load_percent(7.25);
+        runtime.set_graph_latency_ms(3.5);
+        runtime.start().expect("start runtime");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 1),
+            )
+            .expect("process profiling block");
+
+        let mut recorder = RuntimeEventRecorder::default();
+        RuntimeEventSink::push(
+            &mut recorder,
+            RuntimeEvent::RecoveryCycle {
+                sandbox_id: "sandbox-profile".into(),
+                intent: RecoveryRestartIntent::WatchdogRecovery,
+                stop_reason: StopReason::DegradedModeRecovery,
+                processing_epoch: Some(1),
+            },
+        );
+
+        let supervisor = crate::interfaces::RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let profiling = supervisor.profiling_receipt();
+        let soak = supervisor.soak_receipt();
+
+        assert_eq!(profiling.sample_rate_hz, 48_000);
+        assert_eq!(profiling.block_size, 256);
+        assert_eq!(profiling.engine_processed_blocks, 1);
+        assert_eq!(profiling.engine_node_count, 2);
+        assert_eq!(profiling.engine_stage_count, 2);
+        assert!(!profiling.readiness_degraded);
+        assert!(!profiling.transport_gate_active);
+        assert!(!profiling.plugin_gate_active);
+        assert_eq!(profiling.plugin_chain_stage_count, 0);
+        assert_eq!(profiling.plugin_chain_degraded_stage_count, 0);
+        assert!((profiling.runtime_cpu_load_percent - 7.25).abs() < 1.0e-6);
+        assert!((profiling.runtime_graph_latency_ms - 3.5).abs() < 1.0e-6);
+        assert_eq!(profiling.host_callback_count, None);
+        assert!(profiling
+            .render_json()
+            .contains("\"runtime_graph_latency_ms\":3.5"));
+
+        assert_eq!(soak.event_stream_count, 1);
+        assert!(!soak.readiness_degraded);
+        assert_eq!(soak.recovery_event_count, 1);
+        assert_eq!(soak.plugin_quarantined_sandbox_count, 0);
+        assert_eq!(soak.recall_stage_count, 0);
+        assert_eq!(
+            soak.last_recovery_intent,
+            Some(RecoveryRestartIntent::WatchdogRecovery)
+        );
+        assert_eq!(soak.last_stop_reason, None);
+        assert!(soak.render_json().contains("\"recovery_event_count\":1"));
     }
 
     #[test]
@@ -18276,6 +20618,47 @@ mod tests {
     #[test]
     fn runtime_tracks_plugin_lifecycle_recovery_and_quarantine_state() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        let recorder = RuntimeEventRecorder::default();
+        runtime.subscribe(Box::new(recorder.clone()));
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:lifecycle-receipts".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin-a".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                }],
+            })
+            .expect("apply lifecycle receipt graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:lifecycle-receipts".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "plugin-a".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply lifecycle receipt contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:lifecycle-receipts".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin-a".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .expect("apply lifecycle receipt binding");
 
         runtime.record_plugin_sandbox_lifecycle(
             "sandbox-a",
@@ -18378,6 +20761,25 @@ mod tests {
             RuntimePluginLifecycleState::Quarantined
         );
         assert_eq!(quarantined.sandboxes[0].fault_count, 2);
+
+        let supervisor = crate::interfaces::RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let profiling = supervisor.profiling_receipt();
+        let soak = supervisor.soak_receipt();
+        assert_eq!(profiling.plugin_chain_stage_count, 1);
+        assert_eq!(profiling.plugin_chain_degraded_stage_count, 1);
+        assert_eq!(soak.plugin_fault_count, 2);
+        assert_eq!(soak.recovery_event_count, 1);
+        assert_eq!(soak.plugin_quarantined_sandbox_count, 1);
+        assert_eq!(soak.recall_stage_count, 1);
+        assert_eq!(soak.recovered_recall_stage_count, 0);
+        assert_eq!(soak.unavailable_recall_stage_count, 1);
+        assert_eq!(
+            soak.last_recovery_intent,
+            Some(RecoveryRestartIntent::CrashRecovery)
+        );
+        assert!(soak
+            .render_json()
+            .contains("\"plugin_quarantined_sandbox_count\":1"));
     }
 
     #[test]

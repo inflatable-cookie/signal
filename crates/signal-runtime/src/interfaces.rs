@@ -1,7 +1,7 @@
 //! Typed runtime-host interfaces for embedded Signal assemblies.
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     sync::{Arc, Mutex},
 };
 
@@ -1171,6 +1171,7 @@ pub struct RuntimeOfflineRenderRequest {
     pub duration_samples: u32,
     pub export_sample_rate_hz: u32,
     pub include_main_mix: bool,
+    pub artifact_root_path: Option<String>,
     pub stem_targets: Vec<RuntimeOfflineRenderStemTarget>,
     pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactRequest>,
 }
@@ -1195,6 +1196,28 @@ pub struct RuntimeOfflineFreezeArtifactPreview {
     pub summary: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderChainDependencyPreview {
+    pub chain_count: usize,
+    pub stage_count: usize,
+    pub pending_render_stage_count: usize,
+    pub settling_stage_count: usize,
+    pub compensated_stage_count: usize,
+    pub degraded_stage_count: usize,
+    pub bypassed_stage_count: usize,
+    pub missing_binding_stage_count: usize,
+    pub total_planned_latency_samples: u32,
+    pub total_realized_latency_samples: u32,
+    pub total_tail_samples: u32,
+    pub recall_stage_count: usize,
+    pub unbound_recall_stage_count: usize,
+    pub cold_recall_stage_count: usize,
+    pub warm_recall_stage_count: usize,
+    pub recovered_recall_stage_count: usize,
+    pub unavailable_recall_stage_count: usize,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeOfflineRenderContractPreview {
     pub request_id: String,
@@ -1209,6 +1232,7 @@ pub struct RuntimeOfflineRenderContractPreview {
     pub freeze_artifact_count: usize,
     pub resolved_tempo_bpm: f64,
     pub resolved_tempo_source: RuntimeTempoSource,
+    pub chain_contract: RuntimeOfflineRenderChainDependencyPreview,
     pub stem_targets: Vec<RuntimeOfflineRenderStemPreview>,
     pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactPreview>,
     pub summary: String,
@@ -1241,6 +1265,7 @@ pub struct RuntimeOfflineFreezeArtifactResult {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeOfflineRenderResult {
     pub request_id: String,
+    pub runtime_frame_count: usize,
     pub rendered_frame_count: usize,
     pub block_count: usize,
     pub export_sample_rate_hz: u32,
@@ -1249,7 +1274,522 @@ pub struct RuntimeOfflineRenderResult {
     pub main_mix_rms_level: Option<f32>,
     pub stems: Vec<RuntimeOfflineRenderStemResult>,
     pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactResult>,
+    pub manifest: RuntimeOfflineRenderManifest,
+    pub plugin_execution_boundary: RuntimeOfflinePluginExecutionBoundary,
     pub contract_preview: RuntimeOfflineRenderContractPreview,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineRenderProfilingReceipt {
+    pub request_id: String,
+    pub runtime_frame_count: usize,
+    pub rendered_frame_count: usize,
+    pub block_count: usize,
+    pub export_sample_rate_hz: u32,
+    pub stem_count: usize,
+    pub freeze_artifact_count: usize,
+    pub main_mix_peak_level: Option<f32>,
+    pub main_mix_rms_level: Option<f32>,
+    pub chain_stage_count: usize,
+    pub chain_degraded_stage_count: usize,
+    pub chain_missing_binding_stage_count: usize,
+    pub chain_total_planned_latency_samples: u32,
+    pub chain_total_realized_latency_samples: u32,
+    pub chain_total_tail_samples: u32,
+    pub delegated_stage_count: usize,
+    pub fresh_override_stage_count: usize,
+    pub stale_override_stage_count: usize,
+    pub artifact_count: usize,
+    pub report_materialized: bool,
+    pub summary: String,
+}
+
+impl RuntimeOfflineRenderProfilingReceipt {
+    pub fn render_multiline(&self) -> String {
+        format!(
+            concat!(
+                "request_id={}",
+                "\nruntime_frame_count={}",
+                "\nrendered_frame_count={}",
+                "\nblock_count={}",
+                "\nexport_sample_rate_hz={}",
+                "\nstem_count={}",
+                "\nfreeze_artifact_count={}",
+                "\nmain_mix_peak_level={:?}",
+                "\nmain_mix_rms_level={:?}",
+                "\nchain_stage_count={}",
+                "\nchain_degraded_stage_count={}",
+                "\nchain_missing_binding_stage_count={}",
+                "\nchain_total_planned_latency_samples={}",
+                "\nchain_total_realized_latency_samples={}",
+                "\nchain_total_tail_samples={}",
+                "\ndelegated_stage_count={}",
+                "\nfresh_override_stage_count={}",
+                "\nstale_override_stage_count={}",
+                "\nartifact_count={}",
+                "\nreport_materialized={}",
+                "\nsummary={}",
+            ),
+            self.request_id,
+            self.runtime_frame_count,
+            self.rendered_frame_count,
+            self.block_count,
+            self.export_sample_rate_hz,
+            self.stem_count,
+            self.freeze_artifact_count,
+            self.main_mix_peak_level,
+            self.main_mix_rms_level,
+            self.chain_stage_count,
+            self.chain_degraded_stage_count,
+            self.chain_missing_binding_stage_count,
+            self.chain_total_planned_latency_samples,
+            self.chain_total_realized_latency_samples,
+            self.chain_total_tail_samples,
+            self.delegated_stage_count,
+            self.fresh_override_stage_count,
+            self.stale_override_stage_count,
+            self.artifact_count,
+            self.report_materialized,
+            self.summary,
+        )
+    }
+
+    pub fn render_json(&self) -> String {
+        format!(
+            concat!(
+                "{{",
+                "\"request_id\":{},",
+                "\"runtime_frame_count\":{},",
+                "\"rendered_frame_count\":{},",
+                "\"block_count\":{},",
+                "\"export_sample_rate_hz\":{},",
+                "\"stem_count\":{},",
+                "\"freeze_artifact_count\":{},",
+                "\"main_mix_peak_level\":{},",
+                "\"main_mix_rms_level\":{},",
+                "\"chain_stage_count\":{},",
+                "\"chain_degraded_stage_count\":{},",
+                "\"chain_missing_binding_stage_count\":{},",
+                "\"chain_total_planned_latency_samples\":{},",
+                "\"chain_total_realized_latency_samples\":{},",
+                "\"chain_total_tail_samples\":{},",
+                "\"delegated_stage_count\":{},",
+                "\"fresh_override_stage_count\":{},",
+                "\"stale_override_stage_count\":{},",
+                "\"artifact_count\":{},",
+                "\"report_materialized\":{},",
+                "\"summary\":{}",
+                "}}"
+            ),
+            json_string(&self.request_id),
+            self.runtime_frame_count,
+            self.rendered_frame_count,
+            self.block_count,
+            self.export_sample_rate_hz,
+            self.stem_count,
+            self.freeze_artifact_count,
+            json_option_f32(self.main_mix_peak_level),
+            json_option_f32(self.main_mix_rms_level),
+            self.chain_stage_count,
+            self.chain_degraded_stage_count,
+            self.chain_missing_binding_stage_count,
+            self.chain_total_planned_latency_samples,
+            self.chain_total_realized_latency_samples,
+            self.chain_total_tail_samples,
+            self.delegated_stage_count,
+            self.fresh_override_stage_count,
+            self.stale_override_stage_count,
+            self.artifact_count,
+            self.report_materialized,
+            json_option_string(Some(self.summary.as_str())),
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderSoakReceipt {
+    pub request_id: String,
+    pub clip_count: usize,
+    pub ready_clip_count: usize,
+    pub freeze_artifact_count: usize,
+    pub recall_stage_count: usize,
+    pub recovered_recall_stage_count: usize,
+    pub unavailable_recall_stage_count: usize,
+    pub delegated_stage_count: usize,
+    pub delegated_completed_stage_count: usize,
+    pub delegated_rejected_stage_count: usize,
+    pub delegated_unavailable_stage_count: usize,
+    pub materialized_artifact_count: usize,
+    pub report_materialized: bool,
+    pub summary: String,
+}
+
+impl RuntimeOfflineRenderSoakReceipt {
+    pub fn render_multiline(&self) -> String {
+        format!(
+            concat!(
+                "request_id={}",
+                "\nclip_count={}",
+                "\nready_clip_count={}",
+                "\nfreeze_artifact_count={}",
+                "\nrecall_stage_count={}",
+                "\nrecovered_recall_stage_count={}",
+                "\nunavailable_recall_stage_count={}",
+                "\ndelegated_stage_count={}",
+                "\ndelegated_completed_stage_count={}",
+                "\ndelegated_rejected_stage_count={}",
+                "\ndelegated_unavailable_stage_count={}",
+                "\nmaterialized_artifact_count={}",
+                "\nreport_materialized={}",
+                "\nsummary={}",
+            ),
+            self.request_id,
+            self.clip_count,
+            self.ready_clip_count,
+            self.freeze_artifact_count,
+            self.recall_stage_count,
+            self.recovered_recall_stage_count,
+            self.unavailable_recall_stage_count,
+            self.delegated_stage_count,
+            self.delegated_completed_stage_count,
+            self.delegated_rejected_stage_count,
+            self.delegated_unavailable_stage_count,
+            self.materialized_artifact_count,
+            self.report_materialized,
+            self.summary,
+        )
+    }
+
+    pub fn render_json(&self) -> String {
+        format!(
+            concat!(
+                "{{",
+                "\"request_id\":{},",
+                "\"clip_count\":{},",
+                "\"ready_clip_count\":{},",
+                "\"freeze_artifact_count\":{},",
+                "\"recall_stage_count\":{},",
+                "\"recovered_recall_stage_count\":{},",
+                "\"unavailable_recall_stage_count\":{},",
+                "\"delegated_stage_count\":{},",
+                "\"delegated_completed_stage_count\":{},",
+                "\"delegated_rejected_stage_count\":{},",
+                "\"delegated_unavailable_stage_count\":{},",
+                "\"materialized_artifact_count\":{},",
+                "\"report_materialized\":{},",
+                "\"summary\":{}",
+                "}}"
+            ),
+            json_string(&self.request_id),
+            self.clip_count,
+            self.ready_clip_count,
+            self.freeze_artifact_count,
+            self.recall_stage_count,
+            self.recovered_recall_stage_count,
+            self.unavailable_recall_stage_count,
+            self.delegated_stage_count,
+            self.delegated_completed_stage_count,
+            self.delegated_rejected_stage_count,
+            self.delegated_unavailable_stage_count,
+            self.materialized_artifact_count,
+            self.report_materialized,
+            json_option_string(Some(self.summary.as_str())),
+        )
+    }
+}
+
+impl RuntimeOfflineRenderResult {
+    pub fn profiling_receipt(&self) -> RuntimeOfflineRenderProfilingReceipt {
+        RuntimeOfflineRenderProfilingReceipt {
+            request_id: self.request_id.clone(),
+            runtime_frame_count: self.runtime_frame_count,
+            rendered_frame_count: self.rendered_frame_count,
+            block_count: self.block_count,
+            export_sample_rate_hz: self.export_sample_rate_hz,
+            stem_count: self.stems.len(),
+            freeze_artifact_count: self.freeze_artifacts.len(),
+            main_mix_peak_level: self.main_mix_peak_level,
+            main_mix_rms_level: self.main_mix_rms_level,
+            chain_stage_count: self.contract_preview.chain_contract.stage_count,
+            chain_degraded_stage_count: self.contract_preview.chain_contract.degraded_stage_count,
+            chain_missing_binding_stage_count: self
+                .contract_preview
+                .chain_contract
+                .missing_binding_stage_count,
+            chain_total_planned_latency_samples: self
+                .contract_preview
+                .chain_contract
+                .total_planned_latency_samples,
+            chain_total_realized_latency_samples: self
+                .contract_preview
+                .chain_contract
+                .total_realized_latency_samples,
+            chain_total_tail_samples: self.contract_preview.chain_contract.total_tail_samples,
+            delegated_stage_count: self.plugin_execution_boundary.host_delegate_stage_count,
+            fresh_override_stage_count: self.plugin_execution_boundary.fresh_override_stage_count,
+            stale_override_stage_count: self.plugin_execution_boundary.stale_override_stage_count,
+            artifact_count: self.manifest.artifact_count,
+            report_materialized: self.manifest.report.is_some(),
+            summary: format!(
+                "request={} runtime_frames={} rendered_frames={} blocks={} export_rate={} stems={} freeze_artifacts={} chain={}/degraded={}/missing={} delegated={} overrides={}/{} artifacts={} report={}",
+                self.request_id,
+                self.runtime_frame_count,
+                self.rendered_frame_count,
+                self.block_count,
+                self.export_sample_rate_hz,
+                self.stems.len(),
+                self.freeze_artifacts.len(),
+                self.contract_preview.chain_contract.stage_count,
+                self.contract_preview.chain_contract.degraded_stage_count,
+                self.contract_preview.chain_contract.missing_binding_stage_count,
+                self.plugin_execution_boundary.host_delegate_stage_count,
+                self.plugin_execution_boundary.fresh_override_stage_count,
+                self.plugin_execution_boundary.stale_override_stage_count,
+                self.manifest.artifact_count,
+                self.manifest.report.is_some(),
+            ),
+        }
+    }
+
+    pub fn soak_receipt(&self) -> RuntimeOfflineRenderSoakReceipt {
+        let delegated_receipt = self.manifest.delegated_execution_receipt.as_ref();
+        RuntimeOfflineRenderSoakReceipt {
+            request_id: self.request_id.clone(),
+            clip_count: self.contract_preview.clip_count,
+            ready_clip_count: self.contract_preview.ready_clip_count,
+            freeze_artifact_count: self.freeze_artifacts.len(),
+            recall_stage_count: self.contract_preview.chain_contract.recall_stage_count,
+            recovered_recall_stage_count: self
+                .contract_preview
+                .chain_contract
+                .recovered_recall_stage_count,
+            unavailable_recall_stage_count: self
+                .contract_preview
+                .chain_contract
+                .unavailable_recall_stage_count,
+            delegated_stage_count: self.plugin_execution_boundary.host_delegate_stage_count,
+            delegated_completed_stage_count: delegated_receipt
+                .map(|receipt| receipt.completed_stage_count)
+                .unwrap_or(0),
+            delegated_rejected_stage_count: delegated_receipt
+                .map(|receipt| receipt.rejected_stage_count)
+                .unwrap_or(0),
+            delegated_unavailable_stage_count: delegated_receipt
+                .map(|receipt| receipt.unavailable_stage_count)
+                .unwrap_or(0),
+            materialized_artifact_count: self.manifest.artifact_count,
+            report_materialized: self.manifest.report.is_some(),
+            summary: format!(
+                "request={} clips={}/{} freeze_artifacts={} recall={}/recovered={}/unavailable={} delegated={}/{}/{}/{} artifacts={} report={}",
+                self.request_id,
+                self.contract_preview.ready_clip_count,
+                self.contract_preview.clip_count,
+                self.freeze_artifacts.len(),
+                self.contract_preview.chain_contract.recall_stage_count,
+                self.contract_preview.chain_contract.recovered_recall_stage_count,
+                self.contract_preview.chain_contract.unavailable_recall_stage_count,
+                self.plugin_execution_boundary.host_delegate_stage_count,
+                delegated_receipt
+                    .map(|receipt| receipt.completed_stage_count)
+                    .unwrap_or(0),
+                delegated_receipt
+                    .map(|receipt| receipt.rejected_stage_count)
+                    .unwrap_or(0),
+                delegated_receipt
+                    .map(|receipt| receipt.unavailable_stage_count)
+                    .unwrap_or(0),
+                self.manifest.artifact_count,
+                self.manifest.report.is_some(),
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeOfflineRenderArtifactKind {
+    MainMix,
+    Stem,
+    FreezeArtifact,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineRenderArtifactReceipt {
+    pub artifact_id: String,
+    pub artifact_kind: RuntimeOfflineRenderArtifactKind,
+    pub output_path: String,
+    pub sample_rate_hz: u32,
+    pub channel_count: usize,
+    pub frame_count: usize,
+    pub byte_size: u64,
+    pub peak_level: f32,
+    pub rms_level: f32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderReportReceipt {
+    pub request_id: String,
+    pub report_path: String,
+    pub artifact_count: usize,
+    pub byte_size: u64,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeOfflineRenderManifest {
+    pub request_id: String,
+    pub artifact_root_path: Option<String>,
+    pub materialized: bool,
+    pub artifact_count: usize,
+    pub artifacts: Vec<RuntimeOfflineRenderArtifactReceipt>,
+    pub report: Option<RuntimeOfflineRenderReportReceipt>,
+    pub delegated_execution_request: RuntimeOfflinePluginDelegatedExecutionRequest,
+    pub delegated_execution_receipt: Option<RuntimeOfflinePluginDelegatedExecutionReceipt>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflinePluginDelegatedExecutionStageRequest {
+    pub stage_id: RuntimePluginRecallHandoffStageId,
+    pub node_id: String,
+    pub chain_id: String,
+    pub stage_index: usize,
+    pub sandbox_id: Option<String>,
+    pub recall_state: RuntimePluginRecallState,
+    pub recall_payload: RuntimePluginRecallPayload,
+    pub override_state: RuntimeOfflinePluginOverrideState,
+    pub latest_override_processing_epoch: Option<u64>,
+    pub latest_override_block_sequence: Option<u64>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflinePluginDelegatedExecutionRequest {
+    pub request_id: String,
+    pub timeline_start_samples: i64,
+    pub duration_samples: u32,
+    pub runtime_sample_rate_hz: u32,
+    pub export_sample_rate_hz: u32,
+    pub block_size: usize,
+    pub block_count: usize,
+    pub stage_count: usize,
+    pub stages: Vec<RuntimeOfflinePluginDelegatedExecutionStageRequest>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeOfflinePluginDelegatedExecutionStatus {
+    #[default]
+    Completed,
+    Rejected,
+    Unavailable,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflinePluginDelegatedExecutionStageReceipt {
+    pub stage_id: RuntimePluginRecallHandoffStageId,
+    pub node_id: String,
+    pub chain_id: String,
+    pub stage_index: usize,
+    pub status: RuntimeOfflinePluginDelegatedExecutionStatus,
+    pub delegate_label: Option<String>,
+    pub detail: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflinePluginDelegatedExecutionReceipt {
+    pub request_id: String,
+    pub stage_count: usize,
+    pub completed_stage_count: usize,
+    pub rejected_stage_count: usize,
+    pub unavailable_stage_count: usize,
+    pub stages: Vec<RuntimeOfflinePluginDelegatedExecutionStageReceipt>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflinePluginDelegatedStemOutput {
+    pub stem_id: String,
+    pub output: AudioBuffer,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflinePluginDelegatedFreezeArtifactOutput {
+    pub artifact_id: String,
+    pub output: AudioBuffer,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflinePluginDelegatedExecutionMerge {
+    pub request_id: String,
+    pub main_mix: Option<AudioBuffer>,
+    pub stems: Vec<RuntimeOfflinePluginDelegatedStemOutput>,
+    pub freeze_artifacts: Vec<RuntimeOfflinePluginDelegatedFreezeArtifactOutput>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflinePluginDelegatedExecutionOutcome {
+    pub receipt: RuntimeOfflinePluginDelegatedExecutionReceipt,
+    pub merge: RuntimeOfflinePluginDelegatedExecutionMerge,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeOfflinePluginExecutionOwner {
+    #[default]
+    SignalStageModel,
+    HostDelegated,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeOfflinePluginOverrideState {
+    #[default]
+    NotAvailable,
+    FreshLatestBlock,
+    StaleLatestBlock,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflinePluginExecutionStageBoundary {
+    pub stage_id: RuntimePluginRecallHandoffStageId,
+    pub node_id: String,
+    pub chain_id: String,
+    pub stage_index: usize,
+    pub sandbox_id: Option<String>,
+    pub track_lane_id: Option<String>,
+    pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
+    pub recall_state: RuntimePluginRecallState,
+    pub recall_payload: RuntimePluginRecallPayload,
+    pub execution_owner: RuntimeOfflinePluginExecutionOwner,
+    pub host_delegate_required: bool,
+    pub override_state: RuntimeOfflinePluginOverrideState,
+    pub latest_override_processing_epoch: Option<u64>,
+    pub latest_override_block_sequence: Option<u64>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflinePluginExecutionBoundary {
+    pub request_id: String,
+    pub timeline_start_samples: i64,
+    pub duration_samples: u32,
+    pub runtime_sample_rate_hz: u32,
+    pub export_sample_rate_hz: u32,
+    pub block_size: usize,
+    pub block_count: usize,
+    pub stage_count: usize,
+    pub signal_stage_model_stage_count: usize,
+    pub host_delegate_stage_count: usize,
+    pub fresh_override_stage_count: usize,
+    pub stale_override_stage_count: usize,
+    pub stages: Vec<RuntimeOfflinePluginExecutionStageBoundary>,
     pub summary: String,
 }
 
@@ -1553,7 +2093,7 @@ pub struct RuntimePluginChainSnapshot {
     pub summary: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RuntimePluginRecallHandoffStageId {
     pub chain_id: String,
     pub stage_index: usize,
@@ -3203,6 +3743,463 @@ impl RuntimeHostSupervisorReport {
             self.events.len()
         )
     }
+
+    pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
+        build_runtime_profiling_receipt(
+            &self.observation.observation,
+            Some(&self.observation.host_io),
+        )
+    }
+
+    pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
+        build_runtime_soak_receipt(&self.observation.observation, self.events.len())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeProfilingReceipt {
+    pub sample_rate_hz: u32,
+    pub block_size: usize,
+    pub engine_processed_blocks: u64,
+    pub engine_last_block_sequence: Option<u64>,
+    pub engine_node_count: usize,
+    pub engine_stage_count: usize,
+    pub engine_total_latency_samples: u32,
+    pub engine_total_tail_samples: u32,
+    pub runtime_cpu_load_percent: f32,
+    pub runtime_graph_latency_ms: f32,
+    pub runtime_xrun_count: u64,
+    pub active_plugin_sandboxes: u32,
+    pub readiness_degraded: bool,
+    pub transport_gate_active: bool,
+    pub plugin_gate_active: bool,
+    pub degraded_bound_plugin_sandboxes: usize,
+    pub missing_bound_plugin_sandboxes: usize,
+    pub recovery_overlap_sessions: usize,
+    pub lingering_sessions: usize,
+    pub detach_faulted_sessions: usize,
+    pub plugin_chain_stage_count: usize,
+    pub plugin_chain_degraded_stage_count: usize,
+    pub plugin_chain_missing_binding_stage_count: usize,
+    pub plugin_chain_total_planned_latency_samples: u32,
+    pub plugin_chain_total_realized_latency_samples: u32,
+    pub plugin_chain_total_tail_samples: u32,
+    pub output_peak: Option<f32>,
+    pub output_rms: Option<f32>,
+    pub host_callback_count: Option<u64>,
+    pub host_callback_interval_ms: Option<f32>,
+    pub host_output_latency_ms: Option<f32>,
+    pub host_graph_latency_ms: Option<f32>,
+    pub host_estimated_output_latency_ms: Option<f32>,
+    pub host_backend_xrun_count: Option<u64>,
+    pub host_callback_overrun_count: Option<u64>,
+    pub host_device_loss_count: Option<u64>,
+    pub host_restart_attempt_count: Option<u64>,
+    pub host_restart_failure_count: Option<u64>,
+    pub host_copied_output_samples: Option<u64>,
+    pub host_zero_filled_output_samples: Option<u64>,
+    pub host_dropped_output_samples: Option<u64>,
+    pub summary: String,
+}
+
+impl RuntimeProfilingReceipt {
+    pub fn render_multiline(&self) -> String {
+        format!(
+            concat!(
+                "sample_rate_hz={}",
+                "\nblock_size={}",
+                "\nengine_processed_blocks={}",
+                "\nengine_last_block_sequence={:?}",
+                "\nengine_node_count={}",
+                "\nengine_stage_count={}",
+                "\nengine_total_latency_samples={}",
+                "\nengine_total_tail_samples={}",
+                "\nruntime_cpu_load_percent={:.3}",
+                "\nruntime_graph_latency_ms={:.3}",
+                "\nruntime_xrun_count={}",
+                "\nactive_plugin_sandboxes={}",
+                "\nreadiness_degraded={}",
+                "\ntransport_gate_active={}",
+                "\nplugin_gate_active={}",
+                "\ndegraded_bound_plugin_sandboxes={}",
+                "\nmissing_bound_plugin_sandboxes={}",
+                "\nrecovery_overlap_sessions={}",
+                "\nlingering_sessions={}",
+                "\ndetach_faulted_sessions={}",
+                "\nplugin_chain_stage_count={}",
+                "\nplugin_chain_degraded_stage_count={}",
+                "\nplugin_chain_missing_binding_stage_count={}",
+                "\nplugin_chain_total_planned_latency_samples={}",
+                "\nplugin_chain_total_realized_latency_samples={}",
+                "\nplugin_chain_total_tail_samples={}",
+                "\noutput_peak={:?}",
+                "\noutput_rms={:?}",
+                "\nhost_callback_count={:?}",
+                "\nhost_callback_interval_ms={:?}",
+                "\nhost_output_latency_ms={:?}",
+                "\nhost_graph_latency_ms={:?}",
+                "\nhost_estimated_output_latency_ms={:?}",
+                "\nhost_backend_xrun_count={:?}",
+                "\nhost_callback_overrun_count={:?}",
+                "\nhost_device_loss_count={:?}",
+                "\nhost_restart_attempt_count={:?}",
+                "\nhost_restart_failure_count={:?}",
+                "\nhost_copied_output_samples={:?}",
+                "\nhost_zero_filled_output_samples={:?}",
+                "\nhost_dropped_output_samples={:?}",
+                "\nsummary={}",
+            ),
+            self.sample_rate_hz,
+            self.block_size,
+            self.engine_processed_blocks,
+            self.engine_last_block_sequence,
+            self.engine_node_count,
+            self.engine_stage_count,
+            self.engine_total_latency_samples,
+            self.engine_total_tail_samples,
+            self.runtime_cpu_load_percent,
+            self.runtime_graph_latency_ms,
+            self.runtime_xrun_count,
+            self.active_plugin_sandboxes,
+            self.readiness_degraded,
+            self.transport_gate_active,
+            self.plugin_gate_active,
+            self.degraded_bound_plugin_sandboxes,
+            self.missing_bound_plugin_sandboxes,
+            self.recovery_overlap_sessions,
+            self.lingering_sessions,
+            self.detach_faulted_sessions,
+            self.plugin_chain_stage_count,
+            self.plugin_chain_degraded_stage_count,
+            self.plugin_chain_missing_binding_stage_count,
+            self.plugin_chain_total_planned_latency_samples,
+            self.plugin_chain_total_realized_latency_samples,
+            self.plugin_chain_total_tail_samples,
+            self.output_peak,
+            self.output_rms,
+            self.host_callback_count,
+            self.host_callback_interval_ms,
+            self.host_output_latency_ms,
+            self.host_graph_latency_ms,
+            self.host_estimated_output_latency_ms,
+            self.host_backend_xrun_count,
+            self.host_callback_overrun_count,
+            self.host_device_loss_count,
+            self.host_restart_attempt_count,
+            self.host_restart_failure_count,
+            self.host_copied_output_samples,
+            self.host_zero_filled_output_samples,
+            self.host_dropped_output_samples,
+            self.summary,
+        )
+    }
+
+    pub fn render_json(&self) -> String {
+        format!(
+            concat!(
+                "{{",
+                "\"sample_rate_hz\":{},",
+                "\"block_size\":{},",
+                "\"engine_processed_blocks\":{},",
+                "\"engine_last_block_sequence\":{},",
+                "\"engine_node_count\":{},",
+                "\"engine_stage_count\":{},",
+                "\"engine_total_latency_samples\":{},",
+                "\"engine_total_tail_samples\":{},",
+                "\"runtime_cpu_load_percent\":{},",
+                "\"runtime_graph_latency_ms\":{},",
+                "\"runtime_xrun_count\":{},",
+                "\"active_plugin_sandboxes\":{},",
+                "\"readiness_degraded\":{},",
+                "\"transport_gate_active\":{},",
+                "\"plugin_gate_active\":{},",
+                "\"degraded_bound_plugin_sandboxes\":{},",
+                "\"missing_bound_plugin_sandboxes\":{},",
+                "\"recovery_overlap_sessions\":{},",
+                "\"lingering_sessions\":{},",
+                "\"detach_faulted_sessions\":{},",
+                "\"plugin_chain_stage_count\":{},",
+                "\"plugin_chain_degraded_stage_count\":{},",
+                "\"plugin_chain_missing_binding_stage_count\":{},",
+                "\"plugin_chain_total_planned_latency_samples\":{},",
+                "\"plugin_chain_total_realized_latency_samples\":{},",
+                "\"plugin_chain_total_tail_samples\":{},",
+                "\"output_peak\":{},",
+                "\"output_rms\":{},",
+                "\"host_callback_count\":{},",
+                "\"host_callback_interval_ms\":{},",
+                "\"host_output_latency_ms\":{},",
+                "\"host_graph_latency_ms\":{},",
+                "\"host_estimated_output_latency_ms\":{},",
+                "\"host_backend_xrun_count\":{},",
+                "\"host_callback_overrun_count\":{},",
+                "\"host_device_loss_count\":{},",
+                "\"host_restart_attempt_count\":{},",
+                "\"host_restart_failure_count\":{},",
+                "\"host_copied_output_samples\":{},",
+                "\"host_zero_filled_output_samples\":{},",
+                "\"host_dropped_output_samples\":{},",
+                "\"summary\":{}",
+                "}}"
+            ),
+            self.sample_rate_hz,
+            self.block_size,
+            self.engine_processed_blocks,
+            json_option_u64(self.engine_last_block_sequence),
+            self.engine_node_count,
+            self.engine_stage_count,
+            self.engine_total_latency_samples,
+            self.engine_total_tail_samples,
+            self.runtime_cpu_load_percent,
+            self.runtime_graph_latency_ms,
+            self.runtime_xrun_count,
+            self.active_plugin_sandboxes,
+            self.readiness_degraded,
+            self.transport_gate_active,
+            self.plugin_gate_active,
+            self.degraded_bound_plugin_sandboxes,
+            self.missing_bound_plugin_sandboxes,
+            self.recovery_overlap_sessions,
+            self.lingering_sessions,
+            self.detach_faulted_sessions,
+            self.plugin_chain_stage_count,
+            self.plugin_chain_degraded_stage_count,
+            self.plugin_chain_missing_binding_stage_count,
+            self.plugin_chain_total_planned_latency_samples,
+            self.plugin_chain_total_realized_latency_samples,
+            self.plugin_chain_total_tail_samples,
+            json_option_f32(self.output_peak),
+            json_option_f32(self.output_rms),
+            json_option_u64(self.host_callback_count),
+            json_option_f32(self.host_callback_interval_ms),
+            json_option_f32(self.host_output_latency_ms),
+            json_option_f32(self.host_graph_latency_ms),
+            json_option_f32(self.host_estimated_output_latency_ms),
+            json_option_u64(self.host_backend_xrun_count),
+            json_option_u64(self.host_callback_overrun_count),
+            json_option_u64(self.host_device_loss_count),
+            json_option_u64(self.host_restart_attempt_count),
+            json_option_u64(self.host_restart_failure_count),
+            json_option_u64(self.host_copied_output_samples),
+            json_option_u64(self.host_zero_filled_output_samples),
+            json_option_u64(self.host_dropped_output_samples),
+            json_option_string(Some(self.summary.as_str())),
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeSoakReceipt {
+    pub event_stream_count: usize,
+    pub restart_count: u64,
+    pub stop_count: u64,
+    pub watchdog_restart_count: u32,
+    pub safe_mode_enabled: bool,
+    pub readiness_degraded: bool,
+    pub plugin_fault_count: usize,
+    pub recovery_event_count: usize,
+    pub lifecycle_event_count: usize,
+    pub transport_event_count: usize,
+    pub heartbeat_event_count: usize,
+    pub block_dispatch_event_count: usize,
+    pub lease_rollover_event_count: usize,
+    pub invalidation_event_count: usize,
+    pub completion_slot_event_count: usize,
+    pub transport_fault_event_count: usize,
+    pub broker_failure_event_count: usize,
+    pub sandbox_operation_failure_event_count: usize,
+    pub peak_attached_sessions: usize,
+    pub peak_recovery_overlap_sessions: usize,
+    pub peak_lingering_sessions: usize,
+    pub pending_cleanup_waves: usize,
+    pub plugin_ready_sandbox_count: usize,
+    pub plugin_degraded_sandbox_count: usize,
+    pub plugin_faulted_sandbox_count: usize,
+    pub plugin_restarting_sandbox_count: usize,
+    pub plugin_quarantined_sandbox_count: usize,
+    pub recall_stage_count: usize,
+    pub recovered_recall_stage_count: usize,
+    pub unavailable_recall_stage_count: usize,
+    pub last_recovery_intent: Option<RecoveryRestartIntent>,
+    pub last_stop_reason: Option<StopReason>,
+    pub summary: String,
+}
+
+impl RuntimeSoakReceipt {
+    pub fn render_multiline(&self) -> String {
+        format!(
+            concat!(
+                "event_stream_count={}",
+                "\nrestart_count={}",
+                "\nstop_count={}",
+                "\nwatchdog_restart_count={}",
+                "\nsafe_mode_enabled={}",
+                "\nreadiness_degraded={}",
+                "\nplugin_fault_count={}",
+                "\nrecovery_event_count={}",
+                "\nlifecycle_event_count={}",
+                "\ntransport_event_count={}",
+                "\nheartbeat_event_count={}",
+                "\nblock_dispatch_event_count={}",
+                "\nlease_rollover_event_count={}",
+                "\ninvalidation_event_count={}",
+                "\ncompletion_slot_event_count={}",
+                "\ntransport_fault_event_count={}",
+                "\nbroker_failure_event_count={}",
+                "\nsandbox_operation_failure_event_count={}",
+                "\npeak_attached_sessions={}",
+                "\npeak_recovery_overlap_sessions={}",
+                "\npeak_lingering_sessions={}",
+                "\npending_cleanup_waves={}",
+                "\nplugin_ready_sandbox_count={}",
+                "\nplugin_degraded_sandbox_count={}",
+                "\nplugin_faulted_sandbox_count={}",
+                "\nplugin_restarting_sandbox_count={}",
+                "\nplugin_quarantined_sandbox_count={}",
+                "\nrecall_stage_count={}",
+                "\nrecovered_recall_stage_count={}",
+                "\nunavailable_recall_stage_count={}",
+                "\nlast_recovery_intent={:?}",
+                "\nlast_stop_reason={:?}",
+                "\nsummary={}",
+            ),
+            self.event_stream_count,
+            self.restart_count,
+            self.stop_count,
+            self.watchdog_restart_count,
+            self.safe_mode_enabled,
+            self.readiness_degraded,
+            self.plugin_fault_count,
+            self.recovery_event_count,
+            self.lifecycle_event_count,
+            self.transport_event_count,
+            self.heartbeat_event_count,
+            self.block_dispatch_event_count,
+            self.lease_rollover_event_count,
+            self.invalidation_event_count,
+            self.completion_slot_event_count,
+            self.transport_fault_event_count,
+            self.broker_failure_event_count,
+            self.sandbox_operation_failure_event_count,
+            self.peak_attached_sessions,
+            self.peak_recovery_overlap_sessions,
+            self.peak_lingering_sessions,
+            self.pending_cleanup_waves,
+            self.plugin_ready_sandbox_count,
+            self.plugin_degraded_sandbox_count,
+            self.plugin_faulted_sandbox_count,
+            self.plugin_restarting_sandbox_count,
+            self.plugin_quarantined_sandbox_count,
+            self.recall_stage_count,
+            self.recovered_recall_stage_count,
+            self.unavailable_recall_stage_count,
+            self.last_recovery_intent,
+            self.last_stop_reason,
+            self.summary,
+        )
+    }
+
+    pub fn render_json(&self) -> String {
+        format!(
+            concat!(
+                "{{",
+                "\"event_stream_count\":{},",
+                "\"restart_count\":{},",
+                "\"stop_count\":{},",
+                "\"watchdog_restart_count\":{},",
+                "\"safe_mode_enabled\":{},",
+                "\"readiness_degraded\":{},",
+                "\"plugin_fault_count\":{},",
+                "\"recovery_event_count\":{},",
+                "\"lifecycle_event_count\":{},",
+                "\"transport_event_count\":{},",
+                "\"heartbeat_event_count\":{},",
+                "\"block_dispatch_event_count\":{},",
+                "\"lease_rollover_event_count\":{},",
+                "\"invalidation_event_count\":{},",
+                "\"completion_slot_event_count\":{},",
+                "\"transport_fault_event_count\":{},",
+                "\"broker_failure_event_count\":{},",
+                "\"sandbox_operation_failure_event_count\":{},",
+                "\"peak_attached_sessions\":{},",
+                "\"peak_recovery_overlap_sessions\":{},",
+                "\"peak_lingering_sessions\":{},",
+                "\"pending_cleanup_waves\":{},",
+                "\"plugin_ready_sandbox_count\":{},",
+                "\"plugin_degraded_sandbox_count\":{},",
+                "\"plugin_faulted_sandbox_count\":{},",
+                "\"plugin_restarting_sandbox_count\":{},",
+                "\"plugin_quarantined_sandbox_count\":{},",
+                "\"recall_stage_count\":{},",
+                "\"recovered_recall_stage_count\":{},",
+                "\"unavailable_recall_stage_count\":{},",
+                "\"last_recovery_intent\":{},",
+                "\"last_stop_reason\":{},",
+                "\"summary\":{}",
+                "}}"
+            ),
+            self.event_stream_count,
+            self.restart_count,
+            self.stop_count,
+            self.watchdog_restart_count,
+            self.safe_mode_enabled,
+            self.readiness_degraded,
+            self.plugin_fault_count,
+            self.recovery_event_count,
+            self.lifecycle_event_count,
+            self.transport_event_count,
+            self.heartbeat_event_count,
+            self.block_dispatch_event_count,
+            self.lease_rollover_event_count,
+            self.invalidation_event_count,
+            self.completion_slot_event_count,
+            self.transport_fault_event_count,
+            self.broker_failure_event_count,
+            self.sandbox_operation_failure_event_count,
+            self.peak_attached_sessions,
+            self.peak_recovery_overlap_sessions,
+            self.peak_lingering_sessions,
+            self.pending_cleanup_waves,
+            self.plugin_ready_sandbox_count,
+            self.plugin_degraded_sandbox_count,
+            self.plugin_faulted_sandbox_count,
+            self.plugin_restarting_sandbox_count,
+            self.plugin_quarantined_sandbox_count,
+            self.recall_stage_count,
+            self.recovered_recall_stage_count,
+            self.unavailable_recall_stage_count,
+            json_option_string(
+                self.last_recovery_intent
+                    .as_ref()
+                    .map(|intent| match intent {
+                        RecoveryRestartIntent::WatchdogRecovery => "WatchdogRecovery",
+                        RecoveryRestartIntent::CrashRecovery => "CrashRecovery",
+                    }),
+            ),
+            json_option_string(self.last_stop_reason.as_ref().map(|reason| match reason {
+                StopReason::UserRequested => "UserRequested",
+                StopReason::DegradedModeRecovery => "DegradedModeRecovery",
+                StopReason::DeviceReconfigure => "DeviceReconfigure",
+            })),
+            json_option_string(Some(self.summary.as_str())),
+        )
+    }
+}
+
+impl RuntimeObservationReport {
+    pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
+        build_runtime_profiling_receipt(self, None)
+    }
+}
+
+impl RuntimeSupervisorReport {
+    pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
+        self.observation.profiling_receipt()
+    }
+
+    pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
+        build_runtime_soak_receipt(&self.observation, self.events.len())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -3671,6 +4668,62 @@ impl RuntimeExecutionTopologySummary {
 }
 
 impl RuntimeOfflineRenderContractPreview {
+    pub fn chain_contract_from_runtime_state(
+        topology: &RuntimeExecutionTopologySummary,
+        recall_handoff: &RuntimePluginRecallHandoffSnapshot,
+    ) -> Result<RuntimeOfflineRenderChainDependencyPreview, RuntimeError> {
+        let plugin_chain = &topology.plugin_chain;
+        if plugin_chain.stage_count != recall_handoff.stage_count {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                format!(
+                    "offline render contract requires aligned plugin chain and recall handoff stages (chain={} recall={})",
+                    plugin_chain.stage_count, recall_handoff.stage_count
+                ),
+            ));
+        }
+
+        Ok(RuntimeOfflineRenderChainDependencyPreview {
+            chain_count: plugin_chain.chain_count,
+            stage_count: plugin_chain.stage_count,
+            pending_render_stage_count: plugin_chain.pending_render_stage_count,
+            settling_stage_count: plugin_chain.settling_stage_count,
+            compensated_stage_count: plugin_chain.compensated_stage_count,
+            degraded_stage_count: plugin_chain.degraded_stage_count,
+            bypassed_stage_count: plugin_chain.bypassed_stage_count,
+            missing_binding_stage_count: plugin_chain.missing_binding_stage_count,
+            total_planned_latency_samples: plugin_chain.total_planned_latency_samples,
+            total_realized_latency_samples: plugin_chain.total_realized_latency_samples,
+            total_tail_samples: plugin_chain.total_tail_samples,
+            recall_stage_count: recall_handoff.stage_count,
+            unbound_recall_stage_count: recall_handoff.unbound_stage_count,
+            cold_recall_stage_count: recall_handoff.cold_stage_count,
+            warm_recall_stage_count: recall_handoff.warm_stage_count,
+            recovered_recall_stage_count: recall_handoff.recovered_stage_count,
+            unavailable_recall_stage_count: recall_handoff.unavailable_stage_count,
+            summary: format!(
+                "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={} recall={}/unbound={} cold={} warm={} recovered={} unavailable={}",
+                plugin_chain.chain_count,
+                plugin_chain.stage_count,
+                plugin_chain.pending_render_stage_count,
+                plugin_chain.settling_stage_count,
+                plugin_chain.compensated_stage_count,
+                plugin_chain.degraded_stage_count,
+                plugin_chain.bypassed_stage_count,
+                plugin_chain.missing_binding_stage_count,
+                plugin_chain.total_planned_latency_samples,
+                plugin_chain.total_realized_latency_samples,
+                plugin_chain.total_tail_samples,
+                recall_handoff.stage_count,
+                recall_handoff.unbound_stage_count,
+                recall_handoff.cold_stage_count,
+                recall_handoff.warm_stage_count,
+                recall_handoff.recovered_stage_count,
+                recall_handoff.unavailable_stage_count,
+            ),
+        })
+    }
+
     pub fn from_runtime_state(
         request: &RuntimeOfflineRenderRequest,
         topology: &RuntimeExecutionTopologySummary,
@@ -3775,6 +4828,7 @@ impl RuntimeOfflineRenderContractPreview {
         let timeline_end_samples = request
             .timeline_start_samples
             .saturating_add(request.duration_samples as i64);
+        let chain_contract = Self::chain_contract_from_runtime_state(topology, recall_handoff)?;
         let mut preview = Self {
             request_id: request.request_id.clone(),
             timeline_start_samples: request.timeline_start_samples,
@@ -3788,12 +4842,13 @@ impl RuntimeOfflineRenderContractPreview {
             freeze_artifact_count: freeze_artifacts.len(),
             resolved_tempo_bpm: tempo_map.resolved_tempo_bpm,
             resolved_tempo_source: tempo_map.tempo_source,
+            chain_contract,
             stem_targets,
             freeze_artifacts,
             summary: String::new(),
         };
         preview.summary = format!(
-            "request={} timeline={}..{} duration={} export_sample_rate={} clips={}/{} stems={} freeze_artifacts={} tempo={:.3}/{:?}",
+            "request={} timeline={}..{} duration={} export_sample_rate={} clips={}/{} stems={} freeze_artifacts={} tempo={:.3}/{:?} chain_contract={}",
             preview.request_id,
             preview.timeline_start_samples,
             preview.timeline_end_samples,
@@ -3805,6 +4860,7 @@ impl RuntimeOfflineRenderContractPreview {
             preview.freeze_artifact_count,
             preview.resolved_tempo_bpm,
             preview.resolved_tempo_source,
+            preview.chain_contract.summary,
         );
         Ok(preview)
     }
@@ -3965,6 +5021,151 @@ fn resolve_offline_render_stem_target(
             resolved_output_bus_count,
         ),
     })
+}
+
+impl RuntimeOfflinePluginExecutionBoundary {
+    pub fn delegated_execution_request(&self) -> RuntimeOfflinePluginDelegatedExecutionRequest {
+        let stages = self
+            .stages
+            .iter()
+            .filter(|stage| stage.host_delegate_required)
+            .map(|stage| {
+                let mut request = RuntimeOfflinePluginDelegatedExecutionStageRequest {
+                    stage_id: stage.stage_id.clone(),
+                    node_id: stage.node_id.clone(),
+                    chain_id: stage.chain_id.clone(),
+                    stage_index: stage.stage_index,
+                    sandbox_id: stage.sandbox_id.clone(),
+                    recall_state: stage.recall_state,
+                    recall_payload: stage.recall_payload.clone(),
+                    override_state: stage.override_state,
+                    latest_override_processing_epoch: stage.latest_override_processing_epoch,
+                    latest_override_block_sequence: stage.latest_override_block_sequence,
+                    summary: String::new(),
+                };
+                request.summary = format!(
+                    "stage={}:{} sandbox={:?} recall={:?} override={:?}",
+                    request.chain_id,
+                    request.stage_index,
+                    request.sandbox_id.as_deref(),
+                    request.recall_state,
+                    request.override_state,
+                );
+                request
+            })
+            .collect::<Vec<_>>();
+        let stage_count = stages.len();
+        let mut request = RuntimeOfflinePluginDelegatedExecutionRequest {
+            request_id: self.request_id.clone(),
+            timeline_start_samples: self.timeline_start_samples,
+            duration_samples: self.duration_samples,
+            runtime_sample_rate_hz: self.runtime_sample_rate_hz,
+            export_sample_rate_hz: self.export_sample_rate_hz,
+            block_size: self.block_size,
+            block_count: self.block_count,
+            stage_count,
+            stages,
+            summary: String::new(),
+        };
+        request.summary = format!(
+            "request={} delegated_stages={} blocks={} sample_rate={}->{}",
+            request.request_id,
+            request.stage_count,
+            request.block_count,
+            request.runtime_sample_rate_hz,
+            request.export_sample_rate_hz,
+        );
+        request
+    }
+}
+
+impl RuntimeOfflineRenderManifest {
+    pub fn apply_delegated_execution_receipt(
+        &mut self,
+        receipt: RuntimeOfflinePluginDelegatedExecutionReceipt,
+    ) -> Result<(), RuntimeError> {
+        if receipt.request_id != self.request_id {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "delegated offline plugin execution receipt request `{}` does not match manifest request `{}`",
+                    receipt.request_id, self.request_id
+                ),
+            ));
+        }
+        if receipt.stage_count != receipt.stages.len() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "delegated offline plugin execution receipt stage_count must match stage receipt count",
+            ));
+        }
+        if self.delegated_execution_request.stage_count != receipt.stage_count {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "delegated offline plugin execution receipt stages do not match request (request={} receipt={})",
+                    self.delegated_execution_request.stage_count, receipt.stage_count
+                ),
+            ));
+        }
+
+        let expected_stage_ids = self
+            .delegated_execution_request
+            .stages
+            .iter()
+            .map(|stage| stage.stage_id.clone())
+            .collect::<BTreeSet<_>>();
+        let receipt_stage_ids = receipt
+            .stages
+            .iter()
+            .map(|stage| stage.stage_id.clone())
+            .collect::<BTreeSet<_>>();
+        if expected_stage_ids != receipt_stage_ids {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "delegated offline plugin execution receipt stage ids must match the delegated request",
+            ));
+        }
+        let completed_stage_count = receipt
+            .stages
+            .iter()
+            .filter(|stage| stage.status == RuntimeOfflinePluginDelegatedExecutionStatus::Completed)
+            .count();
+        let rejected_stage_count = receipt
+            .stages
+            .iter()
+            .filter(|stage| stage.status == RuntimeOfflinePluginDelegatedExecutionStatus::Rejected)
+            .count();
+        let unavailable_stage_count = receipt
+            .stages
+            .iter()
+            .filter(|stage| {
+                stage.status == RuntimeOfflinePluginDelegatedExecutionStatus::Unavailable
+            })
+            .count();
+        if receipt.completed_stage_count != completed_stage_count
+            || receipt.rejected_stage_count != rejected_stage_count
+            || receipt.unavailable_stage_count != unavailable_stage_count
+        {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "delegated offline plugin execution receipt status counters must match stage receipt statuses",
+            ));
+        }
+
+        self.delegated_execution_receipt = Some(receipt);
+        self.summary = format!(
+            "request={} root={:?} materialized={} artifacts={} report={} delegated_request_stages={} delegated_receipt={}",
+            self.request_id,
+            self.artifact_root_path.as_deref(),
+            self.materialized,
+            self.artifact_count,
+            self.report.is_some(),
+            self.delegated_execution_request.stage_count,
+            self.delegated_execution_receipt.is_some(),
+        );
+        Ok(())
+    }
 }
 
 fn runtime_lane_for_group(group: GraphNodePlanningGroup) -> GraphExecutionLane {
@@ -5908,6 +7109,152 @@ impl RuntimeObservationReport {
             events: Vec::new(),
         }
         .render_json()
+    }
+}
+
+fn build_runtime_profiling_receipt(
+    observation: &RuntimeObservationReport,
+    host_io: Option<&RuntimeHostIoSummary>,
+) -> RuntimeProfilingReceipt {
+    let plugin_chain = &observation.execution_topology_summary.plugin_chain;
+    RuntimeProfilingReceipt {
+        sample_rate_hz: observation.effective_config.sample_rate.0,
+        block_size: observation.effective_config.block_size,
+        engine_processed_blocks: observation.engine_block_snapshot.processed_blocks,
+        engine_last_block_sequence: observation.engine_block_snapshot.last_block_sequence,
+        engine_node_count: observation.engine_block_snapshot.node_count,
+        engine_stage_count: observation.engine_block_snapshot.stage_count,
+        engine_total_latency_samples: observation.engine_block_snapshot.total_latency_samples,
+        engine_total_tail_samples: observation.engine_block_snapshot.total_tail_samples,
+        runtime_cpu_load_percent: observation.diagnostics_snapshot.cpu_load_percent,
+        runtime_graph_latency_ms: observation.diagnostics_snapshot.graph_latency_ms,
+        runtime_xrun_count: observation.diagnostics_snapshot.xruns,
+        active_plugin_sandboxes: observation.diagnostics_snapshot.active_plugin_sandboxes,
+        readiness_degraded: observation.degradation_summary.readiness_degraded,
+        transport_gate_active: observation.degradation_summary.transport_gate_active,
+        plugin_gate_active: observation.degradation_summary.plugin_gate_active,
+        degraded_bound_plugin_sandboxes: observation
+            .degradation_summary
+            .degraded_bound_plugin_sandboxes,
+        missing_bound_plugin_sandboxes: observation
+            .degradation_summary
+            .missing_bound_plugin_sandboxes,
+        recovery_overlap_sessions: observation.degradation_summary.recovery_overlap_sessions,
+        lingering_sessions: observation.degradation_summary.lingering_sessions,
+        detach_faulted_sessions: observation.degradation_summary.detach_faulted_sessions,
+        plugin_chain_stage_count: plugin_chain.stage_count,
+        plugin_chain_degraded_stage_count: plugin_chain.degraded_stage_count,
+        plugin_chain_missing_binding_stage_count: plugin_chain.missing_binding_stage_count,
+        plugin_chain_total_planned_latency_samples: plugin_chain.total_planned_latency_samples,
+        plugin_chain_total_realized_latency_samples: plugin_chain.total_realized_latency_samples,
+        plugin_chain_total_tail_samples: plugin_chain.total_tail_samples,
+        output_peak: observation.diagnostics_snapshot.last_output_peak,
+        output_rms: observation.diagnostics_snapshot.last_output_rms,
+        host_callback_count: host_io.map(|host_io| host_io.audio_pump.callback_count),
+        host_callback_interval_ms: host_io.map(|host_io| host_io.clocking.callback_interval_ms),
+        host_output_latency_ms: host_io.map(|host_io| host_io.latency.output_latency_ms),
+        host_graph_latency_ms: host_io.map(|host_io| host_io.latency.graph_latency_ms),
+        host_estimated_output_latency_ms: host_io
+            .map(|host_io| host_io.latency.estimated_output_latency_ms),
+        host_backend_xrun_count: host_io.map(|host_io| host_io.hardware.xrun_count),
+        host_callback_overrun_count: host_io.map(|host_io| host_io.hardware.callback_overrun_count),
+        host_device_loss_count: host_io.map(|host_io| host_io.hardware.device_loss_count),
+        host_restart_attempt_count: host_io.map(|host_io| host_io.hardware.restart_attempt_count),
+        host_restart_failure_count: host_io.map(|host_io| host_io.hardware.restart_failure_count),
+        host_copied_output_samples: host_io.map(|host_io| host_io.audio_pump.copied_output_samples),
+        host_zero_filled_output_samples: host_io
+            .map(|host_io| host_io.audio_pump.zero_filled_output_samples),
+        host_dropped_output_samples: host_io
+            .map(|host_io| host_io.audio_pump.dropped_output_samples),
+        summary: format!(
+            "sample_rate={} block_size={} engine_blocks={} cpu_load={:.3} xruns={} host_callbacks={:?} degraded={} gates={}/{} plugin_chain={}/degraded={}/missing={} sessions={}/{}/{}",
+            observation.effective_config.sample_rate.0,
+            observation.effective_config.block_size,
+            observation.engine_block_snapshot.processed_blocks,
+            observation.diagnostics_snapshot.cpu_load_percent,
+            observation.diagnostics_snapshot.xruns,
+            host_io.map(|host_io| host_io.audio_pump.callback_count),
+            observation.degradation_summary.readiness_degraded,
+            observation.degradation_summary.transport_gate_active,
+            observation.degradation_summary.plugin_gate_active,
+            plugin_chain.stage_count,
+            plugin_chain.degraded_stage_count,
+            plugin_chain.missing_binding_stage_count,
+            observation.degradation_summary.recovery_overlap_sessions,
+            observation.degradation_summary.lingering_sessions,
+            observation.degradation_summary.detach_faulted_sessions,
+        ),
+    }
+}
+
+fn build_runtime_soak_receipt(
+    observation: &RuntimeObservationReport,
+    event_stream_count: usize,
+) -> RuntimeSoakReceipt {
+    let recall_handoff = RuntimePluginRecallHandoffSnapshot::from_plugin_chain_snapshot(
+        &observation.plugin_chain_snapshot,
+    );
+    RuntimeSoakReceipt {
+        event_stream_count,
+        restart_count: observation.control_snapshot.restart_count,
+        stop_count: observation.control_snapshot.stop_count,
+        watchdog_restart_count: observation.supervision_snapshot.watchdog_restart_count,
+        safe_mode_enabled: observation.supervision_snapshot.safe_mode_enabled,
+        readiness_degraded: observation.degradation_summary.readiness_degraded,
+        plugin_fault_count: observation.observation.plugin_fault_count(),
+        recovery_event_count: observation.observation.recovery_event_count(),
+        lifecycle_event_count: observation.observation.lifecycle_event_count(),
+        transport_event_count: observation.observation.transport_event_count(),
+        heartbeat_event_count: observation.observation.heartbeat_event_count(),
+        block_dispatch_event_count: observation.observation.block_dispatch_event_count(),
+        lease_rollover_event_count: observation.observation.lease_rollover_event_count(),
+        invalidation_event_count: observation.observation.invalidation_event_count(),
+        completion_slot_event_count: observation.observation.completion_slot_event_count(),
+        transport_fault_event_count: observation.observation.transport_fault_event_count(),
+        broker_failure_event_count: observation.observation.broker_failure_event_count(),
+        sandbox_operation_failure_event_count: observation
+            .observation
+            .sandbox_operation_failure_event_count(),
+        peak_attached_sessions: observation.transport_concurrency_snapshot.peak_attached_sessions,
+        peak_recovery_overlap_sessions: observation
+            .transport_concurrency_snapshot
+            .peak_recovery_overlap_sessions,
+        peak_lingering_sessions: observation.transport_concurrency_snapshot.peak_lingering_sessions,
+        pending_cleanup_waves: observation.transport_concurrency_snapshot.pending_cleanup_waves.len(),
+        plugin_ready_sandbox_count: observation.plugin_lifecycle_snapshot.ready_sandbox_count,
+        plugin_degraded_sandbox_count: observation.plugin_lifecycle_snapshot.degraded_sandbox_count,
+        plugin_faulted_sandbox_count: observation.plugin_lifecycle_snapshot.faulted_sandbox_count,
+        plugin_restarting_sandbox_count: observation
+            .plugin_lifecycle_snapshot
+            .restarting_sandbox_count,
+        plugin_quarantined_sandbox_count: observation
+            .plugin_lifecycle_snapshot
+            .quarantined_sandbox_count,
+        recall_stage_count: recall_handoff.stage_count,
+        recovered_recall_stage_count: recall_handoff.recovered_stage_count,
+        unavailable_recall_stage_count: recall_handoff.unavailable_stage_count,
+        last_recovery_intent: observation
+            .observation
+            .last_recovery_event()
+            .map(|record| record.intent),
+        last_stop_reason: observation.control_snapshot.last_stop_reason,
+        summary: format!(
+            "events={} restarts={} watchdog_restarts={} safe_mode={} degraded={} recoveries={} transport_faults={} sandboxes={}/{}/{}/{} recall={}/{}/{}",
+            event_stream_count,
+            observation.control_snapshot.restart_count,
+            observation.supervision_snapshot.watchdog_restart_count,
+            observation.supervision_snapshot.safe_mode_enabled,
+            observation.degradation_summary.readiness_degraded,
+            observation.observation.recovery_event_count(),
+            observation.observation.transport_fault_event_count(),
+            observation.plugin_lifecycle_snapshot.ready_sandbox_count,
+            observation.plugin_lifecycle_snapshot.degraded_sandbox_count,
+            observation.plugin_lifecycle_snapshot.faulted_sandbox_count,
+            observation.plugin_lifecycle_snapshot.quarantined_sandbox_count,
+            recall_handoff.stage_count,
+            recall_handoff.recovered_stage_count,
+            recall_handoff.unavailable_stage_count,
+        ),
     }
 }
 
@@ -8568,6 +9915,10 @@ fn json_string_vec(values: &[String]) -> String {
             .collect::<Vec<_>>()
             .join(",")
     )
+}
+
+fn json_string(value: &str) -> String {
+    json_option_string(Some(value))
 }
 
 fn json_runtime_execution_lane_order(lanes: &[GraphExecutionLane]) -> String {

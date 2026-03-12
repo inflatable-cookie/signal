@@ -24,10 +24,10 @@ Use this section for:
 
 ## Current posture
 
-The active Signal generation is now `g03`. `g01` established the Rust
-workspace, engine, host/device path, and plugin/runtime baseline; `g02`
-completed the first reusable DSP and deep-analysis expansion on top of that
-foundation; `g03` opens the next engine-oriented runtime depth queue.
+The most recently completed Signal generation is now `g03`. `g01` established
+the Rust workspace, engine, host/device path, and plugin/runtime baseline;
+`g02` completed the first reusable DSP and deep-analysis expansion on top of
+that foundation; `g03` completed the next engine-oriented runtime depth queue.
 
 The most recently completed continuation runway was:
 
@@ -38,7 +38,7 @@ The most recently completed continuation runway was:
 - transient/timbral descriptor packs
 - embedding and benchmark hardening
 
-The active continuation runway is:
+The newly completed continuation runway is:
 
 - routed mixer graph, buses, and topology depth
 - runtime metering, loudness, and diagnostics export
@@ -56,6 +56,6 @@ The active continuation runway is:
 
 ## Next Task
 
-Continue `g03.007` with artifact/parity hardening on top of the new offline
-render engine path. Keep `g03.008` deferred until render results are packaged
-cleanly enough to profile and soak.
+COMPLETE. `g03` is closed after the routed engine, offline render, and
+hardening runway landed. Open the next generation when maintainers want the
+next continuation queue.

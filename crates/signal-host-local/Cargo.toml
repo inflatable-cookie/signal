@@ -16,3 +16,6 @@ signal-plugin = { path = "../signal-plugin" }
 signal-plugin-clap = { path = "../signal-plugin-clap" }
 signal-primitives = { path = "../signal-primitives" }
 signal-runtime = { path = "../signal-runtime" }
+
+[dev-dependencies]
+hound = "3.5"

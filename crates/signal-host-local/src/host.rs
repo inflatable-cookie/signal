@@ -27,16 +27,23 @@ use signal_runtime::{
     LingeringCleanupMode, PluginBackedNodeBinding, PluginBackedNodeBindingProjection,
     PluginFaultKind, PluginNodeRender, PluginNodeRenderBatch, PluginSandboxInstanceFaultRecord,
     PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
-    PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RuntimeConfigRequest,
-    RuntimeError, RuntimeEventRecorder, RuntimeExecutionTopologySummary,
-    RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
-    RuntimeHostClockSource, RuntimeHostClockingSummary, RuntimeHostHardwareSummary,
-    RuntimeHostIoSummary, RuntimeHostLatencySummary, RuntimeHostObservationReport,
-    RuntimeHostSupervisorReport, RuntimeLifecycleApi, RuntimeObservationApi,
-    RuntimeObservationDiagnostics, RuntimeObservationReport, RuntimePluginDispatchState,
-    RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeSupervisorApi,
-    RuntimeSupervisorReport, RuntimeWatchdogTrigger, SandboxOperationFailureStage, SignalRuntime,
-    StopReason, TransportAttachIntent, WatchdogRestartRecord,
+    PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
+    RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder,
+    RuntimeExecutionTopologySummary, RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState,
+    RuntimeHostAudioTransferPolicy, RuntimeHostClockSource, RuntimeHostClockingSummary,
+    RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
+    RuntimeHostObservationReport, RuntimeHostSupervisorReport, RuntimeLifecycleApi,
+    RuntimeMediaAssetRegistration, RuntimeObservationApi, RuntimeObservationDiagnostics,
+    RuntimeObservationReport, RuntimeOfflinePluginDelegatedExecutionMerge,
+    RuntimeOfflinePluginDelegatedExecutionOutcome, RuntimeOfflinePluginDelegatedExecutionReceipt,
+    RuntimeOfflinePluginDelegatedExecutionStageReceipt,
+    RuntimeOfflinePluginDelegatedExecutionStatus,
+    RuntimeOfflinePluginDelegatedFreezeArtifactOutput, RuntimeOfflinePluginDelegatedStemOutput,
+    RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult, RuntimePluginDispatchState,
+    RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
+    RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
+    RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
+    SignalRuntime, StopReason, TransportAttachIntent, WatchdogRestartRecord,
 };
 
 const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
@@ -386,6 +393,14 @@ fn transfer_runtime_output_to_host_buffer(
     }
 }
 
+fn scale_audio_buffer(buffer: &AudioBuffer, gain: f32) -> AudioBuffer {
+    let mut scaled = buffer.clone();
+    for sample in scaled.samples_mut() {
+        *sample *= gain;
+    }
+    scaled
+}
+
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
     coreaudio: CoreAudioBackend,
@@ -443,6 +458,113 @@ impl LocalRuntimeHost {
             signal_runtime::RuntimeErrorKind::InvalidRequest,
             format!("hardware negotiation failed: {}", error.message),
         )
+    }
+
+    fn local_delegated_execution_outcome(
+        &self,
+        result: &RuntimeOfflineRenderResult,
+    ) -> Result<Option<RuntimeOfflinePluginDelegatedExecutionOutcome>, RuntimeError> {
+        let delegated_request = if result.manifest.delegated_execution_request.stage_count > 0 {
+            result.manifest.delegated_execution_request.clone()
+        } else {
+            result
+                .plugin_execution_boundary
+                .delegated_execution_request()
+        };
+        if delegated_request.stage_count == 0 {
+            return Ok(None);
+        }
+
+        let attenuation = 1.0_f32 / (delegated_request.stage_count as f32 + 1.0);
+        let receipt = RuntimeOfflinePluginDelegatedExecutionReceipt {
+            request_id: result.request_id.clone(),
+            stage_count: delegated_request.stage_count,
+            completed_stage_count: delegated_request.stage_count,
+            rejected_stage_count: 0,
+            unavailable_stage_count: 0,
+            stages: delegated_request
+                .stages
+                .iter()
+                .map(|stage| RuntimeOfflinePluginDelegatedExecutionStageReceipt {
+                    stage_id: stage.stage_id.clone(),
+                    node_id: stage.node_id.clone(),
+                    chain_id: stage.chain_id.clone(),
+                    stage_index: stage.stage_index,
+                    status: RuntimeOfflinePluginDelegatedExecutionStatus::Completed,
+                    delegate_label: Some("local-host-delegated-executor".into()),
+                    detail: Some(format!(
+                        "local delegated executor rendered stage {}:{}",
+                        stage.chain_id, stage.stage_index
+                    )),
+                    summary: format!(
+                        "stage={}:{} delegate=local-host-delegated-executor",
+                        stage.chain_id, stage.stage_index
+                    ),
+                })
+                .collect(),
+            summary: format!(
+                "request={} delegated_stages={} delegate=local-host-delegated-executor",
+                result.request_id, delegated_request.stage_count
+            ),
+        };
+        let merge = RuntimeOfflinePluginDelegatedExecutionMerge {
+            request_id: result.request_id.clone(),
+            main_mix: result
+                .main_mix
+                .as_ref()
+                .map(|buffer| scale_audio_buffer(buffer, attenuation)),
+            stems: result
+                .stems
+                .iter()
+                .map(|stem| RuntimeOfflinePluginDelegatedStemOutput {
+                    stem_id: stem.stem_id.clone(),
+                    output: scale_audio_buffer(&stem.output, attenuation),
+                    summary: format!("stem={} gain={attenuation:.3}", stem.stem_id),
+                })
+                .collect(),
+            freeze_artifacts: result
+                .freeze_artifacts
+                .iter()
+                .map(
+                    |artifact| RuntimeOfflinePluginDelegatedFreezeArtifactOutput {
+                        artifact_id: artifact.artifact_id.clone(),
+                        output: scale_audio_buffer(&artifact.output, attenuation),
+                        summary: format!("artifact={} gain={attenuation:.3}", artifact.artifact_id),
+                    },
+                )
+                .collect(),
+            summary: format!(
+                "request={} delegated_stages={} gain={attenuation:.3}",
+                result.request_id, delegated_request.stage_count
+            ),
+        };
+        Ok(Some(RuntimeOfflinePluginDelegatedExecutionOutcome {
+            receipt,
+            merge,
+            summary: format!(
+                "request={} delegated_stages={} adapter=local-host",
+                result.request_id, delegated_request.stage_count
+            ),
+        }))
+    }
+
+    pub fn finalize_offline_render_with_local_delegated_executor(
+        &self,
+        result: RuntimeOfflineRenderResult,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        let Some(outcome) = self.local_delegated_execution_outcome(&result)? else {
+            return Ok(result);
+        };
+        self.runtime
+            .apply_offline_plugin_delegated_execution_outcome(&result, outcome)
+    }
+
+    pub fn render_offline_with_local_delegated_executor(
+        &self,
+        request: signal_runtime::RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        let result = self.runtime.render_offline(request)?;
+        self.finalize_offline_render_with_local_delegated_executor(result)
     }
 
     pub fn boot_default(&mut self) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -3779,6 +3901,51 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         Ok(signal_runtime::SandboxHandle(self.supervisor.sandboxes))
     }
 
+    fn start_recording_capture(
+        &mut self,
+        request: RuntimeRecordingCaptureStartRequest,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.start_recording_capture(request)
+    }
+
+    fn finish_recording_capture(
+        &mut self,
+    ) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError> {
+        self.runtime.finish_recording_capture()
+    }
+
+    fn cancel_recording_capture(&mut self) -> Result<(), RuntimeError> {
+        self.runtime.cancel_recording_capture()
+    }
+
+    fn reconcile_media_assets(
+        &mut self,
+        assets: Vec<RuntimeMediaAssetRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.reconcile_media_assets(assets)
+    }
+
+    fn reconcile_warp_clips(
+        &mut self,
+        clips: Vec<RuntimeWarpClipRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.reconcile_warp_clips(clips)
+    }
+
+    fn reconcile_clip_processing_clips(
+        &mut self,
+        clips: Vec<RuntimeClipProcessingRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.runtime.reconcile_clip_processing_clips(clips)
+    }
+
+    fn render_offline(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        self.runtime.render_offline(request)
+    }
+
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError> {
         self.supervisor.teardowns = self.supervisor.teardowns.saturating_add(1);
         self.supervisor.last_sandbox_id = Some(sandbox_id.to_string());
@@ -3815,7 +3982,8 @@ mod tests {
         LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID,
         LOCAL_DEMO_PLUGIN_TAIL_SAMPLES,
     };
-    use signal_graph::GraphNodeTopologyRole;
+    use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
+    use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
     use signal_hardware::{
         AudioDeviceDescriptor, AudioSampleFormat, AudioStreamDirection, BackendHealth,
         HardwareClockSource, HardwareLatencyProfile, HardwareLifecycleContract,
@@ -3827,14 +3995,29 @@ mod tests {
     use signal_runtime::RuntimeHostClockSource;
     use signal_runtime::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-        HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode, PluginSandboxLifecycleStage,
-        PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RuntimeConfig,
-        RuntimeConfigRequest, RuntimeErrorKind, RuntimeHostAudioStreamState, RuntimeLifecycleApi,
-        RuntimeObservationApi, RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi,
-        RuntimeSupervisorReport, SandboxOperationFailureStage, SignalRuntime, StopReason,
+        GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
+        GraphNodeContractProjection, GraphNodeProjection, GraphNodeTopologyProjection,
+        GraphProjection, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
+        PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginNodeRender,
+        PluginNodeRenderBatch, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
+        PluginScanRequest, RecoveryRestartIntent, RuntimeClipFadeEnvelope, RuntimeClipGainEnvelope,
+        RuntimeClipProcessingRegistration, RuntimeConfig, RuntimeConfigRequest, RuntimeErrorKind,
+        RuntimeHostAudioStreamState, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
+        RuntimeObservationApi, RuntimeOfflineFreezeArtifactRequest,
+        RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
+        RuntimeOfflinePluginExecutionStageBoundary, RuntimeOfflinePluginOverrideState,
+        RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderRequest,
+        RuntimeOfflineRenderStemTarget, RuntimeOfflineRenderTargetKind,
+        RuntimePluginRecallHandoffSelection, RuntimePluginRecallHandoffStageId,
+        RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi, RuntimeSupervisorReport,
+        RuntimeWarpMode, SandboxOperationFailureStage, SignalRuntime, StopReason,
         TransportAttachIntent,
     };
-    use std::path::Path;
+    use std::{
+        env, fs,
+        path::{Path, PathBuf},
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     fn assert_runtime_automation_values(
         supervisor: &RuntimeSupervisorReport,
@@ -3989,7 +4172,7 @@ mod tests {
         assert_eq!(topology.bus_node_count, 1);
         assert_eq!(topology.console_node_count, 1);
         assert_eq!(topology.track_lane_group_count, 1);
-        assert_eq!(topology.bus_group_count, 1);
+        assert_eq!(topology.bus_group_count, 2);
         assert_eq!(topology.console_group_count, 1);
         assert!(topology.nodes.iter().any(|node| {
             node.node_id == "track-input"
@@ -4017,7 +4200,7 @@ mod tests {
         assert!(topology.nodes.iter().any(|node| {
             node.node_id == "output-main"
                 && node.topology_role == GraphNodeTopologyRole::ConsoleNode
-                && node.bus_group_id.as_deref() == Some("console:main")
+                && node.console_group_id.as_deref() == Some("console:main")
                 && node.input_bus_id == "bus:console:main"
                 && node.output_bus_id == "main:out"
         }));
@@ -4148,6 +4331,453 @@ mod tests {
             2048,
         );
         (host, protocol)
+    }
+
+    fn unique_test_path(label: &str, extension: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after unix epoch")
+            .as_nanos();
+        env::temp_dir().join(format!("signal-host-local-{label}-{nanos}.{extension}"))
+    }
+
+    fn temp_artifact_dir(label: &str) -> PathBuf {
+        let path = unique_test_path(label, "dir");
+        let _ = fs::create_dir_all(&path);
+        path
+    }
+
+    fn write_test_wav(path: &Path) {
+        let spec = WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 16,
+            sample_format: HoundSampleFormat::Int,
+        };
+        let mut writer = WavWriter::create(path, spec).expect("create wav");
+        for index in 0..128 {
+            let sample = ((index as f32 / 127.0) * i16::MAX as f32 * 0.5) as i16;
+            writer.write_sample(sample).expect("write wav sample");
+        }
+        writer.finalize().expect("finalize wav");
+    }
+
+    fn prepare_local_host_for_offline_render() -> (LocalRuntimeHost, PathBuf) {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-local".into(),
+                anticipative_preferred: false,
+                max_sample_rate_hint: Some(192_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 32))
+            .expect("configure");
+
+        let imported_path = unique_test_path("offline-render", "wav");
+        let content_hash = imported_path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .expect("offline render helper path should have a file stem")
+            .to_string();
+        let asset_id = format!("asset:sha256:{content_hash}");
+        write_test_wav(&imported_path);
+        host.runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: asset_id.clone(),
+                content_hash: content_hash.clone(),
+                source_path: imported_path.display().to_string(),
+                file_name: "offline-render.wav".into(),
+                byte_size: fs::metadata(&imported_path).expect("wav metadata").len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .expect("media assets");
+        host.runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:offline".into(),
+                media_asset_id: Some(asset_id),
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 0,
+                duration_samples: 64,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .expect("clip processing");
+        host.runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:signal-host-local:offline".into(),
+                node_count: 4,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "track".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 8,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "bus-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "console-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    },
+                ],
+            })
+            .expect("graph projection");
+        host.runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:signal-host-local:offline".into(),
+                contract_count: 4,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "track".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection::default(),
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection::default(),
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "bus-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Bus),
+                            track_lane_id: None,
+                            bus_group_id: Some("mix:master".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "console-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "main:out".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::ConsoleNode),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: Some("console:main".into()),
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("graph contracts");
+        host.runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:signal-host-local:offline".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .expect("plugin bindings");
+        host.runtime.record_recovery_cycle(
+            "sandbox-a",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(1),
+        );
+        host.runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(1),
+        );
+        host.runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(2),
+        );
+        host.runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:signal-host-local:offline".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        signal_primitives::FrameCount(32),
+                    ),
+                    latency_samples: 8,
+                    tail_samples: 0,
+                    bypassed: false,
+                }],
+            })
+            .expect("plugin render batch");
+        host.runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(
+                    SampleRate(48_000),
+                    ChannelLayout::Stereo,
+                    signal_primitives::FrameCount(32),
+                ),
+            )
+            .expect("engine block");
+
+        (host, imported_path)
+    }
+
+    #[test]
+    fn local_host_round_trips_delegated_offline_execution_through_runtime_finalization() {
+        let (host, imported_path) = prepare_local_host_for_offline_render();
+        let artifact_dir = temp_artifact_dir("offline-render-local-host-delegated");
+        let handoff = host.runtime.get_plugin_recall_handoff_snapshot();
+        let mut result = host
+            .runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:local-host-delegated".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                    artifact_id: "freeze:track:lead".into(),
+                    source_stem_id: "stem:track:lead".into(),
+                    recall_selection: RuntimePluginRecallHandoffSelection {
+                        stage_count: handoff.stage_count,
+                        stage_ids: handoff
+                            .stages
+                            .iter()
+                            .map(|stage| stage.stage_id.clone())
+                            .collect(),
+                    },
+                }],
+            })
+            .expect("offline render should succeed");
+        let first_handoff_stage = handoff
+            .stages
+            .first()
+            .expect("offline render fixture should expose a recall handoff stage");
+        let sample_probe = |buffer: &AudioBuffer| {
+            buffer
+                .samples()
+                .iter()
+                .copied()
+                .find(|sample| sample.abs() > 1.0e-6)
+                .expect("offline render output should include a non-zero sample")
+        };
+        let original_main_mix = sample_probe(
+            result
+                .main_mix
+                .as_ref()
+                .expect("offline render should include a main mix"),
+        );
+        let original_main_peak = result
+            .main_mix_peak_level
+            .expect("offline render should include a main mix peak");
+        let original_stem = sample_probe(&result.stems[0].output);
+        let original_stem_peak = result.stems[0].peak_level;
+        let original_freeze = sample_probe(&result.freeze_artifacts[0].output);
+        let original_freeze_peak = result.freeze_artifacts[0].peak_level;
+        result.plugin_execution_boundary = RuntimeOfflinePluginExecutionBoundary {
+            request_id: result.request_id.clone(),
+            timeline_start_samples: 0,
+            duration_samples: 64,
+            runtime_sample_rate_hz: 48_000,
+            export_sample_rate_hz: 48_000,
+            block_size: 32,
+            block_count: 2,
+            stage_count: 1,
+            signal_stage_model_stage_count: 0,
+            host_delegate_stage_count: 1,
+            fresh_override_stage_count: 0,
+            stale_override_stage_count: 1,
+            stages: vec![RuntimeOfflinePluginExecutionStageBoundary {
+                stage_id: RuntimePluginRecallHandoffStageId {
+                    chain_id: first_handoff_stage.stage_id.chain_id.clone(),
+                    stage_index: first_handoff_stage.stage_id.stage_index,
+                    node_id: first_handoff_stage.stage_id.node_id.clone(),
+                },
+                node_id: first_handoff_stage.node_id.clone(),
+                chain_id: first_handoff_stage.chain_id.clone(),
+                stage_index: first_handoff_stage.stage_index,
+                sandbox_id: first_handoff_stage.recall_payload.sandbox_id.clone(),
+                track_lane_id: first_handoff_stage.track_lane_id.clone(),
+                bus_group_id: first_handoff_stage.bus_group_id.clone(),
+                console_group_id: first_handoff_stage.console_group_id.clone(),
+                send_return_id: first_handoff_stage.send_return_id.clone(),
+                recall_state: first_handoff_stage.recall_state,
+                recall_payload: first_handoff_stage.recall_payload.clone(),
+                execution_owner: RuntimeOfflinePluginExecutionOwner::HostDelegated,
+                host_delegate_required: true,
+                override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
+                latest_override_processing_epoch: Some(1),
+                latest_override_block_sequence: Some(1),
+                summary: "local-host delegated boundary".into(),
+            }],
+            summary: "local-host delegated boundary".into(),
+        };
+
+        let updated = host
+            .finalize_offline_render_with_local_delegated_executor(result)
+            .expect("local delegated finalization should succeed");
+
+        let attenuation = 0.5_f32;
+        assert_eq!(updated.manifest.delegated_execution_request.stage_count, 1);
+        assert_eq!(
+            updated
+                .manifest
+                .delegated_execution_request
+                .stages
+                .first()
+                .map(|stage| stage.node_id.as_str()),
+            Some("plugin")
+        );
+        let receipt = updated
+            .manifest
+            .delegated_execution_receipt
+            .as_ref()
+            .expect("delegated receipt should be materialized");
+        assert_eq!(receipt.completed_stage_count, 1);
+        assert_eq!(receipt.unavailable_stage_count, 0);
+        assert_eq!(
+            receipt.stages[0].delegate_label.as_deref(),
+            Some("local-host-delegated-executor")
+        );
+        assert_eq!(
+            receipt.stages[0].status,
+            signal_runtime::RuntimeOfflinePluginDelegatedExecutionStatus::Completed
+        );
+        assert!(
+            (sample_probe(updated.main_mix.as_ref().unwrap()) - (original_main_mix * attenuation))
+                .abs()
+                < 1.0e-6
+        );
+        assert!(
+            (updated.main_mix_peak_level.unwrap() - (original_main_peak * attenuation)).abs()
+                < 1.0e-6
+        );
+        assert!(
+            (sample_probe(&updated.stems[0].output) - (original_stem * attenuation)).abs() < 1.0e-6
+        );
+        assert!((updated.stems[0].peak_level - (original_stem_peak * attenuation)).abs() < 1.0e-6);
+        assert!(
+            (sample_probe(&updated.freeze_artifacts[0].output) - (original_freeze * attenuation))
+                .abs()
+                < 1.0e-6
+        );
+        assert!(
+            (updated.freeze_artifacts[0].peak_level - (original_freeze_peak * attenuation)).abs()
+                < 1.0e-6
+        );
+        let report_receipt = updated
+            .manifest
+            .report
+            .as_ref()
+            .expect("materialized report receipt should exist");
+        let report_body = fs::read_to_string(&report_receipt.report_path).expect("read report");
+        assert!(report_body.contains("\"delegate_label\":\"local-host-delegated-executor\""));
+        assert!(report_body.contains("\"delegated_receipt_stage_count\":1"));
+
+        let main_mix_receipt = updated
+            .manifest
+            .artifacts
+            .iter()
+            .find(|receipt| receipt.artifact_kind == RuntimeOfflineRenderArtifactKind::MainMix)
+            .expect("main mix receipt should exist");
+        let mut main_mix_reader =
+            hound::WavReader::open(&main_mix_receipt.output_path).expect("main mix wav readable");
+        let first_non_zero_sample = main_mix_reader
+            .samples::<f32>()
+            .find_map(|sample| {
+                let sample = sample.expect("main mix wav sample should decode");
+                (sample.abs() > 1.0e-6).then_some(sample)
+            })
+            .expect("main mix wav should contain a non-zero sample");
+        assert!((first_non_zero_sample - (original_main_mix * attenuation)).abs() < 1.0e-5);
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = host
+            .runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &updated.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &updated.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
     }
 
     #[test]
@@ -6560,6 +7190,44 @@ mod tests {
         assert!(report
             .render_json()
             .contains("\"metering_snapshot\":{\"meter_count\":"));
+    }
+
+    #[test]
+    fn local_host_shared_report_derives_profiling_and_soak_receipts() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_with_mixed_watchdog_soak()
+            .expect("mixed watchdog soak boot");
+        let report = host.host_supervisor_report();
+        let profiling = report.profiling_receipt();
+        let soak = report.soak_receipt();
+
+        assert_eq!(profiling.sample_rate_hz, 48_000);
+        assert_eq!(profiling.block_size, 512);
+        assert_eq!(profiling.host_callback_count, Some(14));
+        assert_eq!(profiling.runtime_xrun_count, 1);
+        assert_eq!(profiling.host_backend_xrun_count, Some(0));
+        assert_eq!(profiling.host_device_loss_count, Some(0));
+        assert!(profiling.host_graph_latency_ms.unwrap_or_default() > 0.4);
+        assert!((profiling.runtime_graph_latency_ms - 2.7).abs() < 1.0e-6);
+        assert!(profiling
+            .render_json()
+            .contains("\"host_callback_count\":14"));
+
+        assert_eq!(soak.watchdog_restart_count, 3);
+        assert!(soak.safe_mode_enabled);
+        assert_eq!(
+            soak.last_recovery_intent,
+            Some(RecoveryRestartIntent::WatchdogRecovery)
+        );
+        assert_eq!(
+            soak.last_stop_reason,
+            Some(StopReason::DegradedModeRecovery)
+        );
+        assert_eq!(soak.event_stream_count, report.events.len());
+        assert!(soak.recovery_event_count >= 3);
+        assert!(soak.heartbeat_event_count >= 4);
+        assert!(soak.render_json().contains("\"watchdog_restart_count\":3"));
     }
 
     #[test]

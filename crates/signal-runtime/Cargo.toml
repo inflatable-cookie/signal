@@ -14,3 +14,4 @@ signal-graph = { path = "../signal-graph" }
 signal-hardware = { path = "../signal-hardware" }
 signal-plugin = { path = "../signal-plugin" }
 signal-primitives = { path = "../signal-primitives" }
+symphonia = { version = "0.5", features = ["aiff", "aac", "alac", "isomp4", "mp3", "flac", "ogg", "vorbis"] }
