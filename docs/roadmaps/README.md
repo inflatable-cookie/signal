@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-11
+Updated: 2026-03-12
 
 ## Why this section matters now
 
@@ -24,10 +24,10 @@ Use this section for:
 
 ## Current posture
 
-There is no active Signal generation right now. `g01` established the Rust
+The active Signal generation is now `g03`. `g01` established the Rust
 workspace, engine, host/device path, and plugin/runtime baseline; `g02`
 completed the first reusable DSP and deep-analysis expansion on top of that
-foundation.
+foundation; `g03` opens the next engine-oriented runtime depth queue.
 
 The most recently completed continuation runway was:
 
@@ -38,6 +38,16 @@ The most recently completed continuation runway was:
 - transient/timbral descriptor packs
 - embedding and benchmark hardening
 
+The active continuation runway is:
+
+- routed mixer graph, buses, and topology depth
+- runtime metering, loudness, and diagnostics export
+- automation playback and control-resolution depth
+- tempo-map, warp, clip-processing, and render substrate
+- plugin device-chain execution, latency compensation, and state recall
+- offline render, freeze, and stem export pipeline
+- profiling, soak harnesses, and runtime hardening
+
 ## Working Rule
 
 - keep one active queue
@@ -46,5 +56,6 @@ The most recently completed continuation runway was:
 
 ## Next Task
 
-The current roadmap generation queue is complete. Open `g03` only when a new
-sequenced continuation boundary is preferable to a backlog item.
+Continue `g03.007` with artifact/parity hardening on top of the new offline
+render engine path. Keep `g03.008` deferred until render results are packaged
+cleanly enough to profile and soak.

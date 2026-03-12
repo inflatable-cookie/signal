@@ -1,23 +1,25 @@
 //! Runtime configuration and shell implementation for Signal.
 
 use std::{
-    collections::{BTreeMap, BTreeSet, HashMap, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     fs,
     path::{Path, PathBuf},
 };
 
 use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
 use signal_graph::{
-    synthetic_stereo_block, ExecutableGraph, GraphBlockReport, GraphConfig, GraphExecutionContext,
-    GraphNodeBufferContract, GraphNodeExecutionClass, GraphNodeRenderOverride, GraphNodeSpec,
-    GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphPreparedDispatch,
+    synthetic_stereo_block, ExecutableGraph, GraphBlockReport, GraphCapturedBusOutput, GraphConfig,
+    GraphExecutionContext, GraphNodeBufferContract, GraphNodeExecutionClass,
+    GraphNodeRenderOverride, GraphNodeSpec, GraphNodeTopologyMetadata, GraphNodeTopologyRole,
+    GraphParameterApplicationStrategy, GraphParameterBatch, GraphParameterEvent,
+    GraphParameterTarget, GraphPreparedDispatch, GraphStageParameter,
 };
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
     AutomationContinuityReport, BlockSequenceContinuityReport, CompletionState,
     ParameterAutomationSummary,
 };
-use signal_primitives::{AudioBuffer, FrameCount, SampleRate};
+use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 
 use crate::interfaces::{
     BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
@@ -26,12 +28,24 @@ use crate::interfaces::{
     LingeringCleanupMode, LingeringCleanupQueueReceipt, LingeringCleanupTrigger, ParameterBatch,
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRenderBatch,
     PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-    ProjectionReceipt, RecoveryRestartIntent, RestartRequest, RuntimeAutomationSnapshot,
-    RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDiagnosticsSnapshot,
-    RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind,
-    RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
+    ProjectionReceipt, RecoveryRestartIntent, RestartRequest, RuntimeAutomationInterpolation,
+    RuntimeAutomationProjection, RuntimeAutomationSnapshot, RuntimeAutomationTargetProjection,
+    RuntimeClipFadeShape, RuntimeClipGainShape, RuntimeClipProcessingPipelineSnapshot,
+    RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
+    RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
+    RuntimeClipRenderRequest, RuntimeClipRenderResult, RuntimeConfigRequest,
+    RuntimeControlSnapshot, RuntimeDiagnosticsSnapshot, RuntimeEngineBlockResult,
+    RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind, RuntimeEvent, RuntimeEventSink,
+    RuntimeExecutionPhase, RuntimeExecutionTopologySummary, RuntimeLifecycleApi,
     RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
-    RuntimeMediaPipelineSnapshot, RuntimeObservationApi, RuntimePluginDispatchState,
+    RuntimeMediaPipelineSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
+    RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
+    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
+    RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult, RuntimePluginChainSnapshot,
+    RuntimePluginChainStageSnapshot, RuntimePluginCompensationState, RuntimePluginDispatchState,
+    RuntimePluginExecutionChainSummary, RuntimePluginLifecycleSnapshot,
+    RuntimePluginLifecycleState, RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload,
+    RuntimePluginRecallSnapshot, RuntimePluginRecallState, RuntimePluginSandboxSnapshot,
     RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
     RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
     RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
@@ -41,13 +55,15 @@ use crate::interfaces::{
     RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureSnapshot,
     RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeSchedulerSnapshot,
     RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary,
-    RuntimeSupervisionSnapshot, RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot,
-    RuntimeTransportObservationSnapshot, RuntimeTransportTransitionKind, RuntimeWarpClipRegistration,
-    RuntimeWarpClipSnapshot, RuntimeWarpMode, RuntimeWarpPipelineSnapshot,
-    RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
+    RuntimeSupervisionSnapshot, RuntimeTempoMapInterpolation, RuntimeTempoMapProjection,
+    RuntimeTempoMapSegmentProjection, RuntimeTempoMapSegmentSnapshot, RuntimeTempoMapSnapshot,
+    RuntimeTempoSource, RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot,
+    RuntimeTransportObservationSnapshot, RuntimeTransportTransitionKind,
+    RuntimeWarpClipRegistration, RuntimeWarpClipSnapshot, RuntimeWarpMode,
+    RuntimeWarpPipelineSnapshot, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
     SandboxOperationFailureStage, ScheduleProjection, StopReason, SubscriptionHandle,
-    TransportAttachIntent, TransportProjection, TransportSessionProvenance,
-    TransportSessionState, WatchdogRestartRecord,
+    TransportAttachIntent, TransportProjection, TransportSessionProvenance, TransportSessionState,
+    WatchdogRestartRecord,
 };
 
 const PREWORK_LATENCY_FOCUSED_THRESHOLD_SAMPLES: u32 = 64;
@@ -92,6 +108,7 @@ pub struct SignalRuntime {
     applied_graph: Option<GraphProjection>,
     applied_schedule: Option<ScheduleProjection>,
     applied_transport: Option<TransportProjection>,
+    applied_parameter_batch: Option<ParameterBatch>,
     prework_forecast_requested_mode: RuntimePreworkForecastMode,
     prework_forecast_mode: RuntimePreworkForecastMode,
     prework_forecast_policy: Option<RuntimePreworkForecastPolicy>,
@@ -104,9 +121,13 @@ pub struct SignalRuntime {
     automation: RuntimeAutomationState,
     engine: RuntimeEngineState,
     transport_concurrency: RuntimeTransportConcurrencyState,
+    plugin_lifecycle: RuntimePluginLifecycleStateModel,
     recording_capture: RuntimeRecordingCaptureStateModel,
+    metering: RuntimeMeteringStateModel,
     media_pipeline: RuntimeMediaPipelineStateModel,
+    tempo_map: RuntimeTempoMapStateModel,
     warp_pipeline: RuntimeWarpPipelineStateModel,
+    clip_processing_pipeline: RuntimeClipProcessingPipelineStateModel,
     diagnostics: RuntimeDiagnosticsSnapshot,
     supervision: RuntimeSupervisionState,
     next_subscription: u64,
@@ -163,6 +184,389 @@ impl Default for RuntimeSupervisionState {
             last_watchdog_trigger: None,
             last_sandbox_id: None,
             last_processing_epoch: None,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct RuntimePluginLifecyclePolicy {
+    quarantine_after_faults: u32,
+}
+
+impl Default for RuntimePluginLifecyclePolicy {
+    fn default() -> Self {
+        Self {
+            quarantine_after_faults: 2,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct RuntimePluginSandboxStateModel {
+    sandbox_id: String,
+    plugin_type_id: Option<String>,
+    instance_id: Option<String>,
+    state: RuntimePluginLifecycleState,
+    lifecycle_stage: Option<PluginSandboxLifecycleStage>,
+    transport_stage: Option<PluginSandboxTransportStage>,
+    active: bool,
+    active_transport: bool,
+    restart_count: u32,
+    recovery_count: u32,
+    fault_count: u32,
+    last_fault_kind: Option<PluginFaultKind>,
+    last_fault_detail: Option<String>,
+    last_restart_intent: Option<RecoveryRestartIntent>,
+    last_stop_reason: Option<StopReason>,
+    last_processing_epoch: Option<u64>,
+    readiness_state: Option<String>,
+    degraded_reasons: Vec<String>,
+    active_lease_id: Option<String>,
+    active_region_id: Option<String>,
+}
+
+impl RuntimePluginSandboxStateModel {
+    fn new(sandbox_id: String) -> Self {
+        Self {
+            sandbox_id,
+            plugin_type_id: None,
+            instance_id: None,
+            state: RuntimePluginLifecycleState::Stopped,
+            lifecycle_stage: None,
+            transport_stage: None,
+            active: false,
+            active_transport: false,
+            restart_count: 0,
+            recovery_count: 0,
+            fault_count: 0,
+            last_fault_kind: None,
+            last_fault_detail: None,
+            last_restart_intent: None,
+            last_stop_reason: None,
+            last_processing_epoch: None,
+            readiness_state: None,
+            degraded_reasons: Vec::new(),
+            active_lease_id: None,
+            active_region_id: None,
+        }
+    }
+
+    fn snapshot(&self) -> RuntimePluginSandboxSnapshot {
+        RuntimePluginSandboxSnapshot {
+            sandbox_id: self.sandbox_id.clone(),
+            plugin_type_id: self.plugin_type_id.clone(),
+            instance_id: self.instance_id.clone(),
+            state: self.state,
+            lifecycle_stage: self.lifecycle_stage,
+            transport_stage: self.transport_stage,
+            active: self.active,
+            active_transport: self.active_transport,
+            restart_count: self.restart_count,
+            recovery_count: self.recovery_count,
+            fault_count: self.fault_count,
+            last_fault_kind: self.last_fault_kind,
+            last_fault_detail: self.last_fault_detail.clone(),
+            last_restart_intent: self.last_restart_intent,
+            last_stop_reason: self.last_stop_reason,
+            last_processing_epoch: self.last_processing_epoch,
+            readiness_state: self.readiness_state.clone(),
+            degraded_reasons: self.degraded_reasons.clone(),
+            active_lease_id: self.active_lease_id.clone(),
+            active_region_id: self.active_region_id.clone(),
+            summary: format!(
+                "state={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} fault={}",
+                self.state,
+                self.lifecycle_stage,
+                self.transport_stage,
+                self.restart_count,
+                self.recovery_count,
+                self.fault_count,
+                self.active,
+                self.active_transport,
+                self.instance_id.as_deref().unwrap_or("none"),
+                self.last_fault_detail.as_deref().unwrap_or("none"),
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct RuntimePluginLifecycleStateModel {
+    policy: RuntimePluginLifecyclePolicy,
+    sandboxes: BTreeMap<String, RuntimePluginSandboxStateModel>,
+    active_sandbox_count: u32,
+}
+
+impl RuntimePluginLifecycleStateModel {
+    fn sandbox_mut(&mut self, sandbox_id: &str) -> &mut RuntimePluginSandboxStateModel {
+        self.sandboxes
+            .entry(sandbox_id.to_string())
+            .or_insert_with(|| RuntimePluginSandboxStateModel::new(sandbox_id.to_string()))
+    }
+
+    fn snapshot(&self) -> RuntimePluginLifecycleSnapshot {
+        let sandboxes = self
+            .sandboxes
+            .values()
+            .map(RuntimePluginSandboxStateModel::snapshot)
+            .collect::<Vec<_>>();
+        let mut snapshot = RuntimePluginLifecycleSnapshot {
+            sandbox_count: sandboxes.len(),
+            active_sandbox_count: self.active_sandbox_count,
+            ready_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Ready)
+                .count(),
+            booting_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Booting)
+                .count(),
+            degraded_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Degraded)
+                .count(),
+            faulted_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Faulted)
+                .count(),
+            restarting_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Restarting)
+                .count(),
+            quarantined_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Quarantined)
+                .count(),
+            stopped_sandbox_count: sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.state == RuntimePluginLifecycleState::Stopped)
+                .count(),
+            sandboxes,
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "sandboxes={} active={} ready={} booting={} degraded={} faulted={} restarting={} quarantined={} stopped={}",
+            snapshot.sandbox_count,
+            snapshot.active_sandbox_count,
+            snapshot.ready_sandbox_count,
+            snapshot.booting_sandbox_count,
+            snapshot.degraded_sandbox_count,
+            snapshot.faulted_sandbox_count,
+            snapshot.restarting_sandbox_count,
+            snapshot.quarantined_sandbox_count,
+            snapshot.stopped_sandbox_count,
+        );
+        snapshot
+    }
+
+    fn set_active_sandbox_count(&mut self, count: u32) {
+        self.active_sandbox_count = count;
+    }
+
+    fn record_fault(
+        &mut self,
+        sandbox_id: &str,
+        kind: PluginFaultKind,
+        detail: String,
+        processing_epoch: Option<u64>,
+    ) {
+        let threshold = self.policy.quarantine_after_faults;
+        let sandbox = self.sandbox_mut(sandbox_id);
+        sandbox.fault_count = sandbox.fault_count.saturating_add(1);
+        sandbox.last_fault_kind = Some(kind);
+        sandbox.last_fault_detail = Some(detail);
+        sandbox.last_processing_epoch = processing_epoch;
+        sandbox.active = false;
+        sandbox.active_transport = false;
+        sandbox.transport_stage = Some(PluginSandboxTransportStage::DetachFault);
+        sandbox.active_lease_id = None;
+        sandbox.active_region_id = None;
+        sandbox.state = if sandbox.fault_count >= threshold {
+            RuntimePluginLifecycleState::Quarantined
+        } else {
+            RuntimePluginLifecycleState::Faulted
+        };
+    }
+
+    fn record_recovery_cycle(
+        &mut self,
+        sandbox_id: &str,
+        intent: RecoveryRestartIntent,
+        stop_reason: StopReason,
+        processing_epoch: Option<u64>,
+    ) {
+        let sandbox = self.sandbox_mut(sandbox_id);
+        sandbox.recovery_count = sandbox.recovery_count.saturating_add(1);
+        sandbox.last_restart_intent = Some(intent);
+        sandbox.last_stop_reason = Some(stop_reason);
+        sandbox.last_processing_epoch = processing_epoch;
+        sandbox.active = false;
+        sandbox.active_transport = false;
+        sandbox.active_lease_id = None;
+        sandbox.active_region_id = None;
+        if sandbox.state != RuntimePluginLifecycleState::Quarantined {
+            sandbox.state = RuntimePluginLifecycleState::Restarting;
+        }
+    }
+
+    fn record_lifecycle(
+        &mut self,
+        sandbox_id: &str,
+        stage: PluginSandboxLifecycleStage,
+        processing_epoch: Option<u64>,
+    ) {
+        let sandbox = self.sandbox_mut(sandbox_id);
+        sandbox.lifecycle_stage = Some(stage);
+        sandbox.last_processing_epoch = processing_epoch;
+        match stage {
+            PluginSandboxLifecycleStage::SandboxEnsured
+            | PluginSandboxLifecycleStage::SandboxHandshaken
+            | PluginSandboxLifecycleStage::PluginTypeLoaded
+            | PluginSandboxLifecycleStage::InstanceCreated => {
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined {
+                    sandbox.state = RuntimePluginLifecycleState::Booting;
+                    sandbox.active = true;
+                }
+            }
+            PluginSandboxLifecycleStage::InstancePrepared
+            | PluginSandboxLifecycleStage::TransportAttached
+            | PluginSandboxLifecycleStage::InstanceActivated => {
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined {
+                    sandbox.state = if sandbox.degraded_reasons.is_empty() {
+                        RuntimePluginLifecycleState::Ready
+                    } else {
+                        RuntimePluginLifecycleState::Degraded
+                    };
+                    sandbox.active = true;
+                }
+            }
+            PluginSandboxLifecycleStage::InstanceDeactivated
+            | PluginSandboxLifecycleStage::InstanceReset => {
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined {
+                    sandbox.state = RuntimePluginLifecycleState::Degraded;
+                }
+                sandbox.active = false;
+            }
+            PluginSandboxLifecycleStage::InstanceDestroyed
+            | PluginSandboxLifecycleStage::SandboxTeardown
+            | PluginSandboxLifecycleStage::TransportTornDown => {
+                sandbox.state = RuntimePluginLifecycleState::Stopped;
+                sandbox.active = false;
+                sandbox.active_transport = false;
+                sandbox.active_lease_id = None;
+                sandbox.active_region_id = None;
+            }
+            PluginSandboxLifecycleStage::SandboxRestarted => {
+                sandbox.restart_count = sandbox.restart_count.saturating_add(1);
+                sandbox.active = false;
+                sandbox.active_transport = false;
+                sandbox.active_lease_id = None;
+                sandbox.active_region_id = None;
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined {
+                    sandbox.state = RuntimePluginLifecycleState::Restarting;
+                }
+            }
+        }
+    }
+
+    fn record_instance_state(&mut self, state: PluginSandboxInstanceStateRecord) {
+        let sandbox = self.sandbox_mut(state.sandbox_id.as_str());
+        sandbox.plugin_type_id = Some(state.plugin_type_id.clone());
+        sandbox.instance_id = Some(state.instance_id.clone());
+        sandbox.last_processing_epoch = state.processing_epoch;
+        sandbox.readiness_state = Some(state.readiness_state.clone());
+        sandbox.degraded_reasons = state.degraded_reasons.clone();
+        sandbox.active = state.active;
+        if let Some(last_fault) = state.last_fault.as_ref() {
+            sandbox.last_fault_detail = Some(last_fault.message.clone());
+        }
+        if sandbox.state != RuntimePluginLifecycleState::Quarantined
+            && sandbox.state != RuntimePluginLifecycleState::Restarting
+            && sandbox.state != RuntimePluginLifecycleState::Stopped
+        {
+            sandbox.state = if !sandbox.degraded_reasons.is_empty() {
+                RuntimePluginLifecycleState::Degraded
+            } else if state.last_fault.is_some() && !state.active {
+                RuntimePluginLifecycleState::Faulted
+            } else if state.active && state.readiness_state.eq_ignore_ascii_case("ready") {
+                RuntimePluginLifecycleState::Ready
+            } else if state.active {
+                RuntimePluginLifecycleState::Booting
+            } else {
+                RuntimePluginLifecycleState::Degraded
+            };
+        }
+    }
+
+    fn record_transport(
+        &mut self,
+        sandbox_id: &str,
+        lease_id: &str,
+        region_id: &str,
+        stage: PluginSandboxTransportStage,
+        processing_epoch: Option<u64>,
+        detail: Option<String>,
+    ) {
+        let sandbox = self.sandbox_mut(sandbox_id);
+        sandbox.transport_stage = Some(stage);
+        sandbox.last_processing_epoch = processing_epoch;
+        match stage {
+            PluginSandboxTransportStage::Attached => {
+                sandbox.active_transport = true;
+                sandbox.active = true;
+                sandbox.active_lease_id = Some(lease_id.to_string());
+                sandbox.active_region_id = Some(region_id.to_string());
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined
+                    && sandbox.state != RuntimePluginLifecycleState::Faulted
+                {
+                    sandbox.state = if sandbox.degraded_reasons.is_empty() {
+                        RuntimePluginLifecycleState::Ready
+                    } else {
+                        RuntimePluginLifecycleState::Degraded
+                    };
+                }
+            }
+            PluginSandboxTransportStage::DetachRequested => {
+                sandbox.active_transport = false;
+                sandbox.active = false;
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined
+                    && sandbox.state != RuntimePluginLifecycleState::Faulted
+                {
+                    sandbox.state = RuntimePluginLifecycleState::Degraded;
+                }
+            }
+            PluginSandboxTransportStage::Detached => {
+                sandbox.active_transport = false;
+                sandbox.active = false;
+                sandbox.active_lease_id = None;
+                sandbox.active_region_id = None;
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined
+                    && sandbox.state != RuntimePluginLifecycleState::Faulted
+                    && sandbox.state != RuntimePluginLifecycleState::Stopped
+                {
+                    sandbox.state = RuntimePluginLifecycleState::Degraded;
+                }
+            }
+            PluginSandboxTransportStage::DetachFault => {
+                sandbox.active_transport = false;
+                sandbox.active = false;
+                sandbox.active_lease_id = None;
+                sandbox.active_region_id = None;
+                sandbox.last_fault_detail = detail;
+                if sandbox.state != RuntimePluginLifecycleState::Quarantined {
+                    sandbox.state = RuntimePluginLifecycleState::Degraded;
+                }
+            }
+        }
+    }
+}
+
+impl Default for RuntimePluginLifecycleStateModel {
+    fn default() -> Self {
+        Self {
+            policy: RuntimePluginLifecyclePolicy::default(),
+            sandboxes: BTreeMap::new(),
+            active_sandbox_count: 0,
         }
     }
 }
@@ -410,6 +814,154 @@ impl Default for RuntimeMediaPipelineStateModel {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+struct RuntimeTempoMapStateModel {
+    projection: Option<RuntimeTempoMapProjection>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimeResolvedTempo {
+    tempo_bpm: f64,
+    source: RuntimeTempoSource,
+    active_segment_id: Option<String>,
+    active_segment_index: Option<usize>,
+    next_segment_start_samples: Option<i64>,
+    timeline_position_samples: Option<i64>,
+}
+
+impl RuntimeTempoMapStateModel {
+    fn apply_projection(&mut self, mut projection: RuntimeTempoMapProjection) {
+        projection.segment_count = projection.segments.len();
+        projection
+            .segments
+            .sort_by_key(|segment| (segment.start_samples, segment.segment_id.clone()));
+        self.projection = Some(projection);
+    }
+
+    fn resolve(
+        &self,
+        timeline_position_samples: Option<i64>,
+        projected_transport: Option<TransportProjection>,
+        observed_tempo_bpm: Option<f64>,
+    ) -> RuntimeResolvedTempo {
+        let projected_tempo_bpm = projected_transport
+            .map(|transport| transport.tempo_bpm)
+            .or(observed_tempo_bpm)
+            .filter(|tempo| tempo.is_finite() && *tempo > 0.0);
+        let mut resolved = RuntimeResolvedTempo {
+            tempo_bpm: projected_tempo_bpm.unwrap_or(120.0),
+            source: if projected_tempo_bpm.is_some() {
+                RuntimeTempoSource::TransportProjection
+            } else {
+                RuntimeTempoSource::DefaultFallback
+            },
+            active_segment_id: None,
+            active_segment_index: None,
+            next_segment_start_samples: None,
+            timeline_position_samples,
+        };
+
+        let Some(position) = timeline_position_samples else {
+            return resolved;
+        };
+        let Some(projection) = self.projection.as_ref() else {
+            return resolved;
+        };
+
+        for (index, segment) in projection.segments.iter().enumerate() {
+            if segment.start_samples > position {
+                resolved.next_segment_start_samples = Some(segment.start_samples);
+                break;
+            }
+            let segment_end = segment.end_samples.unwrap_or(i64::MAX);
+            if position < segment_end {
+                resolved.tempo_bpm = resolved_tempo_for_segment(segment, position);
+                resolved.source = RuntimeTempoSource::TempoMapSegment;
+                resolved.active_segment_id = Some(segment.segment_id.clone());
+                resolved.active_segment_index = Some(index);
+                resolved.next_segment_start_samples = projection
+                    .segments
+                    .get(index + 1)
+                    .map(|next| next.start_samples);
+                break;
+            }
+        }
+
+        resolved
+    }
+
+    fn snapshot(&self, resolved: &RuntimeResolvedTempo) -> RuntimeTempoMapSnapshot {
+        let segments = self
+            .projection
+            .as_ref()
+            .map(|projection| {
+                projection
+                    .segments
+                    .iter()
+                    .enumerate()
+                    .map(|(index, segment)| RuntimeTempoMapSegmentSnapshot {
+                        segment_id: segment.segment_id.clone(),
+                        start_samples: segment.start_samples,
+                        end_samples: segment.end_samples,
+                        start_tempo_bpm: segment.start_tempo_bpm,
+                        end_tempo_bpm: segment.end_tempo_bpm,
+                        interpolation: segment.interpolation,
+                        covers_timeline_position: resolved.active_segment_index == Some(index),
+                        summary: format!(
+                            "segment={} interpolation={:?} start={} end={:?} tempo={:.3}->{:?}",
+                            segment.segment_id,
+                            segment.interpolation,
+                            segment.start_samples,
+                            segment.end_samples,
+                            segment.start_tempo_bpm,
+                            segment.end_tempo_bpm,
+                        ),
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        RuntimeTempoMapSnapshot {
+            segment_count: segments.len(),
+            active_segment_id: resolved.active_segment_id.clone(),
+            active_segment_index: resolved.active_segment_index,
+            next_segment_start_samples: resolved.next_segment_start_samples,
+            resolved_tempo_bpm: resolved.tempo_bpm,
+            tempo_source: resolved.source,
+            timeline_position_samples: resolved.timeline_position_samples,
+            segments,
+            summary: format!(
+                "tempo_map segments={} active={:?}/{:?} source={:?} tempo={:.3} next_segment={:?}",
+                self.projection
+                    .as_ref()
+                    .map_or(0, |projection| projection.segment_count),
+                resolved.active_segment_index,
+                resolved.active_segment_id,
+                resolved.source,
+                resolved.tempo_bpm,
+                resolved.next_segment_start_samples,
+            ),
+        }
+    }
+}
+
+fn resolved_tempo_for_segment(segment: &RuntimeTempoMapSegmentProjection, position: i64) -> f64 {
+    match (
+        segment.interpolation,
+        segment.end_samples,
+        segment.end_tempo_bpm,
+    ) {
+        (RuntimeTempoMapInterpolation::Linear, Some(end_samples), Some(end_tempo_bpm))
+            if end_samples > segment.start_samples =>
+        {
+            let span = (end_samples - segment.start_samples) as f64;
+            let offset = (position - segment.start_samples)
+                .clamp(0, end_samples - segment.start_samples) as f64;
+            segment.start_tempo_bpm + ((end_tempo_bpm - segment.start_tempo_bpm) * (offset / span))
+        }
+        _ => segment.start_tempo_bpm,
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
 struct RuntimeWarpPipelineStateModel {
     clips: BTreeMap<String, RuntimeWarpClipRegistration>,
 }
@@ -417,19 +969,20 @@ struct RuntimeWarpPipelineStateModel {
 impl RuntimeWarpPipelineStateModel {
     fn snapshot(
         &self,
-        project_tempo_bpm: f64,
+        resolved_tempo: &RuntimeResolvedTempo,
         media_pipeline: &RuntimeMediaPipelineStateModel,
     ) -> RuntimeWarpPipelineSnapshot {
-        let project_tempo_bpm = if project_tempo_bpm.is_finite() && project_tempo_bpm > 0.0 {
-            project_tempo_bpm
-        } else {
-            120.0
-        };
+        let project_tempo_bpm =
+            if resolved_tempo.tempo_bpm.is_finite() && resolved_tempo.tempo_bpm > 0.0 {
+                resolved_tempo.tempo_bpm
+            } else {
+                120.0
+            };
         let clips = self
             .clips
             .values()
             .map(|registration| {
-                self.snapshot_clip(registration, project_tempo_bpm, &media_pipeline.assets)
+                self.snapshot_clip(registration, resolved_tempo, &media_pipeline.assets)
             })
             .collect::<Vec<_>>();
         let ready_clip_count = clips
@@ -455,14 +1008,19 @@ impl RuntimeWarpPipelineStateModel {
             degraded_clip_count,
             bypassed_clip_count,
             active_warp_count,
+            resolved_project_tempo_bpm: project_tempo_bpm,
+            resolved_project_tempo_source: resolved_tempo.source,
+            resolved_project_tempo_segment_id: resolved_tempo.active_segment_id.clone(),
             clips,
             summary: format!(
-                "warp clips={} active={} ready={} degraded={} bypassed={} project_tempo={project_tempo_bpm:.2}",
+                "warp clips={} active={} ready={} degraded={} bypassed={} project_tempo={project_tempo_bpm:.2} source={:?} segment={:?}",
                 self.clips.len(),
                 active_warp_count,
                 ready_clip_count,
                 degraded_clip_count,
                 bypassed_clip_count,
+                resolved_tempo.source,
+                resolved_tempo.active_segment_id,
             ),
         }
     }
@@ -470,9 +1028,15 @@ impl RuntimeWarpPipelineStateModel {
     fn snapshot_clip(
         &self,
         registration: &RuntimeWarpClipRegistration,
-        project_tempo_bpm: f64,
+        resolved_tempo: &RuntimeResolvedTempo,
         media_assets: &BTreeMap<String, RuntimeMediaPipelineAsset>,
     ) -> RuntimeWarpClipSnapshot {
+        let project_tempo_bpm =
+            if resolved_tempo.tempo_bpm.is_finite() && resolved_tempo.tempo_bpm > 0.0 {
+                resolved_tempo.tempo_bpm
+            } else {
+                120.0
+            };
         let mut realized_ratio = 1.0;
         let (readiness, last_error) = match registration.mode {
             RuntimeWarpMode::Off => (RuntimeWarpReadiness::Bypassed, None),
@@ -540,6 +1104,8 @@ impl RuntimeWarpPipelineStateModel {
             mode: registration.mode,
             source_tempo_bpm: registration.source_tempo_bpm,
             project_tempo_bpm,
+            project_tempo_source: resolved_tempo.source,
+            project_tempo_segment_id: resolved_tempo.active_segment_id.clone(),
             realized_ratio,
             anchor_timeline_samples: registration.anchor_timeline_samples,
             start_samples: registration.start_samples,
@@ -547,7 +1113,7 @@ impl RuntimeWarpPipelineStateModel {
             readiness,
             last_error: last_error.clone(),
             summary: format!(
-                "clip={} mode={:?} readiness={:?} ratio={realized_ratio:.3} source_tempo={} project_tempo={project_tempo_bpm:.2} error={}",
+                "clip={} mode={:?} readiness={:?} ratio={realized_ratio:.3} source_tempo={} project_tempo={project_tempo_bpm:.2}/{:?}/{:?} error={}",
                 registration.clip_id,
                 registration.mode,
                 readiness,
@@ -555,6 +1121,8 @@ impl RuntimeWarpPipelineStateModel {
                     .source_tempo_bpm
                     .map(|tempo| format!("{tempo:.2}"))
                     .unwrap_or_else(|| "none".to_string()),
+                resolved_tempo.source,
+                resolved_tempo.active_segment_id,
                 last_error.as_deref().unwrap_or("none"),
             ),
         }
@@ -565,7 +1133,464 @@ impl RuntimeWarpPipelineStateModel {
             .iter()
             .map(|clip| clip.clip_id.clone())
             .collect::<BTreeSet<_>>();
-        self.clips.retain(|clip_id, _| retained_ids.contains(clip_id));
+        self.clips
+            .retain(|clip_id, _| retained_ids.contains(clip_id));
+        for clip in clips {
+            self.clips.insert(clip.clip_id.clone(), clip);
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+struct RuntimeClipProcessingPipelineStateModel {
+    clips: BTreeMap<String, RuntimeClipProcessingRegistration>,
+}
+
+impl RuntimeClipProcessingPipelineStateModel {
+    fn treatment_stages(
+        &self,
+        registration: &RuntimeClipProcessingRegistration,
+    ) -> Vec<RuntimeClipProcessingStage> {
+        let mut stages = Vec::new();
+        if registration.warp_mode != RuntimeWarpMode::Off {
+            stages.push(RuntimeClipProcessingStage::Warp);
+        }
+        if registration.fade_in.duration_samples > 0 {
+            stages.push(RuntimeClipProcessingStage::FadeIn);
+        }
+        if registration.clip_gain.shape != RuntimeClipGainShape::Hold
+            || (registration.clip_gain.start_linear - 1.0).abs() > f32::EPSILON
+            || (registration.clip_gain.end_linear - 1.0).abs() > f32::EPSILON
+        {
+            stages.push(RuntimeClipProcessingStage::GainShape);
+        }
+        if registration.fade_out.duration_samples > 0 {
+            stages.push(RuntimeClipProcessingStage::FadeOut);
+        }
+        stages
+    }
+
+    fn warp_context(
+        &self,
+        registration: &RuntimeClipProcessingRegistration,
+        warp_clips: &[RuntimeWarpClipSnapshot],
+    ) -> (Option<f64>, Option<RuntimeTempoSource>, Option<String>) {
+        warp_clips
+            .iter()
+            .find(|clip| clip.clip_id == registration.clip_id)
+            .map(|clip| {
+                (
+                    Some(clip.realized_ratio),
+                    Some(clip.project_tempo_source),
+                    clip.project_tempo_segment_id.clone(),
+                )
+            })
+            .unwrap_or((None, None, None))
+    }
+
+    fn validate_registration(
+        &self,
+        registration: &RuntimeClipProcessingRegistration,
+    ) -> Option<String> {
+        if !registration.clip_gain.start_linear.is_finite()
+            || !registration.clip_gain.end_linear.is_finite()
+            || registration.clip_gain.start_linear < 0.0
+            || registration.clip_gain.end_linear < 0.0
+        {
+            return Some("clip gain envelope must be finite and non-negative".to_string());
+        }
+        if registration.clip_gain.shape == RuntimeClipGainShape::Hold
+            && (registration.clip_gain.start_linear - registration.clip_gain.end_linear).abs()
+                > f32::EPSILON
+        {
+            return Some("hold clip gain shape requires identical start and end gain".to_string());
+        }
+        if u64::from(registration.fade_in.duration_samples)
+            + u64::from(registration.fade_out.duration_samples)
+            > u64::from(registration.duration_samples)
+        {
+            return Some("clip fades exceed clip duration".to_string());
+        }
+        None
+    }
+
+    fn snapshot(
+        &self,
+        media_pipeline: &RuntimeMediaPipelineStateModel,
+        warp_pipeline: &RuntimeWarpPipelineStateModel,
+        resolved_tempo: &RuntimeResolvedTempo,
+    ) -> RuntimeClipProcessingPipelineSnapshot {
+        let warp_snapshot = warp_pipeline.snapshot(resolved_tempo, media_pipeline);
+        let clips = self
+            .clips
+            .values()
+            .map(|registration| {
+                self.snapshot_clip(registration, media_pipeline, &warp_snapshot.clips)
+            })
+            .collect::<Vec<_>>();
+        let ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeClipProcessingReadiness::Ready)
+            .count();
+        let pending_media_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeClipProcessingReadiness::PendingMedia)
+            .count();
+        let pending_warp_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeClipProcessingReadiness::PendingWarp)
+            .count();
+        let invalid_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeClipProcessingReadiness::Invalid)
+            .count();
+        let faded_clip_count = clips
+            .iter()
+            .filter(|clip| clip.fade_in.duration_samples > 0 || clip.fade_out.duration_samples > 0)
+            .count();
+        let gain_shaped_clip_count = clips
+            .iter()
+            .filter(|clip| {
+                clip.clip_gain.shape != RuntimeClipGainShape::Hold
+                    || (clip.clip_gain.start_linear - 1.0).abs() > f32::EPSILON
+                    || (clip.clip_gain.end_linear - 1.0).abs() > f32::EPSILON
+            })
+            .count();
+        let warped_clip_count = clips
+            .iter()
+            .filter(|clip| clip.realized_warp_ratio.is_some())
+            .count();
+        let treatment_stage_count = clips.iter().map(|clip| clip.treatment_stages.len()).sum();
+
+        RuntimeClipProcessingPipelineSnapshot {
+            clip_count: clips.len(),
+            ready_clip_count,
+            pending_media_clip_count,
+            pending_warp_clip_count,
+            invalid_clip_count,
+            faded_clip_count,
+            gain_shaped_clip_count,
+            warped_clip_count,
+            treatment_stage_count,
+            clips,
+            summary: format!(
+                "clip_processing clips={} ready={} pending_media={} pending_warp={} invalid={} faded={} gain_shaped={} warped={} treatment_stages={}",
+                self.clips.len(),
+                ready_clip_count,
+                pending_media_clip_count,
+                pending_warp_clip_count,
+                invalid_clip_count,
+                faded_clip_count,
+                gain_shaped_clip_count,
+                warped_clip_count,
+                treatment_stage_count,
+            ),
+        }
+    }
+
+    fn snapshot_clip(
+        &self,
+        registration: &RuntimeClipProcessingRegistration,
+        media_pipeline: &RuntimeMediaPipelineStateModel,
+        warp_clips: &[RuntimeWarpClipSnapshot],
+    ) -> RuntimeClipProcessingSnapshot {
+        let fade_in_end_samples = registration
+            .start_samples
+            .saturating_add(i64::from(registration.fade_in.duration_samples));
+        let fade_out_start_samples = registration.start_samples.saturating_add(i64::from(
+            registration
+                .duration_samples
+                .saturating_sub(registration.fade_out.duration_samples),
+        ));
+        let treatment_stages = self.treatment_stages(registration);
+        let treatment_stages_summary = treatment_stages.clone();
+        let (realized_warp_ratio, project_tempo_source, project_tempo_segment_id) =
+            self.warp_context(registration, warp_clips);
+        let project_tempo_segment_id_summary = project_tempo_segment_id.clone();
+        let (readiness, last_error) = if let Some(error) = self.validate_registration(registration)
+        {
+            (RuntimeClipProcessingReadiness::Invalid, Some(error))
+        } else if let Some(media_asset_id) = registration.media_asset_id.as_deref() {
+            match media_pipeline.assets.get(media_asset_id) {
+                Some(asset) if asset.state == RuntimeMediaAssetState::Ready => {
+                    if registration.warp_mode == RuntimeWarpMode::Off {
+                        (RuntimeClipProcessingReadiness::Ready, None)
+                    } else if let Some(warp_clip) = warp_clips
+                        .iter()
+                        .find(|clip| clip.clip_id == registration.clip_id)
+                    {
+                        match warp_clip.readiness {
+                            RuntimeWarpReadiness::Ready | RuntimeWarpReadiness::Bypassed => {
+                                (RuntimeClipProcessingReadiness::Ready, None)
+                            }
+                            RuntimeWarpReadiness::Degraded => (
+                                RuntimeClipProcessingReadiness::Invalid,
+                                warp_clip
+                                    .last_error
+                                    .clone()
+                                    .or_else(|| Some("warp processing degraded".to_string())),
+                            ),
+                        }
+                    } else {
+                        (
+                            RuntimeClipProcessingReadiness::PendingWarp,
+                            Some("warp pipeline has not realized this clip yet".to_string()),
+                        )
+                    }
+                }
+                Some(asset)
+                    if matches!(
+                        asset.state,
+                        RuntimeMediaAssetState::Ingesting
+                            | RuntimeMediaAssetState::Conforming
+                            | RuntimeMediaAssetState::Rebuilding
+                    ) =>
+                {
+                    (
+                        RuntimeClipProcessingReadiness::PendingMedia,
+                        Some(format!("media asset not ready: {:?}", asset.state)),
+                    )
+                }
+                Some(asset) => (
+                    RuntimeClipProcessingReadiness::Invalid,
+                    Some(format!("media asset invalid: {:?}", asset.state)),
+                ),
+                None => (
+                    RuntimeClipProcessingReadiness::PendingMedia,
+                    Some(format!(
+                        "media asset `{media_asset_id}` not yet available in runtime cache"
+                    )),
+                ),
+            }
+        } else if registration.warp_mode != RuntimeWarpMode::Off {
+            (
+                RuntimeClipProcessingReadiness::Invalid,
+                Some("warp-enabled clip has no media asset".to_string()),
+            )
+        } else {
+            (RuntimeClipProcessingReadiness::Ready, None)
+        };
+
+        RuntimeClipProcessingSnapshot {
+            clip_id: registration.clip_id.clone(),
+            media_asset_id: registration.media_asset_id.clone(),
+            warp_mode: registration.warp_mode,
+            start_samples: registration.start_samples,
+            duration_samples: registration.duration_samples,
+            fade_in: registration.fade_in.clone(),
+            fade_out: registration.fade_out.clone(),
+            fade_in_end_samples,
+            fade_out_start_samples,
+            clip_gain: registration.clip_gain.clone(),
+            treatment_stages,
+            realized_warp_ratio,
+            project_tempo_source,
+            project_tempo_segment_id,
+            readiness,
+            last_error: last_error.clone(),
+            summary: format!(
+                "clip={} readiness={:?} gain={:.3}->{:.3}/{:?} fade_in={}/{:?} fade_out={}/{:?} stages={:?} media={} warp={:?} warp_ratio={:?} tempo={:?}/{:?} error={}",
+                registration.clip_id,
+                readiness,
+                registration.clip_gain.start_linear,
+                registration.clip_gain.end_linear,
+                registration.clip_gain.shape,
+                registration.fade_in.duration_samples,
+                registration.fade_in.shape,
+                registration.fade_out.duration_samples,
+                registration.fade_out.shape,
+                treatment_stages_summary,
+                registration.media_asset_id.as_deref().unwrap_or("none"),
+                registration.warp_mode,
+                realized_warp_ratio,
+                project_tempo_source,
+                project_tempo_segment_id_summary,
+                last_error.as_deref().unwrap_or("none"),
+            ),
+        }
+    }
+
+    fn render_clip(
+        &self,
+        request: RuntimeClipRenderRequest,
+        media_pipeline: &RuntimeMediaPipelineStateModel,
+        warp_pipeline: &RuntimeWarpPipelineStateModel,
+        resolved_tempo: &RuntimeResolvedTempo,
+    ) -> Result<RuntimeClipRenderResult, RuntimeError> {
+        let registration = self.clips.get(&request.clip_id).ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "clip processing render request references unknown clip `{}`",
+                    request.clip_id
+                ),
+            )
+        })?;
+        let warp_snapshot = warp_pipeline.snapshot(resolved_tempo, media_pipeline);
+        let clip_processing_snapshot =
+            self.snapshot_clip(registration, media_pipeline, &warp_snapshot.clips);
+        if clip_processing_snapshot.readiness != RuntimeClipProcessingReadiness::Ready {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                clip_processing_snapshot
+                    .last_error
+                    .clone()
+                    .unwrap_or_else(|| "clip processing render path is not ready".to_string()),
+            ));
+        }
+        if registration.warp_mode != RuntimeWarpMode::Off
+            && request.input_stage != RuntimeClipRenderInputStage::PostWarp
+        {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::UnsupportedCapability,
+                "warp-enabled clip render requests currently require post-warp input",
+            ));
+        }
+
+        let mut output = request.buffer;
+        let mut first_frame_gain = None;
+        let mut last_frame_gain = None;
+        let mut peak_applied_gain: Option<f32> = None;
+        let channels = output.channel_count().0;
+        for frame_index in 0..output.frames().0 {
+            let timeline_position_samples = request
+                .timeline_start_samples
+                .saturating_add(frame_index as i64);
+            let gain = Self::clip_frame_gain(registration, timeline_position_samples);
+            if frame_index == 0 {
+                first_frame_gain = Some(gain);
+            }
+            last_frame_gain = Some(gain);
+            peak_applied_gain = Some(
+                peak_applied_gain
+                    .map(|current| current.max(gain))
+                    .unwrap_or(gain),
+            );
+            let frame_start = frame_index.saturating_mul(channels);
+            let frame_end = frame_start.saturating_add(channels);
+            for sample in &mut output.samples_mut()[frame_start..frame_end] {
+                *sample *= gain;
+            }
+        }
+
+        let timeline_end_samples = request
+            .timeline_start_samples
+            .saturating_add(output.frames().0 as i64);
+        Ok(RuntimeClipRenderResult {
+            clip_id: request.clip_id,
+            timeline_start_samples: request.timeline_start_samples,
+            timeline_end_samples,
+            input_stage: request.input_stage,
+            clip_processing_snapshot: clip_processing_snapshot.clone(),
+            first_frame_gain,
+            last_frame_gain,
+            peak_applied_gain,
+            output,
+            summary: format!(
+                "clip_render clip={} input_stage={:?} timeline={}..{} first_gain={:?} last_gain={:?} peak_gain={:?} stages={:?}",
+                clip_processing_snapshot.clip_id,
+                request.input_stage,
+                request.timeline_start_samples,
+                timeline_end_samples,
+                first_frame_gain,
+                last_frame_gain,
+                peak_applied_gain,
+                clip_processing_snapshot.treatment_stages,
+            ),
+        })
+    }
+
+    fn clip_frame_gain(
+        registration: &RuntimeClipProcessingRegistration,
+        timeline_position_samples: i64,
+    ) -> f32 {
+        let clip_offset_samples =
+            timeline_position_samples.saturating_sub(registration.start_samples);
+        if clip_offset_samples < 0
+            || clip_offset_samples >= i64::from(registration.duration_samples)
+        {
+            return 0.0;
+        }
+        let clip_offset_samples = clip_offset_samples as u32;
+        let fade_in_gain = Self::fade_in_gain(registration, clip_offset_samples);
+        let fade_out_gain = Self::fade_out_gain(registration, clip_offset_samples);
+        let gain_shape = Self::gain_shape_gain(registration, clip_offset_samples);
+        fade_in_gain * fade_out_gain * gain_shape
+    }
+
+    fn fade_in_gain(
+        registration: &RuntimeClipProcessingRegistration,
+        clip_offset_samples: u32,
+    ) -> f32 {
+        let fade_in = registration.fade_in.duration_samples;
+        if fade_in == 0 {
+            return 1.0;
+        }
+        if clip_offset_samples >= fade_in {
+            return 1.0;
+        }
+        if fade_in == 1 {
+            return 1.0;
+        }
+        let progress = clip_offset_samples as f32 / (fade_in - 1) as f32;
+        Self::fade_shape_gain(registration.fade_in.shape, progress)
+    }
+
+    fn fade_out_gain(
+        registration: &RuntimeClipProcessingRegistration,
+        clip_offset_samples: u32,
+    ) -> f32 {
+        let fade_out = registration.fade_out.duration_samples;
+        if fade_out == 0 {
+            return 1.0;
+        }
+        let fade_out_start = registration.duration_samples.saturating_sub(fade_out);
+        if clip_offset_samples < fade_out_start {
+            return 1.0;
+        }
+        if fade_out == 1 {
+            return 0.0;
+        }
+        let fade_offset = clip_offset_samples.saturating_sub(fade_out_start) as f32;
+        let progress = 1.0 - (fade_offset / (fade_out - 1) as f32);
+        Self::fade_shape_gain(registration.fade_out.shape, progress)
+    }
+
+    fn fade_shape_gain(shape: RuntimeClipFadeShape, progress: f32) -> f32 {
+        let progress = progress.clamp(0.0, 1.0);
+        match shape {
+            RuntimeClipFadeShape::Linear => progress,
+            RuntimeClipFadeShape::EqualPower => (progress * std::f32::consts::FRAC_PI_2).sin(),
+            RuntimeClipFadeShape::SmoothStep => progress * progress * (3.0 - 2.0 * progress),
+        }
+    }
+
+    fn gain_shape_gain(
+        registration: &RuntimeClipProcessingRegistration,
+        clip_offset_samples: u32,
+    ) -> f32 {
+        match registration.clip_gain.shape {
+            RuntimeClipGainShape::Hold => registration.clip_gain.start_linear,
+            RuntimeClipGainShape::Linear => {
+                if registration.duration_samples <= 1 {
+                    return registration.clip_gain.end_linear;
+                }
+                let progress =
+                    clip_offset_samples as f32 / (registration.duration_samples - 1) as f32;
+                registration.clip_gain.start_linear
+                    + (registration.clip_gain.end_linear - registration.clip_gain.start_linear)
+                        * progress.clamp(0.0, 1.0)
+            }
+        }
+    }
+
+    fn reconcile_clips(&mut self, clips: Vec<RuntimeClipProcessingRegistration>) {
+        let retained_ids = clips
+            .iter()
+            .map(|clip| clip.clip_id.clone())
+            .collect::<BTreeSet<_>>();
+        self.clips
+            .retain(|clip_id, _| retained_ids.contains(clip_id));
         for clip in clips {
             self.clips.insert(clip.clip_id.clone(), clip);
         }
@@ -846,6 +1871,269 @@ impl Default for RuntimeRecordingCaptureStateModel {
             last_committed_path: None,
             last_committed_duration_samples: None,
             last_error: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimeMeteringWindowBlock {
+    mean_square: f64,
+    sample_count: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimeMeteringStateModel {
+    snapshot: RuntimeMeteringSnapshot,
+    momentary_blocks: VecDeque<RuntimeMeteringWindowBlock>,
+    short_term_blocks: VecDeque<RuntimeMeteringWindowBlock>,
+    momentary_sum: f64,
+    short_term_sum: f64,
+    momentary_sample_count: usize,
+    short_term_sample_count: usize,
+    integrated_sum: f64,
+    integrated_sample_count: u64,
+    clipped_sample_count: u64,
+}
+
+impl RuntimeMeteringStateModel {
+    fn snapshot(&self) -> RuntimeMeteringSnapshot {
+        self.snapshot.clone()
+    }
+
+    fn capture(
+        &mut self,
+        sample_rate_hz: u32,
+        output: &AudioBuffer,
+        meter_sources: Vec<RuntimeMeterSourceSnapshot>,
+    ) {
+        let samples = output.samples();
+        let sample_count = samples.len();
+        let mean_square = if sample_count == 0 {
+            0.0
+        } else {
+            samples
+                .iter()
+                .copied()
+                .map(|sample| {
+                    let sample = f64::from(sample);
+                    sample * sample
+                })
+                .sum::<f64>()
+                / sample_count as f64
+        };
+        let clipped_samples = samples
+            .iter()
+            .filter(|sample| sample.abs() >= 0.999)
+            .count() as u64;
+        self.clipped_sample_count = self.clipped_sample_count.saturating_add(clipped_samples);
+        self.integrated_sum += mean_square * sample_count as f64;
+        self.integrated_sample_count = self
+            .integrated_sample_count
+            .saturating_add(sample_count.min(u64::MAX as usize) as u64);
+        Self::push_window_block(
+            &mut self.momentary_blocks,
+            &mut self.momentary_sum,
+            &mut self.momentary_sample_count,
+            RuntimeMeteringWindowBlock {
+                mean_square,
+                sample_count,
+            },
+            Self::window_sample_target(sample_rate_hz, output.channel_count().0, 0.4),
+        );
+        Self::push_window_block(
+            &mut self.short_term_blocks,
+            &mut self.short_term_sum,
+            &mut self.short_term_sample_count,
+            RuntimeMeteringWindowBlock {
+                mean_square,
+                sample_count,
+            },
+            Self::window_sample_target(sample_rate_hz, output.channel_count().0, 3.0),
+        );
+
+        let meters = meter_sources;
+        let main_output = meters.iter().find(|meter| meter.bus_id == "main:out");
+
+        self.snapshot = RuntimeMeteringSnapshot {
+            meter_count: meters.len(),
+            main_output_peak_level: main_output.map(|meter| meter.peak_level),
+            main_output_rms_level: main_output.map(|meter| meter.rms_level),
+            momentary_loudness_lufs: Self::lufs_from_weighted_sum(
+                self.momentary_sum,
+                self.momentary_sample_count,
+            ),
+            short_term_loudness_lufs: Self::lufs_from_weighted_sum(
+                self.short_term_sum,
+                self.short_term_sample_count,
+            ),
+            integrated_loudness_lufs: Self::lufs_from_weighted_sum_u64(
+                self.integrated_sum,
+                self.integrated_sample_count,
+            ),
+            clipped_sample_count: self.clipped_sample_count,
+            track_lanes: Vec::new(),
+            bus_groups: Vec::new(),
+            console_groups: Vec::new(),
+            send_returns: Vec::new(),
+            summary: format!(
+                "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={}",
+                meters.len(),
+                main_output.map(|meter| meter.peak_level),
+                main_output.map(|meter| meter.rms_level),
+                Self::lufs_from_weighted_sum(self.momentary_sum, self.momentary_sample_count),
+                Self::lufs_from_weighted_sum(self.short_term_sum, self.short_term_sample_count),
+                Self::lufs_from_weighted_sum_u64(
+                    self.integrated_sum,
+                    self.integrated_sample_count,
+                ),
+                self.clipped_sample_count,
+            ),
+            meters,
+        };
+    }
+
+    fn push_window_block(
+        window: &mut VecDeque<RuntimeMeteringWindowBlock>,
+        sum: &mut f64,
+        sample_count: &mut usize,
+        block: RuntimeMeteringWindowBlock,
+        target_samples: usize,
+    ) {
+        *sum += block.mean_square * block.sample_count as f64;
+        *sample_count = sample_count.saturating_add(block.sample_count);
+        window.push_back(block);
+        while *sample_count > target_samples.max(1) {
+            let Some(removed) = window.pop_front() else {
+                break;
+            };
+            *sum -= removed.mean_square * removed.sample_count as f64;
+            *sample_count = sample_count.saturating_sub(removed.sample_count);
+        }
+    }
+
+    fn window_sample_target(sample_rate_hz: u32, channel_count: usize, seconds: f64) -> usize {
+        ((sample_rate_hz as f64) * seconds).round() as usize * channel_count.max(1)
+    }
+
+    fn lufs_from_weighted_sum(sum: f64, sample_count: usize) -> Option<f32> {
+        if sample_count == 0 {
+            return None;
+        }
+        Self::lufs_from_mean_square(sum / sample_count as f64)
+    }
+
+    fn lufs_from_weighted_sum_u64(sum: f64, sample_count: u64) -> Option<f32> {
+        if sample_count == 0 {
+            return None;
+        }
+        Self::lufs_from_mean_square(sum / sample_count as f64)
+    }
+
+    fn lufs_from_mean_square(mean_square: f64) -> Option<f32> {
+        if mean_square <= f64::EPSILON {
+            None
+        } else {
+            Some((10.0 * mean_square.log10()) as f32)
+        }
+    }
+
+    fn meter_contract_metadata(
+        contract: &signal_graph::GraphContractSummary,
+        bus_id: &str,
+    ) -> (
+        RuntimeMeterSourceRole,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Vec<String>,
+    ) {
+        let matching = contract
+            .node_contracts
+            .iter()
+            .filter(|node| node.output_bus_id == bus_id)
+            .collect::<Vec<_>>();
+        if matching.is_empty() {
+            return (
+                RuntimeMeterSourceRole::Utility,
+                None,
+                None,
+                None,
+                None,
+                Vec::new(),
+            );
+        }
+
+        let producer_node_ids = matching
+            .iter()
+            .map(|node| node.node_id.clone())
+            .collect::<Vec<_>>();
+        let topology_role = {
+            let first = matching[0].topology_role;
+            if matching.iter().all(|node| node.topology_role == first) {
+                runtime_meter_source_role(first)
+            } else {
+                RuntimeMeterSourceRole::Utility
+            }
+        };
+        let track_lane_id = unique_string(
+            matching
+                .iter()
+                .filter_map(|node| node.track_lane_id.as_ref()),
+        );
+        let bus_group_id = unique_string(
+            matching
+                .iter()
+                .filter_map(|node| node.bus_group_id.as_ref()),
+        );
+        let console_group_id = unique_string(
+            matching
+                .iter()
+                .filter_map(|node| node.console_group_id.as_ref()),
+        );
+        let send_return_id = unique_string(
+            matching
+                .iter()
+                .filter_map(|node| node.send_return_id.as_ref()),
+        );
+        (
+            topology_role,
+            track_lane_id,
+            bus_group_id,
+            console_group_id,
+            send_return_id,
+            producer_node_ids,
+        )
+    }
+}
+
+impl Default for RuntimeMeteringStateModel {
+    fn default() -> Self {
+        Self {
+            snapshot: RuntimeMeteringSnapshot {
+                meter_count: 0,
+                main_output_peak_level: None,
+                main_output_rms_level: None,
+                momentary_loudness_lufs: None,
+                short_term_loudness_lufs: None,
+                integrated_loudness_lufs: None,
+                clipped_sample_count: 0,
+                meters: Vec::new(),
+                track_lanes: Vec::new(),
+                bus_groups: Vec::new(),
+                console_groups: Vec::new(),
+                send_returns: Vec::new(),
+                summary: "runtime metering unavailable".to_string(),
+            },
+            momentary_blocks: VecDeque::new(),
+            short_term_blocks: VecDeque::new(),
+            momentary_sum: 0.0,
+            short_term_sum: 0.0,
+            momentary_sample_count: 0,
+            short_term_sample_count: 0,
+            integrated_sum: 0.0,
+            integrated_sample_count: 0,
+            clipped_sample_count: 0,
         }
     }
 }
@@ -1569,6 +2857,210 @@ fn peak_abs(samples: &[f32]) -> f32 {
         .fold(0.0_f32, |peak, sample| peak.max(sample.abs()))
 }
 
+fn rms(samples: &[f32]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    let mean_square = samples
+        .iter()
+        .map(|sample| f64::from(*sample) * f64::from(*sample))
+        .sum::<f64>()
+        / samples.len() as f64;
+    mean_square.sqrt() as f32
+}
+
+fn adapt_audio_buffer_layout(input: &AudioBuffer, target_layout: ChannelLayout) -> AudioBuffer {
+    if input.channels() == target_layout {
+        return input.clone();
+    }
+
+    match (input.channels(), target_layout) {
+        (ChannelLayout::Mono, ChannelLayout::Stereo) => {
+            let mut samples = Vec::with_capacity(input.samples().len().saturating_mul(2));
+            for sample in input.samples() {
+                samples.push(*sample);
+                samples.push(*sample);
+            }
+            AudioBuffer::from_interleaved(input.sample_rate(), target_layout, samples)
+        }
+        (ChannelLayout::Stereo, ChannelLayout::Mono) => {
+            AudioBuffer::from_interleaved(input.sample_rate(), target_layout, input.to_mono())
+        }
+        _ => AudioBuffer::new(input.sample_rate(), target_layout, input.frames()),
+    }
+}
+
+fn mix_audio_buffer(target: &mut AudioBuffer, source: &AudioBuffer) {
+    let adapted = if target.channels() == source.channels() {
+        source.clone()
+    } else {
+        adapt_audio_buffer_layout(source, target.channels())
+    };
+    for (dst, src) in target.samples_mut().iter_mut().zip(adapted.samples()) {
+        *dst += *src;
+    }
+}
+
+fn write_offline_render_block(
+    target: &mut Option<AudioBuffer>,
+    total_frames: usize,
+    frame_offset: usize,
+    block: &AudioBuffer,
+) {
+    let buffer = target.get_or_insert_with(|| {
+        AudioBuffer::new(
+            block.sample_rate(),
+            block.channels(),
+            FrameCount(total_frames),
+        )
+    });
+    let channel_count = buffer.channel_count().0;
+    let start = frame_offset.saturating_mul(channel_count);
+    let end = start
+        .saturating_add(block.samples().len())
+        .min(buffer.samples().len());
+    buffer.samples_mut()[start..end].copy_from_slice(&block.samples()[..end - start]);
+}
+
+fn sample_audio_buffer_linear(
+    buffer: &AudioBuffer,
+    source_frame: f64,
+    channel_index: usize,
+    frame_count: usize,
+) -> f32 {
+    if frame_count == 0 || channel_index >= buffer.channel_count().0 || source_frame.is_nan() {
+        return 0.0;
+    }
+    let max_frame = frame_count.saturating_sub(1);
+    let base_frame = source_frame.floor().max(0.0) as usize;
+    if base_frame > max_frame {
+        return 0.0;
+    }
+    let next_frame = (base_frame + 1).min(max_frame);
+    let frac = (source_frame - base_frame as f64).clamp(0.0, 1.0) as f32;
+    let channel_count = buffer.channel_count().0;
+    let base_index = base_frame * channel_count + channel_index;
+    let next_index = next_frame * channel_count + channel_index;
+    let base = buffer.samples().get(base_index).copied().unwrap_or(0.0);
+    let next = buffer.samples().get(next_index).copied().unwrap_or(base);
+    base + ((next - base) * frac)
+}
+
+fn decode_runtime_media_asset(
+    media_pipeline: &RuntimeMediaPipelineStateModel,
+    asset_id: &str,
+    decoded_assets: &mut BTreeMap<String, AudioBuffer>,
+    runtime_sample_rate: SampleRate,
+) -> Result<AudioBuffer, RuntimeError> {
+    if let Some(buffer) = decoded_assets.get(asset_id) {
+        return Ok(buffer.clone());
+    }
+    let asset = media_pipeline.assets.get(asset_id).ok_or_else(|| {
+        RuntimeError::new(
+            RuntimeErrorKind::InvalidState,
+            format!("offline render references unknown media asset `{asset_id}`"),
+        )
+    })?;
+    if asset.state != RuntimeMediaAssetState::Ready {
+        return Err(RuntimeError::new(
+            RuntimeErrorKind::InvalidState,
+            format!(
+                "offline render media asset `{asset_id}` is not ready: {:?}",
+                asset.state
+            ),
+        ));
+    }
+    let cache_path = asset.cache_path.as_deref().ok_or_else(|| {
+        RuntimeError::new(
+            RuntimeErrorKind::InvalidState,
+            format!("offline render media asset `{asset_id}` has no cache path"),
+        )
+    })?;
+    let mut reader = hound::WavReader::open(cache_path).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!("failed to open cached media asset `{asset_id}`: {error}"),
+        )
+    })?;
+    let spec = reader.spec();
+    if spec.sample_rate != runtime_sample_rate.0 {
+        return Err(RuntimeError::new(
+            RuntimeErrorKind::UnsupportedCapability,
+            format!(
+                "offline render media asset `{asset_id}` sample rate {} does not match runtime sample rate {}",
+                spec.sample_rate, runtime_sample_rate.0
+            ),
+        ));
+    }
+    let samples = match spec.sample_format {
+        HoundSampleFormat::Float => reader
+            .samples::<f32>()
+            .map(|sample| {
+                sample.map_err(|error| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::ResourceUnavailable,
+                        format!("failed to decode float sample from `{asset_id}`: {error}"),
+                    )
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+        HoundSampleFormat::Int => {
+            let scale = if spec.bits_per_sample == 0 {
+                1.0
+            } else {
+                let magnitude = 1_i64
+                    .checked_shl(spec.bits_per_sample.saturating_sub(1) as u32)
+                    .unwrap_or(1) as f32;
+                if magnitude == 0.0 {
+                    1.0
+                } else {
+                    magnitude
+                }
+            };
+            reader
+                .samples::<i32>()
+                .map(|sample| {
+                    sample.map(|value| value as f32 / scale).map_err(|error| {
+                        RuntimeError::new(
+                            RuntimeErrorKind::ResourceUnavailable,
+                            format!("failed to decode integer sample from `{asset_id}`: {error}"),
+                        )
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?
+        }
+    };
+    let channels = match spec.channels {
+        1 => ChannelLayout::Mono,
+        2 => ChannelLayout::Stereo,
+        count => ChannelLayout::Count(signal_primitives::ChannelCount(count as usize)),
+    };
+    let buffer = AudioBuffer::from_interleaved(runtime_sample_rate, channels, samples);
+    decoded_assets.insert(asset_id.to_string(), buffer.clone());
+    Ok(buffer)
+}
+
+fn runtime_meter_source_role(role: GraphNodeTopologyRole) -> RuntimeMeterSourceRole {
+    match role {
+        GraphNodeTopologyRole::Utility => RuntimeMeterSourceRole::Utility,
+        GraphNodeTopologyRole::TrackLane => RuntimeMeterSourceRole::TrackLane,
+        GraphNodeTopologyRole::Bus => RuntimeMeterSourceRole::Bus,
+        GraphNodeTopologyRole::Send => RuntimeMeterSourceRole::Send,
+        GraphNodeTopologyRole::Return => RuntimeMeterSourceRole::Return,
+        GraphNodeTopologyRole::ConsoleNode => RuntimeMeterSourceRole::ConsoleNode,
+    }
+}
+
+fn unique_string<'a>(values: impl Iterator<Item = &'a String>) -> Option<String> {
+    let mut values = values.cloned().collect::<BTreeSet<_>>().into_iter();
+    let first = values.next()?;
+    if values.next().is_none() {
+        Some(first)
+    } else {
+        None
+    }
+}
+
 fn classify_transport_transition(
     previous: Option<TransportProjection>,
     next: TransportProjection,
@@ -1805,9 +3297,38 @@ fn sanitize_asset_id(asset_id: &str) -> String {
         .collect()
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct RuntimeAutomationBatchMetrics {
+    projected_segment_count: usize,
+    mapped_lane_count: usize,
+    unmapped_lane_count: usize,
+    hold_lane_count: usize,
+    linear_lane_count: usize,
+    strategy_max_sub_blocks: usize,
+    min_ramp_step_samples: Option<usize>,
+    max_sample_offset: Option<usize>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 struct RuntimeAutomationState {
     continuity: AutomationContinuityReport,
+    projection: Option<RuntimeAutomationProjection>,
+    projected_segment_count: usize,
+    mapped_lane_count: usize,
+    unmapped_lane_count: usize,
+    hold_lane_count: usize,
+    linear_lane_count: usize,
+    last_batch_epoch: Option<u64>,
+    last_batch_event_count: usize,
+    last_batch_ignored_event_count: usize,
+    last_batch_sub_block_count: usize,
+    last_batch_coalesced_event_count: usize,
+    last_batch_strategy_max_sub_blocks: usize,
+    last_batch_min_ramp_step_samples: Option<usize>,
+    last_batch_max_sample_offset: Option<usize>,
+    last_block_sequence: Option<u64>,
+    last_timeline_position_samples: Option<i64>,
+    transport_playing: Option<bool>,
 }
 
 impl RuntimeAutomationState {
@@ -1820,13 +3341,244 @@ impl RuntimeAutomationState {
         self.continuity.record(processing_epoch, lease_id, summary);
     }
 
+    fn apply_projection(&mut self, mut projection: RuntimeAutomationProjection) {
+        projection.lane_count = projection.lanes.len();
+        projection.point_count = projection
+            .lanes
+            .iter()
+            .map(|lane| lane.points.len())
+            .sum::<usize>();
+        for lane in &mut projection.lanes {
+            lane.point_count = lane.points.len();
+        }
+        self.projection = Some(projection);
+    }
+
+    fn graph_parameter_batch(
+        &self,
+        graph: &GraphProjection,
+        transport: Option<TransportProjection>,
+        frame_count: usize,
+        epoch: u64,
+    ) -> (
+        Option<GraphParameterBatch>,
+        HashSet<String>,
+        RuntimeAutomationBatchMetrics,
+    ) {
+        let Some(projection) = self.projection.as_ref() else {
+            return (
+                None,
+                HashSet::new(),
+                RuntimeAutomationBatchMetrics::default(),
+            );
+        };
+        let Some(transport) = transport else {
+            return (
+                None,
+                HashSet::new(),
+                RuntimeAutomationBatchMetrics::default(),
+            );
+        };
+
+        let mut metrics = RuntimeAutomationBatchMetrics::default();
+        let mut events = Vec::new();
+        let mut mapped_targets = HashSet::new();
+
+        for lane in &projection.lanes {
+            metrics.projected_segment_count = metrics
+                .projected_segment_count
+                .saturating_add(lane.points.len().saturating_sub(1));
+            metrics.strategy_max_sub_blocks = metrics
+                .strategy_max_sub_blocks
+                .max(lane.resolution.max_sub_blocks.max(1));
+            match lane.interpolation {
+                RuntimeAutomationInterpolation::Hold => {
+                    metrics.hold_lane_count = metrics.hold_lane_count.saturating_add(1);
+                }
+                RuntimeAutomationInterpolation::Linear => {
+                    metrics.linear_lane_count = metrics.linear_lane_count.saturating_add(1);
+                    metrics.min_ramp_step_samples = Some(
+                        metrics
+                            .min_ramp_step_samples
+                            .map_or(lane.resolution.ramp_step_samples.max(1), |current| {
+                                current.min(lane.resolution.ramp_step_samples.max(1))
+                            }),
+                    );
+                }
+            }
+
+            let Some(target) =
+                graph_parameter_target_from_runtime_automation_target(graph, &lane.target)
+            else {
+                metrics.unmapped_lane_count = metrics.unmapped_lane_count.saturating_add(1);
+                continue;
+            };
+            metrics.mapped_lane_count = metrics.mapped_lane_count.saturating_add(1);
+            mapped_targets.insert(lane.target.parameter_path());
+
+            let mut block_events = BTreeMap::new();
+            let sorted_points = sorted_runtime_automation_points(&lane.points);
+            block_events.insert(
+                0usize,
+                automation_value_at_time(
+                    lane.base_normalized_value,
+                    &sorted_points,
+                    lane.interpolation,
+                    transport.timeline_position_samples,
+                ),
+            );
+            for point in &sorted_points {
+                if let Some(sample_offset) = automation_sample_offset_for_block(
+                    transport.timeline_position_samples,
+                    frame_count,
+                    transport.loop_state,
+                    point.time_samples,
+                ) {
+                    block_events.insert(sample_offset, point.normalized_value);
+                }
+            }
+            if lane.interpolation == RuntimeAutomationInterpolation::Linear {
+                for window in sorted_points.windows(2) {
+                    let segment_start = &window[0];
+                    let segment_end = &window[1];
+                    if segment_end.time_samples <= segment_start.time_samples {
+                        continue;
+                    }
+                    for sample_time in automation_linear_segment_sample_times_for_block(
+                        transport.timeline_position_samples,
+                        frame_count,
+                        transport.loop_state,
+                        segment_start.time_samples,
+                        segment_end.time_samples,
+                        lane.resolution.ramp_step_samples.max(1),
+                    ) {
+                        if let Some(sample_offset) = automation_sample_offset_for_block(
+                            transport.timeline_position_samples,
+                            frame_count,
+                            transport.loop_state,
+                            sample_time,
+                        ) {
+                            block_events.insert(
+                                sample_offset,
+                                automation_linear_value_at_time(
+                                    segment_start.time_samples,
+                                    segment_start.normalized_value,
+                                    segment_end.time_samples,
+                                    segment_end.normalized_value,
+                                    sample_time,
+                                ),
+                            );
+                        }
+                    }
+                }
+            }
+
+            for (sample_offset, value) in block_events {
+                metrics.max_sample_offset = Some(
+                    metrics
+                        .max_sample_offset
+                        .map_or(sample_offset, |last| last.max(sample_offset)),
+                );
+                events.push(GraphParameterEvent {
+                    sample_offset,
+                    target: target.clone(),
+                    value,
+                });
+            }
+        }
+
+        if events.is_empty() {
+            return (None, mapped_targets, metrics);
+        }
+
+        events.sort_by(|left, right| {
+            left.target
+                .node_id
+                .cmp(&right.target.node_id)
+                .then(left.target.stage_index.cmp(&right.target.stage_index))
+                .then(
+                    graph_stage_parameter_sort_key(left.target.parameter)
+                        .cmp(&graph_stage_parameter_sort_key(right.target.parameter)),
+                )
+                .then(left.sample_offset.cmp(&right.sample_offset))
+        });
+
+        (
+            Some(GraphParameterBatch {
+                epoch,
+                strategy: GraphParameterApplicationStrategy::SplitAtEvents {
+                    max_sub_blocks: metrics.strategy_max_sub_blocks.max(1),
+                },
+                events,
+            }),
+            mapped_targets,
+            metrics,
+        )
+    }
+
+    fn record_execution(
+        &mut self,
+        block_sequence: u64,
+        timeline_position_samples: Option<i64>,
+        transport_playing: Option<bool>,
+        parameter_epoch: Option<u64>,
+        parameter_event_count: usize,
+        parameter_ignored_event_count: usize,
+        parameter_sub_block_count: usize,
+        parameter_coalesced_event_count: usize,
+        metrics: RuntimeAutomationBatchMetrics,
+    ) {
+        self.projected_segment_count = metrics.projected_segment_count;
+        self.mapped_lane_count = metrics.mapped_lane_count;
+        self.unmapped_lane_count = metrics.unmapped_lane_count;
+        self.hold_lane_count = metrics.hold_lane_count;
+        self.linear_lane_count = metrics.linear_lane_count;
+        self.last_batch_epoch = parameter_epoch;
+        self.last_batch_event_count = parameter_event_count;
+        self.last_batch_ignored_event_count = parameter_ignored_event_count;
+        self.last_batch_sub_block_count = parameter_sub_block_count;
+        self.last_batch_coalesced_event_count = parameter_coalesced_event_count;
+        self.last_batch_strategy_max_sub_blocks = metrics.strategy_max_sub_blocks;
+        self.last_batch_min_ramp_step_samples = metrics.min_ramp_step_samples;
+        self.last_batch_max_sample_offset = metrics.max_sample_offset;
+        self.last_block_sequence = Some(block_sequence);
+        self.last_timeline_position_samples = timeline_position_samples;
+        self.transport_playing = transport_playing;
+    }
+
     fn reset(&mut self) {
         *self = Self::default();
     }
 
     fn snapshot(&self) -> RuntimeAutomationSnapshot {
         let aggregate = self.continuity.aggregate();
+        let lane_count = self
+            .projection
+            .as_ref()
+            .map_or(0, |projection| projection.lane_count);
+        let point_count = self
+            .projection
+            .as_ref()
+            .map_or(0, |projection| projection.point_count);
         RuntimeAutomationSnapshot {
+            lane_count,
+            point_count,
+            projected_segment_count: self.projected_segment_count,
+            mapped_lane_count: self.mapped_lane_count,
+            unmapped_lane_count: self.unmapped_lane_count,
+            hold_lane_count: self.hold_lane_count,
+            linear_lane_count: self.linear_lane_count,
+            last_batch_epoch: self.last_batch_epoch,
+            last_batch_event_count: self.last_batch_event_count,
+            last_batch_ignored_event_count: self.last_batch_ignored_event_count,
+            last_batch_sub_block_count: self.last_batch_sub_block_count,
+            last_batch_coalesced_event_count: self.last_batch_coalesced_event_count,
+            last_batch_strategy_max_sub_blocks: self.last_batch_strategy_max_sub_blocks,
+            last_batch_min_ramp_step_samples: self.last_batch_min_ramp_step_samples,
+            last_batch_max_sample_offset: self.last_batch_max_sample_offset,
+            last_block_sequence: self.last_block_sequence,
+            last_timeline_position_samples: self.last_timeline_position_samples,
+            transport_playing: self.transport_playing,
             parameter_id: aggregate.parameter_id,
             value_events: aggregate.value_events,
             modulation_events: aggregate.modulation_events,
@@ -1844,14 +3596,254 @@ impl RuntimeAutomationState {
     }
 }
 
+fn sorted_runtime_automation_points(
+    points: &[crate::interfaces::RuntimeAutomationPointProjection],
+) -> Vec<crate::interfaces::RuntimeAutomationPointProjection> {
+    let mut points = points.to_vec();
+    points.sort_by_key(|point| point.time_samples);
+    points
+}
+
+fn automation_value_at_time(
+    base_normalized_value: f32,
+    points: &[crate::interfaces::RuntimeAutomationPointProjection],
+    interpolation: RuntimeAutomationInterpolation,
+    time_samples: i64,
+) -> f32 {
+    let mut previous_time = None;
+    let mut previous_value = base_normalized_value;
+
+    for point in points {
+        if point.time_samples > time_samples {
+            return match (interpolation, previous_time) {
+                (RuntimeAutomationInterpolation::Linear, Some(previous_time))
+                    if point.time_samples > previous_time =>
+                {
+                    automation_linear_value_at_time(
+                        previous_time,
+                        previous_value,
+                        point.time_samples,
+                        point.normalized_value,
+                        time_samples,
+                    )
+                }
+                _ => previous_value,
+            };
+        }
+        previous_time = Some(point.time_samples);
+        previous_value = point.normalized_value;
+    }
+
+    previous_value
+}
+
+fn automation_linear_value_at_time(
+    start_time_samples: i64,
+    start_value: f32,
+    end_time_samples: i64,
+    end_value: f32,
+    time_samples: i64,
+) -> f32 {
+    if end_time_samples <= start_time_samples {
+        return end_value;
+    }
+    let span = (end_time_samples - start_time_samples) as f32;
+    let offset =
+        (time_samples - start_time_samples).clamp(0, end_time_samples - start_time_samples) as f32;
+    start_value + ((end_value - start_value) * (offset / span))
+}
+
+fn automation_linear_segment_sample_times_for_block(
+    block_start_samples: i64,
+    frame_count: usize,
+    loop_state: Option<crate::interfaces::LoopRegion>,
+    segment_start_samples: i64,
+    segment_end_samples: i64,
+    ramp_step_samples: usize,
+) -> Vec<i64> {
+    if segment_end_samples <= segment_start_samples {
+        return Vec::new();
+    }
+
+    let mut sample_times = Vec::new();
+    let step = ramp_step_samples.max(1) as i64;
+    let block_end_samples = block_start_samples.saturating_add(frame_count as i64);
+    let first_sample = if block_start_samples < segment_start_samples {
+        segment_start_samples.saturating_add(step)
+    } else {
+        let delta = block_start_samples.saturating_sub(segment_start_samples);
+        let steps = delta.div_euclid(step).saturating_add(1);
+        segment_start_samples.saturating_add(steps.saturating_mul(step))
+    };
+
+    let mut sample_time = first_sample;
+    while sample_time < segment_end_samples && sample_time < block_end_samples {
+        if automation_sample_offset_for_block(
+            block_start_samples,
+            frame_count,
+            loop_state,
+            sample_time,
+        )
+        .is_some()
+        {
+            sample_times.push(sample_time);
+        }
+        sample_time = sample_time.saturating_add(step);
+    }
+    sample_times
+}
+
+fn automation_sample_offset_for_block(
+    block_start_samples: i64,
+    frame_count: usize,
+    loop_state: Option<crate::interfaces::LoopRegion>,
+    point_time_samples: i64,
+) -> Option<usize> {
+    let block_end_samples = block_start_samples.saturating_add(frame_count as i64);
+    if point_time_samples >= block_start_samples && point_time_samples < block_end_samples {
+        return usize::try_from(point_time_samples.saturating_sub(block_start_samples)).ok();
+    }
+
+    let Some(loop_state) = loop_state else {
+        return None;
+    };
+    if loop_state.end_samples <= loop_state.start_samples
+        || block_end_samples <= loop_state.end_samples
+    {
+        return None;
+    }
+
+    let wrapped_span = block_end_samples.saturating_sub(loop_state.end_samples);
+    if point_time_samples < loop_state.start_samples
+        || point_time_samples >= loop_state.start_samples.saturating_add(wrapped_span)
+    {
+        return None;
+    }
+
+    usize::try_from(
+        loop_state
+            .end_samples
+            .saturating_sub(block_start_samples)
+            .saturating_add(point_time_samples.saturating_sub(loop_state.start_samples)),
+    )
+    .ok()
+}
+
+fn graph_parameter_target_from_runtime_automation_target(
+    graph: &GraphProjection,
+    target: &RuntimeAutomationTargetProjection,
+) -> Option<GraphParameterTarget> {
+    graph_parameter_target_from_runtime_parameter_path(graph, &target.node_id, &target.parameter_id)
+}
+
+fn graph_parameter_target_from_runtime_target(
+    graph: &GraphProjection,
+    target: &str,
+) -> Option<GraphParameterTarget> {
+    let (node_id, parameter_id) = target.rsplit_once('.')?;
+    graph_parameter_target_from_runtime_parameter_path(graph, node_id, parameter_id)
+}
+
+fn graph_parameter_target_from_runtime_parameter_path(
+    graph: &GraphProjection,
+    node_id: &str,
+    parameter_id: &str,
+) -> Option<GraphParameterTarget> {
+    let parameter = graph_stage_parameter_from_runtime_parameter_id(parameter_id)?;
+    let stage_index = graph
+        .nodes
+        .iter()
+        .find(|node| node.node_id == node_id)
+        .and_then(|node| {
+            node.stages
+                .iter()
+                .position(|stage| graph_stage_parameter_applies_to(parameter, stage))
+        })?;
+    Some(GraphParameterTarget {
+        node_id: node_id.to_string(),
+        stage_index,
+        parameter,
+    })
+}
+
+fn graph_stage_parameter_from_runtime_parameter_id(
+    parameter_id: &str,
+) -> Option<GraphStageParameter> {
+    match parameter_id {
+        "gain" => Some(GraphStageParameter::GainLinear),
+        "bias" => Some(GraphStageParameter::BiasAmount),
+        "drive" => Some(GraphStageParameter::TanhDrive),
+        "balance" => Some(GraphStageParameter::StereoBalance),
+        "threshold" => Some(GraphStageParameter::HardClipThreshold),
+        "cutoff_hz" => Some(GraphStageParameter::LowPassCutoffHz),
+        "feedback" => Some(GraphStageParameter::DelayFeedback),
+        _ => None,
+    }
+}
+
+fn graph_stage_parameter_applies_to(
+    parameter: GraphStageParameter,
+    stage: &signal_graph::GraphStageSpec,
+) -> bool {
+    matches!(
+        (parameter, stage),
+        (
+            GraphStageParameter::GainLinear,
+            signal_graph::GraphStageSpec::Gain { .. }
+        ) | (
+            GraphStageParameter::BiasAmount,
+            signal_graph::GraphStageSpec::Bias { .. }
+        ) | (
+            GraphStageParameter::TanhDrive,
+            signal_graph::GraphStageSpec::TanhDrive { .. }
+        ) | (
+            GraphStageParameter::StereoBalance,
+            signal_graph::GraphStageSpec::StereoBalance { .. }
+        ) | (
+            GraphStageParameter::HardClipThreshold,
+            signal_graph::GraphStageSpec::HardClip { .. }
+        ) | (
+            GraphStageParameter::LowPassCutoffHz,
+            signal_graph::GraphStageSpec::LowPass { .. }
+        ) | (
+            GraphStageParameter::DelayFeedback,
+            signal_graph::GraphStageSpec::Delay { .. }
+        )
+    )
+}
+
+fn graph_stage_parameter_sort_key(parameter: GraphStageParameter) -> usize {
+    match parameter {
+        GraphStageParameter::GainLinear => 0,
+        GraphStageParameter::BiasAmount => 1,
+        GraphStageParameter::TanhDrive => 2,
+        GraphStageParameter::StereoBalance => 3,
+        GraphStageParameter::HardClipThreshold => 4,
+        GraphStageParameter::LowPassCutoffHz => 5,
+        GraphStageParameter::DelayFeedback => 6,
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 struct RuntimeEngineState {
     graph: Option<ExecutableGraph>,
     snapshot: RuntimeEngineBlockSnapshot,
     plugin_node_bindings: HashMap<String, String>,
     pending_plugin_node_renders: BTreeMap<(u64, u64), PluginNodeRenderBatch>,
+    latest_plugin_node_renders: BTreeMap<String, RuntimePluginRenderedNodeState>,
     prework_queue: VecDeque<RuntimeEnginePreworkCache>,
     pending_prework_targets: VecDeque<RuntimePendingPreworkTarget>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimePluginRenderedNodeState {
+    sandbox_id: String,
+    output: AudioBuffer,
+    latency_samples: u32,
+    tail_samples: u32,
+    bypassed: bool,
+    processing_epoch: u64,
+    block_sequence: u64,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -2472,6 +4464,7 @@ impl RuntimeEngineState {
         ));
         self.plugin_node_bindings.clear();
         self.pending_plugin_node_renders.clear();
+        self.latest_plugin_node_renders.clear();
         self.invalidate_prework_cache(RuntimePreworkInvalidationReason::GraphProjectionChanged);
         self.refresh_planning(anticipative_enabled);
         Ok(())
@@ -2564,8 +4557,10 @@ impl RuntimeEngineState {
                         };
                         node.topology = GraphNodeTopologyMetadata {
                             role: contract.topology.role,
-                            lane_id: contract.topology.lane_id.clone(),
+                            track_lane_id: contract.topology.track_lane_id.clone(),
                             bus_group_id: contract.topology.bus_group_id.clone(),
+                            console_group_id: contract.topology.console_group_id.clone(),
+                            send_return_id: contract.topology.send_return_id.clone(),
                         };
                     }
                     node
@@ -2573,6 +4568,7 @@ impl RuntimeEngineState {
                 .collect(),
         ));
         self.pending_plugin_node_renders.clear();
+        self.latest_plugin_node_renders.clear();
         self.invalidate_prework_cache(RuntimePreworkInvalidationReason::GraphProjectionChanged);
         self.refresh_planning(anticipative_enabled);
         Ok(())
@@ -2627,6 +4623,7 @@ impl RuntimeEngineState {
 
         self.plugin_node_bindings = bindings;
         self.pending_plugin_node_renders.clear();
+        self.latest_plugin_node_renders.clear();
         self.refresh_planning(anticipative_enabled);
         Ok(())
     }
@@ -2821,12 +4818,18 @@ impl RuntimeEngineState {
                         .get(node.node_id.as_str())
                         .map(|contract| contract.topology_role)
                         .unwrap_or(GraphNodeTopologyRole::Utility),
-                    lane_id: contract_by_node
+                    track_lane_id: contract_by_node
                         .get(node.node_id.as_str())
-                        .and_then(|contract| contract.lane_id.clone()),
+                        .and_then(|contract| contract.track_lane_id.clone()),
                     bus_group_id: contract_by_node
                         .get(node.node_id.as_str())
                         .and_then(|contract| contract.bus_group_id.clone()),
+                    console_group_id: contract_by_node
+                        .get(node.node_id.as_str())
+                        .and_then(|contract| contract.console_group_id.clone()),
+                    send_return_id: contract_by_node
+                        .get(node.node_id.as_str())
+                        .and_then(|contract| contract.send_return_id.clone()),
                     input_bus_id: contract_by_node
                         .get(node.node_id.as_str())
                         .map(|contract| contract.input_bus_id.clone())
@@ -2902,6 +4905,7 @@ impl RuntimeEngineState {
             self.snapshot.last_prework_retirement_block_sequence = None;
             self.snapshot.planned_nodes.clear();
             self.plugin_node_bindings.clear();
+            self.latest_plugin_node_renders.clear();
             self.prework_queue.clear();
             self.pending_prework_targets.clear();
         }
@@ -2912,6 +4916,7 @@ impl RuntimeEngineState {
         context: GraphExecutionContext,
         transport: Option<TransportProjection>,
         buffer: AudioBuffer,
+        parameter_batch: Option<GraphParameterBatch>,
     ) -> Result<RuntimeEngineBlockResult, RuntimeError> {
         let graph_id = self
             .graph
@@ -3028,6 +5033,20 @@ impl RuntimeEngineState {
         let plugin_node_renders = self
             .take_plugin_node_render_batch(context.processing_epoch, context.block_sequence)
             .map(|batch| {
+                for render in &batch.renders {
+                    self.latest_plugin_node_renders.insert(
+                        render.node_id.clone(),
+                        RuntimePluginRenderedNodeState {
+                            sandbox_id: render.sandbox_id.clone(),
+                            output: render.output.clone(),
+                            latency_samples: render.latency_samples,
+                            tail_samples: render.tail_samples,
+                            bypassed: render.bypassed,
+                            processing_epoch: batch.processing_epoch,
+                            block_sequence: batch.block_sequence,
+                        },
+                    );
+                }
                 batch
                     .renders
                     .into_iter()
@@ -3081,6 +5100,12 @@ impl RuntimeEngineState {
                 max_node_tail_samples,
                 output_tail_samples,
                 max_bus_tail_samples,
+                parameter_epoch,
+                parameter_event_count,
+                parameter_targeted_node_count,
+                parameter_ignored_event_count,
+                parameter_sub_block_count,
+                parameter_coalesced_event_count,
                 frame_count,
                 channel_count,
                 input_peak,
@@ -3088,6 +5113,7 @@ impl RuntimeEngineState {
                 realtime_input_peak,
                 output_peak,
                 output_rms,
+                bus_levels,
                 first_output_sample,
                 ..
             },
@@ -3096,7 +5122,7 @@ impl RuntimeEngineState {
             peak_abs(buffer.samples()),
             prepared,
             context,
-            None,
+            parameter_batch.as_ref(),
             &planning,
             &contract,
             &routing,
@@ -3185,6 +5211,12 @@ impl RuntimeEngineState {
         self.snapshot.max_node_tail_samples = max_node_tail_samples;
         self.snapshot.output_tail_samples = output_tail_samples;
         self.snapshot.max_bus_tail_samples = max_bus_tail_samples;
+        self.snapshot.parameter_epoch = parameter_epoch;
+        self.snapshot.parameter_event_count = parameter_event_count;
+        self.snapshot.parameter_targeted_node_count = parameter_targeted_node_count;
+        self.snapshot.parameter_ignored_event_count = parameter_ignored_event_count;
+        self.snapshot.parameter_sub_block_count = parameter_sub_block_count;
+        self.snapshot.parameter_coalesced_event_count = parameter_coalesced_event_count;
         self.snapshot.processed_blocks = self.snapshot.processed_blocks.saturating_add(1);
         self.snapshot.last_processing_epoch = Some(context.processing_epoch);
         self.snapshot.last_block_sequence = Some(context.block_sequence);
@@ -3197,11 +5229,83 @@ impl RuntimeEngineState {
         self.snapshot.last_output_rms = Some(output_rms);
         self.snapshot.last_first_output_sample = first_output_sample;
         self.snapshot.last_execution_context = Some(context);
+        let meter_sources = bus_levels
+            .into_iter()
+            .map(|level| {
+                let bus_id = level.bus_id.clone();
+                let (
+                    topology_role,
+                    track_lane_id,
+                    bus_group_id,
+                    console_group_id,
+                    send_return_id,
+                    producer_node_ids,
+                ) = RuntimeMeteringStateModel::meter_contract_metadata(
+                    &contract,
+                    level.bus_id.as_str(),
+                );
+                RuntimeMeterSourceSnapshot {
+                    bus_id: bus_id.clone(),
+                    topology_role,
+                    track_lane_id,
+                    bus_group_id,
+                    console_group_id,
+                    send_return_id,
+                    producer_node_ids: producer_node_ids.clone(),
+                    peak_level: level.peak,
+                    rms_level: level.rms,
+                    latency_samples: level.latency_samples,
+                    tail_samples: level.tail_samples,
+                    summary: format!(
+                        "bus={} role={:?} peak={:.3} rms={:.3} producers={}",
+                        bus_id,
+                        topology_role,
+                        level.peak,
+                        level.rms,
+                        producer_node_ids.len(),
+                    ),
+                }
+            })
+            .collect::<Vec<_>>();
 
         Ok(RuntimeEngineBlockResult {
             snapshot: self.snapshot.clone(),
             output,
+            meter_sources,
         })
+    }
+
+    fn render_offline_block(
+        &self,
+        context: GraphExecutionContext,
+        buffer: AudioBuffer,
+        parameter_batch: Option<GraphParameterBatch>,
+        node_render_overrides: &[GraphNodeRenderOverride],
+        captured_bus_ids: &[String],
+    ) -> Result<(AudioBuffer, Vec<GraphCapturedBusOutput>), RuntimeError> {
+        let graph = self.graph.as_ref().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "no executable graph has been applied",
+            )
+        })?;
+        let planning = graph.planning_summary(context.anticipative_enabled);
+        let contract = graph.contract_summary();
+        let routing = graph.routing_summary();
+        let (output, _, captured_buses) = graph
+            .execute_realtime_from_prepared_with_node_overrides_and_bus_captures(
+                &buffer,
+                peak_abs(buffer.samples()),
+                None,
+                context,
+                parameter_batch.as_ref(),
+                &planning,
+                &contract,
+                &routing,
+                node_render_overrides,
+                captured_bus_ids,
+            );
+        Ok((output, captured_buses))
     }
 
     fn admit_prework_for_block(
@@ -3642,16 +5746,20 @@ impl SignalRuntime {
         let mut console_groups = BTreeSet::new();
         let mut missing_track_lane_ids = 0usize;
         let mut missing_bus_group_ids = 0usize;
+        let mut missing_send_return_ids = 0usize;
         let mut missing_console_group_ids = 0usize;
 
         for node in &contract.node_contracts {
             match node.topology_role {
                 GraphNodeTopologyRole::Utility => {}
                 GraphNodeTopologyRole::TrackLane => {
-                    if let Some(lane_id) = &node.lane_id {
-                        track_lane_groups.insert(lane_id.clone());
+                    if let Some(track_lane_id) = &node.track_lane_id {
+                        track_lane_groups.insert(track_lane_id.clone());
                     } else {
                         missing_track_lane_ids = missing_track_lane_ids.saturating_add(1);
+                    }
+                    if let Some(bus_group_id) = &node.bus_group_id {
+                        bus_groups.insert(bus_group_id.clone());
                     }
                 }
                 GraphNodeTopologyRole::Bus => {
@@ -3662,15 +5770,15 @@ impl SignalRuntime {
                     }
                 }
                 GraphNodeTopologyRole::Send | GraphNodeTopologyRole::Return => {
-                    if let Some(bus_group_id) = &node.bus_group_id {
-                        send_return_groups.insert(bus_group_id.clone());
+                    if let Some(send_return_id) = &node.send_return_id {
+                        send_return_groups.insert(send_return_id.clone());
                     } else {
-                        missing_bus_group_ids = missing_bus_group_ids.saturating_add(1);
+                        missing_send_return_ids = missing_send_return_ids.saturating_add(1);
                     }
                 }
                 GraphNodeTopologyRole::ConsoleNode => {
-                    if let Some(bus_group_id) = &node.bus_group_id {
-                        console_groups.insert(bus_group_id.clone());
+                    if let Some(console_group_id) = &node.console_group_id {
+                        console_groups.insert(console_group_id.clone());
                     } else {
                         missing_console_group_ids = missing_console_group_ids.saturating_add(1);
                     }
@@ -3708,6 +5816,11 @@ impl SignalRuntime {
         if missing_bus_group_ids > 0 {
             issues.push(RuntimeSchedulerTopologyIssue::MissingBusGroupIds {
                 node_count: missing_bus_group_ids,
+            });
+        }
+        if missing_send_return_ids > 0 {
+            issues.push(RuntimeSchedulerTopologyIssue::MissingSendReturnIds {
+                node_count: missing_send_return_ids,
             });
         }
         if missing_console_group_ids > 0 {
@@ -3774,6 +5887,7 @@ impl SignalRuntime {
             applied_graph: None,
             applied_schedule: None,
             applied_transport: None,
+            applied_parameter_batch: None,
             prework_forecast_requested_mode: RuntimePreworkForecastMode::RuntimeRoleDefault,
             prework_forecast_mode: RuntimePreworkForecastMode::Disabled,
             prework_forecast_policy: None,
@@ -3786,15 +5900,28 @@ impl SignalRuntime {
             automation: RuntimeAutomationState::default(),
             engine: RuntimeEngineState::default(),
             transport_concurrency: RuntimeTransportConcurrencyState::default(),
+            plugin_lifecycle: RuntimePluginLifecycleStateModel::default(),
             recording_capture: RuntimeRecordingCaptureStateModel::default(),
+            metering: RuntimeMeteringStateModel::default(),
             media_pipeline: RuntimeMediaPipelineStateModel::default(),
+            tempo_map: RuntimeTempoMapStateModel::default(),
             warp_pipeline: RuntimeWarpPipelineStateModel::default(),
+            clip_processing_pipeline: RuntimeClipProcessingPipelineStateModel::default(),
             diagnostics: RuntimeDiagnosticsSnapshot {
                 cpu_load_percent: 0.0,
                 xruns: 0,
                 graph_latency_ms: 0.0,
                 active_plugin_sandboxes: 0,
                 backend_policy_tier: BackendPolicyTier::Tier0InHost,
+                topology_compatible: false,
+                topology_issue_count: 0,
+                degraded_bound_plugin_sandboxes: 0,
+                missing_bound_plugin_sandboxes: 0,
+                last_output_peak: None,
+                last_output_rms: None,
+                momentary_loudness_lufs: None,
+                short_term_loudness_lufs: None,
+                integrated_loudness_lufs: None,
             },
             supervision: RuntimeSupervisionState::default(),
             next_subscription: 1,
@@ -4222,6 +6349,7 @@ impl SignalRuntime {
 
     pub fn set_active_plugin_sandboxes(&mut self, count: u32) {
         self.diagnostics.active_plugin_sandboxes = count;
+        self.plugin_lifecycle.set_active_sandbox_count(count);
         self.refresh_prework_service_policy_and_state(None);
         self.emit(RuntimeEvent::PluginSandboxChanged {
             active_sandboxes: self.diagnostics.active_plugin_sandboxes,
@@ -4247,6 +6375,12 @@ impl SignalRuntime {
         self.diagnostics.graph_latency_ms = graph_latency_ms.max(0.0);
     }
 
+    fn invalidate_plugin_render_state_for_sandbox(&mut self, sandbox_id: &str) {
+        self.engine
+            .latest_plugin_node_renders
+            .retain(|_, render| render.sandbox_id != sandbox_id);
+    }
+
     pub fn increment_xruns(&mut self) {
         self.diagnostics.xruns = self.diagnostics.xruns.saturating_add(1);
     }
@@ -4258,10 +6392,19 @@ impl SignalRuntime {
         detail: impl Into<String>,
         processing_epoch: Option<u64>,
     ) {
-        self.emit(RuntimeEvent::PluginSandboxFault {
-            sandbox_id: sandbox_id.into(),
+        let sandbox_id = sandbox_id.into();
+        let detail = detail.into();
+        self.plugin_lifecycle.record_fault(
+            sandbox_id.as_str(),
             kind,
-            detail: detail.into(),
+            detail.clone(),
+            processing_epoch,
+        );
+        self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
+        self.emit(RuntimeEvent::PluginSandboxFault {
+            sandbox_id,
+            kind,
+            detail,
             processing_epoch,
         });
     }
@@ -4291,8 +6434,16 @@ impl SignalRuntime {
         stop_reason: StopReason,
         processing_epoch: Option<u64>,
     ) {
+        let sandbox_id = sandbox_id.into();
+        self.plugin_lifecycle.record_recovery_cycle(
+            sandbox_id.as_str(),
+            intent,
+            stop_reason,
+            processing_epoch,
+        );
+        self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
         self.emit(RuntimeEvent::RecoveryCycle {
-            sandbox_id: sandbox_id.into(),
+            sandbox_id,
             intent,
             stop_reason,
             processing_epoch,
@@ -4305,8 +6456,22 @@ impl SignalRuntime {
         stage: PluginSandboxLifecycleStage,
         processing_epoch: Option<u64>,
     ) {
+        let sandbox_id = sandbox_id.into();
+        self.plugin_lifecycle
+            .record_lifecycle(sandbox_id.as_str(), stage, processing_epoch);
+        if matches!(
+            stage,
+            PluginSandboxLifecycleStage::InstanceDeactivated
+                | PluginSandboxLifecycleStage::InstanceReset
+                | PluginSandboxLifecycleStage::InstanceDestroyed
+                | PluginSandboxLifecycleStage::SandboxTeardown
+                | PluginSandboxLifecycleStage::TransportTornDown
+                | PluginSandboxLifecycleStage::SandboxRestarted
+        ) {
+            self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
+        }
         self.emit(RuntimeEvent::PluginSandboxLifecycle {
-            sandbox_id: sandbox_id.into(),
+            sandbox_id,
             stage,
             processing_epoch,
         });
@@ -4316,6 +6481,7 @@ impl SignalRuntime {
         &mut self,
         state: PluginSandboxInstanceStateRecord,
     ) {
+        self.plugin_lifecycle.record_instance_state(state.clone());
         self.emit(RuntimeEvent::PluginSandboxInstanceState { state });
     }
 
@@ -4331,6 +6497,22 @@ impl SignalRuntime {
         let sandbox_id = sandbox_id.into();
         let lease_id = lease_id.into();
         let region_id = region_id.into();
+        self.plugin_lifecycle.record_transport(
+            sandbox_id.as_str(),
+            lease_id.as_str(),
+            region_id.as_str(),
+            stage,
+            processing_epoch,
+            detail.clone(),
+        );
+        if matches!(
+            stage,
+            PluginSandboxTransportStage::DetachRequested
+                | PluginSandboxTransportStage::Detached
+                | PluginSandboxTransportStage::DetachFault
+        ) {
+            self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
+        }
         match stage {
             PluginSandboxTransportStage::Attached => {
                 self.transport_concurrency.mark_session_state(
@@ -4514,10 +6696,14 @@ impl SignalRuntime {
         }
         let transport = self.applied_transport;
         let context = self.build_engine_execution_context(processing_epoch, block_sequence);
+        let (parameter_batch, automation_metrics) =
+            self.current_graph_parameter_batch(&context, buffer.frames().0);
         let pending_transition = self
             .timeline
             .consume_pending_transport_transition(block_sequence);
-        let mut result = self.engine.process_block(context, transport, buffer)?;
+        let mut result = self
+            .engine
+            .process_block(context, transport, buffer, parameter_batch)?;
         let transport_advance = self.advance_engine_transport(result.output.frames().0 as i64);
         self.timeline.record_engine_block_window(
             transport_advance.start_samples,
@@ -4546,11 +6732,514 @@ impl SignalRuntime {
         self.engine.snapshot.transport_block_end_samples =
             result.snapshot.transport_block_end_samples;
         self.engine.snapshot.transport_loop_wrapped = result.snapshot.transport_loop_wrapped;
+        self.metering.capture(
+            self.config.sample_rate.0,
+            &result.output,
+            result.meter_sources.clone(),
+        );
+        self.automation.record_execution(
+            block_sequence,
+            result.snapshot.transport_block_start_samples,
+            result
+                .snapshot
+                .last_execution_context
+                .map(|context| context.transport_playing),
+            result.snapshot.parameter_epoch,
+            result.snapshot.parameter_event_count,
+            result.snapshot.parameter_ignored_event_count,
+            result.snapshot.parameter_sub_block_count,
+            result.snapshot.parameter_coalesced_event_count,
+            automation_metrics,
+        );
         self.recording_capture.record_output_block(&result.output);
         let _ = self.enforce_scheduler_after_engine_block(processing_epoch, block_sequence)?;
         self.refresh_scheduler_topology_summary();
         result.snapshot = self.engine.snapshot.clone();
         Ok(result)
+    }
+
+    pub fn render_clip_processing_buffer(
+        &self,
+        request: RuntimeClipRenderRequest,
+    ) -> Result<RuntimeClipRenderResult, RuntimeError> {
+        if request.clip_id.is_empty() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "clip processing render requests require a non-empty clip id",
+            ));
+        }
+        if request.buffer.sample_rate() != self.config.sample_rate {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "clip processing render buffer sample rate {} does not match runtime sample rate {}",
+                    request.buffer.sample_rate().0,
+                    self.config.sample_rate.0,
+                ),
+            ));
+        }
+        self.render_clip_processing_buffer_with_resolved_tempo(
+            request,
+            &self.current_resolved_tempo(),
+        )
+    }
+
+    pub fn render_offline(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        if request.export_sample_rate_hz != self.config.sample_rate.0 {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::UnsupportedCapability,
+                format!(
+                    "offline render export sample rate {} must match runtime sample rate {} in the current engine path",
+                    request.export_sample_rate_hz, self.config.sample_rate.0
+                ),
+            ));
+        }
+
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &request,
+            &self.execution_topology_summary(),
+            &self.clip_processing_pipeline_snapshot(),
+            &self.tempo_map_snapshot(),
+            &self.plugin_recall_handoff_snapshot(),
+        )?;
+        let input_layout = self.offline_render_input_layout()?;
+        let plugin_overrides = self.offline_render_plugin_node_overrides()?;
+        let captured_bus_ids = preview
+            .stem_targets
+            .iter()
+            .flat_map(|stem| stem.resolved_output_bus_ids.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let mut decoded_media_assets = BTreeMap::new();
+        let mut main_mix = None;
+        let mut stem_outputs = preview
+            .stem_targets
+            .iter()
+            .map(|stem| (stem.stem_id.clone(), None))
+            .collect::<BTreeMap<String, Option<AudioBuffer>>>();
+        let total_frames = request.duration_samples as usize;
+        let block_size = self.config.graph.block_size.max(1);
+        let mut rendered_frames = 0usize;
+        let mut block_count = 0usize;
+
+        while rendered_frames < total_frames {
+            let block_frames = (total_frames - rendered_frames).min(block_size);
+            let block_start_samples = request
+                .timeline_start_samples
+                .saturating_add(rendered_frames as i64);
+            let resolved_tempo = self.resolved_tempo_for_timeline_position(block_start_samples);
+            let context =
+                self.offline_render_context((block_count + 1) as u64, block_start_samples);
+            let (parameter_batch, _) = self.graph_parameter_batch_for_transport(
+                &context,
+                block_frames,
+                Some(transport_projection_from_context(&context)),
+            );
+            let input = self.offline_render_input_block(
+                block_start_samples,
+                block_frames,
+                input_layout,
+                &resolved_tempo,
+                &mut decoded_media_assets,
+            )?;
+            let (output, captured_buses) = self.engine.render_offline_block(
+                context,
+                input,
+                parameter_batch,
+                &plugin_overrides,
+                &captured_bus_ids,
+            )?;
+            if request.include_main_mix {
+                write_offline_render_block(&mut main_mix, total_frames, rendered_frames, &output);
+            }
+
+            for stem_preview in &preview.stem_targets {
+                let block_output =
+                    self.offline_render_stem_block(stem_preview, &output, &captured_buses)?;
+                let stem_buffer = stem_outputs
+                    .get_mut(&stem_preview.stem_id)
+                    .expect("stem output slot should exist");
+                write_offline_render_block(
+                    stem_buffer,
+                    total_frames,
+                    rendered_frames,
+                    &block_output,
+                );
+            }
+
+            rendered_frames = rendered_frames.saturating_add(block_frames);
+            block_count = block_count.saturating_add(1);
+        }
+
+        let stems = preview
+            .stem_targets
+            .iter()
+            .map(|stem_preview| {
+                let output = stem_outputs
+                    .remove(&stem_preview.stem_id)
+                    .and_then(|buffer| buffer)
+                    .unwrap_or_else(|| {
+                        AudioBuffer::new(
+                            self.config.sample_rate,
+                            ChannelLayout::Stereo,
+                            FrameCount(total_frames),
+                        )
+                    });
+                RuntimeOfflineRenderStemResult {
+                    stem_id: stem_preview.stem_id.clone(),
+                    target_kind: stem_preview.target_kind,
+                    target_id: stem_preview.target_id.clone(),
+                    peak_level: peak_abs(output.samples()),
+                    rms_level: rms(output.samples()),
+                    summary: format!(
+                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
+                        stem_preview.stem_id,
+                        stem_preview.target_kind,
+                        stem_preview.target_id,
+                        output.frames().0,
+                        peak_abs(output.samples()),
+                        rms(output.samples()),
+                    ),
+                    output,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let freeze_artifacts = preview
+            .freeze_artifacts
+            .iter()
+            .map(|artifact_preview| {
+                let source_output = stems
+                    .iter()
+                    .find(|stem| stem.stem_id == artifact_preview.source_stem_id)
+                    .map(|stem| stem.output.clone())
+                    .or_else(|| main_mix.clone())
+                    .ok_or_else(|| {
+                        RuntimeError::new(
+                            RuntimeErrorKind::InvalidState,
+                            format!(
+                                "offline freeze artifact `{}` has no rendered source output",
+                                artifact_preview.artifact_id
+                            ),
+                        )
+                    })?;
+                Ok(RuntimeOfflineFreezeArtifactResult {
+                    artifact_id: artifact_preview.artifact_id.clone(),
+                    source_stem_id: artifact_preview.source_stem_id.clone(),
+                    recall_stage_count: artifact_preview.recall_stage_count,
+                    recall_stage_ids: artifact_preview.recall_stage_ids.clone(),
+                    recall_states: artifact_preview.recall_states.clone(),
+                    peak_level: peak_abs(source_output.samples()),
+                    rms_level: rms(source_output.samples()),
+                    summary: format!(
+                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
+                        artifact_preview.artifact_id,
+                        artifact_preview.source_stem_id,
+                        artifact_preview.recall_stage_count,
+                        source_output.frames().0,
+                        peak_abs(source_output.samples()),
+                        rms(source_output.samples()),
+                    ),
+                    output: source_output,
+                })
+            })
+            .collect::<Result<Vec<_>, RuntimeError>>()?;
+
+        let main_mix_peak_level = main_mix.as_ref().map(|buffer| peak_abs(buffer.samples()));
+        let main_mix_rms_level = main_mix.as_ref().map(|buffer| rms(buffer.samples()));
+        let result = RuntimeOfflineRenderResult {
+            request_id: request.request_id.clone(),
+            rendered_frame_count: rendered_frames,
+            block_count,
+            export_sample_rate_hz: request.export_sample_rate_hz,
+            main_mix,
+            main_mix_peak_level,
+            main_mix_rms_level,
+            stems,
+            freeze_artifacts,
+            contract_preview: preview.clone(),
+            summary: format!(
+                "request={} frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
+                request.request_id,
+                rendered_frames,
+                block_count,
+                request.include_main_mix,
+                preview.stem_count,
+                preview.freeze_artifact_count,
+            ),
+        };
+        Ok(result)
+    }
+
+    fn render_clip_processing_buffer_with_resolved_tempo(
+        &self,
+        request: RuntimeClipRenderRequest,
+        resolved_tempo: &RuntimeResolvedTempo,
+    ) -> Result<RuntimeClipRenderResult, RuntimeError> {
+        self.clip_processing_pipeline.render_clip(
+            request,
+            &self.media_pipeline,
+            &self.warp_pipeline,
+            resolved_tempo,
+        )
+    }
+
+    fn offline_render_input_layout(&self) -> Result<ChannelLayout, RuntimeError> {
+        let graph = self.engine.graph.as_ref().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "offline render requires an applied executable graph",
+            )
+        })?;
+        let contract = graph.contract_summary();
+        let mut layout = None;
+        for node in contract
+            .node_contracts
+            .iter()
+            .filter(|node| node.input_bus_id == "main:in")
+        {
+            match layout {
+                Some(existing) if existing != node.input_channels => {
+                    return Err(RuntimeError::new(
+                        RuntimeErrorKind::UnsupportedCapability,
+                        "offline render requires a consistent main:in channel layout",
+                    ));
+                }
+                None => layout = Some(node.input_channels),
+                _ => {}
+            }
+        }
+        Ok(layout.unwrap_or(ChannelLayout::Stereo))
+    }
+
+    fn offline_render_plugin_node_overrides(
+        &self,
+    ) -> Result<Vec<GraphNodeRenderOverride>, RuntimeError> {
+        let Some(graph) = self.applied_graph.as_ref() else {
+            return Ok(Vec::new());
+        };
+
+        graph
+            .nodes
+            .iter()
+            .filter(|node| node.execution_class == GraphNodeExecutionClass::PluginBacked)
+            .map(|node| {
+                let latest = self
+                    .engine
+                    .latest_plugin_node_renders
+                    .get(&node.node_id)
+                    .ok_or_else(|| {
+                        RuntimeError::new(
+                            RuntimeErrorKind::InvalidState,
+                            format!(
+                                "offline render requires a cached plugin render for node `{}`",
+                                node.node_id
+                            ),
+                        )
+                    })?;
+                Ok(GraphNodeRenderOverride {
+                    node_id: node.node_id.clone(),
+                    buffer: latest.output.clone(),
+                    latency_samples: latest.latency_samples,
+                    tail_samples: latest.tail_samples,
+                    bypassed: latest.bypassed,
+                })
+            })
+            .collect()
+    }
+
+    fn offline_render_context(
+        &self,
+        block_sequence: u64,
+        timeline_position_samples: i64,
+    ) -> GraphExecutionContext {
+        let transport = self.offline_render_transport(timeline_position_samples);
+        GraphExecutionContext {
+            processing_epoch: 1,
+            block_sequence,
+            projection_epoch: self.projection_epoch,
+            parameter_epoch: self.latest_parameter_epoch,
+            configured_block_size: self.config.graph.block_size,
+            anticipative_enabled: false,
+            transport_playing: transport.playing,
+            transport_tempo_bpm: transport.tempo_bpm,
+            timeline_position_samples: transport.timeline_position_samples,
+        }
+    }
+
+    fn offline_render_transport(&self, timeline_position_samples: i64) -> TransportProjection {
+        let resolved_tempo = self.resolved_tempo_for_timeline_position(timeline_position_samples);
+        TransportProjection {
+            playing: true,
+            timeline_position_samples,
+            tempo_bpm: resolved_tempo.tempo_bpm,
+            loop_state: None,
+        }
+    }
+
+    fn resolved_tempo_for_timeline_position(
+        &self,
+        timeline_position_samples: i64,
+    ) -> RuntimeResolvedTempo {
+        let projected_transport = Some(TransportProjection {
+            playing: true,
+            timeline_position_samples,
+            tempo_bpm: self
+                .applied_transport
+                .map(|transport| transport.tempo_bpm)
+                .unwrap_or(120.0),
+            loop_state: None,
+        });
+        self.tempo_map.resolve(
+            Some(timeline_position_samples),
+            projected_transport,
+            self.timeline.last_transport_tempo_bpm,
+        )
+    }
+
+    fn offline_render_input_block(
+        &self,
+        timeline_start_samples: i64,
+        frame_count: usize,
+        input_layout: ChannelLayout,
+        resolved_tempo: &RuntimeResolvedTempo,
+        decoded_media_assets: &mut BTreeMap<String, AudioBuffer>,
+    ) -> Result<AudioBuffer, RuntimeError> {
+        let clip_processing = self.clip_processing_pipeline.snapshot(
+            &self.media_pipeline,
+            &self.warp_pipeline,
+            resolved_tempo,
+        );
+        let mut input = AudioBuffer::new(
+            self.config.sample_rate,
+            input_layout,
+            FrameCount(frame_count),
+        );
+        for clip in clip_processing
+            .clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeClipProcessingReadiness::Ready)
+        {
+            let registration = self
+                .clip_processing_pipeline
+                .clips
+                .get(&clip.clip_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidState,
+                        format!(
+                            "offline render clip `{}` is missing registration state",
+                            clip.clip_id
+                        ),
+                    )
+                })?;
+            let source = self.offline_render_clip_source_block(
+                registration,
+                clip,
+                timeline_start_samples,
+                frame_count,
+                decoded_media_assets,
+            )?;
+            let rendered = self.render_clip_processing_buffer_with_resolved_tempo(
+                RuntimeClipRenderRequest {
+                    clip_id: clip.clip_id.clone(),
+                    timeline_start_samples,
+                    input_stage: RuntimeClipRenderInputStage::PostWarp,
+                    buffer: source,
+                },
+                resolved_tempo,
+            )?;
+            let adapted = adapt_audio_buffer_layout(&rendered.output, input_layout);
+            mix_audio_buffer(&mut input, &adapted);
+        }
+        Ok(input)
+    }
+
+    fn offline_render_clip_source_block(
+        &self,
+        registration: &RuntimeClipProcessingRegistration,
+        clip: &RuntimeClipProcessingSnapshot,
+        timeline_start_samples: i64,
+        frame_count: usize,
+        decoded_media_assets: &mut BTreeMap<String, AudioBuffer>,
+    ) -> Result<AudioBuffer, RuntimeError> {
+        let media_asset_id = registration.media_asset_id.as_deref().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::UnsupportedCapability,
+                format!(
+                    "offline render clip `{}` requires a runtime-owned media asset",
+                    registration.clip_id
+                ),
+            )
+        })?;
+        let asset = decode_runtime_media_asset(
+            &self.media_pipeline,
+            media_asset_id,
+            decoded_media_assets,
+            self.config.sample_rate,
+        )?;
+        let ratio = clip.realized_warp_ratio.unwrap_or(1.0);
+        let mut output = AudioBuffer::new(
+            asset.sample_rate(),
+            asset.channels(),
+            FrameCount(frame_count),
+        );
+        let channel_count = output.channel_count().0;
+        let asset_frames = asset.frames().0;
+        for frame_index in 0..frame_count {
+            let timeline_position_samples =
+                timeline_start_samples.saturating_add(frame_index as i64);
+            let clip_offset_samples =
+                timeline_position_samples.saturating_sub(registration.start_samples);
+            if clip_offset_samples < 0
+                || clip_offset_samples >= i64::from(registration.duration_samples)
+            {
+                continue;
+            }
+            let source_frame = (clip_offset_samples as f64 * ratio).max(0.0);
+            for channel_index in 0..channel_count {
+                output.samples_mut()[frame_index * channel_count + channel_index] =
+                    sample_audio_buffer_linear(&asset, source_frame, channel_index, asset_frames);
+            }
+        }
+        Ok(output)
+    }
+
+    fn offline_render_stem_block(
+        &self,
+        stem: &RuntimeOfflineRenderStemPreview,
+        main_output: &AudioBuffer,
+        captured_buses: &[GraphCapturedBusOutput],
+    ) -> Result<AudioBuffer, RuntimeError> {
+        if stem.target_kind == crate::interfaces::RuntimeOfflineRenderTargetKind::MainMix {
+            return Ok(main_output.clone());
+        }
+        if stem.resolved_output_bus_ids.is_empty() {
+            return Ok(main_output.clone());
+        }
+        let mut mixed: Option<AudioBuffer> = None;
+        for bus_id in &stem.resolved_output_bus_ids {
+            let Some(captured) = captured_buses.iter().find(|bus| &bus.bus_id == bus_id) else {
+                continue;
+            };
+            if let Some(buffer) = mixed.as_mut() {
+                let adapted = adapt_audio_buffer_layout(&captured.buffer, buffer.channels());
+                mix_audio_buffer(buffer, &adapted);
+            } else {
+                mixed = Some(captured.buffer.clone());
+            }
+        }
+        Ok(mixed.unwrap_or_else(|| {
+            AudioBuffer::new(
+                self.config.sample_rate,
+                main_output.channels(),
+                main_output.frames(),
+            )
+        }))
     }
 
     pub fn prepare_engine_prework_for_block(
@@ -4985,6 +7674,7 @@ impl SignalRuntime {
                 .saturating_add(1),
             events: vec![crate::interfaces::ParameterEvent {
                 target: policy.parameter_target.clone(),
+                sample_offset: 0,
                 normalized_value: ((block_sequence % cycle_length) as f32) / denominator,
             }],
         }
@@ -5612,17 +8302,366 @@ impl SignalRuntime {
         self.media_pipeline.snapshot()
     }
 
-    fn current_project_tempo_bpm(&self) -> f64 {
-        self.applied_transport
-            .map(|transport| transport.tempo_bpm)
-            .or(self.timeline.last_transport_tempo_bpm)
-            .filter(|tempo| tempo.is_finite() && *tempo > 0.0)
-            .unwrap_or(120.0)
+    fn metering_snapshot(&self) -> RuntimeMeteringSnapshot {
+        self.metering
+            .snapshot()
+            .with_execution_topology(&self.execution_topology_summary())
+    }
+
+    fn plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot {
+        self.plugin_lifecycle.snapshot()
+    }
+
+    fn plugin_chain_snapshot(&self) -> RuntimePluginChainSnapshot {
+        let lifecycle = self.plugin_lifecycle_snapshot();
+        let lifecycle_by_sandbox = lifecycle
+            .sandboxes
+            .iter()
+            .map(|sandbox| (sandbox.sandbox_id.as_str(), sandbox))
+            .collect::<HashMap<_, _>>();
+        let current_block_sequence = self.engine.snapshot.last_block_sequence;
+        let current_frame_count = self.engine.snapshot.last_frame_count.max(1);
+        let mut chain_indexes = HashMap::new();
+        let mut chains = Vec::<RuntimePluginExecutionChainSummary>::new();
+
+        for node in
+            self.engine.snapshot.planned_nodes.iter().filter(|node| {
+                matches!(node.execution_class, GraphNodeExecutionClass::PluginBacked)
+            })
+        {
+            let chain_id = runtime_plugin_chain_id(
+                node.track_lane_id.as_deref(),
+                node.bus_group_id.as_deref(),
+                node.console_group_id.as_deref(),
+                node.send_return_id.as_deref(),
+            );
+            let chain_index = if let Some(index) = chain_indexes.get(chain_id.as_str()) {
+                *index
+            } else {
+                let index = chains.len();
+                chains.push(RuntimePluginExecutionChainSummary {
+                    chain_id: chain_id.clone(),
+                    track_lane_id: node.track_lane_id.clone(),
+                    bus_group_id: node.bus_group_id.clone(),
+                    console_group_id: node.console_group_id.clone(),
+                    send_return_id: node.send_return_id.clone(),
+                    ..RuntimePluginExecutionChainSummary::default()
+                });
+                chain_indexes.insert(chain_id.clone(), index);
+                index
+            };
+
+            let sandbox_id = node.plugin_sandbox_id.clone();
+            let sandbox = sandbox_id
+                .as_deref()
+                .and_then(|sandbox_id| lifecycle_by_sandbox.get(sandbox_id).copied());
+            let realized = self.engine.latest_plugin_node_renders.get(&node.node_id);
+            let lifecycle_state = sandbox.map(|sandbox| sandbox.state);
+            let recall = runtime_plugin_recall_snapshot(sandbox_id.as_deref(), sandbox);
+            let recall_state = recall.state;
+            let compensation = runtime_plugin_compensation_observation(
+                sandbox_id.as_deref(),
+                sandbox,
+                realized,
+                current_block_sequence,
+                current_frame_count,
+            );
+            let compensation_state = compensation.state;
+            let bypassed = matches!(compensation_state, RuntimePluginCompensationState::Bypassed);
+            let active_transport = sandbox.is_some_and(|sandbox| sandbox.active_transport);
+            let degraded_reasons = sandbox
+                .map(|sandbox| sandbox.degraded_reasons.clone())
+                .unwrap_or_default();
+            let stage_index = chains[chain_index].stages.len();
+            let summary = format!(
+                "node={} sandbox={:?} lifecycle={:?} recall={:?} compensation={:?} planned_latency={} realized_latency={:?} tail={:?} bypassed={} active_transport={}",
+                node.node_id,
+                sandbox_id,
+                lifecycle_state,
+                recall_state,
+                compensation_state,
+                node.latency_samples,
+                compensation.realized_latency_samples,
+                compensation.tail_samples,
+                bypassed,
+                active_transport,
+            );
+            let stage = RuntimePluginChainStageSnapshot {
+                node_id: node.node_id.clone(),
+                stage_index,
+                sandbox_id,
+                track_lane_id: node.track_lane_id.clone(),
+                bus_group_id: node.bus_group_id.clone(),
+                console_group_id: node.console_group_id.clone(),
+                send_return_id: node.send_return_id.clone(),
+                lifecycle_state,
+                recall_state,
+                recall,
+                compensation_state,
+                planned_latency_samples: node.latency_samples,
+                realized_latency_samples: compensation.realized_latency_samples,
+                tail_samples: compensation.tail_samples,
+                bypassed,
+                active_transport,
+                degraded_reasons,
+                summary,
+            };
+
+            let chain = &mut chains[chain_index];
+            chain.stage_count = chain.stage_count.saturating_add(1);
+            chain.total_planned_latency_samples = chain
+                .total_planned_latency_samples
+                .saturating_add(stage.planned_latency_samples);
+            chain.total_realized_latency_samples = chain
+                .total_realized_latency_samples
+                .saturating_add(stage.realized_latency_samples.unwrap_or(0));
+            chain.total_tail_samples = chain
+                .total_tail_samples
+                .saturating_add(stage.tail_samples.unwrap_or(0));
+            if matches!(
+                stage.compensation_state,
+                RuntimePluginCompensationState::PendingRender
+            ) {
+                chain.pending_render_stage_count =
+                    chain.pending_render_stage_count.saturating_add(1);
+            }
+            if matches!(
+                stage.compensation_state,
+                RuntimePluginCompensationState::Settling
+            ) {
+                chain.settling_stage_count = chain.settling_stage_count.saturating_add(1);
+            }
+            if matches!(
+                stage.compensation_state,
+                RuntimePluginCompensationState::Compensated
+            ) {
+                chain.compensated_stage_count = chain.compensated_stage_count.saturating_add(1);
+            }
+            if matches!(
+                stage.compensation_state,
+                RuntimePluginCompensationState::Degraded
+            ) {
+                chain.degraded_stage_count = chain.degraded_stage_count.saturating_add(1);
+            }
+            if stage.bypassed {
+                chain.bypassed_stage_count = chain.bypassed_stage_count.saturating_add(1);
+            }
+            if matches!(
+                stage.compensation_state,
+                RuntimePluginCompensationState::MissingBinding
+            ) {
+                chain.missing_binding_stage_count =
+                    chain.missing_binding_stage_count.saturating_add(1);
+            }
+            chain.stages.push(stage);
+        }
+
+        for chain in &mut chains {
+            chain.summary = format!(
+                "chain_id={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={}",
+                chain.chain_id,
+                chain.stage_count,
+                chain.pending_render_stage_count,
+                chain.settling_stage_count,
+                chain.compensated_stage_count,
+                chain.degraded_stage_count,
+                chain.bypassed_stage_count,
+                chain.missing_binding_stage_count,
+                chain.total_planned_latency_samples,
+                chain.total_realized_latency_samples,
+                chain.total_tail_samples,
+            );
+        }
+
+        let mut snapshot = RuntimePluginChainSnapshot {
+            chain_count: chains.len(),
+            stage_count: chains.iter().map(|chain| chain.stage_count).sum(),
+            pending_render_stage_count: chains
+                .iter()
+                .map(|chain| chain.pending_render_stage_count)
+                .sum(),
+            settling_stage_count: chains.iter().map(|chain| chain.settling_stage_count).sum(),
+            compensated_stage_count: chains
+                .iter()
+                .map(|chain| chain.compensated_stage_count)
+                .sum(),
+            degraded_stage_count: chains.iter().map(|chain| chain.degraded_stage_count).sum(),
+            bypassed_stage_count: chains.iter().map(|chain| chain.bypassed_stage_count).sum(),
+            missing_binding_stage_count: chains
+                .iter()
+                .map(|chain| chain.missing_binding_stage_count)
+                .sum(),
+            total_planned_latency_samples: chains
+                .iter()
+                .map(|chain| chain.total_planned_latency_samples)
+                .sum(),
+            total_realized_latency_samples: chains
+                .iter()
+                .map(|chain| chain.total_realized_latency_samples)
+                .sum(),
+            total_tail_samples: chains.iter().map(|chain| chain.total_tail_samples).sum(),
+            chains,
+            ..RuntimePluginChainSnapshot::default()
+        };
+        snapshot.summary = format!(
+            "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={}",
+            snapshot.chain_count,
+            snapshot.stage_count,
+            snapshot.pending_render_stage_count,
+            snapshot.settling_stage_count,
+            snapshot.compensated_stage_count,
+            snapshot.degraded_stage_count,
+            snapshot.bypassed_stage_count,
+            snapshot.missing_binding_stage_count,
+            snapshot.total_planned_latency_samples,
+            snapshot.total_realized_latency_samples,
+            snapshot.total_tail_samples,
+        );
+        snapshot
+    }
+
+    fn plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot {
+        RuntimePluginRecallHandoffSnapshot::from_plugin_chain_snapshot(
+            &self.plugin_chain_snapshot(),
+        )
+    }
+
+    fn scheduler_topology_summary(&self) -> RuntimeSchedulerTopologySummary {
+        self.engine.snapshot.scheduler_topology.clone()
+    }
+
+    fn execution_topology_summary(&self) -> RuntimeExecutionTopologySummary {
+        RuntimeExecutionTopologySummary::from_snapshot(&self.engine.snapshot)
+            .with_plugin_chain_snapshot(&self.plugin_chain_snapshot())
+    }
+
+    fn diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot {
+        RuntimeDiagnosticsSnapshot {
+            cpu_load_percent: self.diagnostics.cpu_load_percent,
+            xruns: self.diagnostics.xruns,
+            graph_latency_ms: self.diagnostics.graph_latency_ms,
+            active_plugin_sandboxes: self.diagnostics.active_plugin_sandboxes,
+            backend_policy_tier: self.diagnostics.backend_policy_tier,
+            topology_compatible: self.engine.snapshot.scheduler_topology.compatible,
+            topology_issue_count: self.engine.snapshot.scheduler_topology.issues.len(),
+            degraded_bound_plugin_sandboxes: self
+                .engine
+                .snapshot
+                .prework_service_degraded_bound_plugin_sandboxes,
+            missing_bound_plugin_sandboxes: self
+                .engine
+                .snapshot
+                .prework_service_missing_bound_plugin_sandboxes,
+            last_output_peak: self.metering.snapshot.main_output_peak_level,
+            last_output_rms: self.metering.snapshot.main_output_rms_level,
+            momentary_loudness_lufs: self.metering.snapshot.momentary_loudness_lufs,
+            short_term_loudness_lufs: self.metering.snapshot.short_term_loudness_lufs,
+            integrated_loudness_lufs: self.metering.snapshot.integrated_loudness_lufs,
+        }
+    }
+
+    fn current_graph_parameter_batch(
+        &self,
+        context: &GraphExecutionContext,
+        frame_count: usize,
+    ) -> (Option<GraphParameterBatch>, RuntimeAutomationBatchMetrics) {
+        self.graph_parameter_batch_for_transport(context, frame_count, self.resolve_transport(None))
+    }
+
+    fn graph_parameter_batch_for_transport(
+        &self,
+        context: &GraphExecutionContext,
+        frame_count: usize,
+        transport: Option<TransportProjection>,
+    ) -> (Option<GraphParameterBatch>, RuntimeAutomationBatchMetrics) {
+        let Some(graph) = self.applied_graph.as_ref() else {
+            return (None, RuntimeAutomationBatchMetrics::default());
+        };
+
+        let (automation_batch, automated_targets, mut automation_metrics) = self
+            .automation
+            .graph_parameter_batch(graph, transport, frame_count, context.parameter_epoch);
+
+        let mut events = self
+            .applied_parameter_batch
+            .as_ref()
+            .map(|batch| {
+                batch
+                    .events
+                    .iter()
+                    .filter(|event| !automated_targets.contains(&event.target))
+                    .filter_map(|event| {
+                        graph_parameter_target_from_runtime_target(graph, &event.target).map(
+                            |target| GraphParameterEvent {
+                                sample_offset: event
+                                    .sample_offset
+                                    .min(frame_count.saturating_sub(1)),
+                                target,
+                                value: event.normalized_value,
+                            },
+                        )
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        if let Some(mut automation_events) = automation_batch.map(|batch| batch.events) {
+            events.append(&mut automation_events);
+        }
+        if events.is_empty() {
+            return (None, automation_metrics);
+        }
+        events.sort_by(|left, right| {
+            left.target
+                .node_id
+                .cmp(&right.target.node_id)
+                .then(left.target.stage_index.cmp(&right.target.stage_index))
+                .then(
+                    graph_stage_parameter_sort_key(left.target.parameter)
+                        .cmp(&graph_stage_parameter_sort_key(right.target.parameter)),
+                )
+                .then(left.sample_offset.cmp(&right.sample_offset))
+        });
+        automation_metrics.max_sample_offset = events.iter().map(|event| event.sample_offset).max();
+        (
+            Some(GraphParameterBatch {
+                epoch: context.parameter_epoch,
+                strategy: GraphParameterApplicationStrategy::SplitAtEvents {
+                    max_sub_blocks: automation_metrics.strategy_max_sub_blocks.max(8),
+                },
+                events,
+            }),
+            automation_metrics,
+        )
+    }
+
+    fn current_resolved_tempo(&self) -> RuntimeResolvedTempo {
+        self.tempo_map.resolve(
+            self.applied_transport
+                .map(|transport| transport.timeline_position_samples)
+                .or(self.timeline.last_transport_timeline_position_samples),
+            self.applied_transport,
+            self.timeline.last_transport_tempo_bpm,
+        )
+    }
+
+    fn tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot {
+        let resolved_tempo = self.current_resolved_tempo();
+        self.tempo_map.snapshot(&resolved_tempo)
     }
 
     fn warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot {
+        let resolved_tempo = self.current_resolved_tempo();
         self.warp_pipeline
-            .snapshot(self.current_project_tempo_bpm(), &self.media_pipeline)
+            .snapshot(&resolved_tempo, &self.media_pipeline)
+    }
+
+    fn clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot {
+        let resolved_tempo = self.current_resolved_tempo();
+        self.clip_processing_pipeline.snapshot(
+            &self.media_pipeline,
+            &self.warp_pipeline,
+            &resolved_tempo,
+        )
     }
 
     pub fn start_recording_capture(
@@ -5659,6 +8698,14 @@ impl SignalRuntime {
         clips: Vec<RuntimeWarpClipRegistration>,
     ) -> Result<(), RuntimeError> {
         self.warp_pipeline.reconcile_clips(clips);
+        Ok(())
+    }
+
+    pub fn reconcile_clip_processing_clips(
+        &mut self,
+        clips: Vec<RuntimeClipProcessingRegistration>,
+    ) -> Result<(), RuntimeError> {
+        self.clip_processing_pipeline.reconcile_clips(clips);
         Ok(())
     }
 
@@ -5740,11 +8787,13 @@ impl RuntimeLifecycleApi for SignalRuntime {
             .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.configure_count = self.control.configure_count.saturating_add(1);
         self.control.last_reconfigure = Some(request);
+        self.applied_parameter_batch = None;
         self.timeline.reset();
         self.automation.reset();
         self.transport_concurrency.reset();
         self.recording_capture = RuntimeRecordingCaptureStateModel::default();
         self.media_pipeline = RuntimeMediaPipelineStateModel::default();
+        self.tempo_map = RuntimeTempoMapStateModel::default();
         self.warp_pipeline = RuntimeWarpPipelineStateModel::default();
         self.readiness = RuntimeReadiness::Starting;
         self.refresh_runtime_state();
@@ -5996,6 +9045,116 @@ impl RuntimeProjectionApi for SignalRuntime {
         })
     }
 
+    fn apply_automation_projection(
+        &mut self,
+        projection: RuntimeAutomationProjection,
+    ) -> Result<ProjectionReceipt, RuntimeError> {
+        for lane in &projection.lanes {
+            if lane.automation_lane_id.is_empty() {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "automation_lane_id must not be empty",
+                ));
+            }
+            if lane.target.node_id.is_empty() || lane.target.parameter_id.is_empty() {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "automation target node_id and parameter_id must not be empty",
+                ));
+            }
+            if lane.resolution.max_sub_blocks == 0 {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "automation max_sub_blocks must be greater than zero",
+                ));
+            }
+            if lane.interpolation == RuntimeAutomationInterpolation::Linear
+                && lane.resolution.ramp_step_samples == 0
+            {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "linear automation ramp_step_samples must be greater than zero",
+                ));
+            }
+        }
+        self.projection_epoch = self.projection_epoch.saturating_add(1);
+        self.automation.apply_projection(projection);
+        Ok(ProjectionReceipt {
+            accepted_epoch: self.projection_epoch,
+            applied_at_block_boundary: true,
+        })
+    }
+
+    fn apply_tempo_map_projection(
+        &mut self,
+        projection: RuntimeTempoMapProjection,
+    ) -> Result<ProjectionReceipt, RuntimeError> {
+        let mut segments = projection.segments.clone();
+        segments.sort_by_key(|segment| (segment.start_samples, segment.segment_id.clone()));
+        let mut previous_end = None;
+        let mut previous_open_ended = false;
+        for segment in &segments {
+            if segment.segment_id.is_empty() {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "tempo map segment_id must not be empty",
+                ));
+            }
+            if !segment.start_tempo_bpm.is_finite() || segment.start_tempo_bpm <= 0.0 {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "tempo map start_tempo_bpm must be positive",
+                ));
+            }
+            if let Some(end_tempo_bpm) = segment.end_tempo_bpm {
+                if !end_tempo_bpm.is_finite() || end_tempo_bpm <= 0.0 {
+                    return Err(RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        "tempo map end_tempo_bpm must be positive",
+                    ));
+                }
+            }
+            if let Some(end_samples) = segment.end_samples {
+                if end_samples <= segment.start_samples {
+                    return Err(RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        "tempo map end_samples must be greater than start_samples",
+                    ));
+                }
+            }
+            if segment.interpolation == RuntimeTempoMapInterpolation::Linear
+                && (segment.end_samples.is_none() || segment.end_tempo_bpm.is_none())
+            {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "linear tempo map segments require end_samples and end_tempo_bpm",
+                ));
+            }
+            if previous_open_ended {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "open-ended tempo map segments must be the final segment",
+                ));
+            }
+            if let Some(previous_end) = previous_end {
+                if segment.start_samples < previous_end {
+                    return Err(RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        "tempo map segments must not overlap",
+                    ));
+                }
+            }
+            previous_open_ended = segment.end_samples.is_none();
+            previous_end = segment.end_samples;
+        }
+        self.projection_epoch = self.projection_epoch.saturating_add(1);
+        self.tempo_map.apply_projection(projection);
+        Ok(ProjectionReceipt {
+            accepted_epoch: self.projection_epoch,
+            applied_at_block_boundary: true,
+        })
+    }
+
     fn apply_transport_projection(
         &mut self,
         projection: TransportProjection,
@@ -6061,6 +9220,7 @@ impl RuntimeProjectionApi for SignalRuntime {
             );
         }
         self.latest_parameter_epoch = batch.epoch;
+        self.applied_parameter_batch = Some(batch);
         Ok(())
     }
 
@@ -6084,6 +9244,190 @@ impl RuntimeProjectionApi for SignalRuntime {
             self.get_effective_config(),
         ));
         Ok(())
+    }
+}
+
+fn runtime_plugin_chain_id(
+    track_lane_id: Option<&str>,
+    bus_group_id: Option<&str>,
+    console_group_id: Option<&str>,
+    send_return_id: Option<&str>,
+) -> String {
+    track_lane_id
+        .map(str::to_string)
+        .or_else(|| bus_group_id.map(str::to_string))
+        .or_else(|| console_group_id.map(str::to_string))
+        .or_else(|| send_return_id.map(str::to_string))
+        .unwrap_or_else(|| "global".into())
+}
+
+fn runtime_plugin_recall_snapshot(
+    sandbox_id: Option<&str>,
+    sandbox: Option<&RuntimePluginSandboxSnapshot>,
+) -> RuntimePluginRecallSnapshot {
+    let state = match (sandbox_id, sandbox) {
+        (None, _) => RuntimePluginRecallState::Unbound,
+        (Some(_), None) => RuntimePluginRecallState::Cold,
+        (Some(_), Some(sandbox))
+            if matches!(
+                sandbox.state,
+                RuntimePluginLifecycleState::Faulted
+                    | RuntimePluginLifecycleState::Restarting
+                    | RuntimePluginLifecycleState::Quarantined
+            ) =>
+        {
+            RuntimePluginRecallState::Unavailable
+        }
+        (Some(_), Some(sandbox)) if sandbox.recovery_count > 0 || sandbox.restart_count > 0 => {
+            RuntimePluginRecallState::Recovered
+        }
+        (Some(_), Some(sandbox))
+            if sandbox.instance_id.is_some() || sandbox.lifecycle_stage.is_some() =>
+        {
+            RuntimePluginRecallState::Warm
+        }
+        (Some(_), Some(_)) => RuntimePluginRecallState::Cold,
+    };
+
+    let mut snapshot = RuntimePluginRecallSnapshot {
+        state,
+        payload: runtime_plugin_recall_payload(sandbox_id, sandbox),
+        summary: String::new(),
+    };
+    snapshot.summary = format!(
+        "state={:?} sandbox={:?} lifecycle={:?}/{:?}/{:?} readiness={:?} recoveries={} restarts={} faults={} restart_intent={:?} stop_reason={:?} fault_kind={:?}",
+        snapshot.state,
+        snapshot.payload.sandbox_id.as_deref(),
+        snapshot.payload.lifecycle_state,
+        snapshot.payload.lifecycle_stage,
+        snapshot.payload.transport_stage,
+        snapshot.payload.readiness_state.as_deref(),
+        snapshot.payload.recovery_count,
+        snapshot.payload.restart_count,
+        snapshot.payload.fault_count,
+        snapshot.payload.last_restart_intent,
+        snapshot.payload.last_stop_reason,
+        snapshot.payload.last_fault_kind,
+    );
+    snapshot
+}
+
+fn runtime_plugin_recall_payload(
+    sandbox_id: Option<&str>,
+    sandbox: Option<&RuntimePluginSandboxSnapshot>,
+) -> RuntimePluginRecallPayload {
+    RuntimePluginRecallPayload {
+        sandbox_id: sandbox_id.map(str::to_string),
+        lifecycle_state: sandbox.map(|sandbox| sandbox.state),
+        lifecycle_stage: sandbox.and_then(|sandbox| sandbox.lifecycle_stage),
+        transport_stage: sandbox.and_then(|sandbox| sandbox.transport_stage),
+        readiness_state: sandbox.and_then(|sandbox| sandbox.readiness_state.clone()),
+        recovery_count: sandbox.map(|sandbox| sandbox.recovery_count).unwrap_or(0),
+        restart_count: sandbox.map(|sandbox| sandbox.restart_count).unwrap_or(0),
+        fault_count: sandbox.map(|sandbox| sandbox.fault_count).unwrap_or(0),
+        last_restart_intent: sandbox.and_then(|sandbox| sandbox.last_restart_intent),
+        last_stop_reason: sandbox.and_then(|sandbox| sandbox.last_stop_reason),
+        last_fault_kind: sandbox.and_then(|sandbox| sandbox.last_fault_kind),
+        last_fault_detail: sandbox.and_then(|sandbox| sandbox.last_fault_detail.clone()),
+        degraded_reasons: sandbox
+            .map(|sandbox| sandbox.degraded_reasons.clone())
+            .unwrap_or_default(),
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct RuntimePluginCompensationObservation {
+    state: RuntimePluginCompensationState,
+    realized_latency_samples: Option<u32>,
+    tail_samples: Option<u32>,
+}
+
+fn runtime_plugin_tail_remaining_samples(
+    realized: &RuntimePluginRenderedNodeState,
+    current_block_sequence: Option<u64>,
+    frame_count: usize,
+) -> Option<u32> {
+    let current_block_sequence = current_block_sequence?;
+    let consumed_samples = current_block_sequence
+        .saturating_sub(realized.block_sequence)
+        .saturating_mul(frame_count.max(1) as u64);
+    Some(
+        realized
+            .tail_samples
+            .saturating_sub(consumed_samples.min(u64::from(u32::MAX)) as u32),
+    )
+}
+
+fn runtime_plugin_compensation_observation(
+    sandbox_id: Option<&str>,
+    sandbox: Option<&RuntimePluginSandboxSnapshot>,
+    realized: Option<&RuntimePluginRenderedNodeState>,
+    current_block_sequence: Option<u64>,
+    current_frame_count: usize,
+) -> RuntimePluginCompensationObservation {
+    if sandbox_id.is_none() {
+        return RuntimePluginCompensationObservation {
+            state: RuntimePluginCompensationState::MissingBinding,
+            realized_latency_samples: None,
+            tail_samples: None,
+        };
+    }
+    if sandbox.is_some_and(|sandbox| {
+        matches!(
+            sandbox.state,
+            RuntimePluginLifecycleState::Faulted
+                | RuntimePluginLifecycleState::Restarting
+                | RuntimePluginLifecycleState::Quarantined
+                | RuntimePluginLifecycleState::Degraded
+        ) || !sandbox.degraded_reasons.is_empty()
+    }) {
+        return RuntimePluginCompensationObservation {
+            state: RuntimePluginCompensationState::Degraded,
+            realized_latency_samples: None,
+            tail_samples: None,
+        };
+    }
+    match realized {
+        Some(realized) if realized.bypassed => RuntimePluginCompensationObservation {
+            state: RuntimePluginCompensationState::Bypassed,
+            realized_latency_samples: Some(realized.latency_samples),
+            tail_samples: Some(realized.tail_samples),
+        },
+        Some(realized) => {
+            let tail_remaining = runtime_plugin_tail_remaining_samples(
+                realized,
+                current_block_sequence,
+                current_frame_count,
+            );
+            let state = match current_block_sequence
+                .unwrap_or(realized.block_sequence)
+                .saturating_sub(realized.block_sequence)
+            {
+                0 => RuntimePluginCompensationState::Compensated,
+                _ if tail_remaining.unwrap_or(0) > 0 => RuntimePluginCompensationState::Settling,
+                _ => RuntimePluginCompensationState::PendingRender,
+            };
+            RuntimePluginCompensationObservation {
+                state,
+                realized_latency_samples: matches!(
+                    state,
+                    RuntimePluginCompensationState::Compensated
+                        | RuntimePluginCompensationState::Settling
+                )
+                .then_some(realized.latency_samples),
+                tail_samples: matches!(
+                    state,
+                    RuntimePluginCompensationState::Compensated
+                        | RuntimePluginCompensationState::Settling
+                )
+                .then_some(tail_remaining.unwrap_or(realized.tail_samples)),
+            }
+        }
+        None => RuntimePluginCompensationObservation {
+            state: RuntimePluginCompensationState::PendingRender,
+            realized_latency_samples: None,
+            tail_samples: None,
+        },
     }
 }
 
@@ -6117,8 +9461,16 @@ impl RuntimeObservationApi for SignalRuntime {
         self.scheduler_snapshot()
     }
 
+    fn get_scheduler_topology_summary(&self) -> RuntimeSchedulerTopologySummary {
+        self.scheduler_topology_summary()
+    }
+
     fn get_diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot {
-        self.diagnostics
+        self.diagnostics_snapshot()
+    }
+
+    fn get_metering_snapshot(&self) -> RuntimeMeteringSnapshot {
+        self.metering_snapshot()
     }
 
     fn get_supervision_snapshot(&self) -> RuntimeSupervisionSnapshot {
@@ -6141,8 +9493,16 @@ impl RuntimeObservationApi for SignalRuntime {
         self.media_pipeline_snapshot()
     }
 
+    fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot {
+        self.tempo_map_snapshot()
+    }
+
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot {
         self.warp_pipeline_snapshot()
+    }
+
+    fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot {
+        self.clip_processing_pipeline_snapshot()
     }
 
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot {
@@ -6153,8 +9513,24 @@ impl RuntimeObservationApi for SignalRuntime {
         self.engine.snapshot()
     }
 
+    fn get_execution_topology_summary(&self) -> RuntimeExecutionTopologySummary {
+        self.execution_topology_summary()
+    }
+
     fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot {
         self.transport_concurrency.snapshot()
+    }
+
+    fn get_plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot {
+        self.plugin_lifecycle_snapshot()
+    }
+
+    fn get_plugin_chain_snapshot(&self) -> RuntimePluginChainSnapshot {
+        self.plugin_chain_snapshot()
+    }
+
+    fn get_plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot {
+        self.plugin_recall_handoff_snapshot()
     }
 }
 
@@ -6166,27 +9542,39 @@ mod tests {
         time::{SystemTime, UNIX_EPOCH},
     };
 
-    use super::{RuntimeConfig, RuntimeProfile, SignalRuntime};
+    use super::{RuntimeConfig, RuntimeMeteringStateModel, RuntimeProfile, SignalRuntime};
     use crate::interfaces::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
         GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
         GraphNodeContractProjection, GraphNodeProjection, GraphNodeTopologyProjection,
         GraphProjection, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
         LingeringCleanupTrigger, ParameterBatch, ParameterEvent, PluginBackedNodeBinding,
-        PluginBackedNodeBindingProjection, PluginNodeRender, PluginNodeRenderBatch,
-        PluginSandboxLifecycleStage, PluginSandboxTransportStage, RecoveryRestartIntent,
-        RestartRequest, RuntimeConfigRequest, RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder,
-        RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
-        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeObservationApi,
-        RuntimeObservationReport, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
-        RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+        PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRender,
+        PluginNodeRenderBatch, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
+        RecoveryRestartIntent, RestartRequest, RuntimeAutomationInterpolation,
+        RuntimeAutomationLaneProjection, RuntimeAutomationPointProjection,
+        RuntimeAutomationProjection, RuntimeAutomationResolution,
+        RuntimeAutomationTargetProjection, RuntimeClipFadeEnvelope, RuntimeClipFadeShape,
+        RuntimeClipGainEnvelope, RuntimeClipGainShape, RuntimeClipProcessingReadiness,
+        RuntimeClipProcessingRegistration, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
+        RuntimeClipRenderRequest, RuntimeConfigRequest, RuntimeErrorKind, RuntimeEvent,
+        RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
+        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
+        RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
+        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflineRenderContractPreview,
+        RuntimeOfflineRenderRequest, RuntimeOfflineRenderStemTarget,
+        RuntimeOfflineRenderTargetKind, RuntimePluginCompensationState,
+        RuntimePluginLifecycleState, RuntimePluginRecallHandoffSelection, RuntimePluginRecallState,
+        RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
+        RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
         RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
         RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason,
         RuntimePreworkRetirementReason, RuntimePreworkServicePressure,
         RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
         RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
         RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeSchedulerState,
-        RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport, RuntimeWarpClipRegistration,
+        RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport, RuntimeTempoMapInterpolation,
+        RuntimeTempoMapProjection, RuntimeTempoSource, RuntimeWarpClipRegistration,
         RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
         SandboxOperationFailureStage, ScheduleProjection, StopReason, TransportAttachIntent,
         TransportProjection, TransportSessionProvenance, WatchdogRestartRecord,
@@ -6360,8 +9748,10 @@ mod tests {
             },
             topology: GraphNodeTopologyMetadata {
                 role: Some(GraphNodeTopologyRole::Utility),
-                lane_id: None,
+                track_lane_id: None,
                 bus_group_id: None,
+                console_group_id: None,
+                send_return_id: None,
             },
             stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
         }];
@@ -6379,8 +9769,10 @@ mod tests {
                 },
                 topology: GraphNodeTopologyMetadata {
                     role: Some(GraphNodeTopologyRole::TrackLane),
-                    lane_id: Some((*lane_id).into()),
+                    track_lane_id: Some((*lane_id).into()),
                     bus_group_id: Some("mix:tracks".into()),
+                    console_group_id: None,
+                    send_return_id: None,
                 },
                 stages: vec![GraphStageSpec::Gain { linear: 0.8 }],
             });
@@ -6399,8 +9791,10 @@ mod tests {
                 },
                 topology: GraphNodeTopologyMetadata {
                     role: Some(GraphNodeTopologyRole::TrackLane),
-                    lane_id: None,
+                    track_lane_id: None,
                     bus_group_id: Some("mix:tracks".into()),
+                    console_group_id: None,
+                    send_return_id: None,
                 },
                 stages: vec![GraphStageSpec::Gain { linear: 0.7 }],
             });
@@ -6418,8 +9812,10 @@ mod tests {
             },
             topology: GraphNodeTopologyMetadata {
                 role: Some(GraphNodeTopologyRole::Bus),
-                lane_id: None,
+                track_lane_id: None,
                 bus_group_id: Some("mix:master".into()),
+                console_group_id: None,
+                send_return_id: None,
             },
             stages: vec![GraphStageSpec::HardClip { threshold: 0.9 }],
         });
@@ -6436,8 +9832,10 @@ mod tests {
             },
             topology: GraphNodeTopologyMetadata {
                 role: Some(GraphNodeTopologyRole::ConsoleNode),
-                lane_id: None,
-                bus_group_id: Some("console:main".into()),
+                track_lane_id: None,
+                bus_group_id: None,
+                console_group_id: Some("console:main".into()),
+                send_return_id: None,
             },
             stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
         });
@@ -6602,6 +10000,316 @@ mod tests {
     }
 
     #[test]
+    fn automation_projection_requires_explicit_targets_and_positive_linear_resolution() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 64));
+        handshake_and_configure(&mut runtime);
+
+        let error = runtime
+            .apply_automation_projection(RuntimeAutomationProjection {
+                lane_count: 1,
+                point_count: 1,
+                lanes: vec![RuntimeAutomationLaneProjection {
+                    automation_lane_id: "lane:invalid".into(),
+                    target: RuntimeAutomationTargetProjection {
+                        node_id: String::new(),
+                        parameter_id: "gain".into(),
+                    },
+                    base_normalized_value: 0.0,
+                    interpolation: RuntimeAutomationInterpolation::Linear,
+                    resolution: RuntimeAutomationResolution {
+                        ramp_step_samples: 0,
+                        max_sub_blocks: 0,
+                    },
+                    point_count: 1,
+                    points: vec![RuntimeAutomationPointProjection {
+                        time_samples: 0,
+                        normalized_value: 0.0,
+                    }],
+                }],
+            })
+            .expect_err("invalid automation projection should be rejected");
+
+        assert_eq!(error.kind, RuntimeErrorKind::InvalidRequest);
+    }
+
+    #[test]
+    fn tempo_map_projection_requires_bounded_non_overlapping_segments() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 64));
+        handshake_and_configure(&mut runtime);
+
+        let error = runtime
+            .apply_tempo_map_projection(RuntimeTempoMapProjection {
+                segment_count: 2,
+                segments: vec![
+                    crate::interfaces::RuntimeTempoMapSegmentProjection {
+                        segment_id: "tempo:intro".into(),
+                        start_samples: 0,
+                        end_samples: None,
+                        start_tempo_bpm: 120.0,
+                        end_tempo_bpm: None,
+                        interpolation: RuntimeTempoMapInterpolation::Hold,
+                    },
+                    crate::interfaces::RuntimeTempoMapSegmentProjection {
+                        segment_id: "tempo:lift".into(),
+                        start_samples: 4_800,
+                        end_samples: Some(9_600),
+                        start_tempo_bpm: 132.0,
+                        end_tempo_bpm: None,
+                        interpolation: RuntimeTempoMapInterpolation::Hold,
+                    },
+                ],
+            })
+            .expect_err("invalid tempo map projection should be rejected");
+
+        assert_eq!(error.kind, RuntimeErrorKind::InvalidRequest);
+        assert!(error.message.contains("open-ended tempo map segments"));
+    }
+
+    #[test]
+    fn runtime_linear_automation_projection_drives_multi_block_gain_playback() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 8));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "runtime-test".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .unwrap();
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 8))
+            .unwrap();
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:automation-linear".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "gain".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.0 }],
+                }],
+            })
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: true,
+                timeline_position_samples: 0,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            })
+            .unwrap();
+        runtime
+            .apply_automation_projection(RuntimeAutomationProjection {
+                lane_count: 1,
+                point_count: 3,
+                lanes: vec![RuntimeAutomationLaneProjection {
+                    automation_lane_id: "lane:gain:linear".into(),
+                    target: RuntimeAutomationTargetProjection {
+                        node_id: "gain".into(),
+                        parameter_id: "gain".into(),
+                    },
+                    base_normalized_value: 0.0,
+                    interpolation: RuntimeAutomationInterpolation::Linear,
+                    resolution: RuntimeAutomationResolution {
+                        ramp_step_samples: 2,
+                        max_sub_blocks: 8,
+                    },
+                    point_count: 3,
+                    points: vec![
+                        RuntimeAutomationPointProjection {
+                            time_samples: 0,
+                            normalized_value: 0.0,
+                        },
+                        RuntimeAutomationPointProjection {
+                            time_samples: 8,
+                            normalized_value: 1.0,
+                        },
+                        RuntimeAutomationPointProjection {
+                            time_samples: 16,
+                            normalized_value: 0.0,
+                        },
+                    ],
+                }],
+            })
+            .unwrap();
+
+        let first = runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![1.0; 8],
+                ),
+            )
+            .expect("first automation block should process");
+        let second = runtime
+            .process_engine_block(
+                2,
+                2,
+                AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![1.0; 8],
+                ),
+            )
+            .expect("second automation block should process");
+
+        assert_eq!(
+            first.output.samples(),
+            &[
+                0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 0.25, 0.5, 0.5, 0.5, 0.5, 0.75, 0.75, 0.75,
+                0.75,
+            ]
+        );
+        assert_eq!(
+            second.output.samples(),
+            &[
+                1.0, 1.0, 1.0, 1.0, 0.75, 0.75, 0.75, 0.75, 0.5, 0.5, 0.5, 0.5, 0.25, 0.25, 0.25,
+                0.25,
+            ]
+        );
+        assert_eq!(first.snapshot.parameter_event_count, 4);
+        assert_eq!(first.snapshot.parameter_sub_block_count, 4);
+        assert_eq!(second.snapshot.parameter_event_count, 4);
+        assert_eq!(second.snapshot.parameter_sub_block_count, 4);
+
+        let automation = runtime.get_automation_snapshot();
+        assert_eq!(automation.lane_count, 1);
+        assert_eq!(automation.point_count, 3);
+        assert_eq!(automation.projected_segment_count, 2);
+        assert_eq!(automation.mapped_lane_count, 1);
+        assert_eq!(automation.unmapped_lane_count, 0);
+        assert_eq!(automation.hold_lane_count, 0);
+        assert_eq!(automation.linear_lane_count, 1);
+        assert_eq!(automation.last_batch_event_count, 4);
+        assert_eq!(automation.last_batch_sub_block_count, 4);
+        assert_eq!(automation.last_batch_strategy_max_sub_blocks, 8);
+        assert_eq!(automation.last_batch_min_ramp_step_samples, Some(2));
+        assert_eq!(automation.last_batch_max_sample_offset, Some(6));
+        assert_eq!(automation.last_block_sequence, Some(2));
+        assert_eq!(automation.last_timeline_position_samples, Some(8));
+        assert_eq!(automation.transport_playing, Some(true));
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert!(observation
+            .render_compact()
+            .contains("automation_projection=1/3/2"));
+        assert!(observation
+            .render_compact()
+            .contains("automation_shapes=0/1"));
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert!(supervisor
+            .render_multiline()
+            .contains("automation_linear_lanes=1"));
+        assert!(supervisor
+            .render_multiline()
+            .contains("automation_last_batch_min_ramp_step_samples=Some(2)"));
+        assert!(supervisor
+            .render_json()
+            .contains("\"automation\":{\"lane_count\":1"));
+        assert!(supervisor
+            .render_json()
+            .contains("\"last_batch_min_ramp_step_samples\":2"));
+    }
+
+    #[test]
+    fn runtime_hold_automation_projection_drives_plugin_backed_threshold_fixture() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 4));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "runtime-test".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .unwrap();
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 4))
+            .unwrap();
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:automation-plugin".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 1.0 }],
+                }],
+            })
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: true,
+                timeline_position_samples: 0,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            })
+            .unwrap();
+        runtime
+            .apply_automation_projection(RuntimeAutomationProjection {
+                lane_count: 1,
+                point_count: 1,
+                lanes: vec![RuntimeAutomationLaneProjection {
+                    automation_lane_id: "lane:plugin:threshold".into(),
+                    target: RuntimeAutomationTargetProjection {
+                        node_id: "plugin".into(),
+                        parameter_id: "threshold".into(),
+                    },
+                    base_normalized_value: 1.0,
+                    interpolation: RuntimeAutomationInterpolation::Hold,
+                    resolution: RuntimeAutomationResolution::default(),
+                    point_count: 1,
+                    points: vec![RuntimeAutomationPointProjection {
+                        time_samples: 2,
+                        normalized_value: 0.5,
+                    }],
+                }],
+            })
+            .unwrap();
+
+        let result = runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![0.7, 0.7, 0.7, 0.7],
+                ),
+            )
+            .expect("plugin-backed automation block should process");
+
+        assert_eq!(
+            result.output.samples(),
+            &[0.7, 0.7, 0.7, 0.7, 0.5, 0.5, 0.5, 0.5]
+        );
+        assert_eq!(result.snapshot.plugin_backed_node_count, 1);
+        assert_eq!(result.snapshot.parameter_event_count, 2);
+        assert_eq!(result.snapshot.parameter_sub_block_count, 2);
+
+        let automation = runtime.get_automation_snapshot();
+        assert_eq!(automation.hold_lane_count, 1);
+        assert_eq!(automation.linear_lane_count, 0);
+        assert_eq!(automation.mapped_lane_count, 1);
+        assert_eq!(automation.projected_segment_count, 0);
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert!(observation
+            .render_compact()
+            .contains("automation_shapes=1/0"));
+        assert!(
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default())
+                .render_json()
+                .contains("\"linear_lane_count\":0")
+        );
+    }
+
+    #[test]
     fn handshake_requires_client_version() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
         let error = runtime
@@ -6644,13 +10352,15 @@ mod tests {
         );
 
         let missing_schedule = runtime.get_engine_block_snapshot();
+        let scheduler_topology = runtime.get_scheduler_topology_summary();
         assert_eq!(missing_schedule.scheduler_topology.track_lane_node_count, 2);
+        assert_eq!(scheduler_topology.track_lane_node_count, 2);
         assert_eq!(
             missing_schedule.scheduler_topology.track_lane_group_count,
             2
         );
         assert_eq!(missing_schedule.scheduler_topology.bus_node_count, 1);
-        assert_eq!(missing_schedule.scheduler_topology.bus_group_count, 1);
+        assert_eq!(missing_schedule.scheduler_topology.bus_group_count, 2);
         assert_eq!(missing_schedule.scheduler_topology.console_node_count, 1);
         assert_eq!(missing_schedule.scheduler_topology.console_group_count, 1);
         assert_eq!(
@@ -6683,6 +10393,7 @@ mod tests {
         let result = runtime
             .process_engine_block(1, 1, block)
             .expect("process topology-aware block");
+        let execution_topology = runtime.get_execution_topology_summary();
 
         assert_eq!(result.snapshot.lane_order.len(), 2);
         assert_eq!(
@@ -6708,6 +10419,10 @@ mod tests {
             result.snapshot.scheduler_topology.schedule_stream_count,
             Some(2)
         );
+        assert_eq!(execution_topology.node_count, result.snapshot.node_count);
+        assert_eq!(execution_topology.track_lane_group_count, 2);
+        assert_eq!(execution_topology.bus_group_count, 2);
+        assert_eq!(execution_topology.console_group_count, 1);
     }
 
     #[test]
@@ -6791,6 +10506,47 @@ mod tests {
             .process_engine_block(1, 1, block)
             .expect("process topology report block");
 
+        let metering = runtime.get_metering_snapshot();
+        assert!(metering.meter_count > 0);
+        assert!(metering.main_output_peak_level.is_some());
+        assert!(metering.main_output_rms_level.is_some());
+        assert!(metering
+            .meters
+            .iter()
+            .any(|meter| meter.bus_id == "main:out"));
+        assert_eq!(metering.track_lanes.len(), 2);
+        assert_eq!(metering.bus_groups.len(), 2);
+        assert_eq!(metering.console_groups.len(), 1);
+        assert!(metering.send_returns.is_empty());
+        assert!(metering
+            .track_lanes
+            .iter()
+            .any(|track_lane| track_lane.track_lane_id == "track:drums"));
+        assert!(metering
+            .bus_groups
+            .iter()
+            .any(|bus_group| bus_group.bus_group_id == "mix:master"));
+        assert!(metering.console_groups.iter().any(|console_group| {
+            console_group.console_group_id == "console:main"
+                && console_group.aggregate.meter_count > 0
+        }));
+
+        let diagnostics = runtime.get_diagnostics_snapshot();
+        assert!(diagnostics.topology_compatible);
+        assert_eq!(
+            diagnostics.last_output_peak,
+            metering.main_output_peak_level
+        );
+        assert_eq!(diagnostics.last_output_rms, metering.main_output_rms_level);
+        assert_eq!(
+            diagnostics.momentary_loudness_lufs,
+            metering.momentary_loudness_lufs
+        );
+        assert_eq!(
+            diagnostics.integrated_loudness_lufs,
+            metering.integrated_loudness_lufs
+        );
+
         let observation =
             RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
         assert_eq!(observation.execution_topology_summary.node_count, 5);
@@ -6806,12 +10562,22 @@ mod tests {
                 .track_lane_group_count,
             2
         );
-        assert_eq!(observation.execution_topology_summary.bus_group_count, 1);
+        assert_eq!(observation.execution_topology_summary.bus_group_count, 2);
         assert_eq!(
             observation.execution_topology_summary.console_group_count,
             1
         );
+        assert_eq!(observation.execution_topology_summary.track_lanes.len(), 2);
+        assert_eq!(observation.execution_topology_summary.bus_groups.len(), 2);
+        assert_eq!(
+            observation.execution_topology_summary.console_groups.len(),
+            1
+        );
         assert_eq!(observation.execution_topology_summary.lanes.len(), 2);
+        assert_eq!(observation.metering_snapshot.track_lanes.len(), 2);
+        assert_eq!(observation.metering_snapshot.bus_groups.len(), 2);
+        assert_eq!(observation.metering_snapshot.console_groups.len(), 1);
+        assert!(observation.metering_snapshot.send_returns.is_empty());
         assert!(observation
             .render_compact()
             .contains("engine_scheduler_topology_compatible=true"));
@@ -6824,12 +10590,15 @@ mod tests {
         assert!(observation
             .render_compact()
             .contains("execution_topology_summary_lane_shapes=Anticipative:1|Realtime:4"));
+        assert!(observation
+            .render_compact()
+            .contains("metering_snapshot_routes=2/2/0/1"));
 
         let supervisor =
             RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
         assert!(supervisor
             .render_multiline()
-            .contains("engine_scheduler_topology_bus_groups=1"));
+            .contains("engine_scheduler_topology_bus_groups=2"));
         assert!(supervisor
             .render_multiline()
             .contains("engine_scheduler_topology_console_groups=1"));
@@ -6844,7 +10613,16 @@ mod tests {
             .contains("execution_topology_summary_lane_1=Realtime"));
         assert!(supervisor
             .render_multiline()
-            .contains("execution_topology_summary_node_2=track-1/Realtime/StatefulRealtime/TrackLane/lane_id=Some(\"track:bass\")"));
+            .contains("metering_snapshot_meter_count="));
+        assert!(supervisor
+            .render_multiline()
+            .contains("metering_snapshot_track_lane_count=2"));
+        assert!(supervisor
+            .render_multiline()
+            .contains("metering_snapshot_console_group_0=console:main"));
+        assert!(supervisor
+            .render_multiline()
+            .contains("execution_topology_summary_node_2=track-1/Realtime/StatefulRealtime/TrackLane/track_lane_id=Some(\"track:bass\")"));
         assert!(supervisor.render_multiline().contains(
             "execution_topology_summary_node_4=console-main/Realtime/InlineRealtime/ConsoleNode"
         ));
@@ -6854,15 +10632,188 @@ mod tests {
         assert!(json.contains("\"track_lane_group_count\":2"));
         assert!(json.contains("\"schedule_stream_count\":2"));
         assert!(json.contains("\"compatible\":true"));
+        assert!(json.contains("\"metering_snapshot\":{\"meter_count\":"));
+        assert!(json.contains("\"track_lanes\":["));
+        assert!(json.contains("\"console_groups\":["));
         assert!(json.contains("\"execution_topology_summary\":{\"node_count\":5"));
         assert!(json.contains("\"track_lane_node_count\":2"));
         assert!(json.contains("\"lane\":\"Anticipative\""));
         assert!(json.contains("\"lane\":\"Realtime\""));
         assert!(json.contains("\"node_id\":\"track-0\""));
-        assert!(json.contains("\"lane_id\":\"track:drums\""));
+        assert!(json.contains("\"track_lane_id\":\"track:drums\""));
         assert!(json.contains("\"bus_group_id\":\"mix:master\""));
+        assert!(json.contains("\"console_group_id\":\"console:main\""));
+        assert!(json.contains("\"track_lanes\":["));
+        assert!(json.contains("\"bus_groups\":["));
+        assert!(json.contains("\"console_groups\":["));
         assert!(json.contains("\"node_id\":\"console-main\""));
         assert!(json.contains("\"output_bus_id\":\"main:out\""));
+    }
+
+    #[test]
+    fn runtime_metering_snapshot_reports_loudness_for_non_silent_output() {
+        let mut metering = RuntimeMeteringStateModel::default();
+        let output = AudioBuffer::from_interleaved(
+            SampleRate(48_000),
+            ChannelLayout::Stereo,
+            vec![0.5, -0.5, 0.25, -0.25, 0.75, -0.75, 0.125, -0.125],
+        );
+
+        metering.capture(
+            48_000,
+            &output,
+            vec![RuntimeMeterSourceSnapshot {
+                bus_id: "main:out".into(),
+                topology_role: RuntimeMeterSourceRole::Bus,
+                track_lane_id: None,
+                bus_group_id: Some("mix:master".into()),
+                console_group_id: None,
+                send_return_id: None,
+                producer_node_ids: vec!["bus-main".into()],
+                peak_level: 0.75,
+                rms_level: 0.4677072,
+                latency_samples: 0,
+                tail_samples: 0,
+                summary: "main output".into(),
+            }],
+        );
+
+        let snapshot = metering.snapshot();
+        assert_eq!(snapshot.meter_count, 1);
+        assert_eq!(snapshot.main_output_peak_level, Some(0.75));
+        assert_eq!(snapshot.main_output_rms_level, Some(0.4677072));
+        assert!(snapshot.momentary_loudness_lufs.is_some());
+        assert!(snapshot.integrated_loudness_lufs.is_some());
+        assert_eq!(snapshot.clipped_sample_count, 0);
+        assert!(snapshot
+            .meters
+            .iter()
+            .any(|meter| meter.bus_id == "main:out"));
+    }
+
+    #[test]
+    fn runtime_automation_projection_drives_within_block_parameter_events() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 6));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:automation-playback".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "gain".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                }],
+            })
+            .expect("apply automation playback graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:automation-playback".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "gain".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Mono,
+                        },
+                        output: GraphNodeBusEndpointProjection {
+                            bus_id: "main:out".into(),
+                            channels: ChannelLayout::Mono,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Utility),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply automation playback contract");
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:automation-playback".into(),
+                stream_count: 1,
+            })
+            .expect("apply automation playback schedule");
+        let receipt = runtime
+            .apply_automation_projection(RuntimeAutomationProjection {
+                lane_count: 1,
+                point_count: 2,
+                lanes: vec![RuntimeAutomationLaneProjection {
+                    automation_lane_id: "automation-lane:gain".into(),
+                    target: RuntimeAutomationTargetProjection {
+                        node_id: "gain".into(),
+                        parameter_id: "gain".into(),
+                    },
+                    base_normalized_value: 0.0,
+                    interpolation: crate::interfaces::RuntimeAutomationInterpolation::Hold,
+                    resolution: RuntimeAutomationResolution::default(),
+                    point_count: 2,
+                    points: vec![
+                        RuntimeAutomationPointProjection {
+                            time_samples: 2,
+                            normalized_value: 0.5,
+                        },
+                        RuntimeAutomationPointProjection {
+                            time_samples: 4,
+                            normalized_value: 1.0,
+                        },
+                    ],
+                }],
+            })
+            .expect("apply automation projection");
+        runtime
+            .apply_parameter_batch(ParameterBatch {
+                epoch: receipt.accepted_epoch,
+                events: Vec::new(),
+            })
+            .expect("apply automation epoch batch");
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: true,
+                timeline_position_samples: 0,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            })
+            .expect("apply transport");
+
+        let input =
+            AudioBuffer::from_interleaved(SampleRate(48_000), ChannelLayout::Mono, vec![1.0; 6]);
+        let result = runtime
+            .process_engine_block(1, 1, input)
+            .expect("process automated block");
+
+        assert_eq!(
+            result.snapshot.parameter_epoch,
+            Some(receipt.accepted_epoch)
+        );
+        assert_eq!(result.snapshot.parameter_event_count, 3);
+        assert_eq!(result.snapshot.parameter_sub_block_count, 3);
+        assert_eq!(result.snapshot.parameter_ignored_event_count, 0);
+        let expected = [0.0_f32, 0.0, 0.5, 0.5, 1.0, 1.0];
+        for (actual, expected) in result.output.samples().iter().zip(expected.iter()) {
+            assert!((actual - expected).abs() < 1.0e-6);
+        }
+
+        let automation = runtime.get_automation_snapshot();
+        assert_eq!(automation.lane_count, 1);
+        assert_eq!(automation.point_count, 2);
+        assert_eq!(automation.mapped_lane_count, 1);
+        assert_eq!(automation.unmapped_lane_count, 0);
+        assert_eq!(automation.last_batch_epoch, Some(receipt.accepted_epoch));
+        assert_eq!(automation.last_batch_event_count, 3);
+        assert_eq!(automation.last_batch_sub_block_count, 3);
+        assert_eq!(automation.last_batch_ignored_event_count, 0);
+        assert_eq!(automation.last_batch_coalesced_event_count, 0);
+        assert_eq!(automation.last_batch_max_sample_offset, Some(4));
+        assert_eq!(automation.last_block_sequence, Some(1));
+        assert_eq!(automation.last_timeline_position_samples, Some(0));
+        assert_eq!(automation.transport_playing, Some(true));
     }
 
     #[test]
@@ -6921,8 +10872,10 @@ mod tests {
                         },
                         topology: GraphNodeTopologyProjection {
                             role: Some(GraphNodeTopologyRole::TrackLane),
-                            lane_id: Some("track:lead".into()),
+                            track_lane_id: Some("track:lead".into()),
                             bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
                         },
                     },
                     GraphNodeContractProjection {
@@ -6940,8 +10893,10 @@ mod tests {
                         },
                         topology: GraphNodeTopologyProjection {
                             role: Some(GraphNodeTopologyRole::TrackLane),
-                            lane_id: Some("track:lead".into()),
+                            track_lane_id: Some("track:lead".into()),
                             bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
                         },
                     },
                     GraphNodeContractProjection {
@@ -6959,8 +10914,10 @@ mod tests {
                         },
                         topology: GraphNodeTopologyProjection {
                             role: Some(GraphNodeTopologyRole::Bus),
-                            lane_id: None,
+                            track_lane_id: None,
                             bus_group_id: Some("mix:master".into()),
+                            console_group_id: None,
+                            send_return_id: None,
                         },
                     },
                     GraphNodeContractProjection {
@@ -6978,8 +10935,10 @@ mod tests {
                         },
                         topology: GraphNodeTopologyProjection {
                             role: Some(GraphNodeTopologyRole::ConsoleNode),
-                            lane_id: None,
-                            bus_group_id: Some("console:main".into()),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: Some("console:main".into()),
+                            send_return_id: None,
                         },
                     },
                 ],
@@ -7015,11 +10974,54 @@ mod tests {
                 .track_lane_group_count,
             1
         );
-        assert_eq!(observation.execution_topology_summary.bus_group_count, 1);
+        assert_eq!(observation.execution_topology_summary.bus_group_count, 2);
         assert_eq!(
             observation.execution_topology_summary.console_group_count,
             1
         );
+        assert_eq!(observation.execution_topology_summary.track_lanes.len(), 1);
+        assert_eq!(observation.execution_topology_summary.bus_groups.len(), 2);
+        assert_eq!(
+            observation.execution_topology_summary.console_groups.len(),
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .plugin_chain
+                .chain_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .plugin_chain
+                .stage_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .plugin_chain
+                .pending_render_stage_count,
+            1
+        );
+        assert!(observation
+            .execution_topology_summary
+            .track_lanes
+            .iter()
+            .any(|track_lane| {
+                track_lane.track_lane_id == "track:lead"
+                    && track_lane.bus_group_ids == vec!["mix:tracks".to_string()]
+                    && track_lane.plugin_chain.chain_count == 1
+                    && track_lane.plugin_chain.pending_render_stage_count == 1
+                    && track_lane
+                        .output_bus_ids
+                        .contains(&"bus:track:lead".to_string())
+                    && track_lane
+                        .output_bus_ids
+                        .contains(&"bus:mix:tracks".to_string())
+            }));
         assert!(observation
             .execution_topology_summary
             .nodes
@@ -7027,7 +11029,7 @@ mod tests {
             .any(|node| {
                 node.node_id == "track-input"
                     && node.topology_role == GraphNodeTopologyRole::TrackLane
-                    && node.lane_id.as_deref() == Some("track:lead")
+                    && node.track_lane_id.as_deref() == Some("track:lead")
                     && node.output_bus_id == "bus:track:lead"
             }));
         assert!(observation
@@ -7037,6 +11039,10 @@ mod tests {
             .any(|node| {
                 node.node_id == "plugin-insert"
                     && node.plugin_sandbox_id.as_deref() == Some("sandbox:lead")
+                    && node.plugin_recall_state == Some(RuntimePluginRecallState::Cold)
+                    && node.plugin_compensation_state
+                        == Some(RuntimePluginCompensationState::PendingRender)
+                    && node.plugin_realized_latency_samples.is_none()
                     && node.input_bus_id == "bus:track:lead"
                     && node.output_bus_id == "bus:mix:tracks"
             }));
@@ -7056,9 +11062,244 @@ mod tests {
             .any(|node| {
                 node.node_id == "output-main"
                     && node.topology_role == GraphNodeTopologyRole::ConsoleNode
+                    && node.console_group_id.as_deref() == Some("console:main")
                     && node.input_bus_id == "bus:console:main"
                     && node.output_bus_id == "main:out"
             }));
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert!(supervisor
+            .render_multiline()
+            .contains("execution_topology_summary_plugin_chain=1/1/1/0/0/0/0/0/0/0/0"));
+        let json = supervisor.render_json();
+        assert!(json.contains("\"plugin_chain\":{\"chain_count\":1"));
+        assert!(json.contains("\"plugin_recall_state\":\"Cold\""));
+        assert!(json.contains("\"plugin_compensation_state\":\"PendingRender\""));
+    }
+
+    #[test]
+    fn runtime_execution_topology_summarizes_send_return_routes_explicitly() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:send-return-summary".into(),
+                node_count: 5,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "track-input".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.8 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "bus-dry".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.95 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "send-fx".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.4 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "return-fx".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 16,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.82 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "output-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: -0.1 }],
+                    },
+                ],
+            })
+            .expect("apply projected graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:send-return-summary".into(),
+                contract_count: 5,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "track-input".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "bus-dry".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:mix:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Bus),
+                            track_lane_id: None,
+                            bus_group_id: Some("mix:master".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "send-fx".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:fx:plate".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Send),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: None,
+                            send_return_id: Some("fx:plate".into()),
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "return-fx".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:fx:plate".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:mix:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Return),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: None,
+                            send_return_id: Some("fx:plate".into()),
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "output-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:mix:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "main:out".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::ConsoleNode),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: Some("console:main".into()),
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply projected graph contracts");
+
+        let block = synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 2);
+        runtime
+            .process_engine_block(3, 5, block)
+            .expect("process send return topology block");
+
+        let metering = runtime.get_metering_snapshot();
+        assert_eq!(metering.send_returns.len(), 1);
+        assert!(metering.send_returns.iter().any(|send_return| {
+            send_return.send_return_id == "fx:plate"
+                && send_return.aggregate.meter_count == 2
+                && send_return
+                    .aggregate
+                    .metered_bus_ids
+                    .contains(&"bus:fx:plate".to_string())
+                && send_return
+                    .aggregate
+                    .metered_bus_ids
+                    .contains(&"bus:mix:master".to_string())
+        }));
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .send_return_node_count,
+            2
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .send_return_group_count,
+            1
+        );
+        assert_eq!(observation.execution_topology_summary.send_returns.len(), 1);
+        assert_eq!(observation.metering_snapshot.send_returns.len(), 1);
+        assert!(observation
+            .execution_topology_summary
+            .send_returns
+            .iter()
+            .any(|send_return| {
+                send_return.send_return_id == "fx:plate"
+                    && send_return.send_node_ids == vec!["send-fx".to_string()]
+                    && send_return.return_node_ids == vec!["return-fx".to_string()]
+                    && send_return
+                        .input_bus_ids
+                        .contains(&"bus:track:lead".to_string())
+                    && send_return
+                        .input_bus_ids
+                        .contains(&"bus:fx:plate".to_string())
+                    && send_return
+                        .output_bus_ids
+                        .contains(&"bus:fx:plate".to_string())
+                    && send_return
+                        .output_bus_ids
+                        .contains(&"bus:mix:master".to_string())
+            }));
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert!(supervisor
+            .render_multiline()
+            .contains("metering_snapshot_send_return_0=fx:plate"));
+        let json = supervisor.render_json();
+        assert!(json.contains("\"metering_snapshot\":{\"meter_count\":"));
+        assert!(json.contains("\"send_return_group_count\":1"));
+        assert!(json.contains("\"send_returns\":["));
+        assert!(json.contains("\"send_return_id\":\"fx:plate\""));
     }
 
     #[test]
@@ -7125,6 +11366,7 @@ mod tests {
                 epoch: runtime.projection_epoch(),
                 events: vec![ParameterEvent {
                     target: "engine.runtime.test".into(),
+                    sample_offset: 0,
                     normalized_value: 0.5,
                 }],
             })
@@ -7334,11 +11576,11 @@ mod tests {
         assert_eq!(observation.scheduler_summary.dispatch_count, 2);
         assert_eq!(
             observation.scheduler_snapshot.state,
-            RuntimeSchedulerState::Anticipative
+            RuntimeSchedulerState::Configured
         );
         assert_eq!(
             observation.scheduler_snapshot.phase,
-            RuntimeExecutionPhase::Realtime
+            RuntimeExecutionPhase::Idle
         );
         assert!(observation.scheduler_snapshot.graph_applied);
         assert!(!observation.scheduler_snapshot.schedule_applied);
@@ -7814,6 +12056,7 @@ mod tests {
             epoch: runtime.projection_epoch().saturating_add(3),
             events: vec![ParameterEvent {
                 target: "engine.local.drive".into(),
+                sample_offset: 0,
                 normalized_value: 0.5,
             }],
         };
@@ -7919,6 +12162,7 @@ mod tests {
             epoch: runtime.projection_epoch().saturating_add(3),
             events: vec![ParameterEvent {
                 target: "engine.local.drive".into(),
+                sample_offset: 0,
                 normalized_value: 0.5,
             }],
         };
@@ -7926,6 +12170,7 @@ mod tests {
             epoch: runtime.projection_epoch().saturating_add(4),
             events: vec![ParameterEvent {
                 target: "engine.local.drive".into(),
+                sample_offset: 0,
                 normalized_value: 0.65,
             }],
         };
@@ -9284,6 +13529,1715 @@ mod tests {
         assert_eq!(first.snapshot.output_tail_samples, 40);
         assert_eq!(second.output.samples(), &[0.0; 8]);
         assert_eq!(second.snapshot.output_tail_samples, 0);
+    }
+
+    #[test]
+    fn runtime_plugin_chain_snapshot_reports_compensation_and_recall() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-chain".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "plugin-a".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-b".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                    },
+                ],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-chain".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "plugin-a".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-b".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-chain".into(),
+                bindings: vec![
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-a".into(),
+                        sandbox_id: "sandbox-a".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-b".into(),
+                        sandbox_id: "sandbox-b".into(),
+                    },
+                ],
+            })
+            .expect("apply bindings");
+
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_transport(
+            "sandbox-a",
+            "lease-a",
+            "region-a",
+            PluginSandboxTransportStage::Attached,
+            Some(1),
+            None,
+        );
+
+        runtime.record_recovery_cycle(
+            "sandbox-b",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-b",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-b",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_transport(
+            "sandbox-b",
+            "lease-b",
+            "region-b",
+            PluginSandboxTransportStage::Attached,
+            Some(2),
+            None,
+        );
+
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:plugin-chain".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![
+                    PluginNodeRender {
+                        node_id: "plugin-a".into(),
+                        sandbox_id: "sandbox-a".into(),
+                        output: AudioBuffer::new(
+                            SampleRate(48_000),
+                            ChannelLayout::Stereo,
+                            FrameCount(4),
+                        ),
+                        latency_samples: 32,
+                        tail_samples: 48,
+                        bypassed: false,
+                    },
+                    PluginNodeRender {
+                        node_id: "plugin-b".into(),
+                        sandbox_id: "sandbox-b".into(),
+                        output: AudioBuffer::new(
+                            SampleRate(48_000),
+                            ChannelLayout::Stereo,
+                            FrameCount(4),
+                        ),
+                        latency_samples: 16,
+                        tail_samples: 24,
+                        bypassed: true,
+                    },
+                ],
+            })
+            .expect("apply render batch");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process block");
+
+        let snapshot = runtime.get_plugin_chain_snapshot();
+        assert_eq!(snapshot.chain_count, 1);
+        assert_eq!(snapshot.stage_count, 2);
+        assert_eq!(snapshot.compensated_stage_count, 1);
+        assert_eq!(snapshot.bypassed_stage_count, 1);
+        assert_eq!(snapshot.total_realized_latency_samples, 48);
+        assert_eq!(snapshot.total_tail_samples, 72);
+        assert_eq!(snapshot.chains[0].chain_id, "track:lead");
+        assert_eq!(snapshot.chains[0].stages[0].node_id, "plugin-a");
+        assert_eq!(snapshot.chains[0].stages[1].node_id, "plugin-b");
+        assert_eq!(
+            snapshot.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::Compensated
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall_state,
+            RuntimePluginRecallState::Warm
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall.state,
+            RuntimePluginRecallState::Warm
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0]
+                .recall
+                .payload
+                .sandbox_id
+                .as_deref(),
+            Some("sandbox-a")
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall.payload.lifecycle_state,
+            Some(RuntimePluginLifecycleState::Ready)
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall.payload.transport_stage,
+            Some(PluginSandboxTransportStage::Attached)
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].compensation_state,
+            RuntimePluginCompensationState::Bypassed
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].recall_state,
+            RuntimePluginRecallState::Recovered
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].recall.state,
+            RuntimePluginRecallState::Recovered
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].recall.payload.recovery_count,
+            1
+        );
+        assert_eq!(snapshot.chains[0].stages[1].recall.payload.restart_count, 1);
+        assert_eq!(
+            snapshot.chains[0].stages[1]
+                .recall
+                .payload
+                .last_restart_intent,
+            Some(RecoveryRestartIntent::CrashRecovery)
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].recall.payload.last_stop_reason,
+            Some(StopReason::DegradedModeRecovery)
+        );
+
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        assert_eq!(handoff.stage_count, 2);
+        assert_eq!(handoff.warm_stage_count, 1);
+        assert_eq!(handoff.recovered_stage_count, 1);
+        assert_eq!(handoff.unavailable_stage_count, 0);
+        assert_eq!(handoff.stages[1].chain_id, "track:lead");
+        assert_eq!(handoff.stages[1].node_id, "plugin-b");
+        assert_eq!(
+            handoff.stages[1].recall_state,
+            RuntimePluginRecallState::Recovered
+        );
+        assert_eq!(
+            handoff.stages[1].recall_payload,
+            snapshot.chains[0].stages[1].recall.payload
+        );
+
+        let recorder = RuntimeEventRecorder::default();
+        let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+        assert!(observation
+            .render_compact()
+            .contains("plugin_chains=1/2 plugin_chain_pending=0 plugin_chain_settling=0 plugin_chain_compensated=1 plugin_chain_degraded=0 plugin_chain_bypassed=1 plugin_chain_missing=0"));
+
+        let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let multiline = supervisor.render_multiline();
+        assert!(multiline.contains("plugin_chain_count=1"));
+        assert!(multiline.contains("plugin_chain_0_stage_0=plugin-a"));
+        assert!(multiline.contains("plugin_chain_0_stage_1=plugin-b"));
+        assert!(multiline.contains("recall=Recovered/sandbox=Some(\"sandbox-b\")"));
+        let json = supervisor.render_json();
+        assert!(json.contains("\"plugin_chain_snapshot\":{\"chain_count\":1"));
+        assert!(json.contains("\"recall\":{\"state\":\"Recovered\""));
+        assert!(json.contains("\"payload\":{\"sandbox_id\":\"sandbox-b\""));
+        assert!(json.contains("\"last_restart_intent\":\"CrashRecovery\""));
+        assert!(json.contains("\"compensation_state\":\"Bypassed\""));
+    }
+
+    #[test]
+    fn runtime_plugin_chain_snapshot_settles_tail_before_returning_to_pending_render() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-chain-settling".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                }],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-chain-settling".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "plugin".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-chain-settling".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:plugin-chain-settling".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(4),
+                    ),
+                    latency_samples: 32,
+                    tail_samples: 48,
+                    bypassed: false,
+                }],
+            })
+            .expect("apply render batch");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process first block");
+
+        let compensated = runtime.get_plugin_chain_snapshot();
+        assert_eq!(compensated.compensated_stage_count, 1);
+        assert_eq!(compensated.settling_stage_count, 0);
+        assert_eq!(
+            compensated.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::Compensated
+        );
+        assert_eq!(compensated.chains[0].stages[0].tail_samples, Some(48));
+
+        runtime
+            .process_engine_block(
+                1,
+                2,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process settling block");
+
+        let settling = runtime.get_plugin_chain_snapshot();
+        assert_eq!(settling.pending_render_stage_count, 0);
+        assert_eq!(settling.settling_stage_count, 1);
+        assert_eq!(settling.compensated_stage_count, 0);
+        assert_eq!(settling.total_realized_latency_samples, 32);
+        assert_eq!(settling.total_tail_samples, 44);
+        assert_eq!(
+            settling.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::Settling
+        );
+        assert_eq!(
+            settling.chains[0].stages[0].realized_latency_samples,
+            Some(32)
+        );
+        assert_eq!(settling.chains[0].stages[0].tail_samples, Some(44));
+
+        for block_sequence in 3..=13 {
+            runtime
+                .process_engine_block(
+                    1,
+                    block_sequence,
+                    AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+                )
+                .expect("process tail retirement block");
+        }
+
+        let pending = runtime.get_plugin_chain_snapshot();
+        assert_eq!(pending.pending_render_stage_count, 1);
+        assert_eq!(pending.settling_stage_count, 0);
+        assert_eq!(pending.compensated_stage_count, 0);
+        assert_eq!(pending.total_realized_latency_samples, 0);
+        assert_eq!(pending.total_tail_samples, 0);
+        assert_eq!(
+            pending.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::PendingRender
+        );
+        assert_eq!(pending.chains[0].stages[0].realized_latency_samples, None);
+        assert_eq!(pending.chains[0].stages[0].tail_samples, None);
+    }
+
+    #[test]
+    fn runtime_plugin_chain_snapshot_tracks_mixed_settling_and_pending_stages_in_multi_stage_chain()
+    {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-chain-multi-stage-settling".into(),
+                node_count: 3,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "plugin-a".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 8,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-b".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 16,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-c".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                    },
+                ],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-chain-multi-stage-settling".into(),
+                contract_count: 3,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "plugin-a".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-b".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-c".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-chain-multi-stage-settling".into(),
+                bindings: vec![
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-a".into(),
+                        sandbox_id: "sandbox-a".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-b".into(),
+                        sandbox_id: "sandbox-b".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-c".into(),
+                        sandbox_id: "sandbox-c".into(),
+                    },
+                ],
+            })
+            .expect("apply bindings");
+        for sandbox_id in ["sandbox-a", "sandbox-b", "sandbox-c"] {
+            runtime.record_plugin_sandbox_lifecycle(
+                sandbox_id,
+                PluginSandboxLifecycleStage::InstancePrepared,
+                Some(1),
+            );
+        }
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:plugin-chain-multi-stage-settling".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![
+                    PluginNodeRender {
+                        node_id: "plugin-a".into(),
+                        sandbox_id: "sandbox-a".into(),
+                        output: AudioBuffer::new(
+                            SampleRate(48_000),
+                            ChannelLayout::Stereo,
+                            FrameCount(4),
+                        ),
+                        latency_samples: 8,
+                        tail_samples: 0,
+                        bypassed: false,
+                    },
+                    PluginNodeRender {
+                        node_id: "plugin-b".into(),
+                        sandbox_id: "sandbox-b".into(),
+                        output: AudioBuffer::new(
+                            SampleRate(48_000),
+                            ChannelLayout::Stereo,
+                            FrameCount(4),
+                        ),
+                        latency_samples: 16,
+                        tail_samples: 16,
+                        bypassed: false,
+                    },
+                    PluginNodeRender {
+                        node_id: "plugin-c".into(),
+                        sandbox_id: "sandbox-c".into(),
+                        output: AudioBuffer::new(
+                            SampleRate(48_000),
+                            ChannelLayout::Stereo,
+                            FrameCount(4),
+                        ),
+                        latency_samples: 24,
+                        tail_samples: 40,
+                        bypassed: false,
+                    },
+                ],
+            })
+            .expect("apply render batch");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process first block");
+        runtime
+            .process_engine_block(
+                1,
+                2,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process settling block");
+
+        let snapshot = runtime.get_plugin_chain_snapshot();
+        assert_eq!(snapshot.chain_count, 1);
+        assert_eq!(snapshot.stage_count, 3);
+        assert_eq!(snapshot.pending_render_stage_count, 1);
+        assert_eq!(snapshot.settling_stage_count, 2);
+        assert_eq!(snapshot.compensated_stage_count, 0);
+        assert_eq!(snapshot.total_realized_latency_samples, 40);
+        assert_eq!(snapshot.total_tail_samples, 48);
+        assert_eq!(
+            snapshot.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::PendingRender
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].compensation_state,
+            RuntimePluginCompensationState::Settling
+        );
+        assert_eq!(snapshot.chains[0].stages[1].tail_samples, Some(12));
+        assert_eq!(
+            snapshot.chains[0].stages[2].compensation_state,
+            RuntimePluginCompensationState::Settling
+        );
+        assert_eq!(snapshot.chains[0].stages[2].tail_samples, Some(36));
+    }
+
+    #[test]
+    fn runtime_recovery_cycle_invalidates_stale_compensation_for_restarted_sandbox() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-recovery-invalidates-render".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                }],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-recovery-invalidates-render".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "plugin".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-recovery-invalidates-render".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:plugin-recovery-invalidates-render".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(4),
+                    ),
+                    latency_samples: 32,
+                    tail_samples: 48,
+                    bypassed: false,
+                }],
+            })
+            .expect("apply render batch");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process first block");
+
+        let compensated = runtime.get_plugin_chain_snapshot();
+        assert_eq!(
+            compensated.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::Compensated
+        );
+
+        runtime.record_recovery_cycle(
+            "sandbox-a",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(3),
+        );
+
+        let recovered = runtime.get_plugin_chain_snapshot();
+        assert_eq!(recovered.pending_render_stage_count, 1);
+        assert_eq!(recovered.settling_stage_count, 0);
+        assert_eq!(recovered.compensated_stage_count, 0);
+        assert_eq!(
+            recovered.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::PendingRender
+        );
+        assert_eq!(recovered.chains[0].stages[0].realized_latency_samples, None);
+        assert_eq!(recovered.chains[0].stages[0].tail_samples, None);
+        assert_eq!(
+            recovered.chains[0].stages[0].recall_state,
+            RuntimePluginRecallState::Recovered
+        );
+        assert_eq!(
+            recovered.chains[0].stages[0]
+                .recall
+                .payload
+                .last_restart_intent,
+            Some(RecoveryRestartIntent::CrashRecovery)
+        );
+    }
+
+    #[test]
+    fn runtime_plugin_chain_snapshot_preserves_degraded_and_missing_binding_states() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-chain-degraded".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "plugin-a".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-b".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                    },
+                ],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-chain-degraded".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "plugin-a".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-b".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-chain-degraded".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin-a".into(),
+                    sandbox_id: "sandbox-faulted".into(),
+                }],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-faulted",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-faulted",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_fault(
+            "sandbox-faulted",
+            PluginFaultKind::Crash,
+            "sandbox faulted before render",
+            Some(2),
+        );
+
+        let snapshot = runtime.get_plugin_chain_snapshot();
+        assert_eq!(snapshot.chain_count, 1);
+        assert_eq!(snapshot.stage_count, 2);
+        assert_eq!(snapshot.degraded_stage_count, 1);
+        assert_eq!(snapshot.missing_binding_stage_count, 1);
+        assert_eq!(
+            snapshot.chains[0].stages[0].compensation_state,
+            RuntimePluginCompensationState::Degraded
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall_state,
+            RuntimePluginRecallState::Unavailable
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall.payload.lifecycle_state,
+            Some(RuntimePluginLifecycleState::Faulted)
+        );
+        assert_eq!(snapshot.chains[0].stages[0].recall.payload.fault_count, 1);
+        assert_eq!(
+            snapshot.chains[0].stages[0].recall.payload.last_fault_kind,
+            Some(PluginFaultKind::Crash)
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0]
+                .recall
+                .payload
+                .last_fault_detail
+                .as_deref(),
+            Some("sandbox faulted before render")
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].compensation_state,
+            RuntimePluginCompensationState::MissingBinding
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].recall_state,
+            RuntimePluginRecallState::Unbound
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1].recall.state,
+            RuntimePluginRecallState::Unbound
+        );
+        assert_eq!(snapshot.chains[0].stages[1].recall.payload.sandbox_id, None);
+
+        let unavailable_handoff = runtime.get_plugin_recall_handoff_snapshot();
+        assert_eq!(unavailable_handoff.stage_count, 2);
+        assert_eq!(unavailable_handoff.unavailable_stage_count, 1);
+        assert_eq!(unavailable_handoff.unbound_stage_count, 1);
+        assert_eq!(
+            unavailable_handoff.stages[0].recall_payload.lifecycle_state,
+            Some(RuntimePluginLifecycleState::Faulted)
+        );
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let unavailable_json = supervisor.render_json();
+        assert!(unavailable_json.contains("\"recall\":{\"state\":\"Unavailable\""));
+        assert!(unavailable_json.contains("\"payload\":{\"sandbox_id\":\"sandbox-faulted\""));
+        assert!(unavailable_json.contains("\"lifecycle_state\":\"Faulted\""));
+
+        runtime.record_plugin_sandbox_fault(
+            "sandbox-faulted",
+            PluginFaultKind::Timeout,
+            "sandbox missed heartbeat twice",
+            Some(3),
+        );
+
+        let quarantined = runtime.get_plugin_chain_snapshot();
+        assert_eq!(
+            quarantined.chains[0].stages[0].recall.state,
+            RuntimePluginRecallState::Unavailable
+        );
+        assert_eq!(
+            quarantined.chains[0].stages[0]
+                .recall
+                .payload
+                .lifecycle_state,
+            Some(RuntimePluginLifecycleState::Quarantined)
+        );
+        assert_eq!(
+            quarantined.chains[0].stages[0].recall.payload.fault_count,
+            2
+        );
+        assert_eq!(
+            quarantined.chains[0].stages[0]
+                .recall
+                .payload
+                .last_fault_kind,
+            Some(PluginFaultKind::Timeout)
+        );
+
+        let quarantined_handoff = runtime.get_plugin_recall_handoff_snapshot();
+        assert_eq!(quarantined_handoff.unavailable_stage_count, 1);
+        assert_eq!(
+            quarantined_handoff.stages[0].recall_payload.lifecycle_state,
+            Some(RuntimePluginLifecycleState::Quarantined)
+        );
+
+        let quarantined_supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let quarantined_multiline = quarantined_supervisor.render_multiline();
+        assert!(
+            quarantined_multiline.contains("recall=Unavailable/sandbox=Some(\"sandbox-faulted\")")
+        );
+        let quarantined_json = quarantined_supervisor.render_json();
+        assert!(quarantined_json.contains("\"lifecycle_state\":\"Quarantined\""));
+    }
+
+    #[test]
+    fn runtime_execution_topology_summary_clears_stale_plugin_chain_state_on_rebind_and_refresh() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-rebind-refresh".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "plugin".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                }],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-rebind-refresh".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "plugin".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:lead".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-rebind-refresh".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:plugin-rebind-refresh".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(4),
+                    ),
+                    latency_samples: 32,
+                    tail_samples: 48,
+                    bypassed: false,
+                }],
+            })
+            .expect("apply render batch");
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(4)),
+            )
+            .expect("process first block");
+
+        let realized = runtime.get_execution_topology_summary();
+        assert_eq!(realized.plugin_chain.total_realized_latency_samples, 32);
+        assert_eq!(
+            realized.nodes[0].plugin_compensation_state,
+            Some(RuntimePluginCompensationState::Compensated)
+        );
+        assert_eq!(
+            realized.nodes[0].plugin_recall_state,
+            Some(RuntimePluginRecallState::Warm)
+        );
+        assert_eq!(
+            realized.nodes[0]
+                .plugin_recall
+                .as_ref()
+                .map(|recall| recall.state),
+            Some(RuntimePluginRecallState::Warm)
+        );
+        assert_eq!(
+            realized.nodes[0]
+                .plugin_recall
+                .as_ref()
+                .and_then(|recall| recall.payload.sandbox_id.as_deref()),
+            Some("sandbox-a")
+        );
+
+        let realized_handoff = runtime.get_plugin_recall_handoff_snapshot();
+        assert_eq!(realized_handoff.stage_count, 1);
+        assert_eq!(
+            realized_handoff.stages[0]
+                .recall_payload
+                .sandbox_id
+                .as_deref(),
+            Some("sandbox-a")
+        );
+        assert_eq!(realized.nodes[0].plugin_realized_latency_samples, Some(32));
+        assert_eq!(realized.nodes[0].plugin_tail_samples, Some(48));
+
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-rebind-refresh".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-b".into(),
+                }],
+            })
+            .expect("rebind plugin");
+
+        let rebound = runtime.get_execution_topology_summary();
+        assert_eq!(rebound.plugin_chain.total_realized_latency_samples, 0);
+        assert_eq!(rebound.plugin_chain.pending_render_stage_count, 1);
+        assert_eq!(
+            rebound.nodes[0].plugin_compensation_state,
+            Some(RuntimePluginCompensationState::PendingRender)
+        );
+        assert_eq!(
+            rebound.nodes[0].plugin_recall_state,
+            Some(RuntimePluginRecallState::Cold)
+        );
+        assert_eq!(
+            rebound.nodes[0]
+                .plugin_recall
+                .as_ref()
+                .map(|recall| recall.state),
+            Some(RuntimePluginRecallState::Cold)
+        );
+        assert_eq!(
+            rebound.nodes[0]
+                .plugin_recall
+                .as_ref()
+                .and_then(|recall| recall.payload.sandbox_id.as_deref()),
+            Some("sandbox-b")
+        );
+        assert_eq!(
+            rebound.nodes[0]
+                .plugin_recall
+                .as_ref()
+                .and_then(|recall| recall.payload.lifecycle_state),
+            None
+        );
+
+        let rebound_handoff = runtime.get_plugin_recall_handoff_snapshot();
+        assert_eq!(rebound_handoff.stage_count, 1);
+        assert_eq!(rebound_handoff.cold_stage_count, 1);
+        assert_eq!(
+            rebound_handoff.stages[0]
+                .recall_payload
+                .sandbox_id
+                .as_deref(),
+            Some("sandbox-b")
+        );
+        assert_eq!(rebound.nodes[0].plugin_realized_latency_samples, None);
+        assert_eq!(rebound.nodes[0].plugin_tail_samples, None);
+
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:utility-refresh".into(),
+                node_count: 1,
+                nodes: vec![GraphNodeProjection {
+                    node_id: "utility".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                }],
+            })
+            .expect("apply refreshed graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:utility-refresh".into(),
+                contract_count: 1,
+                nodes: vec![GraphNodeContractProjection {
+                    node_id: "utility".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Utility),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                }],
+            })
+            .expect("apply refreshed contracts");
+
+        let refreshed = runtime.get_execution_topology_summary();
+        assert_eq!(refreshed.plugin_chain.chain_count, 0);
+        assert_eq!(refreshed.plugin_chain.stage_count, 0);
+        assert_eq!(refreshed.track_lanes.len(), 0);
+        assert_eq!(refreshed.nodes.len(), 1);
+        assert_eq!(refreshed.nodes[0].node_id, "utility");
+        assert_eq!(refreshed.nodes[0].plugin_recall_state, None);
+        assert_eq!(refreshed.nodes[0].plugin_recall, None);
+        assert_eq!(refreshed.nodes[0].plugin_compensation_state, None);
+        assert_eq!(refreshed.nodes[0].plugin_realized_latency_samples, None);
+
+        let refreshed_handoff = runtime.get_plugin_recall_handoff_snapshot();
+        assert_eq!(refreshed_handoff.stage_count, 0);
+    }
+
+    #[test]
+    fn runtime_plugin_recall_handoff_snapshot_resolves_consumer_selection_without_export_parsing() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-recall-selection".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "plugin-a".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-b".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                    },
+                ],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:plugin-recall-selection".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "plugin-a".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-b".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:plugin-recall-selection".into(),
+                bindings: vec![
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-a".into(),
+                        sandbox_id: "sandbox-a".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-b".into(),
+                        sandbox_id: "sandbox-b".into(),
+                    },
+                ],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_recovery_cycle(
+            "sandbox-b",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-b",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-b",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(3),
+        );
+
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let selection = RuntimePluginRecallHandoffSelection {
+            stage_count: 2,
+            stage_ids: handoff
+                .stages
+                .iter()
+                .map(|stage| stage.stage_id.clone())
+                .collect(),
+        };
+
+        let resolved = handoff
+            .resolve_selection(&selection)
+            .expect("resolve recall handoff selection");
+        assert_eq!(resolved.len(), 2);
+        assert_eq!(resolved[0].stage_id, selection.stage_ids[0]);
+        assert_eq!(resolved[0].recall_payload, handoff.stages[0].recall_payload);
+        assert_eq!(resolved[1].stage_id, selection.stage_ids[1]);
+        assert_eq!(
+            resolved[1].recall_state,
+            RuntimePluginRecallState::Recovered
+        );
+        assert_eq!(
+            resolved[1].recall_payload.last_restart_intent,
+            Some(RecoveryRestartIntent::CrashRecovery)
+        );
+
+        let mut missing_selection = selection.clone();
+        missing_selection
+            .stage_ids
+            .push(crate::interfaces::RuntimePluginRecallHandoffStageId {
+                chain_id: "track:lead".into(),
+                stage_index: 99,
+                node_id: "plugin-missing".into(),
+            });
+        missing_selection.stage_count = missing_selection.stage_ids.len();
+        assert!(handoff.resolve_selection(&missing_selection).is_none());
+    }
+
+    #[test]
+    fn runtime_offline_render_contract_preview_reuses_runtime_topology_tempo_clip_and_recall_contracts(
+    ) {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:offline-render-preview".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "plugin-a".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-b".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                    },
+                ],
+            })
+            .expect("apply graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:offline-render-preview".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "plugin-a".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-b".into(),
+                        buffer_contract: GraphNodeBufferContractProjection::default(),
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply graph contracts");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:offline-render-preview".into(),
+                bindings: vec![
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-a".into(),
+                        sandbox_id: "sandbox-a".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "plugin-b".into(),
+                        sandbox_id: "sandbox-b".into(),
+                    },
+                ],
+            })
+            .expect("apply bindings");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_recovery_cycle(
+            "sandbox-b",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-b",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-b",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(3),
+        );
+        runtime
+            .apply_tempo_map_projection(RuntimeTempoMapProjection {
+                segment_count: 1,
+                segments: vec![crate::interfaces::RuntimeTempoMapSegmentProjection {
+                    segment_id: "tempo:offline-render".into(),
+                    start_samples: 0,
+                    end_samples: Some(48_000),
+                    start_tempo_bpm: 132.0,
+                    end_tempo_bpm: None,
+                    interpolation: RuntimeTempoMapInterpolation::Hold,
+                }],
+            })
+            .expect("apply tempo map");
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 24_000,
+                tempo_bpm: 90.0,
+                loop_state: None,
+            })
+            .expect("apply transport");
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:offline-render".into(),
+                media_asset_id: None,
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .expect("reconcile clip processing");
+
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let selection = RuntimePluginRecallHandoffSelection {
+            stage_count: 2,
+            stage_ids: handoff
+                .stages
+                .iter()
+                .map(|stage| stage.stage_id.clone())
+                .collect(),
+        };
+        let request = RuntimeOfflineRenderRequest {
+            request_id: "render:preview".into(),
+            timeline_start_samples: 0,
+            duration_samples: 48_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                stem_id: "stem:track:lead".into(),
+                target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                target_id: Some("track:lead".into()),
+            }],
+            freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                artifact_id: "freeze:track:lead".into(),
+                source_stem_id: "stem:track:lead".into(),
+                recall_selection: selection.clone(),
+            }],
+        };
+
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &request,
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &handoff,
+        )
+        .expect("build offline render contract preview");
+
+        assert_eq!(preview.request_id, "render:preview");
+        assert_eq!(preview.timeline_end_samples, 48_000);
+        assert_eq!(preview.export_sample_rate_hz, 48_000);
+        assert_eq!(preview.clip_count, 1);
+        assert_eq!(preview.ready_clip_count, 1);
+        assert_eq!(preview.stem_count, 1);
+        assert_eq!(preview.freeze_artifact_count, 1);
+        assert_eq!(preview.resolved_tempo_bpm, 132.0);
+        assert_eq!(
+            preview.resolved_tempo_source,
+            RuntimeTempoSource::TempoMapSegment
+        );
+        assert_eq!(preview.stem_targets[0].stem_id, "stem:track:lead");
+        assert_eq!(
+            preview.stem_targets[0].target_kind,
+            RuntimeOfflineRenderTargetKind::TrackLane
+        );
+        assert_eq!(
+            preview.stem_targets[0].target_id.as_deref(),
+            Some("track:lead")
+        );
+        assert_eq!(
+            preview.stem_targets[0].resolved_node_ids,
+            vec!["plugin-a".to_string(), "plugin-b".to_string()]
+        );
+        assert_eq!(preview.freeze_artifacts[0].artifact_id, "freeze:track:lead");
+        assert_eq!(preview.freeze_artifacts[0].recall_stage_count, 2);
+        assert_eq!(
+            preview.freeze_artifacts[0].recall_stage_ids,
+            selection.stage_ids
+        );
+        assert_eq!(
+            preview.freeze_artifacts[0].recall_states,
+            vec![
+                RuntimePluginRecallState::Warm,
+                RuntimePluginRecallState::Recovered
+            ]
+        );
+        assert!(preview.summary.contains("stems=1"));
+        assert!(preview.summary.contains("freeze_artifacts=1"));
+    }
+
+    #[test]
+    fn runtime_offline_render_renders_main_mix_stem_and_freeze_from_runtime_owned_state() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+
+        let imported_path = temp_capture_path("offline-render-engine-proof");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:offline-render-engine-proof".to_string(),
+                content_hash: "offline-render-engine-proof".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "offline-render-engine-proof.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:offline-engine".into(),
+                media_asset_id: Some("asset:sha256:offline-render-engine-proof".into()),
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 0,
+                duration_samples: 64,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                node_count: 4,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "track".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.5 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 8,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "bus-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "console-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 1.0 }],
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                contract_count: 4,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "track".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection::default(),
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection::default(),
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "bus-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Bus),
+                            track_lane_id: None,
+                            bus_group_id: Some("mix:master".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "console-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:master".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "main:out".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::ConsoleNode),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: Some("console:main".into()),
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                bindings: vec![PluginBackedNodeBinding {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                }],
+            })
+            .unwrap();
+        runtime.record_recovery_cycle(
+            "sandbox-a",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(2),
+        );
+        runtime
+            .apply_plugin_node_render_batch(PluginNodeRenderBatch {
+                graph_id: "graph:runtime:offline-render-engine".into(),
+                processing_epoch: 1,
+                block_sequence: 1,
+                renders: vec![PluginNodeRender {
+                    node_id: "plugin".into(),
+                    sandbox_id: "sandbox-a".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(32),
+                    ),
+                    latency_samples: 8,
+                    tail_samples: 0,
+                    bypassed: false,
+                }],
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                AudioBuffer::new(SampleRate(48_000), ChannelLayout::Stereo, FrameCount(32)),
+            )
+            .unwrap();
+
+        let processed_before = runtime.get_engine_block_snapshot().processed_blocks;
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let selection = RuntimePluginRecallHandoffSelection {
+            stage_count: handoff.stage_count,
+            stage_ids: handoff
+                .stages
+                .iter()
+                .map(|stage| stage.stage_id.clone())
+                .collect(),
+        };
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:engine-proof".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                    artifact_id: "freeze:track:lead".into(),
+                    source_stem_id: "stem:track:lead".into(),
+                    recall_selection: selection,
+                }],
+            })
+            .expect("offline render should succeed");
+
+        assert_eq!(
+            runtime.get_engine_block_snapshot().processed_blocks,
+            processed_before
+        );
+        assert_eq!(result.rendered_frame_count, 64);
+        assert_eq!(result.block_count, 1);
+        assert_eq!(result.stems.len(), 1);
+        assert_eq!(result.freeze_artifacts.len(), 1);
+        assert_eq!(result.main_mix.as_ref().unwrap().frames().0, 64);
+        assert_eq!(result.stems[0].output.frames().0, 64);
+        assert_eq!(
+            result.freeze_artifacts[0].recall_states,
+            vec![RuntimePluginRecallState::Recovered]
+        );
+        assert_eq!(
+            result.freeze_artifacts[0].output.samples(),
+            result.stems[0].output.samples()
+        );
+        assert_eq!(
+            result.main_mix.as_ref().unwrap().samples(),
+            result.stems[0].output.samples()
+        );
+        assert!((result.main_mix_peak_level.unwrap() - 0.5).abs() < 1.0e-6);
+        assert!(result.main_mix_rms_level.unwrap() > 0.15);
+        assert!(result.main_mix_rms_level.unwrap() < 0.5);
+        let rendered = result.main_mix.as_ref().unwrap().samples();
+        assert!((rendered[0] + 0.5).abs() < 1.0e-6);
+        assert!((rendered[1] + 0.5).abs() < 1.0e-6);
+        assert!((rendered[2] + 0.492_187_5).abs() < 1.0e-6);
+        assert!(result.summary.contains("stems=1"));
+        assert!(result.summary.contains("freeze_artifacts=1"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]
@@ -10888,6 +16842,7 @@ mod tests {
                 epoch: runtime.projection_epoch().saturating_add(1),
                 events: vec![ParameterEvent {
                     target: "invalidate.param".into(),
+                    sample_offset: 0,
                     normalized_value: 0.25,
                 }],
             })
@@ -11542,7 +17497,15 @@ mod tests {
         assert_eq!(ready.clip_count, 1);
         assert_eq!(ready.ready_clip_count, 1);
         assert_eq!(ready.degraded_clip_count, 0);
+        assert_eq!(
+            ready.resolved_project_tempo_source,
+            RuntimeTempoSource::TransportProjection
+        );
         assert_eq!(ready.clips[0].readiness, RuntimeWarpReadiness::Ready);
+        assert_eq!(
+            ready.clips[0].project_tempo_source,
+            RuntimeTempoSource::TransportProjection
+        );
         assert!((ready.clips[0].realized_ratio - 1.5).abs() < 0.000_1);
 
         runtime
@@ -11556,13 +17519,703 @@ mod tests {
         let degraded = runtime.get_warp_pipeline_snapshot();
         assert_eq!(degraded.ready_clip_count, 0);
         assert_eq!(degraded.degraded_clip_count, 1);
+        assert_eq!(
+            degraded.resolved_project_tempo_source,
+            RuntimeTempoSource::TransportProjection
+        );
         assert_eq!(degraded.clips[0].readiness, RuntimeWarpReadiness::Degraded);
+        assert!(degraded.clips[0]
+            .last_error
+            .as_deref()
+            .unwrap_or_default()
+            .contains("outside baseline support"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_reconciles_clip_processing_against_media_and_warp_readiness() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("clip-processing-ready");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:clip-processing-ready".to_string(),
+                content_hash: "clip-processing-ready".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "clip-processing-ready.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:processing-ready".to_string(),
+                media_asset_id: Some("asset:sha256:clip-processing-ready".to_string()),
+                mode: RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:processing-ready".to_string(),
+                media_asset_id: Some("asset:sha256:clip-processing-ready".to_string()),
+                warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope {
+                    duration_samples: 2_048,
+                    shape: RuntimeClipFadeShape::SmoothStep,
+                },
+                fade_out: RuntimeClipFadeEnvelope {
+                    duration_samples: 4_096,
+                    shape: RuntimeClipFadeShape::EqualPower,
+                },
+                clip_gain: RuntimeClipGainEnvelope {
+                    start_linear: 0.82,
+                    end_linear: 0.64,
+                    shape: RuntimeClipGainShape::Linear,
+                },
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let ready = runtime.get_clip_processing_pipeline_snapshot();
+        assert_eq!(ready.clip_count, 1);
+        assert_eq!(ready.ready_clip_count, 1);
+        assert_eq!(ready.pending_media_clip_count, 0);
+        assert_eq!(ready.pending_warp_clip_count, 0);
+        assert_eq!(ready.invalid_clip_count, 0);
+        assert_eq!(ready.faded_clip_count, 1);
+        assert_eq!(ready.gain_shaped_clip_count, 1);
+        assert_eq!(ready.warped_clip_count, 1);
+        assert_eq!(ready.treatment_stage_count, 4);
+        assert_eq!(
+            ready.clips[0].readiness,
+            RuntimeClipProcessingReadiness::Ready
+        );
+        assert_eq!(ready.clips[0].fade_in_end_samples, 2_048);
+        assert_eq!(ready.clips[0].fade_out_start_samples, 43_904);
+        assert_eq!(
+            ready.clips[0].treatment_stages,
+            vec![
+                RuntimeClipProcessingStage::Warp,
+                RuntimeClipProcessingStage::FadeIn,
+                RuntimeClipProcessingStage::GainShape,
+                RuntimeClipProcessingStage::FadeOut,
+            ]
+        );
+        assert_eq!(
+            ready.clips[0].fade_in.shape,
+            RuntimeClipFadeShape::SmoothStep
+        );
+        assert_eq!(
+            ready.clips[0].fade_out.shape,
+            RuntimeClipFadeShape::EqualPower
+        );
+        assert_eq!(ready.clips[0].clip_gain.shape, RuntimeClipGainShape::Linear);
+        assert!((ready.clips[0].clip_gain.start_linear - 0.82).abs() < f32::EPSILON);
+        assert!((ready.clips[0].clip_gain.end_linear - 0.64).abs() < f32::EPSILON);
+        assert_eq!(
+            ready.clips[0].project_tempo_source,
+            Some(RuntimeTempoSource::TransportProjection)
+        );
+        assert!((ready.clips[0].realized_warp_ratio.unwrap_or_default() - 1.5).abs() < 0.000_1);
+
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 300.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let invalid = runtime.get_clip_processing_pipeline_snapshot();
+        assert_eq!(invalid.clip_count, 1);
+        assert_eq!(invalid.ready_clip_count, 0);
+        assert_eq!(invalid.invalid_clip_count, 1);
+        assert_eq!(
+            invalid.clips[0].readiness,
+            RuntimeClipProcessingReadiness::Invalid
+        );
+        assert!(invalid.clips[0]
+            .last_error
+            .as_deref()
+            .unwrap_or_default()
+            .contains("outside baseline support"));
+
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:processing-ready".to_string(),
+                media_asset_id: Some("asset:sha256:clip-processing-ready".to_string()),
+                warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope {
+                    duration_samples: 2_048,
+                    shape: RuntimeClipFadeShape::Linear,
+                },
+                fade_out: RuntimeClipFadeEnvelope {
+                    duration_samples: 4_096,
+                    shape: RuntimeClipFadeShape::Linear,
+                },
+                clip_gain: RuntimeClipGainEnvelope {
+                    start_linear: 0.82,
+                    end_linear: 0.64,
+                    shape: RuntimeClipGainShape::Hold,
+                },
+            }])
+            .unwrap();
+        let invalid_gain_shape = runtime.get_clip_processing_pipeline_snapshot();
+        assert_eq!(invalid_gain_shape.invalid_clip_count, 1);
+        assert_eq!(
+            invalid_gain_shape.clips[0].readiness,
+            RuntimeClipProcessingReadiness::Invalid
+        );
+        assert!(invalid_gain_shape.clips[0]
+            .last_error
+            .as_deref()
+            .unwrap_or_default()
+            .contains("hold clip gain shape requires identical start and end gain"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_tempo_map_projection_drives_warp_ratio_and_export_reports() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("warp-tempo-map");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:warp-tempo-map".to_string(),
+                content_hash: "warp-tempo-map".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "warp-tempo-map.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .apply_tempo_map_projection(RuntimeTempoMapProjection {
+                segment_count: 2,
+                segments: vec![
+                    crate::interfaces::RuntimeTempoMapSegmentProjection {
+                        segment_id: "tempo:intro".to_string(),
+                        start_samples: 0,
+                        end_samples: Some(48_000),
+                        start_tempo_bpm: 120.0,
+                        end_tempo_bpm: None,
+                        interpolation: RuntimeTempoMapInterpolation::Hold,
+                    },
+                    crate::interfaces::RuntimeTempoMapSegmentProjection {
+                        segment_id: "tempo:lift".to_string(),
+                        start_samples: 48_000,
+                        end_samples: Some(96_000),
+                        start_tempo_bpm: 120.0,
+                        end_tempo_bpm: Some(180.0),
+                        interpolation: RuntimeTempoMapInterpolation::Linear,
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:warp-tempo-map".to_string(),
+                media_asset_id: Some("asset:sha256:warp-tempo-map".to_string()),
+                mode: RuntimeWarpMode::Repitch,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 72_000,
+                tempo_bpm: 90.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let tempo_map = runtime.get_tempo_map_snapshot();
+        assert_eq!(tempo_map.segment_count, 2);
+        assert_eq!(tempo_map.active_segment_id.as_deref(), Some("tempo:lift"));
+        assert_eq!(tempo_map.active_segment_index, Some(1));
+        assert_eq!(tempo_map.tempo_source, RuntimeTempoSource::TempoMapSegment);
+        assert!((tempo_map.resolved_tempo_bpm - 150.0).abs() < 0.000_1);
+
+        let warp = runtime.get_warp_pipeline_snapshot();
+        assert_eq!(warp.clip_count, 1);
+        assert_eq!(warp.ready_clip_count, 1);
+        assert_eq!(warp.degraded_clip_count, 0);
+        assert_eq!(
+            warp.resolved_project_tempo_source,
+            RuntimeTempoSource::TempoMapSegment
+        );
+        assert_eq!(
+            warp.resolved_project_tempo_segment_id.as_deref(),
+            Some("tempo:lift")
+        );
+        assert!((warp.resolved_project_tempo_bpm - 150.0).abs() < 0.000_1);
+        assert_eq!(
+            warp.clips[0].project_tempo_source,
+            RuntimeTempoSource::TempoMapSegment
+        );
+        assert_eq!(
+            warp.clips[0].project_tempo_segment_id.as_deref(),
+            Some("tempo:lift")
+        );
+        assert!((warp.clips[0].project_tempo_bpm - 150.0).abs() < 0.000_1);
+        assert!((warp.clips[0].realized_ratio - 1.25).abs() < 0.000_1);
+
+        let report = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            report.tempo_map_snapshot.tempo_source,
+            RuntimeTempoSource::TempoMapSegment
+        );
+        assert_eq!(
+            report.warp_pipeline_snapshot.resolved_project_tempo_source,
+            RuntimeTempoSource::TempoMapSegment
+        );
+        assert!(report.render_compact().contains("tempo_map_segments=2"));
+        assert!(report
+            .render_compact()
+            .contains("tempo_map_source=TempoMapSegment"));
+        assert!(report.render_compact().contains("warp_clips=1/1/0/0"));
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let multiline = supervisor.render_multiline();
+        assert!(multiline.contains("tempo_map_source=TempoMapSegment"));
+        assert!(multiline.contains("warp_resolved_project_tempo_source=TempoMapSegment"));
+        let json = supervisor.render_json();
+        assert!(json.contains("\"tempo_map_snapshot\":{\"segment_count\":2"));
+        assert!(json.contains("\"resolved_project_tempo_source\":\"TempoMapSegment\""));
+
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 120_000,
+                tempo_bpm: 90.0,
+                loop_state: None,
+            })
+            .unwrap();
+        let fallback_tempo_map = runtime.get_tempo_map_snapshot();
+        assert_eq!(fallback_tempo_map.active_segment_id, None);
+        assert_eq!(
+            fallback_tempo_map.tempo_source,
+            RuntimeTempoSource::TransportProjection
+        );
+        assert!((fallback_tempo_map.resolved_tempo_bpm - 90.0).abs() < 0.000_1);
+        let fallback_warp = runtime.get_warp_pipeline_snapshot();
+        assert_eq!(
+            fallback_warp.resolved_project_tempo_source,
+            RuntimeTempoSource::TransportProjection
+        );
+        assert_eq!(fallback_warp.resolved_project_tempo_segment_id, None);
+        assert!((fallback_warp.clips[0].realized_ratio - 0.75).abs() < 0.000_1);
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_clip_render_path_applies_fade_gain_and_clip_bounds() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:render-envelope".to_string(),
+                media_asset_id: None,
+                warp_mode: RuntimeWarpMode::Off,
+                start_samples: 10,
+                duration_samples: 5,
+                fade_in: RuntimeClipFadeEnvelope {
+                    duration_samples: 2,
+                    shape: RuntimeClipFadeShape::Linear,
+                },
+                fade_out: RuntimeClipFadeEnvelope {
+                    duration_samples: 2,
+                    shape: RuntimeClipFadeShape::Linear,
+                },
+                clip_gain: RuntimeClipGainEnvelope {
+                    start_linear: 1.0,
+                    end_linear: 0.5,
+                    shape: RuntimeClipGainShape::Linear,
+                },
+            }])
+            .unwrap();
+
+        let result = runtime
+            .render_clip_processing_buffer(RuntimeClipRenderRequest {
+                clip_id: "clip:render-envelope".to_string(),
+                timeline_start_samples: 8,
+                input_stage: RuntimeClipRenderInputStage::PostWarp,
+                buffer: AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![1.0; 7],
+                ),
+            })
+            .unwrap();
+
+        assert_eq!(
+            result.clip_processing_snapshot.treatment_stages,
+            vec![
+                RuntimeClipProcessingStage::FadeIn,
+                RuntimeClipProcessingStage::GainShape,
+                RuntimeClipProcessingStage::FadeOut,
+            ]
+        );
+        assert_eq!(result.timeline_start_samples, 8);
+        assert_eq!(result.timeline_end_samples, 15);
+        assert_eq!(result.first_frame_gain, Some(0.0));
+        assert_eq!(result.last_frame_gain, Some(0.0));
+        assert!((result.peak_applied_gain.unwrap_or_default() - 0.875).abs() < 1.0e-6);
+        let expected = [0.0_f32, 0.0, 0.0, 0.875, 0.75, 0.625, 0.0];
+        for (actual, expected) in result.output.samples().iter().zip(expected.iter()) {
+            assert!((actual - expected).abs() < 1.0e-6);
+        }
+        assert!(result
+            .summary
+            .contains("clip_render clip=clip:render-envelope"));
+        assert!(result.summary.contains("input_stage=PostWarp"));
+    }
+
+    #[test]
+    fn runtime_clip_render_path_requires_post_warp_input_for_warp_enabled_clips() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("clip-render-post-warp");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:clip-render-post-warp".to_string(),
+                content_hash: "clip-render-post-warp".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "clip-render-post-warp.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:render-post-warp".to_string(),
+                media_asset_id: Some("asset:sha256:clip-render-post-warp".to_string()),
+                mode: RuntimeWarpMode::Repitch,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:render-post-warp".to_string(),
+                media_asset_id: Some("asset:sha256:clip-render-post-warp".to_string()),
+                warp_mode: RuntimeWarpMode::Repitch,
+                start_samples: 0,
+                duration_samples: 8,
+                fade_in: RuntimeClipFadeEnvelope {
+                    duration_samples: 0,
+                    shape: RuntimeClipFadeShape::Linear,
+                },
+                fade_out: RuntimeClipFadeEnvelope {
+                    duration_samples: 0,
+                    shape: RuntimeClipFadeShape::Linear,
+                },
+                clip_gain: RuntimeClipGainEnvelope {
+                    start_linear: 1.0,
+                    end_linear: 1.0,
+                    shape: RuntimeClipGainShape::Hold,
+                },
+            }])
+            .unwrap();
+
+        let raw_input_error = runtime
+            .render_clip_processing_buffer(RuntimeClipRenderRequest {
+                clip_id: "clip:render-post-warp".to_string(),
+                timeline_start_samples: 0,
+                input_stage: RuntimeClipRenderInputStage::RawClip,
+                buffer: AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![1.0; 8],
+                ),
+            })
+            .expect_err("warp-enabled clip render should require post-warp input");
+        assert_eq!(
+            raw_input_error.kind,
+            RuntimeErrorKind::UnsupportedCapability
+        );
+        assert!(raw_input_error.message.contains("require post-warp input"));
+
+        let rendered = runtime
+            .render_clip_processing_buffer(RuntimeClipRenderRequest {
+                clip_id: "clip:render-post-warp".to_string(),
+                timeline_start_samples: 0,
+                input_stage: RuntimeClipRenderInputStage::PostWarp,
+                buffer: AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![0.25; 8],
+                ),
+            })
+            .unwrap();
+        assert_eq!(
+            rendered.clip_processing_snapshot.treatment_stages,
+            vec![RuntimeClipProcessingStage::Warp]
+        );
+        assert_eq!(
+            rendered.clip_processing_snapshot.project_tempo_source,
+            Some(RuntimeTempoSource::DefaultFallback)
+        );
+        assert_eq!(rendered.output.samples(), &[0.25; 8]);
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_clip_processing_exports_treatment_surface_with_warp_and_automation() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("clip-processing-export");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:clip-processing-export".to_string(),
+                content_hash: "clip-processing-export".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "clip-processing-export.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .apply_tempo_map_projection(RuntimeTempoMapProjection {
+                segment_count: 2,
+                segments: vec![
+                    crate::interfaces::RuntimeTempoMapSegmentProjection {
+                        segment_id: "tempo:intro".to_string(),
+                        start_samples: 0,
+                        end_samples: Some(48_000),
+                        start_tempo_bpm: 120.0,
+                        end_tempo_bpm: None,
+                        interpolation: RuntimeTempoMapInterpolation::Hold,
+                    },
+                    crate::interfaces::RuntimeTempoMapSegmentProjection {
+                        segment_id: "tempo:lift".to_string(),
+                        start_samples: 48_000,
+                        end_samples: Some(96_000),
+                        start_tempo_bpm: 120.0,
+                        end_tempo_bpm: Some(180.0),
+                        interpolation: RuntimeTempoMapInterpolation::Linear,
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:processing-export".to_string(),
+                media_asset_id: Some("asset:sha256:clip-processing-export".to_string()),
+                mode: RuntimeWarpMode::Repitch,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:processing-export".to_string(),
+                media_asset_id: Some("asset:sha256:clip-processing-export".to_string()),
+                warp_mode: RuntimeWarpMode::Repitch,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope {
+                    duration_samples: 1_024,
+                    shape: RuntimeClipFadeShape::SmoothStep,
+                },
+                fade_out: RuntimeClipFadeEnvelope {
+                    duration_samples: 2_048,
+                    shape: RuntimeClipFadeShape::EqualPower,
+                },
+                clip_gain: RuntimeClipGainEnvelope {
+                    start_linear: 1.0,
+                    end_linear: 0.5,
+                    shape: RuntimeClipGainShape::Linear,
+                },
+            }])
+            .unwrap();
+        runtime
+            .apply_automation_projection(RuntimeAutomationProjection {
+                lane_count: 1,
+                point_count: 2,
+                lanes: vec![RuntimeAutomationLaneProjection {
+                    automation_lane_id: "lane:clip:gain".into(),
+                    target: RuntimeAutomationTargetProjection {
+                        node_id: "node:clip:gain".into(),
+                        parameter_id: "gain".into(),
+                    },
+                    base_normalized_value: 1.0,
+                    interpolation: RuntimeAutomationInterpolation::Linear,
+                    resolution: RuntimeAutomationResolution {
+                        ramp_step_samples: 4,
+                        max_sub_blocks: 8,
+                    },
+                    point_count: 2,
+                    points: vec![
+                        RuntimeAutomationPointProjection {
+                            time_samples: 0,
+                            normalized_value: 1.0,
+                        },
+                        RuntimeAutomationPointProjection {
+                            time_samples: 48_000,
+                            normalized_value: 0.5,
+                        },
+                    ],
+                }],
+            })
+            .unwrap();
+        runtime.record_automation_summary(
+            1,
+            "lease:clip-processing-export",
+            ParameterAutomationSummary {
+                parameter_id: 4096,
+                value_events: 2,
+                modulation_events: 0,
+                gesture_begin_events: 1,
+                gesture_end_events: 1,
+                first_value: Some(1.0),
+                last_value: Some(0.5),
+                last_modulation: None,
+            },
+        );
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 72_000,
+                tempo_bpm: 90.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let clip_processing = runtime.get_clip_processing_pipeline_snapshot();
+        assert_eq!(clip_processing.clip_count, 1);
+        assert_eq!(clip_processing.ready_clip_count, 1);
+        assert_eq!(clip_processing.faded_clip_count, 1);
+        assert_eq!(clip_processing.gain_shaped_clip_count, 1);
+        assert_eq!(clip_processing.warped_clip_count, 1);
+        assert_eq!(clip_processing.treatment_stage_count, 4);
+        assert_eq!(
+            clip_processing.clips[0].project_tempo_source,
+            Some(RuntimeTempoSource::TempoMapSegment)
+        );
+        assert_eq!(
+            clip_processing.clips[0].project_tempo_segment_id.as_deref(),
+            Some("tempo:lift")
+        );
+        assert_eq!(
+            clip_processing.clips[0].treatment_stages,
+            vec![
+                RuntimeClipProcessingStage::Warp,
+                RuntimeClipProcessingStage::FadeIn,
+                RuntimeClipProcessingStage::GainShape,
+                RuntimeClipProcessingStage::FadeOut,
+            ]
+        );
         assert!(
-            degraded.clips[0]
-                .last_error
-                .as_deref()
+            (clip_processing.clips[0]
+                .realized_warp_ratio
                 .unwrap_or_default()
-                .contains("outside baseline support")
+                - 1.25)
+                .abs()
+                < 0.000_1
+        );
+
+        let report = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let compact = report.render_compact();
+        assert!(compact.contains("clip_processing_clips=1/1/0/0"));
+        assert!(compact.contains("clip_processing_shapes=1/1/1"));
+        assert!(compact.contains("clip_processing_treatment_stages=4"));
+        assert!(compact.contains("automation_param=4096"));
+        assert!(compact.contains("tempo_map_source=TempoMapSegment"));
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let multiline = supervisor.render_multiline();
+        assert!(multiline.contains("clip_processing_clip_count=1"));
+        assert!(multiline.contains(
+            "clip_processing_clip_0=clip:processing-export/readiness=Ready/warp=Repitch/Some(1.25)/Some(TempoMapSegment)"
+        ));
+        assert!(multiline.contains("stages=[Warp, FadeIn, GainShape, FadeOut]"));
+        let json = supervisor.render_json();
+        assert!(json.contains("\"clip_processing_pipeline_snapshot\":{\"clip_count\":1"));
+        assert!(
+            json.contains("\"treatment_stages\":[\"Warp\",\"FadeIn\",\"GainShape\",\"FadeOut\"]")
         );
 
         let _ = fs::remove_file(imported_path);
@@ -11618,6 +18271,113 @@ mod tests {
             runtime.get_diagnostics_snapshot().active_plugin_sandboxes,
             0
         );
+    }
+
+    #[test]
+    fn runtime_tracks_plugin_lifecycle_recovery_and_quarantine_state() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_transport(
+            "sandbox-a",
+            "lease-a",
+            "region-a",
+            PluginSandboxTransportStage::Attached,
+            Some(1),
+            None,
+        );
+        runtime.set_active_plugin_sandboxes(1);
+
+        let ready = runtime.get_plugin_lifecycle_snapshot();
+        assert_eq!(ready.active_sandbox_count, 1);
+        assert_eq!(ready.ready_sandbox_count, 1);
+        assert_eq!(ready.sandboxes[0].state, RuntimePluginLifecycleState::Ready);
+        assert_eq!(
+            ready.sandboxes[0].active_lease_id.as_deref(),
+            Some("lease-a")
+        );
+
+        runtime.record_plugin_sandbox_fault(
+            "sandbox-a",
+            crate::interfaces::PluginFaultKind::Crash,
+            "sandbox crashed during process block",
+            Some(2),
+        );
+        runtime.set_active_plugin_sandboxes(0);
+
+        let faulted = runtime.get_plugin_lifecycle_snapshot();
+        assert_eq!(faulted.faulted_sandbox_count, 1);
+        assert_eq!(
+            faulted.sandboxes[0].state,
+            RuntimePluginLifecycleState::Faulted
+        );
+        assert_eq!(
+            faulted.sandboxes[0].last_fault_detail.as_deref(),
+            Some("sandbox crashed during process block")
+        );
+
+        runtime.record_recovery_cycle(
+            "sandbox-a",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(3),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(3),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(4),
+        );
+        runtime.record_plugin_sandbox_transport(
+            "sandbox-a",
+            "lease-b",
+            "region-b",
+            PluginSandboxTransportStage::Attached,
+            Some(4),
+            None,
+        );
+        runtime.set_active_plugin_sandboxes(1);
+
+        let recovered = runtime.get_plugin_lifecycle_snapshot();
+        assert_eq!(recovered.ready_sandbox_count, 1);
+        assert_eq!(
+            recovered.sandboxes[0].state,
+            RuntimePluginLifecycleState::Ready
+        );
+        assert_eq!(recovered.sandboxes[0].restart_count, 1);
+        assert_eq!(recovered.sandboxes[0].recovery_count, 1);
+        assert_eq!(
+            recovered.sandboxes[0].active_lease_id.as_deref(),
+            Some("lease-b")
+        );
+
+        runtime.record_plugin_sandbox_fault(
+            "sandbox-a",
+            crate::interfaces::PluginFaultKind::Timeout,
+            "sandbox missed heartbeat twice",
+            Some(5),
+        );
+
+        let quarantined = runtime.get_plugin_lifecycle_snapshot();
+        assert_eq!(quarantined.quarantined_sandbox_count, 1);
+        assert_eq!(
+            quarantined.sandboxes[0].state,
+            RuntimePluginLifecycleState::Quarantined
+        );
+        assert_eq!(quarantined.sandboxes[0].fault_count, 2);
     }
 
     #[test]
@@ -12315,7 +19075,8 @@ mod tests {
         assert!(json.contains("\"active_block_sequence\":12"));
         assert!(json.contains("\"active_sessions\":[]"));
         assert!(json.contains("\"last_region_id\":\"region-4\""));
-        assert!(json.contains("\"automation\":{\"parameter_id\":4096"));
+        assert!(json.contains("\"automation\":{\"lane_count\":0"));
+        assert!(json.contains("\"parameter_id\":4096"));
     }
 
     #[test]

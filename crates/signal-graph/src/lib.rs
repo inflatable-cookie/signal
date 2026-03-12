@@ -211,8 +211,10 @@ impl Default for GraphNodeBufferContract {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GraphNodeTopologyMetadata {
     pub role: Option<GraphNodeTopologyRole>,
-    pub lane_id: Option<String>,
+    pub track_lane_id: Option<String>,
     pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -257,6 +259,18 @@ pub enum GraphContractIssue {
     ReturnRequiresDistinctBuses {
         node_id: String,
     },
+    MissingTrackLaneId {
+        node_id: String,
+    },
+    MissingBusGroupId {
+        node_id: String,
+    },
+    MissingConsoleGroupId {
+        node_id: String,
+    },
+    MissingSendReturnId {
+        node_id: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -272,8 +286,10 @@ pub struct GraphNodeContractSummary {
     pub scratch_buffers: usize,
     pub reset_policy: GraphNodeResetPolicy,
     pub topology_role: GraphNodeTopologyRole,
-    pub lane_id: Option<String>,
+    pub track_lane_id: Option<String>,
     pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -394,6 +410,12 @@ pub struct GraphNodeRenderOverride {
     pub bypassed: bool,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct GraphCapturedBusOutput {
+    pub bus_id: String,
+    pub buffer: AudioBuffer,
+}
+
 /// Prepared anticipative dispatch output that can be handed into the later
 /// realtime dispatch path.
 #[derive(Clone, Debug, PartialEq)]
@@ -407,6 +429,15 @@ pub struct GraphPreparedDispatch {
 pub struct GraphPreparedBus {
     pub bus_id: String,
     pub buffer: AudioBuffer,
+    pub latency_samples: u32,
+    pub tail_samples: u32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct GraphBusLevelReport {
+    pub bus_id: String,
+    pub peak: f32,
+    pub rms: f32,
     pub latency_samples: u32,
     pub tail_samples: u32,
 }
@@ -481,6 +512,8 @@ pub struct GraphBlockReport {
     pub realtime_input_peak: Option<f32>,
     pub output_peak: f32,
     pub output_rms: f32,
+    pub bus_level_count: usize,
+    pub bus_levels: Vec<GraphBusLevelReport>,
     pub first_output_sample: Option<f32>,
 }
 
@@ -692,6 +725,36 @@ impl ExecutableGraph {
                         node_id: node.node_id.clone(),
                     });
             }
+            match role {
+                GraphNodeTopologyRole::TrackLane if node.topology.track_lane_id.is_none() => {
+                    summary.issues.push(GraphContractIssue::MissingTrackLaneId {
+                        node_id: node.node_id.clone(),
+                    });
+                }
+                GraphNodeTopologyRole::Bus if node.topology.bus_group_id.is_none() => {
+                    summary.issues.push(GraphContractIssue::MissingBusGroupId {
+                        node_id: node.node_id.clone(),
+                    });
+                }
+                GraphNodeTopologyRole::ConsoleNode if node.topology.console_group_id.is_none() => {
+                    summary
+                        .issues
+                        .push(GraphContractIssue::MissingConsoleGroupId {
+                            node_id: node.node_id.clone(),
+                        });
+                }
+                GraphNodeTopologyRole::Send | GraphNodeTopologyRole::Return
+                    if node.topology.send_return_id.is_none() =>
+                {
+                    summary
+                        .issues
+                        .push(GraphContractIssue::MissingSendReturnId {
+                            node_id: node.node_id.clone(),
+                        });
+                }
+                GraphNodeTopologyRole::Utility => {}
+                _ => {}
+            }
             match output_bus_layouts.get(&node.buffer_contract.output.bus_id) {
                 Some(expected) if *expected != node.buffer_contract.output.channels => {
                     summary
@@ -745,8 +808,10 @@ impl ExecutableGraph {
                 scratch_buffers: node.buffer_contract.scratch_buffers,
                 reset_policy: node.buffer_contract.reset_policy,
                 topology_role: role,
-                lane_id: node.topology.lane_id.clone(),
+                track_lane_id: node.topology.track_lane_id.clone(),
                 bus_group_id: node.topology.bus_group_id.clone(),
+                console_group_id: node.topology.console_group_id.clone(),
+                send_return_id: node.topology.send_return_id.clone(),
             });
 
             seen_output_buses.insert(node.buffer_contract.output.bus_id.clone());
@@ -1042,6 +1107,35 @@ impl ExecutableGraph {
         routing: &GraphRoutingSummary,
         node_render_overrides: &[GraphNodeRenderOverride],
     ) -> (AudioBuffer, GraphBlockReport) {
+        let (output, report, _) = self
+            .execute_realtime_from_prepared_with_node_overrides_and_bus_captures(
+                input,
+                input_peak,
+                prepared,
+                context,
+                parameter_batch,
+                planning,
+                contract,
+                routing,
+                node_render_overrides,
+                &[],
+            );
+        (output, report)
+    }
+
+    pub fn execute_realtime_from_prepared_with_node_overrides_and_bus_captures(
+        &self,
+        input: &AudioBuffer,
+        input_peak: f32,
+        prepared: Option<GraphPreparedDispatch>,
+        context: GraphExecutionContext,
+        parameter_batch: Option<&GraphParameterBatch>,
+        planning: &GraphPlanningSummary,
+        contract: &GraphContractSummary,
+        routing: &GraphRoutingSummary,
+        node_render_overrides: &[GraphNodeRenderOverride],
+        captured_bus_ids: &[String],
+    ) -> (AudioBuffer, GraphBlockReport, Vec<GraphCapturedBusOutput>) {
         let realtime_dispatches = planning
             .dispatches
             .iter()
@@ -1095,6 +1189,30 @@ impl ExecutableGraph {
             .copied()
             .max()
             .unwrap_or_else(|| routing.max_bus_tail_samples);
+        let bus_levels = working_state
+            .buses
+            .iter()
+            .map(|(bus_id, buffer)| GraphBusLevelReport {
+                bus_id: bus_id.clone(),
+                peak: peak_abs(buffer.samples()),
+                rms: rms(buffer.samples()),
+                latency_samples: working_state.latencies.get(bus_id).copied().unwrap_or(0),
+                tail_samples: working_state.tails.get(bus_id).copied().unwrap_or(0),
+            })
+            .collect::<Vec<_>>();
+        let captured_buses = captured_bus_ids
+            .iter()
+            .filter_map(|bus_id| {
+                working_state
+                    .buses
+                    .get(bus_id)
+                    .cloned()
+                    .map(|buffer| GraphCapturedBusOutput {
+                        bus_id: bus_id.clone(),
+                        buffer,
+                    })
+            })
+            .collect::<Vec<_>>();
 
         (
             working_buffer.clone(),
@@ -1164,8 +1282,11 @@ impl ExecutableGraph {
                 realtime_input_peak,
                 output_peak: peak_abs(working_buffer.samples()),
                 output_rms: rms(working_buffer.samples()),
+                bus_level_count: bus_levels.len(),
+                bus_levels,
                 first_output_sample: working_buffer.samples().first().copied(),
             },
+            captured_buses,
         )
     }
 
@@ -2002,17 +2123,52 @@ mod tests {
         role: GraphNodeTopologyRole,
         stages: Vec<GraphStageSpec>,
     ) -> GraphNodeSpec {
+        let topology = match role {
+            GraphNodeTopologyRole::Utility => GraphNodeTopologyMetadata {
+                role: Some(role),
+                track_lane_id: None,
+                bus_group_id: None,
+                console_group_id: None,
+                send_return_id: None,
+            },
+            GraphNodeTopologyRole::TrackLane => GraphNodeTopologyMetadata {
+                role: Some(role),
+                track_lane_id: Some(node_id.into()),
+                bus_group_id: None,
+                console_group_id: None,
+                send_return_id: None,
+            },
+            GraphNodeTopologyRole::Bus => GraphNodeTopologyMetadata {
+                role: Some(role),
+                track_lane_id: None,
+                bus_group_id: Some(node_id.into()),
+                console_group_id: None,
+                send_return_id: None,
+            },
+            GraphNodeTopologyRole::Send | GraphNodeTopologyRole::Return => {
+                GraphNodeTopologyMetadata {
+                    role: Some(role),
+                    track_lane_id: None,
+                    bus_group_id: None,
+                    console_group_id: None,
+                    send_return_id: Some(node_id.into()),
+                }
+            }
+            GraphNodeTopologyRole::ConsoleNode => GraphNodeTopologyMetadata {
+                role: Some(role),
+                track_lane_id: None,
+                bus_group_id: None,
+                console_group_id: Some(node_id.into()),
+                send_return_id: None,
+            },
+        };
         GraphNodeSpec {
             buffer_contract: GraphNodeBufferContract {
                 input: GraphNodeBusEndpoint::new(input_bus, input_channels),
                 output: GraphNodeBusEndpoint::new(output_bus, output_channels),
                 ..GraphNodeBufferContract::default()
             },
-            topology: GraphNodeTopologyMetadata {
-                role: Some(role),
-                lane_id: None,
-                bus_group_id: None,
-            },
+            topology,
             ..test_node(node_id, GraphNodeExecutionClass::Stateful, 0, stages)
         }
     }
@@ -2039,6 +2195,17 @@ mod tests {
         GraphParameterBatch {
             epoch: 7,
             strategy: GraphParameterApplicationStrategy::SplitAtEvents { max_sub_blocks: 8 },
+            events,
+        }
+    }
+
+    fn parameter_batch_with_strategy(
+        events: Vec<GraphParameterEvent>,
+        strategy: GraphParameterApplicationStrategy,
+    ) -> GraphParameterBatch {
+        GraphParameterBatch {
+            epoch: 7,
+            strategy,
             events,
         }
     }
@@ -2298,6 +2465,43 @@ mod tests {
             assert!((actual - expected).abs() < 1.0e-5);
         }
         assert_eq!(report.parameter_sub_block_count, 2);
+    }
+
+    #[test]
+    fn dense_parameter_batches_are_coalesced_by_max_sub_block_budget() {
+        let graph = ExecutableGraph::new(
+            "graph:param-coalesced",
+            vec![routed_node(
+                "gain",
+                "main:in",
+                ChannelLayout::Mono,
+                "main:out",
+                ChannelLayout::Mono,
+                GraphNodeTopologyRole::Utility,
+                vec![GraphStageSpec::Gain { linear: 0.0 }],
+            )],
+        );
+        let mut buffer =
+            AudioBuffer::from_interleaved(SampleRate(48_000), ChannelLayout::Mono, vec![1.0; 6]);
+        let batch = parameter_batch_with_strategy(
+            vec![
+                stage_event("gain", 0, GraphStageParameter::GainLinear, 1, 0.2),
+                stage_event("gain", 0, GraphStageParameter::GainLinear, 2, 0.4),
+                stage_event("gain", 0, GraphStageParameter::GainLinear, 3, 0.6),
+                stage_event("gain", 0, GraphStageParameter::GainLinear, 4, 0.8),
+            ],
+            GraphParameterApplicationStrategy::SplitAtEvents { max_sub_blocks: 3 },
+        );
+
+        let report = graph.process_with_parameter_batch(
+            &mut buffer,
+            GraphExecutionContext::default(),
+            Some(&batch),
+        );
+
+        assert_eq!(buffer.samples(), &[0.0, 0.2, 0.8, 0.8, 0.8, 0.8]);
+        assert_eq!(report.parameter_sub_block_count, 3);
+        assert_eq!(report.parameter_coalesced_event_count, 2);
     }
 
     #[test]
@@ -2699,8 +2903,10 @@ mod tests {
                     },
                     topology: GraphNodeTopologyMetadata {
                         role: Some(GraphNodeTopologyRole::TrackLane),
-                        lane_id: Some("track:vox".into()),
+                        track_lane_id: Some("track:vox".into()),
                         bus_group_id: Some("mix".into()),
+                        console_group_id: None,
+                        send_return_id: None,
                     },
                     ..test_node(
                         "track",
@@ -2717,8 +2923,10 @@ mod tests {
                     },
                     topology: GraphNodeTopologyMetadata {
                         role: Some(GraphNodeTopologyRole::ConsoleNode),
-                        lane_id: None,
-                        bus_group_id: Some("console:main".into()),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: Some("console:main".into()),
+                        send_return_id: None,
                     },
                     ..test_node(
                         "console",
@@ -2768,8 +2976,10 @@ mod tests {
                     },
                     topology: GraphNodeTopologyMetadata {
                         role: Some(GraphNodeTopologyRole::Send),
-                        lane_id: None,
-                        bus_group_id: Some("fx".into()),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: Some("fx".into()),
                     },
                     ..test_node(
                         "send",
@@ -2788,6 +2998,106 @@ mod tests {
             .issues
             .iter()
             .any(|issue| matches!(issue, GraphContractIssue::SendRequiresDistinctBuses { .. })));
+    }
+
+    #[test]
+    fn contract_summary_requires_explicit_mixer_topology_ids() {
+        let graph = ExecutableGraph::new(
+            "graph:topology-ids",
+            vec![
+                GraphNodeSpec {
+                    topology: GraphNodeTopologyMetadata {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: None,
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                    ..routed_node(
+                        "track",
+                        "main:in",
+                        ChannelLayout::Stereo,
+                        "bus:tracks",
+                        ChannelLayout::Stereo,
+                        GraphNodeTopologyRole::TrackLane,
+                        vec![],
+                    )
+                },
+                GraphNodeSpec {
+                    topology: GraphNodeTopologyMetadata {
+                        role: Some(GraphNodeTopologyRole::Bus),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                    ..routed_node(
+                        "bus",
+                        "bus:tracks",
+                        ChannelLayout::Stereo,
+                        "bus:master",
+                        ChannelLayout::Stereo,
+                        GraphNodeTopologyRole::Bus,
+                        vec![],
+                    )
+                },
+                GraphNodeSpec {
+                    topology: GraphNodeTopologyMetadata {
+                        role: Some(GraphNodeTopologyRole::Send),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                    ..routed_node(
+                        "send",
+                        "bus:tracks",
+                        ChannelLayout::Stereo,
+                        "bus:fx",
+                        ChannelLayout::Stereo,
+                        GraphNodeTopologyRole::Send,
+                        vec![],
+                    )
+                },
+                GraphNodeSpec {
+                    topology: GraphNodeTopologyMetadata {
+                        role: Some(GraphNodeTopologyRole::ConsoleNode),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                    ..routed_node(
+                        "console",
+                        "bus:master",
+                        ChannelLayout::Stereo,
+                        "main:out",
+                        ChannelLayout::Stereo,
+                        GraphNodeTopologyRole::ConsoleNode,
+                        vec![],
+                    )
+                },
+            ],
+        );
+
+        let summary = graph.contract_summary();
+
+        assert!(summary.issues.iter().any(|issue| matches!(
+            issue,
+            GraphContractIssue::MissingTrackLaneId { node_id } if node_id == "track"
+        )));
+        assert!(summary.issues.iter().any(|issue| matches!(
+            issue,
+            GraphContractIssue::MissingBusGroupId { node_id } if node_id == "bus"
+        )));
+        assert!(summary.issues.iter().any(|issue| matches!(
+            issue,
+            GraphContractIssue::MissingSendReturnId { node_id } if node_id == "send"
+        )));
+        assert!(summary.issues.iter().any(|issue| matches!(
+            issue,
+            GraphContractIssue::MissingConsoleGroupId { node_id } if node_id == "console"
+        )));
     }
 
     #[test]

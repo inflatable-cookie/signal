@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-11
+Updated: 2026-03-12
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -63,9 +63,13 @@ Current graph features:
   - reset policy
 - topology metadata per node:
   - role
-  - lane id
+  - track-lane id
   - bus-group id
+  - console-group id
+  - send/return id
 - contract validation and contract summaries
+- contract validation now treats missing topology ownership ids as explicit
+  issues for track, bus, send/return, and console roles
 - routed bus execution with:
   - direct edges
   - fan-in bus mixing
@@ -178,7 +182,8 @@ Current runtime features:
   - `Server`
 - handshake, configure, start, stop, restart, and safe-mode control
 - graph projection receipt and projection epoch tracking
-- schedule, transport, parameter-batch, and plugin-binding application
+- schedule, transport, parameter-batch, plugin-binding, and automation
+  projection application
 - runtime-owned execution of `signal-graph` blocks
 - runtime-owned engine, control, timeline, automation, diagnostics, and
   supervision snapshots
@@ -191,6 +196,8 @@ Key observation structs include:
 - `RuntimeTimelineSnapshot`
 - `RuntimeAutomationSnapshot`
 - `RuntimeEngineBlockSnapshot`
+- `RuntimeMeteringSnapshot`
+- `RuntimeExecutionTopologySummary`
 - `RuntimeTransportConcurrencySnapshot`
 - `RuntimeSupervisionSnapshot`
 - `RuntimeDiagnosticsSnapshot`
@@ -216,11 +223,135 @@ Current timeline tracking includes:
 
 Current automation tracking includes:
 
+- projected automation lane, point, and segment counts
+- typed automation targets as explicit `node_id` plus `parameter_id` pairs
+- explicit interpolation families:
+  - `Hold`
+  - `Linear`
+- per-lane playback policy:
+  - `ramp_step_samples`
+  - `max_sub_blocks`
+- mapped versus unmapped projected-lane counts
+- hold-lane versus linear-lane counts
+- last projected batch strategy, ramp-step, and sample-offset summaries
 - parameter event and modulation counts
 - gesture counts
 - first/last values
 - first/last epochs
 - segment counts and lease rollovers
+
+Current tempo-map and warp tracking includes:
+
+- runtime-owned tempo-map segments with explicit `Hold` and `Linear` timing
+  interpolation
+- resolved project-tempo source tracking:
+  - `DefaultFallback`
+  - `TransportProjection`
+  - `TempoMapSegment`
+- active tempo-map segment identity, next-segment visibility, and resolved
+  project tempo at the current transport position
+- warp clip readiness and realized ratio summaries that preserve the source
+  tempo, resolved project tempo, and active tempo-map segment provenance
+- warp degraded-state visibility for unsupported ratios, missing source tempo,
+  missing media assets, and not-ready cached media
+- shared tempo-map and warp export carried through:
+  - `RuntimeObservationReport`
+  - `RuntimeSupervisorReport`
+  - host observation/supervisor JSON surfaces
+
+Current clip-processing tracking includes:
+
+- runtime-owned clip fade envelopes with explicit shape families:
+  - `Linear`
+  - `EqualPower`
+  - `SmoothStep`
+- runtime-owned clip gain envelopes with explicit shape families:
+  - `Hold`
+  - `Linear`
+- ordered clip-treatment stages carried per clip:
+  - `Warp`
+  - `FadeIn`
+  - `GainShape`
+  - `FadeOut`
+- clip-processing readiness and validation for:
+  - missing media assets
+  - not-yet-realized warp state
+  - degraded warp state
+  - invalid gain-envelope or fade-duration requests
+- clip-processing snapshots that preserve realized warp ratio plus project-tempo
+  provenance alongside the fade/gain treatment order
+- runtime-owned clip-render request/result seam that applies fade and gain
+  envelopes against timeline-relative clip positions on provided post-warp
+  buffers
+- render-path validation that:
+  - silences samples outside the clip bounds
+  - enforces post-warp input for warp-enabled clip renders
+  - preserves the same treatment-order metadata used by observation/export
+- shared clip-processing export carried through:
+  - `RuntimeObservationReport`
+  - `RuntimeSupervisorReport`
+  - host observation/supervisor JSON surfaces
+
+Current offline-render contract tracking includes:
+
+- runtime-owned offline render request surfaces:
+  - `RuntimeOfflineRenderRequest`
+  - `RuntimeOfflineRenderStemTarget`
+  - `RuntimeOfflineFreezeArtifactRequest`
+- runtime-owned preview surfaces:
+  - `RuntimeOfflineRenderContractPreview`
+  - `RuntimeOfflineRenderStemPreview`
+  - `RuntimeOfflineFreezeArtifactPreview`
+- runtime-owned render result surfaces:
+  - `RuntimeOfflineRenderResult`
+  - `RuntimeOfflineRenderStemResult`
+  - `RuntimeOfflineFreezeArtifactResult`
+- target resolution for:
+  - main mix
+  - track lanes
+  - bus groups
+  - console groups
+  - send/return groups
+- contract-preview derivation that reuses runtime-owned:
+  - routed execution topology
+  - clip-processing pipeline snapshots
+  - tempo-map snapshots
+  - plugin recall handoff selections
+- first offline-render engine path that:
+  - decodes runtime-cached WAV media assets
+  - reapplies clip fade/gain treatment through the existing clip-render seam
+  - executes the graph to produce main mix output
+  - captures requested routed bus outputs for stems
+  - clones rendered stem audio into freeze artifacts while preserving recall
+    handoff metadata
+- freeze artifact preview that keeps recall ownership in
+  `RuntimePluginRecallHandoffSnapshot` and resolves stable handoff stage ids
+  rather than requiring supervisor/export parsing
+- current proof-path constraints:
+  - export sample rate must match the runtime sample rate
+  - media decode is currently WAV-only
+  - plugin-backed offline stages reuse cached render overrides rather than
+    driving a dedicated offline sandbox pass
+
+Current metering and diagnostics export includes:
+
+- flat meter-source snapshots with explicit track-lane, bus-group,
+  console-group, and send/return ownership ids
+- loudness-oriented runtime export for:
+  - main output peak/RMS
+  - momentary loudness
+  - short-term loudness
+  - integrated loudness
+  - clipped-sample counts
+- routed meter aggregation on top of `RuntimeExecutionTopologySummary` for:
+  - track lanes
+  - bus groups
+  - console groups
+  - send/return groups
+- shared metering export carried through:
+  - `RuntimeObservationReport`
+  - `RuntimeSupervisorReport`
+  - host observation/supervisor JSON surfaces
 
 ## Runtime Scheduler And Prework
 
@@ -229,6 +360,13 @@ Current engine snapshot features:
 - graph/planning summary mirrored from `signal-graph`
 - scheduler topology summary for track lanes, bus groups, send/return groups,
   and console groups
+- routed mixer execution summary with:
+  - lane summaries
+  - node summaries
+  - track-lane ownership summaries
+  - bus-group summaries
+  - send/return summaries
+  - console-group summaries
 - anticipative planning and dispatch counts
 - prepared-dispatch versus realtime-dispatch metrics
 - prework cache state, queue depth, and queue capacity
@@ -292,6 +430,35 @@ Implemented now:
 - planning groups, execution lanes, and dispatch-order reporting
 - block-local sample-offset parameter-event application
 - runtime-owned graph execution and engine-block observation
+- runtime-owned routed metering, loudness snapshots, and supervisor-facing
+  export on explicit mixer topology
+- runtime-owned typed automation playback projections with hold/linear
+  interpolation, per-lane resolution policy, and multi-block parameter-batch
+  realization through `signal-graph`
+- runtime-owned tempo-map projections and warp clip snapshots with explicit
+  timing intent versus realized project-tempo source, plus degraded/fallback
+  reporting on top of media-cache readiness
+- runtime-owned clip-render request/result seam that applies fade and gain
+  envelopes through typed clip-treatment contracts instead of host-local media
+  logic
+- runtime-owned plugin-chain snapshots that preserve planned chain order,
+  realized per-stage latency/tail state, compensation readiness, and typed
+  recall payload/status export through observation and supervisor reports
+- runtime-owned plugin recall handoff snapshots that separate authoritative
+  recall payload from export-only summary fields for later offline
+  render/freeze consumers
+- runtime-owned offline render request and contract-preview surfaces that let
+  later render/freeze callers resolve stem topology, clip readiness, tempo, and
+  plugin recall dependencies directly from runtime-owned state before a full
+  engine path exists
+- runtime-owned offline render result surfaces plus a first block-based engine
+  path that combines runtime media cache access, clip treatment, graph
+  execution, captured bus output, and recall-backed freeze export without
+  relying on supervisor/export parsing
+- runtime-owned routed topology summaries that carry aggregated plugin-chain
+  latency/compensation state per track lane, bus group, console group, and
+  send/return route, plus node-level recall payload/status and compensation
+  export that survives rebinding and clears cleanly on graph refresh
 - runtime-owned anticipative prework forecasting, queueing, and service-state
   reporting
 - runtime-owned transport concurrency and lingering-cleanup workflow surfaces
@@ -317,6 +484,6 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Add API-local examples that exercise `ExecutableGraph` and `SignalRuntime`
-directly so the current-state graph/runtime reference is backed by runnable
-usage paths, not only architecture summaries.
+Continue `g03.007` by hardening the current offline render path into richer
+artifact/report receipts and by closing the current sample-rate, media-format,
+and plugin-freshness parity gaps before opening `g03.008`.

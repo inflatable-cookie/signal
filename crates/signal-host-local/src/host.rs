@@ -3310,8 +3310,10 @@ fn local_demo_graph_contract_projection(graph_id: &str) -> GraphContractProjecti
                 },
                 topology: GraphNodeTopologyProjection {
                     role: Some(GraphNodeTopologyRole::TrackLane),
-                    lane_id: Some("track:lead".into()),
+                    track_lane_id: Some("track:lead".into()),
                     bus_group_id: Some("mix:tracks".into()),
+                    console_group_id: None,
+                    send_return_id: None,
                 },
             },
             GraphNodeContractProjection {
@@ -3329,8 +3331,10 @@ fn local_demo_graph_contract_projection(graph_id: &str) -> GraphContractProjecti
                 },
                 topology: GraphNodeTopologyProjection {
                     role: Some(GraphNodeTopologyRole::TrackLane),
-                    lane_id: Some("track:lead".into()),
+                    track_lane_id: Some("track:lead".into()),
                     bus_group_id: Some("mix:tracks".into()),
+                    console_group_id: None,
+                    send_return_id: None,
                 },
             },
             GraphNodeContractProjection {
@@ -3348,8 +3352,10 @@ fn local_demo_graph_contract_projection(graph_id: &str) -> GraphContractProjecti
                 },
                 topology: GraphNodeTopologyProjection {
                     role: Some(GraphNodeTopologyRole::Bus),
-                    lane_id: None,
+                    track_lane_id: None,
                     bus_group_id: Some("mix:master".into()),
+                    console_group_id: None,
+                    send_return_id: None,
                 },
             },
             GraphNodeContractProjection {
@@ -3367,8 +3373,10 @@ fn local_demo_graph_contract_projection(graph_id: &str) -> GraphContractProjecti
                 },
                 topology: GraphNodeTopologyProjection {
                     role: Some(GraphNodeTopologyRole::ConsoleNode),
-                    lane_id: None,
-                    bus_group_id: Some("console:main".into()),
+                    track_lane_id: None,
+                    bus_group_id: None,
+                    console_group_id: Some("console:main".into()),
+                    send_return_id: None,
                 },
             },
         ],
@@ -3985,7 +3993,7 @@ mod tests {
         assert_eq!(topology.console_group_count, 1);
         assert!(topology.nodes.iter().any(|node| {
             node.node_id == "track-input"
-                && node.lane_id.as_deref() == Some("track:lead")
+                && node.track_lane_id.as_deref() == Some("track:lead")
                 && node.bus_group_id.as_deref() == Some("mix:tracks")
                 && node.input_bus_id == "main:in"
                 && node.output_bus_id == "bus:track:lead"
@@ -3993,7 +4001,7 @@ mod tests {
         assert!(topology.nodes.iter().any(|node| {
             node.node_id == LOCAL_DEMO_PLUGIN_NODE_ID
                 && node.topology_role == GraphNodeTopologyRole::TrackLane
-                && node.lane_id.as_deref() == Some("track:lead")
+                && node.track_lane_id.as_deref() == Some("track:lead")
                 && node.bus_group_id.as_deref() == Some("mix:tracks")
                 && node.plugin_sandbox_id.as_deref() == Some("local-default-sandbox")
                 && node.input_bus_id == "bus:track:lead"
@@ -6538,6 +6546,9 @@ mod tests {
         assert!(report
             .render_compact()
             .contains("host_audio_graph_matches_runtime=true"));
+        assert!(report
+            .render_compact()
+            .contains("metering_snapshot_routes=1/2/0/1"));
         assert!(report.render_multiline().contains("host_backend=coreaudio"));
         assert!(report.render_json().contains("\"device_loss_count\":0"));
         assert!(report
@@ -6546,6 +6557,9 @@ mod tests {
         assert!(report
             .render_json()
             .contains("\"estimated_output_latency_samples\":536"));
+        assert!(report
+            .render_json()
+            .contains("\"metering_snapshot\":{\"meter_count\":"));
     }
 
     #[test]
@@ -6599,7 +6613,9 @@ mod tests {
         assert!(report
             .render_json()
             .contains("\"plugin_sandbox_id\":\"local-default-sandbox\""));
-        assert!(report.render_json().contains("\"lane_id\":\"track:lead\""));
+        assert!(report
+            .render_json()
+            .contains("\"track_lane_id\":\"track:lead\""));
         assert!(report
             .render_json()
             .contains("\"bus_group_id\":\"mix:tracks\""));

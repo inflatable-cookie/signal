@@ -166,8 +166,10 @@ impl Default for GraphNodeBufferContractProjection {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GraphNodeTopologyProjection {
     pub role: Option<GraphNodeTopologyRole>,
-    pub lane_id: Option<String>,
+    pub track_lane_id: Option<String>,
     pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -344,6 +346,9 @@ pub enum RuntimeSchedulerTopologyIssue {
         node_count: usize,
     },
     MissingBusGroupIds {
+        node_count: usize,
+    },
+    MissingSendReturnIds {
         node_count: usize,
     },
     MissingConsoleGroupIds {
@@ -524,6 +529,12 @@ pub struct RuntimeEngineBlockSnapshot {
     pub max_node_tail_samples: u32,
     pub output_tail_samples: u32,
     pub max_bus_tail_samples: u32,
+    pub parameter_epoch: Option<u64>,
+    pub parameter_event_count: usize,
+    pub parameter_targeted_node_count: usize,
+    pub parameter_ignored_event_count: usize,
+    pub parameter_sub_block_count: usize,
+    pub parameter_coalesced_event_count: usize,
     pub processed_blocks: u64,
     pub last_processing_epoch: Option<u64>,
     pub last_block_sequence: Option<u64>,
@@ -599,8 +610,10 @@ pub struct RuntimePlannedGraphNode {
     pub group: GraphNodePlanningGroup,
     pub latency_samples: u32,
     pub topology_role: GraphNodeTopologyRole,
-    pub lane_id: Option<String>,
+    pub track_lane_id: Option<String>,
     pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
     pub input_bus_id: String,
     pub output_bus_id: String,
     pub plugin_sandbox_id: Option<String>,
@@ -610,6 +623,7 @@ pub struct RuntimePlannedGraphNode {
 pub struct RuntimeEngineBlockResult {
     pub snapshot: RuntimeEngineBlockSnapshot,
     pub output: AudioBuffer,
+    pub meter_sources: Vec<RuntimeMeterSourceSnapshot>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -635,6 +649,7 @@ pub struct TransportProjection {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParameterEvent {
     pub target: String,
+    pub sample_offset: usize,
     pub normalized_value: f32,
 }
 
@@ -646,6 +661,63 @@ pub struct ParameterEvent {
 pub struct ParameterBatch {
     pub epoch: u64,
     pub events: Vec<ParameterEvent>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeAutomationInterpolation {
+    Hold,
+    Linear,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RuntimeAutomationResolution {
+    pub ramp_step_samples: usize,
+    pub max_sub_blocks: usize,
+}
+
+impl Default for RuntimeAutomationResolution {
+    fn default() -> Self {
+        Self {
+            ramp_step_samples: 32,
+            max_sub_blocks: 8,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeAutomationTargetProjection {
+    pub node_id: String,
+    pub parameter_id: String,
+}
+
+impl RuntimeAutomationTargetProjection {
+    pub fn parameter_path(&self) -> String {
+        format!("{}.{}", self.node_id, self.parameter_id)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeAutomationPointProjection {
+    pub time_samples: i64,
+    pub normalized_value: f32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeAutomationLaneProjection {
+    pub automation_lane_id: String,
+    pub target: RuntimeAutomationTargetProjection,
+    pub base_normalized_value: f32,
+    pub interpolation: RuntimeAutomationInterpolation,
+    pub resolution: RuntimeAutomationResolution,
+    pub point_count: usize,
+    pub points: Vec<RuntimeAutomationPointProjection>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeAutomationProjection {
+    pub lane_count: usize,
+    pub point_count: usize,
+    pub lanes: Vec<RuntimeAutomationLaneProjection>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -832,6 +904,62 @@ pub enum RuntimeWarpMode {
     ElastiqueDraft,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTempoMapInterpolation {
+    #[default]
+    Hold,
+    Linear,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeTempoMapSegmentProjection {
+    pub segment_id: String,
+    pub start_samples: i64,
+    pub end_samples: Option<i64>,
+    pub start_tempo_bpm: f64,
+    pub end_tempo_bpm: Option<f64>,
+    pub interpolation: RuntimeTempoMapInterpolation,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeTempoMapProjection {
+    pub segment_count: usize,
+    pub segments: Vec<RuntimeTempoMapSegmentProjection>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTempoSource {
+    #[default]
+    DefaultFallback,
+    TransportProjection,
+    TempoMapSegment,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeTempoMapSegmentSnapshot {
+    pub segment_id: String,
+    pub start_samples: i64,
+    pub end_samples: Option<i64>,
+    pub start_tempo_bpm: f64,
+    pub end_tempo_bpm: Option<f64>,
+    pub interpolation: RuntimeTempoMapInterpolation,
+    pub covers_timeline_position: bool,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeTempoMapSnapshot {
+    pub segment_count: usize,
+    pub active_segment_id: Option<String>,
+    pub active_segment_index: Option<usize>,
+    pub next_segment_start_samples: Option<i64>,
+    pub resolved_tempo_bpm: f64,
+    pub tempo_source: RuntimeTempoSource,
+    pub timeline_position_samples: Option<i64>,
+    pub segments: Vec<RuntimeTempoMapSegmentSnapshot>,
+    pub summary: String,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeWarpReadiness {
     Bypassed,
@@ -857,6 +985,8 @@ pub struct RuntimeWarpClipSnapshot {
     pub mode: RuntimeWarpMode,
     pub source_tempo_bpm: Option<f64>,
     pub project_tempo_bpm: f64,
+    pub project_tempo_source: RuntimeTempoSource,
+    pub project_tempo_segment_id: Option<String>,
     pub realized_ratio: f64,
     pub anchor_timeline_samples: i64,
     pub start_samples: i64,
@@ -873,12 +1003,276 @@ pub struct RuntimeWarpPipelineSnapshot {
     pub degraded_clip_count: usize,
     pub bypassed_clip_count: usize,
     pub active_warp_count: usize,
+    pub resolved_project_tempo_bpm: f64,
+    pub resolved_project_tempo_source: RuntimeTempoSource,
+    pub resolved_project_tempo_segment_id: Option<String>,
     pub clips: Vec<RuntimeWarpClipSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeClipProcessingReadiness {
+    Ready,
+    PendingMedia,
+    PendingWarp,
+    Invalid,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeClipFadeShape {
+    #[default]
+    Linear,
+    EqualPower,
+    SmoothStep,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeClipGainShape {
+    #[default]
+    Hold,
+    Linear,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeClipProcessingStage {
+    Warp,
+    FadeIn,
+    GainShape,
+    FadeOut,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeClipFadeEnvelope {
+    pub duration_samples: u32,
+    pub shape: RuntimeClipFadeShape,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeClipGainEnvelope {
+    pub start_linear: f32,
+    pub end_linear: f32,
+    pub shape: RuntimeClipGainShape,
+}
+
+impl Default for RuntimeClipGainEnvelope {
+    fn default() -> Self {
+        Self {
+            start_linear: 1.0,
+            end_linear: 1.0,
+            shape: RuntimeClipGainShape::Hold,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeClipProcessingRegistration {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub warp_mode: RuntimeWarpMode,
+    pub start_samples: i64,
+    pub duration_samples: u32,
+    pub fade_in: RuntimeClipFadeEnvelope,
+    pub fade_out: RuntimeClipFadeEnvelope,
+    pub clip_gain: RuntimeClipGainEnvelope,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeClipProcessingSnapshot {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub warp_mode: RuntimeWarpMode,
+    pub start_samples: i64,
+    pub duration_samples: u32,
+    pub fade_in: RuntimeClipFadeEnvelope,
+    pub fade_out: RuntimeClipFadeEnvelope,
+    pub fade_in_end_samples: i64,
+    pub fade_out_start_samples: i64,
+    pub clip_gain: RuntimeClipGainEnvelope,
+    pub treatment_stages: Vec<RuntimeClipProcessingStage>,
+    pub realized_warp_ratio: Option<f64>,
+    pub project_tempo_source: Option<RuntimeTempoSource>,
+    pub project_tempo_segment_id: Option<String>,
+    pub readiness: RuntimeClipProcessingReadiness,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeClipProcessingPipelineSnapshot {
+    pub clip_count: usize,
+    pub ready_clip_count: usize,
+    pub pending_media_clip_count: usize,
+    pub pending_warp_clip_count: usize,
+    pub invalid_clip_count: usize,
+    pub faded_clip_count: usize,
+    pub gain_shaped_clip_count: usize,
+    pub warped_clip_count: usize,
+    pub treatment_stage_count: usize,
+    pub clips: Vec<RuntimeClipProcessingSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeClipRenderInputStage {
+    RawClip,
+    #[default]
+    PostWarp,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeClipRenderRequest {
+    pub clip_id: String,
+    pub timeline_start_samples: i64,
+    pub input_stage: RuntimeClipRenderInputStage,
+    pub buffer: AudioBuffer,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeClipRenderResult {
+    pub clip_id: String,
+    pub timeline_start_samples: i64,
+    pub timeline_end_samples: i64,
+    pub input_stage: RuntimeClipRenderInputStage,
+    pub clip_processing_snapshot: RuntimeClipProcessingSnapshot,
+    pub first_frame_gain: Option<f32>,
+    pub last_frame_gain: Option<f32>,
+    pub peak_applied_gain: Option<f32>,
+    pub output: AudioBuffer,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeOfflineRenderTargetKind {
+    MainMix,
+    TrackLane,
+    BusGroup,
+    ConsoleGroup,
+    SendReturn,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderStemTarget {
+    pub stem_id: String,
+    pub target_kind: RuntimeOfflineRenderTargetKind,
+    pub target_id: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflineFreezeArtifactRequest {
+    pub artifact_id: String,
+    pub source_stem_id: String,
+    pub recall_selection: RuntimePluginRecallHandoffSelection,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderRequest {
+    pub request_id: String,
+    pub timeline_start_samples: i64,
+    pub duration_samples: u32,
+    pub export_sample_rate_hz: u32,
+    pub include_main_mix: bool,
+    pub stem_targets: Vec<RuntimeOfflineRenderStemTarget>,
+    pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactRequest>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderStemPreview {
+    pub stem_id: String,
+    pub target_kind: RuntimeOfflineRenderTargetKind,
+    pub target_id: Option<String>,
+    pub resolved_node_ids: Vec<String>,
+    pub resolved_output_bus_ids: Vec<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineFreezeArtifactPreview {
+    pub artifact_id: String,
+    pub source_stem_id: String,
+    pub recall_stage_count: usize,
+    pub recall_stage_ids: Vec<RuntimePluginRecallHandoffStageId>,
+    pub recall_states: Vec<RuntimePluginRecallState>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineRenderContractPreview {
+    pub request_id: String,
+    pub timeline_start_samples: i64,
+    pub timeline_end_samples: i64,
+    pub duration_samples: u32,
+    pub export_sample_rate_hz: u32,
+    pub include_main_mix: bool,
+    pub clip_count: usize,
+    pub ready_clip_count: usize,
+    pub stem_count: usize,
+    pub freeze_artifact_count: usize,
+    pub resolved_tempo_bpm: f64,
+    pub resolved_tempo_source: RuntimeTempoSource,
+    pub stem_targets: Vec<RuntimeOfflineRenderStemPreview>,
+    pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactPreview>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineRenderStemResult {
+    pub stem_id: String,
+    pub target_kind: RuntimeOfflineRenderTargetKind,
+    pub target_id: Option<String>,
+    pub output: AudioBuffer,
+    pub peak_level: f32,
+    pub rms_level: f32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineFreezeArtifactResult {
+    pub artifact_id: String,
+    pub source_stem_id: String,
+    pub recall_stage_count: usize,
+    pub recall_stage_ids: Vec<RuntimePluginRecallHandoffStageId>,
+    pub recall_states: Vec<RuntimePluginRecallState>,
+    pub output: AudioBuffer,
+    pub peak_level: f32,
+    pub rms_level: f32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineRenderResult {
+    pub request_id: String,
+    pub rendered_frame_count: usize,
+    pub block_count: usize,
+    pub export_sample_rate_hz: u32,
+    pub main_mix: Option<AudioBuffer>,
+    pub main_mix_peak_level: Option<f32>,
+    pub main_mix_rms_level: Option<f32>,
+    pub stems: Vec<RuntimeOfflineRenderStemResult>,
+    pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactResult>,
+    pub contract_preview: RuntimeOfflineRenderContractPreview,
     pub summary: String,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RuntimeAutomationSnapshot {
+    pub lane_count: usize,
+    pub point_count: usize,
+    pub projected_segment_count: usize,
+    pub mapped_lane_count: usize,
+    pub unmapped_lane_count: usize,
+    pub hold_lane_count: usize,
+    pub linear_lane_count: usize,
+    pub last_batch_epoch: Option<u64>,
+    pub last_batch_event_count: usize,
+    pub last_batch_ignored_event_count: usize,
+    pub last_batch_sub_block_count: usize,
+    pub last_batch_coalesced_event_count: usize,
+    pub last_batch_strategy_max_sub_blocks: usize,
+    pub last_batch_min_ramp_step_samples: Option<usize>,
+    pub last_batch_max_sample_offset: Option<usize>,
+    pub last_block_sequence: Option<u64>,
+    pub last_timeline_position_samples: Option<i64>,
+    pub transport_playing: Option<bool>,
     pub parameter_id: u32,
     pub value_events: usize,
     pub modulation_events: usize,
@@ -1002,6 +1396,288 @@ pub struct RuntimeTransportConcurrencySnapshot {
     pub last_rejection_reason: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginLifecycleState {
+    Booting,
+    Ready,
+    Degraded,
+    Faulted,
+    Restarting,
+    Quarantined,
+    #[default]
+    Stopped,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginSandboxSnapshot {
+    pub sandbox_id: String,
+    pub plugin_type_id: Option<String>,
+    pub instance_id: Option<String>,
+    pub state: RuntimePluginLifecycleState,
+    pub lifecycle_stage: Option<PluginSandboxLifecycleStage>,
+    pub transport_stage: Option<PluginSandboxTransportStage>,
+    pub active: bool,
+    pub active_transport: bool,
+    pub restart_count: u32,
+    pub recovery_count: u32,
+    pub fault_count: u32,
+    pub last_fault_kind: Option<PluginFaultKind>,
+    pub last_fault_detail: Option<String>,
+    pub last_restart_intent: Option<RecoveryRestartIntent>,
+    pub last_stop_reason: Option<StopReason>,
+    pub last_processing_epoch: Option<u64>,
+    pub readiness_state: Option<String>,
+    pub degraded_reasons: Vec<String>,
+    pub active_lease_id: Option<String>,
+    pub active_region_id: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginLifecycleSnapshot {
+    pub sandbox_count: usize,
+    pub active_sandbox_count: u32,
+    pub ready_sandbox_count: usize,
+    pub booting_sandbox_count: usize,
+    pub degraded_sandbox_count: usize,
+    pub faulted_sandbox_count: usize,
+    pub restarting_sandbox_count: usize,
+    pub quarantined_sandbox_count: usize,
+    pub stopped_sandbox_count: usize,
+    pub sandboxes: Vec<RuntimePluginSandboxSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginRecallState {
+    #[default]
+    Unbound,
+    Cold,
+    Warm,
+    Recovered,
+    Unavailable,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginRecallPayload {
+    pub sandbox_id: Option<String>,
+    pub lifecycle_state: Option<RuntimePluginLifecycleState>,
+    pub lifecycle_stage: Option<PluginSandboxLifecycleStage>,
+    pub transport_stage: Option<PluginSandboxTransportStage>,
+    pub readiness_state: Option<String>,
+    pub recovery_count: u32,
+    pub restart_count: u32,
+    pub fault_count: u32,
+    pub last_restart_intent: Option<RecoveryRestartIntent>,
+    pub last_stop_reason: Option<StopReason>,
+    pub last_fault_kind: Option<PluginFaultKind>,
+    pub last_fault_detail: Option<String>,
+    pub degraded_reasons: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginRecallSnapshot {
+    pub state: RuntimePluginRecallState,
+    pub payload: RuntimePluginRecallPayload,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginCompensationState {
+    #[default]
+    MissingBinding,
+    PendingRender,
+    Settling,
+    Compensated,
+    Bypassed,
+    Degraded,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginChainStageSnapshot {
+    pub node_id: String,
+    pub stage_index: usize,
+    pub sandbox_id: Option<String>,
+    pub track_lane_id: Option<String>,
+    pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
+    pub lifecycle_state: Option<RuntimePluginLifecycleState>,
+    pub recall_state: RuntimePluginRecallState,
+    pub recall: RuntimePluginRecallSnapshot,
+    pub compensation_state: RuntimePluginCompensationState,
+    pub planned_latency_samples: u32,
+    pub realized_latency_samples: Option<u32>,
+    pub tail_samples: Option<u32>,
+    pub bypassed: bool,
+    pub active_transport: bool,
+    pub degraded_reasons: Vec<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginExecutionChainSummary {
+    pub chain_id: String,
+    pub track_lane_id: Option<String>,
+    pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
+    pub stage_count: usize,
+    pub pending_render_stage_count: usize,
+    pub settling_stage_count: usize,
+    pub compensated_stage_count: usize,
+    pub degraded_stage_count: usize,
+    pub bypassed_stage_count: usize,
+    pub missing_binding_stage_count: usize,
+    pub total_planned_latency_samples: u32,
+    pub total_realized_latency_samples: u32,
+    pub total_tail_samples: u32,
+    pub stages: Vec<RuntimePluginChainStageSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginChainSnapshot {
+    pub chain_count: usize,
+    pub stage_count: usize,
+    pub pending_render_stage_count: usize,
+    pub settling_stage_count: usize,
+    pub compensated_stage_count: usize,
+    pub degraded_stage_count: usize,
+    pub bypassed_stage_count: usize,
+    pub missing_binding_stage_count: usize,
+    pub total_planned_latency_samples: u32,
+    pub total_realized_latency_samples: u32,
+    pub total_tail_samples: u32,
+    pub chains: Vec<RuntimePluginExecutionChainSummary>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginRecallHandoffStageId {
+    pub chain_id: String,
+    pub stage_index: usize,
+    pub node_id: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginRecallHandoffSelection {
+    pub stage_count: usize,
+    pub stage_ids: Vec<RuntimePluginRecallHandoffStageId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginRecallHandoffStage {
+    pub stage_id: RuntimePluginRecallHandoffStageId,
+    pub node_id: String,
+    pub stage_index: usize,
+    pub chain_id: String,
+    pub track_lane_id: Option<String>,
+    pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
+    pub recall_state: RuntimePluginRecallState,
+    pub recall_payload: RuntimePluginRecallPayload,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginRecallHandoffSnapshot {
+    pub stage_count: usize,
+    pub unbound_stage_count: usize,
+    pub cold_stage_count: usize,
+    pub warm_stage_count: usize,
+    pub recovered_stage_count: usize,
+    pub unavailable_stage_count: usize,
+    pub stages: Vec<RuntimePluginRecallHandoffStage>,
+    pub summary: String,
+}
+
+impl RuntimePluginRecallHandoffSnapshot {
+    pub fn from_plugin_chain_snapshot(snapshot: &RuntimePluginChainSnapshot) -> Self {
+        let stages = snapshot
+            .chains
+            .iter()
+            .flat_map(|chain| {
+                chain
+                    .stages
+                    .iter()
+                    .map(|stage| RuntimePluginRecallHandoffStage {
+                        stage_id: RuntimePluginRecallHandoffStageId {
+                            chain_id: chain.chain_id.clone(),
+                            stage_index: stage.stage_index,
+                            node_id: stage.node_id.clone(),
+                        },
+                        node_id: stage.node_id.clone(),
+                        stage_index: stage.stage_index,
+                        chain_id: chain.chain_id.clone(),
+                        track_lane_id: stage.track_lane_id.clone(),
+                        bus_group_id: stage.bus_group_id.clone(),
+                        console_group_id: stage.console_group_id.clone(),
+                        send_return_id: stage.send_return_id.clone(),
+                        recall_state: stage.recall_state,
+                        recall_payload: stage.recall.payload.clone(),
+                    })
+            })
+            .collect::<Vec<_>>();
+        let mut handoff = Self {
+            stage_count: stages.len(),
+            unbound_stage_count: stages
+                .iter()
+                .filter(|stage| stage.recall_state == RuntimePluginRecallState::Unbound)
+                .count(),
+            cold_stage_count: stages
+                .iter()
+                .filter(|stage| stage.recall_state == RuntimePluginRecallState::Cold)
+                .count(),
+            warm_stage_count: stages
+                .iter()
+                .filter(|stage| stage.recall_state == RuntimePluginRecallState::Warm)
+                .count(),
+            recovered_stage_count: stages
+                .iter()
+                .filter(|stage| stage.recall_state == RuntimePluginRecallState::Recovered)
+                .count(),
+            unavailable_stage_count: stages
+                .iter()
+                .filter(|stage| stage.recall_state == RuntimePluginRecallState::Unavailable)
+                .count(),
+            stages,
+            summary: String::new(),
+        };
+        handoff.summary = format!(
+            "stages={} unbound={} cold={} warm={} recovered={} unavailable={}",
+            handoff.stage_count,
+            handoff.unbound_stage_count,
+            handoff.cold_stage_count,
+            handoff.warm_stage_count,
+            handoff.recovered_stage_count,
+            handoff.unavailable_stage_count,
+        );
+        handoff
+    }
+
+    pub fn resolve_stage(
+        &self,
+        stage_id: &RuntimePluginRecallHandoffStageId,
+    ) -> Option<&RuntimePluginRecallHandoffStage> {
+        self.stages.iter().find(|stage| &stage.stage_id == stage_id)
+    }
+
+    pub fn resolve_selection<'a>(
+        &'a self,
+        selection: &RuntimePluginRecallHandoffSelection,
+    ) -> Option<Vec<&'a RuntimePluginRecallHandoffStage>> {
+        if selection.stage_count != selection.stage_ids.len() {
+            return None;
+        }
+        selection
+            .stage_ids
+            .iter()
+            .map(|stage_id| self.resolve_stage(stage_id))
+            .collect()
+    }
+}
+
 /// Runtime control-plane summary.
 ///
 /// Callers typically pair this with `RuntimeReadiness` and
@@ -1085,6 +1761,234 @@ pub struct RuntimeDiagnosticsSnapshot {
     pub graph_latency_ms: f32,
     pub active_plugin_sandboxes: u32,
     pub backend_policy_tier: BackendPolicyTier,
+    pub topology_compatible: bool,
+    pub topology_issue_count: usize,
+    pub degraded_bound_plugin_sandboxes: usize,
+    pub missing_bound_plugin_sandboxes: usize,
+    pub last_output_peak: Option<f32>,
+    pub last_output_rms: Option<f32>,
+    pub momentary_loudness_lufs: Option<f32>,
+    pub short_term_loudness_lufs: Option<f32>,
+    pub integrated_loudness_lufs: Option<f32>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeMeterSourceRole {
+    Utility,
+    TrackLane,
+    Bus,
+    Send,
+    Return,
+    ConsoleNode,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeMeterSourceSnapshot {
+    pub bus_id: String,
+    pub topology_role: RuntimeMeterSourceRole,
+    pub track_lane_id: Option<String>,
+    pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
+    pub producer_node_ids: Vec<String>,
+    pub peak_level: f32,
+    pub rms_level: f32,
+    pub latency_samples: u32,
+    pub tail_samples: u32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeMeteringSnapshot {
+    pub meter_count: usize,
+    pub main_output_peak_level: Option<f32>,
+    pub main_output_rms_level: Option<f32>,
+    pub momentary_loudness_lufs: Option<f32>,
+    pub short_term_loudness_lufs: Option<f32>,
+    pub integrated_loudness_lufs: Option<f32>,
+    pub clipped_sample_count: u64,
+    pub meters: Vec<RuntimeMeterSourceSnapshot>,
+    pub track_lanes: Vec<RuntimeTrackLaneMeterSummary>,
+    pub bus_groups: Vec<RuntimeBusGroupMeterSummary>,
+    pub console_groups: Vec<RuntimeConsoleGroupMeterSummary>,
+    pub send_returns: Vec<RuntimeSendReturnMeterSummary>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeRoutedMeterAggregate {
+    pub meter_count: usize,
+    pub metered_bus_ids: Vec<String>,
+    pub producer_node_ids: Vec<String>,
+    pub peak_level: Option<f32>,
+    pub rms_level: Option<f32>,
+    pub latency_samples: u32,
+    pub tail_samples: u32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeTrackLaneMeterSummary {
+    pub track_lane_id: String,
+    pub bus_group_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub aggregate: RuntimeRoutedMeterAggregate,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeBusGroupMeterSummary {
+    pub bus_group_id: String,
+    pub topology_roles: Vec<GraphNodeTopologyRole>,
+    pub node_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub aggregate: RuntimeRoutedMeterAggregate,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeConsoleGroupMeterSummary {
+    pub console_group_id: String,
+    pub node_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub aggregate: RuntimeRoutedMeterAggregate,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeSendReturnMeterSummary {
+    pub send_return_id: String,
+    pub send_node_ids: Vec<String>,
+    pub return_node_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub aggregate: RuntimeRoutedMeterAggregate,
+}
+
+impl RuntimeMeteringSnapshot {
+    pub fn with_execution_topology(mut self, topology: &RuntimeExecutionTopologySummary) -> Self {
+        self.track_lanes = topology
+            .track_lanes
+            .iter()
+            .map(|track_lane| RuntimeTrackLaneMeterSummary {
+                track_lane_id: track_lane.track_lane_id.clone(),
+                bus_group_ids: track_lane.bus_group_ids.clone(),
+                input_bus_ids: track_lane.input_bus_ids.clone(),
+                output_bus_ids: track_lane.output_bus_ids.clone(),
+                aggregate: aggregate_runtime_meter_sources(
+                    self.meters.iter().filter(|meter| {
+                        meter.track_lane_id.as_deref() == Some(track_lane.track_lane_id.as_str())
+                    }),
+                    format!("track_lane={}", track_lane.track_lane_id),
+                ),
+            })
+            .collect();
+        self.bus_groups = topology
+            .bus_groups
+            .iter()
+            .map(|bus_group| RuntimeBusGroupMeterSummary {
+                bus_group_id: bus_group.bus_group_id.clone(),
+                topology_roles: bus_group.topology_roles.clone(),
+                node_ids: bus_group.node_ids.clone(),
+                input_bus_ids: bus_group.input_bus_ids.clone(),
+                output_bus_ids: bus_group.output_bus_ids.clone(),
+                aggregate: aggregate_runtime_meter_sources(
+                    self.meters.iter().filter(|meter| {
+                        meter.bus_group_id.as_deref() == Some(bus_group.bus_group_id.as_str())
+                    }),
+                    format!("bus_group={}", bus_group.bus_group_id),
+                ),
+            })
+            .collect();
+        self.console_groups = topology
+            .console_groups
+            .iter()
+            .map(|console_group| RuntimeConsoleGroupMeterSummary {
+                console_group_id: console_group.console_group_id.clone(),
+                node_ids: console_group.node_ids.clone(),
+                input_bus_ids: console_group.input_bus_ids.clone(),
+                output_bus_ids: console_group.output_bus_ids.clone(),
+                aggregate: aggregate_runtime_meter_sources(
+                    self.meters.iter().filter(|meter| {
+                        meter.console_group_id.as_deref()
+                            == Some(console_group.console_group_id.as_str())
+                    }),
+                    format!("console_group={}", console_group.console_group_id),
+                ),
+            })
+            .collect();
+        self.send_returns = topology
+            .send_returns
+            .iter()
+            .map(|send_return| RuntimeSendReturnMeterSummary {
+                send_return_id: send_return.send_return_id.clone(),
+                send_node_ids: send_return.send_node_ids.clone(),
+                return_node_ids: send_return.return_node_ids.clone(),
+                input_bus_ids: send_return.input_bus_ids.clone(),
+                output_bus_ids: send_return.output_bus_ids.clone(),
+                aggregate: aggregate_runtime_meter_sources(
+                    self.meters.iter().filter(|meter| {
+                        meter.send_return_id.as_deref() == Some(send_return.send_return_id.as_str())
+                    }),
+                    format!("send_return={}", send_return.send_return_id),
+                ),
+            })
+            .collect();
+        self.summary = format!(
+            "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={} routes={}/{}/{}/{}",
+            self.meter_count,
+            self.main_output_peak_level,
+            self.main_output_rms_level,
+            self.momentary_loudness_lufs,
+            self.short_term_loudness_lufs,
+            self.integrated_loudness_lufs,
+            self.clipped_sample_count,
+            self.track_lanes.len(),
+            self.bus_groups.len(),
+            self.send_returns.len(),
+            self.console_groups.len(),
+        );
+        self
+    }
+}
+
+fn aggregate_runtime_meter_sources<'a>(
+    meters: impl Iterator<Item = &'a RuntimeMeterSourceSnapshot>,
+    scope: String,
+) -> RuntimeRoutedMeterAggregate {
+    let mut aggregate = RuntimeRoutedMeterAggregate::default();
+
+    for meter in meters {
+        aggregate.meter_count += 1;
+        if !aggregate.metered_bus_ids.contains(&meter.bus_id) {
+            aggregate.metered_bus_ids.push(meter.bus_id.clone());
+        }
+        for producer_node_id in &meter.producer_node_ids {
+            if !aggregate.producer_node_ids.contains(producer_node_id) {
+                aggregate.producer_node_ids.push(producer_node_id.clone());
+            }
+        }
+        aggregate.peak_level = Some(match aggregate.peak_level {
+            Some(peak_level) => peak_level.max(meter.peak_level),
+            None => meter.peak_level,
+        });
+        aggregate.rms_level = Some(match aggregate.rms_level {
+            Some(rms_level) => rms_level.max(meter.rms_level),
+            None => meter.rms_level,
+        });
+        aggregate.latency_samples = aggregate.latency_samples.max(meter.latency_samples);
+        aggregate.tail_samples = aggregate.tail_samples.max(meter.tail_samples);
+    }
+
+    aggregate.summary = format!(
+        "{scope} meters={} peak={:?} rms={:?} buses={:?} producers={}",
+        aggregate.meter_count,
+        aggregate.peak_level,
+        aggregate.rms_level,
+        aggregate.metered_bus_ids,
+        aggregate.producer_node_ids.len(),
+    );
+    aggregate
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -2089,6 +2993,7 @@ impl RuntimeHostObservationReport {
                 "\"xruns\":{},",
                 "\"engine_graph_id\":{},",
                 "\"degradation_summary\":{},",
+                "\"metering_snapshot\":{},",
                 "\"execution_topology_summary\":{}",
                 "}},",
                 "\"host_io\":{{",
@@ -2154,6 +3059,7 @@ impl RuntimeHostObservationReport {
             self.observation.diagnostics_snapshot.xruns,
             json_option_string(self.observation.engine_block_snapshot.graph_id.as_deref()),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
+            json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary),
             json_option_string(Some(self.host_io.hardware.backend_name.as_str())),
             json_option_string(Some(self.host_io.hardware.device_id.as_str())),
@@ -2307,6 +3213,133 @@ pub struct RuntimeExecutionLaneSummary {
     pub topology_roles: Vec<GraphNodeTopologyRole>,
     pub track_lane_ids: Vec<String>,
     pub bus_group_ids: Vec<String>,
+    pub console_group_ids: Vec<String>,
+    pub send_return_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeRoutedPluginChainSummary {
+    pub chain_count: usize,
+    pub stage_count: usize,
+    pub pending_render_stage_count: usize,
+    pub settling_stage_count: usize,
+    pub compensated_stage_count: usize,
+    pub degraded_stage_count: usize,
+    pub bypassed_stage_count: usize,
+    pub missing_binding_stage_count: usize,
+    pub total_planned_latency_samples: u32,
+    pub total_realized_latency_samples: u32,
+    pub total_tail_samples: u32,
+    pub chain_ids: Vec<String>,
+    pub node_ids: Vec<String>,
+    pub sandbox_ids: Vec<String>,
+}
+
+impl Default for RuntimeRoutedPluginChainSummary {
+    fn default() -> Self {
+        Self {
+            chain_count: 0,
+            stage_count: 0,
+            pending_render_stage_count: 0,
+            settling_stage_count: 0,
+            compensated_stage_count: 0,
+            degraded_stage_count: 0,
+            bypassed_stage_count: 0,
+            missing_binding_stage_count: 0,
+            total_planned_latency_samples: 0,
+            total_realized_latency_samples: 0,
+            total_tail_samples: 0,
+            chain_ids: Vec::new(),
+            node_ids: Vec::new(),
+            sandbox_ids: Vec::new(),
+        }
+    }
+}
+
+impl RuntimeRoutedPluginChainSummary {
+    fn include_chain(&mut self, chain: &RuntimePluginExecutionChainSummary) {
+        if !self.chain_ids.contains(&chain.chain_id) {
+            self.chain_count = self.chain_count.saturating_add(1);
+            self.chain_ids.push(chain.chain_id.clone());
+        }
+        self.stage_count = self.stage_count.saturating_add(chain.stage_count);
+        self.pending_render_stage_count = self
+            .pending_render_stage_count
+            .saturating_add(chain.pending_render_stage_count);
+        self.settling_stage_count = self
+            .settling_stage_count
+            .saturating_add(chain.settling_stage_count);
+        self.compensated_stage_count = self
+            .compensated_stage_count
+            .saturating_add(chain.compensated_stage_count);
+        self.degraded_stage_count = self
+            .degraded_stage_count
+            .saturating_add(chain.degraded_stage_count);
+        self.bypassed_stage_count = self
+            .bypassed_stage_count
+            .saturating_add(chain.bypassed_stage_count);
+        self.missing_binding_stage_count = self
+            .missing_binding_stage_count
+            .saturating_add(chain.missing_binding_stage_count);
+        self.total_planned_latency_samples = self
+            .total_planned_latency_samples
+            .saturating_add(chain.total_planned_latency_samples);
+        self.total_realized_latency_samples = self
+            .total_realized_latency_samples
+            .saturating_add(chain.total_realized_latency_samples);
+        self.total_tail_samples = self
+            .total_tail_samples
+            .saturating_add(chain.total_tail_samples);
+        for stage in &chain.stages {
+            if !self.node_ids.contains(&stage.node_id) {
+                self.node_ids.push(stage.node_id.clone());
+            }
+            if let Some(sandbox_id) = &stage.sandbox_id {
+                if !self.sandbox_ids.contains(sandbox_id) {
+                    self.sandbox_ids.push(sandbox_id.clone());
+                }
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMixerTrackLaneSummary {
+    pub track_lane_id: String,
+    pub node_ids: Vec<String>,
+    pub bus_group_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub plugin_chain: RuntimeRoutedPluginChainSummary,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMixerBusGroupSummary {
+    pub bus_group_id: String,
+    pub topology_roles: Vec<GraphNodeTopologyRole>,
+    pub node_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub plugin_chain: RuntimeRoutedPluginChainSummary,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMixerConsoleGroupSummary {
+    pub console_group_id: String,
+    pub node_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub plugin_chain: RuntimeRoutedPluginChainSummary,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMixerSendReturnSummary {
+    pub send_return_id: String,
+    pub send_node_ids: Vec<String>,
+    pub return_node_ids: Vec<String>,
+    pub input_bus_ids: Vec<String>,
+    pub output_bus_ids: Vec<String>,
+    pub plugin_chain: RuntimeRoutedPluginChainSummary,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -2316,11 +3349,18 @@ pub struct RuntimeExecutionNodeSummary {
     pub group: GraphNodePlanningGroup,
     pub execution_class: GraphNodeExecutionClass,
     pub topology_role: GraphNodeTopologyRole,
-    pub lane_id: Option<String>,
+    pub track_lane_id: Option<String>,
     pub bus_group_id: Option<String>,
+    pub console_group_id: Option<String>,
+    pub send_return_id: Option<String>,
     pub input_bus_id: String,
     pub output_bus_id: String,
     pub plugin_sandbox_id: Option<String>,
+    pub plugin_recall_state: Option<RuntimePluginRecallState>,
+    pub plugin_recall: Option<RuntimePluginRecallSnapshot>,
+    pub plugin_compensation_state: Option<RuntimePluginCompensationState>,
+    pub plugin_realized_latency_samples: Option<u32>,
+    pub plugin_tail_samples: Option<u32>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -2334,15 +3374,22 @@ pub struct RuntimeExecutionTopologySummary {
     pub lane_count: usize,
     pub track_lane_group_count: usize,
     pub bus_group_count: usize,
+    pub send_return_group_count: usize,
     pub console_group_count: usize,
     pub lanes: Vec<RuntimeExecutionLaneSummary>,
+    pub track_lanes: Vec<RuntimeMixerTrackLaneSummary>,
+    pub bus_groups: Vec<RuntimeMixerBusGroupSummary>,
+    pub console_groups: Vec<RuntimeMixerConsoleGroupSummary>,
+    pub send_returns: Vec<RuntimeMixerSendReturnSummary>,
     pub nodes: Vec<RuntimeExecutionNodeSummary>,
+    pub plugin_chain: RuntimeRoutedPluginChainSummary,
 }
 
 impl RuntimeExecutionTopologySummary {
     pub fn from_snapshot(snapshot: &RuntimeEngineBlockSnapshot) -> Self {
         let mut track_lane_ids = std::collections::BTreeSet::new();
         let mut bus_group_ids = std::collections::BTreeSet::new();
+        let mut send_return_ids = std::collections::BTreeSet::new();
         let mut console_group_ids = std::collections::BTreeSet::new();
         let mut lanes = Vec::new();
 
@@ -2352,6 +3399,8 @@ impl RuntimeExecutionTopologySummary {
             let mut topology_roles = Vec::new();
             let mut lane_ids = Vec::new();
             let mut bus_groups = Vec::new();
+            let mut console_groups = Vec::new();
+            let mut send_returns = Vec::new();
 
             for node in snapshot
                 .planned_nodes
@@ -2365,27 +3414,29 @@ impl RuntimeExecutionTopologySummary {
                 if !topology_roles.contains(&node.topology_role) {
                     topology_roles.push(node.topology_role);
                 }
-                if let Some(lane_id) = &node.lane_id {
-                    if !lane_ids.contains(lane_id) {
-                        lane_ids.push(lane_id.clone());
+                if let Some(track_lane_id) = &node.track_lane_id {
+                    if !lane_ids.contains(track_lane_id) {
+                        lane_ids.push(track_lane_id.clone());
                     }
-                    track_lane_ids.insert(lane_id.clone());
+                    track_lane_ids.insert(track_lane_id.clone());
                 }
                 if let Some(bus_group_id) = &node.bus_group_id {
                     if !bus_groups.contains(bus_group_id) {
                         bus_groups.push(bus_group_id.clone());
                     }
-                    match node.topology_role {
-                        GraphNodeTopologyRole::Bus
-                        | GraphNodeTopologyRole::Send
-                        | GraphNodeTopologyRole::Return => {
-                            bus_group_ids.insert(bus_group_id.clone());
-                        }
-                        GraphNodeTopologyRole::ConsoleNode => {
-                            console_group_ids.insert(bus_group_id.clone());
-                        }
-                        GraphNodeTopologyRole::Utility | GraphNodeTopologyRole::TrackLane => {}
+                    bus_group_ids.insert(bus_group_id.clone());
+                }
+                if let Some(console_group_id) = &node.console_group_id {
+                    if !console_groups.contains(console_group_id) {
+                        console_groups.push(console_group_id.clone());
                     }
+                    console_group_ids.insert(console_group_id.clone());
+                }
+                if let Some(send_return_id) = &node.send_return_id {
+                    if !send_returns.contains(send_return_id) {
+                        send_returns.push(send_return_id.clone());
+                    }
+                    send_return_ids.insert(send_return_id.clone());
                 }
             }
 
@@ -2396,8 +3447,19 @@ impl RuntimeExecutionTopologySummary {
                 topology_roles,
                 track_lane_ids: lane_ids,
                 bus_group_ids: bus_groups,
+                console_group_ids: console_groups,
+                send_return_ids: send_returns,
             });
         }
+
+        let mut track_lanes_by_id =
+            std::collections::BTreeMap::<String, RuntimeMixerTrackLaneSummary>::new();
+        let mut bus_groups_by_id =
+            std::collections::BTreeMap::<String, RuntimeMixerBusGroupSummary>::new();
+        let mut console_groups_by_id =
+            std::collections::BTreeMap::<String, RuntimeMixerConsoleGroupSummary>::new();
+        let mut send_returns_by_id =
+            std::collections::BTreeMap::<String, RuntimeMixerSendReturnSummary>::new();
 
         let mut nodes = Vec::with_capacity(snapshot.planned_nodes.len());
         let mut utility_node_count = 0usize;
@@ -2416,17 +3478,113 @@ impl RuntimeExecutionTopologySummary {
                 }
                 GraphNodeTopologyRole::ConsoleNode => console_node_count += 1,
             }
+            if let Some(track_lane_id) = &node.track_lane_id {
+                let summary = track_lanes_by_id
+                    .entry(track_lane_id.clone())
+                    .or_insert_with(|| RuntimeMixerTrackLaneSummary {
+                        track_lane_id: track_lane_id.clone(),
+                        node_ids: Vec::new(),
+                        bus_group_ids: Vec::new(),
+                        input_bus_ids: Vec::new(),
+                        output_bus_ids: Vec::new(),
+                        plugin_chain: RuntimeRoutedPluginChainSummary::default(),
+                    });
+                summary.node_ids.push(node.node_id.clone());
+                if let Some(bus_group_id) = &node.bus_group_id {
+                    if !summary.bus_group_ids.contains(bus_group_id) {
+                        summary.bus_group_ids.push(bus_group_id.clone());
+                    }
+                }
+                if !summary.input_bus_ids.contains(&node.input_bus_id) {
+                    summary.input_bus_ids.push(node.input_bus_id.clone());
+                }
+                if !summary.output_bus_ids.contains(&node.output_bus_id) {
+                    summary.output_bus_ids.push(node.output_bus_id.clone());
+                }
+            }
+            if let Some(bus_group_id) = &node.bus_group_id {
+                let summary = bus_groups_by_id
+                    .entry(bus_group_id.clone())
+                    .or_insert_with(|| RuntimeMixerBusGroupSummary {
+                        bus_group_id: bus_group_id.clone(),
+                        topology_roles: Vec::new(),
+                        node_ids: Vec::new(),
+                        input_bus_ids: Vec::new(),
+                        output_bus_ids: Vec::new(),
+                        plugin_chain: RuntimeRoutedPluginChainSummary::default(),
+                    });
+                if !summary.topology_roles.contains(&node.topology_role) {
+                    summary.topology_roles.push(node.topology_role);
+                }
+                summary.node_ids.push(node.node_id.clone());
+                if !summary.input_bus_ids.contains(&node.input_bus_id) {
+                    summary.input_bus_ids.push(node.input_bus_id.clone());
+                }
+                if !summary.output_bus_ids.contains(&node.output_bus_id) {
+                    summary.output_bus_ids.push(node.output_bus_id.clone());
+                }
+            }
+            if let Some(console_group_id) = &node.console_group_id {
+                let summary = console_groups_by_id
+                    .entry(console_group_id.clone())
+                    .or_insert_with(|| RuntimeMixerConsoleGroupSummary {
+                        console_group_id: console_group_id.clone(),
+                        node_ids: Vec::new(),
+                        input_bus_ids: Vec::new(),
+                        output_bus_ids: Vec::new(),
+                        plugin_chain: RuntimeRoutedPluginChainSummary::default(),
+                    });
+                summary.node_ids.push(node.node_id.clone());
+                if !summary.input_bus_ids.contains(&node.input_bus_id) {
+                    summary.input_bus_ids.push(node.input_bus_id.clone());
+                }
+                if !summary.output_bus_ids.contains(&node.output_bus_id) {
+                    summary.output_bus_ids.push(node.output_bus_id.clone());
+                }
+            }
+            if let Some(send_return_id) = &node.send_return_id {
+                let summary = send_returns_by_id
+                    .entry(send_return_id.clone())
+                    .or_insert_with(|| RuntimeMixerSendReturnSummary {
+                        send_return_id: send_return_id.clone(),
+                        send_node_ids: Vec::new(),
+                        return_node_ids: Vec::new(),
+                        input_bus_ids: Vec::new(),
+                        output_bus_ids: Vec::new(),
+                        plugin_chain: RuntimeRoutedPluginChainSummary::default(),
+                    });
+                match node.topology_role {
+                    GraphNodeTopologyRole::Send => summary.send_node_ids.push(node.node_id.clone()),
+                    GraphNodeTopologyRole::Return => {
+                        summary.return_node_ids.push(node.node_id.clone());
+                    }
+                    _ => {}
+                }
+                if !summary.input_bus_ids.contains(&node.input_bus_id) {
+                    summary.input_bus_ids.push(node.input_bus_id.clone());
+                }
+                if !summary.output_bus_ids.contains(&node.output_bus_id) {
+                    summary.output_bus_ids.push(node.output_bus_id.clone());
+                }
+            }
             nodes.push(RuntimeExecutionNodeSummary {
                 node_id: node.node_id.clone(),
                 lane: runtime_lane_for_group(node.group),
                 group: node.group,
                 execution_class: node.execution_class,
                 topology_role: node.topology_role,
-                lane_id: node.lane_id.clone(),
+                track_lane_id: node.track_lane_id.clone(),
                 bus_group_id: node.bus_group_id.clone(),
+                console_group_id: node.console_group_id.clone(),
+                send_return_id: node.send_return_id.clone(),
                 input_bus_id: node.input_bus_id.clone(),
                 output_bus_id: node.output_bus_id.clone(),
                 plugin_sandbox_id: node.plugin_sandbox_id.clone(),
+                plugin_recall_state: None,
+                plugin_recall: None,
+                plugin_compensation_state: None,
+                plugin_realized_latency_samples: None,
+                plugin_tail_samples: None,
             });
         }
 
@@ -2440,11 +3598,373 @@ impl RuntimeExecutionTopologySummary {
             lane_count: lanes.len(),
             track_lane_group_count: track_lane_ids.len(),
             bus_group_count: bus_group_ids.len(),
+            send_return_group_count: send_return_ids.len(),
             console_group_count: console_group_ids.len(),
             lanes,
+            track_lanes: track_lanes_by_id.into_values().collect(),
+            bus_groups: bus_groups_by_id.into_values().collect(),
+            console_groups: console_groups_by_id.into_values().collect(),
+            send_returns: send_returns_by_id.into_values().collect(),
             nodes,
+            plugin_chain: RuntimeRoutedPluginChainSummary::default(),
         }
     }
+
+    pub fn with_plugin_chain_snapshot(mut self, snapshot: &RuntimePluginChainSnapshot) -> Self {
+        let mut stage_by_node =
+            std::collections::BTreeMap::<&str, &RuntimePluginChainStageSnapshot>::new();
+        for chain in &snapshot.chains {
+            self.plugin_chain.include_chain(chain);
+            if let Some(track_lane_id) = chain.track_lane_id.as_deref() {
+                if let Some(summary) = self
+                    .track_lanes
+                    .iter_mut()
+                    .find(|summary| summary.track_lane_id == track_lane_id)
+                {
+                    summary.plugin_chain.include_chain(chain);
+                }
+            }
+            if let Some(bus_group_id) = chain.bus_group_id.as_deref() {
+                if let Some(summary) = self
+                    .bus_groups
+                    .iter_mut()
+                    .find(|summary| summary.bus_group_id == bus_group_id)
+                {
+                    summary.plugin_chain.include_chain(chain);
+                }
+            }
+            if let Some(console_group_id) = chain.console_group_id.as_deref() {
+                if let Some(summary) = self
+                    .console_groups
+                    .iter_mut()
+                    .find(|summary| summary.console_group_id == console_group_id)
+                {
+                    summary.plugin_chain.include_chain(chain);
+                }
+            }
+            if let Some(send_return_id) = chain.send_return_id.as_deref() {
+                if let Some(summary) = self
+                    .send_returns
+                    .iter_mut()
+                    .find(|summary| summary.send_return_id == send_return_id)
+                {
+                    summary.plugin_chain.include_chain(chain);
+                }
+            }
+            for stage in &chain.stages {
+                stage_by_node.insert(stage.node_id.as_str(), stage);
+            }
+        }
+
+        for node in &mut self.nodes {
+            if let Some(stage) = stage_by_node.get(node.node_id.as_str()) {
+                node.plugin_recall_state = Some(stage.recall_state);
+                node.plugin_recall = Some(stage.recall.clone());
+                node.plugin_compensation_state = Some(stage.compensation_state);
+                node.plugin_realized_latency_samples = stage.realized_latency_samples;
+                node.plugin_tail_samples = stage.tail_samples;
+            }
+        }
+
+        self
+    }
+}
+
+impl RuntimeOfflineRenderContractPreview {
+    pub fn from_runtime_state(
+        request: &RuntimeOfflineRenderRequest,
+        topology: &RuntimeExecutionTopologySummary,
+        clip_processing: &RuntimeClipProcessingPipelineSnapshot,
+        tempo_map: &RuntimeTempoMapSnapshot,
+        recall_handoff: &RuntimePluginRecallHandoffSnapshot,
+    ) -> Result<Self, RuntimeError> {
+        if request.request_id.trim().is_empty() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "offline render requests require a non-empty request id",
+            ));
+        }
+        if request.duration_samples == 0 {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "offline render requests require a non-zero duration",
+            ));
+        }
+        if request.export_sample_rate_hz == 0 {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "offline render requests require a positive export sample rate",
+            ));
+        }
+
+        let mut seen_stem_ids = std::collections::BTreeSet::new();
+        let mut stem_targets = Vec::with_capacity(request.stem_targets.len());
+        for stem in &request.stem_targets {
+            if stem.stem_id.trim().is_empty() {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "offline render stem targets require a non-empty stem id",
+                ));
+            }
+            if !seen_stem_ids.insert(stem.stem_id.clone()) {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("offline render stem id `{}` is duplicated", stem.stem_id),
+                ));
+            }
+            stem_targets.push(resolve_offline_render_stem_target(stem, topology)?);
+        }
+
+        let mut freeze_artifacts = Vec::with_capacity(request.freeze_artifacts.len());
+        for artifact in &request.freeze_artifacts {
+            if artifact.artifact_id.trim().is_empty() {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    "offline freeze artifacts require a non-empty artifact id",
+                ));
+            }
+            if !request.include_main_mix
+                && !stem_targets
+                    .iter()
+                    .any(|stem| stem.stem_id == artifact.source_stem_id)
+            {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "offline freeze artifact `{}` references unknown stem `{}`",
+                        artifact.artifact_id, artifact.source_stem_id
+                    ),
+                ));
+            }
+            let resolved_selection = recall_handoff
+                .resolve_selection(&artifact.recall_selection)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!(
+                            "offline freeze artifact `{}` references an unknown recall handoff stage",
+                            artifact.artifact_id
+                        ),
+                    )
+                })?;
+            freeze_artifacts.push(RuntimeOfflineFreezeArtifactPreview {
+                artifact_id: artifact.artifact_id.clone(),
+                source_stem_id: artifact.source_stem_id.clone(),
+                recall_stage_count: resolved_selection.len(),
+                recall_stage_ids: resolved_selection
+                    .iter()
+                    .map(|stage| stage.stage_id.clone())
+                    .collect(),
+                recall_states: resolved_selection
+                    .iter()
+                    .map(|stage| stage.recall_state)
+                    .collect(),
+                summary: format!(
+                    "artifact={} source_stem={} recall_stages={} recall_states={:?}",
+                    artifact.artifact_id,
+                    artifact.source_stem_id,
+                    resolved_selection.len(),
+                    resolved_selection
+                        .iter()
+                        .map(|stage| stage.recall_state)
+                        .collect::<Vec<_>>(),
+                ),
+            });
+        }
+
+        let timeline_end_samples = request
+            .timeline_start_samples
+            .saturating_add(request.duration_samples as i64);
+        let mut preview = Self {
+            request_id: request.request_id.clone(),
+            timeline_start_samples: request.timeline_start_samples,
+            timeline_end_samples,
+            duration_samples: request.duration_samples,
+            export_sample_rate_hz: request.export_sample_rate_hz,
+            include_main_mix: request.include_main_mix,
+            clip_count: clip_processing.clip_count,
+            ready_clip_count: clip_processing.ready_clip_count,
+            stem_count: stem_targets.len(),
+            freeze_artifact_count: freeze_artifacts.len(),
+            resolved_tempo_bpm: tempo_map.resolved_tempo_bpm,
+            resolved_tempo_source: tempo_map.tempo_source,
+            stem_targets,
+            freeze_artifacts,
+            summary: String::new(),
+        };
+        preview.summary = format!(
+            "request={} timeline={}..{} duration={} export_sample_rate={} clips={}/{} stems={} freeze_artifacts={} tempo={:.3}/{:?}",
+            preview.request_id,
+            preview.timeline_start_samples,
+            preview.timeline_end_samples,
+            preview.duration_samples,
+            preview.export_sample_rate_hz,
+            preview.ready_clip_count,
+            preview.clip_count,
+            preview.stem_count,
+            preview.freeze_artifact_count,
+            preview.resolved_tempo_bpm,
+            preview.resolved_tempo_source,
+        );
+        Ok(preview)
+    }
+}
+
+fn resolve_offline_render_stem_target(
+    stem: &RuntimeOfflineRenderStemTarget,
+    topology: &RuntimeExecutionTopologySummary,
+) -> Result<RuntimeOfflineRenderStemPreview, RuntimeError> {
+    let (target_id, resolved_node_ids, resolved_output_bus_ids) = match stem.target_kind {
+        RuntimeOfflineRenderTargetKind::MainMix => (
+            None,
+            topology
+                .nodes
+                .iter()
+                .map(|node| node.node_id.clone())
+                .collect::<Vec<_>>(),
+            topology
+                .nodes
+                .iter()
+                .map(|node| node.output_bus_id.clone())
+                .collect::<Vec<_>>(),
+        ),
+        RuntimeOfflineRenderTargetKind::TrackLane => {
+            let target_id = stem.target_id.as_deref().ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "offline render stem `{}` requires a track lane id",
+                        stem.stem_id
+                    ),
+                )
+            })?;
+            let summary = topology
+                .track_lanes
+                .iter()
+                .find(|summary| summary.track_lane_id == target_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!(
+                            "offline render stem `{}` references unknown track lane `{}`",
+                            stem.stem_id, target_id
+                        ),
+                    )
+                })?;
+            (
+                Some(target_id.to_string()),
+                summary.node_ids.clone(),
+                summary.output_bus_ids.clone(),
+            )
+        }
+        RuntimeOfflineRenderTargetKind::BusGroup => {
+            let target_id = stem.target_id.as_deref().ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "offline render stem `{}` requires a bus group id",
+                        stem.stem_id
+                    ),
+                )
+            })?;
+            let summary = topology
+                .bus_groups
+                .iter()
+                .find(|summary| summary.bus_group_id == target_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!(
+                            "offline render stem `{}` references unknown bus group `{}`",
+                            stem.stem_id, target_id
+                        ),
+                    )
+                })?;
+            (
+                Some(target_id.to_string()),
+                summary.node_ids.clone(),
+                summary.output_bus_ids.clone(),
+            )
+        }
+        RuntimeOfflineRenderTargetKind::ConsoleGroup => {
+            let target_id = stem.target_id.as_deref().ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "offline render stem `{}` requires a console group id",
+                        stem.stem_id
+                    ),
+                )
+            })?;
+            let summary = topology
+                .console_groups
+                .iter()
+                .find(|summary| summary.console_group_id == target_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!(
+                            "offline render stem `{}` references unknown console group `{}`",
+                            stem.stem_id, target_id
+                        ),
+                    )
+                })?;
+            (
+                Some(target_id.to_string()),
+                summary.node_ids.clone(),
+                summary.output_bus_ids.clone(),
+            )
+        }
+        RuntimeOfflineRenderTargetKind::SendReturn => {
+            let target_id = stem.target_id.as_deref().ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "offline render stem `{}` requires a send/return id",
+                        stem.stem_id
+                    ),
+                )
+            })?;
+            let summary = topology
+                .send_returns
+                .iter()
+                .find(|summary| summary.send_return_id == target_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!(
+                            "offline render stem `{}` references unknown send/return `{}`",
+                            stem.stem_id, target_id
+                        ),
+                    )
+                })?;
+            let mut node_ids = summary.send_node_ids.clone();
+            node_ids.extend(summary.return_node_ids.clone());
+            (
+                Some(target_id.to_string()),
+                node_ids,
+                summary.output_bus_ids.clone(),
+            )
+        }
+    };
+
+    let resolved_node_count = resolved_node_ids.len();
+    let resolved_output_bus_count = resolved_output_bus_ids.len();
+    Ok(RuntimeOfflineRenderStemPreview {
+        stem_id: stem.stem_id.clone(),
+        target_kind: stem.target_kind,
+        target_id,
+        resolved_node_ids,
+        resolved_output_bus_ids,
+        summary: format!(
+            "stem={} target={:?}/{:?} nodes={} output_buses={}",
+            stem.stem_id,
+            stem.target_kind,
+            stem.target_id,
+            resolved_node_count,
+            resolved_output_bus_count,
+        ),
+    })
 }
 
 fn runtime_lane_for_group(group: GraphNodePlanningGroup) -> GraphExecutionLane {
@@ -3111,11 +4631,17 @@ pub struct RuntimeObservationReport {
     pub control_snapshot: RuntimeControlSnapshot,
     pub scheduler_snapshot: RuntimeSchedulerSnapshot,
     pub diagnostics_snapshot: RuntimeDiagnosticsSnapshot,
+    pub metering_snapshot: RuntimeMeteringSnapshot,
     pub supervision_snapshot: RuntimeSupervisionSnapshot,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
+    pub tempo_map_snapshot: RuntimeTempoMapSnapshot,
+    pub warp_pipeline_snapshot: RuntimeWarpPipelineSnapshot,
+    pub clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
     pub automation_snapshot: RuntimeAutomationSnapshot,
     pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
     pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
+    pub plugin_lifecycle_snapshot: RuntimePluginLifecycleSnapshot,
+    pub plugin_chain_snapshot: RuntimePluginChainSnapshot,
     pub scheduler_summary: RuntimeSchedulerExportSummary,
     pub block_summary: RuntimeBlockExecutionSummary,
     pub degradation_summary: RuntimeDegradationSummary,
@@ -3133,20 +4659,33 @@ impl RuntimeObservationReport {
         let control_snapshot = runtime.get_control_snapshot();
         let scheduler_snapshot = runtime.get_scheduler_snapshot();
         let diagnostics_snapshot = runtime.get_diagnostics_snapshot();
+        let metering_snapshot = runtime.get_metering_snapshot();
         let supervision_snapshot = runtime.get_supervision_snapshot();
         let timeline_snapshot = runtime.get_timeline_snapshot();
+        let tempo_map_snapshot = runtime.get_tempo_map_snapshot();
+        let warp_pipeline_snapshot = runtime.get_warp_pipeline_snapshot();
+        let clip_processing_pipeline_snapshot = runtime.get_clip_processing_pipeline_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
         let engine_block_snapshot = runtime.get_engine_block_snapshot();
+        let execution_topology_summary = runtime.get_execution_topology_summary();
         let transport_concurrency_snapshot = runtime.get_transport_concurrency_snapshot();
+        let plugin_lifecycle_snapshot = runtime.get_plugin_lifecycle_snapshot();
+        let plugin_chain_snapshot = runtime.get_plugin_chain_snapshot();
         Self {
             readiness: readiness.clone(),
             effective_config,
             control_snapshot,
             scheduler_snapshot,
             diagnostics_snapshot,
+            metering_snapshot,
             supervision_snapshot: supervision_snapshot.clone(),
             timeline_snapshot,
+            tempo_map_snapshot,
+            warp_pipeline_snapshot,
+            clip_processing_pipeline_snapshot,
             automation_snapshot,
+            plugin_lifecycle_snapshot,
+            plugin_chain_snapshot,
             scheduler_summary: RuntimeSchedulerExportSummary::from_snapshot(&engine_block_snapshot),
             block_summary: RuntimeBlockExecutionSummary::from_snapshot(&engine_block_snapshot),
             degradation_summary: RuntimeDegradationSummary::capture(
@@ -3157,9 +4696,7 @@ impl RuntimeObservationReport {
                 &transport_concurrency_snapshot,
                 &observation,
             ),
-            execution_topology_summary: RuntimeExecutionTopologySummary::from_snapshot(
-                &engine_block_snapshot,
-            ),
+            execution_topology_summary,
             engine_block_snapshot,
             transport_concurrency_snapshot,
             transport_fault_summary: TransportFaultSummary::from_records(
@@ -3171,12 +4708,37 @@ impl RuntimeObservationReport {
     }
 
     pub fn render_compact(&self) -> String {
-        let automation = (self.automation_snapshot.parameter_id != 0)
+        let tempo_map = (self.tempo_map_snapshot.segment_count > 0)
+            .then(|| format_runtime_tempo_map_snapshot_compact(&self.tempo_map_snapshot))
+            .unwrap_or_default();
+        let warp = (self.warp_pipeline_snapshot.clip_count > 0)
+            .then(|| format_runtime_warp_pipeline_snapshot_compact(&self.warp_pipeline_snapshot))
+            .unwrap_or_default();
+        let clip_processing = (self.clip_processing_pipeline_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_clip_processing_pipeline_snapshot_compact(
+                    &self.clip_processing_pipeline_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let plugin_chain = (self.plugin_chain_snapshot.chain_count > 0)
+            .then(|| format_runtime_plugin_chain_snapshot_compact(&self.plugin_chain_snapshot))
+            .unwrap_or_default();
+        let automation = (self.automation_snapshot.parameter_id != 0
+            || self.automation_snapshot.lane_count > 0
+            || self.automation_snapshot.last_batch_epoch.is_some())
             .then(|| {
                 let snapshot = &self.automation_snapshot;
                 format!(
-                    " automation_param={} automation_segments={} automation_first_epoch={:?} automation_last_epoch={:?} automation_lease_rollovers={}",
+                    " automation_param={} automation_projection={}/{}/{} automation_shapes={}/{} automation_batch_policy={}/{:?} automation_segments={} automation_first_epoch={:?} automation_last_epoch={:?} automation_lease_rollovers={}",
                     snapshot.parameter_id,
+                    snapshot.lane_count,
+                    snapshot.point_count,
+                    snapshot.projected_segment_count,
+                    snapshot.hold_lane_count,
+                    snapshot.linear_lane_count,
+                    snapshot.last_batch_strategy_max_sub_blocks,
+                    snapshot.last_batch_min_ramp_step_samples,
                     snapshot.segment_count,
                     snapshot.first_epoch,
                     snapshot.last_epoch,
@@ -3217,8 +4779,9 @@ impl RuntimeObservationReport {
             format_runtime_degradation_summary_compact(&self.degradation_summary);
         let execution_topology_summary =
             format_runtime_execution_topology_summary_compact(&self.execution_topology_summary);
+        let metering_summary = format_runtime_metering_snapshot_compact(&self.metering_snapshot);
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -3241,6 +4804,10 @@ impl RuntimeObservationReport {
             self.timeline_snapshot
                 .block_sequence_continuity
                 .last_block_sequence(),
+            tempo_map,
+            warp,
+            clip_processing,
+            plugin_chain,
             automation,
             transport_timeline,
             scheduler_snapshot,
@@ -3441,7 +5008,7 @@ impl RuntimeObservationReport {
                 self.transport_concurrency_snapshot.pending_cleanup_waves.len()
             )
         );
-        format!("{compact}{execution_topology_summary}")
+        format!("{compact}{execution_topology_summary}{metering_summary}")
     }
 }
 
@@ -3539,12 +5106,62 @@ impl RuntimeSupervisorReport {
     }
 
     pub fn render_multiline(&self) -> String {
-        let automation = (self.observation.automation_snapshot.parameter_id != 0)
+        let tempo_map = (self.observation.tempo_map_snapshot.segment_count > 0)
+            .then(|| {
+                format_runtime_tempo_map_snapshot_multiline(&self.observation.tempo_map_snapshot)
+            })
+            .unwrap_or_default();
+        let warp = (self.observation.warp_pipeline_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_warp_pipeline_snapshot_multiline(
+                    &self.observation.warp_pipeline_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let clip_processing = (self
+            .observation
+            .clip_processing_pipeline_snapshot
+            .clip_count
+            > 0)
+        .then(|| {
+            format_runtime_clip_processing_pipeline_snapshot_multiline(
+                &self.observation.clip_processing_pipeline_snapshot,
+            )
+        })
+        .unwrap_or_default();
+        let plugin_chain = (self.observation.plugin_chain_snapshot.chain_count > 0)
+            .then(|| {
+                format_runtime_plugin_chain_snapshot_multiline(
+                    &self.observation.plugin_chain_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let automation = (self.observation.automation_snapshot.parameter_id != 0
+            || self.observation.automation_snapshot.lane_count > 0
+            || self.observation.automation_snapshot.last_batch_epoch.is_some())
             .then(|| {
                 let snapshot = &self.observation.automation_snapshot;
                 format!(
-                    "\nautomation_param={}\nautomation_value_events={}\nautomation_modulation_events={}\nautomation_gesture_begin_events={}\nautomation_gesture_end_events={}\nautomation_first_value={:?}\nautomation_last_value={:?}\nautomation_last_modulation={:?}\nautomation_first_epoch={:?}\nautomation_last_epoch={:?}\nautomation_segments={}\nautomation_segment_epochs={:?}\nautomation_lease_rollovers={}",
+                    "\nautomation_param={}\nautomation_lane_count={}\nautomation_point_count={}\nautomation_projected_segment_count={}\nautomation_mapped_lanes={}\nautomation_unmapped_lanes={}\nautomation_hold_lanes={}\nautomation_linear_lanes={}\nautomation_last_batch_epoch={:?}\nautomation_last_batch_event_count={}\nautomation_last_batch_ignored_event_count={}\nautomation_last_batch_sub_block_count={}\nautomation_last_batch_coalesced_event_count={}\nautomation_last_batch_strategy_max_sub_blocks={}\nautomation_last_batch_min_ramp_step_samples={:?}\nautomation_last_batch_max_sample_offset={:?}\nautomation_last_block_sequence={:?}\nautomation_last_timeline_position_samples={:?}\nautomation_transport_playing={:?}\nautomation_value_events={}\nautomation_modulation_events={}\nautomation_gesture_begin_events={}\nautomation_gesture_end_events={}\nautomation_first_value={:?}\nautomation_last_value={:?}\nautomation_last_modulation={:?}\nautomation_first_epoch={:?}\nautomation_last_epoch={:?}\nautomation_segments={}\nautomation_segment_epochs={:?}\nautomation_lease_rollovers={}",
                     snapshot.parameter_id,
+                    snapshot.lane_count,
+                    snapshot.point_count,
+                    snapshot.projected_segment_count,
+                    snapshot.mapped_lane_count,
+                    snapshot.unmapped_lane_count,
+                    snapshot.hold_lane_count,
+                    snapshot.linear_lane_count,
+                    snapshot.last_batch_epoch,
+                    snapshot.last_batch_event_count,
+                    snapshot.last_batch_ignored_event_count,
+                    snapshot.last_batch_sub_block_count,
+                    snapshot.last_batch_coalesced_event_count,
+                    snapshot.last_batch_strategy_max_sub_blocks,
+                    snapshot.last_batch_min_ramp_step_samples,
+                    snapshot.last_batch_max_sample_offset,
+                    snapshot.last_block_sequence,
+                    snapshot.last_timeline_position_samples,
+                    snapshot.transport_playing,
                     snapshot.value_events,
                     snapshot.modulation_events,
                     snapshot.gesture_begin_events,
@@ -3604,6 +5221,8 @@ impl RuntimeSupervisorReport {
         let execution_topology_summary = format_runtime_execution_topology_summary_multiline(
             &self.observation.execution_topology_summary,
         );
+        let metering_summary =
+            format_runtime_metering_snapshot_multiline(&self.observation.metering_snapshot);
         let multiline = format!(
             "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
             self.observation.readiness,
@@ -4029,7 +5648,9 @@ impl RuntimeSupervisorReport {
             self.observation.observation.broker_failure_events,
             self.observation.observation.sandbox_operation_failure_events,
         );
-        format!("{multiline}{execution_topology_summary}")
+        format!(
+            "{multiline}{tempo_map}{warp}{clip_processing}{plugin_chain}{execution_topology_summary}{metering_summary}"
+        )
     }
 
     pub fn render_json(&self) -> String {
@@ -4037,7 +5658,10 @@ impl RuntimeSupervisorReport {
         let last_fault = self.observation.observation.plugin_faults.last();
         let last_plugin_instance_state = self.observation.observation.last_plugin_instance_state();
         let automation = &self.observation.automation_snapshot;
-        let automation = if automation.parameter_id == 0 {
+        let automation = if automation.parameter_id == 0
+            && automation.lane_count == 0
+            && automation.last_batch_epoch.is_none()
+        {
             "null".into()
         } else {
             json_runtime_automation_snapshot(automation)
@@ -4076,6 +5700,11 @@ impl RuntimeSupervisorReport {
                 "\"scheduler_summary\":{},",
                 "\"block_summary\":{},",
                 "\"degradation_summary\":{},",
+                "\"tempo_map_snapshot\":{},",
+                "\"warp_pipeline_snapshot\":{},",
+                "\"clip_processing_pipeline_snapshot\":{},",
+                "\"plugin_chain_snapshot\":{},",
+                "\"metering_snapshot\":{},",
                 "\"execution_topology_summary\":{},",
                 "\"transport_concurrency_snapshot\":{},",
                 "\"transport_fault_summary\":{},",
@@ -4194,6 +5823,13 @@ impl RuntimeSupervisorReport {
             json_runtime_scheduler_export_summary(&self.observation.scheduler_summary),
             json_runtime_block_execution_summary(&self.observation.block_summary),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
+            json_runtime_tempo_map_snapshot(&self.observation.tempo_map_snapshot),
+            json_runtime_warp_pipeline_snapshot(&self.observation.warp_pipeline_snapshot),
+            json_runtime_clip_processing_pipeline_snapshot(
+                &self.observation.clip_processing_pipeline_snapshot,
+            ),
+            json_runtime_plugin_chain_snapshot(&self.observation.plugin_chain_snapshot),
+            json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary,),
             json_runtime_transport_concurrency_snapshot(
                 &self.observation.transport_concurrency_snapshot,
@@ -4262,6 +5898,16 @@ impl RuntimeSupervisorReport {
             ),
             automation,
         )
+    }
+}
+
+impl RuntimeObservationReport {
+    pub fn render_json(&self) -> String {
+        RuntimeSupervisorReport {
+            observation: self.clone(),
+            events: Vec::new(),
+        }
+        .render_json()
     }
 }
 
@@ -4552,6 +6198,468 @@ fn format_runtime_degradation_summary_multiline(summary: &RuntimeDegradationSumm
     )
 }
 
+fn format_runtime_tempo_map_snapshot_compact(snapshot: &RuntimeTempoMapSnapshot) -> String {
+    format!(
+        " tempo_map_segments={} tempo_map_active={:?}/{:?} tempo_map_source={:?} tempo_map_tempo={:.3} tempo_map_next_segment={:?}",
+        snapshot.segment_count,
+        snapshot.active_segment_index,
+        snapshot.active_segment_id,
+        snapshot.tempo_source,
+        snapshot.resolved_tempo_bpm,
+        snapshot.next_segment_start_samples,
+    )
+}
+
+fn format_runtime_tempo_map_snapshot_multiline(snapshot: &RuntimeTempoMapSnapshot) -> String {
+    let segment_lines = snapshot
+        .segments
+        .iter()
+        .enumerate()
+        .map(|(index, segment)| {
+            format!(
+                "\ntempo_map_segment_{}={}/interp={:?}/start={}/end={:?}/tempo={:.3}->{:?}/active={}",
+                index,
+                segment.segment_id,
+                segment.interpolation,
+                segment.start_samples,
+                segment.end_samples,
+                segment.start_tempo_bpm,
+                segment.end_tempo_bpm,
+                segment.covers_timeline_position,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\ntempo_map_segment_count={}\ntempo_map_active_segment_id={:?}\ntempo_map_active_segment_index={:?}\ntempo_map_next_segment_start_samples={:?}\ntempo_map_resolved_tempo_bpm={:.3}\ntempo_map_source={:?}\ntempo_map_timeline_position_samples={:?}{}",
+        snapshot.segment_count,
+        snapshot.active_segment_id,
+        snapshot.active_segment_index,
+        snapshot.next_segment_start_samples,
+        snapshot.resolved_tempo_bpm,
+        snapshot.tempo_source,
+        snapshot.timeline_position_samples,
+        segment_lines,
+    )
+}
+
+fn format_runtime_warp_pipeline_snapshot_compact(snapshot: &RuntimeWarpPipelineSnapshot) -> String {
+    format!(
+        " warp_clips={}/{}/{}/{} warp_tempo={:.3}/{:?}/{:?}",
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.bypassed_clip_count,
+        snapshot.resolved_project_tempo_bpm,
+        snapshot.resolved_project_tempo_source,
+        snapshot.resolved_project_tempo_segment_id,
+    )
+}
+
+fn format_runtime_warp_pipeline_snapshot_multiline(
+    snapshot: &RuntimeWarpPipelineSnapshot,
+) -> String {
+    let clip_lines = snapshot
+        .clips
+        .iter()
+        .enumerate()
+        .map(|(index, clip)| {
+            format!(
+                "\nwarp_clip_{}={}/mode={:?}/readiness={:?}/ratio={:.3}/project_tempo={:.3}/{:?}/{:?}/source_tempo={:?}/error={:?}",
+                index,
+                clip.clip_id,
+                clip.mode,
+                clip.readiness,
+                clip.realized_ratio,
+                clip.project_tempo_bpm,
+                clip.project_tempo_source,
+                clip.project_tempo_segment_id,
+                clip.source_tempo_bpm,
+                clip.last_error,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nwarp_clip_count={}\nwarp_ready_clip_count={}\nwarp_degraded_clip_count={}\nwarp_bypassed_clip_count={}\nwarp_active_clip_count={}\nwarp_resolved_project_tempo_bpm={:.3}\nwarp_resolved_project_tempo_source={:?}\nwarp_resolved_project_tempo_segment_id={:?}{}",
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.bypassed_clip_count,
+        snapshot.active_warp_count,
+        snapshot.resolved_project_tempo_bpm,
+        snapshot.resolved_project_tempo_source,
+        snapshot.resolved_project_tempo_segment_id,
+        clip_lines,
+    )
+}
+
+fn format_runtime_clip_processing_pipeline_snapshot_compact(
+    snapshot: &RuntimeClipProcessingPipelineSnapshot,
+) -> String {
+    format!(
+        " clip_processing_clips={}/{}/{}/{} clip_processing_shapes={}/{}/{} clip_processing_treatment_stages={}",
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.pending_warp_clip_count + snapshot.invalid_clip_count,
+        snapshot.faded_clip_count,
+        snapshot.gain_shaped_clip_count,
+        snapshot.warped_clip_count,
+        snapshot.treatment_stage_count,
+    )
+}
+
+fn format_runtime_clip_processing_pipeline_snapshot_multiline(
+    snapshot: &RuntimeClipProcessingPipelineSnapshot,
+) -> String {
+    let clip_lines = snapshot
+        .clips
+        .iter()
+        .enumerate()
+        .map(|(index, clip)| {
+            format!(
+                "\nclip_processing_clip_{}={}/readiness={:?}/warp={:?}/{:?}/{:?}/fade_in={}/{:?}/fade_out={}/{:?}/gain={:.3}->{:.3}/{:?}/stages={:?}/error={:?}",
+                index,
+                clip.clip_id,
+                clip.readiness,
+                clip.warp_mode,
+                clip.realized_warp_ratio,
+                clip.project_tempo_source,
+                clip.fade_in.duration_samples,
+                clip.fade_in.shape,
+                clip.fade_out.duration_samples,
+                clip.fade_out.shape,
+                clip.clip_gain.start_linear,
+                clip.clip_gain.end_linear,
+                clip.clip_gain.shape,
+                clip.treatment_stages,
+                clip.last_error,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nclip_processing_clip_count={}\nclip_processing_ready_clip_count={}\nclip_processing_pending_media_clip_count={}\nclip_processing_pending_warp_clip_count={}\nclip_processing_invalid_clip_count={}\nclip_processing_faded_clip_count={}\nclip_processing_gain_shaped_clip_count={}\nclip_processing_warped_clip_count={}\nclip_processing_treatment_stage_count={}{}",
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.pending_warp_clip_count,
+        snapshot.invalid_clip_count,
+        snapshot.faded_clip_count,
+        snapshot.gain_shaped_clip_count,
+        snapshot.warped_clip_count,
+        snapshot.treatment_stage_count,
+        clip_lines,
+    )
+}
+
+fn format_runtime_plugin_chain_snapshot_compact(snapshot: &RuntimePluginChainSnapshot) -> String {
+    format!(
+        " plugin_chains={}/{} plugin_chain_pending={} plugin_chain_settling={} plugin_chain_compensated={} plugin_chain_degraded={} plugin_chain_bypassed={} plugin_chain_missing={} plugin_chain_latency={}/{} plugin_chain_tail={}",
+        snapshot.chain_count,
+        snapshot.stage_count,
+        snapshot.pending_render_stage_count,
+        snapshot.settling_stage_count,
+        snapshot.compensated_stage_count,
+        snapshot.degraded_stage_count,
+        snapshot.bypassed_stage_count,
+        snapshot.missing_binding_stage_count,
+        snapshot.total_realized_latency_samples,
+        snapshot.total_planned_latency_samples,
+        snapshot.total_tail_samples,
+    )
+}
+
+fn format_runtime_plugin_recall_snapshot_compact(snapshot: &RuntimePluginRecallSnapshot) -> String {
+    format!(
+        "{:?}/sandbox={:?}/lifecycle={:?}/{:?}/{:?}/readiness={:?}/recoveries={}/restarts={}/faults={}/fault_kind={:?}/stop_reason={:?}/degraded={:?}",
+        snapshot.state,
+        snapshot.payload.sandbox_id.as_deref(),
+        snapshot.payload.lifecycle_state,
+        snapshot.payload.lifecycle_stage,
+        snapshot.payload.transport_stage,
+        snapshot.payload.readiness_state.as_deref(),
+        snapshot.payload.recovery_count,
+        snapshot.payload.restart_count,
+        snapshot.payload.fault_count,
+        snapshot.payload.last_fault_kind,
+        snapshot.payload.last_stop_reason,
+        &snapshot.payload.degraded_reasons,
+    )
+}
+
+fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainSnapshot) -> String {
+    let chain_lines = snapshot
+        .chains
+        .iter()
+        .enumerate()
+        .map(|(chain_index, chain)| {
+            let stage_lines = chain
+                .stages
+                .iter()
+                .enumerate()
+                .map(|(stage_index, stage)| {
+                    format!(
+                        "\nplugin_chain_{}_stage_{}={}/sandbox={:?}/lifecycle={:?}/recall={}/compensation={:?}/latency={}/{:?}/{:?}/bypassed={}/active_transport={}/degraded_reasons={:?}",
+                        chain_index,
+                        stage_index,
+                        stage.node_id,
+                        stage.sandbox_id,
+                        stage.lifecycle_state,
+                        format_runtime_plugin_recall_snapshot_compact(&stage.recall),
+                        stage.compensation_state,
+                        stage.planned_latency_samples,
+                        stage.realized_latency_samples,
+                        stage.tail_samples,
+                        stage.bypassed,
+                        stage.active_transport,
+                        stage.degraded_reasons,
+                    )
+                })
+                .collect::<String>();
+            format!(
+                "\nplugin_chain_{}={}/track={:?}/bus={:?}/console={:?}/send_return={:?}/stages={}/pending={}/settling={}/compensated={}/degraded={}/bypassed={}/missing={}/latency={}/{}/{}{}",
+                chain_index,
+                chain.chain_id,
+                chain.track_lane_id,
+                chain.bus_group_id,
+                chain.console_group_id,
+                chain.send_return_id,
+                chain.stage_count,
+                chain.pending_render_stage_count,
+                chain.settling_stage_count,
+                chain.compensated_stage_count,
+                chain.degraded_stage_count,
+                chain.bypassed_stage_count,
+                chain.missing_binding_stage_count,
+                chain.total_planned_latency_samples,
+                chain.total_realized_latency_samples,
+                chain.total_tail_samples,
+                stage_lines,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nplugin_chain_count={}\nplugin_chain_stage_count={}\nplugin_chain_pending_render_stage_count={}\nplugin_chain_settling_stage_count={}\nplugin_chain_compensated_stage_count={}\nplugin_chain_degraded_stage_count={}\nplugin_chain_bypassed_stage_count={}\nplugin_chain_missing_binding_stage_count={}\nplugin_chain_total_planned_latency_samples={}\nplugin_chain_total_realized_latency_samples={}\nplugin_chain_total_tail_samples={}{}",
+        snapshot.chain_count,
+        snapshot.stage_count,
+        snapshot.pending_render_stage_count,
+        snapshot.settling_stage_count,
+        snapshot.compensated_stage_count,
+        snapshot.degraded_stage_count,
+        snapshot.bypassed_stage_count,
+        snapshot.missing_binding_stage_count,
+        snapshot.total_planned_latency_samples,
+        snapshot.total_realized_latency_samples,
+        snapshot.total_tail_samples,
+        chain_lines,
+    )
+}
+
+fn format_runtime_routed_plugin_chain_summary_compact(
+    summary: &RuntimeRoutedPluginChainSummary,
+) -> String {
+    format!(
+        "{}/{}/{}/{}/{}/{}/{}/{}/{}/{}/{}",
+        summary.chain_count,
+        summary.stage_count,
+        summary.pending_render_stage_count,
+        summary.settling_stage_count,
+        summary.compensated_stage_count,
+        summary.degraded_stage_count,
+        summary.bypassed_stage_count,
+        summary.missing_binding_stage_count,
+        summary.total_planned_latency_samples,
+        summary.total_realized_latency_samples,
+        summary.total_tail_samples,
+    )
+}
+
+fn format_runtime_metering_snapshot_compact(snapshot: &RuntimeMeteringSnapshot) -> String {
+    let track_lane_shapes = snapshot
+        .track_lanes
+        .iter()
+        .map(|track_lane| {
+            format!(
+                "{}:{}",
+                track_lane.track_lane_id, track_lane.aggregate.meter_count
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("|");
+    let bus_group_shapes = snapshot
+        .bus_groups
+        .iter()
+        .map(|bus_group| {
+            format!(
+                "{}:{}",
+                bus_group.bus_group_id, bus_group.aggregate.meter_count
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("|");
+    let send_return_shapes = snapshot
+        .send_returns
+        .iter()
+        .map(|send_return| {
+            format!(
+                "{}:{}",
+                send_return.send_return_id, send_return.aggregate.meter_count
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("|");
+    let console_group_shapes = snapshot
+        .console_groups
+        .iter()
+        .map(|console_group| {
+            format!(
+                "{}:{}",
+                console_group.console_group_id, console_group.aggregate.meter_count
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("|");
+    format!(
+        " metering_snapshot_meters={} metering_snapshot_main={:?}/{:?} metering_snapshot_loudness={:?}/{:?}/{:?} metering_snapshot_clipped={} metering_snapshot_routes={}/{}/{}/{} metering_snapshot_track_lane_shapes={} metering_snapshot_bus_group_shapes={} metering_snapshot_send_return_shapes={} metering_snapshot_console_group_shapes={}",
+        snapshot.meter_count,
+        snapshot.main_output_peak_level,
+        snapshot.main_output_rms_level,
+        snapshot.momentary_loudness_lufs,
+        snapshot.short_term_loudness_lufs,
+        snapshot.integrated_loudness_lufs,
+        snapshot.clipped_sample_count,
+        snapshot.track_lanes.len(),
+        snapshot.bus_groups.len(),
+        snapshot.send_returns.len(),
+        snapshot.console_groups.len(),
+        track_lane_shapes,
+        bus_group_shapes,
+        send_return_shapes,
+        console_group_shapes,
+    )
+}
+
+fn format_runtime_metering_snapshot_multiline(snapshot: &RuntimeMeteringSnapshot) -> String {
+    let meter_lines = snapshot
+        .meters
+        .iter()
+        .enumerate()
+        .map(|(index, meter)| {
+            format!(
+                "\nmetering_snapshot_meter_{}={}/{:?}/peak={:.3}/rms={:.3}/track_lane_id={:?}/bus_group_id={:?}/console_group_id={:?}/send_return_id={:?}/latency={}/tail={}/producers={:?}",
+                index,
+                meter.bus_id,
+                meter.topology_role,
+                meter.peak_level,
+                meter.rms_level,
+                meter.track_lane_id,
+                meter.bus_group_id,
+                meter.console_group_id,
+                meter.send_return_id,
+                meter.latency_samples,
+                meter.tail_samples,
+                meter.producer_node_ids,
+            )
+        })
+        .collect::<String>();
+    let track_lane_lines = snapshot
+        .track_lanes
+        .iter()
+        .enumerate()
+        .map(|(index, track_lane)| {
+            format!(
+                "\nmetering_snapshot_track_lane_{}={}/meters={}/peak={:?}/rms={:?}/buses={:?}/producers={:?}/input={:?}/output={:?}",
+                index,
+                track_lane.track_lane_id,
+                track_lane.aggregate.meter_count,
+                track_lane.aggregate.peak_level,
+                track_lane.aggregate.rms_level,
+                track_lane.aggregate.metered_bus_ids,
+                track_lane.aggregate.producer_node_ids,
+                track_lane.input_bus_ids,
+                track_lane.output_bus_ids,
+            )
+        })
+        .collect::<String>();
+    let bus_group_lines = snapshot
+        .bus_groups
+        .iter()
+        .enumerate()
+        .map(|(index, bus_group)| {
+            format!(
+                "\nmetering_snapshot_bus_group_{}={}/roles={:?}/meters={}/peak={:?}/rms={:?}/buses={:?}/nodes={:?}/input={:?}/output={:?}",
+                index,
+                bus_group.bus_group_id,
+                bus_group.topology_roles,
+                bus_group.aggregate.meter_count,
+                bus_group.aggregate.peak_level,
+                bus_group.aggregate.rms_level,
+                bus_group.aggregate.metered_bus_ids,
+                bus_group.node_ids,
+                bus_group.input_bus_ids,
+                bus_group.output_bus_ids,
+            )
+        })
+        .collect::<String>();
+    let console_group_lines = snapshot
+        .console_groups
+        .iter()
+        .enumerate()
+        .map(|(index, console_group)| {
+            format!(
+                "\nmetering_snapshot_console_group_{}={}/meters={}/peak={:?}/rms={:?}/buses={:?}/nodes={:?}/input={:?}/output={:?}",
+                index,
+                console_group.console_group_id,
+                console_group.aggregate.meter_count,
+                console_group.aggregate.peak_level,
+                console_group.aggregate.rms_level,
+                console_group.aggregate.metered_bus_ids,
+                console_group.node_ids,
+                console_group.input_bus_ids,
+                console_group.output_bus_ids,
+            )
+        })
+        .collect::<String>();
+    let send_return_lines = snapshot
+        .send_returns
+        .iter()
+        .enumerate()
+        .map(|(index, send_return)| {
+            format!(
+                "\nmetering_snapshot_send_return_{}={}/meters={}/peak={:?}/rms={:?}/buses={:?}/sends={:?}/returns={:?}/input={:?}/output={:?}",
+                index,
+                send_return.send_return_id,
+                send_return.aggregate.meter_count,
+                send_return.aggregate.peak_level,
+                send_return.aggregate.rms_level,
+                send_return.aggregate.metered_bus_ids,
+                send_return.send_node_ids,
+                send_return.return_node_ids,
+                send_return.input_bus_ids,
+                send_return.output_bus_ids,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nmetering_snapshot_meter_count={}\nmetering_snapshot_main_output_peak_level={:?}\nmetering_snapshot_main_output_rms_level={:?}\nmetering_snapshot_momentary_loudness_lufs={:?}\nmetering_snapshot_short_term_loudness_lufs={:?}\nmetering_snapshot_integrated_loudness_lufs={:?}\nmetering_snapshot_clipped_sample_count={}\nmetering_snapshot_track_lane_count={}\nmetering_snapshot_bus_group_count={}\nmetering_snapshot_send_return_count={}\nmetering_snapshot_console_group_count={}{}{}{}{}{}",
+        snapshot.meter_count,
+        snapshot.main_output_peak_level,
+        snapshot.main_output_rms_level,
+        snapshot.momentary_loudness_lufs,
+        snapshot.short_term_loudness_lufs,
+        snapshot.integrated_loudness_lufs,
+        snapshot.clipped_sample_count,
+        snapshot.track_lanes.len(),
+        snapshot.bus_groups.len(),
+        snapshot.send_returns.len(),
+        snapshot.console_groups.len(),
+        meter_lines,
+        track_lane_lines,
+        bus_group_lines,
+        console_group_lines,
+        send_return_lines,
+    )
+}
+
 fn format_runtime_execution_topology_summary_compact(
     summary: &RuntimeExecutionTopologySummary,
 ) -> String {
@@ -4562,7 +6670,7 @@ fn format_runtime_execution_topology_summary_compact(
         .collect::<Vec<_>>()
         .join("|");
     format!(
-        " execution_topology_summary_nodes={} execution_topology_summary_roles={}/{}/{}/{}/{} execution_topology_summary_groups={}/{}/{} execution_topology_summary_lanes={} execution_topology_summary_lane_shapes={}",
+        " execution_topology_summary_nodes={} execution_topology_summary_roles={}/{}/{}/{}/{} execution_topology_summary_groups={}/{}/{} execution_topology_summary_plugin_chain={} execution_topology_summary_lanes={} execution_topology_summary_lane_shapes={}",
         summary.node_count,
         summary.utility_node_count,
         summary.track_lane_node_count,
@@ -4572,6 +6680,7 @@ fn format_runtime_execution_topology_summary_compact(
         summary.track_lane_group_count,
         summary.bus_group_count,
         summary.console_group_count,
+        format_runtime_routed_plugin_chain_summary_compact(&summary.plugin_chain),
         summary.lane_count,
         lane_shapes,
     )
@@ -4586,7 +6695,7 @@ fn format_runtime_execution_topology_summary_multiline(
         .enumerate()
         .map(|(index, lane)| {
             format!(
-                "\nexecution_topology_summary_lane_{}={:?}/groups={:?}/nodes={:?}/roles={:?}/track_lanes={:?}/bus_groups={:?}",
+                "\nexecution_topology_summary_lane_{}={:?}/groups={:?}/nodes={:?}/roles={:?}/track_lanes={:?}/bus_groups={:?}/console_groups={:?}/send_returns={:?}",
                 index,
                 lane.lane,
                 lane.groups,
@@ -4594,6 +6703,75 @@ fn format_runtime_execution_topology_summary_multiline(
                 lane.topology_roles,
                 lane.track_lane_ids,
                 lane.bus_group_ids,
+                lane.console_group_ids,
+                lane.send_return_ids,
+            )
+        })
+        .collect::<String>();
+    let track_lane_lines = summary
+        .track_lanes
+        .iter()
+        .enumerate()
+        .map(|(index, track_lane)| {
+            format!(
+                "\nexecution_topology_summary_track_lane_{}={}/nodes={:?}/bus_groups={:?}/input={:?}/output={:?}/plugin_chain={}",
+                index,
+                track_lane.track_lane_id,
+                track_lane.node_ids,
+                track_lane.bus_group_ids,
+                track_lane.input_bus_ids,
+                track_lane.output_bus_ids,
+                format_runtime_routed_plugin_chain_summary_compact(&track_lane.plugin_chain),
+            )
+        })
+        .collect::<String>();
+    let bus_group_lines = summary
+        .bus_groups
+        .iter()
+        .enumerate()
+        .map(|(index, bus_group)| {
+            format!(
+                "\nexecution_topology_summary_bus_group_{}={}/roles={:?}/nodes={:?}/input={:?}/output={:?}/plugin_chain={}",
+                index,
+                bus_group.bus_group_id,
+                bus_group.topology_roles,
+                bus_group.node_ids,
+                bus_group.input_bus_ids,
+                bus_group.output_bus_ids,
+                format_runtime_routed_plugin_chain_summary_compact(&bus_group.plugin_chain),
+            )
+        })
+        .collect::<String>();
+    let console_group_lines = summary
+        .console_groups
+        .iter()
+        .enumerate()
+        .map(|(index, console_group)| {
+            format!(
+                "\nexecution_topology_summary_console_group_{}={}/nodes={:?}/input={:?}/output={:?}/plugin_chain={}",
+                index,
+                console_group.console_group_id,
+                console_group.node_ids,
+                console_group.input_bus_ids,
+                console_group.output_bus_ids,
+                format_runtime_routed_plugin_chain_summary_compact(&console_group.plugin_chain),
+            )
+        })
+        .collect::<String>();
+    let send_return_lines = summary
+        .send_returns
+        .iter()
+        .enumerate()
+        .map(|(index, send_return)| {
+            format!(
+                "\nexecution_topology_summary_send_return_{}={}/sends={:?}/returns={:?}/input={:?}/output={:?}/plugin_chain={}",
+                index,
+                send_return.send_return_id,
+                send_return.send_node_ids,
+                send_return.return_node_ids,
+                send_return.input_bus_ids,
+                send_return.output_bus_ids,
+                format_runtime_routed_plugin_chain_summary_compact(&send_return.plugin_chain),
             )
         })
         .collect::<String>();
@@ -4603,22 +6781,31 @@ fn format_runtime_execution_topology_summary_multiline(
         .enumerate()
         .map(|(index, node)| {
             format!(
-                "\nexecution_topology_summary_node_{}={}/{:?}/{:?}/{:?}/lane_id={:?}/bus_group_id={:?}/input={}/output={}/plugin={:?}",
+                "\nexecution_topology_summary_node_{}={}/{:?}/{:?}/{:?}/track_lane_id={:?}/bus_group_id={:?}/console_group_id={:?}/send_return_id={:?}/input={}/output={}/plugin={:?}/plugin_recall={:?}/plugin_recall_payload={:?}/plugin_compensation={:?}/plugin_realized_latency={:?}/plugin_tail={:?}",
                 index,
                 node.node_id,
                 node.lane,
                 node.group,
                 node.topology_role,
-                node.lane_id,
+                node.track_lane_id,
                 node.bus_group_id,
+                node.console_group_id,
+                node.send_return_id,
                 node.input_bus_id,
                 node.output_bus_id,
                 node.plugin_sandbox_id,
+                node.plugin_recall_state,
+                node.plugin_recall
+                    .as_ref()
+                    .map(format_runtime_plugin_recall_snapshot_compact),
+                node.plugin_compensation_state,
+                node.plugin_realized_latency_samples,
+                node.plugin_tail_samples,
             )
         })
         .collect::<String>();
     format!(
-        "\nexecution_topology_summary_node_count={}\nexecution_topology_summary_utility_nodes={}\nexecution_topology_summary_track_lane_nodes={}\nexecution_topology_summary_bus_nodes={}\nexecution_topology_summary_send_return_nodes={}\nexecution_topology_summary_console_nodes={}\nexecution_topology_summary_lane_count={}\nexecution_topology_summary_track_lane_groups={}\nexecution_topology_summary_bus_groups={}\nexecution_topology_summary_console_groups={}{}{}",
+        "\nexecution_topology_summary_node_count={}\nexecution_topology_summary_utility_nodes={}\nexecution_topology_summary_track_lane_nodes={}\nexecution_topology_summary_bus_nodes={}\nexecution_topology_summary_send_return_nodes={}\nexecution_topology_summary_console_nodes={}\nexecution_topology_summary_lane_count={}\nexecution_topology_summary_track_lane_groups={}\nexecution_topology_summary_bus_groups={}\nexecution_topology_summary_send_return_groups={}\nexecution_topology_summary_console_groups={}\nexecution_topology_summary_plugin_chain={}{}{}{}{}{}{}",
         summary.node_count,
         summary.utility_node_count,
         summary.track_lane_node_count,
@@ -4628,8 +6815,14 @@ fn format_runtime_execution_topology_summary_multiline(
         summary.lane_count,
         summary.track_lane_group_count,
         summary.bus_group_count,
+        summary.send_return_group_count,
         summary.console_group_count,
+        format_runtime_routed_plugin_chain_summary_compact(&summary.plugin_chain),
         lane_lines,
+        track_lane_lines,
+        bus_group_lines,
+        console_group_lines,
+        send_return_lines,
         node_lines,
     )
 }
@@ -4829,6 +7022,713 @@ fn json_runtime_degradation_summary(summary: &RuntimeDegradationSummary) -> Stri
     )
 }
 
+fn json_runtime_meter_source_snapshot(snapshot: &RuntimeMeterSourceSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"bus_id\":{},",
+            "\"topology_role\":{},",
+            "\"track_lane_id\":{},",
+            "\"bus_group_id\":{},",
+            "\"console_group_id\":{},",
+            "\"send_return_id\":{},",
+            "\"producer_node_ids\":{},",
+            "\"peak_level\":{},",
+            "\"rms_level\":{},",
+            "\"latency_samples\":{},",
+            "\"tail_samples\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.bus_id.as_str())),
+        json_escape_string(&format!("{:?}", snapshot.topology_role)),
+        json_option_string(snapshot.track_lane_id.as_deref()),
+        json_option_string(snapshot.bus_group_id.as_deref()),
+        json_option_string(snapshot.console_group_id.as_deref()),
+        json_option_string(snapshot.send_return_id.as_deref()),
+        json_string_vec(&snapshot.producer_node_ids),
+        snapshot.peak_level,
+        snapshot.rms_level,
+        snapshot.latency_samples,
+        snapshot.tail_samples,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_meter_source_snapshot_vec(snapshots: &[RuntimeMeterSourceSnapshot]) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_meter_source_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_tempo_map_segment_snapshot(snapshot: &RuntimeTempoMapSegmentSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"segment_id\":{},",
+            "\"start_samples\":{},",
+            "\"end_samples\":{},",
+            "\"start_tempo_bpm\":{},",
+            "\"end_tempo_bpm\":{},",
+            "\"interpolation\":\"{:?}\",",
+            "\"covers_timeline_position\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.segment_id.as_str())),
+        snapshot.start_samples,
+        json_option_i64(snapshot.end_samples),
+        snapshot.start_tempo_bpm,
+        json_option_f64(snapshot.end_tempo_bpm),
+        snapshot.interpolation,
+        snapshot.covers_timeline_position,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_tempo_map_segment_snapshot_vec(
+    snapshots: &[RuntimeTempoMapSegmentSnapshot],
+) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_tempo_map_segment_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_tempo_map_snapshot(snapshot: &RuntimeTempoMapSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"segment_count\":{},",
+            "\"active_segment_id\":{},",
+            "\"active_segment_index\":{},",
+            "\"next_segment_start_samples\":{},",
+            "\"resolved_tempo_bpm\":{},",
+            "\"tempo_source\":\"{:?}\",",
+            "\"timeline_position_samples\":{},",
+            "\"segments\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.segment_count,
+        json_option_string(snapshot.active_segment_id.as_deref()),
+        json_option_usize(snapshot.active_segment_index),
+        json_option_i64(snapshot.next_segment_start_samples),
+        snapshot.resolved_tempo_bpm,
+        snapshot.tempo_source,
+        json_option_i64(snapshot.timeline_position_samples),
+        json_runtime_tempo_map_segment_snapshot_vec(&snapshot.segments),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_warp_clip_snapshot(snapshot: &RuntimeWarpClipSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_id\":{},",
+            "\"media_asset_id\":{},",
+            "\"mode\":\"{:?}\",",
+            "\"source_tempo_bpm\":{},",
+            "\"project_tempo_bpm\":{},",
+            "\"project_tempo_source\":\"{:?}\",",
+            "\"project_tempo_segment_id\":{},",
+            "\"realized_ratio\":{},",
+            "\"anchor_timeline_samples\":{},",
+            "\"start_samples\":{},",
+            "\"duration_samples\":{},",
+            "\"readiness\":\"{:?}\",",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.clip_id.as_str())),
+        json_option_string(snapshot.media_asset_id.as_deref()),
+        snapshot.mode,
+        json_option_f64(snapshot.source_tempo_bpm),
+        snapshot.project_tempo_bpm,
+        snapshot.project_tempo_source,
+        json_option_string(snapshot.project_tempo_segment_id.as_deref()),
+        snapshot.realized_ratio,
+        snapshot.anchor_timeline_samples,
+        snapshot.start_samples,
+        snapshot.duration_samples,
+        snapshot.readiness,
+        json_option_string(snapshot.last_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_warp_clip_snapshot_vec(snapshots: &[RuntimeWarpClipSnapshot]) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_warp_clip_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_warp_pipeline_snapshot(snapshot: &RuntimeWarpPipelineSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_count\":{},",
+            "\"ready_clip_count\":{},",
+            "\"degraded_clip_count\":{},",
+            "\"bypassed_clip_count\":{},",
+            "\"active_warp_count\":{},",
+            "\"resolved_project_tempo_bpm\":{},",
+            "\"resolved_project_tempo_source\":\"{:?}\",",
+            "\"resolved_project_tempo_segment_id\":{},",
+            "\"clips\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.bypassed_clip_count,
+        snapshot.active_warp_count,
+        snapshot.resolved_project_tempo_bpm,
+        snapshot.resolved_project_tempo_source,
+        json_option_string(snapshot.resolved_project_tempo_segment_id.as_deref()),
+        json_runtime_warp_clip_snapshot_vec(&snapshot.clips),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_clip_processing_stage_vec(stages: &[RuntimeClipProcessingStage]) -> String {
+    let joined = stages
+        .iter()
+        .map(|stage| json_escape_string(&format!("{stage:?}")))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_clip_processing_snapshot(snapshot: &RuntimeClipProcessingSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_id\":{},",
+            "\"media_asset_id\":{},",
+            "\"warp_mode\":\"{:?}\",",
+            "\"start_samples\":{},",
+            "\"duration_samples\":{},",
+            "\"fade_in\":{{\"duration_samples\":{},\"shape\":\"{:?}\"}},",
+            "\"fade_out\":{{\"duration_samples\":{},\"shape\":\"{:?}\"}},",
+            "\"fade_in_end_samples\":{},",
+            "\"fade_out_start_samples\":{},",
+            "\"clip_gain\":{{\"start_linear\":{},\"end_linear\":{},\"shape\":\"{:?}\"}},",
+            "\"treatment_stages\":{},",
+            "\"realized_warp_ratio\":{},",
+            "\"project_tempo_source\":{},",
+            "\"project_tempo_segment_id\":{},",
+            "\"readiness\":\"{:?}\",",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.clip_id.as_str())),
+        json_option_string(snapshot.media_asset_id.as_deref()),
+        snapshot.warp_mode,
+        snapshot.start_samples,
+        snapshot.duration_samples,
+        snapshot.fade_in.duration_samples,
+        snapshot.fade_in.shape,
+        snapshot.fade_out.duration_samples,
+        snapshot.fade_out.shape,
+        snapshot.fade_in_end_samples,
+        snapshot.fade_out_start_samples,
+        snapshot.clip_gain.start_linear,
+        snapshot.clip_gain.end_linear,
+        snapshot.clip_gain.shape,
+        json_runtime_clip_processing_stage_vec(&snapshot.treatment_stages),
+        json_option_f64(snapshot.realized_warp_ratio),
+        json_option_string(
+            snapshot
+                .project_tempo_source
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(snapshot.project_tempo_segment_id.as_deref()),
+        snapshot.readiness,
+        json_option_string(snapshot.last_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_clip_processing_snapshot_vec(
+    snapshots: &[RuntimeClipProcessingSnapshot],
+) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_clip_processing_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_clip_processing_pipeline_snapshot(
+    snapshot: &RuntimeClipProcessingPipelineSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_count\":{},",
+            "\"ready_clip_count\":{},",
+            "\"pending_media_clip_count\":{},",
+            "\"pending_warp_clip_count\":{},",
+            "\"invalid_clip_count\":{},",
+            "\"faded_clip_count\":{},",
+            "\"gain_shaped_clip_count\":{},",
+            "\"warped_clip_count\":{},",
+            "\"treatment_stage_count\":{},",
+            "\"clips\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.pending_warp_clip_count,
+        snapshot.invalid_clip_count,
+        snapshot.faded_clip_count,
+        snapshot.gain_shaped_clip_count,
+        snapshot.warped_clip_count,
+        snapshot.treatment_stage_count,
+        json_runtime_clip_processing_snapshot_vec(&snapshot.clips),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_recall_snapshot(snapshot: &RuntimePluginRecallSnapshot) -> String {
+    let lifecycle_state = snapshot
+        .payload
+        .lifecycle_state
+        .map(|state| format!("{state:?}"));
+    let lifecycle_stage = snapshot
+        .payload
+        .lifecycle_stage
+        .map(|stage| format!("{stage:?}"));
+    let transport_stage = snapshot
+        .payload
+        .transport_stage
+        .map(|stage| format!("{stage:?}"));
+    let last_restart_intent = snapshot
+        .payload
+        .last_restart_intent
+        .map(|intent| format!("{intent:?}"));
+    let last_stop_reason = snapshot
+        .payload
+        .last_stop_reason
+        .map(|reason| format!("{reason:?}"));
+    let last_fault_kind = snapshot
+        .payload
+        .last_fault_kind
+        .map(|kind| format!("{kind:?}"));
+    format!(
+        concat!(
+            "{{",
+            "\"state\":\"{:?}\",",
+            "\"payload\":{{",
+            "\"sandbox_id\":{},",
+            "\"lifecycle_state\":{},",
+            "\"lifecycle_stage\":{},",
+            "\"transport_stage\":{},",
+            "\"readiness_state\":{},",
+            "\"recovery_count\":{},",
+            "\"restart_count\":{},",
+            "\"fault_count\":{},",
+            "\"last_restart_intent\":{},",
+            "\"last_stop_reason\":{},",
+            "\"last_fault_kind\":{},",
+            "\"last_fault_detail\":{},",
+            "\"degraded_reasons\":{}",
+            "}},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.state,
+        json_option_string(snapshot.payload.sandbox_id.as_deref()),
+        json_option_string(lifecycle_state.as_deref()),
+        json_option_string(lifecycle_stage.as_deref()),
+        json_option_string(transport_stage.as_deref()),
+        json_option_string(snapshot.payload.readiness_state.as_deref()),
+        snapshot.payload.recovery_count,
+        snapshot.payload.restart_count,
+        snapshot.payload.fault_count,
+        json_option_string(last_restart_intent.as_deref()),
+        json_option_string(last_stop_reason.as_deref()),
+        json_option_string(last_fault_kind.as_deref()),
+        json_option_string(snapshot.payload.last_fault_detail.as_deref()),
+        json_string_vec(&snapshot.payload.degraded_reasons),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_chain_stage_snapshot(snapshot: &RuntimePluginChainStageSnapshot) -> String {
+    let lifecycle_state = snapshot.lifecycle_state.map(|state| format!("{state:?}"));
+    format!(
+        concat!(
+            "{{",
+            "\"node_id\":{},",
+            "\"stage_index\":{},",
+            "\"sandbox_id\":{},",
+            "\"track_lane_id\":{},",
+            "\"bus_group_id\":{},",
+            "\"console_group_id\":{},",
+            "\"send_return_id\":{},",
+            "\"lifecycle_state\":{},",
+            "\"recall_state\":\"{:?}\",",
+            "\"recall\":{},",
+            "\"compensation_state\":\"{:?}\",",
+            "\"planned_latency_samples\":{},",
+            "\"realized_latency_samples\":{},",
+            "\"tail_samples\":{},",
+            "\"bypassed\":{},",
+            "\"active_transport\":{},",
+            "\"degraded_reasons\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.node_id.as_str())),
+        snapshot.stage_index,
+        json_option_string(snapshot.sandbox_id.as_deref()),
+        json_option_string(snapshot.track_lane_id.as_deref()),
+        json_option_string(snapshot.bus_group_id.as_deref()),
+        json_option_string(snapshot.console_group_id.as_deref()),
+        json_option_string(snapshot.send_return_id.as_deref()),
+        json_option_string(lifecycle_state.as_deref()),
+        snapshot.recall_state,
+        json_runtime_plugin_recall_snapshot(&snapshot.recall),
+        snapshot.compensation_state,
+        snapshot.planned_latency_samples,
+        json_option_u32(snapshot.realized_latency_samples),
+        json_option_u32(snapshot.tail_samples),
+        snapshot.bypassed,
+        snapshot.active_transport,
+        json_string_vec(&snapshot.degraded_reasons),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_chain_stage_snapshot_vec(
+    snapshots: &[RuntimePluginChainStageSnapshot],
+) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_plugin_chain_stage_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_plugin_execution_chain_summary(
+    summary: &RuntimePluginExecutionChainSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"chain_id\":{},",
+            "\"track_lane_id\":{},",
+            "\"bus_group_id\":{},",
+            "\"console_group_id\":{},",
+            "\"send_return_id\":{},",
+            "\"stage_count\":{},",
+            "\"pending_render_stage_count\":{},",
+            "\"settling_stage_count\":{},",
+            "\"compensated_stage_count\":{},",
+            "\"degraded_stage_count\":{},",
+            "\"bypassed_stage_count\":{},",
+            "\"missing_binding_stage_count\":{},",
+            "\"total_planned_latency_samples\":{},",
+            "\"total_realized_latency_samples\":{},",
+            "\"total_tail_samples\":{},",
+            "\"stages\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(summary.chain_id.as_str())),
+        json_option_string(summary.track_lane_id.as_deref()),
+        json_option_string(summary.bus_group_id.as_deref()),
+        json_option_string(summary.console_group_id.as_deref()),
+        json_option_string(summary.send_return_id.as_deref()),
+        summary.stage_count,
+        summary.pending_render_stage_count,
+        summary.settling_stage_count,
+        summary.compensated_stage_count,
+        summary.degraded_stage_count,
+        summary.bypassed_stage_count,
+        summary.missing_binding_stage_count,
+        summary.total_planned_latency_samples,
+        summary.total_realized_latency_samples,
+        summary.total_tail_samples,
+        json_runtime_plugin_chain_stage_snapshot_vec(&summary.stages),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_execution_chain_summary_vec(
+    summaries: &[RuntimePluginExecutionChainSummary],
+) -> String {
+    let joined = summaries
+        .iter()
+        .map(json_runtime_plugin_execution_chain_summary)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_plugin_chain_snapshot(snapshot: &RuntimePluginChainSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"chain_count\":{},",
+            "\"stage_count\":{},",
+            "\"pending_render_stage_count\":{},",
+            "\"settling_stage_count\":{},",
+            "\"compensated_stage_count\":{},",
+            "\"degraded_stage_count\":{},",
+            "\"bypassed_stage_count\":{},",
+            "\"missing_binding_stage_count\":{},",
+            "\"total_planned_latency_samples\":{},",
+            "\"total_realized_latency_samples\":{},",
+            "\"total_tail_samples\":{},",
+            "\"chains\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.chain_count,
+        snapshot.stage_count,
+        snapshot.pending_render_stage_count,
+        snapshot.settling_stage_count,
+        snapshot.compensated_stage_count,
+        snapshot.degraded_stage_count,
+        snapshot.bypassed_stage_count,
+        snapshot.missing_binding_stage_count,
+        snapshot.total_planned_latency_samples,
+        snapshot.total_realized_latency_samples,
+        snapshot.total_tail_samples,
+        json_runtime_plugin_execution_chain_summary_vec(&snapshot.chains),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_routed_plugin_chain_summary(summary: &RuntimeRoutedPluginChainSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"chain_count\":{},",
+            "\"stage_count\":{},",
+            "\"pending_render_stage_count\":{},",
+            "\"settling_stage_count\":{},",
+            "\"compensated_stage_count\":{},",
+            "\"degraded_stage_count\":{},",
+            "\"bypassed_stage_count\":{},",
+            "\"missing_binding_stage_count\":{},",
+            "\"total_planned_latency_samples\":{},",
+            "\"total_realized_latency_samples\":{},",
+            "\"total_tail_samples\":{},",
+            "\"chain_ids\":{},",
+            "\"node_ids\":{},",
+            "\"sandbox_ids\":{}",
+            "}}"
+        ),
+        summary.chain_count,
+        summary.stage_count,
+        summary.pending_render_stage_count,
+        summary.settling_stage_count,
+        summary.compensated_stage_count,
+        summary.degraded_stage_count,
+        summary.bypassed_stage_count,
+        summary.missing_binding_stage_count,
+        summary.total_planned_latency_samples,
+        summary.total_realized_latency_samples,
+        summary.total_tail_samples,
+        json_string_vec(&summary.chain_ids),
+        json_string_vec(&summary.node_ids),
+        json_string_vec(&summary.sandbox_ids),
+    )
+}
+
+fn json_runtime_routed_meter_aggregate(aggregate: &RuntimeRoutedMeterAggregate) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"meter_count\":{},",
+            "\"metered_bus_ids\":{},",
+            "\"producer_node_ids\":{},",
+            "\"peak_level\":{},",
+            "\"rms_level\":{},",
+            "\"latency_samples\":{},",
+            "\"tail_samples\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        aggregate.meter_count,
+        json_string_vec(&aggregate.metered_bus_ids),
+        json_string_vec(&aggregate.producer_node_ids),
+        json_option_f32(aggregate.peak_level),
+        json_option_f32(aggregate.rms_level),
+        aggregate.latency_samples,
+        aggregate.tail_samples,
+        json_option_string(Some(aggregate.summary.as_str())),
+    )
+}
+
+fn json_runtime_track_lane_meter_summary_vec(summaries: &[RuntimeTrackLaneMeterSummary]) -> String {
+    let joined = summaries
+        .iter()
+        .map(|summary| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"track_lane_id\":{},",
+                    "\"bus_group_ids\":{},",
+                    "\"input_bus_ids\":{},",
+                    "\"output_bus_ids\":{},",
+                    "\"aggregate\":{}",
+                    "}}"
+                ),
+                json_option_string(Some(summary.track_lane_id.as_str())),
+                json_string_vec(&summary.bus_group_ids),
+                json_string_vec(&summary.input_bus_ids),
+                json_string_vec(&summary.output_bus_ids),
+                json_runtime_routed_meter_aggregate(&summary.aggregate),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_bus_group_meter_summary_vec(summaries: &[RuntimeBusGroupMeterSummary]) -> String {
+    let joined = summaries
+        .iter()
+        .map(|summary| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"bus_group_id\":{},",
+                    "\"topology_roles\":{},",
+                    "\"node_ids\":{},",
+                    "\"input_bus_ids\":{},",
+                    "\"output_bus_ids\":{},",
+                    "\"aggregate\":{}",
+                    "}}"
+                ),
+                json_option_string(Some(summary.bus_group_id.as_str())),
+                json_runtime_topology_role_vec(&summary.topology_roles),
+                json_string_vec(&summary.node_ids),
+                json_string_vec(&summary.input_bus_ids),
+                json_string_vec(&summary.output_bus_ids),
+                json_runtime_routed_meter_aggregate(&summary.aggregate),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_console_group_meter_summary_vec(
+    summaries: &[RuntimeConsoleGroupMeterSummary],
+) -> String {
+    let joined = summaries
+        .iter()
+        .map(|summary| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"console_group_id\":{},",
+                    "\"node_ids\":{},",
+                    "\"input_bus_ids\":{},",
+                    "\"output_bus_ids\":{},",
+                    "\"aggregate\":{}",
+                    "}}"
+                ),
+                json_option_string(Some(summary.console_group_id.as_str())),
+                json_string_vec(&summary.node_ids),
+                json_string_vec(&summary.input_bus_ids),
+                json_string_vec(&summary.output_bus_ids),
+                json_runtime_routed_meter_aggregate(&summary.aggregate),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_send_return_meter_summary_vec(
+    summaries: &[RuntimeSendReturnMeterSummary],
+) -> String {
+    let joined = summaries
+        .iter()
+        .map(|summary| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"send_return_id\":{},",
+                    "\"send_node_ids\":{},",
+                    "\"return_node_ids\":{},",
+                    "\"input_bus_ids\":{},",
+                    "\"output_bus_ids\":{},",
+                    "\"aggregate\":{}",
+                    "}}"
+                ),
+                json_option_string(Some(summary.send_return_id.as_str())),
+                json_string_vec(&summary.send_node_ids),
+                json_string_vec(&summary.return_node_ids),
+                json_string_vec(&summary.input_bus_ids),
+                json_string_vec(&summary.output_bus_ids),
+                json_runtime_routed_meter_aggregate(&summary.aggregate),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_metering_snapshot(snapshot: &RuntimeMeteringSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"meter_count\":{},",
+            "\"main_output_peak_level\":{},",
+            "\"main_output_rms_level\":{},",
+            "\"momentary_loudness_lufs\":{},",
+            "\"short_term_loudness_lufs\":{},",
+            "\"integrated_loudness_lufs\":{},",
+            "\"clipped_sample_count\":{},",
+            "\"meters\":{},",
+            "\"track_lanes\":{},",
+            "\"bus_groups\":{},",
+            "\"console_groups\":{},",
+            "\"send_returns\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.meter_count,
+        json_option_f32(snapshot.main_output_peak_level),
+        json_option_f32(snapshot.main_output_rms_level),
+        json_option_f32(snapshot.momentary_loudness_lufs),
+        json_option_f32(snapshot.short_term_loudness_lufs),
+        json_option_f32(snapshot.integrated_loudness_lufs),
+        snapshot.clipped_sample_count,
+        json_runtime_meter_source_snapshot_vec(&snapshot.meters),
+        json_runtime_track_lane_meter_summary_vec(&snapshot.track_lanes),
+        json_runtime_bus_group_meter_summary_vec(&snapshot.bus_groups),
+        json_runtime_console_group_meter_summary_vec(&snapshot.console_groups),
+        json_runtime_send_return_meter_summary_vec(&snapshot.send_returns),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
 fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySummary) -> String {
     format!(
         concat!(
@@ -4842,8 +7742,14 @@ fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySum
             "\"lane_count\":{},",
             "\"track_lane_group_count\":{},",
             "\"bus_group_count\":{},",
+            "\"send_return_group_count\":{},",
             "\"console_group_count\":{},",
+            "\"plugin_chain\":{},",
             "\"lanes\":{},",
+            "\"track_lanes\":{},",
+            "\"bus_groups\":{},",
+            "\"console_groups\":{},",
+            "\"send_returns\":{},",
             "\"nodes\":{}",
             "}}"
         ),
@@ -4856,8 +7762,14 @@ fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySum
         summary.lane_count,
         summary.track_lane_group_count,
         summary.bus_group_count,
+        summary.send_return_group_count,
         summary.console_group_count,
+        json_runtime_routed_plugin_chain_summary(&summary.plugin_chain),
         json_runtime_execution_topology_lanes(&summary.lanes),
+        json_runtime_mixer_track_lanes(&summary.track_lanes),
+        json_runtime_mixer_bus_groups(&summary.bus_groups),
+        json_runtime_mixer_console_groups(&summary.console_groups),
+        json_runtime_mixer_send_returns(&summary.send_returns),
         json_runtime_execution_topology_nodes(&summary.nodes),
     )
 }
@@ -4870,6 +7782,10 @@ fn json_runtime_scheduler_topology_issue(issue: &RuntimeSchedulerTopologyIssue) 
         ),
         RuntimeSchedulerTopologyIssue::MissingBusGroupIds { node_count } => format!(
             "{{\"kind\":\"MissingBusGroupIds\",\"node_count\":{}}}",
+            node_count
+        ),
+        RuntimeSchedulerTopologyIssue::MissingSendReturnIds { node_count } => format!(
+            "{{\"kind\":\"MissingSendReturnIds\",\"node_count\":{}}}",
             node_count
         ),
         RuntimeSchedulerTopologyIssue::MissingConsoleGroupIds { node_count } => format!(
@@ -4944,6 +7860,24 @@ fn json_runtime_automation_snapshot(snapshot: &RuntimeAutomationSnapshot) -> Str
     format!(
         concat!(
             "{{",
+            "\"lane_count\":{},",
+            "\"point_count\":{},",
+            "\"projected_segment_count\":{},",
+            "\"mapped_lane_count\":{},",
+            "\"unmapped_lane_count\":{},",
+            "\"hold_lane_count\":{},",
+            "\"linear_lane_count\":{},",
+            "\"last_batch_epoch\":{},",
+            "\"last_batch_event_count\":{},",
+            "\"last_batch_ignored_event_count\":{},",
+            "\"last_batch_sub_block_count\":{},",
+            "\"last_batch_coalesced_event_count\":{},",
+            "\"last_batch_strategy_max_sub_blocks\":{},",
+            "\"last_batch_min_ramp_step_samples\":{},",
+            "\"last_batch_max_sample_offset\":{},",
+            "\"last_block_sequence\":{},",
+            "\"last_timeline_position_samples\":{},",
+            "\"transport_playing\":{},",
             "\"parameter_id\":{},",
             "\"value_events\":{},",
             "\"modulation_events\":{},",
@@ -4959,6 +7893,27 @@ fn json_runtime_automation_snapshot(snapshot: &RuntimeAutomationSnapshot) -> Str
             "\"lease_rollovers\":{}",
             "}}"
         ),
+        snapshot.lane_count,
+        snapshot.point_count,
+        snapshot.projected_segment_count,
+        snapshot.mapped_lane_count,
+        snapshot.unmapped_lane_count,
+        snapshot.hold_lane_count,
+        snapshot.linear_lane_count,
+        json_option_u64(snapshot.last_batch_epoch),
+        snapshot.last_batch_event_count,
+        snapshot.last_batch_ignored_event_count,
+        snapshot.last_batch_sub_block_count,
+        snapshot.last_batch_coalesced_event_count,
+        snapshot.last_batch_strategy_max_sub_blocks,
+        json_option_usize(snapshot.last_batch_min_ramp_step_samples),
+        json_option_usize(snapshot.last_batch_max_sample_offset),
+        json_option_u64(snapshot.last_block_sequence),
+        json_option_i64(snapshot.last_timeline_position_samples),
+        match snapshot.transport_playing {
+            Some(value) => value.to_string(),
+            None => "null".into(),
+        },
         snapshot.parameter_id,
         snapshot.value_events,
         snapshot.modulation_events,
@@ -5288,8 +8243,10 @@ fn json_runtime_planned_graph_nodes(nodes: &[RuntimePlannedGraphNode]) -> String
                         "\"group\":{},",
                         "\"latency_samples\":{},",
                         "\"topology_role\":{},",
-                        "\"lane_id\":{},",
+                        "\"track_lane_id\":{},",
                         "\"bus_group_id\":{},",
+                        "\"console_group_id\":{},",
+                        "\"send_return_id\":{},",
                         "\"input_bus_id\":{},",
                         "\"output_bus_id\":{}",
                         "}}"
@@ -5316,8 +8273,10 @@ fn json_runtime_planned_graph_nodes(nodes: &[RuntimePlannedGraphNode]) -> String
                         GraphNodeTopologyRole::Return => "Return",
                         GraphNodeTopologyRole::ConsoleNode => "ConsoleNode",
                     })),
-                    json_option_string(node.lane_id.as_deref()),
+                    json_option_string(node.track_lane_id.as_deref()),
                     json_option_string(node.bus_group_id.as_deref()),
+                    json_option_string(node.console_group_id.as_deref()),
+                    json_option_string(node.send_return_id.as_deref()),
                     json_option_string(Some(node.input_bus_id.as_str())),
                     json_option_string(Some(node.output_bus_id.as_str())),
                 )
@@ -5341,7 +8300,9 @@ fn json_runtime_execution_topology_lanes(lanes: &[RuntimeExecutionLaneSummary]) 
                         "\"node_ids\":{},",
                         "\"topology_roles\":{},",
                         "\"track_lane_ids\":{},",
-                        "\"bus_group_ids\":{}",
+                        "\"bus_group_ids\":{},",
+                        "\"console_group_ids\":{},",
+                        "\"send_return_ids\":{}",
                         "}}"
                     ),
                     json_option_string(Some(match lane.lane {
@@ -5353,6 +8314,126 @@ fn json_runtime_execution_topology_lanes(lanes: &[RuntimeExecutionLaneSummary]) 
                     json_runtime_topology_role_vec(&lane.topology_roles),
                     json_string_vec(&lane.track_lane_ids),
                     json_string_vec(&lane.bus_group_ids),
+                    json_string_vec(&lane.console_group_ids),
+                    json_string_vec(&lane.send_return_ids),
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_mixer_track_lanes(track_lanes: &[RuntimeMixerTrackLaneSummary]) -> String {
+    format!(
+        "[{}]",
+        track_lanes
+            .iter()
+            .map(|track_lane| {
+                format!(
+                    concat!(
+                        "{{",
+                        "\"track_lane_id\":{},",
+                        "\"node_ids\":{},",
+                        "\"bus_group_ids\":{},",
+                        "\"input_bus_ids\":{},",
+                        "\"output_bus_ids\":{},",
+                        "\"plugin_chain\":{}",
+                        "}}"
+                    ),
+                    json_option_string(Some(track_lane.track_lane_id.as_str())),
+                    json_string_vec(&track_lane.node_ids),
+                    json_string_vec(&track_lane.bus_group_ids),
+                    json_string_vec(&track_lane.input_bus_ids),
+                    json_string_vec(&track_lane.output_bus_ids),
+                    json_runtime_routed_plugin_chain_summary(&track_lane.plugin_chain),
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_mixer_bus_groups(bus_groups: &[RuntimeMixerBusGroupSummary]) -> String {
+    format!(
+        "[{}]",
+        bus_groups
+            .iter()
+            .map(|bus_group| {
+                format!(
+                    concat!(
+                        "{{",
+                        "\"bus_group_id\":{},",
+                        "\"topology_roles\":{},",
+                        "\"node_ids\":{},",
+                        "\"input_bus_ids\":{},",
+                        "\"output_bus_ids\":{},",
+                        "\"plugin_chain\":{}",
+                        "}}"
+                    ),
+                    json_option_string(Some(bus_group.bus_group_id.as_str())),
+                    json_runtime_topology_role_vec(&bus_group.topology_roles),
+                    json_string_vec(&bus_group.node_ids),
+                    json_string_vec(&bus_group.input_bus_ids),
+                    json_string_vec(&bus_group.output_bus_ids),
+                    json_runtime_routed_plugin_chain_summary(&bus_group.plugin_chain),
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_mixer_console_groups(console_groups: &[RuntimeMixerConsoleGroupSummary]) -> String {
+    format!(
+        "[{}]",
+        console_groups
+            .iter()
+            .map(|console_group| {
+                format!(
+                    concat!(
+                        "{{",
+                        "\"console_group_id\":{},",
+                        "\"node_ids\":{},",
+                        "\"input_bus_ids\":{},",
+                        "\"output_bus_ids\":{},",
+                        "\"plugin_chain\":{}",
+                        "}}"
+                    ),
+                    json_option_string(Some(console_group.console_group_id.as_str())),
+                    json_string_vec(&console_group.node_ids),
+                    json_string_vec(&console_group.input_bus_ids),
+                    json_string_vec(&console_group.output_bus_ids),
+                    json_runtime_routed_plugin_chain_summary(&console_group.plugin_chain),
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_mixer_send_returns(send_returns: &[RuntimeMixerSendReturnSummary]) -> String {
+    format!(
+        "[{}]",
+        send_returns
+            .iter()
+            .map(|send_return| {
+                format!(
+                    concat!(
+                        "{{",
+                        "\"send_return_id\":{},",
+                        "\"send_node_ids\":{},",
+                        "\"return_node_ids\":{},",
+                        "\"input_bus_ids\":{},",
+                        "\"output_bus_ids\":{},",
+                        "\"plugin_chain\":{}",
+                        "}}"
+                    ),
+                    json_option_string(Some(send_return.send_return_id.as_str())),
+                    json_string_vec(&send_return.send_node_ids),
+                    json_string_vec(&send_return.return_node_ids),
+                    json_string_vec(&send_return.input_bus_ids),
+                    json_string_vec(&send_return.output_bus_ids),
+                    json_runtime_routed_plugin_chain_summary(&send_return.plugin_chain),
                 )
             })
             .collect::<Vec<_>>()
@@ -5374,11 +8455,18 @@ fn json_runtime_execution_topology_nodes(nodes: &[RuntimeExecutionNodeSummary]) 
                         "\"group\":{},",
                         "\"execution_class\":{},",
                         "\"topology_role\":{},",
-                        "\"lane_id\":{},",
+                        "\"track_lane_id\":{},",
                         "\"bus_group_id\":{},",
+                        "\"console_group_id\":{},",
+                        "\"send_return_id\":{},",
                         "\"input_bus_id\":{},",
                         "\"output_bus_id\":{},",
-                        "\"plugin_sandbox_id\":{}",
+                        "\"plugin_sandbox_id\":{},",
+                        "\"plugin_recall_state\":{},",
+                        "\"plugin_recall\":{},",
+                        "\"plugin_compensation_state\":{},",
+                        "\"plugin_realized_latency_samples\":{},",
+                        "\"plugin_tail_samples\":{}",
                         "}}"
                     ),
                     json_option_string(Some(node.node_id.as_str())),
@@ -5405,11 +8493,28 @@ fn json_runtime_execution_topology_nodes(nodes: &[RuntimeExecutionNodeSummary]) 
                         GraphNodeTopologyRole::Return => "Return",
                         GraphNodeTopologyRole::ConsoleNode => "ConsoleNode",
                     })),
-                    json_option_string(node.lane_id.as_deref()),
+                    json_option_string(node.track_lane_id.as_deref()),
                     json_option_string(node.bus_group_id.as_deref()),
+                    json_option_string(node.console_group_id.as_deref()),
+                    json_option_string(node.send_return_id.as_deref()),
                     json_option_string(Some(node.input_bus_id.as_str())),
                     json_option_string(Some(node.output_bus_id.as_str())),
                     json_option_string(node.plugin_sandbox_id.as_deref()),
+                    json_option_string(
+                        node.plugin_recall_state
+                            .map(|state| format!("{state:?}"))
+                            .as_deref(),
+                    ),
+                    node.plugin_recall
+                        .as_ref()
+                        .map_or_else(|| "null".into(), json_runtime_plugin_recall_snapshot,),
+                    json_option_string(
+                        node.plugin_compensation_state
+                            .map(|state| format!("{state:?}"))
+                            .as_deref(),
+                    ),
+                    json_option_u32(node.plugin_realized_latency_samples),
+                    json_option_u32(node.plugin_tail_samples),
                 )
             })
             .collect::<Vec<_>>()
@@ -6996,6 +10101,14 @@ pub trait RuntimeProjectionApi {
         &mut self,
         projection: ScheduleProjection,
     ) -> Result<ProjectionReceipt, RuntimeError>;
+    fn apply_automation_projection(
+        &mut self,
+        projection: RuntimeAutomationProjection,
+    ) -> Result<ProjectionReceipt, RuntimeError>;
+    fn apply_tempo_map_projection(
+        &mut self,
+        projection: RuntimeTempoMapProjection,
+    ) -> Result<ProjectionReceipt, RuntimeError>;
     fn apply_transport_projection(
         &mut self,
         projection: TransportProjection,
@@ -7011,16 +10124,24 @@ pub trait RuntimeObservationApi {
     fn get_effective_config(&self) -> EffectiveRuntimeConfig;
     fn get_control_snapshot(&self) -> RuntimeControlSnapshot;
     fn get_scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot;
+    fn get_scheduler_topology_summary(&self) -> RuntimeSchedulerTopologySummary;
     fn get_diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot;
+    fn get_metering_snapshot(&self) -> RuntimeMeteringSnapshot;
     fn get_supervision_snapshot(&self) -> RuntimeSupervisionSnapshot;
     fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot;
     fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot;
     fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot;
     fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot;
+    fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot;
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
+    fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot;
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
+    fn get_execution_topology_summary(&self) -> RuntimeExecutionTopologySummary;
     fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot;
+    fn get_plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot;
+    fn get_plugin_chain_snapshot(&self) -> RuntimePluginChainSnapshot;
+    fn get_plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot;
 }
 
 pub trait RuntimeSupervisorApi {
@@ -7046,6 +10167,14 @@ pub trait RuntimeSupervisorApi {
         &mut self,
         clips: Vec<RuntimeWarpClipRegistration>,
     ) -> Result<(), RuntimeError>;
+    fn reconcile_clip_processing_clips(
+        &mut self,
+        clips: Vec<RuntimeClipProcessingRegistration>,
+    ) -> Result<(), RuntimeError>;
+    fn render_offline(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError>;
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     fn restart_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     fn set_backend_policy(&mut self, request: BackendPolicyOverride) -> Result<(), RuntimeError>;

@@ -53,6 +53,5 @@ Working rules for that thread:
 
 ## Next Task
 
-`g02` is complete. Open `g03` only when the next reusable DSP or analysis
-sequence is large enough to justify a fresh active generation rather than a
-backlog item.
+`g02` is complete. Continue with `g03.001` now that the next Signal runway is
+engine-oriented runtime depth rather than another DSP/analysis breadth pass.
