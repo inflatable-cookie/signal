@@ -1,0 +1,6 @@
+Lock
+Publish
+Review
+State
+Use
+Adopt

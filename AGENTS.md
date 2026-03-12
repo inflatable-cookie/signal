@@ -11,16 +11,18 @@ Scope: `signal/`.
 
 ## Effigy-First Execution
 
-- Start with `effigy tasks --repo .` to inspect Signal's local task surface.
-- Prefer `effigy health --repo .` as the default repo-owned baseline.
-- Prefer local Effigy tasks such as `effigy build --repo .`, `effigy dev --repo .`, `effigy test --repo .`, and `effigy validate --repo .`.
+- Start with `effigy tasks` to inspect Signal's local task surface.
+- Run `effigy doctor` when environment or task resolution is uncertain.
+- Prefer `effigy health` as the default repo-owned baseline.
+- Prefer local Effigy tasks such as `effigy build`, `effigy dev`, `effigy test --plan`, `effigy validate`, and `effigy qa:docs`.
 - Fall back to raw CMake or CTest commands only when the needed operation is not represented in `effigy.toml`.
 
 ## Validate
 
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .` when behavior changes
+- `effigy health`
+- `effigy validate`
+- `effigy qa:docs` when docs or planning surfaces change
+- `effigy test --plan` before test-focused work
 
 ## References
 

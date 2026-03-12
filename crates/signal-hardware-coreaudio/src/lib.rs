@@ -2,10 +2,11 @@
 
 use signal_hardware::{
     AudioDeviceDescriptor, BackendHealth, BackendPolicyRecord, BackendPolicyTier, HardwareBackend,
-    HardwareClockSource, HardwareConfigRequest, HardwareDiagnosticEvent, HardwareDiagnosticKind,
-    HardwareDiagnosticSeverity, HardwareDiagnosticsSnapshot, HardwareLatencyProfile,
-    HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareNegotiationError,
-    HardwareRestartPolicy, HardwareStreamConfig, HardwareStreamRequest, SampleRate,
+    HardwareClockSource, HardwareClockTopology, HardwareConfigRequest, HardwareDiagnosticEvent,
+    HardwareDiagnosticKind, HardwareDiagnosticSeverity, HardwareDiagnosticsSnapshot,
+    HardwareLatencyProfile, HardwareLifecycleContract, HardwareLifecycleOwnership,
+    HardwareNegotiationError, HardwareRestartPolicy, HardwareStreamConfig, HardwareStreamRequest,
+    SampleRate,
 };
 
 const DEFAULT_OUTPUT_DEVICE_ID: &str = "coreaudio:default-output";
@@ -187,6 +188,7 @@ impl HardwareBackend for CoreAudioBackend {
             sample_format: request.sample_format,
             interleaved: request.interleaved,
             clock_source: HardwareClockSource::Internal,
+            clock_topology: HardwareClockTopology::SingleEndpoint,
             lifecycle: HardwareLifecycleContract {
                 ownership: HardwareLifecycleOwnership::HostDrivenCallback,
                 restart_policy: HardwareRestartPolicy::HostMustRestart,
@@ -226,6 +228,7 @@ mod tests {
         assert_eq!(stream.output_channels, 2);
         assert_eq!(stream.sample_format, AudioSampleFormat::F32);
         assert_eq!(stream.clock_source, HardwareClockSource::Internal);
+        assert_eq!(stream.clock_topology, HardwareClockTopology::SingleEndpoint);
         assert_eq!(stream.latency, HardwareLatencyProfile::output_only(256));
         assert_eq!(
             stream.lifecycle,

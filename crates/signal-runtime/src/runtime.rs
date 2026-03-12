@@ -1,6 +1,7 @@
 //! Runtime configuration and shell implementation for Signal.
 
 use std::{
+    cell::RefCell,
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     fs,
     path::{Path, PathBuf},
@@ -17,7 +18,7 @@ use signal_graph::{
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
     AutomationContinuityReport, BlockSequenceContinuityReport, CompletionState,
-    ParameterAutomationSummary,
+    ParameterAutomationSummary, PluginFormat,
 };
 use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 use symphonia::core::{
@@ -36,33 +37,41 @@ use crate::interfaces::{
     HandshakeRequest, HandshakeResponse, HeartbeatCycleStage, LeaseRolloverRecord,
     LingeringCleanupMode, LingeringCleanupQueueReceipt, LingeringCleanupTrigger, ParameterBatch,
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRenderBatch,
-    PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-    ProjectionReceipt, RecoveryRestartIntent, RestartRequest, RuntimeAutomationInterpolation,
-    RuntimeAutomationProjection, RuntimeAutomationSnapshot, RuntimeAutomationTargetProjection,
-    RuntimeClipFadeShape, RuntimeClipGainShape, RuntimeClipProcessingPipelineSnapshot,
-    RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
-    RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
-    RuntimeClipRenderRequest, RuntimeClipRenderResult, RuntimeConfigRequest,
-    RuntimeControlSnapshot, RuntimeDiagnosticsSnapshot, RuntimeEngineBlockResult,
-    RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind, RuntimeEvent, RuntimeEventSink,
-    RuntimeExecutionPhase, RuntimeExecutionTopologySummary, RuntimeLifecycleApi,
-    RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
-    RuntimeMediaPipelineSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
-    RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
+    PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
+    PluginSandboxTransportStage, PluginScanRequest, ProjectionReceipt, RecoveryRestartIntent,
+    RestartRequest, RuntimeAutomationInterpolation, RuntimeAutomationProjection,
+    RuntimeAutomationSnapshot, RuntimeAutomationTargetProjection, RuntimeClipFadeShape,
+    RuntimeClipGainShape, RuntimeClipProcessingPipelineSnapshot, RuntimeClipProcessingReadiness,
+    RuntimeClipProcessingRegistration, RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage,
+    RuntimeClipRenderInputStage, RuntimeClipRenderRequest, RuntimeClipRenderResult,
+    RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDeferredServiceClass,
+    RuntimeDeferredServiceDecision, RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt,
+    RuntimeDiagnosticsSnapshot, RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError,
+    RuntimeErrorKind, RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase,
+    RuntimeExecutionTopologySummary, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
+    RuntimeMediaAssetSnapshot, RuntimeMediaAssetState, RuntimeMediaPipelineSnapshot,
+    RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeMeteringSnapshot,
+    RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
     RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
     RuntimeOfflinePluginDelegatedExecutionReceipt, RuntimeOfflinePluginDelegatedExecutionRequest,
     RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
     RuntimeOfflinePluginExecutionStageBoundary, RuntimeOfflinePluginOverrideState,
     RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderArtifactReceipt,
-    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderManifest,
+    RuntimeOfflineRenderCheckpointReceipt, RuntimeOfflineRenderCheckpointStage,
+    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderExecutionCancellationReceipt,
+    RuntimeOfflineRenderExecutionProgressReceipt, RuntimeOfflineRenderExecutionReceipt,
+    RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderManifest,
+    RuntimeOfflineRenderPurgeReceipt, RuntimeOfflineRenderPurgeRequest,
+    RuntimeOfflineRenderQueueProgressReceipt, RuntimeOfflineRenderQueueResult,
     RuntimeOfflineRenderReportReceipt, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
     RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult, RuntimePluginChainSnapshot,
-    RuntimePluginChainStageSnapshot, RuntimePluginCompensationState, RuntimePluginDispatchState,
+    RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
+    RuntimePluginDiscoveredTypeRecord, RuntimePluginDiscoverySnapshot, RuntimePluginDispatchState,
     RuntimePluginExecutionChainSummary, RuntimePluginLifecycleSnapshot,
     RuntimePluginLifecycleState, RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload,
     RuntimePluginRecallSnapshot, RuntimePluginRecallState, RuntimePluginSandboxSnapshot,
-    RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
-    RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+    RuntimePluginScanReceipt, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
+    RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
     RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
     RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
@@ -76,12 +85,49 @@ use crate::interfaces::{
     RuntimeTransportObservationSnapshot, RuntimeTransportTransitionKind,
     RuntimeWarpClipRegistration, RuntimeWarpClipSnapshot, RuntimeWarpMode,
     RuntimeWarpPipelineSnapshot, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
-    SandboxOperationFailureStage, ScheduleProjection, StopReason, SubscriptionHandle,
+    SandboxOperationFailureStage, ScanHandle, ScheduleProjection, StopReason, SubscriptionHandle,
     TransportAttachIntent, TransportProjection, TransportSessionProvenance, TransportSessionState,
     WatchdogRestartRecord,
 };
 
 const PREWORK_LATENCY_FOCUSED_THRESHOLD_SAMPLES: u32 = 64;
+const OFFLINE_RENDER_PROGRESS_CHECKPOINT_TARGET_COUNT: usize = 6;
+
+#[derive(Clone, Debug)]
+struct OfflineRenderCheckpointDraft {
+    stage: RuntimeOfflineRenderCheckpointStage,
+    rendered_frame_count: usize,
+    total_frame_count: usize,
+    rendered_block_count: usize,
+    total_block_count: usize,
+    progress_percent: u8,
+    summary: String,
+}
+
+#[derive(Clone, Debug)]
+struct RuntimeOfflineRenderExecutionSession {
+    request: RuntimeOfflineRenderRequest,
+    state: RuntimeOfflineRenderExecutionState,
+    preview: RuntimeOfflineRenderContractPreview,
+    plugin_execution_boundary: RuntimeOfflinePluginExecutionBoundary,
+    delegated_execution_request: RuntimeOfflinePluginDelegatedExecutionRequest,
+    input_layout: ChannelLayout,
+    plugin_overrides: Vec<GraphNodeRenderOverride>,
+    captured_bus_ids: Vec<String>,
+    decoded_media_assets: BTreeMap<String, AudioBuffer>,
+    main_mix: Option<AudioBuffer>,
+    stem_outputs: BTreeMap<String, Option<AudioBuffer>>,
+    total_frames: usize,
+    total_block_count: usize,
+    rendered_frames: usize,
+    block_count: usize,
+    checkpoint_count: usize,
+    emitted_checkpoint_count: usize,
+    interruption_count: usize,
+    last_state_summary: String,
+    materialized_result: Option<RuntimeOfflineRenderResult>,
+    finalizing_checkpoint_emitted: bool,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeProfile {
@@ -136,6 +182,7 @@ pub struct SignalRuntime {
     automation: RuntimeAutomationState,
     engine: RuntimeEngineState,
     transport_concurrency: RuntimeTransportConcurrencyState,
+    plugin_discovery: RuntimePluginDiscoveryStateModel,
     plugin_lifecycle: RuntimePluginLifecycleStateModel,
     recording_capture: RuntimeRecordingCaptureStateModel,
     metering: RuntimeMeteringStateModel,
@@ -145,6 +192,8 @@ pub struct SignalRuntime {
     clip_processing_pipeline: RuntimeClipProcessingPipelineStateModel,
     diagnostics: RuntimeDiagnosticsSnapshot,
     supervision: RuntimeSupervisionState,
+    last_deferred_service_receipt: RefCell<Option<RuntimeDeferredServiceReceipt>>,
+    offline_render_executions: HashMap<String, RuntimeOfflineRenderExecutionSession>,
     next_subscription: u64,
     sinks: Vec<Box<dyn RuntimeEventSink>>,
 }
@@ -203,6 +252,80 @@ impl Default for RuntimeSupervisionState {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct RuntimePluginDiscoveryStateModel {
+    scan_count: usize,
+    format_filtered_scan_count: usize,
+    next_scan_handle: u64,
+    last_scan: Option<RuntimePluginScanReceipt>,
+    discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+}
+
+impl RuntimePluginDiscoveryStateModel {
+    fn record_scan(&mut self, request: &PluginScanRequest) -> ScanHandle {
+        self.next_scan_handle = self.next_scan_handle.saturating_add(1);
+        self.scan_count = self.scan_count.saturating_add(1);
+        if !request.formats.is_empty() {
+            self.format_filtered_scan_count = self.format_filtered_scan_count.saturating_add(1);
+        }
+        let scan_handle = ScanHandle(self.next_scan_handle);
+        self.last_scan = Some(RuntimePluginScanReceipt {
+            scan_handle,
+            roots: request.roots.clone(),
+            formats: request.formats.clone(),
+            targeted_format_count: request.formats.len(),
+            discovered_type_count: 0,
+            summary: format!(
+                "scan={} roots={} formats={:?} discovered_types=0",
+                scan_handle.0,
+                request.roots.len(),
+                request.formats,
+            ),
+        });
+        scan_handle
+    }
+
+    fn record_scan_results(
+        &mut self,
+        scan_handle: ScanHandle,
+        discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+    ) {
+        if let Some(last_scan) = self.last_scan.as_mut() {
+            if last_scan.scan_handle == scan_handle {
+                last_scan.discovered_type_count = discovered_types.len();
+                last_scan.summary = format!(
+                    "scan={} roots={} formats={:?} discovered_types={}",
+                    last_scan.scan_handle.0,
+                    last_scan.roots.len(),
+                    last_scan.formats,
+                    last_scan.discovered_type_count,
+                );
+                self.discovered_types = discovered_types;
+            }
+        }
+    }
+
+    fn snapshot(&self) -> RuntimePluginDiscoverySnapshot {
+        RuntimePluginDiscoverySnapshot {
+            scan_count: self.scan_count,
+            format_filtered_scan_count: self.format_filtered_scan_count,
+            discovered_type_count: self.discovered_types.len(),
+            last_scan: self.last_scan.clone(),
+            discovered_types: self.discovered_types.clone(),
+            summary: format!(
+                "scans={} filtered_scans={} discovered_types={} last_scan={}",
+                self.scan_count,
+                self.format_filtered_scan_count,
+                self.discovered_types.len(),
+                self.last_scan
+                    .as_ref()
+                    .map(|scan| scan.summary.as_str())
+                    .unwrap_or("none"),
+            ),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RuntimePluginLifecyclePolicy {
     quarantine_after_faults: u32,
@@ -220,6 +343,7 @@ impl Default for RuntimePluginLifecyclePolicy {
 struct RuntimePluginSandboxStateModel {
     sandbox_id: String,
     plugin_type_id: Option<String>,
+    plugin_format: Option<PluginFormat>,
     instance_id: Option<String>,
     state: RuntimePluginLifecycleState,
     lifecycle_stage: Option<PluginSandboxLifecycleStage>,
@@ -245,6 +369,7 @@ impl RuntimePluginSandboxStateModel {
         Self {
             sandbox_id,
             plugin_type_id: None,
+            plugin_format: None,
             instance_id: None,
             state: RuntimePluginLifecycleState::Stopped,
             lifecycle_stage: None,
@@ -270,6 +395,7 @@ impl RuntimePluginSandboxStateModel {
         RuntimePluginSandboxSnapshot {
             sandbox_id: self.sandbox_id.clone(),
             plugin_type_id: self.plugin_type_id.clone(),
+            plugin_format: self.plugin_format,
             instance_id: self.instance_id.clone(),
             state: self.state,
             lifecycle_stage: self.lifecycle_stage,
@@ -289,8 +415,9 @@ impl RuntimePluginSandboxStateModel {
             active_lease_id: self.active_lease_id.clone(),
             active_region_id: self.active_region_id.clone(),
             summary: format!(
-                "state={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} fault={}",
+                "state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} fault={}",
                 self.state,
+                self.plugin_format,
                 self.lifecycle_stage,
                 self.transport_stage,
                 self.restart_count,
@@ -317,6 +444,11 @@ impl RuntimePluginLifecycleStateModel {
         self.sandboxes
             .entry(sandbox_id.to_string())
             .or_insert_with(|| RuntimePluginSandboxStateModel::new(sandbox_id.to_string()))
+    }
+
+    fn record_spec(&mut self, spec: &PluginSandboxSpec) {
+        let sandbox = self.sandbox_mut(spec.sandbox_id.as_str());
+        sandbox.plugin_format = Some(spec.plugin_format);
     }
 
     fn snapshot(&self) -> RuntimePluginLifecycleSnapshot {
@@ -2221,6 +2353,10 @@ struct RuntimeLingeringCleanupWorkItem {
 }
 
 impl RuntimeTransportConcurrencyState {
+    fn pending_work_item_count(&self) -> usize {
+        self.pending_cleanup_work.len()
+    }
+
     fn active_session_view(
         session: &RuntimeTransportConcurrencySession,
     ) -> crate::interfaces::ActiveTransportConcurrencySession {
@@ -3382,11 +3518,13 @@ fn offline_render_report_json(
         .iter()
         .map(|stage| {
             format!(
-                "{{\"chain_id\":\"{}\",\"stage_index\":{},\"node_id\":\"{}\",\"sandbox_id\":{},\"recall_state\":\"{:?}\",\"override_state\":\"{:?}\"}}",
+                "{{\"chain_id\":\"{}\",\"stage_index\":{},\"node_id\":\"{}\",\"sandbox_id\":{},\"plugin_type_id\":{},\"plugin_format\":{},\"recall_state\":\"{:?}\",\"override_state\":\"{:?}\"}}",
                 json_escape(&stage.chain_id),
                 stage.stage_index,
                 json_escape(&stage.node_id),
                 stage.sandbox_id.as_deref().map(|id| format!("\"{}\"", json_escape(id))).unwrap_or_else(|| "null".into()),
+                stage.plugin_type_id.as_deref().map(|id| format!("\"{}\"", json_escape(id))).unwrap_or_else(|| "null".into()),
+                stage.plugin_format.map(|format| format!("\"{format:?}\"")).unwrap_or_else(|| "null".into()),
                 stage.recall_state,
                 stage.override_state,
             )
@@ -3640,6 +3778,149 @@ fn materialize_offline_render_delivery(
         delegated_execution_request,
         delegated_execution_receipt,
     ))
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct OfflineRenderPurgeOutcome {
+    removed: bool,
+    file_count: usize,
+    byte_count: u64,
+}
+
+fn offline_render_file_size(path: &Path) -> Result<Option<u64>, RuntimeError> {
+    match fs::metadata(path) {
+        Ok(metadata) => Ok(Some(metadata.len())),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to inspect offline render file {}: {error}",
+                path.display()
+            ),
+        )),
+    }
+}
+
+fn offline_render_directory_stats(path: &Path) -> Result<Option<(usize, u64)>, RuntimeError> {
+    let mut file_count = 0usize;
+    let mut byte_count = 0u64;
+    let mut directories = VecDeque::from([path.to_path_buf()]);
+    while let Some(directory) = directories.pop_front() {
+        let entries = match fs::read_dir(&directory) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return if directory == path {
+                    Ok(None)
+                } else {
+                    Err(RuntimeError::new(
+                        RuntimeErrorKind::ResourceUnavailable,
+                        format!(
+                            "offline render artifact root changed while purging {}",
+                            path.display()
+                        ),
+                    ))
+                };
+            }
+            Err(error) => {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to inspect offline render artifact root {}: {error}",
+                        directory.display()
+                    ),
+                ));
+            }
+        };
+        for entry in entries {
+            let entry = entry.map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to inspect offline render artifact entry under {}: {error}",
+                        path.display()
+                    ),
+                )
+            })?;
+            let entry_path = entry.path();
+            let metadata = entry.metadata().map_err(|error| {
+                RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    format!(
+                        "failed to inspect offline render artifact metadata for {}: {error}",
+                        entry_path.display()
+                    ),
+                )
+            })?;
+            if metadata.is_dir() {
+                directories.push_back(entry_path);
+            } else {
+                file_count = file_count.saturating_add(1);
+                byte_count = byte_count.saturating_add(metadata.len());
+            }
+        }
+    }
+    Ok(Some((file_count, byte_count)))
+}
+
+fn summarize_deferred_service_receipt(receipt: &RuntimeDeferredServiceReceipt) -> String {
+    format!(
+        "class={:?} decision={:?} reason={:?} queued={} admitted={} completed={} deferred={} running={} safe_mode={} degraded={} cleanup_pending={} deferred_retries={} recovery_overlap={}",
+        receipt.work_class,
+        receipt.decision,
+        receipt.reason,
+        receipt.queued_work_item_count,
+        receipt.admitted_work_item_count,
+        receipt.completed_work_item_count,
+        receipt.deferred_work_item_count,
+        receipt.runtime_running,
+        receipt.safe_mode_enabled,
+        receipt.readiness_degraded,
+        receipt.pending_cleanup_work_items,
+        receipt.pending_deferred_retry_work_items,
+        receipt.recovery_overlap_session_count,
+    )
+}
+
+fn purge_offline_render_file(path: &Path) -> Result<OfflineRenderPurgeOutcome, RuntimeError> {
+    let byte_count = offline_render_file_size(path)?.unwrap_or(0);
+    match fs::remove_file(path) {
+        Ok(()) => Ok(OfflineRenderPurgeOutcome {
+            removed: true,
+            file_count: 1,
+            byte_count,
+        }),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            Ok(OfflineRenderPurgeOutcome::default())
+        }
+        Err(error) => Err(RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to remove offline render file {}: {error}",
+                path.display()
+            ),
+        )),
+    }
+}
+
+fn purge_offline_render_directory(path: &Path) -> Result<OfflineRenderPurgeOutcome, RuntimeError> {
+    let (file_count, byte_count) = offline_render_directory_stats(path)?.unwrap_or((0, 0));
+    match fs::remove_dir_all(path) {
+        Ok(()) => Ok(OfflineRenderPurgeOutcome {
+            removed: true,
+            file_count,
+            byte_count,
+        }),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            Ok(OfflineRenderPurgeOutcome::default())
+        }
+        Err(error) => Err(RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to remove offline render artifact root {}: {error}",
+                path.display()
+            ),
+        )),
+    }
 }
 
 fn ensure_offline_buffer_compatible(
@@ -6452,6 +6733,120 @@ impl core::fmt::Debug for SignalRuntime {
 }
 
 impl SignalRuntime {
+    fn record_deferred_service_receipt(&self, receipt: RuntimeDeferredServiceReceipt) {
+        self.last_deferred_service_receipt.replace(Some(receipt));
+    }
+
+    fn offline_render_queue_receipt(&self, queue_count: usize) -> RuntimeDeferredServiceReceipt {
+        let transport_concurrency = self.transport_concurrency.snapshot();
+        let readiness_degraded = matches!(self.readiness, RuntimeReadiness::Degraded { .. });
+        let (decision, reason, admitted_work_item_count) = if self.safe_mode_enabled {
+            (
+                RuntimeDeferredServiceDecision::Defer,
+                RuntimeDeferredServiceReason::SafeMode,
+                0,
+            )
+        } else if readiness_degraded || transport_concurrency.current_recovery_overlap_sessions > 0
+        {
+            (
+                RuntimeDeferredServiceDecision::Defer,
+                RuntimeDeferredServiceReason::RecoveryDegraded,
+                0,
+            )
+        } else if transport_concurrency.pending_cleanup_work_items > 0
+            || transport_concurrency.pending_deferred_retry_work_items > 0
+        {
+            (
+                RuntimeDeferredServiceDecision::Defer,
+                RuntimeDeferredServiceReason::PendingCleanup,
+                0,
+            )
+        } else if self.control.running {
+            (
+                RuntimeDeferredServiceDecision::Throttle,
+                RuntimeDeferredServiceReason::RealtimeActive,
+                queue_count.min(1),
+            )
+        } else {
+            (
+                RuntimeDeferredServiceDecision::Run,
+                RuntimeDeferredServiceReason::Ready,
+                queue_count,
+            )
+        };
+        let mut receipt = RuntimeDeferredServiceReceipt {
+            work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
+            decision,
+            reason,
+            queued_work_item_count: queue_count,
+            admitted_work_item_count,
+            completed_work_item_count: 0,
+            deferred_work_item_count: queue_count.saturating_sub(admitted_work_item_count),
+            runtime_running: self.control.running,
+            safe_mode_enabled: self.safe_mode_enabled,
+            readiness_degraded,
+            pending_cleanup_work_items: transport_concurrency.pending_cleanup_work_items,
+            pending_deferred_retry_work_items: transport_concurrency
+                .pending_deferred_retry_work_items,
+            recovery_overlap_session_count: transport_concurrency.current_recovery_overlap_sessions,
+            summary: String::new(),
+        };
+        receipt.summary = summarize_deferred_service_receipt(&receipt);
+        receipt
+    }
+
+    fn offline_render_purge_receipt(&self) -> RuntimeDeferredServiceReceipt {
+        let transport_concurrency = self.transport_concurrency.snapshot();
+        let readiness_degraded = matches!(self.readiness, RuntimeReadiness::Degraded { .. });
+        let (decision, reason, admitted_work_item_count) = if self.safe_mode_enabled {
+            (
+                RuntimeDeferredServiceDecision::Defer,
+                RuntimeDeferredServiceReason::SafeMode,
+                0,
+            )
+        } else if readiness_degraded || transport_concurrency.current_recovery_overlap_sessions > 0
+        {
+            (
+                RuntimeDeferredServiceDecision::Defer,
+                RuntimeDeferredServiceReason::RecoveryDegraded,
+                0,
+            )
+        } else if transport_concurrency.pending_cleanup_work_items > 0
+            || transport_concurrency.pending_deferred_retry_work_items > 0
+        {
+            (
+                RuntimeDeferredServiceDecision::Defer,
+                RuntimeDeferredServiceReason::PendingCleanup,
+                0,
+            )
+        } else {
+            (
+                RuntimeDeferredServiceDecision::Run,
+                RuntimeDeferredServiceReason::Ready,
+                1,
+            )
+        };
+        let mut receipt = RuntimeDeferredServiceReceipt {
+            work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
+            decision,
+            reason,
+            queued_work_item_count: 1,
+            admitted_work_item_count,
+            completed_work_item_count: 0,
+            deferred_work_item_count: 1usize.saturating_sub(admitted_work_item_count),
+            runtime_running: self.control.running,
+            safe_mode_enabled: self.safe_mode_enabled,
+            readiness_degraded,
+            pending_cleanup_work_items: transport_concurrency.pending_cleanup_work_items,
+            pending_deferred_retry_work_items: transport_concurrency
+                .pending_deferred_retry_work_items,
+            recovery_overlap_session_count: transport_concurrency.current_recovery_overlap_sessions,
+            summary: String::new(),
+        };
+        receipt.summary = summarize_deferred_service_receipt(&receipt);
+        receipt
+    }
+
     fn summarize_plugin_backed_bindings(&self) -> RuntimePluginBackedBindingSummary {
         let bound_sandbox_ids = self
             .engine
@@ -6553,6 +6948,24 @@ impl SignalRuntime {
             lingering_sessions: self.transport_concurrency.lingering_session_count(),
             detach_faulted_sessions: self.transport_concurrency.detach_faulted_session_count(),
         }
+    }
+
+    fn multicore_prework_budget_scale(&self) -> usize {
+        let Some(schedule) = self.applied_schedule.as_ref() else {
+            return 1;
+        };
+        if schedule.stream_count <= 1
+            || !self.engine.snapshot.scheduler_topology.compatible
+            || !self.engine.snapshot.anticipative_planning_enabled
+            || self.engine.snapshot.anticipative_lane_count == 0
+        {
+            return 1;
+        }
+        schedule.stream_count
+    }
+
+    fn multicore_prework_requested_cycles(&self, cycles: usize) -> usize {
+        cycles.saturating_mul(self.multicore_prework_budget_scale().max(1))
     }
 
     fn refresh_prework_service_policy_and_state(&mut self, processing_epoch: Option<u64>) {
@@ -6727,6 +7140,7 @@ impl SignalRuntime {
             automation: RuntimeAutomationState::default(),
             engine: RuntimeEngineState::default(),
             transport_concurrency: RuntimeTransportConcurrencyState::default(),
+            plugin_discovery: RuntimePluginDiscoveryStateModel::default(),
             plugin_lifecycle: RuntimePluginLifecycleStateModel::default(),
             recording_capture: RuntimeRecordingCaptureStateModel::default(),
             metering: RuntimeMeteringStateModel::default(),
@@ -6751,6 +7165,8 @@ impl SignalRuntime {
                 integrated_loudness_lufs: None,
             },
             supervision: RuntimeSupervisionState::default(),
+            last_deferred_service_receipt: RefCell::new(None),
+            offline_render_executions: HashMap::new(),
             next_subscription: 1,
             sinks: Vec::new(),
         };
@@ -6977,11 +7393,20 @@ impl SignalRuntime {
             self.applied_transport,
             block_size,
         );
-        let _ = self.service_pending_prework_cycle(
-            processing_epoch,
-            policy.prepare_budget_per_cycle,
-            RuntimePreworkBacklogClass::Deferred,
-        );
+        if self.control.running {
+            let requested_cycles = self.multicore_prework_requested_cycles(1);
+            let _ = self.service_prework_lane_with_policy(
+                processing_epoch,
+                requested_cycles,
+                policy.prepare_budget_per_cycle,
+            );
+        } else {
+            let _ = self.service_pending_prework_cycle(
+                processing_epoch,
+                policy.prepare_budget_per_cycle,
+                RuntimePreworkBacklogClass::Deferred,
+            );
+        }
     }
 
     fn maybe_rebuild_prework_window_from_current_forecast_plan(
@@ -7275,6 +7700,23 @@ impl SignalRuntime {
             stop_reason,
             processing_epoch,
         });
+    }
+
+    pub fn record_plugin_scan_request(&mut self, request: &PluginScanRequest) -> ScanHandle {
+        self.plugin_discovery.record_scan(request)
+    }
+
+    pub fn record_plugin_scan_results(
+        &mut self,
+        scan_handle: ScanHandle,
+        discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+    ) {
+        self.plugin_discovery
+            .record_scan_results(scan_handle, discovered_types);
+    }
+
+    pub fn record_plugin_sandbox_spec(&mut self, spec: &PluginSandboxSpec) {
+        self.plugin_lifecycle.record_spec(spec);
     }
 
     pub fn record_plugin_sandbox_lifecycle(
@@ -7611,10 +8053,350 @@ impl SignalRuntime {
         )
     }
 
-    pub fn render_offline(
+    fn should_emit_offline_render_checkpoint(
+        rendered_block_count: usize,
+        total_block_count: usize,
+    ) -> bool {
+        if total_block_count == 0 || rendered_block_count == 0 {
+            return false;
+        }
+        if rendered_block_count >= total_block_count {
+            return true;
+        }
+        let stride = total_block_count
+            .div_ceil(OFFLINE_RENDER_PROGRESS_CHECKPOINT_TARGET_COUNT)
+            .max(1);
+        rendered_block_count % stride == 0
+    }
+
+    fn offline_render_checkpoint_count(total_block_count: usize) -> usize {
+        let rendering_checkpoint_count = (1..=total_block_count)
+            .filter(|rendered_block_count| {
+                Self::should_emit_offline_render_checkpoint(
+                    *rendered_block_count,
+                    total_block_count,
+                )
+            })
+            .count();
+        1usize
+            .saturating_add(rendering_checkpoint_count)
+            .saturating_add(2)
+    }
+
+    fn offline_render_checkpoint_progress(
+        rendered_frame_count: usize,
+        total_frame_count: usize,
+    ) -> u8 {
+        if total_frame_count == 0 {
+            return 90;
+        }
+        let scaled = 10usize
+            .saturating_add((rendered_frame_count.saturating_mul(80)) / total_frame_count.max(1));
+        scaled.clamp(10, 90) as u8
+    }
+
+    fn finalize_offline_render_checkpoints(
+        request_id: &str,
+        drafts: Vec<OfflineRenderCheckpointDraft>,
+    ) -> Vec<RuntimeOfflineRenderCheckpointReceipt> {
+        let checkpoint_count = drafts.len();
+        drafts
+            .into_iter()
+            .enumerate()
+            .map(
+                |(checkpoint_index, draft)| RuntimeOfflineRenderCheckpointReceipt {
+                    request_id: request_id.to_string(),
+                    stage: draft.stage,
+                    checkpoint_index,
+                    checkpoint_count,
+                    rendered_frame_count: draft.rendered_frame_count,
+                    total_frame_count: draft.total_frame_count,
+                    rendered_block_count: draft.rendered_block_count,
+                    total_block_count: draft.total_block_count,
+                    progress_percent: draft.progress_percent,
+                    summary: draft.summary,
+                },
+            )
+            .collect()
+    }
+
+    fn build_offline_render_execution_session(
         &self,
         request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionSession, RuntimeError> {
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &request,
+            &self.execution_topology_summary(),
+            &self.clip_processing_pipeline_snapshot(),
+            &self.tempo_map_snapshot(),
+            &self.plugin_recall_handoff_snapshot(),
+        )?;
+        let plugin_execution_boundary =
+            self.offline_plugin_execution_boundary_from_preview(&request, &preview);
+        let delegated_execution_request =
+            offline_plugin_delegated_execution_request(&plugin_execution_boundary);
+        let input_layout = self.offline_render_input_layout()?;
+        let plugin_overrides = self.offline_render_plugin_node_overrides()?;
+        let captured_bus_ids = preview
+            .stem_targets
+            .iter()
+            .flat_map(|stem| stem.resolved_output_bus_ids.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let total_frames = request.duration_samples as usize;
+        let total_block_count = total_frames.div_ceil(self.config.graph.block_size.max(1));
+        let stem_outputs = preview
+            .stem_targets
+            .iter()
+            .map(|stem| (stem.stem_id.clone(), None))
+            .collect::<BTreeMap<String, Option<AudioBuffer>>>();
+
+        Ok(RuntimeOfflineRenderExecutionSession {
+            request,
+            state: RuntimeOfflineRenderExecutionState::Running,
+            preview,
+            plugin_execution_boundary,
+            delegated_execution_request,
+            input_layout,
+            plugin_overrides,
+            captured_bus_ids,
+            decoded_media_assets: BTreeMap::new(),
+            main_mix: None,
+            stem_outputs,
+            total_frames,
+            total_block_count,
+            rendered_frames: 0,
+            block_count: 0,
+            checkpoint_count: Self::offline_render_checkpoint_count(total_block_count),
+            emitted_checkpoint_count: 0,
+            interruption_count: 0,
+            last_state_summary: "state=running checkpoints=0".to_string(),
+            materialized_result: None,
+            finalizing_checkpoint_emitted: false,
+        })
+    }
+
+    fn emit_offline_render_session_checkpoint(
+        session: &mut RuntimeOfflineRenderExecutionSession,
+        stage: RuntimeOfflineRenderCheckpointStage,
+        rendered_frame_count: usize,
+        rendered_block_count: usize,
+        progress_percent: u8,
+        summary: String,
+    ) -> RuntimeOfflineRenderCheckpointReceipt {
+        let checkpoint = RuntimeOfflineRenderCheckpointReceipt {
+            request_id: session.request.request_id.clone(),
+            stage,
+            checkpoint_index: session.emitted_checkpoint_count,
+            checkpoint_count: session.checkpoint_count,
+            rendered_frame_count,
+            total_frame_count: session.total_frames,
+            rendered_block_count,
+            total_block_count: session.total_block_count,
+            progress_percent,
+            summary,
+        };
+        session.emitted_checkpoint_count = session.emitted_checkpoint_count.saturating_add(1);
+        checkpoint
+    }
+
+    fn offline_render_execution_status_receipt(
+        session: &RuntimeOfflineRenderExecutionSession,
+    ) -> RuntimeOfflineRenderExecutionProgressReceipt {
+        RuntimeOfflineRenderExecutionProgressReceipt {
+            request_id: session.request.request_id.clone(),
+            state: session.state,
+            emitted_checkpoint_count: session.emitted_checkpoint_count,
+            checkpoint_count: session.checkpoint_count,
+            checkpoint: None,
+            result: None,
+            summary: session.last_state_summary.clone(),
+        }
+    }
+
+    fn materialize_offline_render_session_outputs(
+        &self,
+        session: &mut RuntimeOfflineRenderExecutionSession,
     ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        let request = &session.request;
+        let preview = &session.preview;
+        let total_frames = session.total_frames;
+        let stems = preview
+            .stem_targets
+            .iter()
+            .map(|stem_preview| {
+                let output = session
+                    .stem_outputs
+                    .remove(&stem_preview.stem_id)
+                    .and_then(|buffer| buffer)
+                    .unwrap_or_else(|| {
+                        AudioBuffer::new(
+                            self.config.sample_rate,
+                            ChannelLayout::Stereo,
+                            FrameCount(total_frames),
+                        )
+                    });
+                RuntimeOfflineRenderStemResult {
+                    stem_id: stem_preview.stem_id.clone(),
+                    target_kind: stem_preview.target_kind,
+                    target_id: stem_preview.target_id.clone(),
+                    peak_level: peak_abs(output.samples()),
+                    rms_level: rms(output.samples()),
+                    summary: format!(
+                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
+                        stem_preview.stem_id,
+                        stem_preview.target_kind,
+                        stem_preview.target_id,
+                        output.frames().0,
+                        peak_abs(output.samples()),
+                        rms(output.samples()),
+                    ),
+                    output,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let freeze_artifacts = preview
+            .freeze_artifacts
+            .iter()
+            .map(|artifact_preview| {
+                let source_output = stems
+                    .iter()
+                    .find(|stem| stem.stem_id == artifact_preview.source_stem_id)
+                    .map(|stem| stem.output.clone())
+                    .or_else(|| session.main_mix.clone())
+                    .ok_or_else(|| {
+                        RuntimeError::new(
+                            RuntimeErrorKind::InvalidState,
+                            format!(
+                                "offline freeze artifact `{}` has no rendered source output",
+                                artifact_preview.artifact_id
+                            ),
+                        )
+                    })?;
+                Ok(RuntimeOfflineFreezeArtifactResult {
+                    artifact_id: artifact_preview.artifact_id.clone(),
+                    source_stem_id: artifact_preview.source_stem_id.clone(),
+                    recall_stage_count: artifact_preview.recall_stage_count,
+                    recall_stage_ids: artifact_preview.recall_stage_ids.clone(),
+                    recall_states: artifact_preview.recall_states.clone(),
+                    peak_level: peak_abs(source_output.samples()),
+                    rms_level: rms(source_output.samples()),
+                    summary: format!(
+                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
+                        artifact_preview.artifact_id,
+                        artifact_preview.source_stem_id,
+                        artifact_preview.recall_stage_count,
+                        source_output.frames().0,
+                        peak_abs(source_output.samples()),
+                        rms(source_output.samples()),
+                    ),
+                    output: source_output,
+                })
+            })
+            .collect::<Result<Vec<_>, RuntimeError>>()?;
+
+        let export_sample_rate = SampleRate(request.export_sample_rate_hz);
+        let main_mix = session
+            .main_mix
+            .take()
+            .map(|buffer| resample_audio_buffer_linear(&buffer, export_sample_rate));
+        let stems = stems
+            .into_iter()
+            .map(|stem| {
+                let output = resample_audio_buffer_linear(&stem.output, export_sample_rate);
+                RuntimeOfflineRenderStemResult {
+                    peak_level: peak_abs(output.samples()),
+                    rms_level: rms(output.samples()),
+                    summary: format!(
+                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
+                        stem.stem_id,
+                        stem.target_kind,
+                        stem.target_id,
+                        output.frames().0,
+                        peak_abs(output.samples()),
+                        rms(output.samples()),
+                    ),
+                    output,
+                    ..stem
+                }
+            })
+            .collect::<Vec<_>>();
+        let freeze_artifacts = freeze_artifacts
+            .into_iter()
+            .map(|artifact| {
+                let output = resample_audio_buffer_linear(&artifact.output, export_sample_rate);
+                RuntimeOfflineFreezeArtifactResult {
+                    peak_level: peak_abs(output.samples()),
+                    rms_level: rms(output.samples()),
+                    summary: format!(
+                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
+                        artifact.artifact_id,
+                        artifact.source_stem_id,
+                        artifact.recall_stage_count,
+                        output.frames().0,
+                        peak_abs(output.samples()),
+                        rms(output.samples()),
+                    ),
+                    output,
+                    ..artifact
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let main_mix_peak_level = main_mix.as_ref().map(|buffer| peak_abs(buffer.samples()));
+        let main_mix_rms_level = main_mix.as_ref().map(|buffer| rms(buffer.samples()));
+        let rendered_frame_count = main_mix
+            .as_ref()
+            .map(|buffer| buffer.frames().0)
+            .or_else(|| stems.first().map(|stem| stem.output.frames().0))
+            .or_else(|| {
+                freeze_artifacts
+                    .first()
+                    .map(|artifact| artifact.output.frames().0)
+            })
+            .unwrap_or(0);
+
+        Ok(RuntimeOfflineRenderResult {
+            request_id: request.request_id.clone(),
+            runtime_frame_count: session.rendered_frames,
+            rendered_frame_count,
+            block_count: session.block_count,
+            export_sample_rate_hz: request.export_sample_rate_hz,
+            main_mix,
+            main_mix_peak_level,
+            main_mix_rms_level,
+            stems,
+            freeze_artifacts,
+            manifest: offline_render_manifest(
+                &request.request_id,
+                request.artifact_root_path.as_deref(),
+                Vec::new(),
+                None,
+                session.delegated_execution_request.clone(),
+                None,
+            ),
+            plugin_execution_boundary: session.plugin_execution_boundary.clone(),
+            contract_preview: preview.clone(),
+            summary: format!(
+                "request={} runtime_frames={} rendered_frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
+                request.request_id,
+                session.rendered_frames,
+                rendered_frame_count,
+                session.block_count,
+                request.include_main_mix,
+                preview.stem_count,
+                preview.freeze_artifact_count,
+            ),
+        })
+    }
+
+    fn render_offline_internal(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+        collect_checkpoints: bool,
+    ) -> Result<RuntimeOfflineRenderExecutionReceipt, RuntimeError> {
         let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
             &request,
             &self.execution_topology_summary(),
@@ -7644,8 +8426,25 @@ impl SignalRuntime {
             .collect::<BTreeMap<String, Option<AudioBuffer>>>();
         let total_frames = request.duration_samples as usize;
         let block_size = self.config.graph.block_size.max(1);
+        let total_block_count = total_frames.div_ceil(block_size);
         let mut rendered_frames = 0usize;
         let mut block_count = 0usize;
+        let mut checkpoint_drafts = Vec::new();
+
+        if collect_checkpoints {
+            checkpoint_drafts.push(OfflineRenderCheckpointDraft {
+                stage: RuntimeOfflineRenderCheckpointStage::PreparingInput,
+                rendered_frame_count: 0,
+                total_frame_count: total_frames,
+                rendered_block_count: 0,
+                total_block_count,
+                progress_percent: 5,
+                summary: format!(
+                    "request={} stage=preparing-input total_frames={} blocks={} stems={} freeze_artifacts={}",
+                    request.request_id, total_frames, total_block_count, preview.stem_count, preview.freeze_artifact_count
+                ),
+            });
+        }
 
         while rendered_frames < total_frames {
             let block_frames = (total_frames - rendered_frames).min(block_size);
@@ -7694,6 +8493,29 @@ impl SignalRuntime {
 
             rendered_frames = rendered_frames.saturating_add(block_frames);
             block_count = block_count.saturating_add(1);
+            if collect_checkpoints
+                && Self::should_emit_offline_render_checkpoint(block_count, total_block_count)
+            {
+                checkpoint_drafts.push(OfflineRenderCheckpointDraft {
+                    stage: RuntimeOfflineRenderCheckpointStage::RenderingGraph,
+                    rendered_frame_count: rendered_frames,
+                    total_frame_count: total_frames,
+                    rendered_block_count: block_count,
+                    total_block_count,
+                    progress_percent: Self::offline_render_checkpoint_progress(
+                        rendered_frames,
+                        total_frames,
+                    ),
+                    summary: format!(
+                        "request={} stage=rendering-graph blocks={}/{} frames={}/{}",
+                        request.request_id,
+                        block_count,
+                        total_block_count,
+                        rendered_frames,
+                        total_frames,
+                    ),
+                });
+            }
         }
 
         let stems = preview
@@ -7828,6 +8650,23 @@ impl SignalRuntime {
                     .map(|artifact| artifact.output.frames().0)
             })
             .unwrap_or(0);
+        if collect_checkpoints {
+            checkpoint_drafts.push(OfflineRenderCheckpointDraft {
+                stage: RuntimeOfflineRenderCheckpointStage::MaterializingOutputs,
+                rendered_frame_count,
+                total_frame_count: total_frames,
+                rendered_block_count: block_count,
+                total_block_count,
+                progress_percent: 95,
+                summary: format!(
+                    "request={} stage=materializing-outputs main_mix={} stems={} freeze_artifacts={}",
+                    request.request_id,
+                    request.include_main_mix,
+                    preview.stem_count,
+                    preview.freeze_artifact_count,
+                ),
+            });
+        }
         let mut result = RuntimeOfflineRenderResult {
             request_id: request.request_id.clone(),
             runtime_frame_count: rendered_frames,
@@ -7861,7 +8700,638 @@ impl SignalRuntime {
             ),
         };
         result.manifest = materialize_offline_render_delivery(&result)?;
-        Ok(result)
+        if collect_checkpoints {
+            checkpoint_drafts.push(OfflineRenderCheckpointDraft {
+                stage: RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts,
+                rendered_frame_count,
+                total_frame_count: total_frames,
+                rendered_block_count: block_count,
+                total_block_count,
+                progress_percent: 99,
+                summary: format!(
+                    "request={} stage=finalizing-artifacts artifacts={} report={}",
+                    request.request_id,
+                    result.manifest.artifact_count,
+                    result
+                        .manifest
+                        .report
+                        .as_ref()
+                        .map(|report| report.report_path.as_str())
+                        .unwrap_or("none"),
+                ),
+            });
+        }
+        let checkpoints = if collect_checkpoints {
+            Self::finalize_offline_render_checkpoints(&request.request_id, checkpoint_drafts)
+        } else {
+            Vec::new()
+        };
+        let checkpoint_count = checkpoints.len();
+        Ok(RuntimeOfflineRenderExecutionReceipt {
+            request_id: request.request_id.clone(),
+            checkpoint_count,
+            checkpoints,
+            result,
+            summary: format!(
+                "request={} checkpoints={} runtime_frames={} rendered_frames={} blocks={}",
+                request.request_id,
+                checkpoint_count,
+                rendered_frames,
+                rendered_frame_count,
+                block_count,
+            ),
+        })
+    }
+
+    pub fn render_offline(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
+        self.render_offline_internal(request, false)
+            .map(|execution| execution.result)
+    }
+
+    pub fn render_offline_with_checkpoints(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionReceipt, RuntimeError> {
+        self.render_offline_internal(request, true)
+    }
+
+    pub fn begin_offline_render_execution(
+        &mut self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        if self
+            .offline_render_executions
+            .contains_key(request.request_id.as_str())
+        {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!(
+                    "offline render execution `{}` is already active",
+                    request.request_id
+                ),
+            ));
+        }
+        let mut session = self.build_offline_render_execution_session(request)?;
+        let preparing_summary = format!(
+            "request={} stage=preparing-input total_frames={} blocks={} stems={} freeze_artifacts={}",
+            session.request.request_id,
+            session.total_frames,
+            session.total_block_count,
+            session.preview.stem_count,
+            session.preview.freeze_artifact_count,
+        );
+        let checkpoint = Self::emit_offline_render_session_checkpoint(
+            &mut session,
+            RuntimeOfflineRenderCheckpointStage::PreparingInput,
+            0,
+            0,
+            5,
+            preparing_summary,
+        );
+        let request_id = session.request.request_id.clone();
+        let checkpoint_count = session.checkpoint_count;
+        let emitted_checkpoint_count = session.emitted_checkpoint_count;
+        session.last_state_summary = format!(
+            "request={} state=running checkpoints={}/{} stage=preparing-input",
+            request_id, emitted_checkpoint_count, checkpoint_count
+        );
+        self.offline_render_executions
+            .insert(request_id.clone(), session);
+        Ok(RuntimeOfflineRenderExecutionProgressReceipt {
+            request_id: request_id.clone(),
+            state: RuntimeOfflineRenderExecutionState::Running,
+            emitted_checkpoint_count,
+            checkpoint_count,
+            checkpoint: Some(checkpoint),
+            result: None,
+            summary: format!(
+                "request={} state=running checkpoints={}/{} stage=preparing-input",
+                request_id, emitted_checkpoint_count, checkpoint_count
+            ),
+        })
+    }
+
+    pub fn pause_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        let session = self
+            .offline_render_executions
+            .get_mut(request_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("offline render execution `{request_id}` is not active"),
+                )
+            })?;
+        session.state = RuntimeOfflineRenderExecutionState::Paused;
+        session.last_state_summary = format!(
+            "request={} state=paused checkpoints={}/{} rendered_frames={} rendered_blocks={}",
+            request_id,
+            session.emitted_checkpoint_count,
+            session.checkpoint_count,
+            session.rendered_frames,
+            session.block_count
+        );
+        Ok(Self::offline_render_execution_status_receipt(session))
+    }
+
+    pub fn resume_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        let session = self
+            .offline_render_executions
+            .get_mut(request_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("offline render execution `{request_id}` is not active"),
+                )
+            })?;
+        session.state = RuntimeOfflineRenderExecutionState::Running;
+        session.last_state_summary = format!(
+            "request={} state=running checkpoints={}/{} interruption_count={}",
+            request_id,
+            session.emitted_checkpoint_count,
+            session.checkpoint_count,
+            session.interruption_count
+        );
+        Ok(Self::offline_render_execution_status_receipt(session))
+    }
+
+    pub fn interrupt_offline_render_execution(
+        &mut self,
+        request_id: &str,
+        reason: String,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        let reason = reason.trim().to_string();
+        if reason.is_empty() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "offline render execution interruption reason cannot be empty",
+            ));
+        }
+        let session = self
+            .offline_render_executions
+            .get_mut(request_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("offline render execution `{request_id}` is not active"),
+                )
+            })?;
+        session.state = RuntimeOfflineRenderExecutionState::Recoverable;
+        session.interruption_count = session.interruption_count.saturating_add(1);
+        session.last_state_summary = format!(
+            "request={} state=recoverable checkpoints={}/{} interruptions={} reason={}",
+            request_id,
+            session.emitted_checkpoint_count,
+            session.checkpoint_count,
+            session.interruption_count,
+            reason
+        );
+        Ok(Self::offline_render_execution_status_receipt(session))
+    }
+
+    pub fn advance_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        let mut session = self
+            .offline_render_executions
+            .remove(request_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("offline render execution `{request_id}` is not active"),
+                )
+            })?;
+
+        if session.state != RuntimeOfflineRenderExecutionState::Running {
+            let receipt = Self::offline_render_execution_status_receipt(&session);
+            self.offline_render_executions
+                .insert(request_id.to_string(), session);
+            return Ok(receipt);
+        }
+
+        if session.rendered_frames < session.total_frames {
+            while session.rendered_frames < session.total_frames {
+                let block_frames = (session.total_frames - session.rendered_frames)
+                    .min(self.config.graph.block_size.max(1));
+                let block_start_samples = session
+                    .request
+                    .timeline_start_samples
+                    .saturating_add(session.rendered_frames as i64);
+                let resolved_tempo = self.resolved_tempo_for_timeline_position(block_start_samples);
+                let context = self
+                    .offline_render_context((session.block_count + 1) as u64, block_start_samples);
+                let (parameter_batch, _) = self.graph_parameter_batch_for_transport(
+                    &context,
+                    block_frames,
+                    Some(transport_projection_from_context(&context)),
+                );
+                let input = self.offline_render_input_block(
+                    block_start_samples,
+                    block_frames,
+                    session.input_layout,
+                    &resolved_tempo,
+                    &mut session.decoded_media_assets,
+                )?;
+                let (output, captured_buses) = self.engine.render_offline_block(
+                    context,
+                    input,
+                    parameter_batch,
+                    &session.plugin_overrides,
+                    &session.captured_bus_ids,
+                )?;
+                if session.request.include_main_mix {
+                    write_offline_render_block(
+                        &mut session.main_mix,
+                        session.total_frames,
+                        session.rendered_frames,
+                        &output,
+                    );
+                }
+
+                for stem_preview in &session.preview.stem_targets {
+                    let block_output =
+                        self.offline_render_stem_block(stem_preview, &output, &captured_buses)?;
+                    let stem_buffer = session
+                        .stem_outputs
+                        .get_mut(&stem_preview.stem_id)
+                        .expect("stem output slot should exist");
+                    write_offline_render_block(
+                        stem_buffer,
+                        session.total_frames,
+                        session.rendered_frames,
+                        &block_output,
+                    );
+                }
+
+                session.rendered_frames = session.rendered_frames.saturating_add(block_frames);
+                session.block_count = session.block_count.saturating_add(1);
+                if Self::should_emit_offline_render_checkpoint(
+                    session.block_count,
+                    session.total_block_count,
+                ) {
+                    let progress_percent = Self::offline_render_checkpoint_progress(
+                        session.rendered_frames,
+                        session.total_frames,
+                    );
+                    let rendered_frames = session.rendered_frames;
+                    let block_count = session.block_count;
+                    let total_block_count = session.total_block_count;
+                    let total_frames = session.total_frames;
+                    let rendering_summary = format!(
+                        "request={} stage=rendering-graph blocks={}/{} frames={}/{}",
+                        session.request.request_id,
+                        block_count,
+                        total_block_count,
+                        rendered_frames,
+                        total_frames,
+                    );
+                    let checkpoint = Self::emit_offline_render_session_checkpoint(
+                        &mut session,
+                        RuntimeOfflineRenderCheckpointStage::RenderingGraph,
+                        rendered_frames,
+                        block_count,
+                        progress_percent,
+                        rendering_summary,
+                    );
+                    let emitted_checkpoint_count = session.emitted_checkpoint_count;
+                    let checkpoint_count = session.checkpoint_count;
+                    let summary = format!(
+                        "request={} state=running checkpoints={}/{} stage=rendering-graph",
+                        session.request.request_id, emitted_checkpoint_count, checkpoint_count
+                    );
+                    session.last_state_summary = summary.clone();
+                    self.offline_render_executions
+                        .insert(request_id.to_string(), session);
+                    return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
+                        request_id: request_id.to_string(),
+                        state: RuntimeOfflineRenderExecutionState::Running,
+                        emitted_checkpoint_count,
+                        checkpoint_count,
+                        checkpoint: Some(checkpoint),
+                        result: None,
+                        summary,
+                    });
+                }
+            }
+        }
+
+        if session.materialized_result.is_none() {
+            let result = self.materialize_offline_render_session_outputs(&mut session)?;
+            session.materialized_result = Some(result);
+            let rendered_frames = session.rendered_frames;
+            let block_count = session.block_count;
+            let materializing_summary = format!(
+                "request={} stage=materializing-outputs main_mix={} stems={} freeze_artifacts={}",
+                session.request.request_id,
+                session.request.include_main_mix,
+                session.preview.stem_count,
+                session.preview.freeze_artifact_count,
+            );
+            let checkpoint = Self::emit_offline_render_session_checkpoint(
+                &mut session,
+                RuntimeOfflineRenderCheckpointStage::MaterializingOutputs,
+                rendered_frames,
+                block_count,
+                95,
+                materializing_summary,
+            );
+            let emitted_checkpoint_count = session.emitted_checkpoint_count;
+            let checkpoint_count = session.checkpoint_count;
+            let summary = format!(
+                "request={} state=running checkpoints={}/{} stage=materializing-outputs",
+                request_id, emitted_checkpoint_count, checkpoint_count
+            );
+            session.last_state_summary = summary.clone();
+            self.offline_render_executions
+                .insert(request_id.to_string(), session);
+            return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
+                request_id: request_id.to_string(),
+                state: RuntimeOfflineRenderExecutionState::Running,
+                emitted_checkpoint_count,
+                checkpoint_count,
+                checkpoint: Some(checkpoint),
+                result: None,
+                summary,
+            });
+        }
+
+        if !session.finalizing_checkpoint_emitted {
+            session.finalizing_checkpoint_emitted = true;
+            let rendered_frames = session.rendered_frames;
+            let block_count = session.block_count;
+            let finalizing_summary = format!(
+                "request={} stage=finalizing-artifacts artifact_root={} pending_delivery=true",
+                session.request.request_id,
+                session
+                    .request
+                    .artifact_root_path
+                    .as_deref()
+                    .unwrap_or("none"),
+            );
+            let checkpoint = Self::emit_offline_render_session_checkpoint(
+                &mut session,
+                RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts,
+                rendered_frames,
+                block_count,
+                99,
+                finalizing_summary,
+            );
+            let emitted_checkpoint_count = session.emitted_checkpoint_count;
+            let checkpoint_count = session.checkpoint_count;
+            let summary = format!(
+                "request={} state=running checkpoints={}/{} stage=finalizing-artifacts",
+                request_id, emitted_checkpoint_count, checkpoint_count
+            );
+            session.last_state_summary = summary.clone();
+            self.offline_render_executions
+                .insert(request_id.to_string(), session);
+            return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
+                request_id: request_id.to_string(),
+                state: RuntimeOfflineRenderExecutionState::Running,
+                emitted_checkpoint_count,
+                checkpoint_count,
+                checkpoint: Some(checkpoint),
+                result: None,
+                summary,
+            });
+        }
+
+        let mut result = session.materialized_result.take().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                format!(
+                    "offline render execution `{request_id}` has no materialized result to finalize"
+                ),
+            )
+        })?;
+        result.manifest = materialize_offline_render_delivery(&result)?;
+        Ok(RuntimeOfflineRenderExecutionProgressReceipt {
+            request_id: request_id.to_string(),
+            state: RuntimeOfflineRenderExecutionState::Completed,
+            emitted_checkpoint_count: session.emitted_checkpoint_count,
+            checkpoint_count: session.checkpoint_count,
+            checkpoint: None,
+            result: Some(result),
+            summary: format!(
+                "request={} state=completed checkpoints={}/{}",
+                request_id, session.emitted_checkpoint_count, session.checkpoint_count
+            ),
+        })
+    }
+
+    pub fn cancel_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeError> {
+        let session = self
+            .offline_render_executions
+            .remove(request_id)
+            .ok_or_else(|| {
+                RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!("offline render execution `{request_id}` is not active"),
+                )
+            })?;
+        Ok(RuntimeOfflineRenderExecutionCancellationReceipt {
+            request_id: request_id.to_string(),
+            cancelled_after_checkpoint_count: session.emitted_checkpoint_count,
+            checkpoint_count: session.checkpoint_count,
+            rendered_frame_count: session.rendered_frames,
+            rendered_block_count: session.block_count,
+            summary: format!(
+                "request={} state=cancelled checkpoints={}/{} rendered_frames={} rendered_blocks={}",
+                request_id,
+                session.emitted_checkpoint_count,
+                session.checkpoint_count,
+                session.rendered_frames,
+                session.block_count
+            ),
+        })
+    }
+
+    pub fn render_offline_queue(
+        &self,
+        requests: Vec<RuntimeOfflineRenderRequest>,
+    ) -> Result<RuntimeOfflineRenderQueueResult, RuntimeError> {
+        if requests.is_empty() {
+            self.record_deferred_service_receipt(RuntimeDeferredServiceReceipt {
+                work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
+                decision: RuntimeDeferredServiceDecision::Abort,
+                reason: RuntimeDeferredServiceReason::InvalidRequest,
+                queued_work_item_count: 0,
+                admitted_work_item_count: 0,
+                completed_work_item_count: 0,
+                deferred_work_item_count: 0,
+                runtime_running: self.control.running,
+                safe_mode_enabled: self.safe_mode_enabled,
+                readiness_degraded: matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
+                pending_cleanup_work_items: self.transport_concurrency.pending_work_item_count(),
+                pending_deferred_retry_work_items: self
+                    .transport_concurrency
+                    .pending_deferred_retry_work_count(),
+                recovery_overlap_session_count: self
+                    .transport_concurrency
+                    .recovery_overlap_session_count(),
+                summary: "class=OfflineRenderQueue decision=Abort reason=InvalidRequest queued=0 admitted=0 completed=0 deferred=0".into(),
+            });
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "offline render queue requires at least one request",
+            ));
+        }
+        let queue_count = requests.len();
+        let mut orchestration = self.offline_render_queue_receipt(queue_count);
+        let mut progress = Vec::with_capacity(orchestration.admitted_work_item_count);
+        let mut results = Vec::with_capacity(orchestration.admitted_work_item_count);
+        let mut deferred_requests = Vec::with_capacity(orchestration.deferred_work_item_count);
+        for (queue_index, request) in requests.into_iter().enumerate() {
+            if queue_index >= orchestration.admitted_work_item_count {
+                deferred_requests.push(request);
+                continue;
+            }
+            let result = self.render_offline(request)?;
+            let completed_job_count = queue_index.saturating_add(1);
+            let progress_percent = ((completed_job_count * 100) / queue_count).clamp(0, 100) as u8;
+            progress.push(RuntimeOfflineRenderQueueProgressReceipt {
+                request_id: result.request_id.clone(),
+                queue_index,
+                queue_count,
+                completed_job_count,
+                progress_percent,
+                summary: format!(
+                    "request={} queue={}/{} progress={}% blocks={} rendered_frames={}",
+                    result.request_id,
+                    completed_job_count,
+                    queue_count,
+                    progress_percent,
+                    result.block_count,
+                    result.rendered_frame_count,
+                ),
+            });
+            results.push(result);
+        }
+        orchestration.completed_work_item_count = results.len();
+        orchestration.deferred_work_item_count = deferred_requests.len();
+        orchestration.summary = summarize_deferred_service_receipt(&orchestration);
+        let completed_job_count = progress.len();
+        let deferred_job_count = deferred_requests.len();
+        let decision = orchestration.decision;
+        let summary = format!(
+            "queue_count={} completed_job_count={} deferred_job_count={} decision={:?}",
+            queue_count, completed_job_count, deferred_job_count, decision
+        );
+        self.record_deferred_service_receipt(orchestration.clone());
+        Ok(RuntimeOfflineRenderQueueResult {
+            queue_count,
+            completed_job_count,
+            orchestration,
+            progress,
+            results,
+            deferred_requests,
+            summary,
+        })
+    }
+
+    pub fn purge_offline_render_artifacts(
+        &self,
+        request: RuntimeOfflineRenderPurgeRequest,
+    ) -> Result<RuntimeOfflineRenderPurgeReceipt, RuntimeError> {
+        let request_id = request.request_id.trim().to_string();
+        if request_id.is_empty() {
+            self.record_deferred_service_receipt(RuntimeDeferredServiceReceipt {
+                work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
+                decision: RuntimeDeferredServiceDecision::Abort,
+                reason: RuntimeDeferredServiceReason::InvalidRequest,
+                queued_work_item_count: 1,
+                admitted_work_item_count: 0,
+                completed_work_item_count: 0,
+                deferred_work_item_count: 1,
+                runtime_running: self.control.running,
+                safe_mode_enabled: self.safe_mode_enabled,
+                readiness_degraded: matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
+                pending_cleanup_work_items: self.transport_concurrency.pending_work_item_count(),
+                pending_deferred_retry_work_items: self
+                    .transport_concurrency
+                    .pending_deferred_retry_work_count(),
+                recovery_overlap_session_count: self
+                    .transport_concurrency
+                    .recovery_overlap_session_count(),
+                summary: "class=OfflineRenderPurge decision=Abort reason=InvalidRequest queued=1 admitted=0 completed=0 deferred=1".into(),
+            });
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "offline render artifact purge requires a request id",
+            ));
+        }
+        let mut orchestration = self.offline_render_purge_receipt();
+        if orchestration.decision != RuntimeDeferredServiceDecision::Run {
+            self.record_deferred_service_receipt(orchestration.clone());
+            let decision = orchestration.decision;
+            let reason = orchestration.reason;
+            let summary = format!(
+                "request={} deferred decision={:?} reason={:?}",
+                request_id, decision, reason
+            );
+            return Ok(RuntimeOfflineRenderPurgeReceipt {
+                request_id,
+                orchestration,
+                artifact_root_path: request.artifact_root_path,
+                report_path: request.report_path,
+                purged_artifact_root: false,
+                purged_artifact_file_count: 0,
+                purged_artifact_byte_count: 0,
+                purged_report: false,
+                purged_report_byte_count: 0,
+                summary,
+            });
+        }
+        let purged_report = request
+            .report_path
+            .as_deref()
+            .map(Path::new)
+            .map(purge_offline_render_file)
+            .transpose()?
+            .unwrap_or_default();
+        let purged_artifact_root = request
+            .artifact_root_path
+            .as_deref()
+            .map(Path::new)
+            .map(purge_offline_render_directory)
+            .transpose()?
+            .unwrap_or_default();
+        orchestration.completed_work_item_count = 1;
+        orchestration.deferred_work_item_count = 0;
+        orchestration.summary = summarize_deferred_service_receipt(&orchestration);
+        self.record_deferred_service_receipt(orchestration.clone());
+        Ok(RuntimeOfflineRenderPurgeReceipt {
+            request_id: request_id.clone(),
+            orchestration,
+            artifact_root_path: request.artifact_root_path,
+            report_path: request.report_path,
+            purged_artifact_root: purged_artifact_root.removed,
+            purged_artifact_file_count: purged_artifact_root.file_count,
+            purged_artifact_byte_count: purged_artifact_root.byte_count,
+            purged_report: purged_report.removed,
+            purged_report_byte_count: purged_report.byte_count,
+            summary: format!(
+                "request={} purged_report={} report_bytes={} purged_artifact_root={} artifact_files={} artifact_bytes={}",
+                request_id,
+                purged_report.removed,
+                purged_report.byte_count,
+                purged_artifact_root.removed,
+                purged_artifact_root.file_count,
+                purged_artifact_root.byte_count
+            ),
+        })
     }
 
     pub fn prepare_offline_plugin_execution_boundary(
@@ -8017,6 +9487,8 @@ impl SignalRuntime {
                     chain_id: stage.chain_id.clone(),
                     stage_index: stage.stage_index,
                     sandbox_id: stage.recall_payload.sandbox_id.clone(),
+                    plugin_type_id: stage.recall_payload.plugin_type_id.clone(),
+                    plugin_format: stage.recall_payload.plugin_format,
                     track_lane_id: stage.track_lane_id.clone(),
                     bus_group_id: stage.bus_group_id.clone(),
                     console_group_id: stage.console_group_id.clone(),
@@ -8472,9 +9944,10 @@ impl SignalRuntime {
     ) -> Result<usize, RuntimeError> {
         self.reconcile_prework_window_with_forecast(current_block_sequence, policy);
         let admitted = if self.control.running {
+            let requested_cycles = self.multicore_prework_requested_cycles(1);
             self.service_prework_lane_with_policy(
                 processing_epoch,
-                1,
+                requested_cycles,
                 policy.prepare_budget_per_cycle,
             )?
         } else {
@@ -8509,9 +9982,10 @@ impl SignalRuntime {
 
         self.reconcile_prework_window_with_forecast(current_block_sequence, &policy);
         if self.control.running {
+            let requested_cycles = self.multicore_prework_requested_cycles(1);
             self.service_prework_lane_with_policy(
                 processing_epoch,
-                1,
+                requested_cycles,
                 policy.prepare_budget_per_cycle,
             )
         } else {
@@ -8603,6 +10077,8 @@ impl SignalRuntime {
         let pressure = self.engine.snapshot.prework_service_pressure;
         let semantic_policy = self.engine.snapshot.prework_service_semantic_policy;
         let transport_condition = self.current_prework_transport_condition();
+        let widened_budget_per_cycle =
+            budget_per_cycle.saturating_mul(self.multicore_prework_budget_scale().max(1));
         if self.engine.snapshot.prework_service_plugin_gate_active
             || self.engine.snapshot.prework_service_transport_gate_active
         {
@@ -8617,23 +10093,23 @@ impl SignalRuntime {
         let (effective_cycles, effective_budget_per_cycle, max_backlog_class) = match pressure {
             RuntimePreworkServicePressure::Normal => (
                 cycles,
-                budget_per_cycle,
+                widened_budget_per_cycle,
                 RuntimePreworkBacklogClass::Deferred,
             ),
             RuntimePreworkServicePressure::Elevated => match semantic_policy {
                 RuntimePreworkServiceSemanticPolicy::Balanced => (
                     cycles.min(1),
-                    budget_per_cycle.min(1),
+                    widened_budget_per_cycle.min(1),
                     RuntimePreworkBacklogClass::NearTerm,
                 ),
                 RuntimePreworkServiceSemanticPolicy::PluginConstrained => (
                     cycles.min(1),
-                    budget_per_cycle.min(1),
+                    widened_budget_per_cycle.min(1),
                     RuntimePreworkBacklogClass::Immediate,
                 ),
                 RuntimePreworkServiceSemanticPolicy::LatencyFocused => (
                     cycles.min(1),
-                    budget_per_cycle.min(2),
+                    widened_budget_per_cycle.min(2),
                     RuntimePreworkBacklogClass::Deferred,
                 ),
             },
@@ -10120,6 +11596,8 @@ impl RuntimeProjectionApi for SignalRuntime {
         self.projection_epoch = self.projection_epoch.saturating_add(1);
         self.applied_schedule = Some(projection);
         self.refresh_scheduler_topology_summary();
+        self.refresh_prework_service_policy_and_state(None);
+        let _ = self.maybe_rebuild_prework_window_from_current_forecast_plan()?;
         Ok(ProjectionReceipt {
             accepted_epoch: self.projection_epoch,
             applied_at_block_boundary: true,
@@ -10376,9 +11854,11 @@ fn runtime_plugin_recall_snapshot(
         summary: String::new(),
     };
     snapshot.summary = format!(
-        "state={:?} sandbox={:?} lifecycle={:?}/{:?}/{:?} readiness={:?} recoveries={} restarts={} faults={} restart_intent={:?} stop_reason={:?} fault_kind={:?}",
+        "state={:?} sandbox={:?} plugin={:?}/{:?} lifecycle={:?}/{:?}/{:?} readiness={:?} recoveries={} restarts={} faults={} restart_intent={:?} stop_reason={:?} fault_kind={:?}",
         snapshot.state,
         snapshot.payload.sandbox_id.as_deref(),
+        snapshot.payload.plugin_type_id.as_deref(),
+        snapshot.payload.plugin_format,
         snapshot.payload.lifecycle_state,
         snapshot.payload.lifecycle_stage,
         snapshot.payload.transport_stage,
@@ -10399,6 +11879,8 @@ fn runtime_plugin_recall_payload(
 ) -> RuntimePluginRecallPayload {
     RuntimePluginRecallPayload {
         sandbox_id: sandbox_id.map(str::to_string),
+        plugin_type_id: sandbox.and_then(|sandbox| sandbox.plugin_type_id.clone()),
+        plugin_format: sandbox.and_then(|sandbox| sandbox.plugin_format),
         lifecycle_state: sandbox.map(|sandbox| sandbox.state),
         lifecycle_stage: sandbox.and_then(|sandbox| sandbox.lifecycle_stage),
         transport_stage: sandbox.and_then(|sandbox| sandbox.transport_stage),
@@ -10602,6 +12084,10 @@ impl RuntimeObservationApi for SignalRuntime {
         self.transport_concurrency.snapshot()
     }
 
+    fn get_plugin_discovery_snapshot(&self) -> RuntimePluginDiscoverySnapshot {
+        self.plugin_discovery.snapshot()
+    }
+
     fn get_plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot {
         self.plugin_lifecycle_snapshot()
     }
@@ -10613,6 +12099,10 @@ impl RuntimeObservationApi for SignalRuntime {
     fn get_plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot {
         self.plugin_recall_handoff_snapshot()
     }
+
+    fn get_last_deferred_service_receipt(&self) -> Option<RuntimeDeferredServiceReceipt> {
+        self.last_deferred_service_receipt.borrow().clone()
+    }
 }
 
 #[cfg(test)]
@@ -10620,6 +12110,7 @@ mod tests {
     use std::{
         env, fs,
         path::{Path, PathBuf},
+        sync::atomic::{AtomicU64, Ordering},
         time::{SystemTime, UNIX_EPOCH},
     };
 
@@ -10631,15 +12122,16 @@ mod tests {
         GraphProjection, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
         LingeringCleanupTrigger, ParameterBatch, ParameterEvent, PluginBackedNodeBinding,
         PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRender,
-        PluginNodeRenderBatch, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-        RecoveryRestartIntent, RestartRequest, RuntimeAutomationInterpolation,
-        RuntimeAutomationLaneProjection, RuntimeAutomationPointProjection,
-        RuntimeAutomationProjection, RuntimeAutomationResolution,
+        PluginNodeRenderBatch, PluginSandboxLifecycleStage, PluginSandboxSpec,
+        PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RestartRequest,
+        RuntimeAutomationInterpolation, RuntimeAutomationLaneProjection,
+        RuntimeAutomationPointProjection, RuntimeAutomationProjection, RuntimeAutomationResolution,
         RuntimeAutomationTargetProjection, RuntimeClipFadeEnvelope, RuntimeClipFadeShape,
         RuntimeClipGainEnvelope, RuntimeClipGainShape, RuntimeClipProcessingReadiness,
         RuntimeClipProcessingRegistration, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
-        RuntimeClipRenderRequest, RuntimeConfigRequest, RuntimeErrorKind, RuntimeEvent,
-        RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
+        RuntimeClipRenderRequest, RuntimeConfigRequest, RuntimeDeferredServiceDecision,
+        RuntimeDeferredServiceReason, RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder,
+        RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
         RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
         RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
         RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
@@ -10650,24 +12142,26 @@ mod tests {
         RuntimeOfflinePluginDelegatedFreezeArtifactOutput, RuntimeOfflinePluginDelegatedStemOutput,
         RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
         RuntimeOfflinePluginExecutionStageBoundary, RuntimeOfflinePluginOverrideState,
-        RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderContractPreview,
-        RuntimeOfflineRenderRequest, RuntimeOfflineRenderStemTarget,
-        RuntimeOfflineRenderTargetKind, RuntimePluginCompensationState,
-        RuntimePluginLifecycleState, RuntimePluginRecallHandoffSelection,
-        RuntimePluginRecallHandoffStageId, RuntimePluginRecallPayload, RuntimePluginRecallState,
-        RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
-        RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
-        RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
-        RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason,
-        RuntimePreworkRetirementReason, RuntimePreworkServicePressure,
-        RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
-        RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
-        RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeSchedulerState,
-        RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport, RuntimeTempoMapInterpolation,
-        RuntimeTempoMapProjection, RuntimeTempoSource, RuntimeWarpClipRegistration,
-        RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
-        SandboxOperationFailureStage, ScheduleProjection, StopReason, TransportAttachIntent,
-        TransportProjection, TransportSessionProvenance, WatchdogRestartRecord,
+        RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderCheckpointStage,
+        RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderExecutionState,
+        RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest,
+        RuntimeOfflineRenderStemTarget, RuntimeOfflineRenderTargetKind,
+        RuntimePluginCompensationState, RuntimePluginLifecycleState,
+        RuntimePluginRecallHandoffSelection, RuntimePluginRecallHandoffStageId,
+        RuntimePluginRecallPayload, RuntimePluginRecallState, RuntimePreworkBacklogClass,
+        RuntimePreworkCacheState, RuntimePreworkForecastMode, RuntimePreworkForecastPolicy,
+        RuntimePreworkForecastProfile, RuntimePreworkForecastProfileSelection,
+        RuntimePreworkForecastProfileSource, RuntimePreworkFreshnessState,
+        RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
+        RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy,
+        RuntimePreworkServiceState, RuntimePreworkWindowTarget, RuntimeProjectionApi,
+        RuntimeReadiness, RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState,
+        RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport,
+        RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoSource,
+        RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
+        SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection, StopReason,
+        TransportAttachIntent, TransportProjection, TransportSessionProvenance,
+        WatchdogRestartRecord,
     };
     use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
     use signal_graph::{
@@ -10676,7 +12170,7 @@ mod tests {
         GraphStageSpec,
     };
     use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
-    use signal_plugin::{CompletionState, ParameterAutomationSummary};
+    use signal_plugin::{CompletionState, ParameterAutomationSummary, PluginFormat};
     use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 
     #[derive(Default)]
@@ -10710,12 +12204,17 @@ mod tests {
         runtime.configure(request).unwrap();
     }
 
+    static TEMP_PATH_COUNTER: AtomicU64 = AtomicU64::new(0);
+
     fn temp_media_path(label: &str, extension: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system time should be monotonic enough for temp files")
             .as_nanos();
-        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}.{extension}"))
+        let sequence = TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
+        env::temp_dir().join(format!(
+            "signal-runtime-{label}-{nonce}-{sequence}.{extension}"
+        ))
     }
 
     fn temp_capture_path(label: &str) -> PathBuf {
@@ -10727,7 +12226,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system time should be monotonic enough for temp dirs")
             .as_nanos();
-        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}"))
+        let sequence = TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
+        env::temp_dir().join(format!("signal-runtime-{label}-{nonce}-{sequence}"))
     }
 
     fn write_test_wav(path: &Path) {
@@ -10953,6 +12453,10 @@ mod tests {
                 }],
             })
             .unwrap();
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "sandbox-a".into(),
+            plugin_format: PluginFormat::Clap,
+        });
         runtime.record_recovery_cycle(
             "sandbox-a",
             RecoveryRestartIntent::CrashRecovery,
@@ -11787,6 +13291,51 @@ mod tests {
 
         assert_eq!(receipt.accepted_epoch, 1);
         assert!(receipt.applied_at_block_boundary);
+    }
+
+    #[test]
+    fn schedule_projection_refreshes_running_prework_window_with_widened_scope() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 8,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set widened refresh policy");
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:schedule-refresh");
+        runtime.start().expect("start runtime");
+
+        let before = runtime.get_engine_block_snapshot();
+        assert_eq!(before.prework_cache_queue_depth, 2);
+        assert!(before.prework_pending_target_count > 0);
+
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:refresh-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+
+        let snapshot = runtime.get_engine_block_snapshot();
+        assert_eq!(snapshot.scheduler_topology.schedule_stream_count, Some(3));
+        assert!(snapshot.scheduler_topology.compatible);
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_cycle_count, 3);
+        assert_eq!(snapshot.last_prework_service_budget_per_cycle, Some(1));
+        assert_eq!(
+            snapshot.last_prework_service_effective_budget_per_cycle,
+            Some(3)
+        );
+        assert!(snapshot.prework_cache_queue_depth > before.prework_cache_queue_depth);
+        assert_eq!(snapshot.prework_pending_target_count, 0);
     }
 
     #[test]
@@ -14200,6 +15749,56 @@ mod tests {
     }
 
     #[test]
+    fn runtime_constrained_anticipative_window_caps_widened_service_realization() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 1,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set constrained widened forecast policy");
+        install_scheduler_topology_runtime_graph(
+            &mut runtime,
+            "graph:runtime:constrained-window-widened",
+            &["track:drums", "track:bass"],
+            false,
+        );
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:constrained-window-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened constrained schedule");
+        runtime.start().expect("start runtime");
+
+        for block_sequence in 1..=3u64 {
+            let block = synthetic_stereo_block(SampleRate(48_000), FrameCount(256), block_sequence);
+            apply_current_forecast_block_state(&mut runtime, block_sequence);
+            let snapshot = runtime
+                .process_engine_block(block_sequence, block_sequence, block)
+                .expect("process constrained widened block")
+                .snapshot;
+
+            assert_eq!(snapshot.scheduler_topology.schedule_stream_count, Some(3));
+            assert!(snapshot.scheduler_topology.compatible);
+            assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+            assert_eq!(snapshot.last_prework_service_effective_cycles, 3);
+            assert_eq!(snapshot.last_prework_service_cycle_count, 1);
+            assert_eq!(snapshot.last_prework_service_prepared_targets, 1);
+            assert!(snapshot.prework_cache_window_target_count <= 2);
+            assert_eq!(snapshot.prework_pending_target_count, 0);
+            assert!(snapshot.prework_cache_peak_queue_depth <= 2);
+        }
+    }
+
+    #[test]
     fn runtime_forecast_runner_leaves_pending_targets_when_budget_is_smaller_than_window() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_disabled_forecast(&mut runtime, true);
@@ -14825,6 +16424,83 @@ mod tests {
             RuntimePreworkServiceSemanticPolicy::PluginConstrained
         );
         assert_eq!(snapshot.prework_service_active_plugin_sandboxes, 2);
+        assert!(snapshot.prework_service_plugin_gate_active);
+        assert_eq!(
+            snapshot.prework_service_state,
+            RuntimePreworkServiceState::Yielding
+        );
+        assert!(snapshot.prework_pending_target_count > 0);
+        assert!(snapshot.prework_service_yield_count >= 1);
+    }
+
+    #[test]
+    fn runtime_schedule_widened_plugin_gate_yields_without_servicing() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        let policy = RuntimePreworkForecastPolicy {
+            target_window_blocks: 6,
+            prepare_budget_per_cycle: 1,
+            buffer_seed_offset: 0,
+            transport_playing: true,
+            transport_tempo_bpm: 126.0,
+            transport_loop_length_blocks: 32,
+            parameter_target: "engine.local.drive".into(),
+            parameter_cycle_length: 8,
+        };
+        runtime
+            .set_prework_forecast_policy(policy.clone())
+            .expect("set widened plugin-constrained forecast policy");
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:plugin-gate-schedule-widened".into(),
+                node_count: 3,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "inline".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "latency".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 96,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                    },
+                ],
+            })
+            .unwrap();
+        runtime.set_active_plugin_sandboxes(2);
+        runtime.start().expect("start runtime");
+        runtime
+            .set_prework_service_pressure(RuntimePreworkServicePressure::Elevated)
+            .expect("set elevated prework pressure");
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:plugin-gate-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        let current_sequence = runtime.allocate_block_sequence();
+
+        let admitted = runtime
+            .prime_engine_prework_window_with_forecast(1, current_sequence, &policy)
+            .expect("prime widened plugin-gated window");
+
+        let snapshot = runtime.get_engine_block_snapshot();
+        assert_eq!(admitted, 0);
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 0);
+        assert_eq!(
+            snapshot.last_prework_service_effective_budget_per_cycle,
+            Some(0)
+        );
         assert!(snapshot.prework_service_plugin_gate_active);
         assert_eq!(
             snapshot.prework_service_state,
@@ -16211,6 +17887,132 @@ mod tests {
     }
 
     #[test]
+    fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure(&mut runtime);
+
+        let first_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
+            formats: vec![PluginFormat::Clap],
+        });
+        let second_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec![
+                "~/Library/Audio/Plug-Ins".into(),
+                "/Library/Audio/Plug-Ins".into(),
+            ],
+            formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
+        });
+        runtime.record_plugin_scan_results(
+            second_handle,
+            vec![crate::RuntimePluginDiscoveredTypeRecord {
+                plugin_type_id: "plugin:clap:default".into(),
+                plugin_id: "com.signal.default".into(),
+                vendor: "Signal".into(),
+                name: "Signal Default".into(),
+                format: PluginFormat::Clap,
+                version: Some("1.0.0".into()),
+                features: vec![
+                    signal_plugin::PluginFeature::AudioEffect,
+                    signal_plugin::PluginFeature::Utility,
+                ],
+                default_io_layout: signal_plugin::PluginIoLayout {
+                    audio_inputs: 2,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 1,
+                },
+                audio_bus_count: 2,
+                parameter_count: 16,
+                state_contract: signal_plugin::PluginStateContract {
+                    supports_snapshot: true,
+                    supports_reset: true,
+                    supports_bypass: true,
+                    exposes_latency: true,
+                    exposes_tail: true,
+                },
+                processing_contract: signal_plugin::PluginProcessingContract {
+                    max_block_frames: 4_096,
+                    sample_accurate_automation: true,
+                    accepts_midi: true,
+                    accepts_note_events: true,
+                    produces_midi: true,
+                    silence_aware: true,
+                },
+                lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                    requires_main_thread_for_state: false,
+                    supports_prepare: true,
+                    supports_activate: true,
+                    supports_reset_while_active: true,
+                },
+                summary: "plugin_type=plugin:clap:default plugin_id=com.signal.default format=Clap features=2 io=PluginIoLayout { audio_inputs: 2, audio_outputs: 2, midi_inputs: 1, midi_outputs: 1 } parameters=16".into(),
+            }],
+        );
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "sandbox-a".into(),
+            plugin_format: PluginFormat::Clap,
+        });
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox-a",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+
+        let discovery = runtime.get_plugin_discovery_snapshot();
+        assert_eq!(first_handle.0, 1);
+        assert_eq!(second_handle.0, 2);
+        assert_eq!(discovery.scan_count, 2);
+        assert_eq!(discovery.format_filtered_scan_count, 2);
+        let last_scan = discovery.last_scan.expect("last scan receipt should exist");
+        assert_eq!(last_scan.scan_handle, second_handle);
+        assert_eq!(
+            last_scan.formats,
+            vec![PluginFormat::Clap, PluginFormat::Vst3]
+        );
+        assert_eq!(last_scan.targeted_format_count, 2);
+        assert_eq!(last_scan.discovered_type_count, 1);
+        assert_eq!(discovery.discovered_type_count, 1);
+        assert_eq!(discovery.discovered_types.len(), 1);
+        let discovered_type = &discovery.discovered_types[0];
+        assert_eq!(discovered_type.plugin_type_id, "plugin:clap:default");
+        assert_eq!(discovered_type.plugin_id, "com.signal.default");
+        assert_eq!(discovered_type.format, PluginFormat::Clap);
+        assert_eq!(
+            discovered_type.features,
+            vec![
+                signal_plugin::PluginFeature::AudioEffect,
+                signal_plugin::PluginFeature::Utility,
+            ]
+        );
+        assert_eq!(discovered_type.audio_bus_count, 2);
+        assert_eq!(discovered_type.parameter_count, 16);
+        assert!(discovered_type.state_contract.supports_snapshot);
+        assert!(discovered_type.processing_contract.produces_midi);
+        assert!(discovered_type.lifecycle_contract.supports_activate);
+
+        let lifecycle = runtime.get_plugin_lifecycle_snapshot();
+        assert_eq!(lifecycle.sandbox_count, 1);
+        assert_eq!(
+            lifecycle.sandboxes[0].plugin_format,
+            Some(PluginFormat::Clap)
+        );
+
+        let report = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(report.plugin_discovery_snapshot.scan_count, 2);
+        assert_eq!(report.plugin_discovery_snapshot.discovered_type_count, 1);
+        assert!(report
+            .render_json()
+            .contains("\"plugin_discovery_snapshot\":{"));
+        assert!(report
+            .render_json()
+            .contains("\"formats\":[\"Clap\",\"Vst3\"]"));
+        assert!(report.render_json().contains("\"discovered_type_count\":1"));
+        assert!(report
+            .render_json()
+            .contains("\"plugin_type_id\":\"plugin:clap:default\""));
+        assert!(report.render_json().contains("\"supports_snapshot\":true"));
+    }
+
+    #[test]
     fn runtime_offline_render_contract_preview_reuses_runtime_topology_tempo_clip_and_recall_contracts(
     ) {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
@@ -16704,6 +18506,838 @@ mod tests {
     }
 
     #[test]
+    fn runtime_offline_render_queue_executes_requests_in_order_and_tracks_queue_completion_progress(
+    ) {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let first_artifact_dir = temp_artifact_dir("offline-render-queue-first");
+        let second_artifact_dir = temp_artifact_dir("offline-render-queue-second");
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let selection = RuntimePluginRecallHandoffSelection {
+            stage_count: handoff.stage_count,
+            stage_ids: handoff
+                .stages
+                .iter()
+                .map(|stage| stage.stage_id.clone())
+                .collect(),
+        };
+
+        let queue_result = runtime
+            .render_offline_queue(vec![
+                RuntimeOfflineRenderRequest {
+                    request_id: "render:queue:0001".into(),
+                    timeline_start_samples: 0,
+                    duration_samples: 64,
+                    export_sample_rate_hz: 48_000,
+                    include_main_mix: true,
+                    artifact_root_path: Some(first_artifact_dir.display().to_string()),
+                    stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                        stem_id: "stem:track:lead".into(),
+                        target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                        target_id: Some("track:lead".into()),
+                    }],
+                    freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                        artifact_id: "freeze:track:lead".into(),
+                        source_stem_id: "stem:track:lead".into(),
+                        recall_selection: selection.clone(),
+                    }],
+                },
+                RuntimeOfflineRenderRequest {
+                    request_id: "render:queue:0002".into(),
+                    timeline_start_samples: 32,
+                    duration_samples: 64,
+                    export_sample_rate_hz: 24_000,
+                    include_main_mix: true,
+                    artifact_root_path: Some(second_artifact_dir.display().to_string()),
+                    stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                        stem_id: "stem:track:lead".into(),
+                        target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                        target_id: Some("track:lead".into()),
+                    }],
+                    freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                        artifact_id: "freeze:track:lead".into(),
+                        source_stem_id: "stem:track:lead".into(),
+                        recall_selection: selection,
+                    }],
+                },
+            ])
+            .expect("offline render queue should succeed");
+
+        assert_eq!(queue_result.queue_count, 2);
+        assert_eq!(queue_result.completed_job_count, 2);
+        assert_eq!(
+            queue_result.orchestration.decision,
+            RuntimeDeferredServiceDecision::Run
+        );
+        assert_eq!(
+            queue_result.orchestration.reason,
+            RuntimeDeferredServiceReason::Ready
+        );
+        assert_eq!(queue_result.orchestration.admitted_work_item_count, 2);
+        assert_eq!(queue_result.orchestration.completed_work_item_count, 2);
+        assert_eq!(queue_result.orchestration.deferred_work_item_count, 0);
+        assert_eq!(queue_result.progress.len(), 2);
+        assert_eq!(queue_result.results.len(), 2);
+        assert!(queue_result.deferred_requests.is_empty());
+        assert_eq!(queue_result.progress[0].request_id, "render:queue:0001");
+        assert_eq!(queue_result.progress[0].queue_index, 0);
+        assert_eq!(queue_result.progress[0].completed_job_count, 1);
+        assert_eq!(queue_result.progress[0].progress_percent, 50);
+        assert_eq!(queue_result.progress[1].request_id, "render:queue:0002");
+        assert_eq!(queue_result.progress[1].queue_index, 1);
+        assert_eq!(queue_result.progress[1].completed_job_count, 2);
+        assert_eq!(queue_result.progress[1].progress_percent, 100);
+        assert_eq!(queue_result.results[0].request_id, "render:queue:0001");
+        assert_eq!(queue_result.results[1].request_id, "render:queue:0002");
+        assert_eq!(
+            queue_result.results[0]
+                .manifest
+                .artifact_root_path
+                .as_deref(),
+            Some(
+                first_artifact_dir
+                    .to_str()
+                    .expect("first artifact dir should be valid utf-8")
+            )
+        );
+        assert_eq!(
+            queue_result.results[1]
+                .manifest
+                .artifact_root_path
+                .as_deref(),
+            Some(
+                second_artifact_dir
+                    .to_str()
+                    .expect("second artifact dir should be valid utf-8")
+            )
+        );
+        assert_eq!(queue_result.results[0].manifest.artifact_count, 3);
+        assert_eq!(queue_result.results[1].manifest.artifact_count, 3);
+        assert!(queue_result.results[0].manifest.report.is_some());
+        assert!(queue_result.results[1].manifest.report.is_some());
+        assert_eq!(
+            queue_result.results[1]
+                .main_mix
+                .as_ref()
+                .expect("second main mix should exist")
+                .sample_rate()
+                .0,
+            24_000
+        );
+        assert!(queue_result.summary.contains("queue_count=2"));
+        assert!(queue_result.summary.contains("completed_job_count=2"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for result in &queue_result.results {
+            for receipt in &result.manifest.artifacts {
+                let _ = fs::remove_file(&receipt.output_path);
+            }
+            if let Some(report_receipt) = &result.manifest.report {
+                let _ = fs::remove_file(&report_receipt.report_path);
+            }
+        }
+        let _ = fs::remove_dir(&first_artifact_dir);
+        let _ = fs::remove_dir(&second_artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_with_checkpoints_reports_runtime_owned_progress_stages() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-checkpoints");
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let selection = RuntimePluginRecallHandoffSelection {
+            stage_count: handoff.stage_count,
+            stage_ids: handoff
+                .stages
+                .iter()
+                .map(|stage| stage.stage_id.clone())
+                .collect(),
+        };
+
+        let execution = runtime
+            .render_offline_with_checkpoints(RuntimeOfflineRenderRequest {
+                request_id: "render:checkpoint:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                    artifact_id: "freeze:track:lead".into(),
+                    source_stem_id: "stem:track:lead".into(),
+                    recall_selection: selection,
+                }],
+            })
+            .expect("offline render with checkpoints should succeed");
+
+        assert_eq!(execution.request_id, "render:checkpoint:0001");
+        assert_eq!(execution.result.request_id, "render:checkpoint:0001");
+        assert_eq!(execution.checkpoint_count, execution.checkpoints.len());
+        assert!(execution.checkpoint_count >= 4);
+        assert_eq!(
+            execution
+                .checkpoints
+                .first()
+                .map(|checkpoint| checkpoint.stage),
+            Some(RuntimeOfflineRenderCheckpointStage::PreparingInput)
+        );
+        assert!(execution.checkpoints.iter().any(|checkpoint| {
+            checkpoint.stage == RuntimeOfflineRenderCheckpointStage::RenderingGraph
+                && checkpoint.progress_percent >= 10
+                && checkpoint.progress_percent <= 90
+        }));
+        assert_eq!(
+            execution
+                .checkpoints
+                .last()
+                .map(|checkpoint| checkpoint.stage),
+            Some(RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts)
+        );
+        assert_eq!(
+            execution
+                .checkpoints
+                .last()
+                .map(|checkpoint| checkpoint.progress_percent),
+            Some(99)
+        );
+        assert!(execution
+            .checkpoints
+            .windows(2)
+            .all(|window| window[0].checkpoint_index < window[1].checkpoint_index));
+        assert_eq!(
+            execution
+                .checkpoints
+                .last()
+                .map(|checkpoint| checkpoint.checkpoint_count),
+            Some(execution.checkpoint_count)
+        );
+        assert!(execution.summary.contains("checkpoints="));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &execution.result.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &execution.result.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_execution_streams_checkpoints_before_delivery_completion() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-streaming");
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let selection = RuntimePluginRecallHandoffSelection {
+            stage_count: handoff.stage_count,
+            stage_ids: handoff
+                .stages
+                .iter()
+                .map(|stage| stage.stage_id.clone())
+                .collect(),
+        };
+
+        let begin = runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:stream:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: vec![RuntimeOfflineFreezeArtifactRequest {
+                    artifact_id: "freeze:track:lead".into(),
+                    source_stem_id: "stem:track:lead".into(),
+                    recall_selection: selection,
+                }],
+            })
+            .expect("offline render execution should begin");
+
+        assert_eq!(begin.state, RuntimeOfflineRenderExecutionState::Running);
+        assert_eq!(begin.emitted_checkpoint_count, 1);
+        assert_eq!(
+            begin.checkpoint.as_ref().map(|checkpoint| checkpoint.stage),
+            Some(RuntimeOfflineRenderCheckpointStage::PreparingInput)
+        );
+        assert!(!artifact_dir.exists());
+
+        let mut observed_stages = vec![
+            begin
+                .checkpoint
+                .as_ref()
+                .expect("begin checkpoint should exist")
+                .stage,
+        ];
+        let mut completed_result = None;
+        for _ in 0..32 {
+            let receipt = runtime
+                .advance_offline_render_execution("render:stream:0001")
+                .expect("offline render execution step should succeed");
+            if let Some(checkpoint) = receipt.checkpoint.as_ref() {
+                observed_stages.push(checkpoint.stage);
+                assert_eq!(receipt.state, RuntimeOfflineRenderExecutionState::Running);
+                assert!(!artifact_dir.exists());
+            }
+            if let Some(result) = receipt.result {
+                assert_eq!(receipt.state, RuntimeOfflineRenderExecutionState::Completed);
+                completed_result = Some(result);
+                break;
+            }
+        }
+
+        let completed_result = completed_result
+            .expect("offline render execution should complete within the step budget");
+        assert!(observed_stages.contains(&RuntimeOfflineRenderCheckpointStage::RenderingGraph));
+        assert!(
+            observed_stages.contains(&RuntimeOfflineRenderCheckpointStage::MaterializingOutputs)
+        );
+        assert!(observed_stages.contains(&RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts));
+        assert!(artifact_dir.exists());
+        assert_eq!(completed_result.request_id, "render:stream:0001");
+        assert!(completed_result.manifest.report.is_some());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &completed_result.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &completed_result.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_execution_cancels_without_persisted_artifacts() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-cancel");
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:cancel:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render execution should begin");
+        runtime
+            .advance_offline_render_execution("render:cancel:0001")
+            .expect("offline render execution should advance");
+
+        let cancelled = runtime
+            .cancel_offline_render_execution("render:cancel:0001")
+            .expect("offline render execution should cancel");
+
+        assert_eq!(cancelled.request_id, "render:cancel:0001");
+        assert!(cancelled.cancelled_after_checkpoint_count >= 1);
+        assert!(cancelled.rendered_frame_count > 0);
+        assert!(!artifact_dir.exists());
+        assert!(runtime
+            .advance_offline_render_execution("render:cancel:0001")
+            .is_err());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_execution_pauses_and_resumes_without_early_delivery() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-pause-resume");
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:pause:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render execution should begin");
+        runtime
+            .advance_offline_render_execution("render:pause:0001")
+            .expect("offline render execution should advance");
+
+        let paused = runtime
+            .pause_offline_render_execution("render:pause:0001")
+            .expect("offline render execution should pause");
+        assert_eq!(paused.state, RuntimeOfflineRenderExecutionState::Paused);
+        assert!(paused.summary.contains("state=paused"));
+        assert!(!artifact_dir.exists());
+
+        let still_paused = runtime
+            .advance_offline_render_execution("render:pause:0001")
+            .expect("paused offline render execution should not advance");
+        assert_eq!(
+            still_paused.state,
+            RuntimeOfflineRenderExecutionState::Paused
+        );
+        assert!(still_paused.checkpoint.is_none());
+        assert!(!artifact_dir.exists());
+
+        let resumed = runtime
+            .resume_offline_render_execution("render:pause:0001")
+            .expect("offline render execution should resume");
+        assert_eq!(resumed.state, RuntimeOfflineRenderExecutionState::Running);
+
+        let mut completed = None;
+        for _ in 0..32 {
+            let receipt = runtime
+                .advance_offline_render_execution("render:pause:0001")
+                .expect("resumed offline render execution should advance");
+            if let Some(result) = receipt.result {
+                completed = Some(result);
+                break;
+            }
+        }
+        let completed = completed.expect("paused session should resume to completion");
+        assert!(artifact_dir.exists());
+        assert!(completed.manifest.report.is_some());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &completed.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &completed.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_execution_becomes_recoverable_and_resumes_after_interrupt() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-recoverable");
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:recover:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render execution should begin");
+        runtime
+            .advance_offline_render_execution("render:recover:0001")
+            .expect("offline render execution should advance");
+
+        let recoverable = runtime
+            .interrupt_offline_render_execution(
+                "render:recover:0001",
+                "runtime restart boundary".to_string(),
+            )
+            .expect("offline render execution should become recoverable");
+        assert_eq!(
+            recoverable.state,
+            RuntimeOfflineRenderExecutionState::Recoverable
+        );
+        assert!(recoverable.summary.contains("state=recoverable"));
+        assert!(!artifact_dir.exists());
+
+        let still_recoverable = runtime
+            .advance_offline_render_execution("render:recover:0001")
+            .expect("recoverable execution should not advance until resumed");
+        assert_eq!(
+            still_recoverable.state,
+            RuntimeOfflineRenderExecutionState::Recoverable
+        );
+        assert!(still_recoverable.checkpoint.is_none());
+
+        runtime
+            .resume_offline_render_execution("render:recover:0001")
+            .expect("recoverable execution should resume");
+        let mut completed = None;
+        for _ in 0..32 {
+            let receipt = runtime
+                .advance_offline_render_execution("render:recover:0001")
+                .expect("resumed recoverable execution should advance");
+            if let Some(result) = receipt.result {
+                completed = Some(result);
+                break;
+            }
+        }
+        let completed = completed.expect("recoverable session should resume to completion");
+        assert!(artifact_dir.exists());
+        assert!(completed.manifest.report.is_some());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &completed.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &completed.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_queue_throttles_when_runtime_is_running() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        runtime.start().expect("start runtime");
+
+        let first_artifact_dir = temp_artifact_dir("offline-render-queue-throttle-first");
+        let second_artifact_dir = temp_artifact_dir("offline-render-queue-throttle-second");
+        let queue_result = runtime
+            .render_offline_queue(vec![
+                RuntimeOfflineRenderRequest {
+                    request_id: "render:queue:throttle:0001".into(),
+                    timeline_start_samples: 0,
+                    duration_samples: 64,
+                    export_sample_rate_hz: 48_000,
+                    include_main_mix: true,
+                    artifact_root_path: Some(first_artifact_dir.display().to_string()),
+                    stem_targets: Vec::new(),
+                    freeze_artifacts: Vec::new(),
+                },
+                RuntimeOfflineRenderRequest {
+                    request_id: "render:queue:throttle:0002".into(),
+                    timeline_start_samples: 32,
+                    duration_samples: 64,
+                    export_sample_rate_hz: 48_000,
+                    include_main_mix: true,
+                    artifact_root_path: Some(second_artifact_dir.display().to_string()),
+                    stem_targets: Vec::new(),
+                    freeze_artifacts: Vec::new(),
+                },
+            ])
+            .expect("running runtime should throttle offline render queue");
+
+        assert_eq!(
+            queue_result.orchestration.decision,
+            RuntimeDeferredServiceDecision::Throttle
+        );
+        assert_eq!(
+            queue_result.orchestration.reason,
+            RuntimeDeferredServiceReason::RealtimeActive
+        );
+        assert_eq!(queue_result.orchestration.admitted_work_item_count, 1);
+        assert_eq!(queue_result.orchestration.completed_work_item_count, 1);
+        assert_eq!(queue_result.orchestration.deferred_work_item_count, 1);
+        assert_eq!(queue_result.completed_job_count, 1);
+        assert_eq!(queue_result.progress.len(), 1);
+        assert_eq!(queue_result.results.len(), 1);
+        assert_eq!(queue_result.deferred_requests.len(), 1);
+        assert_eq!(
+            queue_result.results[0].request_id,
+            "render:queue:throttle:0001"
+        );
+        assert_eq!(
+            queue_result.deferred_requests[0].request_id,
+            "render:queue:throttle:0002"
+        );
+        assert!(queue_result.summary.contains("deferred_job_count=1"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &queue_result.results[0].manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &queue_result.results[0].manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&first_artifact_dir);
+        let _ = fs::remove_dir(&second_artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_queue_defers_and_resumes_after_safe_mode_clears() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("enable safe mode");
+
+        let deferred = runtime
+            .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+                request_id: "render:queue:safe-mode:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            }])
+            .expect("safe mode should defer offline render queue");
+
+        assert_eq!(
+            deferred.orchestration.decision,
+            RuntimeDeferredServiceDecision::Defer
+        );
+        assert_eq!(
+            deferred.orchestration.reason,
+            RuntimeDeferredServiceReason::SafeMode
+        );
+        assert_eq!(deferred.completed_job_count, 0);
+        assert!(deferred.progress.is_empty());
+        assert!(deferred.results.is_empty());
+        assert_eq!(deferred.deferred_requests.len(), 1);
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .expect("disable safe mode");
+        let resumed = runtime
+            .render_offline_queue(deferred.deferred_requests)
+            .expect("cleared safe mode should resume deferred queue");
+
+        assert_eq!(
+            resumed.orchestration.decision,
+            RuntimeDeferredServiceDecision::Run
+        );
+        assert_eq!(resumed.completed_job_count, 1);
+        assert_eq!(resumed.results.len(), 1);
+        assert!(resumed.deferred_requests.is_empty());
+        assert_eq!(resumed.results[0].request_id, "render:queue:safe-mode:0001");
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_offline_render_purge_removes_report_and_artifact_root() {
+        let (runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-purge");
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:purge-proof".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should materialize purge proof artifacts");
+        let report_path = result
+            .manifest
+            .report
+            .as_ref()
+            .map(|receipt| receipt.report_path.clone())
+            .expect("report receipt should exist");
+        assert!(PathBuf::from(&report_path).exists());
+        assert!(artifact_dir.exists());
+
+        let purge_receipt = runtime
+            .purge_offline_render_artifacts(RuntimeOfflineRenderPurgeRequest {
+                request_id: result.request_id.clone(),
+                artifact_root_path: result.manifest.artifact_root_path.clone(),
+                report_path: Some(report_path.clone()),
+            })
+            .expect("offline render purge should succeed");
+
+        assert_eq!(purge_receipt.request_id, "render:purge-proof");
+        assert_eq!(
+            purge_receipt.orchestration.decision,
+            RuntimeDeferredServiceDecision::Run
+        );
+        assert_eq!(
+            purge_receipt.orchestration.reason,
+            RuntimeDeferredServiceReason::Ready
+        );
+        assert!(purge_receipt.purged_report);
+        assert!(purge_receipt.purged_artifact_root);
+        assert!(purge_receipt.purged_report_byte_count > 0);
+        assert!(purge_receipt.purged_artifact_file_count > 0);
+        assert!(purge_receipt.purged_artifact_byte_count > 0);
+        assert!(purge_receipt.summary.contains("artifact_files="));
+        assert!(!PathBuf::from(&report_path).exists());
+        assert!(!artifact_dir.exists());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_purge_defers_in_safe_mode_and_observation_export_surfaces_last_decision() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-purge-deferred");
+
+        let result = runtime
+            .render_offline(RuntimeOfflineRenderRequest {
+                request_id: "render:purge-deferred".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: vec![RuntimeOfflineRenderStemTarget {
+                    stem_id: "stem:track:lead".into(),
+                    target_kind: RuntimeOfflineRenderTargetKind::TrackLane,
+                    target_id: Some("track:lead".into()),
+                }],
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render should materialize deferred purge proof artifacts");
+        let report_path = result
+            .manifest
+            .report
+            .as_ref()
+            .map(|receipt| receipt.report_path.clone())
+            .expect("report receipt should exist");
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("enable safe mode");
+        let deferred = runtime
+            .purge_offline_render_artifacts(RuntimeOfflineRenderPurgeRequest {
+                request_id: result.request_id.clone(),
+                artifact_root_path: result.manifest.artifact_root_path.clone(),
+                report_path: Some(report_path.clone()),
+            })
+            .expect("safe mode should defer purge");
+
+        assert_eq!(
+            deferred.orchestration.decision,
+            RuntimeDeferredServiceDecision::Defer
+        );
+        assert_eq!(
+            deferred.orchestration.reason,
+            RuntimeDeferredServiceReason::SafeMode
+        );
+        assert!(!deferred.purged_report);
+        assert!(!deferred.purged_artifact_root);
+        assert!(PathBuf::from(&report_path).exists());
+        assert!(artifact_dir.exists());
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
+        assert_eq!(
+            report
+                .observation
+                .last_deferred_service_receipt
+                .as_ref()
+                .map(|receipt| receipt.decision),
+            Some(RuntimeDeferredServiceDecision::Defer)
+        );
+        assert!(report.render_json().contains("\"last_deferred_service\":{"));
+        assert!(report
+            .render_json()
+            .contains("\"work_class\":\"OfflineRenderPurge\""));
+        assert!(report.render_json().contains("\"decision\":\"Defer\""));
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .expect("disable safe mode");
+        let resumed = runtime
+            .purge_offline_render_artifacts(RuntimeOfflineRenderPurgeRequest {
+                request_id: result.request_id,
+                artifact_root_path: result.manifest.artifact_root_path,
+                report_path: Some(report_path.clone()),
+            })
+            .expect("cleared safe mode should allow purge");
+        assert_eq!(
+            resumed.orchestration.decision,
+            RuntimeDeferredServiceDecision::Run
+        );
+        assert!(resumed.purged_report);
+        assert!(resumed.purged_artifact_root);
+        assert!(!PathBuf::from(&report_path).exists());
+        assert!(!artifact_dir.exists());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
     fn runtime_prepare_offline_plugin_execution_boundary_surfaces_runtime_owned_stage_contracts() {
         let (runtime, imported_path) = prepare_offline_render_engine_runtime();
         let boundary = runtime
@@ -16738,6 +19372,16 @@ mod tests {
         assert_eq!(
             boundary.stages[0].recall_state,
             RuntimePluginRecallState::Recovered
+        );
+        assert_eq!(boundary.stages[0].plugin_type_id.as_deref(), None);
+        assert_eq!(boundary.stages[0].plugin_format, Some(PluginFormat::Clap));
+        assert_eq!(
+            boundary.stages[0].recall_payload.plugin_type_id.as_deref(),
+            None
+        );
+        assert_eq!(
+            boundary.stages[0].recall_payload.plugin_format,
+            Some(PluginFormat::Clap)
         );
         let delegated_request = runtime
             .prepare_offline_plugin_delegated_execution_request(&RuntimeOfflineRenderRequest {
@@ -16791,6 +19435,8 @@ mod tests {
                     chain_id: "track:lead".into(),
                     stage_index: 0,
                     sandbox_id: Some("sandbox-a".into()),
+                    plugin_type_id: None,
+                    plugin_format: None,
                     track_lane_id: Some("track:lead".into()),
                     bus_group_id: Some("mix:tracks".into()),
                     console_group_id: None,
@@ -16818,6 +19464,8 @@ mod tests {
                     chain_id: "track:lead".into(),
                     stage_index: 1,
                     sandbox_id: Some("sandbox-b".into()),
+                    plugin_type_id: None,
+                    plugin_format: None,
                     track_lane_id: Some("track:lead".into()),
                     bus_group_id: Some("mix:tracks".into()),
                     console_group_id: None,
@@ -16843,6 +19491,7 @@ mod tests {
         assert_eq!(delegated_request.request_id, "render:delegated-boundary");
         assert_eq!(delegated_request.stage_count, 1);
         assert_eq!(delegated_request.stages[0].node_id, "plugin-a");
+        assert_eq!(delegated_request.stages[0].plugin_format, None);
         assert_eq!(
             delegated_request.stages[0].override_state,
             RuntimeOfflinePluginOverrideState::StaleLatestBlock
@@ -16894,6 +19543,8 @@ mod tests {
                 chain_id: "track:lead".into(),
                 stage_index: 0,
                 sandbox_id: Some("sandbox-a".into()),
+                plugin_type_id: None,
+                plugin_format: None,
                 track_lane_id: Some("track:lead".into()),
                 bus_group_id: Some("mix:tracks".into()),
                 console_group_id: None,
@@ -17028,6 +19679,8 @@ mod tests {
                 chain_id: "track:lead".into(),
                 stage_index: 0,
                 sandbox_id: Some("sandbox-a".into()),
+                plugin_type_id: None,
+                plugin_format: None,
                 track_lane_id: Some("track:lead".into()),
                 bus_group_id: Some("mix:tracks".into()),
                 console_group_id: None,
@@ -17166,6 +19819,8 @@ mod tests {
                 chain_id: "track:lead".into(),
                 stage_index: 0,
                 sandbox_id: Some("sandbox-a".into()),
+                plugin_type_id: None,
+                plugin_format: None,
                 track_lane_id: Some("track:lead".into()),
                 bus_group_id: Some("mix:tracks".into()),
                 console_group_id: None,
@@ -17688,6 +20343,206 @@ mod tests {
     }
 
     #[test]
+    fn runtime_compatible_schedule_projection_widens_normal_prework_service_scope() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 8,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set widened multicore realtime policy");
+        install_scheduler_topology_runtime_graph(
+            &mut runtime,
+            "graph:runtime:realtime-scheduler-widened-budget",
+            &["track:drums", "track:bass"],
+            false,
+        );
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:widened-budget".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened compatible schedule");
+        runtime.start().expect("start runtime");
+
+        let first_block = synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 1);
+        apply_current_forecast_block_state(&mut runtime, 1);
+        let first = runtime
+            .process_engine_block(1, 1, first_block)
+            .expect("process widened realtime block");
+
+        assert_eq!(
+            first.snapshot.scheduler_topology.schedule_stream_count,
+            Some(3)
+        );
+        assert!(first.snapshot.scheduler_topology.compatible);
+        assert_eq!(first.snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(first.snapshot.last_prework_service_effective_cycles, 3);
+        assert_eq!(first.snapshot.last_prework_service_cycle_count, 3);
+        assert_eq!(
+            first.snapshot.last_prework_service_budget_per_cycle,
+            Some(1)
+        );
+        assert_eq!(
+            first
+                .snapshot
+                .last_prework_service_effective_budget_per_cycle,
+            Some(3)
+        );
+        assert!(first.snapshot.last_prework_service_prepared_targets >= 7);
+        assert!(first.snapshot.prework_service_prepared_targets >= 7);
+        assert_eq!(first.snapshot.prework_pending_target_count, 0);
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            observation
+                .engine_block_snapshot
+                .scheduler_topology
+                .schedule_stream_count,
+            Some(3)
+        );
+        assert_eq!(
+            observation
+                .engine_block_snapshot
+                .last_prework_service_requested_cycles,
+            3
+        );
+        assert_eq!(
+            observation
+                .engine_block_snapshot
+                .last_prework_service_effective_budget_per_cycle,
+            Some(3)
+        );
+        assert!(observation
+            .render_json()
+            .contains("\"last_prework_service_requested_cycles\":3"));
+        assert!(observation
+            .render_json()
+            .contains("\"last_prework_service_effective_budget_per_cycle\":3"));
+    }
+
+    #[test]
+    fn runtime_missing_schedule_projection_does_not_widen_prework_service_budget() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 4,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set single-budget realtime policy");
+        install_scheduler_topology_runtime_graph(
+            &mut runtime,
+            "graph:runtime:realtime-scheduler-no-schedule",
+            &["track:drums", "track:bass"],
+            false,
+        );
+        runtime.start().expect("start runtime");
+
+        let first_block = synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 1);
+        apply_current_forecast_block_state(&mut runtime, 1);
+        let first = runtime
+            .process_engine_block(1, 1, first_block)
+            .expect("process no-schedule realtime block");
+
+        assert_eq!(
+            first.snapshot.scheduler_topology.schedule_stream_count,
+            None
+        );
+        assert!(!first.snapshot.scheduler_topology.compatible);
+        assert_eq!(first.snapshot.last_prework_service_requested_cycles, 1);
+        assert_eq!(
+            first.snapshot.last_prework_service_budget_per_cycle,
+            Some(1)
+        );
+        assert_eq!(
+            first
+                .snapshot
+                .last_prework_service_effective_budget_per_cycle,
+            Some(1)
+        );
+        assert!(first.snapshot.last_prework_service_prepared_targets <= 1);
+    }
+
+    #[test]
+    fn runtime_elevated_pressure_clamps_schedule_widened_prework_cycles() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        let policy = RuntimePreworkForecastPolicy {
+            target_window_blocks: 8,
+            prepare_budget_per_cycle: 1,
+            buffer_seed_offset: 0,
+            transport_playing: true,
+            transport_tempo_bpm: 126.0,
+            transport_loop_length_blocks: 16,
+            parameter_target: "engine.local.drive".into(),
+            parameter_cycle_length: 8,
+        };
+        runtime
+            .set_prework_forecast_policy(policy.clone())
+            .expect("set elevated widened realtime policy");
+        install_scheduler_topology_runtime_graph(
+            &mut runtime,
+            "graph:runtime:realtime-scheduler-elevated-widened-cycles",
+            &["track:drums", "track:bass"],
+            false,
+        );
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:elevated-widened-cycles".into(),
+                stream_count: 3,
+            })
+            .expect("apply elevated compatible schedule");
+        runtime.start().expect("start runtime");
+        runtime
+            .set_prework_service_pressure(RuntimePreworkServicePressure::Elevated)
+            .expect("set elevated pressure");
+        let current_sequence = runtime.allocate_block_sequence();
+        let admitted = runtime
+            .prime_engine_prework_window_with_forecast(1, current_sequence, &policy)
+            .expect("prime elevated widened forecast window");
+        assert_eq!(admitted, 1);
+
+        let snapshot = runtime.get_engine_block_snapshot();
+
+        assert_eq!(snapshot.scheduler_topology.schedule_stream_count, Some(3));
+        assert!(snapshot.scheduler_topology.compatible);
+        assert_eq!(
+            snapshot.prework_service_pressure,
+            RuntimePreworkServicePressure::Elevated
+        );
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 1);
+        assert_eq!(snapshot.last_prework_service_cycle_count, 1);
+        assert_eq!(snapshot.last_prework_service_budget_per_cycle, Some(1));
+        assert_eq!(
+            snapshot.last_prework_service_effective_budget_per_cycle,
+            Some(1)
+        );
+        assert!(snapshot.last_prework_service_prepared_targets <= 1);
+        assert_eq!(
+            snapshot.prework_service_state,
+            RuntimePreworkServiceState::Pending
+        );
+        assert!(snapshot.prework_service_throttle_count >= 1);
+        assert!(snapshot.prework_pending_target_count > 0);
+    }
+
+    #[test]
     fn runtime_realtime_block_respects_elevated_pressure_backlog_limits() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_anticipative(&mut runtime, true);
@@ -17904,6 +20759,76 @@ mod tests {
     }
 
     #[test]
+    fn runtime_schedule_widened_transport_gate_yields_without_servicing() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        let policy = RuntimePreworkForecastPolicy {
+            target_window_blocks: 6,
+            prepare_budget_per_cycle: 1,
+            buffer_seed_offset: 0,
+            transport_playing: true,
+            transport_tempo_bpm: 126.0,
+            transport_loop_length_blocks: 16,
+            parameter_target: "engine.local.drive".into(),
+            parameter_cycle_length: 8,
+        };
+        runtime
+            .set_prework_forecast_policy(policy.clone())
+            .expect("set widened transport policy");
+        apply_latency_runtime_graph(
+            &mut runtime,
+            "graph:runtime:transport-gate-schedule-widened",
+        );
+        runtime
+            .begin_transport_session(
+                "sandbox-a",
+                "lease-a",
+                "region-a",
+                TransportAttachIntent::SteadyState,
+            )
+            .expect("begin steady session");
+        runtime.record_plugin_sandbox_transport(
+            "sandbox-a",
+            "lease-a",
+            "region-a",
+            PluginSandboxTransportStage::DetachRequested,
+            Some(1),
+            None,
+        );
+        runtime.start().expect("start runtime");
+        runtime
+            .set_prework_service_pressure(RuntimePreworkServicePressure::Elevated)
+            .expect("set elevated pressure");
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:transport-gate-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        let current_sequence = runtime.allocate_block_sequence();
+
+        let admitted = runtime
+            .prime_engine_prework_window_with_forecast(1, current_sequence, &policy)
+            .expect("prime widened transport-gated window");
+
+        let snapshot = runtime.get_engine_block_snapshot();
+        assert_eq!(admitted, 0);
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 0);
+        assert_eq!(
+            snapshot.last_prework_service_effective_budget_per_cycle,
+            Some(0)
+        );
+        assert!(snapshot.prework_service_transport_gate_active);
+        assert_eq!(
+            snapshot.prework_service_state,
+            RuntimePreworkServiceState::Yielding
+        );
+        assert!(snapshot.prework_pending_target_count > 0);
+        assert!(snapshot.prework_service_yield_count >= 1);
+    }
+
+    #[test]
     fn runtime_restart_and_reconfigure_keep_realtime_scheduler_window_coherent() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_anticipative(&mut runtime, true);
@@ -18004,6 +20929,89 @@ mod tests {
         let json = supervisor.render_json();
         assert!(json.contains("\"restart_count\":1"));
         assert!(json.contains("\"scheduler_summary\":{"));
+    }
+
+    #[test]
+    fn runtime_schedule_width_survives_restart_and_reconfigure_transitions() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 8,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set widened restart policy");
+        install_scheduler_topology_runtime_graph(
+            &mut runtime,
+            "graph:runtime:restart-reconfigure-schedule-widened",
+            &["track:drums", "track:bass"],
+            false,
+        );
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:restart-reconfigure-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        runtime.start().expect("start runtime");
+
+        let started = runtime.get_engine_block_snapshot();
+        assert_eq!(started.scheduler_topology.schedule_stream_count, Some(3));
+        assert!(started.scheduler_topology.compatible);
+        assert_eq!(started.last_prework_service_requested_cycles, 3);
+        assert_eq!(started.last_prework_service_effective_cycles, 3);
+
+        runtime
+            .restart(RestartRequest { reconfigure: None })
+            .expect("restart runtime");
+        let restarted = runtime.get_engine_block_snapshot();
+        assert_eq!(restarted.scheduler_topology.schedule_stream_count, Some(3));
+        assert!(restarted.scheduler_topology.compatible);
+        assert_eq!(restarted.last_prework_service_requested_cycles, 3);
+        assert_eq!(restarted.last_prework_service_effective_cycles, 3);
+        assert_eq!(runtime.get_control_snapshot().restart_count, 1);
+
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 256))
+            .expect("reconfigure runtime");
+        let reconfigured = runtime.get_engine_block_snapshot();
+        assert_eq!(
+            reconfigured.scheduler_topology.schedule_stream_count,
+            Some(3)
+        );
+        assert!(reconfigured.scheduler_topology.compatible);
+        assert_eq!(
+            reconfigured.prework_service_state,
+            RuntimePreworkServiceState::Paused
+        );
+
+        runtime.start().expect("restart after reconfigure");
+        let restarted_after_reconfigure = runtime.get_engine_block_snapshot();
+        assert_eq!(
+            restarted_after_reconfigure
+                .scheduler_topology
+                .schedule_stream_count,
+            Some(3)
+        );
+        assert!(restarted_after_reconfigure.scheduler_topology.compatible);
+        assert_eq!(
+            restarted_after_reconfigure.last_prework_service_requested_cycles,
+            3
+        );
+        assert_eq!(
+            restarted_after_reconfigure.last_prework_service_effective_cycles,
+            3
+        );
+        assert_eq!(
+            restarted_after_reconfigure.last_prework_service_effective_budget_per_cycle,
+            Some(3)
+        );
     }
 
     #[test]
@@ -18145,6 +21153,205 @@ mod tests {
             snapshot.prework_service_state,
             RuntimePreworkServiceState::Idle | RuntimePreworkServiceState::Pending
         ));
+    }
+
+    #[test]
+    fn runtime_mixed_execution_class_graph_transition_reuses_schedule_widened_scope() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 8,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set widened mixed-graph policy");
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:mixed-graph-before");
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:mixed-graph-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        runtime.start().expect("start runtime");
+
+        let before = runtime.get_engine_block_snapshot();
+        assert_eq!(before.last_prework_service_requested_cycles, 3);
+        assert_eq!(before.last_prework_service_effective_cycles, 3);
+
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:mixed-graph-after".into(),
+                node_count: 4,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "inline".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "state".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.8 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "latency".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 96,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                    },
+                ],
+            })
+            .expect("apply mixed execution-class graph");
+
+        let snapshot = runtime.get_engine_block_snapshot();
+        assert_eq!(snapshot.scheduler_topology.schedule_stream_count, Some(3));
+        assert!(snapshot.scheduler_topology.compatible);
+        assert_eq!(snapshot.node_count, 4);
+        assert_eq!(snapshot.plugin_backed_node_count, 1);
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 3);
+        assert_eq!(
+            snapshot.last_prework_service_effective_budget_per_cycle,
+            Some(3)
+        );
+        assert!(snapshot.prework_cache_queue_depth >= before.prework_cache_queue_depth);
+    }
+
+    #[test]
+    fn runtime_mixed_execution_class_graph_churn_preserves_widened_scheduler_contract() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 8,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set mixed graph churn policy");
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:mixed-graph-churn-a");
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:mixed-graph-churn".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        runtime.start().expect("start runtime");
+
+        let projections = vec![
+            GraphProjection {
+                graph_id: "graph:runtime:mixed-graph-churn-b".into(),
+                node_count: 4,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "inline".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "state".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.8 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "latency".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 48,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                    },
+                ],
+            },
+            GraphProjection {
+                graph_id: "graph:runtime:mixed-graph-churn-c".into(),
+                node_count: 5,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "state-a".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.8 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "inline-a".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.95 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-a".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.85 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-b".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.82 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "latency-a".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 96,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                    },
+                ],
+            },
+        ];
+
+        let mut last_invalidation_count = runtime
+            .get_engine_block_snapshot()
+            .prework_cache_invalidation_count;
+        for projection in projections {
+            let expected_node_count = projection.node_count;
+            let expected_plugin_count = projection
+                .nodes
+                .iter()
+                .filter(|node| node.execution_class == GraphNodeExecutionClass::PluginBacked)
+                .count();
+            runtime
+                .apply_graph_projection(projection)
+                .expect("apply mixed execution-class graph projection");
+            let snapshot = runtime.get_engine_block_snapshot();
+
+            assert_eq!(snapshot.scheduler_topology.schedule_stream_count, Some(3));
+            assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+            assert_eq!(snapshot.last_prework_service_effective_cycles, 3);
+            assert_eq!(
+                snapshot.last_prework_service_effective_budget_per_cycle,
+                Some(3)
+            );
+            assert_eq!(snapshot.node_count, expected_node_count);
+            assert_eq!(snapshot.plugin_backed_node_count, expected_plugin_count);
+            assert!(snapshot.prework_cache_invalidation_count >= last_invalidation_count);
+            last_invalidation_count = snapshot.prework_cache_invalidation_count;
+        }
     }
 
     #[test]
@@ -18628,6 +21835,66 @@ mod tests {
         );
         assert_eq!(snapshot.prework_cache_invalidation_count, 0);
         assert_eq!(snapshot.prework_cache_retirement_count, 0);
+    }
+
+    #[test]
+    fn runtime_forecast_plan_change_rebuild_uses_schedule_widened_service_scope() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:forecast-plan-change-schedule-widened".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "inline".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "latency".into(),
+                        execution_class: GraphNodeExecutionClass::LatencyBearing,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                    },
+                ],
+            })
+            .unwrap();
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:forecast-plan-change-widened".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        runtime.start().expect("start runtime");
+
+        let current_sequence = runtime.allocate_block_sequence();
+        let admitted = runtime
+            .apply_forecast_state_for_block(1, current_sequence)
+            .expect("prime role-default prework");
+        assert!(admitted >= 2);
+        let before = runtime.get_engine_block_snapshot();
+
+        runtime
+            .set_prework_forecast_profile(RuntimePreworkForecastProfileSelection {
+                profile: RuntimePreworkForecastProfile::Server,
+                target_window_blocks_override: Some(6),
+            })
+            .expect("switch widened forecast profile");
+
+        let snapshot = runtime.get_engine_block_snapshot();
+        assert_eq!(snapshot.scheduler_topology.schedule_stream_count, Some(3));
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 3);
+        assert!((1..=3).contains(&snapshot.last_prework_service_cycle_count));
+        assert!(
+            snapshot.prework_cache_window_target_count > before.prework_cache_window_target_count
+        );
+        assert!(snapshot.prework_cache_invalidation_count >= 1);
+        assert!(snapshot.prework_cache_retirement_count >= 1);
+        assert!(snapshot.prework_cache_queue_depth >= before.prework_cache_queue_depth);
+        assert!(snapshot.prework_pending_target_count <= before.prework_pending_target_count);
     }
 
     #[test]
@@ -19247,6 +22514,115 @@ mod tests {
         assert_eq!(
             after_transport.prework_cache_valid_until_processing_epoch,
             None
+        );
+    }
+
+    #[test]
+    fn runtime_invalidation_heavy_transition_stress_preserves_widened_scheduler_receipts() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        runtime
+            .set_prework_forecast_policy(RuntimePreworkForecastPolicy {
+                target_window_blocks: 8,
+                prepare_budget_per_cycle: 1,
+                buffer_seed_offset: 0,
+                transport_playing: true,
+                transport_tempo_bpm: 126.0,
+                transport_loop_length_blocks: 16,
+                parameter_target: "engine.local.drive".into(),
+                parameter_cycle_length: 8,
+            })
+            .expect("set transition stress policy");
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:transition-stress");
+        runtime
+            .apply_schedule_projection(ScheduleProjection {
+                schedule_id: "sched:runtime:transition-stress".into(),
+                stream_count: 3,
+            })
+            .expect("apply widened schedule projection");
+        runtime.start().expect("start runtime");
+
+        let block = synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 91);
+        let transitions = vec![
+            TransportProjection {
+                playing: true,
+                timeline_position_samples: 64,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            },
+            TransportProjection {
+                playing: true,
+                timeline_position_samples: 512,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            },
+            TransportProjection {
+                playing: true,
+                timeline_position_samples: 520,
+                tempo_bpm: 130.0,
+                loop_state: None,
+            },
+            TransportProjection {
+                playing: true,
+                timeline_position_samples: 528,
+                tempo_bpm: 130.0,
+                loop_state: Some(crate::interfaces::LoopRegion {
+                    start_samples: 256,
+                    end_samples: 1024,
+                }),
+            },
+            TransportProjection {
+                playing: false,
+                timeline_position_samples: 536,
+                tempo_bpm: 130.0,
+                loop_state: Some(crate::interfaces::LoopRegion {
+                    start_samples: 256,
+                    end_samples: 1024,
+                }),
+            },
+        ];
+
+        for (index, projection) in transitions.into_iter().enumerate() {
+            runtime
+                .apply_parameter_batch(ParameterBatch {
+                    epoch: runtime.projection_epoch().saturating_add(50 + index as u64),
+                    events: vec![ParameterEvent {
+                        target: format!("stress.param.{index}"),
+                        sample_offset: 0,
+                        normalized_value: (index as f32) * 0.1,
+                    }],
+                })
+                .expect("apply stress parameter batch");
+            runtime
+                .apply_transport_projection(projection)
+                .expect("apply stress transport projection");
+
+            let result = runtime
+                .process_engine_block((index + 1) as u64, (index + 1) as u64, block.clone())
+                .expect("process stress transition block");
+
+            assert_eq!(
+                result.snapshot.scheduler_topology.schedule_stream_count,
+                Some(3)
+            );
+            assert_eq!(result.snapshot.last_prework_service_requested_cycles, 3);
+            assert_eq!(result.snapshot.last_prework_service_effective_cycles, 3);
+            assert_eq!(
+                result
+                    .snapshot
+                    .last_prework_service_effective_budget_per_cycle,
+                Some(3)
+            );
+        }
+
+        let snapshot = runtime.get_engine_block_snapshot();
+        assert!(snapshot.prework_cache_invalidation_count >= 5);
+        assert!(snapshot.prework_cache_retirement_count >= 5);
+        assert_eq!(snapshot.last_prework_service_requested_cycles, 3);
+        assert_eq!(snapshot.last_prework_service_effective_cycles, 3);
+        assert_eq!(
+            runtime.get_timeline_snapshot().last_transport_transition,
+            Some(crate::interfaces::RuntimeTransportTransitionKind::Stopped)
         );
     }
 

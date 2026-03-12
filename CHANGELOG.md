@@ -23,6 +23,12 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-03-12 22:07:21 UTC) [dev] Added a combined `g04` closeout description mode and repo-owned acceptance task for conformance, release baseline, and post-generation queue handoff.
+(2026-03-12 22:07:21 UTC) [docs] Closed `g04` and recorded the explicit post-`g04` consumer/release/backend breadth backlog candidate.
+(2026-03-12 21:54:52 UTC) [dev] Added a host-free release-boundary description mode and repo-owned acceptance task for Signal's first packaging baseline.
+(2026-03-12 21:54:52 UTC) [docs] Documented the runnable consumer conformance and release-packaging baseline for the stabilised runtime/export boundary.
+(2026-03-12 18:41:02 UTC) [dev] Added native Effigy docs QA tasks and declarative docs-policy checks for Signal's Northstar spine.
+(2026-03-12 18:41:02 UTC) [docs] Updated the README and AGENTS guide to teach repo-root Effigy usage without redundant `--repo .` defaults.
 (2026-02-06 22:06:01 UTC) [fixed] Relaxed `plugin.list` command decode to accept the TLV payload shape emitted by Pulse, avoiding false trailing-bytes decode failures.
 (2026-02-06 21:43:04 UTC) [added] Added a canonical `plugin` domain handler with `plugin.list` support that returns the current scanned CLAP/VST3 catalogue as correlated events.
 (2026-02-06 21:43:04 UTC) [changed] Registered typed binary-envelope-v2 codecs for `plugin.list` command/event payloads in the Signal codec registry and build graph.

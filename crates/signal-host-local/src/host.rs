@@ -1,8 +1,10 @@
+use std::cell::RefCell;
+
 use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
 use signal_hardware::{
-    AudioSampleFormat, BackendPolicyTier, HardwareBackend, HardwareClockSource,
-    HardwareConfigRequest, HardwareDiagnosticsSnapshot, HardwareLifecycleContract,
-    HardwareNegotiationError, HardwareStreamConfig,
+    AudioSampleFormat, BackendHealth, BackendPolicyTier, HardwareBackend, HardwareClockSource,
+    HardwareClockTopology, HardwareConfigRequest, HardwareDiagnosticsSnapshot,
+    HardwareLifecycleContract, HardwareNegotiationError, HardwareStreamConfig,
 };
 use signal_hardware_coreaudio::CoreAudioBackend;
 use signal_ipc::{
@@ -16,7 +18,8 @@ use signal_plugin::{
 };
 use signal_plugin_clap::{
     classify_sandbox_failure, sandbox_failure_event, BrokeredBlockOutcome, ClapBlockProtocol,
-    ClapPluginHostAdapter, ClapSandboxFailureStage, ClapSandboxLifecycleHarness,
+    ClapDiscoveredPluginType, ClapPluginHostAdapter, ClapSandboxFailureStage,
+    ClapSandboxLifecycleHarness,
 };
 use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, FrameCount};
 use signal_runtime::{
@@ -30,7 +33,8 @@ use signal_runtime::{
     PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
     RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder,
     RuntimeExecutionTopologySummary, RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState,
-    RuntimeHostAudioTransferPolicy, RuntimeHostClockSource, RuntimeHostClockingSummary,
+    RuntimeHostAudioTransferPolicy, RuntimeHostClockDomain, RuntimeHostClockFallbackState,
+    RuntimeHostClockSource, RuntimeHostClockTransitionState, RuntimeHostClockingSummary,
     RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
     RuntimeHostObservationReport, RuntimeHostSupervisorReport, RuntimeLifecycleApi,
     RuntimeMediaAssetRegistration, RuntimeObservationApi, RuntimeObservationDiagnostics,
@@ -39,7 +43,10 @@ use signal_runtime::{
     RuntimeOfflinePluginDelegatedExecutionStageReceipt,
     RuntimeOfflinePluginDelegatedExecutionStatus,
     RuntimeOfflinePluginDelegatedFreezeArtifactOutput, RuntimeOfflinePluginDelegatedStemOutput,
-    RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult, RuntimePluginDispatchState,
+    RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
+    RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
+    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
+    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord, RuntimePluginDispatchState,
     RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
     RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
@@ -65,6 +72,25 @@ struct LocalSupervisorState {
     last_sandbox_id: Option<String>,
     last_recovery_intent: Option<RecoveryRestartIntent>,
     last_stop_reason: Option<StopReason>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LocalClockTransitionMemory {
+    configured_stream: bool,
+    domain: RuntimeHostClockDomain,
+    fallback_state: RuntimeHostClockFallbackState,
+    initialized: bool,
+}
+
+impl Default for LocalClockTransitionMemory {
+    fn default() -> Self {
+        Self {
+            configured_stream: false,
+            domain: RuntimeHostClockDomain::SameClock,
+            fallback_state: RuntimeHostClockFallbackState::Unconfigured,
+            initialized: false,
+        }
+    }
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
@@ -401,12 +427,56 @@ fn scale_audio_buffer(buffer: &AudioBuffer, gain: f32) -> AudioBuffer {
     scaled
 }
 
+fn runtime_plugin_discovered_type_record(
+    discovered: ClapDiscoveredPluginType,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let descriptor = discovered.descriptor;
+    runtime_plugin_discovered_type_record_from_descriptor(
+        discovered.plugin_type_id.0,
+        discovered.default_io_layout,
+        descriptor,
+    )
+}
+
+fn runtime_plugin_discovered_type_record_from_descriptor(
+    plugin_type_id: String,
+    default_io_layout: signal_plugin::PluginIoLayout,
+    descriptor: signal_plugin::PluginDescriptor,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let summary = format!(
+        "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
+        plugin_type_id,
+        descriptor.plugin_id,
+        descriptor.format,
+        descriptor.features.len(),
+        default_io_layout,
+        descriptor.parameters.len(),
+    );
+    RuntimePluginDiscoveredTypeRecord {
+        plugin_type_id,
+        plugin_id: descriptor.plugin_id.clone(),
+        vendor: descriptor.vendor.clone(),
+        name: descriptor.name.clone(),
+        format: descriptor.format,
+        version: descriptor.version.clone(),
+        features: descriptor.features.clone(),
+        default_io_layout,
+        audio_bus_count: descriptor.audio_buses.len(),
+        parameter_count: descriptor.parameters.len(),
+        state_contract: descriptor.state_contract,
+        processing_contract: descriptor.processing_contract,
+        lifecycle_contract: descriptor.lifecycle_contract,
+        summary,
+    }
+}
+
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
     coreaudio: CoreAudioBackend,
     clap: ClapPluginHostAdapter,
     broker: SharedMemoryBroker,
     active_output_stream: Option<HardwareStreamConfig>,
+    clock_transition_memory: RefCell<LocalClockTransitionMemory>,
     audio_pump: LocalAudioPumpState,
     supervisor: LocalSupervisorState,
     events: RuntimeEventRecorder,
@@ -424,6 +494,7 @@ impl LocalRuntimeHost {
             clap: ClapPluginHostAdapter::default(),
             broker: SharedMemoryBroker::default(),
             active_output_stream: None,
+            clock_transition_memory: RefCell::new(LocalClockTransitionMemory::default()),
             audio_pump: LocalAudioPumpState::default(),
             supervisor: LocalSupervisorState::default(),
             events,
@@ -458,6 +529,23 @@ impl LocalRuntimeHost {
             signal_runtime::RuntimeErrorKind::InvalidRequest,
             format!("hardware negotiation failed: {}", error.message),
         )
+    }
+
+    fn discovered_plugins_for_scan(
+        &self,
+        request: &PluginScanRequest,
+    ) -> Vec<RuntimePluginDiscoveredTypeRecord> {
+        let include_clap =
+            request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap);
+        if !include_clap {
+            return Vec::new();
+        }
+
+        ["plugin:clap:default", "plugin:clap:sandbox"]
+            .into_iter()
+            .filter_map(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+            .map(runtime_plugin_discovered_type_record)
+            .collect()
     }
 
     fn local_delegated_execution_outcome(
@@ -698,6 +786,7 @@ impl LocalRuntimeHost {
 
         self.start_plugin_scan(PluginScanRequest {
             roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
+            formats: vec![PluginFormat::Clap],
         })?;
 
         for sandbox in &assembly.plugin_sandboxes {
@@ -3158,9 +3247,10 @@ impl LocalRuntimeHost {
         let audio_pump = self.audio_pump.summary();
         let backend_diagnostics = self.coreaudio.diagnostics();
         let active_stream = self.active_output_stream.as_ref();
+        let processing_sample_rate_hz = observation.effective_config.sample_rate.0;
         let sample_rate = active_stream
             .map(|stream| stream.sample_rate.0)
-            .unwrap_or(self.runtime.config().sample_rate.0);
+            .unwrap_or(processing_sample_rate_hz);
         let buffer_size = active_stream
             .map(|stream| stream.buffer_size)
             .unwrap_or(self.runtime.config().graph.block_size);
@@ -3184,6 +3274,19 @@ impl LocalRuntimeHost {
                 ),
                 (None, None) => None,
             };
+        let clock_domain = host_clock_domain(
+            active_stream.map(|stream| stream.clock_topology),
+            processing_sample_rate_hz,
+            sample_rate,
+            backend_diagnostics.health,
+        );
+        let fallback_state = host_clock_fallback_state(
+            active_stream.is_some(),
+            clock_domain,
+            backend_diagnostics.health,
+        );
+        let transition_state =
+            self.host_clock_transition_state(active_stream.is_some(), clock_domain, fallback_state);
         let callback_interval_ms = samples_to_ms(buffer_size as u32, sample_rate);
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
@@ -3239,6 +3342,15 @@ impl LocalRuntimeHost {
                 restart_policy: active_stream
                     .map(|stream| stream.lifecycle.restart_policy.into())
                     .unwrap_or(HardwareLifecycleContract::default().restart_policy.into()),
+                processing_sample_rate_hz,
+                hardware_sample_rate_hz: sample_rate,
+                clock_domain,
+                fallback_state,
+                transition_state,
+                crossing_required: matches!(
+                    clock_domain,
+                    RuntimeHostClockDomain::CrossClock | RuntimeHostClockDomain::Aggregate
+                ),
                 callback_interval_ms,
             },
             latency: RuntimeHostLatencySummary {
@@ -3261,6 +3373,63 @@ impl LocalRuntimeHost {
                 == observation.engine_block_snapshot.graph_id.as_deref(),
         }
     }
+
+    fn host_clock_transition_state(
+        &self,
+        configured_stream: bool,
+        clock_domain: RuntimeHostClockDomain,
+        fallback_state: RuntimeHostClockFallbackState,
+    ) -> RuntimeHostClockTransitionState {
+        let mut memory = self.clock_transition_memory.borrow_mut();
+        let transition = if !memory.initialized {
+            RuntimeHostClockTransitionState::InitialObservation
+        } else if memory.configured_stream && !configured_stream {
+            RuntimeHostClockTransitionState::LostConfiguration
+        } else if !memory.configured_stream && configured_stream {
+            match clock_domain {
+                RuntimeHostClockDomain::Aggregate => {
+                    RuntimeHostClockTransitionState::EnteredAggregateClock
+                }
+                RuntimeHostClockDomain::Degraded => {
+                    RuntimeHostClockTransitionState::EnteredRecoveryFallback
+                }
+                RuntimeHostClockDomain::CrossClock => {
+                    RuntimeHostClockTransitionState::EnteredCrossClockFallback
+                }
+                RuntimeHostClockDomain::SameClock => {
+                    RuntimeHostClockTransitionState::ReturnedToDirect
+                }
+            }
+        } else if memory.domain == clock_domain && memory.fallback_state == fallback_state {
+            RuntimeHostClockTransitionState::Stable
+        } else if clock_domain == RuntimeHostClockDomain::Aggregate
+            && memory.domain != RuntimeHostClockDomain::Aggregate
+        {
+            RuntimeHostClockTransitionState::EnteredAggregateClock
+        } else if clock_domain == RuntimeHostClockDomain::Degraded
+            && memory.domain != RuntimeHostClockDomain::Degraded
+        {
+            RuntimeHostClockTransitionState::EnteredRecoveryFallback
+        } else if fallback_state == RuntimeHostClockFallbackState::RuntimeResampled
+            && memory.fallback_state != RuntimeHostClockFallbackState::RuntimeResampled
+        {
+            RuntimeHostClockTransitionState::EnteredCrossClockFallback
+        } else if fallback_state == RuntimeHostClockFallbackState::Direct
+            && memory.fallback_state != RuntimeHostClockFallbackState::Direct
+        {
+            RuntimeHostClockTransitionState::ReturnedToDirect
+        } else {
+            RuntimeHostClockTransitionState::Reconfigured
+        };
+
+        *memory = LocalClockTransitionMemory {
+            configured_stream,
+            domain: clock_domain,
+            fallback_state,
+            initialized: true,
+        };
+        transition
+    }
 }
 
 fn samples_to_ms(samples: u32, sample_rate: u32) -> f32 {
@@ -3268,6 +3437,41 @@ fn samples_to_ms(samples: u32, sample_rate: u32) -> f32 {
         return 0.0;
     }
     samples as f32 / sample_rate as f32 * 1000.0
+}
+
+fn host_clock_domain(
+    clock_topology: Option<HardwareClockTopology>,
+    processing_sample_rate_hz: u32,
+    hardware_sample_rate_hz: u32,
+    backend_health: BackendHealth,
+) -> RuntimeHostClockDomain {
+    if backend_health != BackendHealth::Healthy {
+        return RuntimeHostClockDomain::Degraded;
+    }
+    if matches!(clock_topology, Some(HardwareClockTopology::Aggregate)) {
+        return RuntimeHostClockDomain::Aggregate;
+    }
+    if processing_sample_rate_hz != hardware_sample_rate_hz {
+        return RuntimeHostClockDomain::CrossClock;
+    }
+    RuntimeHostClockDomain::SameClock
+}
+
+fn host_clock_fallback_state(
+    configured_stream: bool,
+    clock_domain: RuntimeHostClockDomain,
+    backend_health: BackendHealth,
+) -> RuntimeHostClockFallbackState {
+    if !configured_stream {
+        return RuntimeHostClockFallbackState::Unconfigured;
+    }
+    if backend_health != BackendHealth::Healthy {
+        return RuntimeHostClockFallbackState::RecoveryConstrained;
+    }
+    if clock_domain == RuntimeHostClockDomain::CrossClock {
+        return RuntimeHostClockFallbackState::RuntimeResampled;
+    }
+    RuntimeHostClockFallbackState::Direct
 }
 
 #[derive(Clone, Debug)]
@@ -3508,7 +3712,7 @@ fn local_demo_graph_contract_projection(graph_id: &str) -> GraphContractProjecti
 #[derive(Clone, Debug)]
 struct LocalDemoPluginSandboxAssembly {
     request: PluginSandboxRequest,
-    plugin_format: &'static str,
+    plugin_format: PluginFormat,
     bound_node_ids: Vec<&'static str>,
 }
 
@@ -3570,7 +3774,7 @@ fn local_demo_runtime_assembly() -> LocalDemoRuntimeAssembly {
                 PluginFormat::Clap,
                 SandboxPolicy::Strict,
             ),
-            plugin_format: "clap",
+            plugin_format: PluginFormat::Clap,
             bound_node_ids: vec![LOCAL_DEMO_PLUGIN_NODE_ID],
         }],
     }
@@ -3882,9 +4086,13 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         &mut self,
         request: PluginScanRequest,
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
-        self.supervisor.scans_started = self.supervisor.scans_started.saturating_add(1);
+        let handle = self.runtime.record_plugin_scan_request(&request);
+        let discovered_types = self.discovered_plugins_for_scan(&request);
+        self.runtime
+            .record_plugin_scan_results(handle, discovered_types);
+        self.supervisor.scans_started = handle.0;
         self.supervisor.last_scan_roots = request.roots;
-        Ok(signal_runtime::ScanHandle(self.supervisor.scans_started))
+        Ok(handle)
     }
 
     fn ensure_plugin_sandbox(
@@ -3892,6 +4100,7 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         request: PluginSandboxSpec,
     ) -> Result<signal_runtime::SandboxHandle, RuntimeError> {
         self.supervisor.sandboxes = self.supervisor.sandboxes.saturating_add(1);
+        self.runtime.record_plugin_sandbox_spec(&request);
         self.runtime.record_plugin_sandbox_lifecycle(
             request.sandbox_id.as_str(),
             PluginSandboxLifecycleStage::SandboxEnsured,
@@ -3946,6 +4155,71 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         self.runtime.render_offline(request)
     }
 
+    fn render_offline_with_checkpoints(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionReceipt, RuntimeError> {
+        self.runtime.render_offline_with_checkpoints(request)
+    }
+
+    fn begin_offline_render_execution(
+        &mut self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.begin_offline_render_execution(request)
+    }
+
+    fn pause_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.pause_offline_render_execution(request_id)
+    }
+
+    fn resume_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.resume_offline_render_execution(request_id)
+    }
+
+    fn interrupt_offline_render_execution(
+        &mut self,
+        request_id: &str,
+        reason: String,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime
+            .interrupt_offline_render_execution(request_id, reason)
+    }
+
+    fn advance_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.advance_offline_render_execution(request_id)
+    }
+
+    fn cancel_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeError> {
+        self.runtime.cancel_offline_render_execution(request_id)
+    }
+
+    fn render_offline_queue(
+        &self,
+        requests: Vec<RuntimeOfflineRenderRequest>,
+    ) -> Result<RuntimeOfflineRenderQueueResult, RuntimeError> {
+        self.runtime.render_offline_queue(requests)
+    }
+
+    fn purge_offline_render_artifacts(
+        &self,
+        request: RuntimeOfflineRenderPurgeRequest,
+    ) -> Result<RuntimeOfflineRenderPurgeReceipt, RuntimeError> {
+        self.runtime.purge_offline_render_artifacts(request)
+    }
+
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError> {
         self.supervisor.teardowns = self.supervisor.teardowns.saturating_add(1);
         self.supervisor.last_sandbox_id = Some(sandbox_id.to_string());
@@ -3986,13 +4260,15 @@ mod tests {
     use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
     use signal_hardware::{
         AudioDeviceDescriptor, AudioSampleFormat, AudioStreamDirection, BackendHealth,
-        HardwareClockSource, HardwareLatencyProfile, HardwareLifecycleContract,
-        HardwareLifecycleOwnership, HardwareRestartPolicy, HardwareStreamConfig,
+        HardwareClockSource, HardwareClockTopology, HardwareLatencyProfile,
+        HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareRestartPolicy,
+        HardwareStreamConfig,
     };
-    use signal_plugin::{CompletionState, LoopRange, PluginEvent, WatchdogTriggerReason};
+    use signal_plugin::{
+        CompletionState, LoopRange, PluginEvent, PluginFormat, WatchdogTriggerReason,
+    };
     use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
     use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, SampleRate};
-    use signal_runtime::RuntimeHostClockSource;
     use signal_runtime::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
         GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
@@ -4012,6 +4288,10 @@ mod tests {
         RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi, RuntimeSupervisorReport,
         RuntimeWarpMode, SandboxOperationFailureStage, SignalRuntime, StopReason,
         TransportAttachIntent,
+    };
+    use signal_runtime::{
+        RuntimeHostClockDomain, RuntimeHostClockFallbackState, RuntimeHostClockSource,
+        RuntimeHostClockTransitionState,
     };
     use std::{
         env, fs,
@@ -4238,6 +4518,7 @@ mod tests {
             .expect("hardware config");
         host.start_plugin_scan(PluginScanRequest {
             roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
+            formats: vec![PluginFormat::Clap],
         })
         .expect("plugin scan");
         for sandbox in &assembly.plugin_sandboxes {
@@ -4304,6 +4585,7 @@ mod tests {
             .expect("hardware config");
         host.start_plugin_scan(PluginScanRequest {
             roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
+            formats: vec![PluginFormat::Clap],
         })
         .expect("plugin scan");
         for sandbox in &assembly.plugin_sandboxes {
@@ -4667,6 +4949,8 @@ mod tests {
                 chain_id: first_handoff_stage.chain_id.clone(),
                 stage_index: first_handoff_stage.stage_index,
                 sandbox_id: first_handoff_stage.recall_payload.sandbox_id.clone(),
+                plugin_type_id: first_handoff_stage.recall_payload.plugin_type_id.clone(),
+                plugin_format: first_handoff_stage.recall_payload.plugin_format,
                 track_lane_id: first_handoff_stage.track_lane_id.clone(),
                 bus_group_id: first_handoff_stage.bus_group_id.clone(),
                 console_group_id: first_handoff_stage.console_group_id.clone(),
@@ -7100,6 +7384,31 @@ mod tests {
             RuntimeHostClockSource::Internal
         );
         assert_eq!(
+            report.observation.host_io.clocking.clock_domain,
+            RuntimeHostClockDomain::SameClock
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.fallback_state,
+            RuntimeHostClockFallbackState::Direct
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::InitialObservation
+        );
+        assert!(!report.observation.host_io.clocking.crossing_required);
+        assert_eq!(
+            report
+                .observation
+                .host_io
+                .clocking
+                .processing_sample_rate_hz,
+            48_000
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.hardware_sample_rate_hz,
+            48_000
+        );
+        assert_eq!(
             report.observation.host_io.clocking.ownership,
             signal_runtime::RuntimeHostLifecycleOwnership::HostDrivenCallback
         );
@@ -7161,6 +7470,70 @@ mod tests {
                 .console_node_count,
             1
         );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .plugin_discovery_snapshot
+                .scan_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .plugin_discovery_snapshot
+                .format_filtered_scan_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .plugin_discovery_snapshot
+                .discovered_type_count,
+            2
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .plugin_discovery_snapshot
+                .last_scan
+                .as_ref()
+                .map(|scan| scan.discovered_type_count),
+            Some(2)
+        );
+        assert!(report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:clap:default"
+                && plugin.format == PluginFormat::Clap
+                && plugin.state_contract.supports_snapshot));
+        assert!(report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:clap:sandbox"
+                && plugin
+                    .features
+                    .contains(&signal_plugin::PluginFeature::Utility)
+                && plugin.processing_contract.produces_midi));
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .plugin_lifecycle_snapshot
+                .sandboxes
+                .first()
+                .and_then(|sandbox| sandbox.plugin_format),
+            Some(PluginFormat::Clap)
+        );
         assert!(report
             .render_json()
             .contains("\"node_id\":\"plugin-insert\""));
@@ -7184,6 +7557,15 @@ mod tests {
         assert!(report
             .render_json()
             .contains("\"clock_source\":\"Internal\""));
+        assert!(report
+            .render_json()
+            .contains("\"clock_domain\":\"SameClock\""));
+        assert!(report
+            .render_json()
+            .contains("\"fallback_state\":\"Direct\""));
+        assert!(report
+            .render_json()
+            .contains("\"transition_state\":\"InitialObservation\""));
         assert!(report
             .render_json()
             .contains("\"estimated_output_latency_samples\":536"));
@@ -7361,6 +7743,19 @@ mod tests {
             report.observation.host_io.clocking.clock_source,
             RuntimeHostClockSource::Internal
         );
+        assert_eq!(
+            report.observation.host_io.clocking.clock_domain,
+            RuntimeHostClockDomain::Degraded
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.fallback_state,
+            RuntimeHostClockFallbackState::RecoveryConstrained
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::InitialObservation
+        );
+        assert!(!report.observation.host_io.clocking.crossing_required);
         assert!(!report.observation.host_io.runtime_graph_id_matches_pump);
         assert_eq!(
             report
@@ -7374,6 +7769,252 @@ mod tests {
             .render_compact()
             .contains("host_backend_restart_failures=1"));
         assert!(report.render_json().contains("\"device_loss_count\":1"));
+        assert!(report
+            .render_json()
+            .contains("\"clock_domain\":\"Degraded\""));
+        assert!(report
+            .render_json()
+            .contains("\"fallback_state\":\"RecoveryConstrained\""));
+        assert!(report
+            .render_json()
+            .contains("\"transition_state\":\"InitialObservation\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_cross_clock_runtime_resampling_state() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "host-local-test".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(192_000),
+            })
+            .expect("handshake");
+        runtime
+            .configure(RuntimeConfigRequest::new(44_100, 256))
+            .expect("configure");
+        let mut host = LocalRuntimeHost::new(runtime);
+        let initial = host.host_supervisor_report();
+        assert_eq!(
+            initial.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::InitialObservation
+        );
+        host.active_output_stream = Some(HardwareStreamConfig {
+            device: AudioDeviceDescriptor {
+                backend_name: "coreaudio",
+                device_id: "coreaudio:cross-clock-output".into(),
+                name: "CoreAudio Cross Clock Output".into(),
+                default_input: false,
+                default_output: true,
+                max_input_channels: 0,
+                max_output_channels: 2,
+                nominal_sample_rate: SampleRate(48_000),
+                preferred_buffer_sizes: vec![256],
+            },
+            direction: AudioStreamDirection::Output,
+            sample_rate: SampleRate(48_000),
+            buffer_size: 256,
+            input_channels: 0,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            interleaved: true,
+            clock_source: HardwareClockSource::Internal,
+            clock_topology: HardwareClockTopology::SingleEndpoint,
+            lifecycle: HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+                restart_policy: HardwareRestartPolicy::HostMustRestart,
+            },
+            latency: HardwareLatencyProfile::output_only(256),
+            simulated: false,
+        });
+
+        let report = host.host_supervisor_report();
+
+        assert_eq!(
+            report.observation.host_io.clocking.clock_domain,
+            RuntimeHostClockDomain::CrossClock
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.fallback_state,
+            RuntimeHostClockFallbackState::RuntimeResampled
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::EnteredCrossClockFallback
+        );
+        assert!(report.observation.host_io.clocking.crossing_required);
+        assert_eq!(
+            report
+                .observation
+                .host_io
+                .clocking
+                .processing_sample_rate_hz,
+            44_100
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.hardware_sample_rate_hz,
+            48_000
+        );
+        assert!(report
+            .render_compact()
+            .contains("host_clock_domain=CrossClock"));
+        assert!(report
+            .render_json()
+            .contains("\"fallback_state\":\"RuntimeResampled\""));
+        assert!(report
+            .render_json()
+            .contains("\"transition_state\":\"EnteredCrossClockFallback\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_aggregate_clock_domain() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "host-local-test".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(192_000),
+            })
+            .expect("handshake");
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 256))
+            .expect("configure");
+        let mut host = LocalRuntimeHost::new(runtime);
+        let initial = host.host_supervisor_report();
+        assert_eq!(
+            initial.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::InitialObservation
+        );
+        host.active_output_stream = Some(HardwareStreamConfig {
+            device: AudioDeviceDescriptor {
+                backend_name: "coreaudio",
+                device_id: "coreaudio:aggregate-output".into(),
+                name: "CoreAudio Aggregate Output".into(),
+                default_input: false,
+                default_output: true,
+                max_input_channels: 0,
+                max_output_channels: 2,
+                nominal_sample_rate: SampleRate(48_000),
+                preferred_buffer_sizes: vec![256],
+            },
+            direction: AudioStreamDirection::Output,
+            sample_rate: SampleRate(48_000),
+            buffer_size: 256,
+            input_channels: 0,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            interleaved: true,
+            clock_source: HardwareClockSource::DigitalInput,
+            clock_topology: HardwareClockTopology::Aggregate,
+            lifecycle: HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+                restart_policy: HardwareRestartPolicy::HostMustRestart,
+            },
+            latency: HardwareLatencyProfile::output_only(256),
+            simulated: false,
+        });
+
+        let report = host.host_supervisor_report();
+
+        assert_eq!(
+            report.observation.host_io.clocking.clock_domain,
+            RuntimeHostClockDomain::Aggregate
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.fallback_state,
+            RuntimeHostClockFallbackState::Direct
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::EnteredAggregateClock
+        );
+        assert!(report.observation.host_io.clocking.crossing_required);
+        assert!(report
+            .render_json()
+            .contains("\"clock_domain\":\"Aggregate\""));
+        assert!(report
+            .render_json()
+            .contains("\"transition_state\":\"EnteredAggregateClock\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_tracks_return_to_direct_after_cross_clock_fallback() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "host-local-test".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(192_000),
+            })
+            .expect("handshake");
+        runtime
+            .configure(RuntimeConfigRequest::new(44_100, 256))
+            .expect("configure");
+        let mut host = LocalRuntimeHost::new(runtime);
+        let initial = host.host_supervisor_report();
+        assert_eq!(
+            initial.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::InitialObservation
+        );
+        host.active_output_stream = Some(HardwareStreamConfig {
+            device: AudioDeviceDescriptor {
+                backend_name: "coreaudio",
+                device_id: "coreaudio:cross-clock-output".into(),
+                name: "CoreAudio Cross Clock Output".into(),
+                default_input: false,
+                default_output: true,
+                max_input_channels: 0,
+                max_output_channels: 2,
+                nominal_sample_rate: SampleRate(48_000),
+                preferred_buffer_sizes: vec![256],
+            },
+            direction: AudioStreamDirection::Output,
+            sample_rate: SampleRate(48_000),
+            buffer_size: 256,
+            input_channels: 0,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            interleaved: true,
+            clock_source: HardwareClockSource::Internal,
+            clock_topology: HardwareClockTopology::SingleEndpoint,
+            lifecycle: HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+                restart_policy: HardwareRestartPolicy::HostMustRestart,
+            },
+            latency: HardwareLatencyProfile::output_only(256),
+            simulated: false,
+        });
+
+        let cross_clock = host.host_supervisor_report();
+        assert_eq!(
+            cross_clock.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::EnteredCrossClockFallback
+        );
+
+        host.active_output_stream = Some(HardwareStreamConfig {
+            sample_rate: SampleRate(44_100),
+            ..host
+                .active_output_stream
+                .clone()
+                .expect("cross-clock stream should exist")
+        });
+
+        let recovered = host.host_supervisor_report();
+        assert_eq!(
+            recovered.observation.host_io.clocking.clock_domain,
+            RuntimeHostClockDomain::SameClock
+        );
+        assert_eq!(
+            recovered.observation.host_io.clocking.fallback_state,
+            RuntimeHostClockFallbackState::Direct
+        );
+        assert_eq!(
+            recovered.observation.host_io.clocking.transition_state,
+            RuntimeHostClockTransitionState::ReturnedToDirect
+        );
+        assert!(recovered
+            .render_json()
+            .contains("\"transition_state\":\"ReturnedToDirect\""));
     }
 
     #[test]
@@ -7403,6 +8044,7 @@ mod tests {
             sample_format: AudioSampleFormat::F32,
             interleaved: true,
             clock_source: HardwareClockSource::Internal,
+            clock_topology: HardwareClockTopology::SingleEndpoint,
             lifecycle: HardwareLifecycleContract {
                 ownership: HardwareLifecycleOwnership::HostDrivenCallback,
                 restart_policy: HardwareRestartPolicy::HostMustRestart,

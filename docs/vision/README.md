@@ -27,7 +27,15 @@ Use these at periodic checkpoints (for example monthly/quarterly), not per task.
 - `001-project-vision-blueprint-template.md`
 - `001-signal-vision.md`
 
-## Next task
+## Vision Artifacts
+
+- [001-signal-vision.md](./001-signal-vision.md)
+- [001-project-vision-blueprint-template.md](./001-project-vision-blueprint-template.md)
+- [vision-tag-rubric-template.md](./vision-tag-rubric-template.md)
+- [vision-scorecard-template.md](./vision-scorecard-template.md)
+- [risk-checkpoint-ledger-template.md](./risk-checkpoint-ledger-template.md)
+
+## Next Task
 
 Use `001-signal-vision.md` as the active baseline, then add more vision files
 only when Signal needs a materially new long-horizon constraint or milestone

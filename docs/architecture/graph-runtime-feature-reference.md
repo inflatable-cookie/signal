@@ -353,6 +353,80 @@ Current metering and diagnostics export includes:
   - `RuntimeSupervisorReport`
   - host observation/supervisor JSON surfaces
 
+Current host-I/O and hardware-portability tracking includes:
+
+- backend-neutral hardware capability and negotiation primitives in
+  `signal-hardware` for:
+  - device descriptors
+  - stream requests and negotiated stream configs
+  - clock topology hints
+  - lifecycle ownership and restart policy
+  - clock source and latency profile
+  - backend health and diagnostic counters
+- runtime-owned hardware application through `HardwareConfigRequest`, with the
+  active processing configuration and backend policy tracked in
+  `EffectiveRuntimeConfig` and `RuntimeDiagnosticsSnapshot`
+- host-augmented runtime receipts for:
+  - negotiated hardware identity and stream contract
+  - processing versus hardware sample-rate visibility
+  - explicit `SameClock`, `CrossClock`, `Aggregate`, and `Degraded`
+    clock-domain classification
+  - explicit `Direct`, `RuntimeResampled`, `RecoveryConstrained`, and
+    `Unconfigured` fallback-state classification
+  - explicit host clock transition-state classification for first observation,
+    aggregate entry, cross-clock entry, return-to-direct recovery, and other
+    reconfiguration paths
+  - clock source, lifecycle ownership, and restart policy
+  - live latency and callback cadence
+  - callback-pump state and output transfer counters
+  - backend health, xrun, device-loss, and restart counters
+- shared host observation/supervisor delivery through:
+  - `RuntimeHostIoSummary`
+  - `RuntimeHostObservationReport`
+  - `RuntimeHostSupervisorReport`
+- current same-clock live-path visibility through matching runtime versus
+  negotiated host sample-rate reporting plus explicit host clock-domain export
+- current cross-clock live-path visibility through explicit runtime-owned
+  fallback-state export rather than backend-local inference
+- current aggregate-clock live-path visibility through the same runtime-owned
+  host clocking receipt family
+- runtime-owned resampling on offline/export paths rather than backend-private
+  sample-rate conversion
+- current limitation: multi-member aggregate detail, drift compensation, and
+  broader backend-matrix coverage are still not exposed through richer
+  runtime-owned receipts, so those deeper backend details remain internal
+
+Current plugin backend and delegation tracking includes:
+
+- format-neutral plugin vocabulary in `signal-plugin` for:
+  - descriptor, feature, bus, and parameter surfaces
+  - state, processing, and lifecycle contracts
+  - readiness and fault vocabulary
+  - sandbox capability and transport abstractions
+- runtime-owned plugin execution/export surfaces in `signal-runtime` for:
+  - plugin scan/discovery receipts with typed root/filter intent
+  - discovered-plugin catalog records carrying format-neutral identity,
+    feature, I/O, state, processing, and lifecycle detail
+  - plugin-backed node binding projection
+  - plugin lifecycle, chain, recall, and compensation snapshots
+  - typed plugin format/type identity carried through sandbox, recall, and
+    delegated execution stage DTOs
+  - delegated offline execution boundary, request, receipt, and merge/outcome
+    families
+- current adapter-specific CLAP realization in `signal-plugin-clap` for:
+  - extension negotiation
+  - discovered type and instance control surfaces
+  - prepare and block protocol details
+  - CLAP-specific event and shared-memory packet mapping
+- current host-neutral rule: delegated execution fulfillment may happen in a
+  host adapter, but ownership of stage identity, recall payload, completion
+  status, and finalization receipts stays in runtime-owned DTOs
+- current proof boundary: runtime public-boundary and supervisor-export
+  fixtures now consume the widened discovery catalog without adapter-local
+  reconstruction
+- current limitation: broader backend-neutral capability projection and
+  adapter coverage beyond the CLAP-first path are still explicitly deferred
+
 ## Runtime Scheduler And Prework
 
 Current engine snapshot features:
@@ -488,13 +562,47 @@ Implemented now:
   offline-render profiling/soak receipts that pin routing gates, plugin-chain
   quarantine/unavailability, and delegated-offline degraded outcomes through
   the same reusable runtime-owned hardening contract
+- runtime-owned offline render queue and purge receipts for multi-request
+  render advancement and artifact/report cleanup without rebuilding queue or
+  purge meaning in host-local code
+- runtime-owned deferred-service receipts for offline render queue execution,
+  exposing typed `Run`, `Throttle`, and `Defer` decisions plus the runtime
+  state that caused them
+- runtime-owned deferred-service receipts for offline render purge plus
+  observation/supervisor export of the latest deferred-service decision so
+  consumers can inspect orchestration outcomes without private runtime state
+- runtime-owned lingering transport cleanup queue visibility through
+  `RuntimeTransportConcurrencySnapshot`, including pending cleanup waves and
+  deferred retry work counts
 - runtime-owned routed topology summaries that carry aggregated plugin-chain
   latency/compensation state per track lane, bus group, console group, and
   send/return route, plus node-level recall payload/status and compensation
   export that survives rebinding and clears cleanly on graph refresh
 - runtime-owned anticipative prework forecasting, queueing, and service-state
   reporting
+- runtime-owned widening of anticipative prework service budget from compatible
+  schedule-stream capacity, with degraded/plugin/transport policy still able to
+  throttle or yield that widened scope
+- runtime-owned widening of requested anticipative service cadence from
+  compatible schedule-stream capacity, with elevated pressure still collapsing
+  widened requests back to the bounded safe scope
+- runtime-owned schedule-projection refresh and forecast-plan churn rebuilds
+  that reuse the widened service policy instead of dropping back to a separate
+  single-cycle refresh path
+- runtime-owned restart/reconfigure and mixed execution-class graph transitions
+  that preserve the same schedule-width service policy and keep scheduler
+  receipts coherent across lifecycle churn
+- focused scheduler stress proofs for mixed graph churn, invalidation-heavy
+  transition bursts, and constrained anticipative windows
 - runtime-owned transport concurrency and lingering-cleanup workflow surfaces
+- contract-frozen scheduler inspection hierarchy:
+  - `RuntimeEngineBlockSnapshot` as per-block execution truth
+  - `RuntimeSchedulerSnapshot` as lifecycle/control-state truth
+  - `RuntimeSchedulerExportSummary` as the narrow stable digest for reports and
+    automation
+  - `RuntimeExecutionTopologySummary` and `RuntimeSchedulerTopologySummary` as
+    the explanatory topology context for those choices rather than a
+    host-recomputed scheduler model
 
 Planned elsewhere but not implemented in these crates yet:
 
@@ -503,6 +611,9 @@ Planned elsewhere but not implemented in these crates yet:
   `signal-graph` itself
 - a production-grade multithreaded scheduler rather than the current embeddable
   block-processing shell
+- true cost-aware or work-stealing dispatch balancing beyond schedule-stream
+  width as a bounded proxy for multicore capacity
+- long-duration scheduler threshold/fail-gate benchmark policy
 - narrower, more task-specific runtime docs for each control subsystem
 
 ## Current Entry Points
@@ -513,11 +624,17 @@ Useful implementation entry points after this doc:
 - `crates/signal-runtime/src/lib.rs`
 - `crates/signal-runtime/src/interfaces.rs`
 - `crates/signal-runtime/src/runtime.rs`
+- `crates/signal-runtime/tests/public_contract_boundary.rs`
 - `crates/signal-host-local/src/host.rs`
 - `crates/signal-supervisor-tools/src/main.rs`
 - `crates/signal-runtime/examples/supervisor_report_demo.rs`
+- `effigy acceptance:conformance --repo .`
+- `effigy acceptance:release-boundary --repo .`
+- `effigy acceptance:g04-closeout --repo .`
 
 ## Next Task
 
-COMPLETE. `g03` closed after the runtime-owned hardening receipts were proven
-across routing, plugin-chain, and offline-render fault paths.
+COMPLETE. The `g04` runtime/export/plugin conformance and release-baseline
+closeout proof is finished. Promote
+`docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md` only
+when maintainers choose to open the next generation.

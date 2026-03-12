@@ -32,6 +32,12 @@ pub enum HardwareClockSource {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HardwareClockTopology {
+    SingleEndpoint,
+    Aggregate,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HardwareLifecycleOwnership {
     HostDrivenCallback,
     BackendManagedCallback,
@@ -162,6 +168,7 @@ pub struct HardwareStreamConfig {
     pub sample_format: AudioSampleFormat,
     pub interleaved: bool,
     pub clock_source: HardwareClockSource,
+    pub clock_topology: HardwareClockTopology,
     pub lifecycle: HardwareLifecycleContract,
     pub latency: HardwareLatencyProfile,
     pub simulated: bool,
@@ -409,6 +416,7 @@ impl HardwareBackend for SimulatedHardwareBackend {
             sample_format: request.sample_format,
             interleaved: request.interleaved,
             clock_source: HardwareClockSource::Virtual,
+            clock_topology: HardwareClockTopology::SingleEndpoint,
             lifecycle: self.lifecycle,
             latency: HardwareLatencyProfile::output_only(request.buffer_size as u32),
             simulated: true,
@@ -453,6 +461,7 @@ mod tests {
         assert_eq!(stream.sample_format, AudioSampleFormat::F32);
         assert!(stream.interleaved);
         assert_eq!(stream.clock_source, HardwareClockSource::Virtual);
+        assert_eq!(stream.clock_topology, HardwareClockTopology::SingleEndpoint);
         assert_eq!(
             stream.lifecycle,
             HardwareLifecycleContract {

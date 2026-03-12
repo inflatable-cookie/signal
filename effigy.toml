@@ -7,7 +7,25 @@ validate = [
   { task = "health" },
   { task = "test" },
 ]
-qa = [{ task = "validate" }]
+qa = [
+  { task = "validate" },
+  { task = "qa:docs" },
+]
+"qa:docs:links" = "effigy docs check-links"
+"qa:docs:agent-defaults" = "effigy docs check-forbidden AGENTS.md README.md docs/README.md --forbid '--repo .'"
+"qa:docs:headings" = "effigy docs check-headings docs/README.md docs/vision/README.md docs/roadmaps/README.md docs/logs/README.md --require-heading '## Next Task'"
+"qa:docs:index:vision" = "effigy docs check-index --policy-index vision"
+"qa:docs:next-action:vision" = "effigy docs check-next-action --policy vision"
+"qa:northstar" = [
+  { task = "qa:docs:headings" },
+  { task = "qa:docs:index:vision" },
+  { task = "qa:docs:next-action:vision" },
+]
+"qa:docs" = [
+  { task = "qa:docs:links" },
+  { task = "qa:docs:agent-defaults" },
+  { task = "qa:northstar" },
+]
 "acceptance:analysis" = [
   { run = "cargo test -p signal-analysis harness -- --nocapture" },
   { run = "cargo test -p signal-analysis-rhythm harness -- --nocapture" },
@@ -15,6 +33,23 @@ qa = [{ task = "validate" }]
   { run = "cargo test -p signal-analysis-character harness -- --nocapture" },
   { run = "cargo test -p signal-analysis-loudness harness -- --nocapture" },
   { run = "cargo test -p signal-analysis-embed harness -- --nocapture" },
+]
+"acceptance:conformance" = [
+  { run = "cargo test -p signal-runtime public_runtime_contract_boundary_is_consumable_from_reexports" },
+  { run = "cargo test -p signal-supervisor-tools export_json_carries_runtime_owned_plugin_discovery_catalog" },
+  { run = "cargo test -p signal-supervisor-tools conformance_matrix_json_reports_runnable_consumer_boundary" },
+  { run = "cargo run -p signal-runtime --example supervisor_report_demo" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json" },
+]
+"acceptance:release-boundary" = [
+  { task = "acceptance:conformance" },
+  { run = "cargo test -p signal-supervisor-tools release_boundary_json_reports_packaging_baseline" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json" },
+]
+"acceptance:g04-closeout" = [
+  { task = "acceptance:release-boundary" },
+  { run = "cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json" },
 ]
 build = [
   { task = "configure:debug" },
@@ -31,3 +66,13 @@ test = [
 "configure:debug" = "cmake -S legacy/cpp -B legacy/cpp/build"
 "compile:debug" = "cmake --build legacy/cpp/build --config Debug"
 "audit:god-files" = "python3 ../chorus/meta/tools/check_god_file_audit.py --workspace-root .. --fail-on high"
+
+[docs_policy.indexes.vision]
+file = "docs/vision/README.md"
+dir = "docs/vision"
+section = "Vision Artifacts"
+
+[docs_policy.next_actions.vision]
+index = "vision"
+heading = "## Next Task"
+allowlist_file = "docs/policy/vision-next-task-verbs.txt"

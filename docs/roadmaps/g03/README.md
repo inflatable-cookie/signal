@@ -63,5 +63,5 @@ This generation stays inside Signal-owned reusable boundaries:
 ## Next Task
 
 COMPLETE. `g03` closed on 2026-03-12 after `g03.008` finished the profiling,
-soak, and fault-hardening acceptance spine. Open the next generation when
-maintainers want the next reusable Signal queue.
+soak, and fault-hardening acceptance spine. Continue with `g04.001` now that
+the next reusable Signal queue is open.

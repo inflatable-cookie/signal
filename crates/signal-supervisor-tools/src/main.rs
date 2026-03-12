@@ -41,12 +41,72 @@ enum CliMode {
         scenario: Scenario,
     },
     DescribeExport,
+    DescribeConformanceMatrix,
+    DescribeReleaseBoundary,
+    DescribeGenerationCloseout,
 }
 
 const EXPORT_SCHEMA: &str = "signal.supervisor.export";
 const EXPORT_SCHEMA_VERSION: u32 = 1;
 const DEFAULT_HOST_SUMMARY_SECTIONS: &[&str] = &["execution", "transport", "faults"];
 const SUPPORTED_DEBUG_SECTIONS: &[HostSummaryDebugSection] = &[HostSummaryDebugSection::Payload];
+const RELEASE_BOUNDARY: &str = "signal.release.boundary";
+const RELEASE_VERSION_SOURCE: &str = "workspace.package.version";
+const RELEASE_CHANGELOG_PATH: &str = "CHANGELOG.md";
+const RELEASE_CONFORMANCE_TASK: &str = "effigy acceptance:conformance --repo .";
+const GENERATION_CLOSEOUT: &str = "signal.generation.closeout";
+const GENERATION_CLOSEOUT_GENERATION: &str = "g04";
+const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g04-closeout --repo .";
+const POST_G04_QUEUE_PATH: &str =
+    "docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ConformanceMatrixEntryKind {
+    PublicBoundaryTest,
+    ExportConsumerTest,
+    Example,
+    Introspection,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ConformanceMatrixEntry {
+    id: &'static str,
+    kind: ConformanceMatrixEntryKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ReleaseBoundaryArtifactKind {
+    Document,
+    ExportDescription,
+    ConformanceMatrix,
+    Example,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ReleaseBoundaryArtifact {
+    id: &'static str,
+    kind: ReleaseBoundaryArtifactKind,
+    path_or_command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ReleaseBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct GenerationCloseoutValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct ExportDebugOptions {
@@ -102,7 +162,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-release-boundary|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -120,6 +180,180 @@ impl ExportDebugOptions {
             HostSummaryDebugSection::Payload => self.payload,
         }
     }
+}
+
+impl ConformanceMatrixEntryKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::PublicBoundaryTest => "public-boundary-test",
+            Self::ExportConsumerTest => "export-consumer-test",
+            Self::Example => "example",
+            Self::Introspection => "introspection",
+        }
+    }
+}
+
+impl ReleaseBoundaryArtifactKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Document => "document",
+            Self::ExportDescription => "export-description",
+            Self::ConformanceMatrix => "conformance-matrix",
+            Self::Example => "example",
+        }
+    }
+}
+
+fn conformance_matrix_entries() -> &'static [ConformanceMatrixEntry] {
+    &[
+        ConformanceMatrixEntry {
+            id: "runtime-public-contract-boundary",
+            kind: ConformanceMatrixEntryKind::PublicBoundaryTest,
+            crate_name: "signal-runtime",
+            surface: "SignalRuntime, RuntimeObservationReport, RuntimeSupervisorReport public reexports",
+            command:
+                "cargo test -p signal-runtime public_runtime_contract_boundary_is_consumable_from_reexports",
+            rationale:
+                "Proves a downstream-style consumer can capture runtime/export/plugin receipts without private internals.",
+        },
+        ConformanceMatrixEntry {
+            id: "supervisor-export-discovery-consumer",
+            kind: ConformanceMatrixEntryKind::ExportConsumerTest,
+            crate_name: "signal-supervisor-tools",
+            surface: "signal.supervisor.export JSON carrying runtime-owned plugin discovery catalog",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_runtime_owned_plugin_discovery_catalog",
+            rationale:
+                "Proves the versioned supervisor export carries the widened discovery boundary without host-local reconstruction.",
+        },
+        ConformanceMatrixEntry {
+            id: "runtime-supervisor-report-demo",
+            kind: ConformanceMatrixEntryKind::Example,
+            crate_name: "signal-runtime",
+            surface: "supervisor_report_demo example",
+            command: "cargo run -p signal-runtime --example supervisor_report_demo",
+            rationale:
+                "Provides a host-free runnable example that emits the stabilized supervisor report surface.",
+        },
+        ConformanceMatrixEntry {
+            id: "supervisor-export-schema-description",
+            kind: ConformanceMatrixEntryKind::Introspection,
+            crate_name: "signal-supervisor-tools",
+            surface: "signal-supervisor-tools export/conformance schema description",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
+            rationale:
+                "Lets consumers inspect the runnable conformance matrix without reading private implementation detail.",
+        },
+    ]
+}
+
+fn release_boundary_artifacts() -> &'static [ReleaseBoundaryArtifact] {
+    &[
+        ReleaseBoundaryArtifact {
+            id: "workspace-changelog",
+            kind: ReleaseBoundaryArtifactKind::Document,
+            path_or_command: RELEASE_CHANGELOG_PATH,
+            rationale:
+                "Every consumer-facing release baseline must carry a human-readable change summary in the workspace changelog.",
+        },
+        ReleaseBoundaryArtifact {
+            id: "supervisor-export-description",
+            kind: ReleaseBoundaryArtifactKind::ExportDescription,
+            path_or_command: "cargo run -p signal-supervisor-tools -- --describe-export --format=json",
+            rationale:
+                "The versioned export schema remains the machine-readable release contract for automation.",
+        },
+        ReleaseBoundaryArtifact {
+            id: "consumer-conformance-matrix",
+            kind: ReleaseBoundaryArtifactKind::ConformanceMatrix,
+            path_or_command:
+                "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
+            rationale:
+                "Consumers need one inspectable list of the runnable proof surfaces included in the baseline.",
+        },
+        ReleaseBoundaryArtifact {
+            id: "runtime-supervisor-report-demo",
+            kind: ReleaseBoundaryArtifactKind::Example,
+            path_or_command: "cargo run -p signal-runtime --example supervisor_report_demo",
+            rationale:
+                "The human-readable report example remains part of the first shared release baseline for manual inspection.",
+        },
+    ]
+}
+
+fn release_boundary_validation_steps() -> &'static [ReleaseBoundaryValidationStep] {
+    &[
+        ReleaseBoundaryValidationStep {
+            id: "consumer-conformance",
+            command: RELEASE_CONFORMANCE_TASK,
+            rationale:
+                "The runnable consumer conformance matrix must pass before the packaging baseline is considered valid.",
+        },
+        ReleaseBoundaryValidationStep {
+            id: "workspace-health",
+            command: "effigy health --repo .",
+            rationale:
+                "The repo-owned build baseline must stay healthy for a release-boundary claim to be credible.",
+        },
+        ReleaseBoundaryValidationStep {
+            id: "workspace-test",
+            command: "effigy test --repo .",
+            rationale:
+                "The shared repo-owned test surface remains part of the packaging baseline rather than downstream-only policy.",
+        },
+        ReleaseBoundaryValidationStep {
+            id: "workspace-validate",
+            command: "effigy validate --repo .",
+            rationale:
+                "Validation must include the repo-owned configure/build/test chain before a release boundary is declared.",
+        },
+    ]
+}
+
+fn release_boundary_unstable_scopes() -> &'static [&'static str] {
+    &[
+        "backend breadth beyond the current CLAP-first plugin path",
+        "host convenience APIs outside the frozen runtime/export boundary",
+        "crates.io publication and downstream release orchestration",
+        "artifact packaging beyond changelog plus host-free boundary descriptions",
+    ]
+}
+
+fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidationStep] {
+    &[
+        GenerationCloseoutValidationStep {
+            id: "release-boundary-baseline",
+            command: "effigy acceptance:release-boundary --repo .",
+            rationale:
+                "The combined closeout must include the full conformance matrix plus the explicit release-packaging baseline.",
+        },
+        GenerationCloseoutValidationStep {
+            id: "generation-closeout-description",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json",
+            rationale:
+                "Consumers and maintainers need one host-free machine-readable closeout record for the completed generation.",
+        },
+        GenerationCloseoutValidationStep {
+            id: "repo-validation",
+            command: "effigy validate --repo .",
+            rationale:
+                "Generation closure still requires the repo-owned configure/build/test chain to stay green.",
+        },
+    ]
+}
+
+fn generation_closeout_residual_risks() -> &'static [&'static str] {
+    &[
+        "non-CLAP plugin backend breadth remains deferred beyond the current conformance boundary",
+        "host convenience APIs and downstream orchestration remain outside the first stable release promise",
+        "publication-grade packaging beyond changelog plus host-free boundary descriptions still needs a later queue",
+    ]
+}
+
+fn generation_closeout_next_queue_summary() -> &'static str {
+    "Promote the post-g04 queue when maintainers want broader backend-neutral consumer breadth, publication-ready packaging, or longer-running downstream conformance automation."
 }
 
 fn render_host_summary_sections_text(debug: ExportDebugOptions) -> String {
@@ -602,6 +836,256 @@ fn print_export_description(format: OutputFormat) {
     }
 }
 
+fn render_conformance_matrix_text() -> String {
+    let mut rendered = String::from("consumer_conformance_matrix:\n");
+    for entry in conformance_matrix_entries() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  command: {}\n  rationale: {}\n",
+            entry.id,
+            entry.kind.label(),
+            entry.crate_name,
+            entry.surface,
+            entry.command,
+            entry.rationale,
+        ));
+    }
+    rendered
+}
+
+fn render_conformance_matrix_json() -> String {
+    let entries = conformance_matrix_entries()
+        .iter()
+        .map(|entry| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(entry.id),
+                json_string(entry.kind.label()),
+                json_string(entry.crate_name),
+                json_string(entry.surface),
+                json_string(entry.command),
+                json_string(entry.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"matrix\":\"signal.consumer.conformance\",",
+            "\"entry_count\":{},",
+            "\"entries\":[{}]",
+            "}}"
+        ),
+        conformance_matrix_entries().len(),
+        entries,
+    )
+}
+
+fn print_conformance_matrix(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_conformance_matrix_text()),
+        OutputFormat::Json => println!("{}", render_conformance_matrix_json()),
+    }
+}
+
+fn render_release_boundary_text() -> String {
+    let mut rendered = format!(
+        "release_boundary: {RELEASE_BOUNDARY}\nrelease_version: {}\nversion_source: {RELEASE_VERSION_SOURCE}\nchangelog_path: {RELEASE_CHANGELOG_PATH}\nexport_schema: {EXPORT_SCHEMA}\nexport_schema_version: {EXPORT_SCHEMA_VERSION}\nconformance_task: {RELEASE_CONFORMANCE_TASK}\nartifacts:\n",
+        env!("CARGO_PKG_VERSION")
+    );
+    for artifact in release_boundary_artifacts() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  path_or_command: {}\n  rationale: {}\n",
+            artifact.id,
+            artifact.kind.label(),
+            artifact.path_or_command,
+            artifact.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in release_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("intentionally_unstable:\n");
+    for scope in release_boundary_unstable_scopes() {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_release_boundary_json() -> String {
+    let artifacts = release_boundary_artifacts()
+        .iter()
+        .map(|artifact| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"path_or_command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(artifact.id),
+                json_string(artifact.kind.label()),
+                json_string(artifact.path_or_command),
+                json_string(artifact.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = release_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let unstable = release_boundary_unstable_scopes()
+        .iter()
+        .map(|scope| json_string(scope))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"release_version\":{},",
+            "\"version_source\":{},",
+            "\"changelog_path\":{},",
+            "\"export_schema\":{},",
+            "\"export_schema_version\":{},",
+            "\"conformance_task\":{},",
+            "\"artifacts\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"intentionally_unstable\":[{}]",
+            "}}"
+        ),
+        json_string(RELEASE_BOUNDARY),
+        json_string(env!("CARGO_PKG_VERSION")),
+        json_string(RELEASE_VERSION_SOURCE),
+        json_string(RELEASE_CHANGELOG_PATH),
+        json_string(EXPORT_SCHEMA),
+        EXPORT_SCHEMA_VERSION,
+        json_string(RELEASE_CONFORMANCE_TASK),
+        artifacts,
+        validation_steps,
+        unstable,
+    )
+}
+
+fn print_release_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_release_boundary_text()),
+        OutputFormat::Json => println!("{}", render_release_boundary_json()),
+    }
+}
+
+fn render_generation_closeout_text() -> String {
+    let mut rendered = format!(
+        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\nconformance_matrix_command: cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json\nrelease_boundary_command: cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json\npost_g04_queue_path: {POST_G04_QUEUE_PATH}\nvalidation_steps:\n"
+    );
+    for step in generation_closeout_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("residual_risks:\n");
+    for risk in generation_closeout_residual_risks() {
+        rendered.push_str(&format!("- {risk}\n"));
+    }
+    rendered.push_str(&format!(
+        "next_queue_summary: {}\n",
+        generation_closeout_next_queue_summary()
+    ));
+    rendered
+}
+
+fn render_generation_closeout_json() -> String {
+    let validation_steps = generation_closeout_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let residual_risks = generation_closeout_residual_risks()
+        .iter()
+        .map(|risk| json_string(risk))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"closeout\":{},",
+            "\"generation\":{},",
+            "\"closeout_task\":{},",
+            "\"conformance_matrix_command\":{},",
+            "\"release_boundary_command\":{},",
+            "\"post_g04_queue_path\":{},",
+            "\"validation_steps\":[{}],",
+            "\"residual_risks\":[{}],",
+            "\"next_queue_summary\":{}",
+            "}}"
+        ),
+        json_string(GENERATION_CLOSEOUT),
+        json_string(GENERATION_CLOSEOUT_GENERATION),
+        json_string(GENERATION_CLOSEOUT_TASK),
+        json_string(
+            "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
+        ),
+        json_string(
+            "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json",
+        ),
+        json_string(POST_G04_QUEUE_PATH),
+        validation_steps,
+        residual_risks,
+        json_string(generation_closeout_next_queue_summary()),
+    )
+}
+
+fn print_generation_closeout(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_generation_closeout_text()),
+        OutputFormat::Json => println!("{}", render_generation_closeout_json()),
+    }
+}
+
 fn json_string(value: &str) -> String {
     let escaped = value
         .replace('\\', "\\\\")
@@ -713,6 +1197,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut format = OutputFormat::Text;
     let mut debug = ExportDebugOptions::default();
     let mut describe_export = false;
+    let mut describe_conformance_matrix = false;
+    let mut describe_release_boundary = false;
+    let mut describe_generation_closeout = false;
     let mut positional = Vec::new();
 
     for arg in args {
@@ -732,11 +1219,36 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             describe_export = true;
             continue;
         }
+        if arg == "--describe-conformance-matrix" {
+            describe_conformance_matrix = true;
+            continue;
+        }
+        if arg == "--describe-release-boundary" {
+            describe_release_boundary = true;
+            continue;
+        }
+        if arg == "--describe-generation-closeout" {
+            describe_generation_closeout = true;
+            continue;
+        }
         if let Some(value) = arg.strip_prefix("--format=") {
             format = OutputFormat::parse(value)?;
             continue;
         }
         positional.push(arg);
+    }
+
+    let describe_mode_count = [
+        describe_export,
+        describe_conformance_matrix,
+        describe_release_boundary,
+        describe_generation_closeout,
+    ]
+    .into_iter()
+    .filter(|enabled| *enabled)
+    .count();
+    if describe_mode_count > 1 {
+        return Err("describe modes are mutually exclusive".into());
     }
 
     if describe_export {
@@ -749,6 +1261,48 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeExport,
+        });
+    }
+
+    if describe_conformance_matrix {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-conformance-matrix` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeConformanceMatrix,
+        });
+    }
+
+    if describe_release_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-release-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeReleaseBoundary,
+        });
+    }
+
+    if describe_generation_closeout {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-generation-closeout` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeGenerationCloseout,
         });
     }
 
@@ -785,6 +1339,18 @@ fn main() {
             print_export_description(args.format);
             Ok(())
         }
+        CliMode::DescribeConformanceMatrix => {
+            print_conformance_matrix(args.format);
+            Ok(())
+        }
+        CliMode::DescribeReleaseBoundary => {
+            print_release_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeGenerationCloseout => {
+            print_generation_closeout(args.format);
+            Ok(())
+        }
     };
 
     if let Err(message) = result {
@@ -796,9 +1362,12 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_args, render_export_description_json, render_export_description_text,
-        render_supervisor_export_json, CliArgs, CliMode, ExportDebugOptions, HostProfile,
-        HostSummaryDebugSection, OutputFormat, Scenario,
+        parse_args, render_conformance_matrix_json, render_conformance_matrix_text,
+        render_export_description_json, render_export_description_text,
+        render_generation_closeout_json, render_generation_closeout_text,
+        render_release_boundary_json, render_release_boundary_text, render_supervisor_export_json,
+        CliArgs, CliMode, ExportDebugOptions, HostProfile, HostSummaryDebugSection, OutputFormat,
+        Scenario,
     };
     use signal_hardware::{
         AudioSampleFormat, HardwareDiagnosticsSnapshot, HardwareLifecycleContract,
@@ -810,15 +1379,61 @@ mod tests {
         LocalTransportSummary,
     };
     use signal_host_local::{LocalRuntimeHostSummary, RecoveryRestartIntent};
-    use signal_plugin::{CompletionState, WatchdogTriggerReason};
+    use signal_plugin::{
+        CompletionState, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
+        PluginProcessingContract, PluginStateContract, WatchdogTriggerReason,
+    };
     use signal_runtime::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-        HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-        RuntimeConfig, RuntimeEvent, RuntimeEventRecorder, RuntimeEventSink,
-        RuntimeExecutionTopologySummary, RuntimeSupervisorReport, SandboxOperationFailureStage,
-        SignalRuntime, StopReason, TransportDispatchState, TransportHeartbeatFreshness,
-        TransportSessionState,
+        HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxSpec,
+        PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig, RuntimeEvent,
+        RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionTopologySummary,
+        RuntimeLifecycleApi, RuntimeOfflineRenderPurgeRequest, RuntimePluginDiscoveredTypeRecord,
+        RuntimeSupervisorReport, SafeModeRequest, SandboxOperationFailureStage, SignalRuntime,
+        StopReason, TransportDispatchState, TransportHeartbeatFreshness, TransportSessionState,
     };
+
+    fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
+        RuntimePluginDiscoveredTypeRecord {
+            plugin_type_id: "plugin:clap:export-consumer".into(),
+            plugin_id: "com.signal.export-consumer".into(),
+            vendor: "Signal".into(),
+            name: "Signal Export Consumer".into(),
+            format: PluginFormat::Clap,
+            version: Some("1.0.0".into()),
+            features: vec![PluginFeature::AudioEffect, PluginFeature::Utility],
+            default_io_layout: PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 1,
+            },
+            audio_bus_count: 2,
+            parameter_count: 12,
+            state_contract: PluginStateContract {
+                supports_snapshot: true,
+                supports_reset: true,
+                supports_bypass: true,
+                exposes_latency: true,
+                exposes_tail: true,
+            },
+            processing_contract: PluginProcessingContract {
+                max_block_frames: 4096,
+                sample_accurate_automation: true,
+                accepts_midi: true,
+                accepts_note_events: true,
+                produces_midi: true,
+                silence_aware: true,
+            },
+            lifecycle_contract: PluginLifecycleContract {
+                requires_main_thread_for_state: false,
+                supports_prepare: true,
+                supports_activate: true,
+                supports_reset_while_active: true,
+            },
+            summary: "supervisor export discovered plugin".into(),
+        }
+    }
 
     fn sample_local_summary() -> LocalRuntimeHostSummary {
         LocalRuntimeHostSummary {
@@ -992,6 +1607,91 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_conformance_matrix_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-conformance-matrix".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeConformanceMatrix,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_conformance_matrix() {
+        let error = parse_args([
+            "--describe-conformance-matrix".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_multiple_describe_modes() {
+        let error = parse_args([
+            "--describe-export".into(),
+            "--describe-conformance-matrix".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("mutually exclusive"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_release_boundary_mode() {
+        assert_eq!(
+            parse_args(["--format=json".into(), "--describe-release-boundary".into()]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeReleaseBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_release_boundary() {
+        let error = parse_args([
+            "--describe-release-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_generation_closeout_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-generation-closeout".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeGenerationCloseout,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_generation_closeout() {
+        let error = parse_args([
+            "--describe-generation-closeout".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn only_payload_is_currently_supported_as_debug_section() {
         assert!(ExportDebugOptions { payload: true }.supports(HostSummaryDebugSection::Payload));
         assert_eq!(HostSummaryDebugSection::Payload.label(), "payload");
@@ -1018,6 +1718,98 @@ mod tests {
     }
 
     #[test]
+    fn conformance_matrix_text_reports_runnable_consumer_boundary() {
+        let rendered = render_conformance_matrix_text();
+        assert!(rendered.contains("consumer_conformance_matrix:"));
+        assert!(rendered.contains("runtime-public-contract-boundary"));
+        assert!(rendered.contains("supervisor-export-discovery-consumer"));
+        assert!(rendered.contains("runtime-supervisor-report-demo"));
+        assert!(rendered.contains("supervisor-export-schema-description"));
+        assert!(rendered.contains("cargo test -p signal-runtime public_runtime_contract_boundary_is_consumable_from_reexports"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
+        ));
+    }
+
+    #[test]
+    fn conformance_matrix_json_reports_runnable_consumer_boundary() {
+        let rendered = render_conformance_matrix_json();
+        assert!(rendered.contains("\"matrix\":\"signal.consumer.conformance\""));
+        assert!(rendered.contains("\"entry_count\":4"));
+        assert!(rendered.contains("\"id\":\"runtime-public-contract-boundary\""));
+        assert!(rendered.contains("\"kind\":\"export-consumer-test\""));
+        assert!(rendered.contains("\"crate\":\"signal-supervisor-tools\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo run -p signal-runtime --example supervisor_report_demo\""
+        ));
+    }
+
+    #[test]
+    fn release_boundary_text_reports_packaging_baseline() {
+        let rendered = render_release_boundary_text();
+        assert!(rendered.contains("release_boundary: signal.release.boundary"));
+        assert!(rendered.contains("release_version: 0.1.0"));
+        assert!(rendered.contains("version_source: workspace.package.version"));
+        assert!(rendered.contains("changelog_path: CHANGELOG.md"));
+        assert!(rendered.contains("conformance_task: effigy acceptance:conformance --repo ."));
+        assert!(rendered
+            .contains("cargo run -p signal-supervisor-tools -- --describe-export --format=json"));
+        assert!(rendered
+            .contains("artifact packaging beyond changelog plus host-free boundary descriptions"));
+    }
+
+    #[test]
+    fn release_boundary_json_reports_packaging_baseline() {
+        let rendered = render_release_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.release.boundary\""));
+        assert!(rendered.contains("\"release_version\":\"0.1.0\""));
+        assert!(rendered.contains("\"version_source\":\"workspace.package.version\""));
+        assert!(rendered.contains("\"changelog_path\":\"CHANGELOG.md\""));
+        assert!(
+            rendered.contains("\"conformance_task\":\"effigy acceptance:conformance --repo .\"")
+        );
+        assert!(rendered.contains("\"id\":\"workspace-changelog\""));
+        assert!(rendered.contains("\"id\":\"consumer-conformance\""));
+        assert!(rendered.contains("\"id\":\"supervisor-export-description\""));
+    }
+
+    #[test]
+    fn generation_closeout_text_reports_combined_boundary_and_next_queue() {
+        let rendered = render_generation_closeout_text();
+        assert!(rendered.contains("generation_closeout: signal.generation.closeout"));
+        assert!(rendered.contains("generation: g04"));
+        assert!(rendered.contains("closeout_task: effigy acceptance:g04-closeout --repo ."));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json"
+        ));
+        assert!(rendered.contains(
+            "post_g04_queue_path: docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md"
+        ));
+        assert!(rendered.contains(
+            "Promote the post-g04 queue when maintainers want broader backend-neutral consumer breadth"
+        ));
+    }
+
+    #[test]
+    fn generation_closeout_json_reports_combined_boundary_and_next_queue() {
+        let rendered = render_generation_closeout_json();
+        assert!(rendered.contains("\"closeout\":\"signal.generation.closeout\""));
+        assert!(rendered.contains("\"generation\":\"g04\""));
+        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g04-closeout --repo .\""));
+        assert!(rendered.contains(
+            "\"post_g04_queue_path\":\"docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md\""
+        ));
+        assert!(rendered.contains("\"id\":\"release-boundary-baseline\""));
+        assert!(rendered.contains("\"id\":\"generation-closeout-description\""));
+        assert!(rendered.contains(
+            "\"non-CLAP plugin backend breadth remains deferred beyond the current conformance boundary\""
+        ));
+    }
+
+    #[test]
     fn export_json_is_versioned() {
         let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
         let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
@@ -1035,6 +1827,80 @@ mod tests {
         assert!(export.contains("\"schema_version\":1"));
         assert!(export.contains("\"profiling_receipt\":{"));
         assert!(export.contains("\"soak_receipt\":{"));
+    }
+
+    #[test]
+    fn export_json_carries_last_deferred_service_receipt() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("enable safe mode");
+        let purge_receipt = runtime
+            .purge_offline_render_artifacts(RuntimeOfflineRenderPurgeRequest {
+                request_id: "purge:export-proof".into(),
+                artifact_root_path: Some("/tmp/nonexistent-artifacts".into()),
+                report_path: Some("/tmp/nonexistent-report.json".into()),
+            })
+            .expect("safe mode should defer purge export proof");
+        assert!(!purge_receipt.purged_report);
+        assert!(!purge_receipt.purged_artifact_root);
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
+        let profiling = report.profiling_receipt();
+        let soak = report.soak_receipt();
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Default,
+            "{}".into(),
+            &profiling,
+            &soak,
+            &report,
+        );
+
+        assert!(export.contains("\"last_deferred_service\":{"));
+        assert!(export.contains("\"work_class\":\"OfflineRenderPurge\""));
+        assert!(export.contains("\"decision\":\"Defer\""));
+        assert!(export.contains("\"reason\":\"SafeMode\""));
+    }
+
+    #[test]
+    fn export_json_carries_runtime_owned_plugin_discovery_catalog() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
+            formats: vec![PluginFormat::Clap],
+        });
+        runtime.record_plugin_scan_results(scan_handle, vec![sample_discovered_type_record()]);
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "export-consumer-sandbox".into(),
+            plugin_format: PluginFormat::Clap,
+        });
+        runtime.record_plugin_sandbox_lifecycle(
+            "export-consumer-sandbox",
+            PluginSandboxLifecycleStage::SandboxEnsured,
+            None,
+        );
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
+        let profiling = report.profiling_receipt();
+        let soak = report.soak_receipt();
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Default,
+            "{}".into(),
+            &profiling,
+            &soak,
+            &report,
+        );
+
+        assert!(export.contains("\"host_summary\":{}"));
+        assert!(export.contains("\"supervisor_report\":{"));
+        assert!(export.contains("\"plugin_discovery_snapshot\":{"));
+        assert!(export.contains("\"discovered_type_count\":1"));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:clap:export-consumer\""));
+        assert!(export.contains("\"format\":\"Clap\""));
+        assert!(export.contains("\"supports_snapshot\":true"));
+        assert!(export.contains("\"supports_activate\":true"));
     }
 
     #[test]

@@ -88,10 +88,12 @@ it is no longer the primary repo surface.
 Use Effigy as the default command surface inside `signal/`:
 
 ```bash
-effigy tasks --repo .
-effigy health --repo .
-effigy dev --repo .
-effigy validate --repo .
+effigy tasks
+effigy doctor
+effigy health
+effigy dev
+effigy validate
+effigy qa:docs
 ```
 
 Equivalent raw CMake flow:
@@ -111,6 +113,9 @@ Rust workspace bootstrap:
 cargo check --workspace
 cargo run -p signal-host-local
 cargo run -p signal-supervisor-tools -- --describe-export --format=json
+cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json
+cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json
+cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json
 cargo run -p signal-supervisor-tools -- --format=json local soak
 cargo run -p signal-supervisor-tools -- --format=json --include-payload local soak
 ```
@@ -124,7 +129,13 @@ distinguish default exports from payload-augmented debug runs without relying
 on implicit shape assumptions, and it now also declares both supported and
 enabled debug sections so the current payload-only debug policy is explicit in
 the export itself. Use `--describe-export` when tooling needs that frozen
-export policy without booting a host scenario. The shared supervisor report now
+export policy without booting a host scenario. Use
+`--describe-conformance-matrix` when tooling needs the runnable shared boundary
+proof set, and `--describe-release-boundary` when tooling needs the first
+packaging/versioning baseline for that same boundary without booting a host
+scenario. Use `--describe-generation-closeout` when tooling needs the combined
+`g04` closeout record, including residual risk and the explicit post-`g04`
+queue handoff. The shared supervisor report now
 also carries runtime control-path state, including handshake/configure/start
 history and the current running/configured status. Host watchdog recovery now
 also drives runtime `stop(DegradedModeRecovery)` / `start()` cycles, so

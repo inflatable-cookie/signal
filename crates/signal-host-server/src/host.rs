@@ -10,7 +10,8 @@ use signal_plugin::{
 };
 use signal_plugin_clap::{
     classify_sandbox_failure, sandbox_failure_event, BrokeredBlockOutcome, ClapBlockProtocol,
-    ClapSandboxFailureStage, ClapSandboxLifecycleHarness,
+    ClapDiscoveredPluginType, ClapPluginHostAdapter, ClapSandboxFailureStage,
+    ClapSandboxLifecycleHarness,
 };
 use signal_primitives::FrameCount;
 use signal_runtime::{
@@ -22,18 +23,54 @@ use signal_runtime::{
     PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
     RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder,
     RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeObservationApi,
-    RuntimeObservationDiagnostics, RuntimeObservationReport, RuntimeOfflineRenderRequest,
-    RuntimeOfflineRenderResult, RuntimePreworkServicePressure, RuntimeProjectionApi,
-    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureStartRequest,
-    RuntimeSupervisorApi, RuntimeSupervisorReport, RuntimeWarpClipRegistration,
-    RuntimeWatchdogTrigger, SandboxOperationFailureStage, SignalRuntime, StopReason,
-    TransportAttachIntent, WatchdogRestartRecord,
+    RuntimeObservationDiagnostics, RuntimeObservationReport,
+    RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
+    RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
+    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
+    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord, RuntimePreworkServicePressure,
+    RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
+    RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
+    RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
+    SignalRuntime, StopReason, TransportAttachIntent, WatchdogRestartRecord,
 };
 
 const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
 const STEADY_STATE_BLOCKS: u64 = 8;
 const SOAK_RESTART_EPISODES: u32 = 3;
 const INTER_EPISODE_CONTINUITY_BLOCKS: u64 = 2;
+
+fn runtime_plugin_discovered_type_record(
+    discovered: ClapDiscoveredPluginType,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let plugin_type_id = discovered.plugin_type_id.0;
+    let descriptor = discovered.descriptor;
+    let summary = format!(
+        "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
+        plugin_type_id,
+        descriptor.plugin_id,
+        descriptor.format,
+        descriptor.features.len(),
+        discovered.default_io_layout,
+        descriptor.parameters.len(),
+    );
+    RuntimePluginDiscoveredTypeRecord {
+        plugin_type_id,
+        plugin_id: descriptor.plugin_id.clone(),
+        vendor: descriptor.vendor.clone(),
+        name: descriptor.name.clone(),
+        format: descriptor.format,
+        version: descriptor.version.clone(),
+        features: descriptor.features.clone(),
+        default_io_layout: discovered.default_io_layout,
+        audio_bus_count: descriptor.audio_buses.len(),
+        parameter_count: descriptor.parameters.len(),
+        state_contract: descriptor.state_contract,
+        processing_contract: descriptor.processing_contract,
+        lifecycle_contract: descriptor.lifecycle_contract,
+        summary,
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 struct ServerSupervisorState {
     scans_started: u64,
@@ -152,6 +189,24 @@ impl ServerRuntimeHost {
             supervisor: ServerSupervisorState::default(),
             events,
         }
+    }
+
+    fn discovered_plugins_for_scan(
+        &self,
+        request: &PluginScanRequest,
+    ) -> Vec<RuntimePluginDiscoveredTypeRecord> {
+        let include_clap =
+            request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap);
+        if !include_clap {
+            return Vec::new();
+        }
+
+        let clap = ClapPluginHostAdapter::default();
+        ["plugin:clap:server", "plugin:clap:sandbox"]
+            .into_iter()
+            .filter_map(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+            .map(runtime_plugin_discovered_type_record)
+            .collect()
     }
 
     pub fn boot_default(&mut self) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -284,6 +339,7 @@ impl ServerRuntimeHost {
 
         self.start_plugin_scan(PluginScanRequest {
             roots: vec!["/srv/plugins/clap".into()],
+            formats: vec![PluginFormat::Clap],
         })?;
 
         for sandbox in &assembly.plugin_sandboxes {
@@ -2603,7 +2659,7 @@ fn server_demo_graph_projection() -> GraphProjection {
 #[derive(Clone, Debug)]
 struct ServerDemoPluginSandboxAssembly {
     request: PluginSandboxRequest,
-    plugin_format: &'static str,
+    plugin_format: PluginFormat,
     bound_node_ids: Vec<&'static str>,
 }
 
@@ -2662,7 +2718,7 @@ fn server_demo_runtime_assembly() -> ServerDemoRuntimeAssembly {
                 PluginFormat::Clap,
                 SandboxPolicy::Strict,
             ),
-            plugin_format: "clap",
+            plugin_format: PluginFormat::Clap,
             bound_node_ids: vec!["drive"],
         }],
     }
@@ -2950,9 +3006,13 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         &mut self,
         request: PluginScanRequest,
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
-        self.supervisor.scans_started = self.supervisor.scans_started.saturating_add(1);
+        let handle = self.runtime.record_plugin_scan_request(&request);
+        let discovered_types = self.discovered_plugins_for_scan(&request);
+        self.runtime
+            .record_plugin_scan_results(handle, discovered_types);
+        self.supervisor.scans_started = handle.0;
         self.supervisor.last_scan_roots = request.roots;
-        Ok(signal_runtime::ScanHandle(self.supervisor.scans_started))
+        Ok(handle)
     }
 
     fn ensure_plugin_sandbox(
@@ -2960,6 +3020,7 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         request: PluginSandboxSpec,
     ) -> Result<signal_runtime::SandboxHandle, RuntimeError> {
         self.supervisor.sandboxes = self.supervisor.sandboxes.saturating_add(1);
+        self.runtime.record_plugin_sandbox_spec(&request);
         self.runtime.record_plugin_sandbox_lifecycle(
             request.sandbox_id.as_str(),
             PluginSandboxLifecycleStage::SandboxEnsured,
@@ -3014,6 +3075,71 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         self.runtime.render_offline(request)
     }
 
+    fn render_offline_with_checkpoints(
+        &self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionReceipt, RuntimeError> {
+        self.runtime.render_offline_with_checkpoints(request)
+    }
+
+    fn begin_offline_render_execution(
+        &mut self,
+        request: RuntimeOfflineRenderRequest,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.begin_offline_render_execution(request)
+    }
+
+    fn pause_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.pause_offline_render_execution(request_id)
+    }
+
+    fn resume_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.resume_offline_render_execution(request_id)
+    }
+
+    fn interrupt_offline_render_execution(
+        &mut self,
+        request_id: &str,
+        reason: String,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime
+            .interrupt_offline_render_execution(request_id, reason)
+    }
+
+    fn advance_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
+        self.runtime.advance_offline_render_execution(request_id)
+    }
+
+    fn cancel_offline_render_execution(
+        &mut self,
+        request_id: &str,
+    ) -> Result<RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeError> {
+        self.runtime.cancel_offline_render_execution(request_id)
+    }
+
+    fn render_offline_queue(
+        &self,
+        requests: Vec<RuntimeOfflineRenderRequest>,
+    ) -> Result<RuntimeOfflineRenderQueueResult, RuntimeError> {
+        self.runtime.render_offline_queue(requests)
+    }
+
+    fn purge_offline_render_artifacts(
+        &self,
+        request: RuntimeOfflineRenderPurgeRequest,
+    ) -> Result<RuntimeOfflineRenderPurgeReceipt, RuntimeError> {
+        self.runtime.purge_offline_render_artifacts(request)
+    }
+
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError> {
         self.supervisor.teardowns = self.supervisor.teardowns.saturating_add(1);
         self.supervisor.last_sandbox_id = Some(sandbox_id.to_string());
@@ -3045,7 +3171,7 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
 #[cfg(test)]
 mod tests {
     use super::{server_demo_runtime_assembly, LifecycleRunSummary, ServerRuntimeHost};
-    use signal_plugin::{CompletionState, WatchdogTriggerReason};
+    use signal_plugin::{CompletionState, PluginFormat, WatchdogTriggerReason};
     use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
     use signal_runtime::{
         BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
@@ -3164,6 +3290,7 @@ mod tests {
             .set_backend_policy_tier(hardware_request.backend_policy);
         host.start_plugin_scan(PluginScanRequest {
             roots: vec!["/srv/plugins/clap".into()],
+            formats: vec![PluginFormat::Clap],
         })
         .expect("plugin scan");
         for sandbox in &assembly.plugin_sandboxes {
@@ -3242,6 +3369,7 @@ mod tests {
             .set_backend_policy_tier(hardware_request.backend_policy);
         host.start_plugin_scan(PluginScanRequest {
             roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
+            formats: vec![PluginFormat::Clap],
         })
         .expect("plugin scan");
         for sandbox in &assembly.plugin_sandboxes {

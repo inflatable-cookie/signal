@@ -24,12 +24,14 @@ Use this section for:
 
 ## Current posture
 
-The most recently completed Signal generation is now `g03`. `g01` established
-the Rust workspace, engine, host/device path, and plugin/runtime baseline;
-`g02` completed the first reusable DSP and deep-analysis expansion on top of
-that foundation; `g03` completed the next engine-oriented runtime depth queue.
+No Signal generation is currently open. `g01` established the Rust
+workspace, engine, host/device path, and plugin/runtime baseline; `g02`
+completed the first reusable DSP and deep-analysis expansion on top of that
+foundation; `g03` completed the next engine-oriented runtime depth queue; and
+`g04` completed the reusable contract, scheduling, portability, conformance,
+and release-baseline queue.
 
-The most recently completed continuation runway was:
+The previously completed continuation runway was:
 
 - shared streaming spectral and resampling substrate
 - rhythm structure and tempo continuity depth
@@ -38,7 +40,7 @@ The most recently completed continuation runway was:
 - transient/timbral descriptor packs
 - embedding and benchmark hardening
 
-The newly completed continuation runway is:
+The newly completed continuation runway was:
 
 - routed mixer graph, buses, and topology depth
 - runtime metering, loudness, and diagnostics export
@@ -48,6 +50,15 @@ The newly completed continuation runway is:
 - offline render, freeze, and stem export pipeline
 - profiling, soak harnesses, and runtime hardening
 
+The latest completed continuation runway was:
+
+- crate/public-contract maturity and schema-freeze baseline
+- multicore scheduling and anticipative execution depth
+- runtime work orchestration and deferred-service policy
+- hardware backend portability and clock-domain boundary depth
+- plugin backend breadth and host-neutral delegation contracts
+- consumer conformance, export stability, and release packaging
+
 ## Working Rule
 
 - keep one active queue
@@ -56,6 +67,7 @@ The newly completed continuation runway is:
 
 ## Next Task
 
-COMPLETE. `g03` is closed after the routed engine, offline render, and
-hardening runway landed. Open the next generation when maintainers want the
-next continuation queue.
+COMPLETE. `g04` closed on 2026-03-12. The next likely queue is recorded in
+`docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md` and
+should only be promoted when maintainers want to open the post-`g04`
+generation.

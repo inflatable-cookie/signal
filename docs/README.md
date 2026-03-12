@@ -29,6 +29,11 @@ so they are intentionally absent.
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Research index: [research/master-index.md](./research/master-index.md)
 
+## Validation
+
+- `effigy qa:docs`
+- `effigy qa:northstar`
+
 ## Working Rule
 
 - treat Signal docs as the canonical authority for reusable library/runtime
