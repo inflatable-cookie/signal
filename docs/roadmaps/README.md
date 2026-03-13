@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-12
+Updated: 2026-03-13
 
 ## Why this section matters now
 
@@ -24,12 +24,19 @@ Use this section for:
 
 ## Current posture
 
-No Signal generation is currently open. `g01` established the Rust
-workspace, engine, host/device path, and plugin/runtime baseline; `g02`
-completed the first reusable DSP and deep-analysis expansion on top of that
-foundation; `g03` completed the next engine-oriented runtime depth queue; and
-`g04` completed the reusable contract, scheduling, portability, conformance,
-and release-baseline queue.
+`g06` is now active and `g07` is now seeded as the next planned generation.
+`g01` established the Rust workspace, engine, host/device
+path, and plugin/runtime baseline; `g02` completed the first reusable DSP and
+deep-analysis expansion on top of that foundation; `g03` completed the next
+engine-oriented runtime depth queue; `g04` completed the reusable contract,
+scheduling, portability, conformance, and release-baseline queue; `g05`
+completed the widened backend, host-edge, publication-packaging,
+downstream-automation, and generation-closeout queue; and `g06` now opens the
+next deeper Signal-owned runway around runtime recovery, instrumentation,
+plugin-format breadth, MIDI/event expansion, hardware and external-I/O depth,
+media-service depth, and shared acceptance evidence that will tangibly move
+Loophole forward. `g07` is already laid out behind it for the next major
+feature-expansion queue.
 
 The previously completed continuation runway was:
 
@@ -59,6 +66,30 @@ The latest completed continuation runway was:
 - plugin backend breadth and host-neutral delegation contracts
 - consumer conformance, export stability, and release packaging
 
+The latest completed continuation runway was:
+
+- backend-neutral plugin capability and adapter breadth baseline
+- shared host convenience API and consumer-edge contracts
+- publication-grade packaging manifests and release automation receipts
+- downstream conformance soak and release-acceptance automation
+- generation closeout and promotion gate
+
+The newly active continuation runway is:
+
+- runtime interruption, resumability, and recovery truth
+- profiling, causal diagnostics, and deferred-work orchestration
+- VST3 and AU adapter breadth plus richer generic MIDI/event semantics
+- hardware supervision, external I/O, monitoring, and loopback depth
+- media indexing, waveform analysis, preview, and metadata services
+- fault injection, long-session soak, and Loophole-facing runtime readiness
+
+The next planned continuation runway after `g06` is:
+
+- spatial, multichannel, sidechain, and complex plugin-I/O depth
+- LV2 plus deeper Linux plugin and hardware backend breadth
+- external MIDI, control-surface, and advanced hardware device substrate
+- fuller sample-domain time-stretch and transform-service depth
+
 ## Working Rule
 
 - keep one active queue
@@ -67,7 +98,7 @@ The latest completed continuation runway was:
 
 ## Next Task
 
-COMPLETE. `g04` closed on 2026-03-12. The next likely queue is recorded in
-`docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md` and
-should only be promoted when maintainers want to open the post-`g04`
-generation.
+Continue `g06.001` with Batch 1.2 by applying the runtime interruption and
+resumability contract to active runtime-owned snapshots and receipts, then walk
+forward through the profiling, plugin-breadth, hardware, media-service, and
+acceptance lanes without reopening host-local ownership.

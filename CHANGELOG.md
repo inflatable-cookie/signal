@@ -23,6 +23,8 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-03-12 22:51:28 UTC) [dev] Widened runtime-owned plugin discovery receipts with format-coverage and backend-neutral capability aggregates for the opening `g05` backend-breadth tranche.
+(2026-03-12 22:51:28 UTC) [docs] Documented the widened `g05.001` plugin discovery receipt boundary and moved the roadmap queue to conformance proof.
 (2026-03-12 22:07:21 UTC) [dev] Added a combined `g04` closeout description mode and repo-owned acceptance task for conformance, release baseline, and post-generation queue handoff.
 (2026-03-12 22:07:21 UTC) [docs] Closed `g04` and recorded the explicit post-`g04` consumer/release/backend breadth backlog candidate.
 (2026-03-12 21:54:52 UTC) [dev] Added a host-free release-boundary description mode and repo-owned acceptance task for Signal's first packaging baseline.

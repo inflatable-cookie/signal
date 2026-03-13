@@ -68,6 +68,5 @@ This generation stays inside Signal-owned reusable boundaries:
 ## Next Task
 
 COMPLETE. `g04` closed on 2026-03-12 after `g04.006` finished the combined
-consumer-conformance, release-boundary, and closeout proof. The next likely
-queue is recorded in
-`docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md`.
+consumer-conformance, release-boundary, and closeout proof. Continue with
+`g05.001` now that the next Signal generation is open.

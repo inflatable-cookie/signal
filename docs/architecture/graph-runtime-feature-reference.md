@@ -595,6 +595,10 @@ Implemented now:
 - focused scheduler stress proofs for mixed graph churn, invalidation-heavy
   transition bursts, and constrained anticipative windows
 - runtime-owned transport concurrency and lingering-cleanup workflow surfaces
+- runtime-owned plugin discovery coverage receipts:
+  - per-format discovery breadth through `RuntimePluginFormatCoverageRecord`
+  - aggregate backend-neutral capability breadth through
+    `RuntimePluginCapabilityCoverageSummary`
 - contract-frozen scheduler inspection hierarchy:
   - `RuntimeEngineBlockSnapshot` as per-block execution truth
   - `RuntimeSchedulerSnapshot` as lifecycle/control-state truth
@@ -603,6 +607,15 @@ Implemented now:
   - `RuntimeExecutionTopologySummary` and `RuntimeSchedulerTopologySummary` as
     the explanatory topology context for those choices rather than a
     host-recomputed scheduler model
+- contract-frozen shared host-edge tiers:
+  - `LocalRuntimeHost::new`, `ServerRuntimeHost::new`, `RuntimeSupervisorApi`,
+    and `supervisor_report()` as the first stable shared host edge
+  - host-specific report enrichments, summary structs, scenario boot helpers,
+    and local delegated executor helpers remain explicitly unstable until later
+    `g05.002` tranches promote them
+  - `signal-supervisor-tools --describe-host-edge-boundary` and
+    `effigy acceptance:host-edge-consumer --repo .` as the machine-readable
+    inspection and consumer-proof surface for that stable/unstable split
 
 Planned elsewhere but not implemented in these crates yet:
 
@@ -626,15 +639,36 @@ Useful implementation entry points after this doc:
 - `crates/signal-runtime/src/runtime.rs`
 - `crates/signal-runtime/tests/public_contract_boundary.rs`
 - `crates/signal-host-local/src/host.rs`
+- `crates/signal-host-server/src/host.rs`
+- `crates/signal-host-local/tests/public_host_edge_boundary.rs`
+- `crates/signal-host-server/tests/public_host_edge_boundary.rs`
 - `crates/signal-supervisor-tools/src/main.rs`
+- `crates/signal-supervisor-tools/tests/public_packaging_manifest_boundary.rs`
 - `crates/signal-runtime/examples/supervisor_report_demo.rs`
+- `cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json`
+- `cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json`
+- `cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json`
+- `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
+- `effigy acceptance:host-edge-consumer --repo .`
+- `effigy acceptance:plugin-backend-breadth --repo .`
 - `effigy acceptance:conformance --repo .`
 - `effigy acceptance:release-boundary --repo .`
-- `effigy acceptance:g04-closeout --repo .`
+- `effigy acceptance:packaging-manifest --repo .`
+- `effigy acceptance:release-packaging-consumer --repo .`
+- `effigy acceptance:downstream-release --repo .`
+- `effigy acceptance:downstream-depth --repo .`
+- `effigy acceptance:downstream-automation --repo .`
+- `effigy acceptance:downstream-gate --repo .`
+- `effigy acceptance:analysis --repo .`
+- `cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json`
+- `effigy acceptance:g05-closeout --repo .`
+- `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`
+- `docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md`
+- `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`
 
 ## Next Task
 
-COMPLETE. The `g04` runtime/export/plugin conformance and release-baseline
-closeout proof is finished. Promote
-`docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md` only
-when maintainers choose to open the next generation.
+Continue `g06.001` with Batch 1.2 by applying the interruption and
+resumability contract to active runtime-owned snapshots, receipts, and shared
+host-edge surfaces before deeper recovery, profiling, plugin, hardware, and
+media-service milestones widen the implementation.

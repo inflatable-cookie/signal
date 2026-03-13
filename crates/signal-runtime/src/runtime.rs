@@ -18,7 +18,7 @@ use signal_graph::{
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
     AutomationContinuityReport, BlockSequenceContinuityReport, CompletionState,
-    ParameterAutomationSummary, PluginFormat,
+    ParameterAutomationSummary, PluginFeature, PluginFormat,
 };
 use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 use symphonia::core::{
@@ -64,14 +64,16 @@ use crate::interfaces::{
     RuntimeOfflineRenderPurgeReceipt, RuntimeOfflineRenderPurgeRequest,
     RuntimeOfflineRenderQueueProgressReceipt, RuntimeOfflineRenderQueueResult,
     RuntimeOfflineRenderReportReceipt, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
-    RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult, RuntimePluginChainSnapshot,
+    RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult,
+    RuntimePluginCapabilityCoverageSummary, RuntimePluginChainSnapshot,
     RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginDiscoverySnapshot, RuntimePluginDispatchState,
-    RuntimePluginExecutionChainSummary, RuntimePluginLifecycleSnapshot,
-    RuntimePluginLifecycleState, RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload,
-    RuntimePluginRecallSnapshot, RuntimePluginRecallState, RuntimePluginSandboxSnapshot,
-    RuntimePluginScanReceipt, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
-    RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+    RuntimePluginExecutionChainSummary, RuntimePluginFormatCoverageRecord,
+    RuntimePluginLifecycleSnapshot, RuntimePluginLifecycleState,
+    RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload, RuntimePluginRecallSnapshot,
+    RuntimePluginRecallState, RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt,
+    RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
+    RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
     RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
     RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
@@ -201,12 +203,14 @@ pub struct SignalRuntime {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RuntimeSupervisionPolicy {
     safe_mode_restart_threshold: u32,
+    safe_mode_xrun_threshold: u64,
 }
 
 impl Default for RuntimeSupervisionPolicy {
     fn default() -> Self {
         Self {
             safe_mode_restart_threshold: 2,
+            safe_mode_xrun_threshold: 3,
         }
     }
 }
@@ -215,6 +219,7 @@ impl Default for RuntimeSupervisionPolicy {
 struct RuntimeSupervisionState {
     policy: RuntimeSupervisionPolicy,
     watchdog_restart_count: u32,
+    xrun_overload_active: bool,
     last_watchdog_trigger: Option<RuntimeWatchdogTrigger>,
     last_sandbox_id: Option<String>,
     last_processing_epoch: Option<u64>,
@@ -225,6 +230,7 @@ impl RuntimeSupervisionState {
         RuntimeSupervisionSnapshot {
             watchdog_restart_count: self.watchdog_restart_count,
             safe_mode_enabled,
+            xrun_overload_active: self.xrun_overload_active,
             last_watchdog_trigger: self.last_watchdog_trigger,
             last_sandbox_id: self.last_sandbox_id.clone(),
             last_processing_epoch: self.last_processing_epoch,
@@ -238,6 +244,20 @@ impl RuntimeSupervisionState {
         self.last_processing_epoch = Some(record.processing_epoch);
         self.watchdog_restart_count >= self.policy.safe_mode_restart_threshold
     }
+
+    fn record_xrun_overload(&mut self, processing_epoch: Option<u64>, xruns: u64) -> bool {
+        if let Some(processing_epoch) = processing_epoch {
+            self.last_processing_epoch = Some(processing_epoch);
+        }
+        if xruns >= self.policy.safe_mode_xrun_threshold {
+            self.xrun_overload_active = true;
+        }
+        self.xrun_overload_active
+    }
+
+    fn clear_xrun_overload_recovery(&mut self) {
+        self.xrun_overload_active = false;
+    }
 }
 
 impl Default for RuntimeSupervisionState {
@@ -245,6 +265,7 @@ impl Default for RuntimeSupervisionState {
         Self {
             policy: RuntimeSupervisionPolicy::default(),
             watchdog_restart_count: 0,
+            xrun_overload_active: false,
             last_watchdog_trigger: None,
             last_sandbox_id: None,
             last_processing_epoch: None,
@@ -275,8 +296,14 @@ impl RuntimePluginDiscoveryStateModel {
             formats: request.formats.clone(),
             targeted_format_count: request.formats.len(),
             discovered_type_count: 0,
+            discovered_format_count: 0,
+            format_coverage: Vec::new(),
+            capability_coverage: RuntimePluginCapabilityCoverageSummary {
+                summary: "formats=0 multi_format=false types=0".into(),
+                ..RuntimePluginCapabilityCoverageSummary::default()
+            },
             summary: format!(
-                "scan={} roots={} formats={:?} discovered_types=0",
+                "scan={} roots={} formats={:?} discovered_types=0 discovered_formats=0",
                 scan_handle.0,
                 request.roots.len(),
                 request.formats,
@@ -290,15 +317,21 @@ impl RuntimePluginDiscoveryStateModel {
         scan_handle: ScanHandle,
         discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
     ) {
+        let format_coverage = runtime_plugin_format_coverage(&discovered_types);
+        let capability_coverage = runtime_plugin_capability_coverage(&discovered_types);
         if let Some(last_scan) = self.last_scan.as_mut() {
             if last_scan.scan_handle == scan_handle {
                 last_scan.discovered_type_count = discovered_types.len();
+                last_scan.discovered_format_count = format_coverage.len();
+                last_scan.format_coverage = format_coverage;
+                last_scan.capability_coverage = capability_coverage;
                 last_scan.summary = format!(
-                    "scan={} roots={} formats={:?} discovered_types={}",
+                    "scan={} roots={} formats={:?} discovered_types={} discovered_formats={}",
                     last_scan.scan_handle.0,
                     last_scan.roots.len(),
                     last_scan.formats,
                     last_scan.discovered_type_count,
+                    last_scan.discovered_format_count,
                 );
                 self.discovered_types = discovered_types;
             }
@@ -306,23 +339,254 @@ impl RuntimePluginDiscoveryStateModel {
     }
 
     fn snapshot(&self) -> RuntimePluginDiscoverySnapshot {
+        let format_coverage = runtime_plugin_format_coverage(&self.discovered_types);
+        let capability_coverage = runtime_plugin_capability_coverage(&self.discovered_types);
         RuntimePluginDiscoverySnapshot {
             scan_count: self.scan_count,
             format_filtered_scan_count: self.format_filtered_scan_count,
             discovered_type_count: self.discovered_types.len(),
+            discovered_format_count: format_coverage.len(),
             last_scan: self.last_scan.clone(),
+            format_coverage,
+            capability_coverage,
             discovered_types: self.discovered_types.clone(),
             summary: format!(
-                "scans={} filtered_scans={} discovered_types={} last_scan={}",
+                "scans={} filtered_scans={} discovered_types={} discovered_formats={} last_scan={} capability={}",
                 self.scan_count,
                 self.format_filtered_scan_count,
                 self.discovered_types.len(),
+                {
+                    let mut formats = self
+                        .discovered_types
+                        .iter()
+                        .map(|record| record.format)
+                        .collect::<Vec<_>>();
+                    formats.sort_by_key(|format| plugin_format_sort_key(*format));
+                    formats.dedup();
+                    formats.len()
+                },
                 self.last_scan
                     .as_ref()
                     .map(|scan| scan.summary.as_str())
                     .unwrap_or("none"),
+                runtime_plugin_capability_coverage(&self.discovered_types).summary,
             ),
         }
+    }
+}
+
+fn plugin_format_sort_key(format: PluginFormat) -> u8 {
+    match format {
+        PluginFormat::Clap => 0,
+        PluginFormat::Vst3 => 1,
+        PluginFormat::Au => 2,
+        PluginFormat::Native => 3,
+    }
+}
+
+fn runtime_plugin_format_coverage(
+    discovered_types: &[RuntimePluginDiscoveredTypeRecord],
+) -> Vec<RuntimePluginFormatCoverageRecord> {
+    let mut grouped = BTreeMap::new();
+    for record in discovered_types {
+        grouped
+            .entry(plugin_format_sort_key(record.format))
+            .or_insert_with(Vec::new)
+            .push(record);
+    }
+    grouped
+        .into_values()
+        .map(|records| {
+            let format = records[0].format;
+            let feature_count = |feature: PluginFeature| -> usize {
+                records
+                    .iter()
+                    .filter(|record| record.features.contains(&feature))
+                    .count()
+            };
+            let supports_snapshot_count = records
+                .iter()
+                .filter(|record| record.state_contract.supports_snapshot)
+                .count();
+            let supports_prepare_count = records
+                .iter()
+                .filter(|record| record.lifecycle_contract.supports_prepare)
+                .count();
+            let supports_activate_count = records
+                .iter()
+                .filter(|record| record.lifecycle_contract.supports_activate)
+                .count();
+            let accepts_midi_count = records
+                .iter()
+                .filter(|record| record.processing_contract.accepts_midi)
+                .count();
+            let produces_midi_count = records
+                .iter()
+                .filter(|record| record.processing_contract.produces_midi)
+                .count();
+            let max_audio_bus_count = records
+                .iter()
+                .map(|record| record.audio_bus_count)
+                .max()
+                .unwrap_or(0);
+            let max_parameter_count = records
+                .iter()
+                .map(|record| record.parameter_count)
+                .max()
+                .unwrap_or(0);
+            RuntimePluginFormatCoverageRecord {
+                format,
+                discovered_type_count: records.len(),
+                instrument_count: feature_count(PluginFeature::Instrument),
+                audio_effect_count: feature_count(PluginFeature::AudioEffect),
+                analyzer_count: feature_count(PluginFeature::Analyzer),
+                utility_count: feature_count(PluginFeature::Utility),
+                note_effect_count: feature_count(PluginFeature::NoteEffect),
+                supports_snapshot_count,
+                supports_prepare_count,
+                supports_activate_count,
+                accepts_midi_count,
+                produces_midi_count,
+                max_audio_bus_count,
+                max_parameter_count,
+                summary: format!(
+                    "format={format:?} types={} features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} midi_out={} max_audio_buses={} max_parameters={}",
+                    records.len(),
+                    feature_count(PluginFeature::AudioEffect),
+                    feature_count(PluginFeature::Instrument),
+                    feature_count(PluginFeature::Analyzer),
+                    feature_count(PluginFeature::Utility),
+                    feature_count(PluginFeature::NoteEffect),
+                    supports_snapshot_count,
+                    supports_prepare_count,
+                    supports_activate_count,
+                    accepts_midi_count,
+                    produces_midi_count,
+                    max_audio_bus_count,
+                    max_parameter_count,
+                ),
+            }
+        })
+        .collect()
+}
+
+fn runtime_plugin_capability_coverage(
+    discovered_types: &[RuntimePluginDiscoveredTypeRecord],
+) -> RuntimePluginCapabilityCoverageSummary {
+    let mut discovered_formats = discovered_types
+        .iter()
+        .map(|record| record.format)
+        .collect::<Vec<_>>();
+    discovered_formats.sort_by_key(|format| plugin_format_sort_key(*format));
+    discovered_formats.dedup();
+    let discovered_format_count = discovered_formats.len();
+    let feature_count = |feature: PluginFeature| -> usize {
+        discovered_types
+            .iter()
+            .filter(|record| record.features.contains(&feature))
+            .count()
+    };
+    RuntimePluginCapabilityCoverageSummary {
+        discovered_format_count,
+        multi_format_catalog: discovered_format_count > 1,
+        instrument_count: feature_count(PluginFeature::Instrument),
+        audio_effect_count: feature_count(PluginFeature::AudioEffect),
+        analyzer_count: feature_count(PluginFeature::Analyzer),
+        utility_count: feature_count(PluginFeature::Utility),
+        note_effect_count: feature_count(PluginFeature::NoteEffect),
+        supports_snapshot_count: discovered_types
+            .iter()
+            .filter(|record| record.state_contract.supports_snapshot)
+            .count(),
+        supports_reset_count: discovered_types
+            .iter()
+            .filter(|record| record.state_contract.supports_reset)
+            .count(),
+        supports_bypass_count: discovered_types
+            .iter()
+            .filter(|record| record.state_contract.supports_bypass)
+            .count(),
+        exposes_latency_count: discovered_types
+            .iter()
+            .filter(|record| record.state_contract.exposes_latency)
+            .count(),
+        exposes_tail_count: discovered_types
+            .iter()
+            .filter(|record| record.state_contract.exposes_tail)
+            .count(),
+        sample_accurate_automation_count: discovered_types
+            .iter()
+            .filter(|record| record.processing_contract.sample_accurate_automation)
+            .count(),
+        accepts_midi_count: discovered_types
+            .iter()
+            .filter(|record| record.processing_contract.accepts_midi)
+            .count(),
+        accepts_note_events_count: discovered_types
+            .iter()
+            .filter(|record| record.processing_contract.accepts_note_events)
+            .count(),
+        produces_midi_count: discovered_types
+            .iter()
+            .filter(|record| record.processing_contract.produces_midi)
+            .count(),
+        silence_aware_count: discovered_types
+            .iter()
+            .filter(|record| record.processing_contract.silence_aware)
+            .count(),
+        requires_main_thread_for_state_count: discovered_types
+            .iter()
+            .filter(|record| record.lifecycle_contract.requires_main_thread_for_state)
+            .count(),
+        supports_prepare_count: discovered_types
+            .iter()
+            .filter(|record| record.lifecycle_contract.supports_prepare)
+            .count(),
+        supports_activate_count: discovered_types
+            .iter()
+            .filter(|record| record.lifecycle_contract.supports_activate)
+            .count(),
+        supports_reset_while_active_count: discovered_types
+            .iter()
+            .filter(|record| record.lifecycle_contract.supports_reset_while_active)
+            .count(),
+        max_audio_bus_count: discovered_types
+            .iter()
+            .map(|record| record.audio_bus_count)
+            .max()
+            .unwrap_or(0),
+        max_parameter_count: discovered_types
+            .iter()
+            .map(|record| record.parameter_count)
+            .max()
+            .unwrap_or(0),
+        summary: format!(
+            "formats={} multi_format={} types={} features={}/{}/{}/{}/{} snapshot={} reset={} bypass={} latency={} tail={} sample_accurate={} midi_in={} note_in={} midi_out={} silence_aware={} main_thread_state={} prepare={} activate={} reset_while_active={} max_audio_buses={} max_parameters={}",
+            discovered_format_count,
+            discovered_format_count > 1,
+            discovered_types.len(),
+            feature_count(PluginFeature::AudioEffect),
+            feature_count(PluginFeature::Instrument),
+            feature_count(PluginFeature::Analyzer),
+            feature_count(PluginFeature::Utility),
+            feature_count(PluginFeature::NoteEffect),
+            discovered_types.iter().filter(|record| record.state_contract.supports_snapshot).count(),
+            discovered_types.iter().filter(|record| record.state_contract.supports_reset).count(),
+            discovered_types.iter().filter(|record| record.state_contract.supports_bypass).count(),
+            discovered_types.iter().filter(|record| record.state_contract.exposes_latency).count(),
+            discovered_types.iter().filter(|record| record.state_contract.exposes_tail).count(),
+            discovered_types.iter().filter(|record| record.processing_contract.sample_accurate_automation).count(),
+            discovered_types.iter().filter(|record| record.processing_contract.accepts_midi).count(),
+            discovered_types.iter().filter(|record| record.processing_contract.accepts_note_events).count(),
+            discovered_types.iter().filter(|record| record.processing_contract.produces_midi).count(),
+            discovered_types.iter().filter(|record| record.processing_contract.silence_aware).count(),
+            discovered_types.iter().filter(|record| record.lifecycle_contract.requires_main_thread_for_state).count(),
+            discovered_types.iter().filter(|record| record.lifecycle_contract.supports_prepare).count(),
+            discovered_types.iter().filter(|record| record.lifecycle_contract.supports_activate).count(),
+            discovered_types.iter().filter(|record| record.lifecycle_contract.supports_reset_while_active).count(),
+            discovered_types.iter().map(|record| record.audio_bus_count).max().unwrap_or(0),
+            discovered_types.iter().map(|record| record.parameter_count).max().unwrap_or(0),
+        ),
     }
 }
 
@@ -2353,6 +2617,42 @@ struct RuntimeLingeringCleanupWorkItem {
 }
 
 impl RuntimeTransportConcurrencyState {
+    fn set_policy(
+        &mut self,
+        steady_session_limit: usize,
+        recovery_session_limit: usize,
+    ) -> Result<RuntimeTransportConcurrencySnapshot, RuntimeError> {
+        if steady_session_limit == 0 {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "steady-state transport session limit must be greater than zero",
+            ));
+        }
+        if recovery_session_limit <= steady_session_limit {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "recovery transport session limit must exceed steady-state limit",
+            ));
+        }
+        if self.steady_session_count() > steady_session_limit {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "active steady-state transport sessions exceed the requested limit",
+            ));
+        }
+        if self.active_sessions.len() > recovery_session_limit {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "active transport sessions exceed the requested recovery limit",
+            ));
+        }
+        self.policy = RuntimeTransportConcurrencyPolicy {
+            steady_session_limit,
+            recovery_session_limit,
+        };
+        Ok(self.snapshot())
+    }
+
     fn pending_work_item_count(&self) -> usize {
         self.pending_cleanup_work.len()
     }
@@ -7637,6 +7937,39 @@ impl SignalRuntime {
         self.diagnostics.xruns = self.diagnostics.xruns.saturating_add(1);
     }
 
+    pub fn record_xrun_overload(
+        &mut self,
+        processing_epoch: Option<u64>,
+    ) -> RuntimeSupervisionSnapshot {
+        self.increment_xruns();
+        if self
+            .supervision
+            .record_xrun_overload(processing_epoch, self.diagnostics.xruns)
+        {
+            self.safe_mode_enabled = true;
+        }
+        self.refresh_runtime_state();
+        self.emit(RuntimeEvent::ReadinessChanged(self.readiness.clone()));
+        self.emit(RuntimeEvent::EffectiveConfigChanged(
+            self.get_effective_config(),
+        ));
+        self.emit(RuntimeEvent::SupervisionChanged(
+            self.get_supervision_snapshot(),
+        ));
+        self.get_supervision_snapshot()
+    }
+
+    pub fn fail_runtime(&mut self, error: RuntimeError) -> RuntimeReadiness {
+        self.safe_mode_enabled = true;
+        self.control.running = false;
+        self.readiness = RuntimeReadiness::Failed { fatal: error };
+        self.emit(RuntimeEvent::ReadinessChanged(self.readiness.clone()));
+        self.emit(RuntimeEvent::EffectiveConfigChanged(
+            self.get_effective_config(),
+        ));
+        self.readiness.clone()
+    }
+
     pub fn record_plugin_sandbox_fault(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -10555,6 +10888,18 @@ impl SignalRuntime {
         Ok(snapshot)
     }
 
+    pub fn set_transport_session_limits(
+        &mut self,
+        steady_session_limit: usize,
+        recovery_session_limit: usize,
+    ) -> Result<RuntimeTransportConcurrencySnapshot, RuntimeError> {
+        let snapshot = self
+            .transport_concurrency
+            .set_policy(steady_session_limit, recovery_session_limit)?;
+        self.refresh_prework_service_policy_and_state(None);
+        Ok(snapshot)
+    }
+
     pub fn begin_transport_session_with_metadata(
         &mut self,
         sandbox_id: &str,
@@ -11272,12 +11617,16 @@ impl SignalRuntime {
             RuntimeReadiness::Starting => {}
             RuntimeReadiness::Ready | RuntimeReadiness::Degraded { .. } => {
                 self.readiness = if self.safe_mode_enabled {
-                    RuntimeReadiness::Degraded {
-                        reasons: vec![
-                            DegradedReason("safe-mode-enabled"),
-                            DegradedReason("watchdog-restart-threshold-exceeded"),
-                        ],
+                    let mut reasons = vec![DegradedReason("safe-mode-enabled")];
+                    if self.supervision.xrun_overload_active {
+                        reasons.push(DegradedReason("xrun-overload-recovery-active"));
                     }
+                    if self.supervision.watchdog_restart_count
+                        >= self.supervision.policy.safe_mode_restart_threshold
+                    {
+                        reasons.push(DegradedReason("watchdog-restart-threshold-exceeded"));
+                    }
+                    RuntimeReadiness::Degraded { reasons }
                 } else {
                     RuntimeReadiness::Ready
                 };
@@ -11425,6 +11774,9 @@ impl RuntimeLifecycleApi for SignalRuntime {
 
     fn set_safe_mode(&mut self, request: SafeModeRequest) -> Result<(), RuntimeError> {
         self.safe_mode_enabled = request.enabled;
+        if !request.enabled {
+            self.supervision.clear_xrun_overload_recovery();
+        }
         self.refresh_runtime_state();
         self.emit(RuntimeEvent::ReadinessChanged(self.readiness.clone()));
         self.emit(RuntimeEvent::EffectiveConfigChanged(
@@ -12130,12 +12482,12 @@ mod tests {
         RuntimeClipGainEnvelope, RuntimeClipGainShape, RuntimeClipProcessingReadiness,
         RuntimeClipProcessingRegistration, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
         RuntimeClipRenderRequest, RuntimeConfigRequest, RuntimeDeferredServiceDecision,
-        RuntimeDeferredServiceReason, RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder,
-        RuntimeEventSink, RuntimeExecutionPhase, RuntimeLifecycleApi,
-        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
-        RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
-        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
-        RuntimeOfflinePluginDelegatedExecutionOutcome,
+        RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
+        RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
+        RuntimeFaultStatusSnapshot, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
+        RuntimeMediaAssetState, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
+        RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
+        RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
         RuntimeOfflinePluginDelegatedExecutionReceipt,
         RuntimeOfflinePluginDelegatedExecutionStageReceipt,
         RuntimeOfflinePluginDelegatedExecutionStatus,
@@ -12156,11 +12508,11 @@ mod tests {
         RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy,
         RuntimePreworkServiceState, RuntimePreworkWindowTarget, RuntimeProjectionApi,
         RuntimeReadiness, RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState,
-        RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport,
-        RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoSource,
-        RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
-        SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection, StopReason,
-        TransportAttachIntent, TransportProjection, TransportSessionProvenance,
+        RuntimeRecoveryState, RuntimeSchedulerState, RuntimeSchedulerTopologyIssue,
+        RuntimeSupervisorReport, RuntimeTempoMapInterpolation, RuntimeTempoMapProjection,
+        RuntimeTempoSource, RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness,
+        RuntimeWatchdogTrigger, SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection,
+        StopReason, TransportAttachIntent, TransportProjection, TransportSessionProvenance,
         WatchdogRestartRecord,
     };
     use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
@@ -17904,48 +18256,92 @@ mod tests {
         });
         runtime.record_plugin_scan_results(
             second_handle,
-            vec![crate::RuntimePluginDiscoveredTypeRecord {
-                plugin_type_id: "plugin:clap:default".into(),
-                plugin_id: "com.signal.default".into(),
-                vendor: "Signal".into(),
-                name: "Signal Default".into(),
-                format: PluginFormat::Clap,
-                version: Some("1.0.0".into()),
-                features: vec![
-                    signal_plugin::PluginFeature::AudioEffect,
-                    signal_plugin::PluginFeature::Utility,
-                ],
-                default_io_layout: signal_plugin::PluginIoLayout {
-                    audio_inputs: 2,
-                    audio_outputs: 2,
-                    midi_inputs: 1,
-                    midi_outputs: 1,
+            vec![
+                crate::RuntimePluginDiscoveredTypeRecord {
+                    plugin_type_id: "plugin:clap:default".into(),
+                    plugin_id: "com.signal.default".into(),
+                    vendor: "Signal".into(),
+                    name: "Signal Default".into(),
+                    format: PluginFormat::Clap,
+                    version: Some("1.0.0".into()),
+                    features: vec![
+                        signal_plugin::PluginFeature::AudioEffect,
+                        signal_plugin::PluginFeature::Utility,
+                    ],
+                    default_io_layout: signal_plugin::PluginIoLayout {
+                        audio_inputs: 2,
+                        audio_outputs: 2,
+                        midi_inputs: 1,
+                        midi_outputs: 1,
+                    },
+                    audio_bus_count: 2,
+                    parameter_count: 16,
+                    state_contract: signal_plugin::PluginStateContract {
+                        supports_snapshot: true,
+                        supports_reset: true,
+                        supports_bypass: true,
+                        exposes_latency: true,
+                        exposes_tail: true,
+                    },
+                    processing_contract: signal_plugin::PluginProcessingContract {
+                        max_block_frames: 4_096,
+                        sample_accurate_automation: true,
+                        accepts_midi: true,
+                        accepts_note_events: true,
+                        produces_midi: true,
+                        silence_aware: true,
+                    },
+                    lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                        requires_main_thread_for_state: false,
+                        supports_prepare: true,
+                        supports_activate: true,
+                        supports_reset_while_active: true,
+                    },
+                    summary: "plugin_type=plugin:clap:default plugin_id=com.signal.default format=Clap features=2 io=PluginIoLayout { audio_inputs: 2, audio_outputs: 2, midi_inputs: 1, midi_outputs: 1 } parameters=16".into(),
                 },
-                audio_bus_count: 2,
-                parameter_count: 16,
-                state_contract: signal_plugin::PluginStateContract {
-                    supports_snapshot: true,
-                    supports_reset: true,
-                    supports_bypass: true,
-                    exposes_latency: true,
-                    exposes_tail: true,
+                crate::RuntimePluginDiscoveredTypeRecord {
+                    plugin_type_id: "plugin:vst3:instrument".into(),
+                    plugin_id: "com.signal.instrument".into(),
+                    vendor: "Signal".into(),
+                    name: "Signal Instrument".into(),
+                    format: PluginFormat::Vst3,
+                    version: Some("2.0.0".into()),
+                    features: vec![
+                        signal_plugin::PluginFeature::Instrument,
+                        signal_plugin::PluginFeature::Analyzer,
+                    ],
+                    default_io_layout: signal_plugin::PluginIoLayout {
+                        audio_inputs: 0,
+                        audio_outputs: 2,
+                        midi_inputs: 1,
+                        midi_outputs: 0,
+                    },
+                    audio_bus_count: 1,
+                    parameter_count: 24,
+                    state_contract: signal_plugin::PluginStateContract {
+                        supports_snapshot: false,
+                        supports_reset: true,
+                        supports_bypass: false,
+                        exposes_latency: false,
+                        exposes_tail: true,
+                    },
+                    processing_contract: signal_plugin::PluginProcessingContract {
+                        max_block_frames: 2_048,
+                        sample_accurate_automation: false,
+                        accepts_midi: true,
+                        accepts_note_events: true,
+                        produces_midi: false,
+                        silence_aware: false,
+                    },
+                    lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                        requires_main_thread_for_state: true,
+                        supports_prepare: true,
+                        supports_activate: false,
+                        supports_reset_while_active: false,
+                    },
+                    summary: "plugin_type=plugin:vst3:instrument plugin_id=com.signal.instrument format=Vst3 features=2 io=PluginIoLayout { audio_inputs: 0, audio_outputs: 2, midi_inputs: 1, midi_outputs: 0 } parameters=24".into(),
                 },
-                processing_contract: signal_plugin::PluginProcessingContract {
-                    max_block_frames: 4_096,
-                    sample_accurate_automation: true,
-                    accepts_midi: true,
-                    accepts_note_events: true,
-                    produces_midi: true,
-                    silence_aware: true,
-                },
-                lifecycle_contract: signal_plugin::PluginLifecycleContract {
-                    requires_main_thread_for_state: false,
-                    supports_prepare: true,
-                    supports_activate: true,
-                    supports_reset_while_active: true,
-                },
-                summary: "plugin_type=plugin:clap:default plugin_id=com.signal.default format=Clap features=2 io=PluginIoLayout { audio_inputs: 2, audio_outputs: 2, midi_inputs: 1, midi_outputs: 1 } parameters=16".into(),
-            }],
+            ],
         );
         runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
             sandbox_id: "sandbox-a".into(),
@@ -17969,9 +18365,25 @@ mod tests {
             vec![PluginFormat::Clap, PluginFormat::Vst3]
         );
         assert_eq!(last_scan.targeted_format_count, 2);
-        assert_eq!(last_scan.discovered_type_count, 1);
-        assert_eq!(discovery.discovered_type_count, 1);
-        assert_eq!(discovery.discovered_types.len(), 1);
+        assert_eq!(last_scan.discovered_type_count, 2);
+        assert_eq!(last_scan.discovered_format_count, 2);
+        assert_eq!(last_scan.format_coverage.len(), 2);
+        assert!(last_scan.capability_coverage.multi_format_catalog);
+        assert_eq!(last_scan.capability_coverage.supports_snapshot_count, 1);
+        assert_eq!(last_scan.capability_coverage.supports_activate_count, 1);
+        assert_eq!(discovery.discovered_type_count, 2);
+        assert_eq!(discovery.discovered_format_count, 2);
+        assert_eq!(discovery.format_coverage.len(), 2);
+        assert_eq!(discovery.capability_coverage.instrument_count, 1);
+        assert_eq!(discovery.capability_coverage.audio_effect_count, 1);
+        assert_eq!(
+            discovery
+                .capability_coverage
+                .requires_main_thread_for_state_count,
+            1
+        );
+        assert_eq!(discovery.capability_coverage.max_parameter_count, 24);
+        assert_eq!(discovery.discovered_types.len(), 2);
         let discovered_type = &discovery.discovered_types[0];
         assert_eq!(discovered_type.plugin_type_id, "plugin:clap:default");
         assert_eq!(discovered_type.plugin_id, "com.signal.default");
@@ -17998,17 +18410,31 @@ mod tests {
 
         let report = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
         assert_eq!(report.plugin_discovery_snapshot.scan_count, 2);
-        assert_eq!(report.plugin_discovery_snapshot.discovered_type_count, 1);
+        assert_eq!(report.plugin_discovery_snapshot.discovered_type_count, 2);
+        assert_eq!(report.plugin_discovery_snapshot.discovered_format_count, 2);
         assert!(report
             .render_json()
             .contains("\"plugin_discovery_snapshot\":{"));
         assert!(report
             .render_json()
             .contains("\"formats\":[\"Clap\",\"Vst3\"]"));
-        assert!(report.render_json().contains("\"discovered_type_count\":1"));
+        assert!(report.render_json().contains("\"discovered_type_count\":2"));
+        assert!(report
+            .render_json()
+            .contains("\"discovered_format_count\":2"));
         assert!(report
             .render_json()
             .contains("\"plugin_type_id\":\"plugin:clap:default\""));
+        assert!(report
+            .render_json()
+            .contains("\"plugin_type_id\":\"plugin:vst3:instrument\""));
+        assert!(report
+            .render_json()
+            .contains("\"multi_format_catalog\":true"));
+        assert!(report
+            .render_json()
+            .contains("\"supports_activate_count\":1"));
+        assert!(report.render_json().contains("\"format_coverage\":["));
         assert!(report.render_json().contains("\"supports_snapshot\":true"));
     }
 
@@ -24191,6 +24617,160 @@ mod tests {
     }
 
     #[test]
+    fn runtime_fault_status_snapshot_classifies_watchdog_plugin_fault_and_xrun_pressure() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+        runtime.start().expect("start runtime");
+        runtime.record_xrun_overload(Some(1));
+        runtime.record_xrun_overload(Some(2));
+        runtime.record_xrun_overload(Some(3));
+        runtime.record_plugin_sandbox_fault(
+            "sandbox-a",
+            PluginFaultKind::Crash,
+            "sandbox crashed during process block",
+            Some(2),
+        );
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "sandbox-a".into(),
+            trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+            processing_epoch: 3,
+        });
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "sandbox-a".into(),
+            trigger: RuntimeWatchdogTrigger::DeadlineMisses,
+            processing_epoch: 4,
+        });
+
+        let status = RuntimeFaultStatusSnapshot::capture(
+            runtime.get_readiness(),
+            &runtime.get_control_snapshot(),
+            &runtime.get_diagnostics_snapshot(),
+            &runtime.get_supervision_snapshot(),
+            &runtime.get_engine_block_snapshot(),
+            &runtime.get_transport_concurrency_snapshot(),
+            &runtime.get_plugin_lifecycle_snapshot(),
+            false,
+            0,
+        );
+
+        assert_eq!(status.recovery_state, RuntimeRecoveryState::Recovering);
+        assert_eq!(
+            status.primary_fault_cause,
+            Some(RuntimeFaultCause::WatchdogRestart)
+        );
+        assert_eq!(status.active_fault_count, 3);
+        assert!(status.xrun_overload_active);
+        assert!(status.plugin_fault_active);
+        assert!(status.watchdog_active);
+        assert!(status.safe_mode_enabled);
+        assert_eq!(status.plugin_fault_count, 1);
+        assert_eq!(status.watchdog_restart_count, 2);
+        assert!(status.summary.contains("primary=Some(WatchdogRestart)"));
+    }
+
+    #[test]
+    fn runtime_xrun_overload_escalates_into_safe_mode_and_clears_after_recovery() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+        runtime.start().expect("start runtime");
+
+        let first = runtime.record_xrun_overload(Some(1));
+        assert!(!first.safe_mode_enabled);
+        assert!(!first.xrun_overload_active);
+
+        let second = runtime.record_xrun_overload(Some(2));
+        assert!(!second.safe_mode_enabled);
+        assert!(!second.xrun_overload_active);
+
+        let third = runtime.record_xrun_overload(Some(3));
+        assert!(third.safe_mode_enabled);
+        assert!(third.xrun_overload_active);
+        assert!(matches!(
+            runtime.get_readiness(),
+            RuntimeReadiness::Degraded { .. }
+        ));
+
+        let active_status = RuntimeFaultStatusSnapshot::capture(
+            runtime.get_readiness(),
+            &runtime.get_control_snapshot(),
+            &runtime.get_diagnostics_snapshot(),
+            &runtime.get_supervision_snapshot(),
+            &runtime.get_engine_block_snapshot(),
+            &runtime.get_transport_concurrency_snapshot(),
+            &runtime.get_plugin_lifecycle_snapshot(),
+            false,
+            0,
+        );
+        assert_eq!(
+            active_status.recovery_state,
+            RuntimeRecoveryState::Recovering
+        );
+        assert_eq!(
+            active_status.primary_fault_cause,
+            Some(RuntimeFaultCause::XrunOverload)
+        );
+        assert_eq!(active_status.active_fault_count, 1);
+        assert!(active_status.xrun_overload_active);
+        assert!(active_status.safe_mode_enabled);
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .expect("safe mode should clear");
+
+        let recovered_status = RuntimeFaultStatusSnapshot::capture(
+            runtime.get_readiness(),
+            &runtime.get_control_snapshot(),
+            &runtime.get_diagnostics_snapshot(),
+            &runtime.get_supervision_snapshot(),
+            &runtime.get_engine_block_snapshot(),
+            &runtime.get_transport_concurrency_snapshot(),
+            &runtime.get_plugin_lifecycle_snapshot(),
+            false,
+            0,
+        );
+        assert_eq!(
+            recovered_status.recovery_state,
+            RuntimeRecoveryState::Steady
+        );
+        assert_eq!(recovered_status.primary_fault_cause, None);
+        assert_eq!(recovered_status.active_fault_count, 0);
+        assert!(!recovered_status.xrun_overload_active);
+        assert_eq!(runtime.get_diagnostics_snapshot().xruns, 3);
+    }
+
+    #[test]
+    fn runtime_fail_runtime_marks_faulted_recovery_state() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+        runtime.start().expect("start runtime");
+
+        let readiness = runtime.fail_runtime(RuntimeError::new(
+            RuntimeErrorKind::HardwareFailure,
+            "simulated output recovery exhaustion",
+        ));
+        assert!(matches!(readiness, RuntimeReadiness::Failed { .. }));
+
+        let status = RuntimeFaultStatusSnapshot::capture(
+            runtime.get_readiness(),
+            &runtime.get_control_snapshot(),
+            &runtime.get_diagnostics_snapshot(),
+            &runtime.get_supervision_snapshot(),
+            &runtime.get_engine_block_snapshot(),
+            &runtime.get_transport_concurrency_snapshot(),
+            &runtime.get_plugin_lifecycle_snapshot(),
+            false,
+            0,
+        );
+        assert_eq!(status.recovery_state, RuntimeRecoveryState::Faulted);
+        assert_eq!(
+            status.primary_fault_cause,
+            Some(RuntimeFaultCause::RuntimeError)
+        );
+        assert_eq!(status.active_fault_count, 1);
+        assert!(runtime.get_effective_config().safe_mode_enabled);
+    }
+
+    #[test]
     fn runtime_event_recorder_builds_reusable_observation_diagnostics() {
         let mut recorder = RuntimeEventRecorder::default();
         RuntimeEventSink::push(
@@ -24198,6 +24778,7 @@ mod tests {
             RuntimeEvent::SupervisionChanged(crate::interfaces::RuntimeSupervisionSnapshot {
                 watchdog_restart_count: 2,
                 safe_mode_enabled: true,
+                xrun_overload_active: false,
                 last_watchdog_trigger: Some(RuntimeWatchdogTrigger::HeartbeatMisses),
                 last_sandbox_id: Some("sandbox-a".into()),
                 last_processing_epoch: Some(4),
@@ -25168,6 +25749,40 @@ mod tests {
         assert!(reset.active_sessions.is_empty());
         assert_eq!(reset.peak_attached_sessions, 0);
         assert_eq!(reset.peak_lingering_sessions, 0);
+    }
+
+    #[test]
+    fn runtime_transport_session_limits_can_be_widened_for_multiple_steady_sessions() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+
+        let widened = runtime
+            .set_transport_session_limits(4, 6)
+            .expect("set widened transport session policy");
+        assert_eq!(widened.steady_session_limit, 4);
+        assert_eq!(widened.recovery_session_limit, 6);
+
+        let first = runtime
+            .begin_transport_session(
+                "sandbox-a",
+                "lease-a",
+                "region-a",
+                TransportAttachIntent::SteadyState,
+            )
+            .expect("begin first steady session");
+        assert_eq!(first.current_attached_sessions, 1);
+
+        let second = runtime
+            .begin_transport_session(
+                "sandbox-a",
+                "lease-b",
+                "region-b",
+                TransportAttachIntent::SteadyState,
+            )
+            .expect("begin second steady session");
+        assert_eq!(second.current_attached_sessions, 2);
+        assert_eq!(second.steady_session_limit, 4);
+        assert_eq!(second.recovery_session_limit, 6);
     }
 
     #[test]

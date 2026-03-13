@@ -1,6 +1,6 @@
 # Backlog: Post-g04 Consumer, Release, And Backend Breadth
 
-Status: backlog
+Status: complete
 Priority: medium
 Estimated effort: multi-batch generation
 Source: g04.006
@@ -56,6 +56,5 @@ Promote this backlog item when at least one of the following becomes true:
 
 ## Next Task
 
-Promote this item only when maintainers choose to open the post-`g04`
-generation and can name which of the deferred breadth areas now justify active
-roadmap work.
+COMPLETE. This backlog item was promoted into `g05` on 2026-03-12. Continue
+with `g05.001` and keep the rest of the new suite sequenced behind it.

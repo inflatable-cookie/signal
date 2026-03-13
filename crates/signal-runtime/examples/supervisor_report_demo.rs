@@ -24,6 +24,7 @@ fn main() {
         RuntimeEvent::SupervisionChanged(signal_runtime::RuntimeSupervisionSnapshot {
             watchdog_restart_count: 3,
             safe_mode_enabled: true,
+            xrun_overload_active: false,
             last_watchdog_trigger: Some(RuntimeWatchdogTrigger::HeartbeatMisses),
             last_sandbox_id: Some("sandbox-demo".into()),
             last_processing_epoch: Some(4),

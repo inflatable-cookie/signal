@@ -757,6 +757,7 @@ pub struct WatchdogRestartRecord {
 pub struct RuntimeSupervisionSnapshot {
     pub watchdog_restart_count: u32,
     pub safe_mode_enabled: bool,
+    pub xrun_overload_active: bool,
     pub last_watchdog_trigger: Option<RuntimeWatchdogTrigger>,
     pub last_sandbox_id: Option<String>,
     pub last_processing_epoch: Option<u64>,
@@ -2561,6 +2562,143 @@ pub struct RuntimeDiagnosticsSnapshot {
     pub momentary_loudness_lufs: Option<f32>,
     pub short_term_loudness_lufs: Option<f32>,
     pub integrated_loudness_lufs: Option<f32>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeFaultCause {
+    XrunOverload,
+    PluginFault,
+    WatchdogRestart,
+    DeviceLoss,
+    TransportFault,
+    MissingPluginBinding,
+    RuntimeError,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeRecoveryState {
+    Steady,
+    Recovering,
+    Faulted,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeFaultStatusSnapshot {
+    pub recovery_state: RuntimeRecoveryState,
+    pub primary_fault_cause: Option<RuntimeFaultCause>,
+    pub active_fault_count: usize,
+    pub xrun_overload_active: bool,
+    pub plugin_fault_active: bool,
+    pub watchdog_active: bool,
+    pub device_loss_active: bool,
+    pub transport_fault_active: bool,
+    pub missing_plugin_binding_active: bool,
+    pub safe_mode_enabled: bool,
+    pub restart_count: u64,
+    pub watchdog_restart_count: u32,
+    pub plugin_fault_count: usize,
+    pub transport_faulted_session_count: usize,
+    pub device_loss_count: u64,
+    pub summary: String,
+}
+
+impl RuntimeFaultStatusSnapshot {
+    pub fn capture(
+        readiness: RuntimeReadiness,
+        control_snapshot: &RuntimeControlSnapshot,
+        diagnostics_snapshot: &RuntimeDiagnosticsSnapshot,
+        supervision_snapshot: &RuntimeSupervisionSnapshot,
+        engine_block_snapshot: &RuntimeEngineBlockSnapshot,
+        transport_concurrency_snapshot: &RuntimeTransportConcurrencySnapshot,
+        plugin_lifecycle_snapshot: &RuntimePluginLifecycleSnapshot,
+        device_loss_active: bool,
+        device_loss_count: u64,
+    ) -> Self {
+        let xrun_overload_active = supervision_snapshot.xrun_overload_active;
+        let plugin_fault_count = plugin_lifecycle_snapshot
+            .faulted_sandbox_count
+            .saturating_add(plugin_lifecycle_snapshot.quarantined_sandbox_count);
+        let plugin_fault_active = plugin_fault_count > 0;
+        let watchdog_active = supervision_snapshot.watchdog_restart_count > 0;
+        let transport_faulted_session_count =
+            transport_concurrency_snapshot.current_detach_faulted_sessions;
+        let transport_fault_active = transport_faulted_session_count > 0;
+        let missing_plugin_binding_active =
+            engine_block_snapshot.prework_service_missing_bound_plugin_sandboxes > 0;
+        let runtime_error_active = matches!(readiness, RuntimeReadiness::Failed { .. });
+        let primary_fault_cause = if device_loss_active {
+            Some(RuntimeFaultCause::DeviceLoss)
+        } else if watchdog_active {
+            Some(RuntimeFaultCause::WatchdogRestart)
+        } else if plugin_fault_active {
+            Some(RuntimeFaultCause::PluginFault)
+        } else if transport_fault_active {
+            Some(RuntimeFaultCause::TransportFault)
+        } else if xrun_overload_active {
+            Some(RuntimeFaultCause::XrunOverload)
+        } else if missing_plugin_binding_active {
+            Some(RuntimeFaultCause::MissingPluginBinding)
+        } else if runtime_error_active {
+            Some(RuntimeFaultCause::RuntimeError)
+        } else {
+            None
+        };
+        let mut active_fault_count = usize::from(xrun_overload_active)
+            + usize::from(plugin_fault_active)
+            + usize::from(watchdog_active)
+            + usize::from(device_loss_active)
+            + usize::from(transport_fault_active)
+            + usize::from(missing_plugin_binding_active);
+        if runtime_error_active && primary_fault_cause == Some(RuntimeFaultCause::RuntimeError) {
+            active_fault_count = active_fault_count.saturating_add(1);
+        }
+        let recovery_state = if runtime_error_active {
+            RuntimeRecoveryState::Faulted
+        } else if supervision_snapshot.safe_mode_enabled
+            || xrun_overload_active
+            || device_loss_active
+            || watchdog_active
+            || transport_fault_active
+            || plugin_lifecycle_snapshot.restarting_sandbox_count > 0
+            || control_snapshot.restart_count > 0
+        {
+            RuntimeRecoveryState::Recovering
+        } else {
+            RuntimeRecoveryState::Steady
+        };
+        let mut snapshot = Self {
+            recovery_state,
+            primary_fault_cause,
+            active_fault_count,
+            xrun_overload_active,
+            plugin_fault_active,
+            watchdog_active,
+            device_loss_active,
+            transport_fault_active,
+            missing_plugin_binding_active,
+            safe_mode_enabled: supervision_snapshot.safe_mode_enabled,
+            restart_count: control_snapshot.restart_count,
+            watchdog_restart_count: supervision_snapshot.watchdog_restart_count,
+            plugin_fault_count,
+            transport_faulted_session_count,
+            device_loss_count,
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "recovery={:?} primary={:?} faults={} xruns={} plugin_faults={} watchdog_restarts={} device_losses={} transport_faulted_sessions={} safe_mode={} restarts={}",
+            snapshot.recovery_state,
+            snapshot.primary_fault_cause,
+            snapshot.active_fault_count,
+            diagnostics_snapshot.xruns,
+            snapshot.plugin_fault_count,
+            snapshot.watchdog_restart_count,
+            snapshot.device_loss_count,
+            snapshot.transport_faulted_session_count,
+            snapshot.safe_mode_enabled,
+            snapshot.restart_count,
+        );
+        snapshot
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -8122,10 +8260,12 @@ fn format_runtime_plugin_discovery_snapshot_compact(
     snapshot: &RuntimePluginDiscoverySnapshot,
 ) -> String {
     format!(
-        " plugin_scans={} plugin_filtered_scans={} plugin_discovered_types={} plugin_last_scan={}",
+        " plugin_scans={} plugin_filtered_scans={} plugin_discovered_types={} plugin_discovered_formats={} plugin_capability_coverage={} plugin_last_scan={}",
         snapshot.scan_count,
         snapshot.format_filtered_scan_count,
         snapshot.discovered_type_count,
+        snapshot.discovered_format_count,
+        snapshot.capability_coverage.summary,
         snapshot
             .last_scan
             .as_ref()
@@ -8172,6 +8312,31 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
             )
         })
         .unwrap_or_default();
+    let format_coverage_lines = snapshot
+        .format_coverage
+        .iter()
+        .enumerate()
+        .map(|(index, coverage)| {
+            format!(
+                "\nplugin_format_coverage_{}={:?}/types={}/features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} midi_out={} max_audio_buses={} max_parameters={}",
+                index,
+                coverage.format,
+                coverage.discovered_type_count,
+                coverage.audio_effect_count,
+                coverage.instrument_count,
+                coverage.analyzer_count,
+                coverage.utility_count,
+                coverage.note_effect_count,
+                coverage.supports_snapshot_count,
+                coverage.supports_prepare_count,
+                coverage.supports_activate_count,
+                coverage.accepts_midi_count,
+                coverage.produces_midi_count,
+                coverage.max_audio_bus_count,
+                coverage.max_parameter_count,
+            )
+        })
+        .collect::<String>();
     let discovered_type_lines = snapshot
         .discovered_types
         .iter()
@@ -8194,11 +8359,17 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
         })
         .collect::<String>();
     format!(
-        "\nplugin_scan_count={}\nplugin_format_filtered_scan_count={}\nplugin_discovered_type_count={}{}{}",
+        "\nplugin_scan_count={}\nplugin_format_filtered_scan_count={}\nplugin_discovered_type_count={}\nplugin_discovered_format_count={}\nplugin_capability_coverage_summary={}\nplugin_capability_coverage_multi_format_catalog={}\nplugin_capability_coverage_max_audio_bus_count={}\nplugin_capability_coverage_max_parameter_count={}{}{}{}",
         snapshot.scan_count,
         snapshot.format_filtered_scan_count,
         snapshot.discovered_type_count,
+        snapshot.discovered_format_count,
+        snapshot.capability_coverage.summary,
+        snapshot.capability_coverage.multi_format_catalog,
+        snapshot.capability_coverage.max_audio_bus_count,
+        snapshot.capability_coverage.max_parameter_count,
         last_scan,
+        format_coverage_lines,
         discovered_type_lines,
     )
 }
@@ -9209,7 +9380,10 @@ fn json_runtime_plugin_discovery_snapshot(snapshot: &RuntimePluginDiscoverySnaps
             "\"scan_count\":{},",
             "\"format_filtered_scan_count\":{},",
             "\"discovered_type_count\":{},",
+            "\"discovered_format_count\":{},",
             "\"last_scan\":{},",
+            "\"format_coverage\":{},",
+            "\"capability_coverage\":{},",
             "\"discovered_types\":{},",
             "\"summary\":{}",
             "}}"
@@ -9217,7 +9391,10 @@ fn json_runtime_plugin_discovery_snapshot(snapshot: &RuntimePluginDiscoverySnaps
         snapshot.scan_count,
         snapshot.format_filtered_scan_count,
         snapshot.discovered_type_count,
+        snapshot.discovered_format_count,
         last_scan,
+        json_runtime_plugin_format_coverage_vec(&snapshot.format_coverage),
+        json_runtime_plugin_capability_coverage_summary(&snapshot.capability_coverage),
         json_runtime_plugin_discovered_type_record_vec(&snapshot.discovered_types),
         json_option_string(Some(snapshot.summary.as_str())),
     )
@@ -9232,6 +9409,9 @@ fn json_runtime_plugin_scan_receipt(receipt: &RuntimePluginScanReceipt) -> Strin
             "\"formats\":{},",
             "\"targeted_format_count\":{},",
             "\"discovered_type_count\":{},",
+            "\"discovered_format_count\":{},",
+            "\"format_coverage\":{},",
+            "\"capability_coverage\":{},",
             "\"summary\":{}",
             "}}"
         ),
@@ -9240,7 +9420,123 @@ fn json_runtime_plugin_scan_receipt(receipt: &RuntimePluginScanReceipt) -> Strin
         json_plugin_format_vec(&receipt.formats),
         receipt.targeted_format_count,
         receipt.discovered_type_count,
+        receipt.discovered_format_count,
+        json_runtime_plugin_format_coverage_vec(&receipt.format_coverage),
+        json_runtime_plugin_capability_coverage_summary(&receipt.capability_coverage),
         json_option_string(Some(receipt.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_format_coverage_vec(
+    records: &[RuntimePluginFormatCoverageRecord],
+) -> String {
+    format!(
+        "[{}]",
+        records
+            .iter()
+            .map(json_runtime_plugin_format_coverage_record)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_plugin_format_coverage_record(
+    record: &RuntimePluginFormatCoverageRecord,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"format\":{},",
+            "\"discovered_type_count\":{},",
+            "\"instrument_count\":{},",
+            "\"audio_effect_count\":{},",
+            "\"analyzer_count\":{},",
+            "\"utility_count\":{},",
+            "\"note_effect_count\":{},",
+            "\"supports_snapshot_count\":{},",
+            "\"supports_prepare_count\":{},",
+            "\"supports_activate_count\":{},",
+            "\"accepts_midi_count\":{},",
+            "\"produces_midi_count\":{},",
+            "\"max_audio_bus_count\":{},",
+            "\"max_parameter_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_escape_string(&format!("{:?}", record.format)),
+        record.discovered_type_count,
+        record.instrument_count,
+        record.audio_effect_count,
+        record.analyzer_count,
+        record.utility_count,
+        record.note_effect_count,
+        record.supports_snapshot_count,
+        record.supports_prepare_count,
+        record.supports_activate_count,
+        record.accepts_midi_count,
+        record.produces_midi_count,
+        record.max_audio_bus_count,
+        record.max_parameter_count,
+        json_option_string(Some(record.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_capability_coverage_summary(
+    summary: &RuntimePluginCapabilityCoverageSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"discovered_format_count\":{},",
+            "\"multi_format_catalog\":{},",
+            "\"instrument_count\":{},",
+            "\"audio_effect_count\":{},",
+            "\"analyzer_count\":{},",
+            "\"utility_count\":{},",
+            "\"note_effect_count\":{},",
+            "\"supports_snapshot_count\":{},",
+            "\"supports_reset_count\":{},",
+            "\"supports_bypass_count\":{},",
+            "\"exposes_latency_count\":{},",
+            "\"exposes_tail_count\":{},",
+            "\"sample_accurate_automation_count\":{},",
+            "\"accepts_midi_count\":{},",
+            "\"accepts_note_events_count\":{},",
+            "\"produces_midi_count\":{},",
+            "\"silence_aware_count\":{},",
+            "\"requires_main_thread_for_state_count\":{},",
+            "\"supports_prepare_count\":{},",
+            "\"supports_activate_count\":{},",
+            "\"supports_reset_while_active_count\":{},",
+            "\"max_audio_bus_count\":{},",
+            "\"max_parameter_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.discovered_format_count,
+        summary.multi_format_catalog,
+        summary.instrument_count,
+        summary.audio_effect_count,
+        summary.analyzer_count,
+        summary.utility_count,
+        summary.note_effect_count,
+        summary.supports_snapshot_count,
+        summary.supports_reset_count,
+        summary.supports_bypass_count,
+        summary.exposes_latency_count,
+        summary.exposes_tail_count,
+        summary.sample_accurate_automation_count,
+        summary.accepts_midi_count,
+        summary.accepts_note_events_count,
+        summary.produces_midi_count,
+        summary.silence_aware_count,
+        summary.requires_main_thread_for_state_count,
+        summary.supports_prepare_count,
+        summary.supports_activate_count,
+        summary.supports_reset_while_active_count,
+        summary.max_audio_bus_count,
+        summary.max_parameter_count,
+        json_option_string(Some(summary.summary.as_str())),
     )
 }
 
@@ -12069,6 +12365,9 @@ pub struct RuntimePluginScanReceipt {
     pub formats: Vec<PluginFormat>,
     pub targeted_format_count: usize,
     pub discovered_type_count: usize,
+    pub discovered_format_count: usize,
+    pub format_coverage: Vec<RuntimePluginFormatCoverageRecord>,
+    pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
     pub summary: String,
 }
 
@@ -12090,12 +12389,62 @@ pub struct RuntimePluginDiscoveredTypeRecord {
     pub summary: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginFormatCoverageRecord {
+    pub format: PluginFormat,
+    pub discovered_type_count: usize,
+    pub instrument_count: usize,
+    pub audio_effect_count: usize,
+    pub analyzer_count: usize,
+    pub utility_count: usize,
+    pub note_effect_count: usize,
+    pub supports_snapshot_count: usize,
+    pub supports_prepare_count: usize,
+    pub supports_activate_count: usize,
+    pub accepts_midi_count: usize,
+    pub produces_midi_count: usize,
+    pub max_audio_bus_count: usize,
+    pub max_parameter_count: usize,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginCapabilityCoverageSummary {
+    pub discovered_format_count: usize,
+    pub multi_format_catalog: bool,
+    pub instrument_count: usize,
+    pub audio_effect_count: usize,
+    pub analyzer_count: usize,
+    pub utility_count: usize,
+    pub note_effect_count: usize,
+    pub supports_snapshot_count: usize,
+    pub supports_reset_count: usize,
+    pub supports_bypass_count: usize,
+    pub exposes_latency_count: usize,
+    pub exposes_tail_count: usize,
+    pub sample_accurate_automation_count: usize,
+    pub accepts_midi_count: usize,
+    pub accepts_note_events_count: usize,
+    pub produces_midi_count: usize,
+    pub silence_aware_count: usize,
+    pub requires_main_thread_for_state_count: usize,
+    pub supports_prepare_count: usize,
+    pub supports_activate_count: usize,
+    pub supports_reset_while_active_count: usize,
+    pub max_audio_bus_count: usize,
+    pub max_parameter_count: usize,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginDiscoverySnapshot {
     pub scan_count: usize,
     pub format_filtered_scan_count: usize,
     pub discovered_type_count: usize,
+    pub discovered_format_count: usize,
     pub last_scan: Option<RuntimePluginScanReceipt>,
+    pub format_coverage: Vec<RuntimePluginFormatCoverageRecord>,
+    pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
     pub discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
     pub summary: String,
 }

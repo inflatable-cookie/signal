@@ -42,7 +42,11 @@ enum CliMode {
     },
     DescribeExport,
     DescribeConformanceMatrix,
+    DescribeHostEdgeBoundary,
     DescribeReleaseBoundary,
+    DescribePackagingManifest,
+    DescribeDownstreamAutomation,
+    DescribeDownstreamFailGates,
     DescribeGenerationCloseout,
 }
 
@@ -50,15 +54,34 @@ const EXPORT_SCHEMA: &str = "signal.supervisor.export";
 const EXPORT_SCHEMA_VERSION: u32 = 1;
 const DEFAULT_HOST_SUMMARY_SECTIONS: &[&str] = &["execution", "transport", "faults"];
 const SUPPORTED_DEBUG_SECTIONS: &[HostSummaryDebugSection] = &[HostSummaryDebugSection::Payload];
+const HOST_EDGE_BOUNDARY: &str = "signal.host.edge.boundary";
+const HOST_EDGE_CONTRACT_PATH: &str =
+    "docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md";
+const HOST_EDGE_ACCEPTANCE_TASK: &str = "effigy acceptance:host-edge-consumer --repo .";
 const RELEASE_BOUNDARY: &str = "signal.release.boundary";
 const RELEASE_VERSION_SOURCE: &str = "workspace.package.version";
 const RELEASE_CHANGELOG_PATH: &str = "CHANGELOG.md";
 const RELEASE_CONFORMANCE_TASK: &str = "effigy acceptance:conformance --repo .";
+const PACKAGING_MANIFEST: &str = "signal.release.packaging-manifest";
+const PACKAGING_MANIFEST_CONTRACT_PATH: &str =
+    "docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md";
+const PACKAGING_MANIFEST_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:release-packaging-consumer --repo .";
+const DOWNSTREAM_AUTOMATION_BOUNDARY: &str = "signal.downstream.automation";
+const DOWNSTREAM_AUTOMATION_CONTRACT_PATH: &str =
+    "docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md";
+const DOWNSTREAM_AUTOMATION_MANDATORY_TASK: &str = "effigy acceptance:downstream-release --repo .";
+const DOWNSTREAM_AUTOMATION_OPTIONAL_TASK: &str = "effigy acceptance:downstream-depth --repo .";
+const DOWNSTREAM_AUTOMATION_COMBINED_TASK: &str =
+    "effigy acceptance:downstream-automation --repo .";
+const DOWNSTREAM_FAIL_GATES: &str = "signal.downstream.fail-gates";
+const DOWNSTREAM_FAIL_GATE_TASK: &str = "effigy acceptance:downstream-gate --repo .";
 const GENERATION_CLOSEOUT: &str = "signal.generation.closeout";
-const GENERATION_CLOSEOUT_GENERATION: &str = "g04";
-const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g04-closeout --repo .";
-const POST_G04_QUEUE_PATH: &str =
-    "docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md";
+const GENERATION_CLOSEOUT_GENERATION: &str = "g05";
+const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g05-closeout --repo .";
+const POST_G05_QUEUE_PATH: &str =
+    "docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md";
+const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "recorded-backlog-candidate";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ConformanceMatrixEntryKind {
@@ -79,10 +102,35 @@ struct ConformanceMatrixEntry {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HostEdgeStabilityTier {
+    Public,
+    ConsumerFacingButUnstable,
+    ScenarioOnly,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct HostEdgeSurfaceRecord {
+    id: &'static str,
+    tier: HostEdgeStabilityTier,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct HostEdgeValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ReleaseBoundaryArtifactKind {
     Document,
     ExportDescription,
     ConformanceMatrix,
+    PackagingManifest,
     Example,
 }
 
@@ -98,6 +146,69 @@ struct ReleaseBoundaryArtifact {
 struct ReleaseBoundaryValidationStep {
     id: &'static str,
     command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PackagingManifestInputKind {
+    Document,
+    Descriptor,
+    ValidationTask,
+    Contract,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PackagingManifestInput {
+    id: &'static str,
+    kind: PackagingManifestInputKind,
+    path_or_command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PackagingReceiptSurface {
+    id: &'static str,
+    surface: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PackagingManifestValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DownstreamAutomationFixtureKind {
+    AcceptanceTask,
+    Descriptor,
+    ScenarioExport,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DownstreamAutomationFixture {
+    id: &'static str,
+    kind: DownstreamAutomationFixtureKind,
+    command: &'static str,
+    typed_output: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DownstreamFailGateRule {
+    id: &'static str,
+    gate: &'static str,
+    command: &'static str,
+    blocks_release: bool,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DownstreamDeferredDepthRecord {
+    id: &'static str,
+    command: &'static str,
+    status: &'static str,
     rationale: &'static str,
 }
 
@@ -162,7 +273,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-release-boundary|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -193,13 +304,45 @@ impl ConformanceMatrixEntryKind {
     }
 }
 
+impl HostEdgeStabilityTier {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Public => "public",
+            Self::ConsumerFacingButUnstable => "consumer-facing-but-unstable",
+            Self::ScenarioOnly => "scenario-only",
+        }
+    }
+}
+
 impl ReleaseBoundaryArtifactKind {
     fn label(self) -> &'static str {
         match self {
             Self::Document => "document",
             Self::ExportDescription => "export-description",
             Self::ConformanceMatrix => "conformance-matrix",
+            Self::PackagingManifest => "packaging-manifest",
             Self::Example => "example",
+        }
+    }
+}
+
+impl PackagingManifestInputKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Document => "document",
+            Self::Descriptor => "descriptor",
+            Self::ValidationTask => "validation-task",
+            Self::Contract => "contract",
+        }
+    }
+}
+
+impl DownstreamAutomationFixtureKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::AcceptanceTask => "acceptance-task",
+            Self::Descriptor => "descriptor",
+            Self::ScenarioExport => "scenario-export",
         }
     }
 }
@@ -227,6 +370,24 @@ fn conformance_matrix_entries() -> &'static [ConformanceMatrixEntry] {
                 "Proves the versioned supervisor export carries the widened discovery boundary without host-local reconstruction.",
         },
         ConformanceMatrixEntry {
+            id: "plugin-backend-breadth-coverage",
+            kind: ConformanceMatrixEntryKind::ExportConsumerTest,
+            crate_name: "signal-runtime + signal-supervisor-tools",
+            surface: "runtime reexports and supervisor export carrying backend-neutral plugin discovery coverage aggregates",
+            command: "effigy acceptance:plugin-backend-breadth --repo .",
+            rationale:
+                "Proves widened multi-format discovery and capability coverage stays consumable through Signal-owned runtime and export surfaces.",
+        },
+        ConformanceMatrixEntry {
+            id: "shared-host-edge-consumer",
+            kind: ConformanceMatrixEntryKind::PublicBoundaryTest,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "shared-stable host constructors, RuntimeSupervisorApi, and supervisor_report()",
+            command: "effigy acceptance:host-edge-consumer --repo .",
+            rationale:
+                "Proves the shared stable host edge remains consumable without private host internals or unstable summary helpers.",
+        },
+        ConformanceMatrixEntry {
             id: "runtime-supervisor-report-demo",
             kind: ConformanceMatrixEntryKind::Example,
             crate_name: "signal-runtime",
@@ -244,6 +405,98 @@ fn conformance_matrix_entries() -> &'static [ConformanceMatrixEntry] {
                 "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
             rationale:
                 "Lets consumers inspect the runnable conformance matrix without reading private implementation detail.",
+        },
+    ]
+}
+
+fn host_edge_surface_records() -> &'static [HostEdgeSurfaceRecord] {
+    &[
+        HostEdgeSurfaceRecord {
+            id: "host-constructors",
+            tier: HostEdgeStabilityTier::Public,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "LocalRuntimeHost::new and ServerRuntimeHost::new",
+            runtime_anchor: "SignalRuntime configuration and subscribed event stream ownership",
+            rationale:
+                "Host construction is shared-stable only as the thin entry into runtime-owned authority.",
+        },
+        HostEdgeSurfaceRecord {
+            id: "shared-runtime-supervisor-api",
+            tier: HostEdgeStabilityTier::Public,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "RuntimeSupervisorApi implemented by both hosts",
+            runtime_anchor: "RuntimeSupervisorApi and runtime-owned receipts",
+            rationale:
+                "The shared stable host edge is the supervisor-oriented convenience layer that delegates back into runtime-owned orchestration.",
+        },
+        HostEdgeSurfaceRecord {
+            id: "shared-supervisor-report",
+            tier: HostEdgeStabilityTier::Public,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorReport and signal.supervisor.export",
+            rationale:
+                "Consumers inspect the stable shared host edge through runtime-owned report/export surfaces rather than host-private summaries.",
+        },
+        HostEdgeSurfaceRecord {
+            id: "host-enriched-reports",
+            tier: HostEdgeStabilityTier::ConsumerFacingButUnstable,
+            crate_name: "signal-host-local",
+            surface: "observation_report(), host_observation_report(), host_supervisor_report()",
+            runtime_anchor: "RuntimeObservationReport, RuntimeHostObservationReport, RuntimeHostSupervisorReport",
+            rationale:
+                "These enrich runtime-owned meaning with host-specific context, but they remain asymmetric and are not yet part of the shared stable tier.",
+        },
+        HostEdgeSurfaceRecord {
+            id: "host-summary-dtos",
+            tier: HostEdgeStabilityTier::ConsumerFacingButUnstable,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "LocalRuntimeHostSummary and ServerRuntimeHostSummary",
+            runtime_anchor: "Host summary structs only; not runtime-owned receipts",
+            rationale:
+                "Summary DTOs are still explanatory convenience shells rather than the canonical consumer inspection boundary.",
+        },
+        HostEdgeSurfaceRecord {
+            id: "local-delegated-executor-helpers",
+            tier: HostEdgeStabilityTier::ConsumerFacingButUnstable,
+            crate_name: "signal-host-local",
+            surface: "finalize_offline_render_with_local_delegated_executor() and render_offline_with_local_delegated_executor()",
+            runtime_anchor: "runtime-owned delegated offline execution boundary",
+            rationale:
+                "These methods are useful local helpers, but they encode one adapter path and are not yet a backend-neutral host promise.",
+        },
+        HostEdgeSurfaceRecord {
+            id: "scenario-boot-helpers",
+            tier: HostEdgeStabilityTier::ScenarioOnly,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "boot_* fault, recovery, watchdog, and soak helpers",
+            runtime_anchor: "scenario fixtures only",
+            rationale:
+                "Scenario boot helpers are fixtures and demos, not reusable stable consumer APIs.",
+        },
+    ]
+}
+
+fn host_edge_validation_steps() -> &'static [HostEdgeValidationStep] {
+    &[
+        HostEdgeValidationStep {
+            id: "host-edge-boundary-description",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json",
+            rationale:
+                "Consumers need one machine-readable descriptor for the shared host-edge boundary without reading private host code.",
+        },
+        HostEdgeValidationStep {
+            id: "host-edge-boundary-acceptance",
+            command: HOST_EDGE_ACCEPTANCE_TASK,
+            rationale:
+                "The repo-owned acceptance task keeps the boundary descriptor runnable instead of prose-only.",
+        },
+        HostEdgeValidationStep {
+            id: "workspace-health",
+            command: "effigy health --repo .",
+            rationale:
+                "Shared host-edge claims still depend on the repo-owned build baseline staying healthy.",
         },
     ]
 }
@@ -271,6 +524,14 @@ fn release_boundary_artifacts() -> &'static [ReleaseBoundaryArtifact] {
                 "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
             rationale:
                 "Consumers need one inspectable list of the runnable proof surfaces included in the baseline.",
+        },
+        ReleaseBoundaryArtifact {
+            id: "publication-packaging-manifest",
+            kind: ReleaseBoundaryArtifactKind::PackagingManifest,
+            path_or_command:
+                "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json",
+            rationale:
+                "Publication-grade packaging now has a repo-owned manifest descriptor instead of living only in prose around the baseline release boundary.",
         },
         ReleaseBoundaryArtifact {
             id: "runtime-supervisor-report-demo",
@@ -316,17 +577,250 @@ fn release_boundary_unstable_scopes() -> &'static [&'static str] {
         "backend breadth beyond the current CLAP-first plugin path",
         "host convenience APIs outside the frozen runtime/export boundary",
         "crates.io publication and downstream release orchestration",
-        "artifact packaging beyond changelog plus host-free boundary descriptions",
+        "publication packaging beyond the repo-owned manifest descriptor and receipt inventory",
+    ]
+}
+
+fn packaging_manifest_inputs() -> &'static [PackagingManifestInput] {
+    &[
+        PackagingManifestInput {
+            id: "workspace-changelog",
+            kind: PackagingManifestInputKind::Document,
+            path_or_command: RELEASE_CHANGELOG_PATH,
+            rationale:
+                "The publication bundle still anchors human-readable release notes in the workspace changelog.",
+        },
+        PackagingManifestInput {
+            id: "export-boundary-descriptor",
+            kind: PackagingManifestInputKind::Descriptor,
+            path_or_command: "cargo run -p signal-supervisor-tools -- --describe-export --format=json",
+            rationale:
+                "The versioned supervisor export descriptor remains the canonical machine-readable schema source.",
+        },
+        PackagingManifestInput {
+            id: "consumer-conformance-descriptor",
+            kind: PackagingManifestInputKind::Descriptor,
+            path_or_command:
+                "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
+            rationale:
+                "The packaging manifest must include the repo-owned consumer-proof boundary rather than a private release matrix.",
+        },
+        PackagingManifestInput {
+            id: "host-edge-boundary-descriptor",
+            kind: PackagingManifestInputKind::Descriptor,
+            path_or_command:
+                "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json",
+            rationale:
+                "Stable shared host edges must remain explicit in the publication bundle instead of being inferred from host crate internals.",
+        },
+        PackagingManifestInput {
+            id: "release-boundary-descriptor",
+            kind: PackagingManifestInputKind::Descriptor,
+            path_or_command:
+                "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json",
+            rationale:
+                "The publication manifest aggregates the existing host-free release boundary rather than replacing it.",
+        },
+        PackagingManifestInput {
+            id: "plugin-backend-breadth-acceptance",
+            kind: PackagingManifestInputKind::ValidationTask,
+            path_or_command: "effigy acceptance:plugin-backend-breadth --repo .",
+            rationale:
+                "Release packaging claims about backend-neutral breadth must point back to the repo-owned acceptance task that proves them.",
+        },
+        PackagingManifestInput {
+            id: "host-edge-consumer-acceptance",
+            kind: PackagingManifestInputKind::ValidationTask,
+            path_or_command: "effigy acceptance:host-edge-consumer --repo .",
+            rationale:
+                "The manifest includes the stable shared host-edge proof rather than assuming it from release prose.",
+        },
+        PackagingManifestInput {
+            id: "packaging-contract",
+            kind: PackagingManifestInputKind::Contract,
+            path_or_command: PACKAGING_MANIFEST_CONTRACT_PATH,
+            rationale:
+                "The packaging manifest stays anchored to the frozen contract instead of an ad hoc release script.",
+        },
+    ]
+}
+
+fn packaging_receipt_surfaces() -> &'static [PackagingReceiptSurface] {
+    &[
+        PackagingReceiptSurface {
+            id: "manifest-generation-receipt",
+            surface:
+                "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json",
+            rationale:
+                "The packaging manifest descriptor is the repo-owned receipt for what Signal currently considers packageable.",
+        },
+        PackagingReceiptSurface {
+            id: "validation-receipt",
+            surface: PACKAGING_MANIFEST_ACCEPTANCE_TASK,
+            rationale:
+                "The packaging acceptance task is the repo-owned receipt that the declared bundle and validation spine stay runnable together.",
+        },
+    ]
+}
+
+fn packaging_manifest_validation_steps() -> &'static [PackagingManifestValidationStep] {
+    &[
+        PackagingManifestValidationStep {
+            id: "release-boundary-baseline",
+            command: "effigy acceptance:release-boundary --repo .",
+            rationale:
+                "Publication packaging builds on the existing release-boundary baseline instead of replacing it.",
+        },
+        PackagingManifestValidationStep {
+            id: "packaging-manifest-description",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json",
+            rationale:
+                "Consumers and automation need one machine-readable publication manifest descriptor.",
+        },
+        PackagingManifestValidationStep {
+            id: "workspace-health",
+            command: "effigy health --repo .",
+            rationale:
+                "Publication packaging claims still depend on the repo-owned build baseline staying healthy.",
+        },
+        PackagingManifestValidationStep {
+            id: "workspace-docs",
+            command: "effigy qa:docs --repo .",
+            rationale:
+                "The publication manifest depends on docs and index surfaces staying aligned with the declared release bundle.",
+        },
+    ]
+}
+
+fn packaging_manifest_unsupported_paths() -> &'static [&'static str] {
+    &[
+        "crates.io publication and registry upload automation",
+        "signed installers, notarization, and platform distribution packaging",
+        "downstream application-specific release wrappers or private CI pipelines",
+        "generation closeout bundling and post-release promotion policy beyond the current g05 milestone",
+    ]
+}
+
+fn downstream_automation_mandatory_fixtures() -> &'static [DownstreamAutomationFixture] {
+    &[
+        DownstreamAutomationFixture {
+            id: "consumer-conformance",
+            kind: DownstreamAutomationFixtureKind::AcceptanceTask,
+            command: RELEASE_CONFORMANCE_TASK,
+            typed_output:
+                "conformance matrix descriptor plus task-local test/example receipts",
+            rationale:
+                "The bounded release fast path still starts from the shared consumer conformance matrix.",
+        },
+        DownstreamAutomationFixture {
+            id: "release-packaging-consumer",
+            kind: DownstreamAutomationFixtureKind::AcceptanceTask,
+            command: PACKAGING_MANIFEST_ACCEPTANCE_TASK,
+            typed_output:
+                "release-boundary and packaging-manifest descriptors plus public binary-facing proof",
+            rationale:
+                "The mandatory release path must prove packaging claims remain consumable without private scripts.",
+        },
+        DownstreamAutomationFixture {
+            id: "downstream-automation-descriptor",
+            kind: DownstreamAutomationFixtureKind::Descriptor,
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json",
+            typed_output: "machine-readable downstream automation boundary descriptor",
+            rationale:
+                "Mandatory release automation must stay inspectable as one repo-owned boundary description.",
+        },
+    ]
+}
+
+fn downstream_automation_optional_fixtures() -> &'static [DownstreamAutomationFixture] {
+    &[
+        DownstreamAutomationFixture {
+            id: "local-mixed-watchdog-export",
+            kind: DownstreamAutomationFixtureKind::ScenarioExport,
+            command: "cargo run -p signal-supervisor-tools -- --format=json local mixed",
+            typed_output:
+                "signal.supervisor.export JSON with profiling_receipt, soak_receipt, and supervisor_report",
+            rationale:
+                "Optional depth should exercise richer mixed watchdog/fault scenarios through typed export rather than log-only review.",
+        },
+        DownstreamAutomationFixture {
+            id: "local-soak-export",
+            kind: DownstreamAutomationFixtureKind::ScenarioExport,
+            command: "cargo run -p signal-supervisor-tools -- --format=json local soak",
+            typed_output:
+                "signal.supervisor.export JSON with profiling_receipt, soak_receipt, and supervisor_report",
+            rationale:
+                "Optional depth should include a broader watchdog-soak path while keeping the output typed and inspectable.",
+        },
+        DownstreamAutomationFixture {
+            id: "analysis-acceptance",
+            kind: DownstreamAutomationFixtureKind::AcceptanceTask,
+            command: "effigy acceptance:analysis --repo .",
+            typed_output: "analysis harness task receipts across the shared analysis crates",
+            rationale:
+                "Longer-running shared confidence can extend into broader analysis acceptance without becoming a release prerequisite yet.",
+        },
+    ]
+}
+
+fn downstream_fail_gate_rules() -> &'static [DownstreamFailGateRule] {
+    &[
+        DownstreamFailGateRule {
+            id: "mandatory-release-gate",
+            gate: "required",
+            command: DOWNSTREAM_AUTOMATION_MANDATORY_TASK,
+            blocks_release: true,
+            rationale:
+                "The bounded downstream release task is the current mandatory gate for widened consumer and packaging claims.",
+        },
+        DownstreamFailGateRule {
+            id: "automation-boundary-descriptor",
+            gate: "required",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json",
+            blocks_release: true,
+            rationale:
+                "The fail-gate policy itself must remain inspectable as a machine-readable repo-owned surface.",
+        },
+        DownstreamFailGateRule {
+            id: "optional-depth-lane",
+            gate: "advisory",
+            command: DOWNSTREAM_AUTOMATION_OPTIONAL_TASK,
+            blocks_release: false,
+            rationale:
+                "Optional depth broadens confidence, but it does not currently block the fast release path.",
+        },
+    ]
+}
+
+fn downstream_deferred_depth_records() -> &'static [DownstreamDeferredDepthRecord] {
+    &[
+        DownstreamDeferredDepthRecord {
+            id: "server-soak-export",
+            command: "cargo run -p signal-supervisor-tools -- --format=json server soak",
+            status: "deferred",
+            rationale:
+                "The current server-host soak path is not yet stable enough to gate release because the recovery-overlap attach limit still trips this fixture.",
+        },
+        DownstreamDeferredDepthRecord {
+            id: "analysis-acceptance-promotion",
+            command: "effigy acceptance:analysis --repo .",
+            status: "deferred",
+            rationale:
+                "Analysis acceptance remains useful optional depth, but it is not yet part of the bounded shared release gate.",
+        },
     ]
 }
 
 fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidationStep] {
     &[
         GenerationCloseoutValidationStep {
-            id: "release-boundary-baseline",
-            command: "effigy acceptance:release-boundary --repo .",
+            id: "widened-release-and-automation-gate",
+            command: "effigy acceptance:downstream-gate --repo .",
             rationale:
-                "The combined closeout must include the full conformance matrix plus the explicit release-packaging baseline.",
+                "The combined closeout must prove the widened backend, host-edge, packaging, and downstream fail-gate chain as one repo-owned release surface.",
         },
         GenerationCloseoutValidationStep {
             id: "generation-closeout-description",
@@ -346,14 +840,14 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
 
 fn generation_closeout_residual_risks() -> &'static [&'static str] {
     &[
-        "non-CLAP plugin backend breadth remains deferred beyond the current conformance boundary",
-        "host convenience APIs and downstream orchestration remain outside the first stable release promise",
-        "publication-grade packaging beyond changelog plus host-free boundary descriptions still needs a later queue",
+        "the broader server-host soak path remains deferred because the recovery-overlap attach limit still trips that fixture",
+        "optional analysis and wider confidence depth still remain outside the mandatory release gate",
+        "publication/distribution automation beyond the current repo-owned manifest descriptor still remains deferred",
     ]
 }
 
 fn generation_closeout_next_queue_summary() -> &'static str {
-    "Promote the post-g04 queue when maintainers want broader backend-neutral consumer breadth, publication-ready packaging, or longer-running downstream conformance automation."
+    "The explicit post-g05 candidate queue is recorded in backlog for later promotion when maintainers want broader publication/distribution automation and deeper shared acceptance promotion."
 }
 
 fn render_host_summary_sections_text(debug: ExportDebugOptions) -> String {
@@ -897,6 +1391,145 @@ fn print_conformance_matrix(format: OutputFormat) {
     }
 }
 
+fn render_host_edge_boundary_text() -> String {
+    let mut rendered = format!(
+        "host_edge_boundary: {HOST_EDGE_BOUNDARY}\ncontract_path: {HOST_EDGE_CONTRACT_PATH}\nacceptance_task: {HOST_EDGE_ACCEPTANCE_TASK}\nstable_surfaces:\n"
+    );
+    for surface in host_edge_surface_records()
+        .iter()
+        .filter(|surface| surface.tier == HostEdgeStabilityTier::Public)
+    {
+        rendered.push_str(&format!(
+            "- id: {}\n  tier: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.tier.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("intentionally_unstable:\n");
+    for surface in host_edge_surface_records()
+        .iter()
+        .filter(|surface| surface.tier != HostEdgeStabilityTier::Public)
+    {
+        rendered.push_str(&format!(
+            "- id: {}\n  tier: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.tier.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in host_edge_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered
+}
+
+fn render_host_edge_boundary_json() -> String {
+    let stable_surfaces = host_edge_surface_records()
+        .iter()
+        .filter(|surface| surface.tier == HostEdgeStabilityTier::Public)
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"tier\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.tier.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let unstable_surfaces = host_edge_surface_records()
+        .iter()
+        .filter(|surface| surface.tier != HostEdgeStabilityTier::Public)
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"tier\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.tier.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = host_edge_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"stable_surfaces\":[{}],",
+            "\"intentionally_unstable\":[{}],",
+            "\"validation_steps\":[{}]",
+            "}}"
+        ),
+        json_string(HOST_EDGE_BOUNDARY),
+        json_string(HOST_EDGE_CONTRACT_PATH),
+        json_string(HOST_EDGE_ACCEPTANCE_TASK),
+        stable_surfaces,
+        unstable_surfaces,
+        validation_steps,
+    )
+}
+
+fn print_host_edge_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_host_edge_boundary_text()),
+        OutputFormat::Json => println!("{}", render_host_edge_boundary_json()),
+    }
+}
+
 fn render_release_boundary_text() -> String {
     let mut rendered = format!(
         "release_boundary: {RELEASE_BOUNDARY}\nrelease_version: {}\nversion_source: {RELEASE_VERSION_SOURCE}\nchangelog_path: {RELEASE_CHANGELOG_PATH}\nexport_schema: {EXPORT_SCHEMA}\nexport_schema_version: {EXPORT_SCHEMA_VERSION}\nconformance_task: {RELEASE_CONFORMANCE_TASK}\nartifacts:\n",
@@ -1004,9 +1637,333 @@ fn print_release_boundary(format: OutputFormat) {
     }
 }
 
+fn render_packaging_manifest_text() -> String {
+    let mut rendered = format!(
+        "packaging_manifest: {PACKAGING_MANIFEST}\nrelease_version: {}\nversion_source: {RELEASE_VERSION_SOURCE}\ncontract_path: {PACKAGING_MANIFEST_CONTRACT_PATH}\nacceptance_task: {PACKAGING_MANIFEST_ACCEPTANCE_TASK}\ninputs:\n",
+        env!("CARGO_PKG_VERSION")
+    );
+    for input in packaging_manifest_inputs() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  path_or_command: {}\n  rationale: {}\n",
+            input.id,
+            input.kind.label(),
+            input.path_or_command,
+            input.rationale,
+        ));
+    }
+    rendered.push_str("receipt_surfaces:\n");
+    for receipt in packaging_receipt_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  surface: {}\n  rationale: {}\n",
+            receipt.id, receipt.surface, receipt.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in packaging_manifest_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("unsupported_publication_paths:\n");
+    for scope in packaging_manifest_unsupported_paths() {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_packaging_manifest_json() -> String {
+    let inputs = packaging_manifest_inputs()
+        .iter()
+        .map(|input| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"path_or_command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(input.id),
+                json_string(input.kind.label()),
+                json_string(input.path_or_command),
+                json_string(input.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let receipts = packaging_receipt_surfaces()
+        .iter()
+        .map(|receipt| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"surface\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(receipt.id),
+                json_string(receipt.surface),
+                json_string(receipt.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = packaging_manifest_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let unsupported = packaging_manifest_unsupported_paths()
+        .iter()
+        .map(|scope| json_string(scope))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"manifest\":{},",
+            "\"release_version\":{},",
+            "\"version_source\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"inputs\":[{}],",
+            "\"receipt_surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"unsupported_publication_paths\":[{}]",
+            "}}"
+        ),
+        json_string(PACKAGING_MANIFEST),
+        json_string(env!("CARGO_PKG_VERSION")),
+        json_string(RELEASE_VERSION_SOURCE),
+        json_string(PACKAGING_MANIFEST_CONTRACT_PATH),
+        json_string(PACKAGING_MANIFEST_ACCEPTANCE_TASK),
+        inputs,
+        receipts,
+        validation_steps,
+        unsupported,
+    )
+}
+
+fn print_packaging_manifest(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_packaging_manifest_text()),
+        OutputFormat::Json => println!("{}", render_packaging_manifest_json()),
+    }
+}
+
+fn render_downstream_automation_text() -> String {
+    let mut rendered = format!(
+        "downstream_automation_boundary: {DOWNSTREAM_AUTOMATION_BOUNDARY}\ncontract_path: {DOWNSTREAM_AUTOMATION_CONTRACT_PATH}\nmandatory_release_task: {DOWNSTREAM_AUTOMATION_MANDATORY_TASK}\noptional_depth_task: {DOWNSTREAM_AUTOMATION_OPTIONAL_TASK}\ncombined_task: {DOWNSTREAM_AUTOMATION_COMBINED_TASK}\nmandatory_release_acceptance:\n"
+    );
+    for fixture in downstream_automation_mandatory_fixtures() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  command: {}\n  typed_output: {}\n  rationale: {}\n",
+            fixture.id,
+            fixture.kind.label(),
+            fixture.command,
+            fixture.typed_output,
+            fixture.rationale,
+        ));
+    }
+    rendered.push_str("optional_confidence_depth:\n");
+    for fixture in downstream_automation_optional_fixtures() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  command: {}\n  typed_output: {}\n  rationale: {}\n",
+            fixture.id,
+            fixture.kind.label(),
+            fixture.command,
+            fixture.typed_output,
+            fixture.rationale,
+        ));
+    }
+    rendered
+}
+
+fn render_downstream_automation_json() -> String {
+    let mandatory = downstream_automation_mandatory_fixtures()
+        .iter()
+        .map(|fixture| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"command\":{},",
+                    "\"typed_output\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(fixture.id),
+                json_string(fixture.kind.label()),
+                json_string(fixture.command),
+                json_string(fixture.typed_output),
+                json_string(fixture.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let optional = downstream_automation_optional_fixtures()
+        .iter()
+        .map(|fixture| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"command\":{},",
+                    "\"typed_output\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(fixture.id),
+                json_string(fixture.kind.label()),
+                json_string(fixture.command),
+                json_string(fixture.typed_output),
+                json_string(fixture.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"mandatory_release_task\":{},",
+            "\"optional_depth_task\":{},",
+            "\"combined_task\":{},",
+            "\"mandatory_release_acceptance\":[{}],",
+            "\"optional_confidence_depth\":[{}]",
+            "}}"
+        ),
+        json_string(DOWNSTREAM_AUTOMATION_BOUNDARY),
+        json_string(DOWNSTREAM_AUTOMATION_CONTRACT_PATH),
+        json_string(DOWNSTREAM_AUTOMATION_MANDATORY_TASK),
+        json_string(DOWNSTREAM_AUTOMATION_OPTIONAL_TASK),
+        json_string(DOWNSTREAM_AUTOMATION_COMBINED_TASK),
+        mandatory,
+        optional,
+    )
+}
+
+fn print_downstream_automation(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_downstream_automation_text()),
+        OutputFormat::Json => println!("{}", render_downstream_automation_json()),
+    }
+}
+
+fn render_downstream_fail_gates_text() -> String {
+    let mut rendered = format!(
+        "downstream_fail_gates: {DOWNSTREAM_FAIL_GATES}\ncontract_path: {DOWNSTREAM_AUTOMATION_CONTRACT_PATH}\nfail_gate_task: {DOWNSTREAM_FAIL_GATE_TASK}\nmandatory_release_task: {DOWNSTREAM_AUTOMATION_MANDATORY_TASK}\noptional_depth_task: {DOWNSTREAM_AUTOMATION_OPTIONAL_TASK}\nrules:\n"
+    );
+    for rule in downstream_fail_gate_rules() {
+        rendered.push_str(&format!(
+            "- id: {}\n  gate: {}\n  command: {}\n  blocks_release: {}\n  rationale: {}\n",
+            rule.id, rule.gate, rule.command, rule.blocks_release, rule.rationale,
+        ));
+    }
+    rendered.push_str("deferred_depth:\n");
+    for record in downstream_deferred_depth_records() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  status: {}\n  rationale: {}\n",
+            record.id, record.command, record.status, record.rationale,
+        ));
+    }
+    rendered
+}
+
+fn render_downstream_fail_gates_json() -> String {
+    let rules = downstream_fail_gate_rules()
+        .iter()
+        .map(|rule| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"gate\":{},",
+                    "\"command\":{},",
+                    "\"blocks_release\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(rule.id),
+                json_string(rule.gate),
+                json_string(rule.command),
+                rule.blocks_release,
+                json_string(rule.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred = downstream_deferred_depth_records()
+        .iter()
+        .map(|record| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"status\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(record.id),
+                json_string(record.command),
+                json_string(record.status),
+                json_string(record.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"fail_gate_task\":{},",
+            "\"mandatory_release_task\":{},",
+            "\"optional_depth_task\":{},",
+            "\"rules\":[{}],",
+            "\"deferred_depth\":[{}]",
+            "}}"
+        ),
+        json_string(DOWNSTREAM_FAIL_GATES),
+        json_string(DOWNSTREAM_AUTOMATION_CONTRACT_PATH),
+        json_string(DOWNSTREAM_FAIL_GATE_TASK),
+        json_string(DOWNSTREAM_AUTOMATION_MANDATORY_TASK),
+        json_string(DOWNSTREAM_AUTOMATION_OPTIONAL_TASK),
+        rules,
+        deferred,
+    )
+}
+
+fn print_downstream_fail_gates(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_downstream_fail_gates_text()),
+        OutputFormat::Json => println!("{}", render_downstream_fail_gates_json()),
+    }
+}
+
 fn render_generation_closeout_text() -> String {
     let mut rendered = format!(
-        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\nconformance_matrix_command: cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json\nrelease_boundary_command: cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json\npost_g04_queue_path: {POST_G04_QUEUE_PATH}\nvalidation_steps:\n"
+        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\nconformance_matrix_command: cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json\nhost_edge_boundary_command: cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json\nrelease_boundary_command: cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json\npackaging_manifest_command: cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json\ndownstream_automation_command: cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json\ndownstream_fail_gates_command: cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json\npost_g05_queue_path: {POST_G05_QUEUE_PATH}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
     );
     for step in generation_closeout_validation_steps() {
         rendered.push_str(&format!(
@@ -1056,8 +2013,13 @@ fn render_generation_closeout_json() -> String {
             "\"generation\":{},",
             "\"closeout_task\":{},",
             "\"conformance_matrix_command\":{},",
+            "\"host_edge_boundary_command\":{},",
             "\"release_boundary_command\":{},",
-            "\"post_g04_queue_path\":{},",
+            "\"packaging_manifest_command\":{},",
+            "\"downstream_automation_command\":{},",
+            "\"downstream_fail_gates_command\":{},",
+            "\"post_g05_queue_path\":{},",
+            "\"next_queue_status\":{},",
             "\"validation_steps\":[{}],",
             "\"residual_risks\":[{}],",
             "\"next_queue_summary\":{}",
@@ -1070,9 +2032,22 @@ fn render_generation_closeout_json() -> String {
             "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
         ),
         json_string(
+            "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json",
+        ),
+        json_string(
             "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json",
         ),
-        json_string(POST_G04_QUEUE_PATH),
+        json_string(
+            "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json",
+        ),
+        json_string(
+            "cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json",
+        ),
+        json_string(
+            "cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json",
+        ),
+        json_string(POST_G05_QUEUE_PATH),
+        json_string(GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS),
         validation_steps,
         residual_risks,
         json_string(generation_closeout_next_queue_summary()),
@@ -1198,7 +2173,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut debug = ExportDebugOptions::default();
     let mut describe_export = false;
     let mut describe_conformance_matrix = false;
+    let mut describe_host_edge_boundary = false;
     let mut describe_release_boundary = false;
+    let mut describe_packaging_manifest = false;
+    let mut describe_downstream_automation = false;
+    let mut describe_downstream_fail_gates = false;
     let mut describe_generation_closeout = false;
     let mut positional = Vec::new();
 
@@ -1223,8 +2202,24 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             describe_conformance_matrix = true;
             continue;
         }
+        if arg == "--describe-host-edge-boundary" {
+            describe_host_edge_boundary = true;
+            continue;
+        }
         if arg == "--describe-release-boundary" {
             describe_release_boundary = true;
+            continue;
+        }
+        if arg == "--describe-packaging-manifest" {
+            describe_packaging_manifest = true;
+            continue;
+        }
+        if arg == "--describe-downstream-automation" {
+            describe_downstream_automation = true;
+            continue;
+        }
+        if arg == "--describe-downstream-fail-gates" {
+            describe_downstream_fail_gates = true;
             continue;
         }
         if arg == "--describe-generation-closeout" {
@@ -1241,7 +2236,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let describe_mode_count = [
         describe_export,
         describe_conformance_matrix,
+        describe_host_edge_boundary,
         describe_release_boundary,
+        describe_packaging_manifest,
+        describe_downstream_automation,
+        describe_downstream_fail_gates,
         describe_generation_closeout,
     ]
     .into_iter()
@@ -1278,6 +2277,20 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_host_edge_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-host-edge-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeHostEdgeBoundary,
+        });
+    }
+
     if describe_release_boundary {
         if !positional.is_empty() {
             return Err(
@@ -1292,6 +2305,34 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_downstream_automation {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-downstream-automation` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeDownstreamAutomation,
+        });
+    }
+
+    if describe_downstream_fail_gates {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-downstream-fail-gates` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeDownstreamFailGates,
+        });
+    }
+
     if describe_generation_closeout {
         if !positional.is_empty() {
             return Err(
@@ -1303,6 +2344,20 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeGenerationCloseout,
+        });
+    }
+
+    if describe_packaging_manifest {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-packaging-manifest` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribePackagingManifest,
         });
     }
 
@@ -1343,8 +2398,24 @@ fn main() {
             print_conformance_matrix(args.format);
             Ok(())
         }
+        CliMode::DescribeHostEdgeBoundary => {
+            print_host_edge_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeReleaseBoundary => {
             print_release_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribePackagingManifest => {
+            print_packaging_manifest(args.format);
+            Ok(())
+        }
+        CliMode::DescribeDownstreamAutomation => {
+            print_downstream_automation(args.format);
+            Ok(())
+        }
+        CliMode::DescribeDownstreamFailGates => {
+            print_downstream_fail_gates(args.format);
             Ok(())
         }
         CliMode::DescribeGenerationCloseout => {
@@ -1363,8 +2434,12 @@ fn main() {
 mod tests {
     use super::{
         parse_args, render_conformance_matrix_json, render_conformance_matrix_text,
+        render_downstream_automation_json, render_downstream_automation_text,
+        render_downstream_fail_gates_json, render_downstream_fail_gates_text,
         render_export_description_json, render_export_description_text,
         render_generation_closeout_json, render_generation_closeout_text,
+        render_host_edge_boundary_json, render_host_edge_boundary_text,
+        render_packaging_manifest_json, render_packaging_manifest_text,
         render_release_boundary_json, render_release_boundary_text, render_supervisor_export_json,
         CliArgs, CliMode, ExportDebugOptions, HostProfile, HostSummaryDebugSection, OutputFormat,
         Scenario,
@@ -1432,6 +2507,48 @@ mod tests {
                 supports_reset_while_active: true,
             },
             summary: "supervisor export discovered plugin".into(),
+        }
+    }
+
+    fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
+        RuntimePluginDiscoveredTypeRecord {
+            plugin_type_id: "plugin:vst3:export-instrument".into(),
+            plugin_id: "com.signal.export-instrument".into(),
+            vendor: "Signal".into(),
+            name: "Signal Export Instrument".into(),
+            format: PluginFormat::Vst3,
+            version: Some("2.0.0".into()),
+            features: vec![PluginFeature::Instrument, PluginFeature::Analyzer],
+            default_io_layout: PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+            audio_bus_count: 1,
+            parameter_count: 24,
+            state_contract: PluginStateContract {
+                supports_snapshot: false,
+                supports_reset: true,
+                supports_bypass: false,
+                exposes_latency: false,
+                exposes_tail: true,
+            },
+            processing_contract: PluginProcessingContract {
+                max_block_frames: 2048,
+                sample_accurate_automation: false,
+                accepts_midi: true,
+                accepts_note_events: true,
+                produces_midi: false,
+                silence_aware: false,
+            },
+            lifecycle_contract: PluginLifecycleContract {
+                requires_main_thread_for_state: true,
+                supports_prepare: true,
+                supports_activate: false,
+                supports_reset_while_active: false,
+            },
+            summary: "supervisor export backend breadth plugin".into(),
         }
     }
 
@@ -1643,6 +2760,32 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_host_edge_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-host-edge-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeHostEdgeBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_host_edge_boundary() {
+        let error = parse_args([
+            "--describe-host-edge-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_supports_describe_release_boundary_mode() {
         assert_eq!(
             parse_args(["--format=json".into(), "--describe-release-boundary".into()]),
@@ -1658,6 +2801,84 @@ mod tests {
     fn parse_args_rejects_positionals_with_describe_release_boundary() {
         let error = parse_args([
             "--describe-release-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_packaging_manifest_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-packaging-manifest".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribePackagingManifest,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_packaging_manifest() {
+        let error = parse_args([
+            "--describe-packaging-manifest".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_downstream_automation_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-downstream-automation".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeDownstreamAutomation,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_downstream_automation() {
+        let error = parse_args([
+            "--describe-downstream-automation".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_downstream_fail_gates_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-downstream-fail-gates".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeDownstreamFailGates,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_downstream_fail_gates() {
+        let error = parse_args([
+            "--describe-downstream-fail-gates".into(),
             "local".into(),
             "default".into(),
         ])
@@ -1723,9 +2944,13 @@ mod tests {
         assert!(rendered.contains("consumer_conformance_matrix:"));
         assert!(rendered.contains("runtime-public-contract-boundary"));
         assert!(rendered.contains("supervisor-export-discovery-consumer"));
+        assert!(rendered.contains("plugin-backend-breadth-coverage"));
+        assert!(rendered.contains("shared-host-edge-consumer"));
         assert!(rendered.contains("runtime-supervisor-report-demo"));
         assert!(rendered.contains("supervisor-export-schema-description"));
         assert!(rendered.contains("cargo test -p signal-runtime public_runtime_contract_boundary_is_consumable_from_reexports"));
+        assert!(rendered.contains("effigy acceptance:plugin-backend-breadth --repo ."));
+        assert!(rendered.contains("effigy acceptance:host-edge-consumer --repo ."));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
         ));
@@ -1735,13 +2960,41 @@ mod tests {
     fn conformance_matrix_json_reports_runnable_consumer_boundary() {
         let rendered = render_conformance_matrix_json();
         assert!(rendered.contains("\"matrix\":\"signal.consumer.conformance\""));
-        assert!(rendered.contains("\"entry_count\":4"));
+        assert!(rendered.contains("\"entry_count\":6"));
         assert!(rendered.contains("\"id\":\"runtime-public-contract-boundary\""));
         assert!(rendered.contains("\"kind\":\"export-consumer-test\""));
         assert!(rendered.contains("\"crate\":\"signal-supervisor-tools\""));
+        assert!(rendered.contains("\"id\":\"plugin-backend-breadth-coverage\""));
+        assert!(rendered.contains("\"id\":\"shared-host-edge-consumer\""));
         assert!(rendered.contains(
             "\"command\":\"cargo run -p signal-runtime --example supervisor_report_demo\""
         ));
+    }
+
+    #[test]
+    fn host_edge_boundary_text_reports_stable_and_unstable_edges() {
+        let rendered = render_host_edge_boundary_text();
+        assert!(rendered.contains("host_edge_boundary: signal.host.edge.boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:host-edge-consumer --repo ."));
+        assert!(rendered.contains("surface: RuntimeSupervisorApi implemented by both hosts"));
+        assert!(rendered.contains("surface: supervisor_report() -> RuntimeSupervisorReport"));
+        assert!(rendered.contains("tier: consumer-facing-but-unstable"));
+        assert!(rendered.contains("surface: boot_* fault, recovery, watchdog, and soak helpers"));
+    }
+
+    #[test]
+    fn host_edge_boundary_json_reports_stable_and_unstable_edges() {
+        let rendered = render_host_edge_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.host.edge.boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:host-edge-consumer --repo .\""));
+        assert!(rendered.contains("\"id\":\"shared-runtime-supervisor-api\""));
+        assert!(rendered.contains("\"id\":\"shared-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"host-summary-dtos\""));
+        assert!(rendered.contains("\"tier\":\"scenario-only\""));
     }
 
     #[test]
@@ -1754,8 +3007,12 @@ mod tests {
         assert!(rendered.contains("conformance_task: effigy acceptance:conformance --repo ."));
         assert!(rendered
             .contains("cargo run -p signal-supervisor-tools -- --describe-export --format=json"));
-        assert!(rendered
-            .contains("artifact packaging beyond changelog plus host-free boundary descriptions"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json"
+        ));
+        assert!(rendered.contains(
+            "publication packaging beyond the repo-owned manifest descriptor and receipt inventory"
+        ));
     }
 
     #[test]
@@ -1771,41 +3028,157 @@ mod tests {
         assert!(rendered.contains("\"id\":\"workspace-changelog\""));
         assert!(rendered.contains("\"id\":\"consumer-conformance\""));
         assert!(rendered.contains("\"id\":\"supervisor-export-description\""));
+        assert!(rendered.contains("\"id\":\"publication-packaging-manifest\""));
+    }
+
+    #[test]
+    fn packaging_manifest_text_reports_release_bundle_and_receipts() {
+        let rendered = render_packaging_manifest_text();
+        assert!(rendered.contains("packaging_manifest: signal.release.packaging-manifest"));
+        assert!(rendered.contains("release_version: 0.1.0"));
+        assert!(rendered.contains(
+            "contract_path: docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md"
+        ));
+        assert!(rendered
+            .contains("acceptance_task: effigy acceptance:release-packaging-consumer --repo ."));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json"
+        ));
+        assert!(rendered.contains("id: manifest-generation-receipt"));
+        assert!(rendered.contains("id: validation-receipt"));
+        assert!(rendered.contains("crates.io publication and registry upload automation"));
+    }
+
+    #[test]
+    fn packaging_manifest_json_reports_release_bundle_and_receipts() {
+        let rendered = render_packaging_manifest_json();
+        assert!(rendered.contains("\"manifest\":\"signal.release.packaging-manifest\""));
+        assert!(rendered.contains("\"release_version\":\"0.1.0\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md\""
+        ));
+        assert!(rendered.contains(
+            "\"acceptance_task\":\"effigy acceptance:release-packaging-consumer --repo .\""
+        ));
+        assert!(rendered.contains("\"id\":\"release-boundary-descriptor\""));
+        assert!(rendered.contains("\"id\":\"manifest-generation-receipt\""));
+        assert!(rendered.contains("\"id\":\"validation-receipt\""));
+        assert!(rendered.contains("\"id\":\"release-boundary-baseline\""));
+    }
+
+    #[test]
+    fn downstream_automation_text_reports_mandatory_and_optional_fixtures() {
+        let rendered = render_downstream_automation_text();
+        assert!(rendered.contains("downstream_automation_boundary: signal.downstream.automation"));
+        assert!(rendered
+            .contains("mandatory_release_task: effigy acceptance:downstream-release --repo ."));
+        assert!(
+            rendered.contains("optional_depth_task: effigy acceptance:downstream-depth --repo .")
+        );
+        assert!(rendered.contains("id: release-packaging-consumer"));
+        assert!(rendered.contains("id: local-mixed-watchdog-export"));
+        assert!(rendered.contains(
+            "signal.supervisor.export JSON with profiling_receipt, soak_receipt, and supervisor_report"
+        ));
+    }
+
+    #[test]
+    fn downstream_automation_json_reports_mandatory_and_optional_fixtures() {
+        let rendered = render_downstream_automation_json();
+        assert!(rendered.contains("\"boundary\":\"signal.downstream.automation\""));
+        assert!(rendered.contains(
+            "\"mandatory_release_task\":\"effigy acceptance:downstream-release --repo .\""
+        ));
+        assert!(rendered
+            .contains("\"optional_depth_task\":\"effigy acceptance:downstream-depth --repo .\""));
+        assert!(rendered
+            .contains("\"combined_task\":\"effigy acceptance:downstream-automation --repo .\""));
+        assert!(rendered.contains("\"id\":\"downstream-automation-descriptor\""));
+        assert!(rendered.contains("\"id\":\"local-soak-export\""));
+        assert!(rendered.contains("\"id\":\"analysis-acceptance\""));
+    }
+
+    #[test]
+    fn downstream_fail_gates_text_reports_required_and_deferred_policy() {
+        let rendered = render_downstream_fail_gates_text();
+        assert!(rendered.contains("downstream_fail_gates: signal.downstream.fail-gates"));
+        assert!(rendered.contains("fail_gate_task: effigy acceptance:downstream-gate --repo ."));
+        assert!(rendered.contains("id: mandatory-release-gate"));
+        assert!(rendered.contains("blocks_release: true"));
+        assert!(rendered.contains("id: optional-depth-lane"));
+        assert!(rendered.contains("blocks_release: false"));
+        assert!(rendered.contains("id: server-soak-export"));
+    }
+
+    #[test]
+    fn downstream_fail_gates_json_reports_required_and_deferred_policy() {
+        let rendered = render_downstream_fail_gates_json();
+        assert!(rendered.contains("\"boundary\":\"signal.downstream.fail-gates\""));
+        assert!(
+            rendered.contains("\"fail_gate_task\":\"effigy acceptance:downstream-gate --repo .\"")
+        );
+        assert!(rendered.contains("\"id\":\"mandatory-release-gate\""));
+        assert!(rendered.contains("\"blocks_release\":true"));
+        assert!(rendered.contains("\"id\":\"optional-depth-lane\""));
+        assert!(rendered.contains("\"blocks_release\":false"));
+        assert!(rendered.contains("\"id\":\"server-soak-export\""));
+        assert!(rendered.contains("\"status\":\"deferred\""));
     }
 
     #[test]
     fn generation_closeout_text_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_text();
         assert!(rendered.contains("generation_closeout: signal.generation.closeout"));
-        assert!(rendered.contains("generation: g04"));
-        assert!(rendered.contains("closeout_task: effigy acceptance:g04-closeout --repo ."));
+        assert!(rendered.contains("generation: g05"));
+        assert!(rendered.contains("closeout_task: effigy acceptance:g05-closeout --repo ."));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json"
         ));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json"
         ));
         assert!(rendered.contains(
-            "post_g04_queue_path: docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md"
+            "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json"
         ));
         assert!(rendered.contains(
-            "Promote the post-g04 queue when maintainers want broader backend-neutral consumer breadth"
+            "cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json"
         ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json"
+        ));
+        assert!(rendered.contains(
+            "post_g05_queue_path: docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md"
+        ));
+        assert!(rendered.contains("next_queue_status: recorded-backlog-candidate"));
+        assert!(rendered.contains("The explicit post-g05 candidate queue is recorded in backlog"));
     }
 
     #[test]
     fn generation_closeout_json_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_json();
         assert!(rendered.contains("\"closeout\":\"signal.generation.closeout\""));
-        assert!(rendered.contains("\"generation\":\"g04\""));
-        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g04-closeout --repo .\""));
+        assert!(rendered.contains("\"generation\":\"g05\""));
+        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g05-closeout --repo .\""));
         assert!(rendered.contains(
-            "\"post_g04_queue_path\":\"docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md\""
+            "\"host_edge_boundary_command\":\"cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json\""
         ));
-        assert!(rendered.contains("\"id\":\"release-boundary-baseline\""));
+        assert!(rendered.contains(
+            "\"packaging_manifest_command\":\"cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json\""
+        ));
+        assert!(rendered.contains(
+            "\"downstream_fail_gates_command\":\"cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json\""
+        ));
+        assert!(rendered.contains(
+            "\"post_g05_queue_path\":\"docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md\""
+        ));
+        assert!(rendered.contains("\"next_queue_status\":\"recorded-backlog-candidate\""));
+        assert!(rendered.contains("\"id\":\"widened-release-and-automation-gate\""));
         assert!(rendered.contains("\"id\":\"generation-closeout-description\""));
         assert!(rendered.contains(
-            "\"non-CLAP plugin backend breadth remains deferred beyond the current conformance boundary\""
+            "\"publication/distribution automation beyond the current repo-owned manifest descriptor still remains deferred\""
         ));
     }
 
@@ -1870,7 +3243,13 @@ mod tests {
             roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
             formats: vec![PluginFormat::Clap],
         });
-        runtime.record_plugin_scan_results(scan_handle, vec![sample_discovered_type_record()]);
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                sample_discovered_type_record(),
+                sample_backend_breadth_record(),
+            ],
+        );
         runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
             sandbox_id: "export-consumer-sandbox".into(),
             plugin_format: PluginFormat::Clap,
@@ -1896,11 +3275,49 @@ mod tests {
         assert!(export.contains("\"host_summary\":{}"));
         assert!(export.contains("\"supervisor_report\":{"));
         assert!(export.contains("\"plugin_discovery_snapshot\":{"));
-        assert!(export.contains("\"discovered_type_count\":1"));
+        assert!(export.contains("\"discovered_type_count\":2"));
+        assert!(export.contains("\"discovered_format_count\":2"));
         assert!(export.contains("\"plugin_type_id\":\"plugin:clap:export-consumer\""));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:vst3:export-instrument\""));
         assert!(export.contains("\"format\":\"Clap\""));
+        assert!(export.contains("\"multi_format_catalog\":true"));
+        assert!(export.contains("\"requires_main_thread_for_state_count\":1"));
+        assert!(export.contains("\"format_coverage\":["));
         assert!(export.contains("\"supports_snapshot\":true"));
         assert!(export.contains("\"supports_activate\":true"));
+    }
+
+    #[test]
+    fn export_json_carries_runtime_owned_plugin_discovery_capability_coverage() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/Library/Audio/Plug-Ins".into()],
+            formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
+        });
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                sample_discovered_type_record(),
+                sample_backend_breadth_record(),
+            ],
+        );
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Default,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"discovered_format_count\":2"));
+        assert!(export.contains("\"multi_format_catalog\":true"));
+        assert!(export.contains("\"requires_main_thread_for_state_count\":1"));
+        assert!(export.contains("\"max_parameter_count\":24"));
+        assert!(export.contains("\"format\":\"Vst3\""));
+        assert!(export.contains("\"instrument_count\":1"));
     }
 
     #[test]
