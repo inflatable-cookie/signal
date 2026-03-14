@@ -44,6 +44,8 @@ enum CliMode {
     DescribeConformanceMatrix,
     DescribeInterruptionBoundary,
     DescribeFaultDiagnosticBoundary,
+    DescribeCriticalPathBoundary,
+    DescribeBlockTimingBoundary,
     DescribeRecordingContinuityBoundary,
     DescribeOfflineRenderContinuityBoundary,
     DescribePluginContinuityBoundary,
@@ -67,6 +69,14 @@ const FAULT_DIAGNOSTIC_BOUNDARY: &str = "signal.runtime.fault-diagnostic-boundar
 const FAULT_DIAGNOSTIC_CONTRACT_PATH: &str =
     "docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md";
 const FAULT_DIAGNOSTIC_ACCEPTANCE_TASK: &str = "effigy acceptance:fault-diagnostic-boundary";
+const CRITICAL_PATH_BOUNDARY: &str = "signal.runtime.critical-path-boundary";
+const CRITICAL_PATH_CONTRACT_PATH: &str =
+    "docs/contracts/018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md";
+const CRITICAL_PATH_ACCEPTANCE_TASK: &str = "effigy acceptance:critical-path-boundary";
+const BLOCK_TIMING_BOUNDARY: &str = "signal.runtime.block-timing-boundary";
+const BLOCK_TIMING_CONTRACT_PATH: &str =
+    "docs/contracts/017-per-block-execution-timing-and-pressure-snapshot-contract.md";
+const BLOCK_TIMING_ACCEPTANCE_TASK: &str = "effigy acceptance:block-timing-boundary";
 const RECORDING_CONTINUITY_BOUNDARY: &str = "signal.runtime.recording-continuity-boundary";
 const RECORDING_CONTINUITY_CONTRACT_PATH: &str =
     "docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md";
@@ -193,6 +203,54 @@ struct FaultDiagnosticBoundarySurface {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct FaultDiagnosticBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CriticalPathBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeReceipt,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct CriticalPathBoundarySurface {
+    id: &'static str,
+    kind: CriticalPathBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct CriticalPathBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum BlockTimingBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeReceipt,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct BlockTimingBoundarySurface {
+    id: &'static str,
+    kind: BlockTimingBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct BlockTimingBoundaryValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -418,7 +476,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -470,6 +528,26 @@ impl InterruptionBoundarySurfaceKind {
 }
 
 impl FaultDiagnosticBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeReceipt => "runtime-receipt",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl CriticalPathBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeReceipt => "runtime-receipt",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl BlockTimingBoundarySurfaceKind {
     fn label(self) -> &'static str {
         match self {
             Self::RuntimeReport => "runtime-report",
@@ -805,6 +883,139 @@ fn fault_diagnostic_boundary_validation_steps() -> &'static [FaultDiagnosticBoun
                 "cargo run -p signal-supervisor-tools -- --describe-fault-diagnostic-boundary --format=json",
             rationale:
                 "Lets downstream tooling inspect the fault-diagnostic boundary, proof commands, and deferred scope without private implementation detail.",
+        },
+    ]
+}
+
+fn critical_path_boundary_surfaces() -> &'static [CriticalPathBoundarySurface] {
+    &[
+        CriticalPathBoundarySurface {
+            id: "runtime-performance-hotspot-report",
+            kind: CriticalPathBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::performance_snapshot() and RuntimeSupervisorReport::performance_snapshot()",
+            runtime_anchor: "RuntimePerformanceSnapshot",
+            rationale:
+                "Carries the bounded hot-node, hot-group, critical-path lane, and typed worker-lane summaries directly on the public runtime report boundary.",
+        },
+        CriticalPathBoundarySurface {
+            id: "runtime-performance-trace-digest",
+            kind: CriticalPathBoundarySurfaceKind::RuntimeReceipt,
+            crate_name: "signal-runtime",
+            surface: "RuntimePerformanceTraceReceipt",
+            runtime_anchor: "RuntimePerformanceTraceReceipt",
+            rationale:
+                "Keeps peak hot-group and critical-path lane evidence consumable across an observation window without private tracing hooks.",
+        },
+        CriticalPathBoundarySurface {
+            id: "shared-host-critical-path-report",
+            kind: CriticalPathBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures stable host edges forward the same bounded hotspot and lane receipts without host-local scheduler reconstruction.",
+        },
+    ]
+}
+
+fn critical_path_boundary_validation_steps() -> &'static [CriticalPathBoundaryValidationStep] {
+    &[
+        CriticalPathBoundaryValidationStep {
+            id: "runtime-public-critical-path-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect bounded hot-node, hot-group, critical-path lane, and worker-lane summaries through public reexports.",
+        },
+        CriticalPathBoundaryValidationStep {
+            id: "local-host-critical-path-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_critical_path_truth",
+            rationale:
+                "Proves the local shared host edge forwards the same bounded hotspot and lane receipts on supervisor export without private runtime hooks.",
+        },
+        CriticalPathBoundaryValidationStep {
+            id: "server-host-critical-path-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_critical_path_truth",
+            rationale:
+                "Proves the server shared host edge forwards the same bounded hotspot and lane receipts on supervisor export without server-local reinterpretation.",
+        },
+        CriticalPathBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-critical-path-boundary --format=json",
+            rationale:
+                "Lets downstream consumers inspect the bounded critical-path proof boundary without reading private runtime or host implementation detail.",
+        },
+    ]
+}
+
+fn block_timing_boundary_surfaces() -> &'static [BlockTimingBoundarySurface] {
+    &[
+        BlockTimingBoundarySurface {
+            id: "runtime-engine-block-snapshot",
+            kind: BlockTimingBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::engine_block_snapshot and RuntimeSupervisorReport::observation.engine_block_snapshot",
+            runtime_anchor: "RuntimeEngineBlockSnapshot",
+            rationale:
+                "Carries the canonical bounded block timing, deadline budget, pressure class, and overrun counters directly on the public runtime report boundary.",
+        },
+        BlockTimingBoundarySurface {
+            id: "runtime-performance-digests",
+            kind: BlockTimingBoundarySurfaceKind::RuntimeReceipt,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::performance_snapshot(), RuntimeSupervisorReport::performance_snapshot(), and RuntimePerformanceTraceReceipt",
+            runtime_anchor: "RuntimePerformanceSnapshot + RuntimePerformanceTraceReceipt",
+            rationale:
+                "Keeps consumer and automation timing evidence aligned to the same runtime-owned measurement seam instead of private tracing hooks.",
+        },
+        BlockTimingBoundarySurface {
+            id: "shared-host-block-timing-report",
+            kind: BlockTimingBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned block timing and pressure truth without host-local callback reinterpretation.",
+        },
+    ]
+}
+
+fn block_timing_boundary_validation_steps() -> &'static [BlockTimingBoundaryValidationStep] {
+    &[
+        BlockTimingBoundaryValidationStep {
+            id: "runtime-public-block-timing-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_block_timing_boundary_reports_bounded_runtime_measurements",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect block timing, deadline pressure, and performance digests through public reexports.",
+        },
+        BlockTimingBoundaryValidationStep {
+            id: "local-host-block-timing-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_block_timing_truth",
+            rationale:
+                "Proves the local shared host edge forwards the same block timing and pressure truth on supervisor export without private tracing hooks.",
+        },
+        BlockTimingBoundaryValidationStep {
+            id: "server-host-block-timing-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_block_timing_truth",
+            rationale:
+                "Proves the server shared host edge forwards the same block timing and pressure truth on supervisor export without server-local reinterpretation.",
+        },
+        BlockTimingBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-block-timing-boundary --format=json",
+            rationale:
+                "Lets downstream consumers inspect the bounded block timing proof boundary without reading private runtime or host implementation detail.",
         },
     ]
 }
@@ -2329,6 +2540,234 @@ fn print_fault_diagnostic_boundary(format: OutputFormat) {
     }
 }
 
+fn render_critical_path_boundary_text() -> String {
+    let mut rendered = format!(
+        "critical_path_boundary: {CRITICAL_PATH_BOUNDARY}\ncontract_path: {CRITICAL_PATH_CONTRACT_PATH}\nacceptance_task: {CRITICAL_PATH_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in critical_path_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in critical_path_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "deeper scheduler attribution beyond the current bounded hot-node, hot-group, and critical-path lane receipts remains deferred to later profiling work",
+        "node-by-node elapsed-time traces, flamegraph exports, and host thread telemetry remain outside this bounded consumer surface",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_critical_path_boundary_json() -> String {
+    let surfaces = critical_path_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = critical_path_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "deeper scheduler attribution beyond the current bounded hot-node, hot-group, and critical-path lane receipts remains deferred to later profiling work",
+        "node-by-node elapsed-time traces, flamegraph exports, and host thread telemetry remain outside this bounded consumer surface",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(CRITICAL_PATH_BOUNDARY),
+        json_string(CRITICAL_PATH_CONTRACT_PATH),
+        json_string(CRITICAL_PATH_ACCEPTANCE_TASK),
+        critical_path_boundary_surfaces().len(),
+        surfaces,
+        critical_path_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_critical_path_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_critical_path_boundary_text()),
+        OutputFormat::Json => println!("{}", render_critical_path_boundary_json()),
+    }
+}
+
+fn render_block_timing_boundary_text() -> String {
+    let mut rendered = format!(
+        "block_timing_boundary: {BLOCK_TIMING_BOUNDARY}\ncontract_path: {BLOCK_TIMING_CONTRACT_PATH}\nacceptance_task: {BLOCK_TIMING_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in block_timing_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in block_timing_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "critical-path, hot-node, and worker-lane attribution are still deferred to g06.007 instead of being inferred from block timing alone",
+        "host callback cadence remains advisory evidence and does not outrank the runtime-owned per-block timing seam",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_block_timing_boundary_json() -> String {
+    let surfaces = block_timing_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = block_timing_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "critical-path, hot-node, and worker-lane attribution are still deferred to g06.007 instead of being inferred from block timing alone",
+        "host callback cadence remains advisory evidence and does not outrank the runtime-owned per-block timing seam",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(BLOCK_TIMING_BOUNDARY),
+        json_string(BLOCK_TIMING_CONTRACT_PATH),
+        json_string(BLOCK_TIMING_ACCEPTANCE_TASK),
+        block_timing_boundary_surfaces().len(),
+        surfaces,
+        block_timing_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_block_timing_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_block_timing_boundary_text()),
+        OutputFormat::Json => println!("{}", render_block_timing_boundary_json()),
+    }
+}
+
 fn print_recording_continuity_boundary(format: OutputFormat) {
     match format {
         OutputFormat::Text => println!("{}", render_recording_continuity_boundary_text()),
@@ -3358,6 +3797,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_conformance_matrix = false;
     let mut describe_interruption_boundary = false;
     let mut describe_fault_diagnostic_boundary = false;
+    let mut describe_critical_path_boundary = false;
+    let mut describe_block_timing_boundary = false;
     let mut describe_recording_continuity_boundary = false;
     let mut describe_offline_render_continuity_boundary = false;
     let mut describe_plugin_continuity_boundary = false;
@@ -3396,6 +3837,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         }
         if arg == "--describe-fault-diagnostic-boundary" {
             describe_fault_diagnostic_boundary = true;
+            continue;
+        }
+        if arg == "--describe-critical-path-boundary" {
+            describe_critical_path_boundary = true;
+            continue;
+        }
+        if arg == "--describe-block-timing-boundary" {
+            describe_block_timing_boundary = true;
             continue;
         }
         if arg == "--describe-recording-continuity-boundary" {
@@ -3446,6 +3895,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_conformance_matrix,
         describe_interruption_boundary,
         describe_fault_diagnostic_boundary,
+        describe_critical_path_boundary,
+        describe_block_timing_boundary,
         describe_recording_continuity_boundary,
         describe_offline_render_continuity_boundary,
         describe_plugin_continuity_boundary,
@@ -3515,6 +3966,34 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeFaultDiagnosticBoundary,
+        });
+    }
+
+    if describe_critical_path_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-critical-path-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeCriticalPathBoundary,
+        });
+    }
+
+    if describe_block_timing_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-block-timing-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeBlockTimingBoundary,
         });
     }
 
@@ -3689,6 +4168,14 @@ fn main() {
             print_fault_diagnostic_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribeCriticalPathBoundary => {
+            print_critical_path_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeBlockTimingBoundary => {
+            print_block_timing_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeRecordingContinuityBoundary => {
             print_recording_continuity_boundary(args.format);
             Ok(())
@@ -3736,7 +4223,9 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        parse_args, render_conformance_matrix_json, render_conformance_matrix_text,
+        parse_args, render_block_timing_boundary_json, render_block_timing_boundary_text,
+        render_conformance_matrix_json, render_conformance_matrix_text,
+        render_critical_path_boundary_json, render_critical_path_boundary_text,
         render_downstream_automation_json, render_downstream_automation_text,
         render_downstream_fail_gates_json, render_downstream_fail_gates_text,
         render_export_description_json, render_export_description_text,
@@ -4110,6 +4599,58 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_critical_path_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-critical-path-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeCriticalPathBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_critical_path_boundary() {
+        let error = parse_args([
+            "--describe-critical-path-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_block_timing_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-block-timing-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeBlockTimingBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_block_timing_boundary() {
+        let error = parse_args([
+            "--describe-block-timing-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_supports_describe_recording_continuity_boundary_mode() {
         assert_eq!(
             parse_args([
@@ -4472,6 +5013,74 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-profiling-fault-diagnostic\""));
         assert!(rendered.contains("\"id\":\"shared-host-fault-diagnostic-report\""));
         assert!(rendered.contains("\"id\":\"runtime-public-fault-diagnostic-proof\""));
+    }
+
+    #[test]
+    fn critical_path_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_critical_path_boundary_text();
+        assert!(rendered.contains("critical_path_boundary: signal.runtime.critical-path-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:critical-path-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::performance_snapshot() and RuntimeSupervisorReport::performance_snapshot()"
+        ));
+        assert!(rendered.contains("surface: RuntimePerformanceTraceReceipt"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-critical-path-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn critical_path_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_critical_path_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.critical-path-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:critical-path-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-performance-hotspot-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-performance-trace-digest\""));
+        assert!(rendered.contains("\"id\":\"shared-host-critical-path-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-public-critical-path-proof\""));
+    }
+
+    #[test]
+    fn block_timing_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_block_timing_boundary_text();
+        assert!(rendered.contains("block_timing_boundary: signal.runtime.block-timing-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:block-timing-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::engine_block_snapshot and RuntimeSupervisorReport::observation.engine_block_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::performance_snapshot(), RuntimeSupervisorReport::performance_snapshot(), and RuntimePerformanceTraceReceipt"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_block_timing_boundary_reports_bounded_runtime_measurements"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-block-timing-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn block_timing_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_block_timing_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.block-timing-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/017-per-block-execution-timing-and-pressure-snapshot-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:block-timing-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-engine-block-snapshot\""));
+        assert!(rendered.contains("\"id\":\"runtime-performance-digests\""));
+        assert!(rendered.contains("\"id\":\"shared-host-block-timing-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-public-block-timing-proof\""));
     }
 
     #[test]

@@ -98,6 +98,6 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.006` with Batch 6.2 by instrumenting the newly frozen per-block
-execution timing and pressure seam so the profiling lane can move from contract
-meaning into real bounded runtime measurements without opening full tracing yet.
+Continue `g06.008` with Batch 8.1 by defining deferred-work scheduler
+priority, backpressure, starvation, and cancellation semantics before the
+profiling lane widens into deeper scheduler attribution.

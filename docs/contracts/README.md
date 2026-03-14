@@ -35,6 +35,7 @@ Use this section for:
 - `015-offline-render-recovery-and-resumability-contract.md`
 - `016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
 - `017-per-block-execution-timing-and-pressure-snapshot-contract.md`
+- `018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md`
 
 ## Rule
 
@@ -43,7 +44,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g06.006` with Batch 6.2 by instrumenting the newly frozen per-block
-execution timing and pressure snapshot contract so later scheduler and
-acceptance work can consume runtime-owned measurements instead of prose or
-private traces.
+Continue `g06.008` with Batch 8.1 by freezing deferred-work scheduler
+priority, backpressure, starvation, and cancellation semantics before later
+scheduler and acceptance lanes widen them.

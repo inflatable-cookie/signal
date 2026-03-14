@@ -1,6 +1,6 @@
 # 007 - Graph Critical-Path, Hot-Node, And Worker-Lane Instrumentation
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.006
@@ -28,25 +28,50 @@ identify where timing pressure actually comes from.
 
 ### Batch 7.1 - Critical-Path Contract
 
-- [ ] define critical-path and hot-node observation semantics
-- [ ] decide what worker-lane occupancy and queue detail belong in shared
+- [x] define critical-path and hot-node observation semantics
+- [x] decide what worker-lane occupancy and queue detail belong in shared
   Signal-owned surfaces
+
+Batch 7.1 freezes the bounded hotspot hierarchy in
+`docs/contracts/018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md`.
+It makes `RuntimeEngineBlockSnapshot` the explanatory graph-and-lane context
+authority, freezes `RuntimePerformanceSnapshot` as the shared consumer digest
+for hot-node, hot-group, and worker-lane width context, and keeps
+`RuntimePerformanceTraceReceipt` as the bounded peak-hotspot digest across an
+observation window. It also explicitly keeps host callback and OS scheduler
+detail advisory so Batch 7.2 can deepen runtime-owned instrumentation without
+drifting into host-local attribution.
 
 ### Batch 7.2 - Runtime Instrumentation Depth
 
-- [ ] implement graph/node/worker-lane instrumentation on top of block timing
-- [ ] keep multicore and anticipative execution semantics aligned with receipts
+- [x] implement graph/node/worker-lane instrumentation on top of block timing
+- [x] keep multicore and anticipative execution semantics aligned with receipts
+
+Batch 7.2 turns the bounded contract into a real runtime-owned hotspot seam.
+`RuntimePerformanceSnapshot` now carries richer hot-group and
+critical-path-lane attribution plus typed per-lane summaries, and
+`RuntimePerformanceTraceReceipt` now preserves the peak critical lane alongside
+the existing peak hot-node and hot-group fields. The implementation reuses
+`RuntimeEngineBlockSnapshot` planning and lane-order truth so multicore and
+anticipative execution evidence stay derived inside `signal-runtime` rather
+than being reconstructed by hosts or tools.
 
 ### Batch 7.3 - Public Proof
 
-- [ ] add focused proof that downstream consumers can inspect the bounded
+- [x] add focused proof that downstream consumers can inspect the bounded
   critical-path surface without private runtime hooks
+
+Batch 7.3 closes the bounded consumer seam. The widened hotspot and lane
+receipts are now proven through downstream-style runtime tests, stable local
+and server host-edge tests, and a machine-readable
+`signal-supervisor-tools --describe-critical-path-boundary` descriptor plus the
+repo-owned `effigy acceptance:critical-path-boundary` task.
 
 ## Acceptance Criteria
 
-- [ ] Signal can identify bounded critical-path and worker-lane timing pressure
-- [ ] later optimization and soak evidence can cite node/lane sources directly
-- [ ] instrumentation remains runtime-owned rather than host-local
+- [x] Signal can identify bounded critical-path and worker-lane timing pressure
+- [x] later optimization and soak evidence can cite node/lane sources directly
+- [x] instrumentation remains runtime-owned rather than host-local
 
 ## Risks And Mitigations
 
@@ -57,11 +82,12 @@ identify where timing pressure actually comes from.
 
 ## Evidence Requirements
 
-- [ ] log each meaningful graph-instrumentation tranche
-- [ ] run focused validation for critical-path and lane observations
-- [ ] record deferred trace breadth explicitly
+- [x] log each meaningful graph-instrumentation tranche
+- [x] run focused validation for critical-path and lane observations
+- [x] record deferred trace breadth explicitly
 
 ## Next Task
 
-Continue `g06.008` by turning the new observations into stronger deferred-work
-policy and backpressure semantics.
+Continue `g06.008` with Batch 8.1 by defining the deferred-work scheduler
+priority, backpressure, starvation, and cancellation contract on top of the
+closed timing, hotspot, and orchestration receipt families.

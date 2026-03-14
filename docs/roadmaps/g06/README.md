@@ -69,11 +69,11 @@ surfaced in Chorus:
   - offline render execution recovery and resumability depth
 - `g06.005` `complete`
   - runtime fault-cause attribution and diagnostic receipts
-- `g06.006` `active`
+- `g06.006` `complete`
   - per-block execution timing and pressure snapshots
-- `g06.007` `planned`
+- `g06.007` `complete`
   - graph critical-path, hot-node, and worker-lane instrumentation
-- `g06.008` `planned`
+- `g06.008` `active`
   - deferred-work scheduler priority, backpressure, and cancellation policy
 - `g06.009` `planned`
   - VST3 adapter baseline and runtime-owned lifecycle depth
@@ -154,7 +154,6 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.006` with Batch 6.2 by instrumenting bounded per-block execution
-timing, deadline pressure, and budget-overrun fields on the newly frozen
-runtime-owned measurement seam before widening into `g06.007` scheduler hot-path
-analysis.
+Continue `g06.008` with Batch 8.1 by defining deferred-work scheduler
+priority, backpressure, starvation, and cancellation semantics before deeper
+scheduler attribution, plugin breadth, and media-service evidence land.

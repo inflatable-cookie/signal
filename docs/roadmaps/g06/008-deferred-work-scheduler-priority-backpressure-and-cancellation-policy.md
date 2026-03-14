@@ -1,6 +1,6 @@
 # 008 - Deferred-Work Scheduler Priority, Backpressure, And Cancellation Policy
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.006, g06.007
@@ -65,5 +65,6 @@ and cancellation instead of letting products improvise orchestration policy.
 
 ## Next Task
 
-Continue `g06.009` by widening actual plugin functionality into the first
-non-CLAP adapter baseline.
+Continue `g06.008` with Batch 8.1 by defining deferred-work classes, priority
+rules, starvation signals, and cancellation semantics aligned with the closed
+timing, hotspot, and orchestration receipt surfaces.

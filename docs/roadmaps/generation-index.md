@@ -33,7 +33,8 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g06.006` with Batch 6.2 and keep the generation on Signal-owned
-runtime surfaces by instrumenting the newly frozen per-block timing and
-pressure seam before broader scheduler, plugin, hardware, media, and
-acceptance lanes widen while `g07` remains the next full feature-breadth queue.
+Continue `g06.008` with Batch 8.1 and keep the generation on Signal-owned
+runtime surfaces by defining deferred-work scheduler priority, backpressure,
+starvation, and cancellation semantics before broader scheduler, plugin,
+hardware, media, and acceptance lanes widen while `g07` remains the next full
+feature-breadth queue.

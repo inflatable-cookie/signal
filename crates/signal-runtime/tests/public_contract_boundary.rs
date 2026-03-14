@@ -1,5 +1,7 @@
 use signal_graph::GraphNodeTopologyRole;
-use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
+use signal_graph::{
+    synthetic_stereo_block, GraphExecutionLane, GraphNodeExecutionClass, GraphStageSpec,
+};
 use signal_plugin::{
     PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,
     PluginStateContract,
@@ -10,11 +12,12 @@ use signal_runtime::{
     GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, HandshakeRequest,
     PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage,
     PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RestartRequest,
-    RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder, RuntimeInterruptionClass,
-    RuntimeLifecycleApi, RuntimeObservationReport, RuntimeOfflineRenderExecutionState,
-    RuntimeOfflineRenderRequest, RuntimePluginDiscoveredTypeRecord, RuntimePluginIsolationOutcome,
-    RuntimePluginPlacementPolicy, RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
-    RuntimeProjectionApi, RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
+    RuntimeBlockDeadlinePressure, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
+    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeObservationReport,
+    RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderRequest,
+    RuntimePluginDiscoveredTypeRecord, RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy,
+    RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
+    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorReport,
     RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, StopReason, WatchdogRestartRecord,
 };
@@ -568,6 +571,198 @@ fn public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts()
     let supervisor_json = supervisor.render_json();
     assert!(supervisor_json.contains("\"fault_diagnostic_receipt\":{"));
     assert!(supervisor_json.contains("\"primary_family\":\"DeferredWorkPressure\""));
+}
+
+#[test]
+fn public_runtime_block_timing_boundary_reports_bounded_runtime_measurements() {
+    let recorder = RuntimeEventRecorder::default();
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 48));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-block-timing".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public block timing handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 48))
+        .expect("public block timing configure should succeed");
+    apply_public_capture_graph(&mut runtime, "graph:public:block-timing");
+    runtime
+        .process_engine_block(
+            1,
+            1,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(48), 47),
+        )
+        .expect("public block timing block should process");
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let performance = observation.performance_snapshot();
+    let trace = RuntimeObservationReport::build_performance_trace_receipt(&[observation.clone()]);
+
+    assert_eq!(
+        observation.engine_block_snapshot.last_block_sequence,
+        Some(1)
+    );
+    assert_eq!(
+        observation
+            .engine_block_snapshot
+            .last_block_deadline_budget_ns,
+        Some(1_000_000)
+    );
+    assert!(
+        observation
+            .engine_block_snapshot
+            .last_block_execution_time_ns
+            .expect("public block timing should expose latest execution time")
+            > 0
+    );
+    assert_eq!(
+        performance.last_block_execution_time_ns,
+        observation
+            .engine_block_snapshot
+            .last_block_execution_time_ns
+    );
+    assert_eq!(
+        performance.last_block_deadline_budget_ns,
+        observation
+            .engine_block_snapshot
+            .last_block_deadline_budget_ns
+    );
+    assert_eq!(
+        performance.last_block_deadline_pressure,
+        observation
+            .engine_block_snapshot
+            .last_block_deadline_pressure
+    );
+    assert!(matches!(
+        performance.last_block_deadline_pressure,
+        RuntimeBlockDeadlinePressure::Normal
+            | RuntimeBlockDeadlinePressure::Elevated
+            | RuntimeBlockDeadlinePressure::Critical
+            | RuntimeBlockDeadlinePressure::Overrun
+    ));
+    assert_eq!(
+        supervisor
+            .performance_snapshot()
+            .last_block_execution_time_ns,
+        performance.last_block_execution_time_ns
+    );
+    assert_eq!(trace.observation_count, 1);
+    assert_eq!(
+        trace.peak_block_execution_time_ns,
+        performance
+            .last_block_execution_time_ns
+            .expect("trace should preserve the public latest block timing")
+    );
+    assert_eq!(
+        trace.peak_block_budget_utilization_percent,
+        performance
+            .last_block_budget_utilization_percent
+            .expect("trace should preserve public budget utilization")
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"engine_block_snapshot\":{"));
+    assert!(observation_json.contains("\"last_block_execution_time_ns\":"));
+    assert!(observation_json.contains("\"last_block_deadline_pressure\":"));
+
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"engine_block_snapshot\":{"));
+    assert!(supervisor_json.contains("\"last_block_deadline_budget_ns\":1000000"));
+
+    let performance_json = performance.render_json();
+    assert!(performance_json.contains("\"last_block_execution_time_ns\":"));
+    assert!(performance_json.contains("\"last_block_deadline_pressure\":"));
+
+    let trace_json = trace.render_json();
+    assert!(trace_json.contains("\"peak_block_execution_time_ns\":"));
+    assert!(trace_json.contains("\"peak_block_budget_utilization_percent\":"));
+}
+
+#[test]
+fn public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts() {
+    let recorder = RuntimeEventRecorder::default();
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 48));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-critical-path".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public critical-path handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 48))
+        .expect("public critical-path configure should succeed");
+    apply_public_capture_graph(&mut runtime, "graph:public:critical-path");
+    runtime
+        .process_engine_block(
+            1,
+            1,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(48), 31),
+        )
+        .expect("public critical-path block should process");
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let performance = observation.performance_snapshot();
+    let trace = RuntimeObservationReport::build_performance_trace_receipt(&[observation.clone()]);
+
+    assert!(performance.hot_latency_node_id.is_some());
+    assert!(performance.hot_latency_group_node_count > 0);
+    assert!(matches!(
+        performance.critical_path_lane.as_deref(),
+        Some("Realtime") | Some("Anticipative")
+    ));
+    assert!(!performance.worker_lane_summaries.is_empty());
+
+    let critical_lane_summary = performance
+        .worker_lane_summaries
+        .iter()
+        .find(|summary| {
+            Some(match summary.lane {
+                GraphExecutionLane::Realtime => "Realtime",
+                GraphExecutionLane::Anticipative => "Anticipative",
+            }) == performance.critical_path_lane.as_deref()
+        })
+        .expect("public critical-path lane should resolve to a typed worker-lane summary");
+    assert_eq!(
+        performance.critical_path_lane_node_count,
+        critical_lane_summary.node_count
+    );
+    assert_eq!(
+        performance.critical_path_lane_plugin_backed_node_count,
+        critical_lane_summary.plugin_backed_node_count
+    );
+    assert_eq!(
+        performance.critical_path_lane_total_latency_samples,
+        critical_lane_summary.total_latency_samples
+    );
+    assert_eq!(
+        supervisor.performance_snapshot().critical_path_lane,
+        performance.critical_path_lane
+    );
+    assert_eq!(
+        trace.peak_hot_latency_group_node_count,
+        performance.hot_latency_group_node_count
+    );
+    assert_eq!(
+        trace.peak_critical_path_lane,
+        performance.critical_path_lane
+    );
+    assert_eq!(
+        trace.peak_critical_path_lane_total_latency_samples,
+        performance.critical_path_lane_total_latency_samples
+    );
+
+    let performance_json = performance.render_json();
+    assert!(performance_json.contains("\"hot_latency_group_node_count\":"));
+    assert!(performance_json.contains("\"worker_lane_summaries\":["));
+
+    let trace_json = trace.render_json();
+    assert!(trace_json.contains("\"peak_critical_path_lane\":"));
+    assert!(trace_json.contains("\"peak_hot_latency_group_node_count\":"));
 }
 
 #[test]

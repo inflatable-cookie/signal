@@ -1,6 +1,6 @@
 # 017 Per-Block Execution Timing And Pressure Snapshot Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-03-14
 Related contracts: `docs/contracts/004-runtime-multicore-scheduling-and-anticipative-execution-contract.md`, `docs/contracts/005-runtime-work-orchestration-and-deferred-service-policy.md`, `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`, `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`, `docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
@@ -264,7 +264,7 @@ This Batch 6.1 contract does not yet freeze:
 - publication of host callback cadence as canonical runtime timing authority
 - fleet or remote telemetry aggregation
 
-Those belong to Batch 6.2, `g06.007`, or later acceptance work.
+Those belong to later Batch 6.3 proof work, `g06.007`, or later acceptance work.
 
 ## Batch 6.1 outcome
 
@@ -277,9 +277,46 @@ Batch 6.1 freezes the meaning first:
 - host callback timing remains additive evidence rather than a competing timing
   authority
 
+## Batch 6.2 outcome
+
+Batch 6.2 turns the frozen meaning into real runtime-owned measurements:
+
+- `process_engine_block()` now records bounded wall-clock execution duration for
+  one runtime-owned block boundary
+- `signal-runtime` now derives:
+  - deadline budget from block frame count and effective sample rate
+  - budget utilization percent
+  - bounded budget-overrun amount
+  - `RuntimeBlockDeadlinePressure` classification
+- `RuntimeEngineBlockSnapshot` now carries the authoritative timing fields for
+  the latest and peak bounded block observations
+- `RuntimeBlockExecutionSummary` now exposes the narrower supervisor/export
+  digest for the same timing truth
+- `RuntimePerformanceSnapshot` and `RuntimePerformanceTraceReceipt` now carry
+  aligned bounded timing and overrun summary instead of relying on CPU load and
+  graph-latency placeholders alone
+- runtime `cpu_load_percent` and `graph_latency_ms` now align to measured block
+  execution once real blocks have been processed
+
+## Batch 6.3 outcome
+
+Batch 6.3 closes the first bounded timing boundary as a consumer-facing seam:
+
+- downstream-style runtime proofs now show `RuntimeObservationReport`,
+  `RuntimeSupervisorReport`, `RuntimePerformanceSnapshot`, and
+  `RuntimePerformanceTraceReceipt` expose the same bounded block timing truth
+  without private tracing hooks
+- stable local and server host edges now prove `supervisor_report()` forwards
+  the same runtime-owned block timing, deadline pressure, and budget evidence
+- `signal-supervisor-tools --describe-block-timing-boundary` and
+  `effigy acceptance:block-timing-boundary` now provide the repo-owned
+  inspection and acceptance seam for this bounded measurement family
+- host callback cadence remains advisory evidence; `g06.007` is now the next
+  place where richer hot-node and worker-lane attribution can widen the timing
+  story without changing its authority
+
 ## Next Task
 
-Continue `g06.006` with Batch 6.2 by instrumenting bounded per-block execution
-timing, deadline pressure, and budget-overrun fields on the frozen runtime-owned
-measurement seam, then align supervisor and host-edge export to the same
-observations without widening into full tracing yet.
+Continue `g06.007` with Batch 7.1 by freezing graph critical-path, hot-node,
+and worker-lane instrumentation semantics on top of the closed per-block timing
+boundary before deeper scheduler attribution lands.

@@ -5,6 +5,7 @@ use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     fs,
     path::{Path, PathBuf},
+    time::Instant,
 };
 
 use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
@@ -39,9 +40,10 @@ use crate::interfaces::{
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRenderBatch,
     PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
     PluginSandboxTransportStage, PluginScanRequest, ProjectionReceipt, RecoveryRestartIntent,
-    RestartRequest, RuntimeAutomationInterpolation, RuntimeAutomationProjection,
-    RuntimeAutomationSnapshot, RuntimeAutomationTargetProjection, RuntimeClipFadeShape,
-    RuntimeClipGainShape, RuntimeClipProcessingPipelineSnapshot, RuntimeClipProcessingReadiness,
+    RestartRequest, RuntimeAcceptanceReceipt, RuntimeAutomationInterpolation,
+    RuntimeAutomationProjection, RuntimeAutomationSnapshot, RuntimeAutomationTargetProjection,
+    RuntimeBlockDeadlinePressure, RuntimeClipFadeShape, RuntimeClipGainShape,
+    RuntimeClipProcessingPipelineSnapshot, RuntimeClipProcessingReadiness,
     RuntimeClipProcessingRegistration, RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage,
     RuntimeClipRenderInputStage, RuntimeClipRenderRequest, RuntimeClipRenderResult,
     RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDeferredServiceClass,
@@ -98,6 +100,8 @@ use crate::interfaces::{
 
 const PREWORK_LATENCY_FOCUSED_THRESHOLD_SAMPLES: u32 = 64;
 const OFFLINE_RENDER_PROGRESS_CHECKPOINT_TARGET_COUNT: usize = 6;
+const BLOCK_DEADLINE_ELEVATED_UTILIZATION_PERCENT: f32 = 75.0;
+const BLOCK_DEADLINE_CRITICAL_UTILIZATION_PERCENT: f32 = 95.0;
 
 #[derive(Clone, Debug)]
 struct OfflineRenderCheckpointDraft {
@@ -8539,6 +8543,65 @@ impl SignalRuntime {
         self.diagnostics.graph_latency_ms = graph_latency_ms.max(0.0);
     }
 
+    fn classify_block_deadline_pressure(
+        budget_utilization_percent: f32,
+        budget_overrun_ns: u64,
+    ) -> RuntimeBlockDeadlinePressure {
+        if budget_overrun_ns > 0 {
+            RuntimeBlockDeadlinePressure::Overrun
+        } else if budget_utilization_percent >= BLOCK_DEADLINE_CRITICAL_UTILIZATION_PERCENT {
+            RuntimeBlockDeadlinePressure::Critical
+        } else if budget_utilization_percent >= BLOCK_DEADLINE_ELEVATED_UTILIZATION_PERCENT {
+            RuntimeBlockDeadlinePressure::Elevated
+        } else {
+            RuntimeBlockDeadlinePressure::Normal
+        }
+    }
+
+    fn record_block_execution_timing_ns(&mut self, frame_count: usize, execution_time_ns: u64) {
+        let budget_ns = if frame_count == 0 {
+            0
+        } else {
+            ((frame_count as u128) * 1_000_000_000u128 / self.config.sample_rate.0 as u128) as u64
+        };
+        let budget_ns = budget_ns.max(1);
+        let budget_utilization_percent =
+            (execution_time_ns as f64 / budget_ns as f64 * 100.0) as f32;
+        let budget_overrun_ns = execution_time_ns.saturating_sub(budget_ns);
+        let pressure =
+            Self::classify_block_deadline_pressure(budget_utilization_percent, budget_overrun_ns);
+
+        self.diagnostics.cpu_load_percent = budget_utilization_percent.max(0.0);
+        self.diagnostics.graph_latency_ms = (execution_time_ns as f64 / 1_000_000.0) as f32;
+
+        self.engine.snapshot.last_block_execution_time_ns = Some(execution_time_ns);
+        self.engine.snapshot.last_block_deadline_budget_ns = Some(budget_ns);
+        self.engine.snapshot.last_block_budget_utilization_percent =
+            Some(budget_utilization_percent.max(0.0));
+        self.engine.snapshot.last_block_budget_overrun_ns =
+            (budget_overrun_ns > 0).then_some(budget_overrun_ns);
+        self.engine.snapshot.last_block_deadline_pressure = pressure;
+        if budget_overrun_ns > 0 {
+            self.engine.snapshot.budget_overrun_count =
+                self.engine.snapshot.budget_overrun_count.saturating_add(1);
+        }
+        self.engine.snapshot.peak_block_execution_time_ns = self
+            .engine
+            .snapshot
+            .peak_block_execution_time_ns
+            .max(execution_time_ns);
+        self.engine.snapshot.peak_block_budget_utilization_percent = self
+            .engine
+            .snapshot
+            .peak_block_budget_utilization_percent
+            .max(budget_utilization_percent);
+        self.engine.snapshot.peak_block_budget_overrun_ns = self
+            .engine
+            .snapshot
+            .peak_block_budget_overrun_ns
+            .max(budget_overrun_ns);
+    }
+
     fn invalidate_plugin_render_state_for_sandbox(&mut self, sandbox_id: &str) {
         self.engine
             .latest_plugin_node_renders
@@ -8908,6 +8971,7 @@ impl SignalRuntime {
                 "runtime must be configured before processing engine blocks",
             ));
         }
+        let block_start = Instant::now();
         let transport = self.applied_transport;
         let context = self.build_engine_execution_context(processing_epoch, block_sequence);
         let (parameter_batch, automation_metrics) =
@@ -8968,6 +9032,8 @@ impl SignalRuntime {
         self.recording_capture.record_output_block(&result.output);
         let _ = self.enforce_scheduler_after_engine_block(processing_epoch, block_sequence)?;
         self.refresh_scheduler_topology_summary();
+        let execution_time_ns = block_start.elapsed().as_nanos().min(u64::MAX as u128) as u64;
+        self.record_block_execution_timing_ns(result.output.frames().0, execution_time_ns);
         result.snapshot = self.engine.snapshot.clone();
         Ok(result)
     }
@@ -13414,6 +13480,10 @@ impl RuntimeObservationApi for SignalRuntime {
         self.readiness.clone()
     }
 
+    fn get_acceptance_receipt(&self) -> RuntimeAcceptanceReceipt {
+        RuntimeAcceptanceReceipt::capture(self)
+    }
+
     fn get_effective_config(&self) -> EffectiveRuntimeConfig {
         EffectiveRuntimeConfig {
             sample_rate: self.config.sample_rate,
@@ -13544,17 +13614,18 @@ mod tests {
         PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RestartRequest,
         RuntimeAutomationInterpolation, RuntimeAutomationLaneProjection,
         RuntimeAutomationPointProjection, RuntimeAutomationProjection, RuntimeAutomationResolution,
-        RuntimeAutomationTargetProjection, RuntimeClipFadeEnvelope, RuntimeClipFadeShape,
-        RuntimeClipGainEnvelope, RuntimeClipGainShape, RuntimeClipProcessingReadiness,
-        RuntimeClipProcessingRegistration, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
-        RuntimeClipRenderRequest, RuntimeConfigRequest, RuntimeDeferredServiceClass,
-        RuntimeDeferredServiceDecision, RuntimeDeferredServiceReason, RuntimeError,
-        RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder, RuntimeEventSink,
-        RuntimeExecutionPhase, RuntimeFaultCause, RuntimeFaultStatusSnapshot,
-        RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
-        RuntimeMediaAssetState, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
-        RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
-        RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
+        RuntimeAutomationTargetProjection, RuntimeBlockDeadlinePressure, RuntimeClipFadeEnvelope,
+        RuntimeClipFadeShape, RuntimeClipGainEnvelope, RuntimeClipGainShape,
+        RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
+        RuntimeClipProcessingStage, RuntimeClipRenderInputStage, RuntimeClipRenderRequest,
+        RuntimeConfigRequest, RuntimeDeferredServiceClass, RuntimeDeferredServiceDecision,
+        RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
+        RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
+        RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
+        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
+        RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
+        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
+        RuntimeOfflinePluginDelegatedExecutionOutcome,
         RuntimeOfflinePluginDelegatedExecutionReceipt,
         RuntimeOfflinePluginDelegatedExecutionStageReceipt,
         RuntimeOfflinePluginDelegatedExecutionStatus,
@@ -13587,9 +13658,9 @@ mod tests {
     };
     use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
     use signal_graph::{
-        synthetic_stereo_block, ExecutableGraph, GraphNodeBufferContract, GraphNodeBusEndpoint,
-        GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeSpec, GraphNodeTopologyMetadata,
-        GraphNodeTopologyRole, GraphStageSpec,
+        synthetic_stereo_block, ExecutableGraph, GraphExecutionLane, GraphNodeBufferContract,
+        GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeSpec,
+        GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec,
     };
     use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
     use signal_plugin::{CompletionState, ParameterAutomationSummary, PluginFormat};
@@ -23264,9 +23335,53 @@ mod tests {
             performance.hot_latency_node_group.as_deref()
         );
         assert_eq!(
+            performance.hot_latency_group_node_count,
+            engine_snapshot
+                .planned_nodes
+                .iter()
+                .filter(|node| node.group == expected_hot_node.group)
+                .count()
+        );
+        assert_eq!(
             performance.hot_latency_group_total_samples,
             expected_group_total
         );
+        let expected_lane = performance
+            .worker_lane_summaries
+            .iter()
+            .max_by_key(|summary| summary.total_latency_samples)
+            .expect("prepared runtime should export at least one worker-lane summary");
+        assert_eq!(
+            performance.critical_path_lane.as_deref(),
+            Some(match expected_lane.lane {
+                GraphExecutionLane::Realtime => "Realtime",
+                GraphExecutionLane::Anticipative => "Anticipative",
+            })
+        );
+        assert_eq!(
+            performance.critical_path_lane_node_count,
+            expected_lane.node_count
+        );
+        assert_eq!(
+            performance.critical_path_lane_plugin_backed_node_count,
+            expected_lane.plugin_backed_node_count
+        );
+        assert_eq!(
+            performance.critical_path_lane_planning_group_count,
+            expected_lane.planning_group_count
+        );
+        assert_eq!(
+            performance.critical_path_lane_total_latency_samples,
+            expected_lane.total_latency_samples
+        );
+        assert_eq!(
+            performance.worker_lane_summaries.len(),
+            engine_snapshot.lane_order.len()
+        );
+        assert!(performance.worker_lane_summaries.iter().all(|summary| {
+            summary.node_count > 0
+                && summary.total_latency_samples >= summary.max_node_latency_samples
+        }));
         assert_eq!(
             performance.background_service_class,
             Some(RuntimeDeferredServiceClass::OfflineRenderQueue)
@@ -23287,6 +23402,12 @@ mod tests {
         assert!(performance
             .render_json()
             .contains("\"scheduler_dispatch_handoff_count\":"));
+        assert!(performance
+            .render_json()
+            .contains("\"critical_path_lane\":"));
+        assert!(performance
+            .render_json()
+            .contains("\"worker_lane_summaries\":["));
 
         runtime
             .set_safe_mode(SafeModeRequest { enabled: false })
@@ -23301,6 +23422,108 @@ mod tests {
         {
             let _ = fs::remove_file(path);
         }
+    }
+
+    #[test]
+    fn runtime_process_engine_block_records_bounded_timing_and_budget_fields() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 48));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:block-timing");
+
+        let result = runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(48), 21),
+            )
+            .expect("process runtime block with timing instrumentation");
+        let snapshot = runtime.get_engine_block_snapshot();
+        let diagnostics = runtime.get_diagnostics_snapshot();
+
+        assert_eq!(snapshot.last_block_sequence, Some(1));
+        assert_eq!(snapshot.last_block_deadline_budget_ns, Some(1_000_000));
+        assert_eq!(
+            result.snapshot.last_block_deadline_budget_ns,
+            Some(1_000_000)
+        );
+        assert_eq!(
+            snapshot.last_block_execution_time_ns,
+            result.snapshot.last_block_execution_time_ns
+        );
+        let execution_time_ns = snapshot
+            .last_block_execution_time_ns
+            .expect("runtime should capture a block execution time");
+        assert!(execution_time_ns > 0);
+        assert_eq!(
+            snapshot.last_block_budget_overrun_ns.is_some(),
+            snapshot.last_block_deadline_pressure == RuntimeBlockDeadlinePressure::Overrun
+        );
+        assert!(snapshot.peak_block_execution_time_ns >= execution_time_ns);
+        assert!(
+            (diagnostics.graph_latency_ms - (execution_time_ns as f32 / 1_000_000.0)).abs() < 0.01
+        );
+        assert_eq!(
+            diagnostics.cpu_load_percent,
+            snapshot
+                .last_block_budget_utilization_percent
+                .expect("timing instrumentation should derive utilization")
+        );
+    }
+
+    #[test]
+    fn runtime_block_timing_pressure_rolls_into_performance_snapshot_and_trace_receipt() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 48));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:block-timing-trace");
+
+        runtime.record_block_execution_timing_ns(48, 500_000);
+        let normal = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+
+        runtime.record_block_execution_timing_ns(48, 800_000);
+        let elevated = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+
+        runtime.record_block_execution_timing_ns(48, 950_000);
+        let critical = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+
+        runtime.record_block_execution_timing_ns(48, 1_250_000);
+        let overrun = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+
+        let performance = overrun.performance_snapshot();
+        assert_eq!(performance.last_block_deadline_budget_ns, Some(1_000_000));
+        assert_eq!(performance.last_block_execution_time_ns, Some(1_250_000));
+        assert_eq!(
+            performance.last_block_deadline_pressure,
+            RuntimeBlockDeadlinePressure::Overrun
+        );
+        assert_eq!(performance.last_block_budget_overrun_ns, Some(250_000));
+        assert_eq!(performance.budget_overrun_count, 1);
+        assert_eq!(performance.peak_block_execution_time_ns, 1_250_000);
+        assert_eq!(performance.peak_block_budget_overrun_ns, 250_000);
+        assert!(performance
+            .render_json()
+            .contains("\"last_block_deadline_pressure\":\"Overrun\""));
+
+        let trace = RuntimeSupervisorReport::build_performance_trace_receipt(&[
+            normal.clone(),
+            elevated,
+            critical,
+            overrun.clone(),
+        ]);
+        assert_eq!(trace.elevated_deadline_pressure_observation_count, 1);
+        assert_eq!(trace.critical_deadline_pressure_observation_count, 1);
+        assert_eq!(trace.overrun_deadline_pressure_observation_count, 1);
+        assert_eq!(trace.budget_overrun_count_delta, 1);
+        assert_eq!(trace.peak_block_execution_time_ns, 1_250_000);
+        assert_eq!(trace.peak_block_budget_overrun_ns, 250_000);
+        assert!(trace
+            .render_json()
+            .contains("\"budget_overrun_count_delta\":1"));
+        assert!(overrun
+            .render_json()
+            .contains("\"last_block_deadline_pressure\":\"Overrun\""));
+        assert!(overrun
+            .render_json()
+            .contains("\"last_block_deadline_budget_ns\":1000000"));
     }
 
     #[test]
@@ -23387,12 +23610,25 @@ mod tests {
         ));
 
         let trace = RuntimeSupervisorReport::build_performance_trace_receipt(&reports);
+        let performance_snapshots = reports
+            .iter()
+            .map(|report| report.performance_snapshot())
+            .collect::<Vec<_>>();
+        let expected_peak_cpu = reports
+            .iter()
+            .map(|report| report.performance_snapshot().cpu_load_percent)
+            .fold(0.0f32, f32::max);
+        let expected_peak_graph_latency = reports
+            .iter()
+            .map(|report| report.performance_snapshot().graph_latency_ms)
+            .fold(0.0f32, f32::max);
         assert_eq!(trace.observation_count, reports.len());
         assert_eq!(trace.first_block_sequence, None);
         assert_eq!(trace.last_block_sequence, Some(2));
         assert_eq!(trace.processed_block_span, 2);
-        assert_eq!(trace.peak_cpu_load_percent, 13.5);
-        assert_eq!(trace.peak_graph_latency_ms, 5.25);
+        assert_eq!(trace.peak_cpu_load_percent, expected_peak_cpu);
+        assert_eq!(trace.peak_graph_latency_ms, expected_peak_graph_latency);
+        assert!(trace.peak_block_execution_time_ns > 0);
         assert!(trace.playback_active_observation_count >= 3);
         assert!(trace.recording_active_observation_count >= 3);
         assert!(trace.background_service_defer_count >= 1);
@@ -23402,11 +23638,41 @@ mod tests {
         assert_eq!(trace.peak_background_deferred_work_item_count, 1);
         assert_eq!(trace.peak_hot_latency_node_id.as_deref(), Some("latency"));
         assert_eq!(trace.peak_hot_latency_node_samples, 24);
+        let expected_peak_lane = performance_snapshots
+            .iter()
+            .max_by_key(|snapshot| snapshot.critical_path_lane_total_latency_samples)
+            .expect("trace should have at least one performance snapshot");
+        assert_eq!(
+            trace.peak_hot_latency_group_node_count,
+            expected_peak_lane.hot_latency_group_node_count
+        );
+        assert_eq!(
+            trace.peak_critical_path_lane.as_deref(),
+            expected_peak_lane.critical_path_lane.as_deref()
+        );
+        assert_eq!(
+            trace.peak_critical_path_lane_node_count,
+            expected_peak_lane.critical_path_lane_node_count
+        );
+        assert_eq!(
+            trace.peak_critical_path_lane_plugin_backed_node_count,
+            expected_peak_lane.critical_path_lane_plugin_backed_node_count
+        );
+        assert_eq!(
+            trace.peak_critical_path_lane_total_latency_samples,
+            expected_peak_lane.critical_path_lane_total_latency_samples
+        );
         assert!(trace.summary.contains("recording_active="));
+        assert!(trace.summary.contains("deadline="));
         assert!(trace.summary.contains("background="));
+        assert!(trace.summary.contains("critical_lane="));
         assert!(trace
             .render_json()
             .contains("\"peak_hot_latency_node_id\":\"latency\""));
+        assert!(trace.render_json().contains("\"peak_critical_path_lane\":"));
+        assert!(trace
+            .render_json()
+            .contains("\"peak_block_execution_time_ns\":"));
 
         runtime.cancel_recording_capture().unwrap();
         let _ = fs::remove_file(capture_path);
@@ -25945,6 +26211,52 @@ mod tests {
             previewing_again.previewing_asset_id.as_deref(),
             Some("asset:sha256:recoverable")
         );
+
+        let _ = fs::remove_file(ready_path);
+    }
+
+    #[test]
+    fn runtime_acceptance_receipt_scopes_integrated_runtime_lanes_and_targets() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:acceptance-scope");
+
+        let ready_path = temp_capture_path("acceptance-media-ready");
+        write_test_wav(&ready_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:acceptance".to_string(),
+                content_hash: "acceptance".to_string(),
+                source_path: ready_path.display().to_string(),
+                file_name: "acceptance.wav".to_string(),
+                byte_size: fs::metadata(&ready_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .expect("ready media should reconcile");
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
+                take_id: "take:acceptance".to_string(),
+                track_id: "track:acceptance".to_string(),
+                start_samples: 0,
+                capture_path: temp_capture_path("acceptance-take").display().to_string(),
+            })
+            .expect("recording capture should start");
+
+        let receipt = runtime.get_acceptance_receipt();
+        assert_eq!(receipt.runtime_lane_count, 6);
+        assert!(receipt.playback_ready);
+        assert!(receipt.recording_ready);
+        assert!(receipt.media_ready);
+        assert!(!receipt.clip_processing_ready);
+        assert!(!receipt.plugin_ready);
+        assert!(receipt.recovery_ready);
+        assert_eq!(receipt.minimum_trace_observation_count, 128);
+        assert_eq!(receipt.minimum_soak_event_count, 64);
+        assert_eq!(receipt.runtime_ready_lane_count, 4);
 
         let _ = fs::remove_file(ready_path);
     }

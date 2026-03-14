@@ -454,6 +454,15 @@ impl Default for RuntimePreworkBacklogClass {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeBlockDeadlinePressure {
+    #[default]
+    Normal,
+    Elevated,
+    Critical,
+    Overrun,
+}
+
 /// Supervisor-facing snapshot of the most recent engine block.
 ///
 /// This is the primary integration surface for understanding how runtime is
@@ -582,6 +591,15 @@ pub struct RuntimeEngineBlockSnapshot {
     pub last_block_sequence: Option<u64>,
     pub last_frame_count: usize,
     pub last_channel_count: usize,
+    pub last_block_execution_time_ns: Option<u64>,
+    pub last_block_deadline_budget_ns: Option<u64>,
+    pub last_block_budget_utilization_percent: Option<f32>,
+    pub last_block_budget_overrun_ns: Option<u64>,
+    pub last_block_deadline_pressure: RuntimeBlockDeadlinePressure,
+    pub budget_overrun_count: u64,
+    pub peak_block_execution_time_ns: u64,
+    pub peak_block_budget_utilization_percent: f32,
+    pub peak_block_budget_overrun_ns: u64,
     pub last_input_peak: Option<f32>,
     pub last_prework_output_peak: Option<f32>,
     pub last_realtime_input_peak: Option<f32>,
@@ -4100,6 +4118,12 @@ pub struct RuntimeBlockExecutionSummary {
     pub last_block_sequence: Option<u64>,
     pub last_frame_count: usize,
     pub last_channel_count: usize,
+    pub last_block_execution_time_ns: Option<u64>,
+    pub last_block_deadline_budget_ns: Option<u64>,
+    pub last_block_budget_utilization_percent: Option<f32>,
+    pub last_block_budget_overrun_ns: Option<u64>,
+    pub last_block_deadline_pressure: RuntimeBlockDeadlinePressure,
+    pub budget_overrun_count: u64,
     pub prework_cache_state: RuntimePreworkCacheState,
     pub prework_cache_freshness_state: RuntimePreworkFreshnessState,
     pub last_prework_invalidation_reason: Option<RuntimePreworkInvalidationReason>,
@@ -4127,6 +4151,12 @@ impl RuntimeBlockExecutionSummary {
             last_block_sequence: snapshot.last_block_sequence,
             last_frame_count: snapshot.last_frame_count,
             last_channel_count: snapshot.last_channel_count,
+            last_block_execution_time_ns: snapshot.last_block_execution_time_ns,
+            last_block_deadline_budget_ns: snapshot.last_block_deadline_budget_ns,
+            last_block_budget_utilization_percent: snapshot.last_block_budget_utilization_percent,
+            last_block_budget_overrun_ns: snapshot.last_block_budget_overrun_ns,
+            last_block_deadline_pressure: snapshot.last_block_deadline_pressure,
+            budget_overrun_count: snapshot.budget_overrun_count,
             prework_cache_state: snapshot.prework_cache_state,
             prework_cache_freshness_state: snapshot.prework_cache_freshness_state,
             last_prework_invalidation_reason: snapshot.last_prework_invalidation_reason,
@@ -4227,6 +4257,15 @@ pub struct RuntimePerformanceSnapshot {
     pub last_block_sequence: Option<u64>,
     pub cpu_load_percent: f32,
     pub graph_latency_ms: f32,
+    pub last_block_execution_time_ns: Option<u64>,
+    pub last_block_deadline_budget_ns: Option<u64>,
+    pub last_block_budget_utilization_percent: Option<f32>,
+    pub last_block_budget_overrun_ns: Option<u64>,
+    pub last_block_deadline_pressure: RuntimeBlockDeadlinePressure,
+    pub budget_overrun_count: u64,
+    pub peak_block_execution_time_ns: u64,
+    pub peak_block_budget_utilization_percent: f32,
+    pub peak_block_budget_overrun_ns: u64,
     pub xrun_count: u64,
     pub scheduler_phase_count: usize,
     pub scheduler_lane_count: usize,
@@ -4260,7 +4299,14 @@ pub struct RuntimePerformanceSnapshot {
     pub hot_latency_node_plugin_sandbox_id: Option<String>,
     pub hot_latency_node_samples: u32,
     pub hot_latency_group: Option<String>,
+    pub hot_latency_group_node_count: usize,
     pub hot_latency_group_total_samples: u32,
+    pub critical_path_lane: Option<String>,
+    pub critical_path_lane_node_count: usize,
+    pub critical_path_lane_plugin_backed_node_count: usize,
+    pub critical_path_lane_planning_group_count: usize,
+    pub critical_path_lane_total_latency_samples: u32,
+    pub worker_lane_summaries: Vec<RuntimeWorkerLaneInstrumentationSummary>,
     pub background_service_class: Option<RuntimeDeferredServiceClass>,
     pub background_service_decision: Option<RuntimeDeferredServiceDecision>,
     pub background_service_reason: Option<RuntimeDeferredServiceReason>,
@@ -4271,6 +4317,16 @@ pub struct RuntimePerformanceSnapshot {
     pub summary: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeWorkerLaneInstrumentationSummary {
+    pub lane: GraphExecutionLane,
+    pub node_count: usize,
+    pub plugin_backed_node_count: usize,
+    pub planning_group_count: usize,
+    pub total_latency_samples: u32,
+    pub max_node_latency_samples: u32,
+}
+
 impl RuntimePerformanceSnapshot {
     pub fn capture(
         effective_config: &EffectiveRuntimeConfig,
@@ -4278,27 +4334,37 @@ impl RuntimePerformanceSnapshot {
         engine_block_snapshot: &RuntimeEngineBlockSnapshot,
         last_deferred_service_receipt: Option<&RuntimeDeferredServiceReceipt>,
     ) -> Self {
+        let worker_lane_summaries =
+            runtime_worker_lane_instrumentation_summaries(engine_block_snapshot);
         let hot_latency_node = engine_block_snapshot
             .planned_nodes
             .iter()
             .max_by_key(|node| node.latency_samples)
             .filter(|node| node.latency_samples > 0);
         let mut inline_realtime_group_total_samples = 0u32;
+        let mut inline_realtime_group_node_count = 0usize;
         let mut stateful_realtime_group_total_samples = 0u32;
+        let mut stateful_realtime_group_node_count = 0usize;
         let mut anticipative_group_total_samples = 0u32;
+        let mut anticipative_group_node_count = 0usize;
         for node in &engine_block_snapshot.planned_nodes {
             match node.group {
                 GraphNodePlanningGroup::InlineRealtime => {
                     inline_realtime_group_total_samples =
                         inline_realtime_group_total_samples.saturating_add(node.latency_samples);
+                    inline_realtime_group_node_count =
+                        inline_realtime_group_node_count.saturating_add(1);
                 }
                 GraphNodePlanningGroup::StatefulRealtime => {
                     stateful_realtime_group_total_samples =
                         stateful_realtime_group_total_samples.saturating_add(node.latency_samples);
+                    stateful_realtime_group_node_count =
+                        stateful_realtime_group_node_count.saturating_add(1);
                 }
                 GraphNodePlanningGroup::AnticipativeEligible => {
                     anticipative_group_total_samples =
                         anticipative_group_total_samples.saturating_add(node.latency_samples);
+                    anticipative_group_node_count = anticipative_group_node_count.saturating_add(1);
                 }
             }
         }
@@ -4306,19 +4372,26 @@ impl RuntimePerformanceSnapshot {
             (
                 GraphNodePlanningGroup::InlineRealtime,
                 inline_realtime_group_total_samples,
+                inline_realtime_group_node_count,
             ),
             (
                 GraphNodePlanningGroup::StatefulRealtime,
                 stateful_realtime_group_total_samples,
+                stateful_realtime_group_node_count,
             ),
             (
                 GraphNodePlanningGroup::AnticipativeEligible,
                 anticipative_group_total_samples,
+                anticipative_group_node_count,
             ),
         ]
         .into_iter()
-        .max_by_key(|(_, total_samples)| *total_samples)
-        .filter(|(_, total_samples)| *total_samples > 0);
+        .max_by_key(|(_, total_samples, _)| *total_samples)
+        .filter(|(_, total_samples, _)| *total_samples > 0);
+        let critical_path_lane = worker_lane_summaries
+            .iter()
+            .max_by_key(|summary| summary.total_latency_samples)
+            .filter(|summary| summary.total_latency_samples > 0);
         let mut snapshot = Self {
             sample_rate_hz: effective_config.sample_rate.0,
             block_size: effective_config.block_size,
@@ -4326,6 +4399,17 @@ impl RuntimePerformanceSnapshot {
             last_block_sequence: engine_block_snapshot.last_block_sequence,
             cpu_load_percent: diagnostics_snapshot.cpu_load_percent,
             graph_latency_ms: diagnostics_snapshot.graph_latency_ms,
+            last_block_execution_time_ns: engine_block_snapshot.last_block_execution_time_ns,
+            last_block_deadline_budget_ns: engine_block_snapshot.last_block_deadline_budget_ns,
+            last_block_budget_utilization_percent: engine_block_snapshot
+                .last_block_budget_utilization_percent,
+            last_block_budget_overrun_ns: engine_block_snapshot.last_block_budget_overrun_ns,
+            last_block_deadline_pressure: engine_block_snapshot.last_block_deadline_pressure,
+            budget_overrun_count: engine_block_snapshot.budget_overrun_count,
+            peak_block_execution_time_ns: engine_block_snapshot.peak_block_execution_time_ns,
+            peak_block_budget_utilization_percent: engine_block_snapshot
+                .peak_block_budget_utilization_percent,
+            peak_block_budget_overrun_ns: engine_block_snapshot.peak_block_budget_overrun_ns,
             xrun_count: diagnostics_snapshot.xruns,
             scheduler_phase_count: engine_block_snapshot.phase_count,
             scheduler_lane_count: engine_block_snapshot.lane_count,
@@ -4371,9 +4455,22 @@ impl RuntimePerformanceSnapshot {
                 .and_then(|node| node.plugin_sandbox_id.clone()),
             hot_latency_node_samples: hot_latency_node.map_or(0, |node| node.latency_samples),
             hot_latency_group: hot_latency_group
-                .map(|(group, _)| runtime_graph_node_planning_group_name(group).to_string()),
+                .map(|(group, _, _)| runtime_graph_node_planning_group_name(group).to_string()),
+            hot_latency_group_node_count: hot_latency_group
+                .map_or(0, |(_, _, node_count)| node_count),
             hot_latency_group_total_samples: hot_latency_group
-                .map_or(0, |(_, total_samples)| total_samples),
+                .map_or(0, |(_, total_samples, _)| total_samples),
+            critical_path_lane: critical_path_lane
+                .map(|summary| runtime_execution_lane_name(summary.lane).to_string()),
+            critical_path_lane_node_count: critical_path_lane
+                .map_or(0, |summary| summary.node_count),
+            critical_path_lane_plugin_backed_node_count: critical_path_lane
+                .map_or(0, |summary| summary.plugin_backed_node_count),
+            critical_path_lane_planning_group_count: critical_path_lane
+                .map_or(0, |summary| summary.planning_group_count),
+            critical_path_lane_total_latency_samples: critical_path_lane
+                .map_or(0, |summary| summary.total_latency_samples),
+            worker_lane_summaries,
             background_service_class: last_deferred_service_receipt
                 .map(|receipt| receipt.work_class),
             background_service_decision: last_deferred_service_receipt
@@ -4426,9 +4523,35 @@ impl RuntimePerformanceSnapshot {
             snapshot.hot_latency_node_samples,
         );
         let hot_group_summary = format!(
-            "{:?}/{}",
-            snapshot.hot_latency_group, snapshot.hot_latency_group_total_samples
+            "{:?}/{}/{}",
+            snapshot.hot_latency_group,
+            snapshot.hot_latency_group_node_count,
+            snapshot.hot_latency_group_total_samples
         );
+        let critical_lane_summary = format!(
+            "{:?}/{}/{}/{}/{}",
+            snapshot.critical_path_lane,
+            snapshot.critical_path_lane_node_count,
+            snapshot.critical_path_lane_plugin_backed_node_count,
+            snapshot.critical_path_lane_planning_group_count,
+            snapshot.critical_path_lane_total_latency_samples
+        );
+        let worker_lane_summary = snapshot
+            .worker_lane_summaries
+            .iter()
+            .map(|summary| {
+                format!(
+                    "{}:{}/{}/{}/{}/{}",
+                    runtime_execution_lane_name(summary.lane),
+                    summary.node_count,
+                    summary.plugin_backed_node_count,
+                    summary.planning_group_count,
+                    summary.total_latency_samples,
+                    summary.max_node_latency_samples,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("|");
         let background_summary = format!(
             "{:?}/{:?}/{:?}",
             snapshot.background_service_class,
@@ -4436,12 +4559,18 @@ impl RuntimePerformanceSnapshot {
             snapshot.background_service_reason,
         );
         snapshot.summary = format!(
-            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} xruns={} phases={} lanes={} dispatches={} handoff={} topology={} prework={} pending_targets={}/{} queue={}/{} service={} cycles={} budget={:?}/{:?} backlog={:?} gates={}/{} hot_node={} hot_group={} background={} items={}/{}/{}/{}",
+            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} timing={:?}/{:?}/{:?}/{:?}/{:?}/{} xruns={} phases={} lanes={} dispatches={} handoff={} topology={} prework={} pending_targets={}/{} queue={}/{} service={} cycles={} budget={:?}/{:?} backlog={:?} gates={}/{} hot_node={} hot_group={} critical_lane={} worker_lanes={} background={} items={}/{}/{}/{}",
             snapshot.sample_rate_hz,
             snapshot.block_size,
             snapshot.processed_block_count,
             snapshot.cpu_load_percent,
             snapshot.graph_latency_ms,
+            snapshot.last_block_execution_time_ns,
+            snapshot.last_block_deadline_budget_ns,
+            snapshot.last_block_budget_utilization_percent,
+            snapshot.last_block_budget_overrun_ns,
+            snapshot.last_block_deadline_pressure,
+            snapshot.budget_overrun_count,
             snapshot.xrun_count,
             snapshot.scheduler_phase_count,
             snapshot.scheduler_lane_count,
@@ -4462,6 +4591,8 @@ impl RuntimePerformanceSnapshot {
             snapshot.plugin_gate_active,
             hot_node_summary,
             hot_group_summary,
+            critical_lane_summary,
+            worker_lane_summary,
             background_summary,
             snapshot.background_queued_work_item_count,
             snapshot.background_deferred_work_item_count,
@@ -4481,6 +4612,15 @@ impl RuntimePerformanceSnapshot {
                 "\"last_block_sequence\":{},",
                 "\"cpu_load_percent\":{},",
                 "\"graph_latency_ms\":{},",
+                "\"last_block_execution_time_ns\":{},",
+                "\"last_block_deadline_budget_ns\":{},",
+                "\"last_block_budget_utilization_percent\":{},",
+                "\"last_block_budget_overrun_ns\":{},",
+                "\"last_block_deadline_pressure\":\"{:?}\",",
+                "\"budget_overrun_count\":{},",
+                "\"peak_block_execution_time_ns\":{},",
+                "\"peak_block_budget_utilization_percent\":{},",
+                "\"peak_block_budget_overrun_ns\":{},",
                 "\"xrun_count\":{},",
                 "\"scheduler_phase_count\":{},",
                 "\"scheduler_lane_count\":{},",
@@ -4514,7 +4654,14 @@ impl RuntimePerformanceSnapshot {
                 "\"hot_latency_node_plugin_sandbox_id\":{},",
                 "\"hot_latency_node_samples\":{},",
                 "\"hot_latency_group\":{},",
+                "\"hot_latency_group_node_count\":{},",
                 "\"hot_latency_group_total_samples\":{},",
+                "\"critical_path_lane\":{},",
+                "\"critical_path_lane_node_count\":{},",
+                "\"critical_path_lane_plugin_backed_node_count\":{},",
+                "\"critical_path_lane_planning_group_count\":{},",
+                "\"critical_path_lane_total_latency_samples\":{},",
+                "\"worker_lane_summaries\":{},",
                 "\"background_service_class\":{},",
                 "\"background_service_decision\":{},",
                 "\"background_service_reason\":{},",
@@ -4530,6 +4677,15 @@ impl RuntimePerformanceSnapshot {
             json_option_u64(self.last_block_sequence),
             self.cpu_load_percent,
             self.graph_latency_ms,
+            json_option_u64(self.last_block_execution_time_ns),
+            json_option_u64(self.last_block_deadline_budget_ns),
+            json_option_f32(self.last_block_budget_utilization_percent),
+            json_option_u64(self.last_block_budget_overrun_ns),
+            self.last_block_deadline_pressure,
+            self.budget_overrun_count,
+            self.peak_block_execution_time_ns,
+            self.peak_block_budget_utilization_percent,
+            self.peak_block_budget_overrun_ns,
             self.xrun_count,
             self.scheduler_phase_count,
             self.scheduler_lane_count,
@@ -4569,7 +4725,14 @@ impl RuntimePerformanceSnapshot {
             json_option_string(self.hot_latency_node_plugin_sandbox_id.as_deref()),
             self.hot_latency_node_samples,
             json_option_string(self.hot_latency_group.as_deref()),
+            self.hot_latency_group_node_count,
             self.hot_latency_group_total_samples,
+            json_option_string(self.critical_path_lane.as_deref()),
+            self.critical_path_lane_node_count,
+            self.critical_path_lane_plugin_backed_node_count,
+            self.critical_path_lane_planning_group_count,
+            self.critical_path_lane_total_latency_samples,
+            json_runtime_worker_lane_instrumentation_summaries(&self.worker_lane_summaries),
             json_option_string(
                 self.background_service_class
                     .as_ref()
@@ -4607,6 +4770,56 @@ impl RuntimePerformanceSnapshot {
     }
 }
 
+fn runtime_worker_lane_instrumentation_summaries(
+    engine_block_snapshot: &RuntimeEngineBlockSnapshot,
+) -> Vec<RuntimeWorkerLaneInstrumentationSummary> {
+    let mut lane_order = engine_block_snapshot.lane_order.clone();
+    for node in &engine_block_snapshot.planned_nodes {
+        let lane = runtime_lane_for_group(node.group);
+        if !lane_order.contains(&lane) {
+            lane_order.push(lane);
+        }
+    }
+
+    let mut summaries = Vec::new();
+    for lane in lane_order {
+        let mut node_count = 0usize;
+        let mut plugin_backed_node_count = 0usize;
+        let mut planning_groups = Vec::new();
+        let mut total_latency_samples = 0u32;
+        let mut max_node_latency_samples = 0u32;
+
+        for node in engine_block_snapshot
+            .planned_nodes
+            .iter()
+            .filter(|node| runtime_lane_for_group(node.group) == lane)
+        {
+            node_count = node_count.saturating_add(1);
+            if matches!(node.execution_class, GraphNodeExecutionClass::PluginBacked) {
+                plugin_backed_node_count = plugin_backed_node_count.saturating_add(1);
+            }
+            if !planning_groups.contains(&node.group) {
+                planning_groups.push(node.group);
+            }
+            total_latency_samples = total_latency_samples.saturating_add(node.latency_samples);
+            max_node_latency_samples = max_node_latency_samples.max(node.latency_samples);
+        }
+
+        if node_count > 0 {
+            summaries.push(RuntimeWorkerLaneInstrumentationSummary {
+                lane,
+                node_count,
+                plugin_backed_node_count,
+                planning_group_count: planning_groups.len(),
+                total_latency_samples,
+                max_node_latency_samples,
+            });
+        }
+    }
+
+    summaries
+}
+
 fn runtime_graph_node_planning_group_name(group: GraphNodePlanningGroup) -> &'static str {
     match group {
         GraphNodePlanningGroup::InlineRealtime => "InlineRealtime",
@@ -4623,6 +4836,13 @@ fn runtime_graph_node_topology_role_name(role: GraphNodeTopologyRole) -> &'stati
         GraphNodeTopologyRole::Send => "Send",
         GraphNodeTopologyRole::Return => "Return",
         GraphNodeTopologyRole::ConsoleNode => "ConsoleNode",
+    }
+}
+
+fn runtime_execution_lane_name(lane: GraphExecutionLane) -> &'static str {
+    match lane {
+        GraphExecutionLane::Realtime => "Realtime",
+        GraphExecutionLane::Anticipative => "Anticipative",
     }
 }
 
@@ -5570,6 +5790,9 @@ pub struct RuntimePerformanceTraceReceipt {
     pub processed_block_span: u64,
     pub peak_cpu_load_percent: f32,
     pub peak_graph_latency_ms: f32,
+    pub peak_block_execution_time_ns: u64,
+    pub peak_block_budget_utilization_percent: f32,
+    pub peak_block_budget_overrun_ns: u64,
     pub peak_pending_prework_target_count: usize,
     pub peak_prework_queue_depth: usize,
     pub peak_background_queued_work_item_count: usize,
@@ -5583,6 +5806,10 @@ pub struct RuntimePerformanceTraceReceipt {
     pub background_service_while_playing_count: usize,
     pub background_service_while_recording_count: usize,
     pub topology_incompatible_observation_count: usize,
+    pub elevated_deadline_pressure_observation_count: usize,
+    pub critical_deadline_pressure_observation_count: usize,
+    pub overrun_deadline_pressure_observation_count: usize,
+    pub budget_overrun_count_delta: u64,
     pub xrun_count_delta: u64,
     pub prework_service_starvation_count_delta: u64,
     pub prework_service_throttle_count_delta: u64,
@@ -5591,7 +5818,12 @@ pub struct RuntimePerformanceTraceReceipt {
     pub peak_hot_latency_node_group: Option<String>,
     pub peak_hot_latency_node_samples: u32,
     pub peak_hot_latency_group: Option<String>,
+    pub peak_hot_latency_group_node_count: usize,
     pub peak_hot_latency_group_total_samples: u32,
+    pub peak_critical_path_lane: Option<String>,
+    pub peak_critical_path_lane_node_count: usize,
+    pub peak_critical_path_lane_plugin_backed_node_count: usize,
+    pub peak_critical_path_lane_total_latency_samples: u32,
     pub summary: String,
 }
 
@@ -5606,6 +5838,9 @@ impl RuntimePerformanceTraceReceipt {
                 "\"processed_block_span\":{},",
                 "\"peak_cpu_load_percent\":{},",
                 "\"peak_graph_latency_ms\":{},",
+                "\"peak_block_execution_time_ns\":{},",
+                "\"peak_block_budget_utilization_percent\":{},",
+                "\"peak_block_budget_overrun_ns\":{},",
                 "\"peak_pending_prework_target_count\":{},",
                 "\"peak_prework_queue_depth\":{},",
                 "\"peak_background_queued_work_item_count\":{},",
@@ -5619,6 +5854,10 @@ impl RuntimePerformanceTraceReceipt {
                 "\"background_service_while_playing_count\":{},",
                 "\"background_service_while_recording_count\":{},",
                 "\"topology_incompatible_observation_count\":{},",
+                "\"elevated_deadline_pressure_observation_count\":{},",
+                "\"critical_deadline_pressure_observation_count\":{},",
+                "\"overrun_deadline_pressure_observation_count\":{},",
+                "\"budget_overrun_count_delta\":{},",
                 "\"xrun_count_delta\":{},",
                 "\"prework_service_starvation_count_delta\":{},",
                 "\"prework_service_throttle_count_delta\":{},",
@@ -5627,7 +5866,12 @@ impl RuntimePerformanceTraceReceipt {
                 "\"peak_hot_latency_node_group\":{},",
                 "\"peak_hot_latency_node_samples\":{},",
                 "\"peak_hot_latency_group\":{},",
+                "\"peak_hot_latency_group_node_count\":{},",
                 "\"peak_hot_latency_group_total_samples\":{},",
+                "\"peak_critical_path_lane\":{},",
+                "\"peak_critical_path_lane_node_count\":{},",
+                "\"peak_critical_path_lane_plugin_backed_node_count\":{},",
+                "\"peak_critical_path_lane_total_latency_samples\":{},",
                 "\"summary\":{}",
                 "}}"
             ),
@@ -5637,6 +5881,9 @@ impl RuntimePerformanceTraceReceipt {
             self.processed_block_span,
             self.peak_cpu_load_percent,
             self.peak_graph_latency_ms,
+            self.peak_block_execution_time_ns,
+            self.peak_block_budget_utilization_percent,
+            self.peak_block_budget_overrun_ns,
             self.peak_pending_prework_target_count,
             self.peak_prework_queue_depth,
             self.peak_background_queued_work_item_count,
@@ -5650,6 +5897,10 @@ impl RuntimePerformanceTraceReceipt {
             self.background_service_while_playing_count,
             self.background_service_while_recording_count,
             self.topology_incompatible_observation_count,
+            self.elevated_deadline_pressure_observation_count,
+            self.critical_deadline_pressure_observation_count,
+            self.overrun_deadline_pressure_observation_count,
+            self.budget_overrun_count_delta,
             self.xrun_count_delta,
             self.prework_service_starvation_count_delta,
             self.prework_service_throttle_count_delta,
@@ -5658,7 +5909,12 @@ impl RuntimePerformanceTraceReceipt {
             json_option_string(self.peak_hot_latency_node_group.as_deref()),
             self.peak_hot_latency_node_samples,
             json_option_string(self.peak_hot_latency_group.as_deref()),
+            self.peak_hot_latency_group_node_count,
             self.peak_hot_latency_group_total_samples,
+            json_option_string(self.peak_critical_path_lane.as_deref()),
+            self.peak_critical_path_lane_node_count,
+            self.peak_critical_path_lane_plugin_backed_node_count,
+            self.peak_critical_path_lane_total_latency_samples,
             json_option_string(Some(self.summary.as_str())),
         )
     }
@@ -5933,7 +6189,6 @@ impl RuntimeSupervisorReport {
     pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
         build_runtime_soak_receipt(&self.observation, self.events.len())
     }
-
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -9102,6 +9357,9 @@ fn build_runtime_performance_trace_receipt(
             processed_block_span: 0,
             peak_cpu_load_percent: 0.0,
             peak_graph_latency_ms: 0.0,
+            peak_block_execution_time_ns: 0,
+            peak_block_budget_utilization_percent: 0.0,
+            peak_block_budget_overrun_ns: 0,
             peak_pending_prework_target_count: 0,
             peak_prework_queue_depth: 0,
             peak_background_queued_work_item_count: 0,
@@ -9115,6 +9373,10 @@ fn build_runtime_performance_trace_receipt(
             background_service_while_playing_count: 0,
             background_service_while_recording_count: 0,
             topology_incompatible_observation_count: 0,
+            elevated_deadline_pressure_observation_count: 0,
+            critical_deadline_pressure_observation_count: 0,
+            overrun_deadline_pressure_observation_count: 0,
+            budget_overrun_count_delta: 0,
             xrun_count_delta: 0,
             prework_service_starvation_count_delta: 0,
             prework_service_throttle_count_delta: 0,
@@ -9123,7 +9385,12 @@ fn build_runtime_performance_trace_receipt(
             peak_hot_latency_node_group: None,
             peak_hot_latency_node_samples: 0,
             peak_hot_latency_group: None,
+            peak_hot_latency_group_node_count: 0,
             peak_hot_latency_group_total_samples: 0,
+            peak_critical_path_lane: None,
+            peak_critical_path_lane_node_count: 0,
+            peak_critical_path_lane_plugin_backed_node_count: 0,
+            peak_critical_path_lane_total_latency_samples: 0,
             summary: "observations=0".to_string(),
         };
     }
@@ -9136,6 +9403,9 @@ fn build_runtime_performance_trace_receipt(
         processed_block_span: 0,
         peak_cpu_load_percent: first_snapshot.cpu_load_percent,
         peak_graph_latency_ms: first_snapshot.graph_latency_ms,
+        peak_block_execution_time_ns: first_snapshot.peak_block_execution_time_ns,
+        peak_block_budget_utilization_percent: first_snapshot.peak_block_budget_utilization_percent,
+        peak_block_budget_overrun_ns: first_snapshot.peak_block_budget_overrun_ns,
         peak_pending_prework_target_count: first_snapshot.pending_prework_target_count,
         peak_prework_queue_depth: first_snapshot.prework_queue_depth,
         peak_background_queued_work_item_count: first_snapshot.background_queued_work_item_count,
@@ -9150,6 +9420,10 @@ fn build_runtime_performance_trace_receipt(
         background_service_while_playing_count: 0,
         background_service_while_recording_count: 0,
         topology_incompatible_observation_count: 0,
+        elevated_deadline_pressure_observation_count: 0,
+        critical_deadline_pressure_observation_count: 0,
+        overrun_deadline_pressure_observation_count: 0,
+        budget_overrun_count_delta: 0,
         xrun_count_delta: 0,
         prework_service_starvation_count_delta: 0,
         prework_service_throttle_count_delta: 0,
@@ -9158,7 +9432,14 @@ fn build_runtime_performance_trace_receipt(
         peak_hot_latency_node_group: first_snapshot.hot_latency_node_group.clone(),
         peak_hot_latency_node_samples: first_snapshot.hot_latency_node_samples,
         peak_hot_latency_group: first_snapshot.hot_latency_group.clone(),
+        peak_hot_latency_group_node_count: first_snapshot.hot_latency_group_node_count,
         peak_hot_latency_group_total_samples: first_snapshot.hot_latency_group_total_samples,
+        peak_critical_path_lane: first_snapshot.critical_path_lane.clone(),
+        peak_critical_path_lane_node_count: first_snapshot.critical_path_lane_node_count,
+        peak_critical_path_lane_plugin_backed_node_count: first_snapshot
+            .critical_path_lane_plugin_backed_node_count,
+        peak_critical_path_lane_total_latency_samples: first_snapshot
+            .critical_path_lane_total_latency_samples,
         summary: String::new(),
     };
 
@@ -9215,11 +9496,38 @@ fn build_runtime_performance_trace_receipt(
                 .topology_incompatible_observation_count
                 .saturating_add(1);
         }
+        match snapshot.last_block_deadline_pressure {
+            RuntimeBlockDeadlinePressure::Normal => {}
+            RuntimeBlockDeadlinePressure::Elevated => {
+                receipt.elevated_deadline_pressure_observation_count = receipt
+                    .elevated_deadline_pressure_observation_count
+                    .saturating_add(1);
+            }
+            RuntimeBlockDeadlinePressure::Critical => {
+                receipt.critical_deadline_pressure_observation_count = receipt
+                    .critical_deadline_pressure_observation_count
+                    .saturating_add(1);
+            }
+            RuntimeBlockDeadlinePressure::Overrun => {
+                receipt.overrun_deadline_pressure_observation_count = receipt
+                    .overrun_deadline_pressure_observation_count
+                    .saturating_add(1);
+            }
+        }
         receipt.last_block_sequence = snapshot.last_block_sequence;
         receipt.peak_cpu_load_percent =
             receipt.peak_cpu_load_percent.max(snapshot.cpu_load_percent);
         receipt.peak_graph_latency_ms =
             receipt.peak_graph_latency_ms.max(snapshot.graph_latency_ms);
+        receipt.peak_block_execution_time_ns = receipt
+            .peak_block_execution_time_ns
+            .max(snapshot.peak_block_execution_time_ns);
+        receipt.peak_block_budget_utilization_percent = receipt
+            .peak_block_budget_utilization_percent
+            .max(snapshot.peak_block_budget_utilization_percent);
+        receipt.peak_block_budget_overrun_ns = receipt
+            .peak_block_budget_overrun_ns
+            .max(snapshot.peak_block_budget_overrun_ns);
         receipt.peak_pending_prework_target_count = receipt
             .peak_pending_prework_target_count
             .max(snapshot.pending_prework_target_count);
@@ -9237,7 +9545,18 @@ fn build_runtime_performance_trace_receipt(
             receipt.peak_hot_latency_node_group = snapshot.hot_latency_node_group.clone();
             receipt.peak_hot_latency_node_samples = snapshot.hot_latency_node_samples;
             receipt.peak_hot_latency_group = snapshot.hot_latency_group.clone();
+            receipt.peak_hot_latency_group_node_count = snapshot.hot_latency_group_node_count;
             receipt.peak_hot_latency_group_total_samples = snapshot.hot_latency_group_total_samples;
+        }
+        if snapshot.critical_path_lane_total_latency_samples
+            > receipt.peak_critical_path_lane_total_latency_samples
+        {
+            receipt.peak_critical_path_lane = snapshot.critical_path_lane.clone();
+            receipt.peak_critical_path_lane_node_count = snapshot.critical_path_lane_node_count;
+            receipt.peak_critical_path_lane_plugin_backed_node_count =
+                snapshot.critical_path_lane_plugin_backed_node_count;
+            receipt.peak_critical_path_lane_total_latency_samples =
+                snapshot.critical_path_lane_total_latency_samples;
         }
         last_snapshot = snapshot;
     }
@@ -9248,6 +9567,9 @@ fn build_runtime_performance_trace_receipt(
     receipt.xrun_count_delta = last_snapshot
         .xrun_count
         .saturating_sub(first_snapshot.xrun_count);
+    receipt.budget_overrun_count_delta = last_snapshot
+        .budget_overrun_count
+        .saturating_sub(first_snapshot.budget_overrun_count);
     receipt.prework_service_starvation_count_delta = last_snapshot
         .prework_service_starvation_count
         .saturating_sub(first_snapshot.prework_service_starvation_count);
@@ -9258,7 +9580,7 @@ fn build_runtime_performance_trace_receipt(
         .prework_service_yield_count
         .saturating_sub(first_snapshot.prework_service_yield_count);
     receipt.summary = format!(
-        "observations={} blocks={} playback_active={} recording_active={} background={}/{}/{}/{} overlap={}/{} queue_peak={}/{} prework_delta={}/{}/{} hot_node={:?}/{} hot_group={:?}/{} topology_incompatible={}",
+        "observations={} blocks={} playback_active={} recording_active={} background={}/{}/{}/{} overlap={}/{} queue_peak={}/{} prework_delta={}/{}/{} deadline={}/{}/{} budget_overruns={} hot_node={:?}/{} hot_group={:?}/{}/{} critical_lane={:?}/{}/{}/{} topology_incompatible={}",
         receipt.observation_count,
         receipt.processed_block_span,
         receipt.playback_active_observation_count,
@@ -9274,10 +9596,19 @@ fn build_runtime_performance_trace_receipt(
         receipt.prework_service_starvation_count_delta,
         receipt.prework_service_throttle_count_delta,
         receipt.prework_service_yield_count_delta,
+        receipt.elevated_deadline_pressure_observation_count,
+        receipt.critical_deadline_pressure_observation_count,
+        receipt.overrun_deadline_pressure_observation_count,
+        receipt.budget_overrun_count_delta,
         receipt.peak_hot_latency_node_id,
         receipt.peak_hot_latency_node_samples,
         receipt.peak_hot_latency_group,
+        receipt.peak_hot_latency_group_node_count,
         receipt.peak_hot_latency_group_total_samples,
+        receipt.peak_critical_path_lane,
+        receipt.peak_critical_path_lane_node_count,
+        receipt.peak_critical_path_lane_plugin_backed_node_count,
+        receipt.peak_critical_path_lane_total_latency_samples,
         receipt.topology_incompatible_observation_count,
     );
     receipt
@@ -9370,8 +9701,8 @@ fn build_runtime_acceptance_receipt(
     let playback_ready = effective_config.block_size > 0
         && effective_config.sample_rate.0 > 0
         && scheduler_topology_summary.compatible;
-    let recording_ready =
-        recording_capture_snapshot.capture_ready || recording_capture_snapshot.last_checkpoint.is_some();
+    let recording_ready = recording_capture_snapshot.capture_ready
+        || recording_capture_snapshot.last_checkpoint.is_some();
     let media_ready = media_service_snapshot.indexed_asset_count > 0
         && !media_service_snapshot.invalidation_active
         && matches!(
@@ -9389,12 +9720,11 @@ fn build_runtime_acceptance_receipt(
         && clip_processing_pipeline_snapshot.pending_warp_clip_count == 0
         && clip_processing_pipeline_snapshot.invalid_clip_count == 0;
     let plugin_ready = plugin_lifecycle_snapshot.sandbox_count > 0
-        && plugin_lifecycle_snapshot.ready_sandbox_count
-            == plugin_lifecycle_snapshot.sandbox_count
+        && plugin_lifecycle_snapshot.ready_sandbox_count == plugin_lifecycle_snapshot.sandbox_count
         && plugin_lifecycle_snapshot.faulted_sandbox_count == 0
         && plugin_lifecycle_snapshot.quarantined_sandbox_count == 0;
-    let recovery_ready = !matches!(readiness, RuntimeReadiness::Failed { .. })
-        && control_snapshot.restart_count >= 0;
+    let recovery_ready =
+        !matches!(readiness, RuntimeReadiness::Failed { .. }) || control_snapshot.restart_count > 0;
     let runtime_ready_lane_count = [
         playback_ready,
         recording_ready,
@@ -9624,12 +9954,18 @@ fn format_runtime_scheduler_snapshot_multiline(snapshot: &RuntimeSchedulerSnapsh
 
 fn format_runtime_block_summary_compact(summary: &RuntimeBlockExecutionSummary) -> String {
     format!(
-        " block_summary_processed={} block_summary_last={:?}/{:?}/{}ch@{} block_summary_prework={:?}/{:?}/{:?} block_summary_latency_tail={}/{}/{} block_summary_levels={:?}/{:?}/{:?} block_summary_transport={}/{:?}/{} block_summary_context={:?}/{:?}/{:?}/{:?}",
+        " block_summary_processed={} block_summary_last={:?}/{:?}/{}ch@{} block_summary_timing={:?}/{:?}/{:?}/{:?}/{:?}/{} block_summary_prework={:?}/{:?}/{:?} block_summary_latency_tail={}/{}/{} block_summary_levels={:?}/{:?}/{:?} block_summary_transport={}/{:?}/{} block_summary_context={:?}/{:?}/{:?}/{:?}",
         summary.processed_blocks,
         summary.last_processing_epoch,
         summary.last_block_sequence,
         summary.last_channel_count,
         summary.last_frame_count,
+        summary.last_block_execution_time_ns,
+        summary.last_block_deadline_budget_ns,
+        summary.last_block_budget_utilization_percent,
+        summary.last_block_budget_overrun_ns,
+        summary.last_block_deadline_pressure,
+        summary.budget_overrun_count,
         summary.prework_cache_state,
         summary.prework_cache_freshness_state,
         summary.last_prework_invalidation_reason,
@@ -9651,12 +9987,18 @@ fn format_runtime_block_summary_compact(summary: &RuntimeBlockExecutionSummary) 
 
 fn format_runtime_block_summary_multiline(summary: &RuntimeBlockExecutionSummary) -> String {
     format!(
-        "\nblock_summary_processed_blocks={}\nblock_summary_last_processing_epoch={:?}\nblock_summary_last_block_sequence={:?}\nblock_summary_last_frame_count={}\nblock_summary_last_channel_count={}\nblock_summary_prework_cache_state={:?}\nblock_summary_prework_cache_freshness_state={:?}\nblock_summary_last_prework_invalidation_reason={:?}\nblock_summary_total_latency_samples={}\nblock_summary_total_tail_samples={}\nblock_summary_output_tail_samples={}\nblock_summary_max_bus_tail_samples={}\nblock_summary_last_input_peak={:?}\nblock_summary_last_output_peak={:?}\nblock_summary_last_output_rms={:?}\nblock_summary_transport_epoch={}\nblock_summary_transport_transition={:?}\nblock_summary_transport_loop_wrapped={}\nblock_summary_context_anticipative={:?}\nblock_summary_transport_playing={:?}\nblock_summary_transport_tempo_bpm={:?}\nblock_summary_timeline_position_samples={:?}",
+        "\nblock_summary_processed_blocks={}\nblock_summary_last_processing_epoch={:?}\nblock_summary_last_block_sequence={:?}\nblock_summary_last_frame_count={}\nblock_summary_last_channel_count={}\nblock_summary_last_block_execution_time_ns={:?}\nblock_summary_last_block_deadline_budget_ns={:?}\nblock_summary_last_block_budget_utilization_percent={:?}\nblock_summary_last_block_budget_overrun_ns={:?}\nblock_summary_last_block_deadline_pressure={:?}\nblock_summary_budget_overrun_count={}\nblock_summary_prework_cache_state={:?}\nblock_summary_prework_cache_freshness_state={:?}\nblock_summary_last_prework_invalidation_reason={:?}\nblock_summary_total_latency_samples={}\nblock_summary_total_tail_samples={}\nblock_summary_output_tail_samples={}\nblock_summary_max_bus_tail_samples={}\nblock_summary_last_input_peak={:?}\nblock_summary_last_output_peak={:?}\nblock_summary_last_output_rms={:?}\nblock_summary_transport_epoch={}\nblock_summary_transport_transition={:?}\nblock_summary_transport_loop_wrapped={}\nblock_summary_context_anticipative={:?}\nblock_summary_transport_playing={:?}\nblock_summary_transport_tempo_bpm={:?}\nblock_summary_timeline_position_samples={:?}",
         summary.processed_blocks,
         summary.last_processing_epoch,
         summary.last_block_sequence,
         summary.last_frame_count,
         summary.last_channel_count,
+        summary.last_block_execution_time_ns,
+        summary.last_block_deadline_budget_ns,
+        summary.last_block_budget_utilization_percent,
+        summary.last_block_budget_overrun_ns,
+        summary.last_block_deadline_pressure,
+        summary.budget_overrun_count,
         summary.prework_cache_state,
         summary.prework_cache_freshness_state,
         summary.last_prework_invalidation_reason,
@@ -10866,6 +11208,12 @@ fn json_runtime_block_execution_summary(summary: &RuntimeBlockExecutionSummary) 
             "\"last_block_sequence\":{},",
             "\"last_frame_count\":{},",
             "\"last_channel_count\":{},",
+            "\"last_block_execution_time_ns\":{},",
+            "\"last_block_deadline_budget_ns\":{},",
+            "\"last_block_budget_utilization_percent\":{},",
+            "\"last_block_budget_overrun_ns\":{},",
+            "\"last_block_deadline_pressure\":\"{:?}\",",
+            "\"budget_overrun_count\":{},",
             "\"prework_cache_state\":{},",
             "\"prework_cache_freshness_state\":{},",
             "\"last_prework_invalidation_reason\":{},",
@@ -10890,6 +11238,12 @@ fn json_runtime_block_execution_summary(summary: &RuntimeBlockExecutionSummary) 
         json_option_u64(summary.last_block_sequence),
         summary.last_frame_count,
         summary.last_channel_count,
+        json_option_u64(summary.last_block_execution_time_ns),
+        json_option_u64(summary.last_block_deadline_budget_ns),
+        json_option_f32(summary.last_block_budget_utilization_percent),
+        json_option_u64(summary.last_block_budget_overrun_ns),
+        summary.last_block_deadline_pressure,
+        summary.budget_overrun_count,
         json_escape_string(&format!("{:?}", summary.prework_cache_state)),
         json_escape_string(&format!("{:?}", summary.prework_cache_freshness_state)),
         json_option_string(
@@ -12945,6 +13299,15 @@ fn json_runtime_engine_block_snapshot(snapshot: &RuntimeEngineBlockSnapshot) -> 
             "\"last_block_sequence\":{},",
             "\"last_frame_count\":{},",
             "\"last_channel_count\":{},",
+            "\"last_block_execution_time_ns\":{},",
+            "\"last_block_deadline_budget_ns\":{},",
+            "\"last_block_budget_utilization_percent\":{},",
+            "\"last_block_budget_overrun_ns\":{},",
+            "\"last_block_deadline_pressure\":\"{:?}\",",
+            "\"budget_overrun_count\":{},",
+            "\"peak_block_execution_time_ns\":{},",
+            "\"peak_block_budget_utilization_percent\":{},",
+            "\"peak_block_budget_overrun_ns\":{},",
             "\"last_input_peak\":{},",
             "\"last_prework_output_peak\":{},",
             "\"last_realtime_input_peak\":{},",
@@ -13107,6 +13470,15 @@ fn json_runtime_engine_block_snapshot(snapshot: &RuntimeEngineBlockSnapshot) -> 
         json_option_u64(snapshot.last_block_sequence),
         snapshot.last_frame_count,
         snapshot.last_channel_count,
+        json_option_u64(snapshot.last_block_execution_time_ns),
+        json_option_u64(snapshot.last_block_deadline_budget_ns),
+        json_option_f32(snapshot.last_block_budget_utilization_percent),
+        json_option_u64(snapshot.last_block_budget_overrun_ns),
+        snapshot.last_block_deadline_pressure,
+        snapshot.budget_overrun_count,
+        snapshot.peak_block_execution_time_ns,
+        snapshot.peak_block_budget_utilization_percent,
+        snapshot.peak_block_budget_overrun_ns,
         json_option_f32(snapshot.last_input_peak),
         json_option_f32(snapshot.last_prework_output_peak),
         json_option_f32(snapshot.last_realtime_input_peak),
@@ -13575,11 +13947,38 @@ fn json_runtime_execution_lane_order(lanes: &[GraphExecutionLane]) -> String {
         "[{}]",
         lanes
             .iter()
-            .map(|lane| {
-                json_option_string(Some(match lane {
-                    GraphExecutionLane::Realtime => "Realtime",
-                    GraphExecutionLane::Anticipative => "Anticipative",
-                }))
+            .map(|lane| json_option_string(Some(runtime_execution_lane_name(*lane))))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_worker_lane_instrumentation_summaries(
+    summaries: &[RuntimeWorkerLaneInstrumentationSummary],
+) -> String {
+    format!(
+        "[{}]",
+        summaries
+            .iter()
+            .map(|summary| {
+                format!(
+                    concat!(
+                        "{{",
+                        "\"lane\":{},",
+                        "\"node_count\":{},",
+                        "\"plugin_backed_node_count\":{},",
+                        "\"planning_group_count\":{},",
+                        "\"total_latency_samples\":{},",
+                        "\"max_node_latency_samples\":{}",
+                        "}}"
+                    ),
+                    json_string(runtime_execution_lane_name(summary.lane)),
+                    summary.node_count,
+                    summary.plugin_backed_node_count,
+                    summary.planning_group_count,
+                    summary.total_latency_samples,
+                    summary.max_node_latency_samples,
+                )
             })
             .collect::<Vec<_>>()
             .join(",")
@@ -15218,6 +15617,7 @@ pub trait RuntimeProjectionApi {
 pub trait RuntimeObservationApi {
     fn subscribe(&mut self, sink: Box<dyn RuntimeEventSink>) -> SubscriptionHandle;
     fn get_readiness(&self) -> RuntimeReadiness;
+    fn get_acceptance_receipt(&self) -> RuntimeAcceptanceReceipt;
     fn get_effective_config(&self) -> EffectiveRuntimeConfig;
     fn get_control_snapshot(&self) -> RuntimeControlSnapshot;
     fn get_scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot;

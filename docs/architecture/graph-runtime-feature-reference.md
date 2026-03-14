@@ -623,6 +623,47 @@ Implemented now:
     bounded consumer and automation digests for timing and pressure
   - host callback cadence and backend timing remain additive evidence rather
     than a competing timing authority
+- implemented bounded per-block timing instrumentation:
+  - runtime-owned `RuntimeBlockDeadlinePressure`
+  - latest block execution duration, derived deadline budget, utilization, and
+    overrun amount on `RuntimeEngineBlockSnapshot`
+  - aligned timing digest on `RuntimeBlockExecutionSummary`,
+    `RuntimePerformanceSnapshot`, and `RuntimePerformanceTraceReceipt`
+  - measured block execution now feeds runtime `cpu_load_percent` and
+    `graph_latency_ms` once actual blocks have been processed
+  - consumer-facing boundary proof via public runtime reports, stable
+    host-edge `supervisor_report()`, and
+    `signal-supervisor-tools --describe-block-timing-boundary`
+- contract-frozen bounded hotspot and worker-lane instrumentation hierarchy:
+  - `RuntimeEngineBlockSnapshot` as the explanatory graph, planning-group,
+    lane-order, and dispatch-shape authority
+  - `RuntimePerformanceSnapshot` as the bounded consumer digest for
+    `hot_latency_node_*`, `hot_latency_group*`, and scheduler lane or handoff
+    width context
+  - `RuntimePerformanceTraceReceipt` as the bounded peak-hotspot digest across
+    an observation window
+  - host callback cadence and OS scheduler detail remain advisory evidence
+    rather than a competing hotspot authority
+- implemented bounded graph hotspot and worker-lane instrumentation depth:
+  - `RuntimePerformanceSnapshot` now exposes:
+    - hot-group membership count through `hot_latency_group_node_count`
+    - critical-path lane identity and lane-level node, plugin, planning-group,
+      and total-latency counts
+    - typed `worker_lane_summaries` through
+      `RuntimeWorkerLaneInstrumentationSummary`
+  - `RuntimePerformanceTraceReceipt` now preserves:
+    - peak hot-group membership count
+    - peak critical-path lane identity
+    - peak critical-path lane node, plugin, and total-latency counts
+  - the widened hotspot and lane receipts are still derived from
+    `RuntimeEngineBlockSnapshot` planning and lane-order truth rather than
+    host-side scheduler or thread reinterpretation
+  - consumer-facing boundary proof via:
+    - public runtime consumption of `RuntimePerformanceSnapshot` and
+      `RuntimePerformanceTraceReceipt`
+    - stable local and server host-edge `supervisor_report().performance_snapshot()`
+    - `signal-supervisor-tools --describe-critical-path-boundary`
+    - `effigy acceptance:critical-path-boundary`
 - contract-frozen shared host-edge tiers:
   - `LocalRuntimeHost::new`, `ServerRuntimeHost::new`, `RuntimeSupervisorApi`,
     and `supervisor_report()` as the first stable shared host edge
@@ -662,10 +703,14 @@ Useful implementation entry points after this doc:
 - `crates/signal-supervisor-tools/tests/public_packaging_manifest_boundary.rs`
 - `crates/signal-runtime/examples/supervisor_report_demo.rs`
 - `cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json`
+- `cargo run -p signal-supervisor-tools -- --describe-block-timing-boundary --format=json`
+- `cargo run -p signal-supervisor-tools -- --describe-critical-path-boundary --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
 - `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:block-timing-boundary`
+- `effigy acceptance:critical-path-boundary`
 - `effigy acceptance:plugin-continuity`
 - `effigy acceptance:plugin-backend-breadth`
 - `effigy acceptance:conformance`
@@ -686,6 +731,7 @@ Useful implementation entry points after this doc:
 - `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
 - `docs/contracts/015-offline-render-recovery-and-resumability-contract.md`
 - `docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
+- `docs/contracts/018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md`
 - `crates/signal-supervisor-tools/src/main.rs`
 - `effigy.toml`
 - `crates/signal-runtime/src/interfaces.rs`
@@ -697,7 +743,7 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Continue `g06.006` with Batch 6.2 by instrumenting bounded per-block execution
-timing, deadline pressure, and budget-overrun fields on the newly frozen
-runtime-owned measurement seam before later profiling, scheduler, and
-media-service work widen the instrumentation surface further.
+Continue `g06.008` with Batch 8.1 by defining deferred-work scheduler
+priority, backpressure, starvation, and cancellation semantics before later
+profiling, scheduler, and media-service work widen the runtime evidence
+surface further.
