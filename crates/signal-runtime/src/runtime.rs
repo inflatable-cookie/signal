@@ -50,7 +50,8 @@ use crate::interfaces::{
     RuntimeErrorKind, RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase,
     RuntimeExecutionTopologySummary, RuntimeInterruptionClass, RuntimeLifecycleApi,
     RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
-    RuntimeMediaPipelineSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
+    RuntimeMediaIndexingState, RuntimeMediaPipelineSnapshot, RuntimeMediaPreviewState,
+    RuntimeMediaServiceSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
     RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
     RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
     RuntimeOfflinePluginDelegatedExecutionReceipt, RuntimeOfflinePluginDelegatedExecutionRequest,
@@ -1263,6 +1264,8 @@ struct RuntimeMediaPipelineAsset {
 struct RuntimeMediaPipelineStateModel {
     policy: RuntimeMediaPipelinePolicy,
     assets: BTreeMap<String, RuntimeMediaPipelineAsset>,
+    previewing_asset_id: Option<String>,
+    last_preview_error: Option<String>,
 }
 
 impl RuntimeMediaPipelineStateModel {
@@ -1335,6 +1338,154 @@ impl RuntimeMediaPipelineStateModel {
         }
     }
 
+    fn service_snapshot(&self) -> RuntimeMediaServiceSnapshot {
+        let indexed_asset_count = self.assets.len();
+        let analysis_ready_asset_count = self
+            .assets
+            .values()
+            .filter(|asset| asset.state == RuntimeMediaAssetState::Ready)
+            .count();
+        let invalidated_assets = self
+            .assets
+            .values()
+            .filter(|asset| asset.state == RuntimeMediaAssetState::Invalid)
+            .collect::<Vec<_>>();
+        let invalidated_asset_count = invalidated_assets.len();
+        let waveform_ready_asset_count = self
+            .assets
+            .values()
+            .filter(|asset| {
+                asset.registration.waveform_bin_count > 0
+                    && asset.state == RuntimeMediaAssetState::Ready
+            })
+            .count();
+        let waveform_pending_asset_count = self
+            .assets
+            .values()
+            .filter(|asset| {
+                asset.registration.waveform_bin_count > 0
+                    && matches!(
+                        asset.state,
+                        RuntimeMediaAssetState::Ingesting
+                            | RuntimeMediaAssetState::Conforming
+                            | RuntimeMediaAssetState::Rebuilding
+                    )
+            })
+            .count();
+        let previewable_asset_count = analysis_ready_asset_count;
+        let invalidation_active = invalidated_asset_count > 0;
+        let indexing_state = if indexed_asset_count == 0 {
+            RuntimeMediaIndexingState::Empty
+        } else if self.assets.values().any(|asset| {
+            matches!(
+                asset.state,
+                RuntimeMediaAssetState::Ingesting
+                    | RuntimeMediaAssetState::Conforming
+                    | RuntimeMediaAssetState::Rebuilding
+            )
+        }) {
+            RuntimeMediaIndexingState::Syncing
+        } else if invalidation_active {
+            RuntimeMediaIndexingState::Invalidated
+        } else {
+            RuntimeMediaIndexingState::Ready
+        };
+        let preview_state = if self.previewing_asset_id.is_some() && previewable_asset_count > 0 {
+            RuntimeMediaPreviewState::Previewing
+        } else if previewable_asset_count > 0 {
+            RuntimeMediaPreviewState::Ready
+        } else if invalidation_active {
+            RuntimeMediaPreviewState::Invalidated
+        } else {
+            RuntimeMediaPreviewState::Unavailable
+        };
+        let last_invalidated_asset = invalidated_assets.last().copied();
+
+        RuntimeMediaServiceSnapshot {
+            indexed_asset_count,
+            analysis_ready_asset_count,
+            waveform_ready_asset_count,
+            waveform_pending_asset_count,
+            previewable_asset_count,
+            invalidated_asset_count,
+            invalidation_active,
+            indexing_state,
+            preview_state,
+            previewing_asset_id: self.previewing_asset_id.clone(),
+            last_invalidated_asset_id: last_invalidated_asset
+                .map(|asset| asset.registration.asset_id.clone()),
+            last_invalidation_error: last_invalidated_asset
+                .and_then(|asset| asset.last_error.clone()),
+            last_preview_error: self.last_preview_error.clone(),
+            summary: format!(
+                "indexed={} ready={} waveform_ready={} waveform_pending={} previewable={} invalidated={} indexing={:?} preview={:?} previewing={} last_invalidated={} invalidation_error={} preview_error={}",
+                indexed_asset_count,
+                analysis_ready_asset_count,
+                waveform_ready_asset_count,
+                waveform_pending_asset_count,
+                previewable_asset_count,
+                invalidated_asset_count,
+                indexing_state,
+                preview_state,
+                self.previewing_asset_id.as_deref().unwrap_or("none"),
+                last_invalidated_asset
+                    .map(|asset| asset.registration.asset_id.as_str())
+                    .unwrap_or("none"),
+                last_invalidated_asset
+                    .and_then(|asset| asset.last_error.as_deref())
+                    .unwrap_or("none"),
+                self.last_preview_error.as_deref().unwrap_or("none"),
+            ),
+        }
+    }
+
+    fn start_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError> {
+        let asset = self.assets.get(asset_id).ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                format!("media asset not indexed for preview: {asset_id}"),
+            )
+        })?;
+        if asset.state != RuntimeMediaAssetState::Ready {
+            let message = format!(
+                "media asset not ready for preview: {asset_id} state={:?}",
+                asset.state
+            );
+            self.previewing_asset_id = None;
+            self.last_preview_error = Some(message.clone());
+            return Err(RuntimeError::new(RuntimeErrorKind::InvalidState, message));
+        }
+        self.previewing_asset_id = Some(asset_id.to_string());
+        self.last_preview_error = None;
+        Ok(())
+    }
+
+    fn stop_preview(&mut self) {
+        self.previewing_asset_id = None;
+        self.last_preview_error = None;
+    }
+
+    fn reconcile_preview_state(&mut self) {
+        if let Some(asset_id) = self.previewing_asset_id.clone() {
+            match self.assets.get(&asset_id) {
+                Some(asset) if asset.state == RuntimeMediaAssetState::Ready => {}
+                Some(asset) => {
+                    self.previewing_asset_id = None;
+                    self.last_preview_error = Some(format!(
+                        "preview invalidated for asset {} state={:?}",
+                        asset.registration.asset_id, asset.state
+                    ));
+                }
+                None => {
+                    self.previewing_asset_id = None;
+                    self.last_preview_error = Some(format!(
+                        "preview asset removed from runtime index: {asset_id}"
+                    ));
+                }
+            }
+        }
+    }
+
     fn reconcile_assets(
         &mut self,
         registrations: Vec<RuntimeMediaAssetRegistration>,
@@ -1390,6 +1541,8 @@ impl RuntimeMediaPipelineStateModel {
             self.assets
                 .insert(asset.registration.asset_id.clone(), asset);
         }
+
+        self.reconcile_preview_state();
 
         Ok(())
     }
@@ -1461,6 +1614,8 @@ impl Default for RuntimeMediaPipelineStateModel {
         Self {
             policy: RuntimeMediaPipelinePolicy::default(),
             assets: BTreeMap::new(),
+            previewing_asset_id: None,
+            last_preview_error: None,
         }
     }
 }
@@ -11998,6 +12153,10 @@ impl SignalRuntime {
         self.media_pipeline.snapshot()
     }
 
+    fn media_service_snapshot(&self) -> RuntimeMediaServiceSnapshot {
+        self.media_pipeline.service_snapshot()
+    }
+
     fn metering_snapshot(&self) -> RuntimeMeteringSnapshot {
         self.metering
             .snapshot()
@@ -12463,6 +12622,15 @@ impl SignalRuntime {
         assets: Vec<RuntimeMediaAssetRegistration>,
     ) -> Result<(), RuntimeError> {
         self.media_pipeline.reconcile_assets(assets)
+    }
+
+    pub fn start_media_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError> {
+        self.media_pipeline.start_preview(asset_id)
+    }
+
+    pub fn stop_media_preview(&mut self) -> Result<(), RuntimeError> {
+        self.media_pipeline.stop_preview();
+        Ok(())
     }
 
     pub fn reconcile_warp_clips(
@@ -13294,6 +13462,10 @@ impl RuntimeObservationApi for SignalRuntime {
 
     fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot {
         self.media_pipeline_snapshot()
+    }
+
+    fn get_media_service_snapshot(&self) -> RuntimeMediaServiceSnapshot {
+        self.media_service_snapshot()
     }
 
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot {
@@ -25568,6 +25740,216 @@ mod tests {
     }
 
     #[test]
+    fn runtime_media_service_snapshot_tracks_ready_previewable_and_invalidated_assets() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let ready_path = temp_capture_path("media-service-ready");
+        let missing_path = temp_capture_path("media-service-missing");
+        write_test_wav(&ready_path);
+
+        runtime
+            .reconcile_media_assets(vec![
+                RuntimeMediaAssetRegistration {
+                    asset_id: "asset:sha256:ready".to_string(),
+                    content_hash: "ready".to_string(),
+                    source_path: ready_path.display().to_string(),
+                    file_name: "ready.wav".to_string(),
+                    byte_size: fs::metadata(&ready_path).unwrap().len(),
+                    sample_rate_hz: 48_000,
+                    channel_count: 1,
+                    duration_samples: 128,
+                    waveform_bin_count: 8,
+                },
+                RuntimeMediaAssetRegistration {
+                    asset_id: "asset:sha256:missing".to_string(),
+                    content_hash: "missing".to_string(),
+                    source_path: missing_path.display().to_string(),
+                    file_name: "missing.wav".to_string(),
+                    byte_size: 0,
+                    sample_rate_hz: 48_000,
+                    channel_count: 1,
+                    duration_samples: 128,
+                    waveform_bin_count: 8,
+                },
+            ])
+            .unwrap();
+
+        let service = runtime.get_media_service_snapshot();
+        assert_eq!(service.indexed_asset_count, 2);
+        assert_eq!(service.analysis_ready_asset_count, 1);
+        assert_eq!(service.waveform_ready_asset_count, 1);
+        assert_eq!(service.waveform_pending_asset_count, 0);
+        assert_eq!(service.previewable_asset_count, 1);
+        assert_eq!(service.invalidated_asset_count, 1);
+        assert!(service.invalidation_active);
+        assert_eq!(
+            service.indexing_state,
+            crate::interfaces::RuntimeMediaIndexingState::Invalidated
+        );
+        assert_eq!(
+            service.preview_state,
+            crate::interfaces::RuntimeMediaPreviewState::Ready
+        );
+        assert_eq!(
+            service.last_invalidated_asset_id.as_deref(),
+            Some("asset:sha256:missing")
+        );
+        assert!(service.last_invalidation_error.is_some());
+
+        let _ = fs::remove_file(ready_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .iter()
+            .find(|asset| asset.asset_id == "asset:sha256:ready")
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_media_preview_clears_when_previewed_asset_is_invalidated() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let ready_path = temp_capture_path("media-preview-ready");
+        write_test_wav(&ready_path);
+
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:previewed".to_string(),
+                content_hash: "previewed".to_string(),
+                source_path: ready_path.display().to_string(),
+                file_name: "previewed.wav".to_string(),
+                byte_size: fs::metadata(&ready_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+
+        runtime
+            .start_media_preview("asset:sha256:previewed")
+            .expect("preview should start for ready media");
+        let previewing = runtime.get_media_service_snapshot();
+        assert_eq!(
+            previewing.preview_state,
+            crate::RuntimeMediaPreviewState::Previewing
+        );
+        assert_eq!(
+            previewing.previewing_asset_id.as_deref(),
+            Some("asset:sha256:previewed")
+        );
+
+        fs::remove_file(&ready_path).unwrap();
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:previewed".to_string(),
+                content_hash: "previewed".to_string(),
+                source_path: ready_path.display().to_string(),
+                file_name: "previewed.wav".to_string(),
+                byte_size: 0,
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+
+        let invalidated = runtime.get_media_service_snapshot();
+        assert_eq!(
+            invalidated.preview_state,
+            crate::RuntimeMediaPreviewState::Invalidated
+        );
+        assert_eq!(invalidated.previewing_asset_id, None);
+        assert!(invalidated.last_preview_error.is_some());
+    }
+
+    #[test]
+    fn runtime_media_service_recovers_after_invalidation_and_supports_preview_again() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let ready_path = temp_capture_path("media-preview-recovered");
+        write_test_wav(&ready_path);
+
+        let registration = RuntimeMediaAssetRegistration {
+            asset_id: "asset:sha256:recoverable".to_string(),
+            content_hash: "recoverable".to_string(),
+            source_path: ready_path.display().to_string(),
+            file_name: "recoverable.wav".to_string(),
+            byte_size: fs::metadata(&ready_path).unwrap().len(),
+            sample_rate_hz: 48_000,
+            channel_count: 1,
+            duration_samples: 128,
+            waveform_bin_count: 8,
+        };
+
+        runtime
+            .reconcile_media_assets(vec![registration.clone()])
+            .expect("ready media should reconcile");
+        runtime
+            .start_media_preview("asset:sha256:recoverable")
+            .expect("preview should start for ready media");
+        assert_eq!(
+            runtime.get_media_service_snapshot().preview_state,
+            crate::RuntimeMediaPreviewState::Previewing
+        );
+
+        fs::remove_file(&ready_path).expect("source media should be removable");
+        runtime
+            .reconcile_media_assets(vec![registration.clone()])
+            .expect("missing media should reconcile as invalid");
+
+        let invalidated = runtime.get_media_service_snapshot();
+        assert_eq!(
+            invalidated.preview_state,
+            crate::RuntimeMediaPreviewState::Invalidated
+        );
+        assert_eq!(invalidated.previewing_asset_id, None);
+        assert_eq!(invalidated.invalidated_asset_count, 1);
+
+        write_test_wav(&ready_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                byte_size: fs::metadata(&ready_path).unwrap().len(),
+                ..registration
+            }])
+            .expect("restored media should reconcile");
+
+        let recovered = runtime.get_media_service_snapshot();
+        assert_eq!(
+            recovered.indexing_state,
+            crate::RuntimeMediaIndexingState::Ready
+        );
+        assert_eq!(
+            recovered.preview_state,
+            crate::RuntimeMediaPreviewState::Ready
+        );
+        assert_eq!(recovered.invalidated_asset_count, 0);
+        assert_eq!(recovered.previewing_asset_id, None);
+        assert_eq!(recovered.last_invalidated_asset_id, None);
+
+        runtime
+            .start_media_preview("asset:sha256:recoverable")
+            .expect("preview should restart after recovery");
+        let previewing_again = runtime.get_media_service_snapshot();
+        assert_eq!(
+            previewing_again.preview_state,
+            crate::RuntimeMediaPreviewState::Previewing
+        );
+        assert_eq!(
+            previewing_again.previewing_asset_id.as_deref(),
+            Some("asset:sha256:recoverable")
+        );
+
+        let _ = fs::remove_file(ready_path);
+    }
+
+    #[test]
     fn runtime_reconciles_warp_clips_against_media_readiness_and_project_tempo() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_anticipative(&mut runtime, true);
@@ -27466,8 +27848,107 @@ mod tests {
 
         let observation_json = observation.render_json();
         assert!(observation_json.contains("\"fault_status\":{"));
+        assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
         assert!(observation_json.contains("\"interruption_summary\":{"));
         assert!(observation_json.contains("\"class\":\"Restartable\""));
+    }
+
+    #[test]
+    fn runtime_fault_diagnostic_receipt_maps_xrun_pressure_into_runtime_owned_primary_family() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+        runtime.start().expect("start runtime");
+        runtime.record_xrun_overload(Some(1));
+        runtime.record_xrun_overload(Some(2));
+        runtime.record_xrun_overload(Some(3));
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let receipt = &observation.fault_diagnostic_receipt;
+        let xrun = receipt
+            .contributions
+            .iter()
+            .find(|entry| {
+                entry.family == crate::interfaces::RuntimeFaultDiagnosticFamily::XrunPressure
+            })
+            .expect("xrun contribution should be present");
+
+        assert_eq!(
+            receipt.primary_family,
+            Some(crate::interfaces::RuntimeFaultDiagnosticFamily::XrunPressure)
+        );
+        assert_eq!(
+            receipt.primary_fault_cause,
+            Some(crate::interfaces::RuntimeFaultCause::XrunOverload)
+        );
+        assert_eq!(
+            receipt.interruption_class,
+            crate::interfaces::RuntimeInterruptionClass::Recoverable
+        );
+        assert!(xrun.active);
+        assert_eq!(xrun.event_count, 3);
+        assert_eq!(
+            xrun.authority,
+            crate::interfaces::RuntimeFaultDiagnosticAuthority::RuntimeCanonical
+        );
+
+        let observation_json = observation.render_json();
+        assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
+        assert!(observation_json.contains("\"primary_family\":\"XrunPressure\""));
+    }
+
+    #[test]
+    fn runtime_fault_diagnostic_receipt_maps_deferred_work_pressure_without_faulting_runtime() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("enable safe mode");
+
+        let deferred = runtime
+            .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+                request_id: "render:queue:fault-diagnostic:deferred".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            }])
+            .expect("safe mode should defer offline render queue");
+        assert_eq!(
+            deferred.orchestration.decision,
+            RuntimeDeferredServiceDecision::Defer
+        );
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let receipt = &observation.fault_diagnostic_receipt;
+        let deferred_entry = receipt
+            .contributions
+            .iter()
+            .find(|entry| {
+                entry.family
+                    == crate::interfaces::RuntimeFaultDiagnosticFamily::DeferredWorkPressure
+            })
+            .expect("deferred-work contribution should be present");
+
+        assert_eq!(
+            receipt.primary_family,
+            Some(crate::interfaces::RuntimeFaultDiagnosticFamily::DeferredWorkPressure)
+        );
+        assert_eq!(receipt.primary_fault_cause, None);
+        assert_eq!(
+            receipt.interruption_class,
+            crate::interfaces::RuntimeInterruptionClass::Recoverable
+        );
+        assert!(deferred_entry.active);
+        assert!(deferred_entry.event_count >= 1);
+        assert!(deferred_entry
+            .detail
+            .as_deref()
+            .unwrap_or_default()
+            .contains("decision=Some(Defer)"));
     }
 
     #[test]

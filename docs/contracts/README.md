@@ -34,6 +34,7 @@ Use this section for:
 - `014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
 - `015-offline-render-recovery-and-resumability-contract.md`
 - `016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
+- `017-per-block-execution-timing-and-pressure-snapshot-contract.md`
 
 ## Rule
 
@@ -42,6 +43,7 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g06.005` with Batch 5.2 by materializing typed fault-cause
-attribution and diagnostic receipts on runtime, supervisor, and stable
-host-edge surfaces now that the causal contract boundary is frozen.
+Continue `g06.006` with Batch 6.2 by instrumenting the newly frozen per-block
+execution timing and pressure snapshot contract so later scheduler and
+acceptance work can consume runtime-owned measurements instead of prose or
+private traces.

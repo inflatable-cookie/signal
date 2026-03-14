@@ -4135,6 +4135,14 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         self.runtime.reconcile_media_assets(assets)
     }
 
+    fn start_media_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError> {
+        self.runtime.start_media_preview(asset_id)
+    }
+
+    fn stop_media_preview(&mut self) -> Result<(), RuntimeError> {
+        self.runtime.stop_media_preview()
+    }
+
     fn reconcile_warp_clips(
         &mut self,
         clips: Vec<RuntimeWarpClipRegistration>,
@@ -7593,9 +7601,25 @@ mod tests {
         assert_eq!(profiling.host_device_loss_count, Some(0));
         assert!(profiling.host_graph_latency_ms.unwrap_or_default() > 0.4);
         assert!((profiling.runtime_graph_latency_ms - 2.7).abs() < 1.0e-6);
+        assert_eq!(
+            profiling.fault_diagnostic_receipt.primary_family,
+            Some(signal_runtime::RuntimeFaultDiagnosticFamily::DeferredWorkPressure)
+        );
+        assert!(profiling
+            .fault_diagnostic_receipt
+            .contributions
+            .iter()
+            .any(|entry| {
+                entry.family == signal_runtime::RuntimeFaultDiagnosticFamily::CallbackPressure
+                    && entry.authority
+                        == signal_runtime::RuntimeFaultDiagnosticAuthority::HostAdvisory
+            }));
         assert!(profiling
             .render_json()
             .contains("\"host_callback_count\":14"));
+        assert!(profiling
+            .render_json()
+            .contains("\"fault_diagnostic_receipt\":{"));
 
         assert_eq!(soak.watchdog_restart_count, 3);
         assert!(soak.safe_mode_enabled);

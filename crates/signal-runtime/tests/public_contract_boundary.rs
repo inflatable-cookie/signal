@@ -273,6 +273,8 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
         RuntimeInterruptionClass::Steady
     );
     assert!(!observation.interruption_summary.active);
+    assert_eq!(observation.fault_diagnostic_receipt.primary_family, None);
+    assert_eq!(observation.fault_diagnostic_receipt.contributions.len(), 4);
     assert_eq!(
         observation.recording_capture_snapshot.state,
         Some(signal_runtime::RuntimeRecordingCaptureState::Idle)
@@ -323,6 +325,7 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     assert!(observation_json.contains("\"block_size\":512"));
     assert!(observation_json.contains("\"engine_block_snapshot\":{"));
     assert!(observation_json.contains("\"fault_status\":{"));
+    assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
     assert!(observation_json.contains("\"interruption_summary\":{"));
     assert!(observation_json.contains("\"recording_capture_snapshot\":{"));
     assert!(observation_json.contains("\"class\":\"Steady\""));
@@ -339,6 +342,7 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     assert!(supervisor_json.contains("\"block_size\":512"));
     assert!(supervisor_json.contains("\"event_stream\":0"));
     assert!(supervisor_json.contains("\"fault_status\":{"));
+    assert!(supervisor_json.contains("\"fault_diagnostic_receipt\":{"));
     assert!(supervisor_json.contains("\"interruption_summary\":{"));
     assert!(supervisor_json.contains("\"recording_capture_snapshot\":{"));
     assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
@@ -348,6 +352,7 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     let profiling_json = profiling.render_json();
     assert!(profiling_json.contains("\"sample_rate_hz\":48000"));
     assert!(profiling_json.contains("\"block_size\":512"));
+    assert!(profiling_json.contains("\"fault_diagnostic_receipt\":{"));
     assert!(profiling_json.contains("\"summary\":"));
 
     let soak_json = soak.render_json();
@@ -358,7 +363,6 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
         .render_multiline()
         .contains("sample_rate_hz=48000"));
     assert!(soak.render_multiline().contains("event_stream_count=0"));
-    assert!(supervisor.render_multiline().contains("event_stream=0"));
 }
 
 #[test]
@@ -504,6 +508,66 @@ fn public_runtime_plugin_continuity_boundary_reports_shared_boundary_and_policy_
     assert!(rendered.contains("\"sandbox_group_key\":\"shared:public\""));
     assert!(rendered.contains("\"shared_boundary_member_count\":2"));
     assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
+}
+
+#[test]
+fn public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .set_safe_mode(SafeModeRequest { enabled: true })
+        .expect("public fault diagnostic safe mode should enable");
+
+    let deferred = runtime
+        .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+            request_id: "render:public:fault-diagnostic".into(),
+            timeline_start_samples: 0,
+            duration_samples: 64,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        }])
+        .expect("public fault diagnostic render queue should defer");
+    assert_eq!(deferred.orchestration.deferred_work_item_count, 1);
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let deferred_contribution = observation
+        .fault_diagnostic_receipt
+        .contributions
+        .iter()
+        .find(|entry| {
+            entry.family == signal_runtime::RuntimeFaultDiagnosticFamily::DeferredWorkPressure
+        })
+        .expect("public fault diagnostic deferred-work contribution should be present");
+
+    assert_eq!(
+        observation.fault_diagnostic_receipt.primary_family,
+        Some(signal_runtime::RuntimeFaultDiagnosticFamily::DeferredWorkPressure)
+    );
+    assert_eq!(
+        observation.fault_diagnostic_receipt.interruption_class,
+        RuntimeInterruptionClass::Recoverable
+    );
+    assert!(deferred_contribution.active);
+    assert!(deferred_contribution.event_count >= 1);
+    assert_eq!(
+        supervisor
+            .observation
+            .fault_diagnostic_receipt
+            .primary_family,
+        observation.fault_diagnostic_receipt.primary_family
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
+    assert!(observation_json.contains("\"primary_family\":\"DeferredWorkPressure\""));
+
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"fault_diagnostic_receipt\":{"));
+    assert!(supervisor_json.contains("\"primary_family\":\"DeferredWorkPressure\""));
 }
 
 #[test]

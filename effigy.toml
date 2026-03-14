@@ -64,6 +64,13 @@ qa = [
   { run = "cargo test -p signal-supervisor-tools interruption_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-interruption-boundary --format=json" },
 ]
+"acceptance:fault-diagnostic-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_fault_diagnostic_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_fault_diagnostic_truth" },
+  { run = "cargo test -p signal-supervisor-tools fault_diagnostic_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-fault-diagnostic-boundary --format=json" },
+]
 "acceptance:recording-continuity" = [
   { run = "cargo test -p signal-runtime runtime_recording_capture_resumes_same_identity_after_safe_mode_clears" },
   { run = "cargo test -p signal-runtime runtime_recording_capture_preserves_restartable_checkpoint_across_stop_and_reconfigure" },

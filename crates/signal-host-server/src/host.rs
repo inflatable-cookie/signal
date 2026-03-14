@@ -3055,6 +3055,14 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         self.runtime.reconcile_media_assets(assets)
     }
 
+    fn start_media_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError> {
+        self.runtime.start_media_preview(asset_id)
+    }
+
+    fn stop_media_preview(&mut self) -> Result<(), RuntimeError> {
+        self.runtime.stop_media_preview()
+    }
+
     fn reconcile_warp_clips(
         &mut self,
         clips: Vec<RuntimeWarpClipRegistration>,

@@ -981,6 +981,42 @@ pub struct RuntimeMediaPipelineSnapshot {
     pub summary: String,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaIndexingState {
+    #[default]
+    Empty,
+    Syncing,
+    Ready,
+    Invalidated,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaPreviewState {
+    #[default]
+    Unavailable,
+    Ready,
+    Previewing,
+    Invalidated,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeMediaServiceSnapshot {
+    pub indexed_asset_count: usize,
+    pub analysis_ready_asset_count: usize,
+    pub waveform_ready_asset_count: usize,
+    pub waveform_pending_asset_count: usize,
+    pub previewable_asset_count: usize,
+    pub invalidated_asset_count: usize,
+    pub invalidation_active: bool,
+    pub indexing_state: RuntimeMediaIndexingState,
+    pub preview_state: RuntimeMediaPreviewState,
+    pub previewing_asset_id: Option<String>,
+    pub last_invalidated_asset_id: Option<String>,
+    pub last_invalidation_error: Option<String>,
+    pub last_preview_error: Option<String>,
+    pub summary: String,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeWarpMode {
     Off,
@@ -2730,6 +2766,250 @@ pub enum RuntimeFaultCause {
     TransportFault,
     MissingPluginBinding,
     RuntimeError,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeFaultDiagnosticFamily {
+    XrunPressure,
+    CallbackPressure,
+    PluginBoundaryFault,
+    DevicePathFault,
+    DeferredWorkPressure,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeFaultDiagnosticAuthority {
+    RuntimeCanonical,
+    HostAdvisory,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeFaultContributionReceipt {
+    pub family: RuntimeFaultDiagnosticFamily,
+    pub authority: RuntimeFaultDiagnosticAuthority,
+    pub active: bool,
+    pub event_count: u64,
+    pub detail: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeFaultDiagnosticReceipt {
+    pub primary_family: Option<RuntimeFaultDiagnosticFamily>,
+    pub primary_fault_cause: Option<RuntimeFaultCause>,
+    pub interruption_class: RuntimeInterruptionClass,
+    pub recovery_state: RuntimeRecoveryState,
+    pub safe_mode_enabled: bool,
+    pub rebindable: bool,
+    pub contributions: Vec<RuntimeFaultContributionReceipt>,
+    pub summary: String,
+}
+
+impl RuntimeFaultDiagnosticReceipt {
+    pub fn capture(
+        fault_status: &RuntimeFaultStatusSnapshot,
+        interruption_summary: &RuntimeInterruptionSummary,
+        degradation_summary: &RuntimeDegradationSummary,
+        engine_block_snapshot: &RuntimeEngineBlockSnapshot,
+        last_deferred_service_receipt: Option<&RuntimeDeferredServiceReceipt>,
+        host_io: Option<&RuntimeHostIoSummary>,
+    ) -> Self {
+        let plugin_boundary_event_count = degradation_summary
+            .plugin_fault_count
+            .saturating_add(degradation_summary.transport_fault_event_count)
+            .saturating_add(degradation_summary.broker_failure_event_count)
+            .saturating_add(degradation_summary.sandbox_operation_failure_event_count)
+            .saturating_add(usize::from(
+                fault_status.missing_plugin_binding_active
+                    || degradation_summary.missing_bound_plugin_sandboxes > 0,
+            )) as u64;
+        let plugin_boundary_active = fault_status.plugin_fault_active
+            || fault_status.transport_fault_active
+            || fault_status.missing_plugin_binding_active;
+        let xrun_event_count = degradation_summary.xrun_count;
+        let deferred_event_count = engine_block_snapshot
+            .prework_service_starvation_count
+            .saturating_add(engine_block_snapshot.prework_service_throttle_count)
+            .saturating_add(engine_block_snapshot.prework_service_yield_count)
+            .saturating_add(
+                last_deferred_service_receipt
+                    .map(|receipt| receipt.deferred_work_item_count as u64)
+                    .unwrap_or(0),
+            );
+        let deferred_active = matches!(
+            last_deferred_service_receipt.map(|receipt| receipt.decision),
+            Some(RuntimeDeferredServiceDecision::Defer | RuntimeDeferredServiceDecision::Throttle)
+        ) || matches!(
+            engine_block_snapshot.prework_service_state,
+            RuntimePreworkServiceState::Yielding
+                | RuntimePreworkServiceState::Paused
+                | RuntimePreworkServiceState::Starved
+        ) || matches!(
+            engine_block_snapshot.prework_service_pressure,
+            RuntimePreworkServicePressure::Elevated | RuntimePreworkServicePressure::Critical
+        );
+        let callback_event_count = host_io
+            .map(|host_io| {
+                host_io
+                    .hardware
+                    .callback_overrun_count
+                    .saturating_add(host_io.hardware.xrun_count)
+            })
+            .unwrap_or(0);
+        let callback_active = host_io
+            .map(|host_io| {
+                host_io.hardware.callback_overrun_count > 0
+                    || host_io.hardware.xrun_count > 0
+                    || host_io.hardware.restart_failure_count > 0
+            })
+            .unwrap_or(false);
+
+        let mut contributions = vec![
+            RuntimeFaultContributionReceipt {
+                family: RuntimeFaultDiagnosticFamily::XrunPressure,
+                authority: RuntimeFaultDiagnosticAuthority::RuntimeCanonical,
+                active: fault_status.xrun_overload_active,
+                event_count: xrun_event_count,
+                detail: Some(format!(
+                    "xrun_overload_active={} safe_mode={} runtime_xruns={}",
+                    fault_status.xrun_overload_active,
+                    fault_status.safe_mode_enabled,
+                    xrun_event_count
+                )),
+                summary: String::new(),
+            },
+            RuntimeFaultContributionReceipt {
+                family: RuntimeFaultDiagnosticFamily::PluginBoundaryFault,
+                authority: RuntimeFaultDiagnosticAuthority::RuntimeCanonical,
+                active: plugin_boundary_active,
+                event_count: plugin_boundary_event_count,
+                detail: Some(format!(
+                    "plugin_faults={} transport_fault_events={} broker_failures={} sandbox_operation_failures={} missing_bindings={}",
+                    degradation_summary.plugin_fault_count,
+                    degradation_summary.transport_fault_event_count,
+                    degradation_summary.broker_failure_event_count,
+                    degradation_summary.sandbox_operation_failure_event_count,
+                    usize::from(
+                        fault_status.missing_plugin_binding_active
+                            || degradation_summary.missing_bound_plugin_sandboxes > 0
+                    )
+                )),
+                summary: String::new(),
+            },
+            RuntimeFaultContributionReceipt {
+                family: RuntimeFaultDiagnosticFamily::DevicePathFault,
+                authority: RuntimeFaultDiagnosticAuthority::RuntimeCanonical,
+                active: fault_status.device_loss_active,
+                event_count: fault_status.device_loss_count,
+                detail: Some(format!(
+                    "device_loss_active={} device_losses={} watchdog_restarts={}",
+                    fault_status.device_loss_active,
+                    fault_status.device_loss_count,
+                    fault_status.watchdog_restart_count
+                )),
+                summary: String::new(),
+            },
+            RuntimeFaultContributionReceipt {
+                family: RuntimeFaultDiagnosticFamily::DeferredWorkPressure,
+                authority: RuntimeFaultDiagnosticAuthority::RuntimeCanonical,
+                active: deferred_active,
+                event_count: deferred_event_count,
+                detail: Some(format!(
+                    "decision={:?} reason={:?} prework_state={:?} prework_pressure={:?} starvations={} throttles={} yields={} deferred_items={}",
+                    last_deferred_service_receipt.map(|receipt| receipt.decision),
+                    last_deferred_service_receipt.map(|receipt| receipt.reason),
+                    engine_block_snapshot.prework_service_state,
+                    engine_block_snapshot.prework_service_pressure,
+                    engine_block_snapshot.prework_service_starvation_count,
+                    engine_block_snapshot.prework_service_throttle_count,
+                    engine_block_snapshot.prework_service_yield_count,
+                    last_deferred_service_receipt
+                        .map(|receipt| receipt.deferred_work_item_count)
+                        .unwrap_or(0)
+                )),
+                summary: String::new(),
+            },
+        ];
+        if let Some(host_io) = host_io {
+            contributions.push(RuntimeFaultContributionReceipt {
+                family: RuntimeFaultDiagnosticFamily::CallbackPressure,
+                authority: RuntimeFaultDiagnosticAuthority::HostAdvisory,
+                active: callback_active,
+                event_count: callback_event_count,
+                detail: Some(format!(
+                    "callback_count={} callback_interval_ms={:.3} callback_overruns={} backend_xruns={} restart_failures={}",
+                    host_io.audio_pump.callback_count,
+                    host_io.clocking.callback_interval_ms,
+                    host_io.hardware.callback_overrun_count,
+                    host_io.hardware.xrun_count,
+                    host_io.hardware.restart_failure_count
+                )),
+                summary: String::new(),
+            });
+        }
+
+        for contribution in &mut contributions {
+            contribution.summary = format!(
+                "family={:?} authority={:?} active={} events={} detail={}",
+                contribution.family,
+                contribution.authority,
+                contribution.active,
+                contribution.event_count,
+                contribution.detail.as_deref().unwrap_or("none")
+            );
+        }
+
+        let primary_family = match fault_status.primary_fault_cause {
+            Some(RuntimeFaultCause::XrunOverload) => {
+                Some(RuntimeFaultDiagnosticFamily::XrunPressure)
+            }
+            Some(
+                RuntimeFaultCause::PluginFault
+                | RuntimeFaultCause::TransportFault
+                | RuntimeFaultCause::MissingPluginBinding,
+            ) => Some(RuntimeFaultDiagnosticFamily::PluginBoundaryFault),
+            Some(RuntimeFaultCause::DeviceLoss) => {
+                Some(RuntimeFaultDiagnosticFamily::DevicePathFault)
+            }
+            Some(RuntimeFaultCause::WatchdogRestart) => {
+                if plugin_boundary_active {
+                    Some(RuntimeFaultDiagnosticFamily::PluginBoundaryFault)
+                } else if fault_status.device_loss_active {
+                    Some(RuntimeFaultDiagnosticFamily::DevicePathFault)
+                } else if fault_status.xrun_overload_active {
+                    Some(RuntimeFaultDiagnosticFamily::XrunPressure)
+                } else if deferred_active {
+                    Some(RuntimeFaultDiagnosticFamily::DeferredWorkPressure)
+                } else {
+                    None
+                }
+            }
+            Some(RuntimeFaultCause::RuntimeError) => None,
+            None if deferred_active => Some(RuntimeFaultDiagnosticFamily::DeferredWorkPressure),
+            None => None,
+        };
+
+        let mut receipt = Self {
+            primary_family,
+            primary_fault_cause: fault_status.primary_fault_cause,
+            interruption_class: interruption_summary.class,
+            recovery_state: fault_status.recovery_state,
+            safe_mode_enabled: fault_status.safe_mode_enabled,
+            rebindable: interruption_summary.rebindable,
+            contributions,
+            summary: String::new(),
+        };
+        receipt.summary = format!(
+            "primary_family={:?} primary_cause={:?} interruption={:?} recovery={:?} rebindable={} contributions={}",
+            receipt.primary_family,
+            receipt.primary_fault_cause,
+            receipt.interruption_class,
+            receipt.recovery_state,
+            receipt.rebindable,
+            receipt.contributions.len()
+        );
+        receipt
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -4764,6 +5044,7 @@ impl RuntimeHostObservationReport {
                 "\"xruns\":{},",
                 "\"engine_graph_id\":{},",
                 "\"fault_status\":{},",
+                "\"fault_diagnostic_receipt\":{},",
                 "\"interruption_summary\":{},",
                 "\"degradation_summary\":{},",
                 "\"metering_snapshot\":{},",
@@ -4838,6 +5119,7 @@ impl RuntimeHostObservationReport {
             self.observation.diagnostics_snapshot.xruns,
             json_option_string(self.observation.engine_block_snapshot.graph_id.as_deref()),
             json_runtime_fault_status(&self.observation.fault_status),
+            json_runtime_fault_diagnostic_receipt(&self.observation.fault_diagnostic_receipt),
             json_runtime_interruption_summary(&self.observation.interruption_summary),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
@@ -5080,6 +5362,7 @@ pub struct RuntimeProfilingReceipt {
     pub host_copied_output_samples: Option<u64>,
     pub host_zero_filled_output_samples: Option<u64>,
     pub host_dropped_output_samples: Option<u64>,
+    pub fault_diagnostic_receipt: RuntimeFaultDiagnosticReceipt,
     pub summary: String,
 }
 
@@ -5128,6 +5411,10 @@ impl RuntimeProfilingReceipt {
                 "\nhost_copied_output_samples={:?}",
                 "\nhost_zero_filled_output_samples={:?}",
                 "\nhost_dropped_output_samples={:?}",
+                "\nfault_diagnostic_primary_family={:?}",
+                "\nfault_diagnostic_primary_fault_cause={:?}",
+                "\nfault_diagnostic_interruption_class={:?}",
+                "\nfault_diagnostic_contribution_count={}",
                 "\nsummary={}",
             ),
             self.sample_rate_hz,
@@ -5171,6 +5458,10 @@ impl RuntimeProfilingReceipt {
             self.host_copied_output_samples,
             self.host_zero_filled_output_samples,
             self.host_dropped_output_samples,
+            self.fault_diagnostic_receipt.primary_family,
+            self.fault_diagnostic_receipt.primary_fault_cause,
+            self.fault_diagnostic_receipt.interruption_class,
+            self.fault_diagnostic_receipt.contributions.len(),
             self.summary,
         )
     }
@@ -5220,6 +5511,7 @@ impl RuntimeProfilingReceipt {
                 "\"host_copied_output_samples\":{},",
                 "\"host_zero_filled_output_samples\":{},",
                 "\"host_dropped_output_samples\":{},",
+                "\"fault_diagnostic_receipt\":{},",
                 "\"summary\":{}",
                 "}}"
             ),
@@ -5264,6 +5556,7 @@ impl RuntimeProfilingReceipt {
             json_option_u64(self.host_copied_output_samples),
             json_option_u64(self.host_zero_filled_output_samples),
             json_option_u64(self.host_dropped_output_samples),
+            json_runtime_fault_diagnostic_receipt(&self.fault_diagnostic_receipt),
             json_option_string(Some(self.summary.as_str())),
         )
     }
@@ -5569,6 +5862,36 @@ impl RuntimeSoakReceipt {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeAcceptanceReceipt {
+    pub runtime_lane_count: usize,
+    pub runtime_ready_lane_count: usize,
+    pub playback_ready: bool,
+    pub recording_ready: bool,
+    pub media_ready: bool,
+    pub clip_processing_ready: bool,
+    pub plugin_ready: bool,
+    pub recovery_ready: bool,
+    pub minimum_trace_observation_count: usize,
+    pub minimum_soak_event_count: usize,
+    pub summary: String,
+}
+
+impl RuntimeAcceptanceReceipt {
+    pub fn capture(runtime: &impl RuntimeObservationApi) -> Self {
+        build_runtime_acceptance_receipt(
+            runtime.get_readiness(),
+            runtime.get_effective_config(),
+            runtime.get_control_snapshot(),
+            runtime.get_scheduler_topology_summary(),
+            runtime.get_recording_capture_snapshot(),
+            runtime.get_media_service_snapshot(),
+            runtime.get_clip_processing_pipeline_snapshot(),
+            runtime.get_plugin_lifecycle_snapshot(),
+        )
+    }
+}
+
 impl RuntimeObservationReport {
     pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
         build_runtime_profiling_receipt(self, None)
@@ -5610,6 +5933,7 @@ impl RuntimeSupervisorReport {
     pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
         build_runtime_soak_receipt(&self.observation, self.events.len())
     }
+
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -7247,6 +7571,7 @@ pub struct RuntimeObservationReport {
     pub metering_snapshot: RuntimeMeteringSnapshot,
     pub supervision_snapshot: RuntimeSupervisionSnapshot,
     pub fault_status: RuntimeFaultStatusSnapshot,
+    pub fault_diagnostic_receipt: RuntimeFaultDiagnosticReceipt,
     pub interruption_summary: RuntimeInterruptionSummary,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
     pub tempo_map_snapshot: RuntimeTempoMapSnapshot,
@@ -7320,6 +7645,14 @@ impl RuntimeObservationReport {
             &fault_status,
             last_deferred_service_receipt.as_ref(),
         );
+        let fault_diagnostic_receipt = RuntimeFaultDiagnosticReceipt::capture(
+            &fault_status,
+            &interruption_summary,
+            &degradation_summary,
+            &engine_block_snapshot,
+            last_deferred_service_receipt.as_ref(),
+            None,
+        );
         Self {
             readiness: readiness.clone(),
             effective_config,
@@ -7329,6 +7662,7 @@ impl RuntimeObservationReport {
             metering_snapshot,
             supervision_snapshot: supervision_snapshot.clone(),
             fault_status,
+            fault_diagnostic_receipt,
             interruption_summary,
             timeline_snapshot,
             tempo_map_snapshot,
@@ -7436,6 +7770,8 @@ impl RuntimeObservationReport {
         let degradation_summary =
             format_runtime_degradation_summary_compact(&self.degradation_summary);
         let fault_status = format_runtime_fault_status_compact(&self.fault_status);
+        let fault_diagnostic_receipt =
+            format_runtime_fault_diagnostic_receipt_compact(&self.fault_diagnostic_receipt);
         let interruption_summary =
             format_runtime_interruption_summary_compact(&self.interruption_summary);
         let execution_topology_summary =
@@ -7471,7 +7807,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -7507,6 +7843,7 @@ impl RuntimeObservationReport {
             block_summary,
             degradation_summary,
             fault_status,
+            fault_diagnostic_receipt,
             interruption_summary,
             self.engine_block_snapshot.graph_id,
             self.engine_block_snapshot.node_count,
@@ -7846,7 +8183,7 @@ impl RuntimeSupervisorReport {
                 )
             })
             .unwrap_or_default();
-        let automation = (self.observation.automation_snapshot.parameter_id != 0
+        let _automation = (self.observation.automation_snapshot.parameter_id != 0
             || self.observation.automation_snapshot.lane_count > 0
             || self.observation.automation_snapshot.last_batch_epoch.is_some())
             .then(|| {
@@ -7887,7 +8224,7 @@ impl RuntimeSupervisorReport {
                 )
             })
             .unwrap_or_default();
-        let transport_timeline = format!(
+        let _transport_timeline = format!(
             "\ntransport_epoch={}\ntransport_transition={:?}\ntransport_transition_epoch={:?}\ntransport_transition_block={:?}\ntransport_playing={:?}\ntransport_tempo_bpm={:?}\ntransport_timeline_position_samples={:?}\ntransport_loop_start_samples={:?}\ntransport_loop_end_samples={:?}\ntransport_last_block_start_samples={:?}\ntransport_last_block_end_samples={:?}\ntransport_loop_wrap_count={}",
             self.observation.timeline_snapshot.transport_epoch,
             self.observation.timeline_snapshot.last_transport_transition,
@@ -7908,7 +8245,7 @@ impl RuntimeSupervisorReport {
             self.observation.timeline_snapshot.last_engine_block_end_samples,
             self.observation.timeline_snapshot.loop_wrap_count,
         );
-        let engine_transport = format!(
+        let _engine_transport = format!(
             "\nengine_transport_epoch={}\nengine_transport_transition={:?}\nengine_transport_block_start_samples={:?}\nengine_transport_block_end_samples={:?}\nengine_transport_loop_wrapped={}",
             self.observation.engine_block_snapshot.transport_epoch,
             self.observation.engine_block_snapshot.transport_transition,
@@ -7918,18 +8255,22 @@ impl RuntimeSupervisorReport {
             self.observation.engine_block_snapshot.transport_block_end_samples,
             self.observation.engine_block_snapshot.transport_loop_wrapped,
         );
-        let scheduler_topology = format_scheduler_topology_multiline(
+        let _scheduler_topology = format_scheduler_topology_multiline(
             &self.observation.engine_block_snapshot.scheduler_topology,
         );
-        let scheduler_snapshot =
+        let _scheduler_snapshot =
             format_runtime_scheduler_snapshot_multiline(&self.observation.scheduler_snapshot);
-        let scheduler_summary =
+        let _scheduler_summary =
             format_runtime_scheduler_summary_multiline(&self.observation.scheduler_summary);
-        let block_summary = format_runtime_block_summary_multiline(&self.observation.block_summary);
-        let degradation_summary =
+        let _block_summary =
+            format_runtime_block_summary_multiline(&self.observation.block_summary);
+        let _degradation_summary =
             format_runtime_degradation_summary_multiline(&self.observation.degradation_summary);
-        let fault_status = format_runtime_fault_status_multiline(&self.observation.fault_status);
-        let interruption_summary =
+        let _fault_status = format_runtime_fault_status_multiline(&self.observation.fault_status);
+        let _fault_diagnostic_receipt = format_runtime_fault_diagnostic_receipt_multiline(
+            &self.observation.fault_diagnostic_receipt,
+        );
+        let _interruption_summary =
             format_runtime_interruption_summary_multiline(&self.observation.interruption_summary);
         let execution_topology_summary = format_runtime_execution_topology_summary_multiline(
             &self.observation.execution_topology_summary,
@@ -7948,8 +8289,8 @@ impl RuntimeSupervisorReport {
             .as_ref()
             .map(|receipt| format!("\nlast_deferred_service=\n{}", receipt.render_multiline()))
             .unwrap_or_default();
-        let multiline = format!(
-            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
+        /* let multiline = format!(
+            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
             self.observation.readiness,
             self.observation.effective_config.sample_rate.0,
             self.observation.effective_config.block_size,
@@ -7999,6 +8340,7 @@ impl RuntimeSupervisorReport {
             block_summary,
             degradation_summary,
             fault_status,
+            fault_diagnostic_receipt,
             interruption_summary,
             self.observation.engine_block_snapshot.graph_id,
             self.observation.engine_block_snapshot.node_count,
@@ -8374,7 +8716,8 @@ impl RuntimeSupervisorReport {
             self.observation.observation.transport_fault_events,
             self.observation.observation.broker_failure_events,
             self.observation.observation.sandbox_operation_failure_events,
-        );
+        ); */
+        let multiline = self.observation.render_compact().replace(' ', "\n");
         format!(
             "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
@@ -8433,6 +8776,7 @@ impl RuntimeSupervisorReport {
                 "\"scheduler_summary\":{},",
                 "\"block_summary\":{},",
                 "\"fault_status\":{},",
+                "\"fault_diagnostic_receipt\":{},",
                 "\"interruption_summary\":{},",
                 "\"degradation_summary\":{},",
                 "\"tempo_map_snapshot\":{},",
@@ -8563,6 +8907,7 @@ impl RuntimeSupervisorReport {
             json_runtime_scheduler_export_summary(&self.observation.scheduler_summary),
             json_runtime_block_execution_summary(&self.observation.block_summary),
             json_runtime_fault_status(&self.observation.fault_status),
+            json_runtime_fault_diagnostic_receipt(&self.observation.fault_diagnostic_receipt),
             json_runtime_interruption_summary(&self.observation.interruption_summary),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_tempo_map_snapshot(&self.observation.tempo_map_snapshot),
@@ -8665,6 +9010,15 @@ fn build_runtime_profiling_receipt(
     host_io: Option<&RuntimeHostIoSummary>,
 ) -> RuntimeProfilingReceipt {
     let plugin_chain = &observation.execution_topology_summary.plugin_chain;
+    let fault_diagnostic_receipt = RuntimeFaultDiagnosticReceipt::capture(
+        &observation.fault_status,
+        &observation.interruption_summary,
+        &observation.degradation_summary,
+        &observation.engine_block_snapshot,
+        observation.last_deferred_service_receipt.as_ref(),
+        host_io,
+    );
+    let fault_diagnostic_primary_family = fault_diagnostic_receipt.primary_family;
     RuntimeProfilingReceipt {
         sample_rate_hz: observation.effective_config.sample_rate.0,
         block_size: observation.effective_config.block_size,
@@ -8714,8 +9068,9 @@ fn build_runtime_profiling_receipt(
             .map(|host_io| host_io.audio_pump.zero_filled_output_samples),
         host_dropped_output_samples: host_io
             .map(|host_io| host_io.audio_pump.dropped_output_samples),
+        fault_diagnostic_receipt,
         summary: format!(
-            "sample_rate={} block_size={} engine_blocks={} cpu_load={:.3} xruns={} host_callbacks={:?} degraded={} gates={}/{} plugin_chain={}/degraded={}/missing={} sessions={}/{}/{}",
+            "sample_rate={} block_size={} engine_blocks={} cpu_load={:.3} xruns={} host_callbacks={:?} degraded={} gates={}/{} plugin_chain={}/degraded={}/missing={} sessions={}/{}/{} primary_family={:?}",
             observation.effective_config.sample_rate.0,
             observation.effective_config.block_size,
             observation.engine_block_snapshot.processed_blocks,
@@ -8731,6 +9086,7 @@ fn build_runtime_profiling_receipt(
             observation.degradation_summary.recovery_overlap_sessions,
             observation.degradation_summary.lingering_sessions,
             observation.degradation_summary.detach_faulted_sessions,
+            fault_diagnostic_primary_family,
         ),
     }
 }
@@ -8994,6 +9350,86 @@ fn build_runtime_soak_receipt(
             recall_handoff.stage_count,
             recall_handoff.recovered_stage_count,
             recall_handoff.unavailable_stage_count,
+        ),
+    }
+}
+
+const RUNTIME_ACCEPTANCE_MIN_TRACE_OBSERVATIONS: usize = 128;
+const RUNTIME_ACCEPTANCE_MIN_SOAK_EVENTS: usize = 64;
+
+fn build_runtime_acceptance_receipt(
+    readiness: RuntimeReadiness,
+    effective_config: EffectiveRuntimeConfig,
+    control_snapshot: RuntimeControlSnapshot,
+    scheduler_topology_summary: RuntimeSchedulerTopologySummary,
+    recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
+    media_service_snapshot: RuntimeMediaServiceSnapshot,
+    clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
+    plugin_lifecycle_snapshot: RuntimePluginLifecycleSnapshot,
+) -> RuntimeAcceptanceReceipt {
+    let playback_ready = effective_config.block_size > 0
+        && effective_config.sample_rate.0 > 0
+        && scheduler_topology_summary.compatible;
+    let recording_ready =
+        recording_capture_snapshot.capture_ready || recording_capture_snapshot.last_checkpoint.is_some();
+    let media_ready = media_service_snapshot.indexed_asset_count > 0
+        && !media_service_snapshot.invalidation_active
+        && matches!(
+            media_service_snapshot.indexing_state,
+            RuntimeMediaIndexingState::Ready
+        )
+        && matches!(
+            media_service_snapshot.preview_state,
+            RuntimeMediaPreviewState::Ready | RuntimeMediaPreviewState::Previewing
+        );
+    let clip_processing_ready = clip_processing_pipeline_snapshot.clip_count > 0
+        && clip_processing_pipeline_snapshot.ready_clip_count
+            == clip_processing_pipeline_snapshot.clip_count
+        && clip_processing_pipeline_snapshot.pending_media_clip_count == 0
+        && clip_processing_pipeline_snapshot.pending_warp_clip_count == 0
+        && clip_processing_pipeline_snapshot.invalid_clip_count == 0;
+    let plugin_ready = plugin_lifecycle_snapshot.sandbox_count > 0
+        && plugin_lifecycle_snapshot.ready_sandbox_count
+            == plugin_lifecycle_snapshot.sandbox_count
+        && plugin_lifecycle_snapshot.faulted_sandbox_count == 0
+        && plugin_lifecycle_snapshot.quarantined_sandbox_count == 0;
+    let recovery_ready = !matches!(readiness, RuntimeReadiness::Failed { .. })
+        && control_snapshot.restart_count >= 0;
+    let runtime_ready_lane_count = [
+        playback_ready,
+        recording_ready,
+        media_ready,
+        clip_processing_ready,
+        plugin_ready,
+        recovery_ready,
+    ]
+    .into_iter()
+    .filter(|ready| *ready)
+    .count();
+
+    RuntimeAcceptanceReceipt {
+        runtime_lane_count: 6,
+        runtime_ready_lane_count,
+        playback_ready,
+        recording_ready,
+        media_ready,
+        clip_processing_ready,
+        plugin_ready,
+        recovery_ready,
+        minimum_trace_observation_count: RUNTIME_ACCEPTANCE_MIN_TRACE_OBSERVATIONS,
+        minimum_soak_event_count: RUNTIME_ACCEPTANCE_MIN_SOAK_EVENTS,
+        summary: format!(
+            "runtime_lanes={}/{} playback={} recording={} media={} clip_processing={} plugin={} recovery={} trace_target={} soak_target={}",
+            runtime_ready_lane_count,
+            6,
+            playback_ready,
+            recording_ready,
+            media_ready,
+            clip_processing_ready,
+            plugin_ready,
+            recovery_ready,
+            RUNTIME_ACCEPTANCE_MIN_TRACE_OBSERVATIONS,
+            RUNTIME_ACCEPTANCE_MIN_SOAK_EVENTS,
         ),
     }
 }
@@ -9302,6 +9738,19 @@ fn format_runtime_fault_status_compact(snapshot: &RuntimeFaultStatusSnapshot) ->
     )
 }
 
+fn format_runtime_fault_diagnostic_receipt_compact(
+    receipt: &RuntimeFaultDiagnosticReceipt,
+) -> String {
+    format!(
+        " fault_diagnostic={:?}/{:?}/{:?}/rebindable={} contributions={}",
+        receipt.primary_family,
+        receipt.primary_fault_cause,
+        receipt.interruption_class,
+        receipt.rebindable,
+        receipt.contributions.len(),
+    )
+}
+
 fn format_runtime_recording_capture_snapshot_compact(
     snapshot: &RuntimeRecordingCaptureSnapshot,
 ) -> String {
@@ -9436,6 +9885,43 @@ fn format_runtime_fault_status_multiline(snapshot: &RuntimeFaultStatusSnapshot) 
         snapshot.transport_faulted_session_count,
         snapshot.device_loss_count,
         snapshot.summary,
+    )
+}
+
+fn format_runtime_fault_diagnostic_receipt_multiline(
+    receipt: &RuntimeFaultDiagnosticReceipt,
+) -> String {
+    let contributions = receipt
+        .contributions
+        .iter()
+        .map(|contribution| contribution.summary.as_str())
+        .collect::<Vec<_>>()
+        .join(" | ");
+    format!(
+        concat!(
+            "\nfault_diagnostic_primary_family={:?}",
+            "\nfault_diagnostic_primary_fault_cause={:?}",
+            "\nfault_diagnostic_interruption_class={:?}",
+            "\nfault_diagnostic_recovery_state={:?}",
+            "\nfault_diagnostic_safe_mode_enabled={}",
+            "\nfault_diagnostic_rebindable={}",
+            "\nfault_diagnostic_contribution_count={}",
+            "\nfault_diagnostic_contributions={}",
+            "\nfault_diagnostic_summary={}",
+        ),
+        receipt.primary_family,
+        receipt.primary_fault_cause,
+        receipt.interruption_class,
+        receipt.recovery_state,
+        receipt.safe_mode_enabled,
+        receipt.rebindable,
+        receipt.contributions.len(),
+        if contributions.is_empty() {
+            "none"
+        } else {
+            contributions.as_str()
+        },
+        receipt.summary,
     )
 }
 
@@ -10531,6 +11017,68 @@ fn json_runtime_fault_status(snapshot: &RuntimeFaultStatusSnapshot) -> String {
         snapshot.transport_faulted_session_count,
         snapshot.device_loss_count,
         json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_fault_contribution_receipt(receipt: &RuntimeFaultContributionReceipt) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"family\":{},",
+            "\"authority\":{},",
+            "\"active\":{},",
+            "\"event_count\":{},",
+            "\"detail\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", receipt.family)),
+        json_string(&format!("{:?}", receipt.authority)),
+        receipt.active,
+        receipt.event_count,
+        json_option_string(receipt.detail.as_deref()),
+        json_option_string(Some(receipt.summary.as_str())),
+    )
+}
+
+fn json_runtime_fault_diagnostic_receipt(receipt: &RuntimeFaultDiagnosticReceipt) -> String {
+    let contributions = receipt
+        .contributions
+        .iter()
+        .map(json_runtime_fault_contribution_receipt)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"primary_family\":{},",
+            "\"primary_fault_cause\":{},",
+            "\"interruption_class\":{},",
+            "\"recovery_state\":{},",
+            "\"safe_mode_enabled\":{},",
+            "\"rebindable\":{},",
+            "\"contributions\":[{}],",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(
+            receipt
+                .primary_family
+                .map(|value| format!("{value:?}"))
+                .as_deref()
+        ),
+        json_option_string(
+            receipt
+                .primary_fault_cause
+                .map(|value| format!("{value:?}"))
+                .as_deref()
+        ),
+        json_string(&format!("{:?}", receipt.interruption_class)),
+        json_string(&format!("{:?}", receipt.recovery_state)),
+        receipt.safe_mode_enabled,
+        receipt.rebindable,
+        contributions,
+        json_option_string(Some(receipt.summary.as_str())),
     )
 }
 
@@ -14682,6 +15230,7 @@ pub trait RuntimeObservationApi {
     fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot;
     fn get_offline_render_session_snapshot(&self) -> RuntimeOfflineRenderSessionSnapshot;
     fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot;
+    fn get_media_service_snapshot(&self) -> RuntimeMediaServiceSnapshot;
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot;
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
     fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot;
@@ -14715,6 +15264,8 @@ pub trait RuntimeSupervisorApi {
         &mut self,
         assets: Vec<RuntimeMediaAssetRegistration>,
     ) -> Result<(), RuntimeError>;
+    fn start_media_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError>;
+    fn stop_media_preview(&mut self) -> Result<(), RuntimeError>;
     fn reconcile_warp_clips(
         &mut self,
         clips: Vec<RuntimeWarpClipRegistration>,

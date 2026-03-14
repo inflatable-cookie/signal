@@ -98,7 +98,6 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.005` with Batch 5.2 by turning the new fault-cause contract into
-typed runtime, supervisor, and stable host-edge diagnostic receipts before the
-later profiling, plugin-breadth, hardware, media-service, and acceptance lanes
-widen further.
+Continue `g06.006` with Batch 6.2 by instrumenting the newly frozen per-block
+execution timing and pressure seam so the profiling lane can move from contract
+meaning into real bounded runtime measurements without opening full tracing yet.

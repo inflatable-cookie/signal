@@ -43,6 +43,7 @@ enum CliMode {
     DescribeExport,
     DescribeConformanceMatrix,
     DescribeInterruptionBoundary,
+    DescribeFaultDiagnosticBoundary,
     DescribeRecordingContinuityBoundary,
     DescribeOfflineRenderContinuityBoundary,
     DescribePluginContinuityBoundary,
@@ -62,6 +63,10 @@ const INTERRUPTION_BOUNDARY: &str = "signal.runtime.interruption-boundary";
 const INTERRUPTION_CONTRACT_PATH: &str =
     "docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md";
 const INTERRUPTION_ACCEPTANCE_TASK: &str = "effigy acceptance:interruption-boundary";
+const FAULT_DIAGNOSTIC_BOUNDARY: &str = "signal.runtime.fault-diagnostic-boundary";
+const FAULT_DIAGNOSTIC_CONTRACT_PATH: &str =
+    "docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md";
+const FAULT_DIAGNOSTIC_ACCEPTANCE_TASK: &str = "effigy acceptance:fault-diagnostic-boundary";
 const RECORDING_CONTINUITY_BOUNDARY: &str = "signal.runtime.recording-continuity-boundary";
 const RECORDING_CONTINUITY_CONTRACT_PATH: &str =
     "docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md";
@@ -164,6 +169,30 @@ struct InterruptionBoundarySurface {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct InterruptionBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FaultDiagnosticBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeReceipt,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct FaultDiagnosticBoundarySurface {
+    id: &'static str,
+    kind: FaultDiagnosticBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct FaultDiagnosticBoundaryValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -389,7 +418,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -435,6 +464,16 @@ impl InterruptionBoundarySurfaceKind {
         match self {
             Self::RuntimeReport => "runtime-report",
             Self::ContinuityReceipt => "continuity-receipt",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl FaultDiagnosticBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeReceipt => "runtime-receipt",
             Self::HostEdge => "host-edge",
         }
     }
@@ -699,6 +738,73 @@ fn interruption_boundary_validation_steps() -> &'static [InterruptionBoundaryVal
                 "cargo run -p signal-supervisor-tools -- --describe-interruption-boundary --format=json",
             rationale:
                 "Lets consumers inspect the runtime and host-edge interruption proof boundary without reading private implementation detail.",
+        },
+    ]
+}
+
+fn fault_diagnostic_boundary_surfaces() -> &'static [FaultDiagnosticBoundarySurface] {
+    &[
+        FaultDiagnosticBoundarySurface {
+            id: "runtime-observation-fault-diagnostic",
+            kind: FaultDiagnosticBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::fault_diagnostic_receipt and RuntimeSupervisorReport::observation.fault_diagnostic_receipt",
+            runtime_anchor: "RuntimeFaultDiagnosticReceipt",
+            rationale:
+                "Carries the canonical primary-family and typed contribution evidence directly on the public runtime observation and supervisor surfaces.",
+        },
+        FaultDiagnosticBoundarySurface {
+            id: "runtime-profiling-fault-diagnostic",
+            kind: FaultDiagnosticBoundarySurfaceKind::RuntimeReceipt,
+            crate_name: "signal-runtime",
+            surface: "RuntimeProfilingReceipt::fault_diagnostic_receipt",
+            runtime_anchor: "RuntimeProfilingReceipt",
+            rationale:
+                "Keeps later profiling and soak work aligned to the same runtime-owned fault-diagnostic receipt rather than a separate performance-only taxonomy.",
+        },
+        FaultDiagnosticBoundarySurface {
+            id: "shared-host-fault-diagnostic-report",
+            kind: FaultDiagnosticBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures stable host edges expose the same canonical primary-family and contribution evidence without host-local causal reconstruction.",
+        },
+    ]
+}
+
+fn fault_diagnostic_boundary_validation_steps() -> &'static [FaultDiagnosticBoundaryValidationStep]
+{
+    &[
+        FaultDiagnosticBoundaryValidationStep {
+            id: "runtime-public-fault-diagnostic-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts",
+            rationale:
+                "Proves a downstream-style runtime consumer can read canonical primary-family and typed contribution evidence through public runtime surfaces.",
+        },
+        FaultDiagnosticBoundaryValidationStep {
+            id: "local-host-fault-diagnostic-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_fault_diagnostic_truth",
+            rationale:
+                "Proves the local shared host edge forwards the runtime-owned fault-diagnostic receipt without private host-side diagnosis.",
+        },
+        FaultDiagnosticBoundaryValidationStep {
+            id: "server-host-fault-diagnostic-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_fault_diagnostic_truth",
+            rationale:
+                "Proves the server shared host edge forwards the same runtime-owned fault-diagnostic receipt without server-local causal rewriting.",
+        },
+        FaultDiagnosticBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-fault-diagnostic-boundary --format=json",
+            rationale:
+                "Lets downstream tooling inspect the fault-diagnostic boundary, proof commands, and deferred scope without private implementation detail.",
         },
     ]
 }
@@ -2109,6 +2215,120 @@ fn print_interruption_boundary(format: OutputFormat) {
     }
 }
 
+fn render_fault_diagnostic_boundary_text() -> String {
+    let mut rendered = format!(
+        "fault_diagnostic_boundary: {FAULT_DIAGNOSTIC_BOUNDARY}\ncontract_path: {FAULT_DIAGNOSTIC_CONTRACT_PATH}\nacceptance_task: {FAULT_DIAGNOSTIC_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in fault_diagnostic_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in fault_diagnostic_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "callback pressure remains advisory host evidence rather than a stronger canonical runtime family",
+        "per-event traces, remote diagnostics pipelines, and product-specific diagnostic UX remain out of scope for this shared boundary",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_fault_diagnostic_boundary_json() -> String {
+    let surfaces = fault_diagnostic_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = fault_diagnostic_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "callback pressure remains advisory host evidence rather than a stronger canonical runtime family",
+        "per-event traces, remote diagnostics pipelines, and product-specific diagnostic UX remain out of scope for this shared boundary",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(FAULT_DIAGNOSTIC_BOUNDARY),
+        json_string(FAULT_DIAGNOSTIC_CONTRACT_PATH),
+        json_string(FAULT_DIAGNOSTIC_ACCEPTANCE_TASK),
+        fault_diagnostic_boundary_surfaces().len(),
+        surfaces,
+        fault_diagnostic_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_fault_diagnostic_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_fault_diagnostic_boundary_text()),
+        OutputFormat::Json => println!("{}", render_fault_diagnostic_boundary_json()),
+    }
+}
+
 fn print_recording_continuity_boundary(format: OutputFormat) {
     match format {
         OutputFormat::Text => println!("{}", render_recording_continuity_boundary_text()),
@@ -3137,6 +3357,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_export = false;
     let mut describe_conformance_matrix = false;
     let mut describe_interruption_boundary = false;
+    let mut describe_fault_diagnostic_boundary = false;
     let mut describe_recording_continuity_boundary = false;
     let mut describe_offline_render_continuity_boundary = false;
     let mut describe_plugin_continuity_boundary = false;
@@ -3171,6 +3392,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         }
         if arg == "--describe-interruption-boundary" {
             describe_interruption_boundary = true;
+            continue;
+        }
+        if arg == "--describe-fault-diagnostic-boundary" {
+            describe_fault_diagnostic_boundary = true;
             continue;
         }
         if arg == "--describe-recording-continuity-boundary" {
@@ -3220,6 +3445,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_export,
         describe_conformance_matrix,
         describe_interruption_boundary,
+        describe_fault_diagnostic_boundary,
         describe_recording_continuity_boundary,
         describe_offline_render_continuity_boundary,
         describe_plugin_continuity_boundary,
@@ -3275,6 +3501,20 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeInterruptionBoundary,
+        });
+    }
+
+    if describe_fault_diagnostic_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-fault-diagnostic-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeFaultDiagnosticBoundary,
         });
     }
 
@@ -3445,6 +3685,10 @@ fn main() {
             print_interruption_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribeFaultDiagnosticBoundary => {
+            print_fault_diagnostic_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeRecordingContinuityBoundary => {
             print_recording_continuity_boundary(args.format);
             Ok(())
@@ -3496,6 +3740,7 @@ mod tests {
         render_downstream_automation_json, render_downstream_automation_text,
         render_downstream_fail_gates_json, render_downstream_fail_gates_text,
         render_export_description_json, render_export_description_text,
+        render_fault_diagnostic_boundary_json, render_fault_diagnostic_boundary_text,
         render_generation_closeout_json, render_generation_closeout_text,
         render_host_edge_boundary_json, render_host_edge_boundary_text,
         render_interruption_boundary_json, render_interruption_boundary_text,
@@ -3839,6 +4084,32 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_fault_diagnostic_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-fault-diagnostic-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeFaultDiagnosticBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_fault_diagnostic_boundary() {
+        let error = parse_args([
+            "--describe-fault-diagnostic-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_supports_describe_recording_continuity_boundary_mode() {
         assert_eq!(
             parse_args([
@@ -4168,6 +4439,39 @@ mod tests {
         assert!(rendered.contains("\"id\":\"offline-render-execution-interruption-receipt\""));
         assert!(rendered.contains("\"id\":\"shared-host-supervisor-report\""));
         assert!(rendered.contains("\"id\":\"runtime-resumable-deferred-proof\""));
+    }
+
+    #[test]
+    fn fault_diagnostic_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_fault_diagnostic_boundary_text();
+        assert!(rendered
+            .contains("fault_diagnostic_boundary: signal.runtime.fault-diagnostic-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:fault-diagnostic-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::fault_diagnostic_receipt and RuntimeSupervisorReport::observation.fault_diagnostic_receipt"
+        ));
+        assert!(rendered.contains("surface: RuntimeProfilingReceipt::fault_diagnostic_receipt"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-fault-diagnostic-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn fault_diagnostic_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_fault_diagnostic_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.fault-diagnostic-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:fault-diagnostic-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-observation-fault-diagnostic\""));
+        assert!(rendered.contains("\"id\":\"runtime-profiling-fault-diagnostic\""));
+        assert!(rendered.contains("\"id\":\"shared-host-fault-diagnostic-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-public-fault-diagnostic-proof\""));
     }
 
     #[test]

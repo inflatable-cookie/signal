@@ -1,6 +1,6 @@
 # 005 - Runtime Fault-Cause Attribution And Diagnostic Receipts
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.001, g06.003, g06.004
@@ -40,19 +40,38 @@ host taxonomy.
 
 ### Batch 5.2 - Runtime Diagnostic Depth
 
-- [ ] materialize the causal receipts in runtime and supervisor surfaces
-- [ ] keep local and server host exports aligned with the new meaning
+- [x] materialize the causal receipts in runtime and supervisor surfaces
+- [x] keep local and server host exports aligned with the new meaning
+
+Batch 5.2 added `RuntimeFaultDiagnosticReceipt`,
+`RuntimeFaultContributionReceipt`, and the shared runtime-versus-host authority
+split directly to `signal-runtime`, then threaded that receipt family through
+`RuntimeObservationReport`, `RuntimeSupervisorReport`, and
+`RuntimeProfilingReceipt`. The runtime now selects one canonical
+`primary_family` from runtime-owned fault posture while preserving xrun,
+plugin-boundary, device-path, deferred-work, and advisory callback evidence as
+typed contributions instead of forcing products to infer cause from unrelated
+counters. Downstream-style runtime proofs and stable host-edge proofs now read
+that same receipt family without host-local reclassification.
 
 ### Batch 5.3 - Consumer Proof
 
-- [ ] add focused proof that causal fault receipts remain consumable through
+- [x] add focused proof that causal fault receipts remain consumable through
   Signal-owned boundaries without private host logic
+
+Batch 5.3 added the first dedicated consumer-facing boundary for fault-cause
+receipts. Downstream-style runtime proofs now exercise canonical
+`primary_family` export directly, stable local/server host-edge proofs forward
+the same receipt through `supervisor_report()`, and
+`signal-supervisor-tools --describe-fault-diagnostic-boundary` plus
+`effigy acceptance:fault-diagnostic-boundary --repo .` make the proof boundary
+runnable without private implementation detail.
 
 ## Acceptance Criteria
 
-- [ ] Signal exposes typed runtime fault-cause receipts
-- [ ] later profiling and soak work can cite causal evidence directly
-- [ ] host products no longer need to infer cause from unrelated counters
+- [x] Signal exposes typed runtime fault-cause receipts
+- [x] later profiling and soak work can cite causal evidence directly
+- [x] host products no longer need to infer cause from unrelated counters
 
 ## Risks And Mitigations
 
@@ -63,13 +82,13 @@ host taxonomy.
 
 ## Evidence Requirements
 
-- [ ] log each meaningful causal-diagnostics tranche
-- [ ] run focused runtime/export validation for causal receipts
-- [ ] record deferred diagnostics breadth explicitly
+- [x] log each meaningful causal-diagnostics tranche
+- [x] run focused runtime/export validation for causal receipts
+- [x] record deferred diagnostics breadth explicitly
 
 ## Next Task
 
-Continue `g06.005` with Batch 5.2 by materializing the typed causal diagnostic
-receipt family in runtime and supervisor surfaces, then keep local and server
-host exports aligned to the same primary-cause and contributing-evidence
-meaning without host-local reclassification.
+Continue `g06.006` with Batch 6.1 by defining the first runtime-owned per-block
+execution timing and pressure snapshot contract so the newly closed
+fault-diagnostic boundary can feed into bounded timing instrumentation rather
+than counter-only performance anecdotes.

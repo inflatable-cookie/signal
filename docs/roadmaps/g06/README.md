@@ -67,9 +67,9 @@ surfaced in Chorus:
   - plugin isolation policy, transport rebind, and shared-sandbox continuity depth
 - `g06.004` `complete`
   - offline render execution recovery and resumability depth
-- `g06.005` `active`
+- `g06.005` `complete`
   - runtime fault-cause attribution and diagnostic receipts
-- `g06.006` `planned`
+- `g06.006` `active`
   - per-block execution timing and pressure snapshots
 - `g06.007` `planned`
   - graph critical-path, hot-node, and worker-lane instrumentation
@@ -154,7 +154,7 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.005` with Batch 5.2 by materializing typed causal diagnostic
-receipts on runtime, supervisor, and host-edge surfaces so the next profiling
-and soak lane can point at canonical primary-cause evidence instead of
-counter-only summaries.
+Continue `g06.006` with Batch 6.2 by instrumenting bounded per-block execution
+timing, deadline pressure, and budget-overrun fields on the newly frozen
+runtime-owned measurement seam before widening into `g06.007` scheduler hot-path
+analysis.

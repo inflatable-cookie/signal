@@ -614,6 +614,15 @@ Implemented now:
   - `RuntimeExecutionTopologySummary` and `RuntimeSchedulerTopologySummary` as
     the explanatory topology context for those choices rather than a
     host-recomputed scheduler model
+- contract-frozen timing and pressure measurement hierarchy:
+  - `RuntimeEngineBlockSnapshot` as the authoritative per-block timing and
+    budget observation seam
+  - `RuntimeSchedulerSnapshot` as the control-state companion that explains the
+    measured block without replacing it
+  - `RuntimePerformanceSnapshot` and `RuntimePerformanceTraceReceipt` as the
+    bounded consumer and automation digests for timing and pressure
+  - host callback cadence and backend timing remain additive evidence rather
+    than a competing timing authority
 - contract-frozen shared host-edge tiers:
   - `LocalRuntimeHost::new`, `ServerRuntimeHost::new`, `RuntimeSupervisorApi`,
     and `supervisor_report()` as the first stable shared host edge
@@ -688,7 +697,7 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Continue `g06.005` with Batch 5.2 by materializing typed fault-cause and
-contributing-evidence receipts on runtime, supervisor, and host-edge surfaces
-before deeper profiling, plugin, hardware, and media-service milestones widen
-the implementation.
+Continue `g06.006` with Batch 6.2 by instrumenting bounded per-block execution
+timing, deadline pressure, and budget-overrun fields on the newly frozen
+runtime-owned measurement seam before later profiling, scheduler, and
+media-service work widen the instrumentation surface further.

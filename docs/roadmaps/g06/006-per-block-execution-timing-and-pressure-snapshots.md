@@ -1,6 +1,6 @@
 # 006 - Per-Block Execution Timing And Pressure Snapshots
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.005
@@ -29,8 +29,17 @@ performance diagnosis.
 
 ### Batch 6.1 - Timing Snapshot Contract
 
-- [ ] define block timing, deadline pressure, and budget-overrun observations
-- [ ] decide which metrics belong in runtime-facing versus supervisor exports
+- [x] define block timing, deadline pressure, and budget-overrun observations
+- [x] decide which metrics belong in runtime-facing versus supervisor exports
+
+Batch 6.1 froze the bounded timing vocabulary in
+`docs/contracts/017-per-block-execution-timing-and-pressure-snapshot-contract.md`.
+That contract makes `RuntimeEngineBlockSnapshot` the authoritative per-block
+measurement seam, keeps `RuntimeSchedulerSnapshot` as lifecycle and control
+context, and freezes `RuntimePerformanceSnapshot` plus
+`RuntimePerformanceTraceReceipt` as the narrower consumer and automation digests.
+It also explicitly treats host callback cadence as advisory timing evidence
+rather than a competing timing authority.
 
 ### Batch 6.2 - Runtime Instrumentation Baseline
 
@@ -63,5 +72,7 @@ performance diagnosis.
 
 ## Next Task
 
-Continue `g06.007` by identifying critical-path, hot-node, and worker-lane
-sources of the timing pressure now visible.
+Continue `g06.006` with Batch 6.2 by instrumenting bounded per-block execution
+timing, deadline pressure, and budget-overrun fields on the frozen runtime-owned
+measurement seam, then align supervisor and host-edge export to the same
+observations before widening into `g06.007` hot-node and worker-lane depth.

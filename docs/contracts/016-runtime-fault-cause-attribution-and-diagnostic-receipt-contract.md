@@ -1,6 +1,6 @@
 # 016 Runtime Fault-Cause Attribution And Diagnostic Receipt Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-03-14
 Related contracts: `docs/contracts/002-supervisor-export-schema-and-report-boundary.md`, `docs/contracts/005-runtime-work-orchestration-and-deferred-service-policy.md`, `docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md`, `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`, `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`, `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`, `docs/contracts/015-offline-render-recovery-and-resumability-contract.md`
@@ -355,9 +355,65 @@ The current repo-owned baseline that this contract builds on is:
 - `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
 - `docs/contracts/015-offline-render-recovery-and-resumability-contract.md`
 
+## Batch 5.2 landed receipt family
+
+Batch 5.2 moves this contract beyond vocabulary and into typed runtime-owned
+receipt surfaces.
+
+The first landed DTO family is:
+
+- `RuntimeFaultDiagnosticReceipt`
+- `RuntimeFaultContributionReceipt`
+- `RuntimeFaultDiagnosticFamily`
+- `RuntimeFaultDiagnosticAuthority`
+
+The first landed runtime-owned export surfaces are:
+
+- `RuntimeObservationReport`
+- `RuntimeSupervisorReport`
+- `RuntimeProfilingReceipt`
+- stable host-edge `supervisor_report()` consumers through the already-frozen
+  host boundary
+
+The landed mapping keeps three rules explicit:
+
+1. `primary_family` stays canonical and runtime-owned. It is derived from
+   runtime posture, recovery state, interruption class, and current fault
+   boundary rather than from host callback heuristics.
+2. `contributions` may include both runtime-canonical and host-advisory
+   evidence. Host callback and backend counters remain additive evidence only.
+3. deferred-work pressure may be the canonical family when runtime-owned defer,
+   throttle, starvation, or yield surfaces are the best explanation, even when
+   historical host or plugin counters are also present.
+
+This means downstream consumers can now read one typed receipt for:
+
+- canonical cause family
+- underlying broad fault cause
+- interruption class and recovery state
+- safe-mode and rebindability posture
+- contributing runtime and host-adjacent evidence
+
+## Batch 5.3 consumer-facing proof boundary
+
+Batch 5.3 closes this contract with one explicit consumer-facing inspection
+seam:
+
+- `signal-supervisor-tools --describe-fault-diagnostic-boundary`
+- `effigy acceptance:fault-diagnostic-boundary --repo .`
+
+That seam proves:
+
+- a downstream-style runtime consumer can read canonical primary-family and
+  contribution evidence from public runtime surfaces
+- stable local and server host edges forward the same receipt through
+  `supervisor_report()`
+- consumers can inspect the shared fault-diagnostic boundary without private
+  host helpers or log parsing
+
 ## Next Task
 
-Continue `g06.005` with Batch 5.2 by materializing typed causal diagnostic
-receipts in runtime, supervisor, and stable host-edge surfaces so downstream
-consumers can cite xrun, callback, plugin, device, and deferred-work pressure
-causes directly instead of inferring them from mixed counters.
+Continue `g06.006` with Batch 6.1 by defining the first per-block timing and
+pressure snapshot contract so later instrumentation work can compose with the
+now-closed fault-diagnostic boundary instead of inventing a second profiling
+taxonomy.

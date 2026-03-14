@@ -33,8 +33,7 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g06.005` with Batch 5.2 and keep the generation on Signal-owned
-reusable runtime surfaces by materializing the typed fault-cause receipt family
-across runtime, supervisor, and host-edge export before broader profiling,
-plugin, hardware, media, and acceptance lanes widen while `g07` remains the
-next full feature-breadth queue.
+Continue `g06.006` with Batch 6.2 and keep the generation on Signal-owned
+runtime surfaces by instrumenting the newly frozen per-block timing and
+pressure seam before broader scheduler, plugin, hardware, media, and
+acceptance lanes widen while `g07` remains the next full feature-breadth queue.
