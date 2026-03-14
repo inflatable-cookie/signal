@@ -9,9 +9,9 @@ top of the mandatory-versus-optional contract split.
 ## Work completed
 
 - added `signal-supervisor-tools --describe-downstream-automation`
-- added `effigy acceptance:downstream-release --repo .`
-- added `effigy acceptance:downstream-depth --repo .`
-- added `effigy acceptance:downstream-automation --repo .`
+- added `effigy acceptance:downstream-release`
+- added `effigy acceptance:downstream-depth`
+- added `effigy acceptance:downstream-automation`
 - kept the optional depth path typed by using `signal.supervisor.export` JSON
   scenario runs rather than log-only soak output
 - moved `g05.004` forward to Batch 4.3
@@ -22,10 +22,10 @@ top of the mandatory-versus-optional contract split.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_downstream_automation_mode`
 - `cargo test -p signal-supervisor-tools downstream_automation_json_reports_mandatory_and_optional_fixtures`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json`
-- `effigy acceptance:downstream-automation --repo .`
+- `effigy acceptance:downstream-automation`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual risk
 

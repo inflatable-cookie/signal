@@ -37,7 +37,7 @@ This tranche makes the authority boundary explicit first.
 ## Validation
 
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

@@ -1,7 +1,7 @@
 # g06 Milestones
 
 Status: active
-Updated: 2026-03-13
+Updated: 2026-03-14
 
 ## Why this generation matters now
 
@@ -59,11 +59,11 @@ surfaced in Chorus:
 
 ## Milestone map
 
-- `g06.001` `active`
+- `g06.001` `complete`
   - runtime interruption taxonomy and resumability contract
-- `g06.002` `planned`
+- `g06.002` `complete`
   - recording continuity, MIDI capture, and checkpoint truth
-- `g06.003` `planned`
+- `g06.003` `active`
   - plugin isolation policy, transport rebind, and shared-sandbox continuity depth
 - `g06.004` `planned`
   - offline render execution recovery and resumability depth
@@ -154,6 +154,6 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.001` with Batch 1.2 and apply the interruption/resumability
-contract to active runtime-owned snapshots and receipts before widening
-implementation or feature breadth further.
+Continue `g06.003` with Batch 3.1 by freezing placement-rule vocabulary,
+sandbox grouping keys, and shared plugin rebind or continuity semantics before
+widening deeper recovery implementation or feature breadth.

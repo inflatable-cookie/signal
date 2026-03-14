@@ -34,8 +34,8 @@ runtime/supervisor surface.
 - Passed: `cargo test -p signal-host-server server_host_rolls_leases_forward_after_timeout -- --nocapture`
 - Passed: `cargo test -p signal-supervisor-tools --no-run`
 - Passed: `git diff --check`
-- Failed unrelated to this Rust batch: `effigy health --repo .`
-- Failed unrelated to this Rust batch: `effigy validate --repo .`
+- Failed unrelated to this Rust batch: `effigy health`
+- Failed unrelated to this Rust batch: `effigy validate`
 - Current repo-level blocker: legacy C++ build error in `src/ipc/binary_envelope/recording/codecs.cpp` calling `readTlvString(...)` with two arguments while `CodecCommon.hpp` exposes a one-argument overload.
 - Pending caveat: a full rerun of `cargo test -p signal-graph -- --nocapture` stalled after launching the test binary in this environment, after an earlier deterministic failure was fixed. Compile-time validation and the targeted host/runtime checks were clean.
 

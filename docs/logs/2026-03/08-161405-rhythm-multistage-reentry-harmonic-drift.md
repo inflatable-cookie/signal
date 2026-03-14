@@ -33,8 +33,8 @@ accelerates or decelerates across successive post-dropout sections.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy health --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy validate`
 - `cargo test --workspace`:
   failed outside this batch in `signal-plugin/src/lib.rs` because tests there
   reference `BlockProcessResult` and `CompletionSlot` without importing them
@@ -44,7 +44,7 @@ accelerates or decelerates across successive post-dropout sections.
 
 - The rhythm crate now has 27 targeted tests covering multistage recovery drift
   in addition to the earlier preset-family calibration surface.
-- `effigy validate --repo .` still runs the heavyweight CMake/C++ path here,
+- `effigy validate` still runs the heavyweight CMake/C++ path here,
   but it completed successfully once the workspace lock from the concurrent
   `effigy health` invocation cleared.
 - The new transition surface keeps this work inside Signal’s reusable rhythm

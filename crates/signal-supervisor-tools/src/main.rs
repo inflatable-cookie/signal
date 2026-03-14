@@ -42,6 +42,8 @@ enum CliMode {
     },
     DescribeExport,
     DescribeConformanceMatrix,
+    DescribeInterruptionBoundary,
+    DescribeRecordingContinuityBoundary,
     DescribeHostEdgeBoundary,
     DescribeReleaseBoundary,
     DescribePackagingManifest,
@@ -54,31 +56,37 @@ const EXPORT_SCHEMA: &str = "signal.supervisor.export";
 const EXPORT_SCHEMA_VERSION: u32 = 1;
 const DEFAULT_HOST_SUMMARY_SECTIONS: &[&str] = &["execution", "transport", "faults"];
 const SUPPORTED_DEBUG_SECTIONS: &[HostSummaryDebugSection] = &[HostSummaryDebugSection::Payload];
+const INTERRUPTION_BOUNDARY: &str = "signal.runtime.interruption-boundary";
+const INTERRUPTION_CONTRACT_PATH: &str =
+    "docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md";
+const INTERRUPTION_ACCEPTANCE_TASK: &str = "effigy acceptance:interruption-boundary";
+const RECORDING_CONTINUITY_BOUNDARY: &str = "signal.runtime.recording-continuity-boundary";
+const RECORDING_CONTINUITY_CONTRACT_PATH: &str =
+    "docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md";
+const RECORDING_CONTINUITY_ACCEPTANCE_TASK: &str = "effigy acceptance:recording-continuity";
 const HOST_EDGE_BOUNDARY: &str = "signal.host.edge.boundary";
 const HOST_EDGE_CONTRACT_PATH: &str =
     "docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md";
-const HOST_EDGE_ACCEPTANCE_TASK: &str = "effigy acceptance:host-edge-consumer --repo .";
+const HOST_EDGE_ACCEPTANCE_TASK: &str = "effigy acceptance:host-edge-consumer";
 const RELEASE_BOUNDARY: &str = "signal.release.boundary";
 const RELEASE_VERSION_SOURCE: &str = "workspace.package.version";
 const RELEASE_CHANGELOG_PATH: &str = "CHANGELOG.md";
-const RELEASE_CONFORMANCE_TASK: &str = "effigy acceptance:conformance --repo .";
+const RELEASE_CONFORMANCE_TASK: &str = "effigy acceptance:conformance";
 const PACKAGING_MANIFEST: &str = "signal.release.packaging-manifest";
 const PACKAGING_MANIFEST_CONTRACT_PATH: &str =
     "docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md";
-const PACKAGING_MANIFEST_ACCEPTANCE_TASK: &str =
-    "effigy acceptance:release-packaging-consumer --repo .";
+const PACKAGING_MANIFEST_ACCEPTANCE_TASK: &str = "effigy acceptance:release-packaging-consumer";
 const DOWNSTREAM_AUTOMATION_BOUNDARY: &str = "signal.downstream.automation";
 const DOWNSTREAM_AUTOMATION_CONTRACT_PATH: &str =
     "docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md";
-const DOWNSTREAM_AUTOMATION_MANDATORY_TASK: &str = "effigy acceptance:downstream-release --repo .";
-const DOWNSTREAM_AUTOMATION_OPTIONAL_TASK: &str = "effigy acceptance:downstream-depth --repo .";
-const DOWNSTREAM_AUTOMATION_COMBINED_TASK: &str =
-    "effigy acceptance:downstream-automation --repo .";
+const DOWNSTREAM_AUTOMATION_MANDATORY_TASK: &str = "effigy acceptance:downstream-release";
+const DOWNSTREAM_AUTOMATION_OPTIONAL_TASK: &str = "effigy acceptance:downstream-depth";
+const DOWNSTREAM_AUTOMATION_COMBINED_TASK: &str = "effigy acceptance:downstream-automation";
 const DOWNSTREAM_FAIL_GATES: &str = "signal.downstream.fail-gates";
-const DOWNSTREAM_FAIL_GATE_TASK: &str = "effigy acceptance:downstream-gate --repo .";
+const DOWNSTREAM_FAIL_GATE_TASK: &str = "effigy acceptance:downstream-gate";
 const GENERATION_CLOSEOUT: &str = "signal.generation.closeout";
 const GENERATION_CLOSEOUT_GENERATION: &str = "g05";
-const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g05-closeout --repo .";
+const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g05-closeout";
 const POST_G05_QUEUE_PATH: &str =
     "docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md";
 const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "recorded-backlog-candidate";
@@ -120,6 +128,54 @@ struct HostEdgeSurfaceRecord {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct HostEdgeValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum InterruptionBoundarySurfaceKind {
+    RuntimeReport,
+    ContinuityReceipt,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct InterruptionBoundarySurface {
+    id: &'static str,
+    kind: InterruptionBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct InterruptionBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RecordingContinuityBoundarySurfaceKind {
+    RuntimeReceipt,
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct RecordingContinuityBoundarySurface {
+    id: &'static str,
+    kind: RecordingContinuityBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct RecordingContinuityValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -273,7 +329,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-recording-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -310,6 +366,16 @@ impl HostEdgeStabilityTier {
             Self::Public => "public",
             Self::ConsumerFacingButUnstable => "consumer-facing-but-unstable",
             Self::ScenarioOnly => "scenario-only",
+        }
+    }
+}
+
+impl InterruptionBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::ContinuityReceipt => "continuity-receipt",
+            Self::HostEdge => "host-edge",
         }
     }
 }
@@ -374,7 +440,7 @@ fn conformance_matrix_entries() -> &'static [ConformanceMatrixEntry] {
             kind: ConformanceMatrixEntryKind::ExportConsumerTest,
             crate_name: "signal-runtime + signal-supervisor-tools",
             surface: "runtime reexports and supervisor export carrying backend-neutral plugin discovery coverage aggregates",
-            command: "effigy acceptance:plugin-backend-breadth --repo .",
+            command: "effigy acceptance:plugin-backend-breadth",
             rationale:
                 "Proves widened multi-format discovery and capability coverage stays consumable through Signal-owned runtime and export surfaces.",
         },
@@ -383,7 +449,7 @@ fn conformance_matrix_entries() -> &'static [ConformanceMatrixEntry] {
             kind: ConformanceMatrixEntryKind::PublicBoundaryTest,
             crate_name: "signal-host-local + signal-host-server",
             surface: "shared-stable host constructors, RuntimeSupervisorApi, and supervisor_report()",
-            command: "effigy acceptance:host-edge-consumer --repo .",
+            command: "effigy acceptance:host-edge-consumer",
             rationale:
                 "Proves the shared stable host edge remains consumable without private host internals or unstable summary helpers.",
         },
@@ -477,6 +543,183 @@ fn host_edge_surface_records() -> &'static [HostEdgeSurfaceRecord] {
     ]
 }
 
+fn interruption_boundary_surfaces() -> &'static [InterruptionBoundarySurface] {
+    &[
+        InterruptionBoundarySurface {
+            id: "runtime-fault-status",
+            kind: InterruptionBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationReport::fault_status and RuntimeSupervisorReport::observation.fault_status",
+            runtime_anchor: "RuntimeFaultStatusSnapshot",
+            rationale:
+                "Carries the runtime-owned recovery-state and primary-fault classification without host-local inference.",
+        },
+        InterruptionBoundarySurface {
+            id: "runtime-interruption-summary",
+            kind: InterruptionBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationReport::interruption_summary and RuntimeSupervisorReport::observation.interruption_summary",
+            runtime_anchor: "RuntimeInterruptionSummary",
+            rationale:
+                "Carries the shared interruption taxonomy directly on the public observation and supervisor boundary.",
+        },
+        InterruptionBoundarySurface {
+            id: "deferred-service-interruption-receipt",
+            kind: InterruptionBoundarySurfaceKind::ContinuityReceipt,
+            crate_name: "signal-runtime",
+            surface: "RuntimeDeferredServiceReceipt::interruption_class",
+            runtime_anchor: "RuntimeDeferredServiceReceipt",
+            rationale:
+                "Keeps deferred-work resumability and terminal abort semantics typed instead of implied by queue policy prose.",
+        },
+        InterruptionBoundarySurface {
+            id: "offline-render-execution-interruption-receipt",
+            kind: InterruptionBoundarySurfaceKind::ContinuityReceipt,
+            crate_name: "signal-runtime",
+            surface: "RuntimeOfflineRenderExecutionProgressReceipt::interruption_class",
+            runtime_anchor: "RuntimeOfflineRenderExecutionProgressReceipt",
+            rationale:
+                "Keeps paused, recoverable, and completed offline execution continuity visible through the same interruption vocabulary.",
+        },
+        InterruptionBoundarySurface {
+            id: "shared-host-supervisor-report",
+            kind: InterruptionBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges expose runtime-owned interruption meaning without their own recovery taxonomy.",
+        },
+    ]
+}
+
+fn interruption_boundary_validation_steps() -> &'static [InterruptionBoundaryValidationStep] {
+    &[
+        InterruptionBoundaryValidationStep {
+            id: "runtime-restartable-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_restartable_runtime_state",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect a non-steady restartable interruption class through public reexports.",
+        },
+        InterruptionBoundaryValidationStep {
+            id: "runtime-resumable-deferred-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_resumable_deferred_state",
+            rationale:
+                "Proves resumable deferred-work continuity stays visible on public runtime receipts and observation export.",
+        },
+        InterruptionBoundaryValidationStep {
+            id: "local-host-edge-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_is_consumable_without_private_helpers",
+            rationale:
+                "Proves the local shared host edge forwards interruption state through supervisor_report() without private helpers.",
+        },
+        InterruptionBoundaryValidationStep {
+            id: "server-host-edge-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_is_consumable_without_private_helpers",
+            rationale:
+                "Proves the server shared host edge forwards interruption state through supervisor_report() without private helpers.",
+        },
+        InterruptionBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-interruption-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the runtime and host-edge interruption proof boundary without reading private implementation detail.",
+        },
+    ]
+}
+
+fn recording_continuity_boundary_surfaces() -> &'static [RecordingContinuityBoundarySurface] {
+    &[
+        RecordingContinuityBoundarySurface {
+            id: "runtime-recording-capture-snapshot",
+            kind: RecordingContinuityBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::recording_capture_snapshot and RuntimeSupervisorReport::observation.recording_capture_snapshot",
+            runtime_anchor: "RuntimeRecordingCaptureSnapshot",
+            rationale:
+                "Carries the runtime-owned capture identity, typed checkpoints, and continuity class directly on the public observation boundary.",
+        },
+        RecordingContinuityBoundarySurface {
+            id: "runtime-recording-capture-commit-receipt",
+            kind: RecordingContinuityBoundarySurfaceKind::RuntimeReceipt,
+            crate_name: "signal-runtime",
+            surface: "RuntimeRecordingCaptureCommitReceipt::committed_checkpoint",
+            runtime_anchor: "RuntimeRecordingCaptureCommitReceipt",
+            rationale:
+                "Keeps committed capture evidence tied to the same runtime-owned checkpoint family instead of leaving commit continuity implicit.",
+        },
+        RecordingContinuityBoundarySurface {
+            id: "shared-host-recording-supervisor-report",
+            kind: RecordingContinuityBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures stable host edges expose resumable, restartable, and terminal capture truth without host-local recovery policy.",
+        },
+    ]
+}
+
+fn recording_continuity_validation_steps() -> &'static [RecordingContinuityValidationStep] {
+    &[
+        RecordingContinuityValidationStep {
+            id: "runtime-resumable-capture-proof",
+            command:
+                "cargo test -p signal-runtime runtime_recording_capture_resumes_same_identity_after_safe_mode_clears",
+            rationale:
+                "Proves same-identity resumable capture state survives degraded runtime conditions and later commits under the same runtime-owned boundary.",
+        },
+        RecordingContinuityValidationStep {
+            id: "runtime-restartable-capture-proof",
+            command:
+                "cargo test -p signal-runtime runtime_recording_capture_preserves_restartable_checkpoint_across_stop_and_reconfigure",
+            rationale:
+                "Proves restartable capture preserves buffered checkpoint truth across runtime stop or reconfigure instead of disappearing silently.",
+        },
+        RecordingContinuityValidationStep {
+            id: "runtime-terminal-capture-proof",
+            command:
+                "cargo test -p signal-runtime runtime_recording_capture_reports_terminal_checkpoint_on_commit_failure",
+            rationale:
+                "Proves terminal capture failure is exported as a typed failed checkpoint rather than log-only error context.",
+        },
+        RecordingContinuityValidationStep {
+            id: "runtime-public-boundary-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_recording_continuity_boundary_reports_resumable_restartable_and_terminal_states",
+            rationale:
+                "Proves a downstream-style runtime consumer can distinguish all three capture outcomes through public reexports.",
+        },
+        RecordingContinuityValidationStep {
+            id: "local-host-recording-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_resumable_recording_checkpoint_truth",
+            rationale:
+                "Proves the local shared host edge preserves resumable recording checkpoint meaning on supervisor export.",
+        },
+        RecordingContinuityValidationStep {
+            id: "server-host-recording-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_restartable_and_terminal_recording_checkpoint_truth",
+            rationale:
+                "Proves the server shared host edge preserves restartable and terminal recording checkpoint meaning on supervisor export.",
+        },
+        RecordingContinuityValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-recording-continuity-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the recording continuity proof boundary without reading private runtime or host implementation detail.",
+        },
+    ]
+}
+
 fn host_edge_validation_steps() -> &'static [HostEdgeValidationStep] {
     &[
         HostEdgeValidationStep {
@@ -494,7 +737,7 @@ fn host_edge_validation_steps() -> &'static [HostEdgeValidationStep] {
         },
         HostEdgeValidationStep {
             id: "workspace-health",
-            command: "effigy health --repo .",
+            command: "effigy health",
             rationale:
                 "Shared host-edge claims still depend on the repo-owned build baseline staying healthy.",
         },
@@ -553,19 +796,19 @@ fn release_boundary_validation_steps() -> &'static [ReleaseBoundaryValidationSte
         },
         ReleaseBoundaryValidationStep {
             id: "workspace-health",
-            command: "effigy health --repo .",
+            command: "effigy health",
             rationale:
                 "The repo-owned build baseline must stay healthy for a release-boundary claim to be credible.",
         },
         ReleaseBoundaryValidationStep {
             id: "workspace-test",
-            command: "effigy test --repo .",
+            command: "effigy test",
             rationale:
                 "The shared repo-owned test surface remains part of the packaging baseline rather than downstream-only policy.",
         },
         ReleaseBoundaryValidationStep {
             id: "workspace-validate",
-            command: "effigy validate --repo .",
+            command: "effigy validate",
             rationale:
                 "Validation must include the repo-owned configure/build/test chain before a release boundary is declared.",
         },
@@ -624,14 +867,14 @@ fn packaging_manifest_inputs() -> &'static [PackagingManifestInput] {
         PackagingManifestInput {
             id: "plugin-backend-breadth-acceptance",
             kind: PackagingManifestInputKind::ValidationTask,
-            path_or_command: "effigy acceptance:plugin-backend-breadth --repo .",
+            path_or_command: "effigy acceptance:plugin-backend-breadth",
             rationale:
                 "Release packaging claims about backend-neutral breadth must point back to the repo-owned acceptance task that proves them.",
         },
         PackagingManifestInput {
             id: "host-edge-consumer-acceptance",
             kind: PackagingManifestInputKind::ValidationTask,
-            path_or_command: "effigy acceptance:host-edge-consumer --repo .",
+            path_or_command: "effigy acceptance:host-edge-consumer",
             rationale:
                 "The manifest includes the stable shared host-edge proof rather than assuming it from release prose.",
         },
@@ -667,7 +910,7 @@ fn packaging_manifest_validation_steps() -> &'static [PackagingManifestValidatio
     &[
         PackagingManifestValidationStep {
             id: "release-boundary-baseline",
-            command: "effigy acceptance:release-boundary --repo .",
+            command: "effigy acceptance:release-boundary",
             rationale:
                 "Publication packaging builds on the existing release-boundary baseline instead of replacing it.",
         },
@@ -680,13 +923,13 @@ fn packaging_manifest_validation_steps() -> &'static [PackagingManifestValidatio
         },
         PackagingManifestValidationStep {
             id: "workspace-health",
-            command: "effigy health --repo .",
+            command: "effigy health",
             rationale:
                 "Publication packaging claims still depend on the repo-owned build baseline staying healthy.",
         },
         PackagingManifestValidationStep {
             id: "workspace-docs",
-            command: "effigy qa:docs --repo .",
+            command: "effigy qa:docs",
             rationale:
                 "The publication manifest depends on docs and index surfaces staying aligned with the declared release bundle.",
         },
@@ -757,7 +1000,7 @@ fn downstream_automation_optional_fixtures() -> &'static [DownstreamAutomationFi
         DownstreamAutomationFixture {
             id: "analysis-acceptance",
             kind: DownstreamAutomationFixtureKind::AcceptanceTask,
-            command: "effigy acceptance:analysis --repo .",
+            command: "effigy acceptance:analysis",
             typed_output: "analysis harness task receipts across the shared analysis crates",
             rationale:
                 "Longer-running shared confidence can extend into broader analysis acceptance without becoming a release prerequisite yet.",
@@ -806,7 +1049,7 @@ fn downstream_deferred_depth_records() -> &'static [DownstreamDeferredDepthRecor
         },
         DownstreamDeferredDepthRecord {
             id: "analysis-acceptance-promotion",
-            command: "effigy acceptance:analysis --repo .",
+            command: "effigy acceptance:analysis",
             status: "deferred",
             rationale:
                 "Analysis acceptance remains useful optional depth, but it is not yet part of the bounded shared release gate.",
@@ -818,7 +1061,7 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
     &[
         GenerationCloseoutValidationStep {
             id: "widened-release-and-automation-gate",
-            command: "effigy acceptance:downstream-gate --repo .",
+            command: "effigy acceptance:downstream-gate",
             rationale:
                 "The combined closeout must prove the widened backend, host-edge, packaging, and downstream fail-gate chain as one repo-owned release surface.",
         },
@@ -831,7 +1074,7 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
         },
         GenerationCloseoutValidationStep {
             id: "repo-validation",
-            command: "effigy validate --repo .",
+            command: "effigy validate",
             rationale:
                 "Generation closure still requires the repo-owned configure/build/test chain to stay green.",
         },
@@ -1388,6 +1631,240 @@ fn print_conformance_matrix(format: OutputFormat) {
     match format {
         OutputFormat::Text => println!("{}", render_conformance_matrix_text()),
         OutputFormat::Json => println!("{}", render_conformance_matrix_json()),
+    }
+}
+
+fn render_interruption_boundary_text() -> String {
+    let mut rendered = format!(
+        "interruption_boundary: {INTERRUPTION_BOUNDARY}\ncontract_path: {INTERRUPTION_CONTRACT_PATH}\nacceptance_task: {INTERRUPTION_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in interruption_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in interruption_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "device-loss-specific fault truth is still stronger on broader host I/O surfaces than on a dedicated runtime-owned device-loss snapshot",
+        "subsystem-specific recording, plugin transport, and offline render recovery depth still belong to later g06 milestones",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_interruption_boundary_json() -> String {
+    let surfaces = interruption_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = interruption_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "device-loss-specific fault truth is still stronger on broader host I/O surfaces than on a dedicated runtime-owned device-loss snapshot",
+        "subsystem-specific recording, plugin transport, and offline render recovery depth still belong to later g06 milestones",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(INTERRUPTION_BOUNDARY),
+        json_string(INTERRUPTION_CONTRACT_PATH),
+        json_string(INTERRUPTION_ACCEPTANCE_TASK),
+        surfaces,
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn render_recording_continuity_boundary_text() -> String {
+    let mut rendered = format!(
+        "recording_continuity_boundary: {RECORDING_CONTINUITY_BOUNDARY}\ncontract_path: {RECORDING_CONTINUITY_CONTRACT_PATH}\nacceptance_task: {RECORDING_CONTINUITY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in recording_continuity_boundary_surfaces() {
+        let kind = match surface.kind {
+            RecordingContinuityBoundarySurfaceKind::RuntimeReceipt => "runtime-receipt",
+            RecordingContinuityBoundarySurfaceKind::RuntimeReport => "runtime-report",
+            RecordingContinuityBoundarySurfaceKind::HostEdge => "host-edge",
+        };
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            kind,
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in recording_continuity_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "concrete MIDI capture and commit DTOs are still deferred, so the continuity family is typed but not yet format-complete",
+        "same-identity resumable capture is currently proven through safe-mode degradation rather than a richer dedicated capture pause or resume API",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_recording_continuity_boundary_json() -> String {
+    let surfaces = recording_continuity_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            let kind = match surface.kind {
+                RecordingContinuityBoundarySurfaceKind::RuntimeReceipt => "runtime-receipt",
+                RecordingContinuityBoundarySurfaceKind::RuntimeReport => "runtime-report",
+                RecordingContinuityBoundarySurfaceKind::HostEdge => "host-edge",
+            };
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(kind),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = recording_continuity_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "concrete MIDI capture and commit DTOs are still deferred, so the continuity family is typed but not yet format-complete",
+        "same-identity resumable capture is currently proven through safe-mode degradation rather than a richer dedicated capture pause or resume API",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(RECORDING_CONTINUITY_BOUNDARY),
+        json_string(RECORDING_CONTINUITY_CONTRACT_PATH),
+        json_string(RECORDING_CONTINUITY_ACCEPTANCE_TASK),
+        recording_continuity_boundary_surfaces().len(),
+        surfaces,
+        recording_continuity_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_interruption_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_interruption_boundary_text()),
+        OutputFormat::Json => println!("{}", render_interruption_boundary_json()),
+    }
+}
+
+fn print_recording_continuity_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_recording_continuity_boundary_text()),
+        OutputFormat::Json => println!("{}", render_recording_continuity_boundary_json()),
     }
 }
 
@@ -2173,6 +2650,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut debug = ExportDebugOptions::default();
     let mut describe_export = false;
     let mut describe_conformance_matrix = false;
+    let mut describe_interruption_boundary = false;
+    let mut describe_recording_continuity_boundary = false;
     let mut describe_host_edge_boundary = false;
     let mut describe_release_boundary = false;
     let mut describe_packaging_manifest = false;
@@ -2200,6 +2679,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         }
         if arg == "--describe-conformance-matrix" {
             describe_conformance_matrix = true;
+            continue;
+        }
+        if arg == "--describe-interruption-boundary" {
+            describe_interruption_boundary = true;
+            continue;
+        }
+        if arg == "--describe-recording-continuity-boundary" {
+            describe_recording_continuity_boundary = true;
             continue;
         }
         if arg == "--describe-host-edge-boundary" {
@@ -2236,6 +2723,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let describe_mode_count = [
         describe_export,
         describe_conformance_matrix,
+        describe_interruption_boundary,
+        describe_recording_continuity_boundary,
         describe_host_edge_boundary,
         describe_release_boundary,
         describe_packaging_manifest,
@@ -2274,6 +2763,34 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeConformanceMatrix,
+        });
+    }
+
+    if describe_interruption_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-interruption-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeInterruptionBoundary,
+        });
+    }
+
+    if describe_recording_continuity_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-recording-continuity-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeRecordingContinuityBoundary,
         });
     }
 
@@ -2398,6 +2915,14 @@ fn main() {
             print_conformance_matrix(args.format);
             Ok(())
         }
+        CliMode::DescribeInterruptionBoundary => {
+            print_interruption_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeRecordingContinuityBoundary => {
+            print_recording_continuity_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeHostEdgeBoundary => {
             print_host_edge_boundary(args.format);
             Ok(())
@@ -2439,7 +2964,9 @@ mod tests {
         render_export_description_json, render_export_description_text,
         render_generation_closeout_json, render_generation_closeout_text,
         render_host_edge_boundary_json, render_host_edge_boundary_text,
+        render_interruption_boundary_json, render_interruption_boundary_text,
         render_packaging_manifest_json, render_packaging_manifest_text,
+        render_recording_continuity_boundary_json, render_recording_continuity_boundary_text,
         render_release_boundary_json, render_release_boundary_text, render_supervisor_export_json,
         CliArgs, CliMode, ExportDebugOptions, HostProfile, HostSummaryDebugSection, OutputFormat,
         Scenario,
@@ -2750,6 +3277,58 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_interruption_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-interruption-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeInterruptionBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_interruption_boundary() {
+        let error = parse_args([
+            "--describe-interruption-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_supports_describe_recording_continuity_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-recording-continuity-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeRecordingContinuityBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_recording_continuity_boundary() {
+        let error = parse_args([
+            "--describe-recording-continuity-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_rejects_multiple_describe_modes() {
         let error = parse_args([
             "--describe-export".into(),
@@ -2949,8 +3528,8 @@ mod tests {
         assert!(rendered.contains("runtime-supervisor-report-demo"));
         assert!(rendered.contains("supervisor-export-schema-description"));
         assert!(rendered.contains("cargo test -p signal-runtime public_runtime_contract_boundary_is_consumable_from_reexports"));
-        assert!(rendered.contains("effigy acceptance:plugin-backend-breadth --repo ."));
-        assert!(rendered.contains("effigy acceptance:host-edge-consumer --repo ."));
+        assert!(rendered.contains("effigy acceptance:plugin-backend-breadth"));
+        assert!(rendered.contains("effigy acceptance:host-edge-consumer"));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
         ));
@@ -2972,10 +3551,76 @@ mod tests {
     }
 
     #[test]
+    fn interruption_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_interruption_boundary_text();
+        assert!(rendered.contains("interruption_boundary: signal.runtime.interruption-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:interruption-boundary"));
+        assert!(rendered.contains("surface: RuntimeObservationReport::fault_status"));
+        assert!(rendered.contains("surface: RuntimeDeferredServiceReceipt::interruption_class"));
+        assert!(rendered.contains("surface: supervisor_report() -> RuntimeSupervisorReport"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_restartable_runtime_state"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-interruption-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn interruption_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_interruption_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.interruption-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:interruption-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-fault-status\""));
+        assert!(rendered.contains("\"id\":\"offline-render-execution-interruption-receipt\""));
+        assert!(rendered.contains("\"id\":\"shared-host-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-resumable-deferred-proof\""));
+    }
+
+    #[test]
+    fn recording_continuity_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_recording_continuity_boundary_text();
+        assert!(rendered.contains(
+            "recording_continuity_boundary: signal.runtime.recording-continuity-boundary"
+        ));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:recording-continuity"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::recording_capture_snapshot and RuntimeSupervisorReport::observation.recording_capture_snapshot"
+        ));
+        assert!(rendered
+            .contains("surface: RuntimeRecordingCaptureCommitReceipt::committed_checkpoint"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_recording_continuity_boundary_reports_resumable_restartable_and_terminal_states"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-recording-continuity-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn recording_continuity_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_recording_continuity_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.recording-continuity-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:recording-continuity\""));
+        assert!(rendered.contains("\"id\":\"runtime-recording-capture-snapshot\""));
+        assert!(rendered.contains("\"id\":\"runtime-recording-capture-commit-receipt\""));
+        assert!(rendered.contains("\"id\":\"shared-host-recording-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-terminal-capture-proof\""));
+    }
+
+    #[test]
     fn host_edge_boundary_text_reports_stable_and_unstable_edges() {
         let rendered = render_host_edge_boundary_text();
         assert!(rendered.contains("host_edge_boundary: signal.host.edge.boundary"));
-        assert!(rendered.contains("acceptance_task: effigy acceptance:host-edge-consumer --repo ."));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:host-edge-consumer"));
         assert!(rendered.contains("surface: RuntimeSupervisorApi implemented by both hosts"));
         assert!(rendered.contains("surface: supervisor_report() -> RuntimeSupervisorReport"));
         assert!(rendered.contains("tier: consumer-facing-but-unstable"));
@@ -2989,8 +3634,7 @@ mod tests {
         assert!(rendered.contains(
             "\"contract_path\":\"docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md\""
         ));
-        assert!(rendered
-            .contains("\"acceptance_task\":\"effigy acceptance:host-edge-consumer --repo .\""));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:host-edge-consumer\""));
         assert!(rendered.contains("\"id\":\"shared-runtime-supervisor-api\""));
         assert!(rendered.contains("\"id\":\"shared-supervisor-report\""));
         assert!(rendered.contains("\"id\":\"host-summary-dtos\""));
@@ -3004,7 +3648,7 @@ mod tests {
         assert!(rendered.contains("release_version: 0.1.0"));
         assert!(rendered.contains("version_source: workspace.package.version"));
         assert!(rendered.contains("changelog_path: CHANGELOG.md"));
-        assert!(rendered.contains("conformance_task: effigy acceptance:conformance --repo ."));
+        assert!(rendered.contains("conformance_task: effigy acceptance:conformance"));
         assert!(rendered
             .contains("cargo run -p signal-supervisor-tools -- --describe-export --format=json"));
         assert!(rendered.contains(
@@ -3022,9 +3666,7 @@ mod tests {
         assert!(rendered.contains("\"release_version\":\"0.1.0\""));
         assert!(rendered.contains("\"version_source\":\"workspace.package.version\""));
         assert!(rendered.contains("\"changelog_path\":\"CHANGELOG.md\""));
-        assert!(
-            rendered.contains("\"conformance_task\":\"effigy acceptance:conformance --repo .\"")
-        );
+        assert!(rendered.contains("\"conformance_task\":\"effigy acceptance:conformance\""));
         assert!(rendered.contains("\"id\":\"workspace-changelog\""));
         assert!(rendered.contains("\"id\":\"consumer-conformance\""));
         assert!(rendered.contains("\"id\":\"supervisor-export-description\""));
@@ -3039,8 +3681,7 @@ mod tests {
         assert!(rendered.contains(
             "contract_path: docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md"
         ));
-        assert!(rendered
-            .contains("acceptance_task: effigy acceptance:release-packaging-consumer --repo ."));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:release-packaging-consumer"));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json"
         ));
@@ -3057,9 +3698,8 @@ mod tests {
         assert!(rendered.contains(
             "\"contract_path\":\"docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md\""
         ));
-        assert!(rendered.contains(
-            "\"acceptance_task\":\"effigy acceptance:release-packaging-consumer --repo .\""
-        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:release-packaging-consumer\""));
         assert!(rendered.contains("\"id\":\"release-boundary-descriptor\""));
         assert!(rendered.contains("\"id\":\"manifest-generation-receipt\""));
         assert!(rendered.contains("\"id\":\"validation-receipt\""));
@@ -3070,11 +3710,8 @@ mod tests {
     fn downstream_automation_text_reports_mandatory_and_optional_fixtures() {
         let rendered = render_downstream_automation_text();
         assert!(rendered.contains("downstream_automation_boundary: signal.downstream.automation"));
-        assert!(rendered
-            .contains("mandatory_release_task: effigy acceptance:downstream-release --repo ."));
-        assert!(
-            rendered.contains("optional_depth_task: effigy acceptance:downstream-depth --repo .")
-        );
+        assert!(rendered.contains("mandatory_release_task: effigy acceptance:downstream-release"));
+        assert!(rendered.contains("optional_depth_task: effigy acceptance:downstream-depth"));
         assert!(rendered.contains("id: release-packaging-consumer"));
         assert!(rendered.contains("id: local-mixed-watchdog-export"));
         assert!(rendered.contains(
@@ -3086,13 +3723,10 @@ mod tests {
     fn downstream_automation_json_reports_mandatory_and_optional_fixtures() {
         let rendered = render_downstream_automation_json();
         assert!(rendered.contains("\"boundary\":\"signal.downstream.automation\""));
-        assert!(rendered.contains(
-            "\"mandatory_release_task\":\"effigy acceptance:downstream-release --repo .\""
-        ));
         assert!(rendered
-            .contains("\"optional_depth_task\":\"effigy acceptance:downstream-depth --repo .\""));
-        assert!(rendered
-            .contains("\"combined_task\":\"effigy acceptance:downstream-automation --repo .\""));
+            .contains("\"mandatory_release_task\":\"effigy acceptance:downstream-release\""));
+        assert!(rendered.contains("\"optional_depth_task\":\"effigy acceptance:downstream-depth\""));
+        assert!(rendered.contains("\"combined_task\":\"effigy acceptance:downstream-automation\""));
         assert!(rendered.contains("\"id\":\"downstream-automation-descriptor\""));
         assert!(rendered.contains("\"id\":\"local-soak-export\""));
         assert!(rendered.contains("\"id\":\"analysis-acceptance\""));
@@ -3102,7 +3736,7 @@ mod tests {
     fn downstream_fail_gates_text_reports_required_and_deferred_policy() {
         let rendered = render_downstream_fail_gates_text();
         assert!(rendered.contains("downstream_fail_gates: signal.downstream.fail-gates"));
-        assert!(rendered.contains("fail_gate_task: effigy acceptance:downstream-gate --repo ."));
+        assert!(rendered.contains("fail_gate_task: effigy acceptance:downstream-gate"));
         assert!(rendered.contains("id: mandatory-release-gate"));
         assert!(rendered.contains("blocks_release: true"));
         assert!(rendered.contains("id: optional-depth-lane"));
@@ -3114,9 +3748,7 @@ mod tests {
     fn downstream_fail_gates_json_reports_required_and_deferred_policy() {
         let rendered = render_downstream_fail_gates_json();
         assert!(rendered.contains("\"boundary\":\"signal.downstream.fail-gates\""));
-        assert!(
-            rendered.contains("\"fail_gate_task\":\"effigy acceptance:downstream-gate --repo .\"")
-        );
+        assert!(rendered.contains("\"fail_gate_task\":\"effigy acceptance:downstream-gate\""));
         assert!(rendered.contains("\"id\":\"mandatory-release-gate\""));
         assert!(rendered.contains("\"blocks_release\":true"));
         assert!(rendered.contains("\"id\":\"optional-depth-lane\""));
@@ -3130,7 +3762,7 @@ mod tests {
         let rendered = render_generation_closeout_text();
         assert!(rendered.contains("generation_closeout: signal.generation.closeout"));
         assert!(rendered.contains("generation: g05"));
-        assert!(rendered.contains("closeout_task: effigy acceptance:g05-closeout --repo ."));
+        assert!(rendered.contains("closeout_task: effigy acceptance:g05-closeout"));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
         ));
@@ -3161,7 +3793,7 @@ mod tests {
         let rendered = render_generation_closeout_json();
         assert!(rendered.contains("\"closeout\":\"signal.generation.closeout\""));
         assert!(rendered.contains("\"generation\":\"g05\""));
-        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g05-closeout --repo .\""));
+        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g05-closeout\""));
         assert!(rendered.contains(
             "\"host_edge_boundary_command\":\"cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json\""
         ));

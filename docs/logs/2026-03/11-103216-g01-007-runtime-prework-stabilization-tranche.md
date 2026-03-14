@@ -29,8 +29,8 @@ The main outcome of this tranche was separating manual prework-cache tests from 
   - graph-replan and manual prework queue behavior
   - block-sequence expiry
 - `cargo test -p signal-runtime -- --nocapture` improved from 17 failures to 9 failures.
-- `effigy validate --repo .` passed.
-- `effigy health --repo .` failed in legacy CMake configure/build because of an existing VST3 sample bundle configure error under `legacy/cpp/build`; this was outside the Rust runtime changes.
+- `effigy validate` passed.
+- `effigy health` failed in legacy CMake configure/build because of an existing VST3 sample bundle configure error under `legacy/cpp/build`; this was outside the Rust runtime changes.
 
 ## Remaining failures
 

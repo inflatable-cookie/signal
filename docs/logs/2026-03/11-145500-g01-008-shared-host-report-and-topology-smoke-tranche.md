@@ -63,9 +63,9 @@ topology-aware local host path in both steady-state and timeout-recovery cases.
 - `cargo test -p signal-host-local local_host_shared_report_tracks_timeout_recovery_without_losing_topology -- --nocapture`
 - `cargo test -p signal-runtime`
 - `cargo test -p signal-host-local`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Next
 

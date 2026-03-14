@@ -34,15 +34,15 @@ regularity and recent stability instead of broad meter promotion.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes
 
-- An initial parallel attempt to run `effigy test --repo .` and
-  `effigy validate --repo .` reproduced the repo's workspace lock conflict; the
+- An initial parallel attempt to run `effigy test` and
+  `effigy validate` reproduced the repo's workspace lock conflict; the
   validation run passed once rerun serially.
 - This batch keeps the segment-aware recovery path in place, but makes it much
   less eager to claim meter from partially recovered tails.

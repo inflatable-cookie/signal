@@ -12,7 +12,7 @@ Acceptance evidence commands:
 - `cargo test -p signal-analysis-character frozen_character_acceptance_report_remains_interpretable_for_closeout -- --nocapture`
 - `cargo test -p signal-analysis-loudness frozen_loudness_acceptance_report_remains_interpretable_for_closeout -- --nocapture`
 - `cargo test -p signal-analysis-embed frozen_semantic_acceptance_report_remains_interpretable_for_closeout -- --nocapture`
-- `effigy acceptance:analysis --repo .`
+- `effigy acceptance:analysis`
 
 Frozen-family acceptance evidence:
 
@@ -100,9 +100,9 @@ Validation:
 - `cargo test -p signal-analysis-loudness frozen_loudness_acceptance_report_remains_interpretable_for_closeout -- --nocapture`
 - `cargo test -p signal-analysis-embed frozen_semantic_acceptance_report_remains_interpretable_for_closeout -- --nocapture`
 - `git diff --check`
-- `effigy acceptance:analysis --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy acceptance:analysis`
+- `effigy test`
+- `effigy validate`
 
 Next task:
 

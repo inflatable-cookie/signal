@@ -27,9 +27,9 @@ without inventing a new incremental runtime API.
 - `cargo fmt`
 - `cargo test -p signal-analysis-rhythm`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Completion
 

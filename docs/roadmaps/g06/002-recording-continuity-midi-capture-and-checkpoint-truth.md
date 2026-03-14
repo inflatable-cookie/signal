@@ -1,6 +1,6 @@
 # 002 - Recording Continuity, MIDI Capture, And Checkpoint Truth
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.001
@@ -29,19 +29,41 @@ capture as the only first-class recording path.
 
 ### Batch 2.1 - Capture Continuity Contract
 
-- [ ] define resumable, restartable, and terminal capture checkpoints for audio
+- [x] define resumable, restartable, and terminal capture checkpoints for audio
   and MIDI paths
-- [ ] freeze what evidence survives runtime interruption and restart
+- [x] freeze what evidence survives runtime interruption and restart
+
+## Progress Notes
+
+- 2026-03-14: completed Batch 2.1 by freezing contract `013`, defining one
+  shared audio/MIDI capture continuity vocabulary around capture identity,
+  checkpoint classes, resumable versus restartable capture, terminal failure,
+  and committed evidence on top of contract `012` instead of a second recovery
+  language.
 
 ### Batch 2.2 - Runtime Capture Depth
 
-- [ ] deepen runtime capture state and checkpoint receipts for audio and MIDI
-- [ ] align host-edge export and supervisor views to the same capture truth
+- [x] deepen runtime capture state and checkpoint receipts for audio and MIDI
+- [x] align host-edge export and supervisor views to the same capture truth
+
+- 2026-03-14: completed Batch 2.2 by widening
+  `RuntimeRecordingCaptureSnapshot` and
+  `RuntimeRecordingCaptureCommitReceipt` with typed capture kind and checkpoint
+  surfaces, preserving restartable buffered checkpoints across stop or
+  reconfigure, and wiring `recording_capture_snapshot` into
+  `RuntimeObservationReport` or `RuntimeSupervisorReport` so shared host edges
+  consume the same runtime-owned capture truth instead of reconstructing it.
 
 ### Batch 2.3 - Focused Recovery Proof
 
-- [ ] add focused proofs for resumed, restarted, and failed capture cases
-- [ ] verify downstream consumers can distinguish them without parsing logs
+- [x] add focused proofs for resumed, restarted, and failed capture cases
+- [x] verify downstream consumers can distinguish them without parsing logs
+
+- 2026-03-14: completed Batch 2.3 by adding focused runtime proofs for
+  resumable, restartable, and terminal capture outcomes, adding downstream-style
+  runtime and shared host-edge proofs for those cases, and promoting the batch
+  into the repo-owned `signal.runtime.recording-continuity-boundary` descriptor
+  plus `effigy acceptance:recording-continuity`.
 
 ## Acceptance Criteria
 
@@ -64,5 +86,6 @@ capture as the only first-class recording path.
 
 ## Next Task
 
-Continue `g06.003` by applying the same recovery model to plugin transport and
-shared-sandbox continuity.
+Continue `g06.003` with Batch 3.1 by freezing placement-rule vocabulary,
+sandbox grouping keys, and shared rebind or continuity semantics before plugin
+adapter breadth and richer recovery implementation widen further.

@@ -53,15 +53,15 @@ analysis.
 
 - `cargo test -p signal-analysis-rhythm`
 - `cargo run -q -p signal-analysis-rhythm --example file_rhythm_probe -- '/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - `git diff --check`
 
 ## Notes
 
-- `effigy test --repo .` initially hit the known workspace lock conflict because
-  it overlapped with `effigy validate --repo .`; rerunning it serially passed.
+- `effigy test` initially hit the known workspace lock conflict because
+  it overlapped with `effigy validate`; rerunning it serially passed.
 - The new edge-trimmed span is intentionally permissive enough to keep sparse
   interior misses inside a mostly stable track summary, so the stricter
   contiguous `stable_core_span` remains important as the narrow clean-run view.

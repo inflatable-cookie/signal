@@ -52,7 +52,7 @@ Without a dedicated closeout milestone:
   downstream automation tiers, typed fixtures, and a repo-owned fail-gate
   policy on top of the widened backend, host-edge, and packaging seams.
 - 2026-03-13: completed Batch 5.1 by promoting the stale `g04` closeout seam
-  into a real `g05` combined closeout descriptor and `effigy acceptance:g05-closeout --repo .`
+  into a real `g05` combined closeout descriptor and `effigy acceptance:g05-closeout`
   task, explicitly aligning the closeout surface with the conformance matrix,
   host-edge boundary, release boundary, packaging manifest, downstream
   automation descriptor, and downstream fail-gate descriptor.

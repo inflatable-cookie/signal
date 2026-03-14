@@ -37,9 +37,9 @@ This batch adds:
 - `cargo test -p signal-runtime -p signal-host-local -p signal-host-server`
 - `cargo run -p signal-host-local`
 - `cargo run -p signal-host-server`
-- `effigy validate --repo .`
-- `effigy health --repo .`
-- `effigy test --repo .`
+- `effigy validate`
+- `effigy health`
+- `effigy test`
 
 ## Validation Notes
 

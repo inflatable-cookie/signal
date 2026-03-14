@@ -39,8 +39,8 @@ destabilized window.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy health --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy validate`
 - `cargo test --workspace`
 - `git diff --check`
 

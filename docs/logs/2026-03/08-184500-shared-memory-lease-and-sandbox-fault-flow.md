@@ -47,11 +47,11 @@ This batch adds:
 - `cargo run -p signal-host-server`
 - `cargo run -p signal-plugin-sandbox`
 - `git diff --check`
-- `effigy tasks --repo .`
-- `effigy unlock workspace --repo .`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy tasks`
+- `effigy unlock workspace`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Validation Notes
 
@@ -60,7 +60,7 @@ This batch adds:
 - The host and sandbox smoke runs now report concrete lease identifiers,
   confirming the prepare/activate path is carrying real lease metadata.
 - `effigy` validation remains the repo-owned baseline for this batch. If a stale
-  workspace lock is present, clear it with `effigy unlock workspace --repo .`
+  workspace lock is present, clear it with `effigy unlock workspace`
   before rerunning the repo suite.
 
 ## Notes

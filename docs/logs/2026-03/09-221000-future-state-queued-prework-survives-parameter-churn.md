@@ -43,8 +43,8 @@ retiring it immediately.
 - `cargo test -p signal-host-server server_host_rolls_leases_forward_after_timeout -- --nocapture`
 - `cargo test -p signal-supervisor-tools --no-run`
 - `git diff --check`
-- `effigy validate --repo .`
-- `effigy health --repo .`
+- `effigy validate`
+- `effigy health`
 
 # Notes
 

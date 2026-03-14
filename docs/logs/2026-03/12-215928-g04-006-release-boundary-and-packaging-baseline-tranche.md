@@ -19,12 +19,12 @@ surface.
   - `CHANGELOG.md` as the required human-readable release summary
   - host-free export and conformance descriptions as required machine-readable
     baseline artifacts
-  - repo-owned `effigy acceptance:conformance --repo .`, `effigy health --repo .`,
-    `effigy test --repo .`, and `effigy validate --repo .` as required
+  - repo-owned `effigy acceptance:conformance`, `effigy health`,
+    `effigy test`, and `effigy validate` as required
     validation steps
   - explicit intentionally unstable scopes for backend breadth, host
     convenience APIs, crates.io publication, and richer artifact packaging
-- added `effigy acceptance:release-boundary --repo .` so the baseline is
+- added `effigy acceptance:release-boundary` so the baseline is
   runnable through one repo-owned task
 - updated README, roadmap, reference, and changelog surfaces to point the
   queue at the final closeout proof
@@ -34,7 +34,7 @@ surface.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_release_boundary_mode`
 - `cargo test -p signal-supervisor-tools release_boundary_json_reports_packaging_baseline`
 - `cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json`
-- `effigy acceptance:release-boundary --repo .`
+- `effigy acceptance:release-boundary`
 
 ## Residual Risk
 

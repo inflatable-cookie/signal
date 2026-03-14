@@ -1,9 +1,9 @@
 # 003 - Plugin Isolation Policy, Transport Rebind, And Shared-Sandbox Continuity Depth
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
-Depends on: g06.001
+Depends on: g06.002
 Vision tags: `PLUGINS`, `RECOVERY`, `SANDBOX`
 
 ## Problem
@@ -83,5 +83,6 @@ explicitly.
 
 ## Next Task
 
-Continue `g06.004` by carrying the same interruption and continuity model into
-offline render execution sessions.
+Continue `g06.003` with Batch 3.1 by defining placement-rule vocabulary,
+sandbox grouping keys, and shared rebind or terminal continuity semantics
+before deeper runtime policy evaluation and multi-instance proof work.

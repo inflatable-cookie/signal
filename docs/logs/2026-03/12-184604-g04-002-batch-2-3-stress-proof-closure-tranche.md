@@ -35,7 +35,7 @@ deferred after Batch 2.2.
 - `cargo test -p signal-runtime runtime_restart_and_reconfigure_keep_realtime_scheduler_window_coherent`
 - `cargo test -p signal-runtime runtime_forecast_profile_change_keeps_realtime_scheduler_coherent`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next Task
 

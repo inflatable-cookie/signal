@@ -28,7 +28,7 @@ compared systematically instead of living only as isolated tests.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy validate --repo .`
+- `effigy validate`
 - `cargo test --workspace`:
   failed in unrelated crate `signal-plugin-clap` because
   `PluginMessagePayload` initializers are missing the new

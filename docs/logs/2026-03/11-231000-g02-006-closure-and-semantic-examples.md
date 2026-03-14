@@ -73,7 +73,7 @@ Validation:
 - `cargo fmt --all`
 - `cargo test -p signal-analysis-embed`
 - `git diff --check`
-- `effigy test --repo .`
+- `effigy test`
 
 Next task:
 

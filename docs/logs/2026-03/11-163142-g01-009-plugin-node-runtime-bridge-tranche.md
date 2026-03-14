@@ -46,8 +46,8 @@ with explicit bypass and latency/tail semantics.
 - `cargo test -p signal-runtime`
 - `cargo test -p signal-host-local`
 - `cargo fmt`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Ownership notes

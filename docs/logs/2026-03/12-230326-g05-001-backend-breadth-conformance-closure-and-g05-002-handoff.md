@@ -29,10 +29,10 @@ queue to `g05.002`.
 - `cargo test -p signal-runtime public_runtime_plugin_discovery_coverage_is_consumable_from_reexports`
 - `cargo test -p signal-supervisor-tools export_json_carries_runtime_owned_plugin_discovery_capability_coverage`
 - `cargo test -p signal-supervisor-tools conformance_matrix_json_reports_runnable_consumer_boundary`
-- `effigy acceptance:plugin-backend-breadth --repo .`
+- `effigy acceptance:plugin-backend-breadth`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual Risk
 

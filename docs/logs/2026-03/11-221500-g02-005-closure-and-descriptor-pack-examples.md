@@ -64,11 +64,11 @@ Validation:
 - `cargo fmt --all`
 - `cargo test -p signal-analysis-character`
 - `git diff --check`
-- `effigy test --repo .`
+- `effigy test`
 
 Validation note:
 
-- `effigy validate --repo .` failed during external CMake fetch/setup because it
+- `effigy validate` failed during external CMake fetch/setup because it
   could not remove
   `/Users/betterthanclay/Dev/projects/loophole/signal/legacy/cpp/build/_deps/asio-src`
   before validation started. The Rust crate changes validated cleanly; this

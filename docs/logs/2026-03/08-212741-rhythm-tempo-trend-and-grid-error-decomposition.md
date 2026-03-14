@@ -42,9 +42,9 @@ Extended the new local-tempo diagnostics surface in `signal-analysis-rhythm`
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

@@ -30,7 +30,7 @@ after dropout, temporary meter modulation, and cadence-like bar elongation.
 
 - `cargo test -p signal-analysis-rhythm`
 - `cargo test --workspace`
-- `effigy validate --repo .`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

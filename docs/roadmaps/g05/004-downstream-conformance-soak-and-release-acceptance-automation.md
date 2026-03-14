@@ -68,14 +68,14 @@ Without a dedicated downstream automation milestone:
   descriptors, and Effigy tasks.
 - 2026-03-13: completed Batch 4.2 by adding
   `signal-supervisor-tools --describe-downstream-automation`, wiring bounded
-  `effigy acceptance:downstream-release --repo .`, optional typed-depth
-  `effigy acceptance:downstream-depth --repo .`, and the combined
-  `effigy acceptance:downstream-automation --repo .` task so broader shared
+  `effigy acceptance:downstream-release`, optional typed-depth
+  `effigy acceptance:downstream-depth`, and the combined
+  `effigy acceptance:downstream-automation` task so broader shared
   automation now produces machine-readable boundary output and typed scenario
   export rather than log-only review.
 - 2026-03-13: completed Batch 4.3 by adding
   `signal-supervisor-tools --describe-downstream-fail-gates`, wiring
-  `effigy acceptance:downstream-gate --repo .`, and making the first required,
+  `effigy acceptance:downstream-gate`, and making the first required,
   advisory, and deferred downstream automation states explicit, including the
   currently deferred `server soak` fixture.
 

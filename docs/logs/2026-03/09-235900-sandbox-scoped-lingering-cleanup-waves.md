@@ -36,8 +36,8 @@ cleanup workflow.
 - `cargo test -p signal-host-local adjacent_overlap -- --nocapture`
 - `cargo test -p signal-host-server adjacent_overlap -- --nocapture`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy validate`
 
 ## Next Task
 

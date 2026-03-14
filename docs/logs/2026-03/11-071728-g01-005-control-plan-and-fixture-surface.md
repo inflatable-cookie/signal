@@ -53,9 +53,9 @@ stable known inputs before graph routing and scheduling semantics land.
 
 - `cargo test -p signal-primitives`
 - `cargo test -p signal-dsp`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Notes

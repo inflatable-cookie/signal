@@ -35,8 +35,8 @@ Validation:
 - `cargo fmt`
 - `cargo test -p signal-analysis-loudness`
 - `git diff --check`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy validate`
+- `effigy test`
 
 Remaining limits recorded at close:
 

@@ -48,10 +48,10 @@ use crate::interfaces::{
     RuntimeDeferredServiceDecision, RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt,
     RuntimeDiagnosticsSnapshot, RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError,
     RuntimeErrorKind, RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase,
-    RuntimeExecutionTopologySummary, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
-    RuntimeMediaAssetSnapshot, RuntimeMediaAssetState, RuntimeMediaPipelineSnapshot,
-    RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeMeteringSnapshot,
-    RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
+    RuntimeExecutionTopologySummary, RuntimeInterruptionClass, RuntimeLifecycleApi,
+    RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
+    RuntimeMediaPipelineSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
+    RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
     RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
     RuntimeOfflinePluginDelegatedExecutionReceipt, RuntimeOfflinePluginDelegatedExecutionRequest,
     RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
@@ -78,12 +78,14 @@ use crate::interfaces::{
     RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
     RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
-    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureSnapshot,
-    RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeSchedulerSnapshot,
-    RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary,
-    RuntimeSupervisionSnapshot, RuntimeTempoMapInterpolation, RuntimeTempoMapProjection,
-    RuntimeTempoMapSegmentProjection, RuntimeTempoMapSegmentSnapshot, RuntimeTempoMapSnapshot,
-    RuntimeTempoSource, RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot,
+    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureCheckpointSnapshot,
+    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureKind,
+    RuntimeRecordingCaptureSnapshot, RuntimeRecordingCaptureStartRequest,
+    RuntimeRecordingCaptureState, RuntimeSchedulerSnapshot, RuntimeSchedulerState,
+    RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary, RuntimeSupervisionSnapshot,
+    RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoMapSegmentProjection,
+    RuntimeTempoMapSegmentSnapshot, RuntimeTempoMapSnapshot, RuntimeTempoSource,
+    RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot,
     RuntimeTransportObservationSnapshot, RuntimeTransportTransitionKind,
     RuntimeWarpClipRegistration, RuntimeWarpClipSnapshot, RuntimeWarpMode,
     RuntimeWarpPipelineSnapshot, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
@@ -2010,6 +2012,7 @@ impl RuntimeClipProcessingPipelineStateModel {
 
 #[derive(Clone, Debug, PartialEq)]
 struct RuntimeRecordingCaptureActiveSession {
+    capture_kind: RuntimeRecordingCaptureKind,
     take_id: String,
     track_id: String,
     start_samples: i64,
@@ -2019,6 +2022,7 @@ struct RuntimeRecordingCaptureActiveSession {
     samples: Vec<f32>,
     buffered_block_count: u64,
     buffered_frame_count: u64,
+    buffered_event_count: u64,
     peak_level: f32,
     pressure_event_count: u64,
 }
@@ -2030,6 +2034,7 @@ struct RuntimeRecordingCaptureStateModel {
     last_committed_take_id: Option<String>,
     last_committed_path: Option<String>,
     last_committed_duration_samples: Option<u32>,
+    last_checkpoint: Option<RuntimeRecordingCaptureCheckpointSnapshot>,
     last_error: Option<String>,
 }
 
@@ -2047,6 +2052,10 @@ impl RuntimeRecordingCaptureStateModel {
         configured: bool,
         readiness: &RuntimeReadiness,
     ) -> RuntimeRecordingCaptureSnapshot {
+        let active_checkpoint = self
+            .active
+            .as_ref()
+            .map(|active| self.active_checkpoint(active, readiness));
         let state = if self.last_error.is_some() {
             Some(RuntimeRecordingCaptureState::Failed)
         } else if self.active.is_some() {
@@ -2054,20 +2063,24 @@ impl RuntimeRecordingCaptureStateModel {
         } else {
             Some(RuntimeRecordingCaptureState::Idle)
         };
-        let summary = if let Some(active) = self.active.as_ref() {
+        let summary = if let Some(checkpoint) = active_checkpoint.as_ref() {
             format!(
-                "state=capturing ready={} take={} track={} frames={} blocks={} pressure={} path={}",
+                "state=capturing ready={} kind={:?} checkpoint={:?}/{:?} take={} track={} frames={} events={} blocks={} pressure={} path={}",
                 self.capture_ready(configured, readiness),
-                active.take_id,
-                active.track_id,
-                active.buffered_frame_count,
-                active.buffered_block_count,
-                active.pressure_event_count,
-                active.capture_path
+                checkpoint.capture_kind,
+                checkpoint.checkpoint_class,
+                checkpoint.interruption_class,
+                checkpoint.take_id,
+                checkpoint.track_id,
+                checkpoint.buffered_frame_count,
+                checkpoint.buffered_event_count,
+                checkpoint.buffered_block_count,
+                checkpoint.pressure_event_count,
+                checkpoint.capture_path
             )
         } else {
             format!(
-                "state={} ready={} last_take={} last_path={} duration={} error={}",
+                "state={} ready={} last_take={} last_path={} duration={} last_checkpoint={:?}/{:?} error={}",
                 if self.last_error.is_some() {
                     "failed"
                 } else {
@@ -2077,6 +2090,10 @@ impl RuntimeRecordingCaptureStateModel {
                 self.last_committed_take_id.as_deref().unwrap_or("none"),
                 self.last_committed_path.as_deref().unwrap_or("none"),
                 self.last_committed_duration_samples.unwrap_or(0),
+                self.last_checkpoint.as_ref().map(|checkpoint| checkpoint.checkpoint_class),
+                self.last_checkpoint
+                    .as_ref()
+                    .map(|checkpoint| checkpoint.interruption_class),
                 self.last_error.as_deref().unwrap_or("none"),
             )
         };
@@ -2084,6 +2101,15 @@ impl RuntimeRecordingCaptureStateModel {
         RuntimeRecordingCaptureSnapshot {
             capture_ready: self.capture_ready(configured, readiness),
             state,
+            capture_kind: self
+                .active
+                .as_ref()
+                .map(|active| active.capture_kind)
+                .or_else(|| {
+                    self.last_checkpoint
+                        .as_ref()
+                        .map(|checkpoint| checkpoint.capture_kind)
+                }),
             active_take_id: self.active.as_ref().map(|active| active.take_id.clone()),
             active_track_id: self.active.as_ref().map(|active| active.track_id.clone()),
             capture_start_samples: self.active.as_ref().map(|active| active.start_samples),
@@ -2101,6 +2127,11 @@ impl RuntimeRecordingCaptureStateModel {
                 .as_ref()
                 .map(|active| active.buffered_frame_count)
                 .unwrap_or(0),
+            buffered_event_count: self
+                .active
+                .as_ref()
+                .map(|active| active.buffered_event_count)
+                .unwrap_or(0),
             captured_channel_count: self
                 .active
                 .as_ref()
@@ -2112,12 +2143,117 @@ impl RuntimeRecordingCaptureStateModel {
                 .as_ref()
                 .map(|active| active.pressure_event_count)
                 .unwrap_or(0),
+            active_checkpoint,
+            last_checkpoint: self.last_checkpoint.clone(),
             last_committed_take_id: self.last_committed_take_id.clone(),
             last_committed_path: self.last_committed_path.clone(),
             last_committed_duration_samples: self.last_committed_duration_samples,
             last_error: self.last_error.clone(),
             summary,
         }
+    }
+
+    fn active_checkpoint(
+        &self,
+        active: &RuntimeRecordingCaptureActiveSession,
+        readiness: &RuntimeReadiness,
+    ) -> RuntimeRecordingCaptureCheckpointSnapshot {
+        let checkpoint_class = if self.last_error.is_some() {
+            RuntimeRecordingCaptureCheckpointClass::Failed
+        } else if active.buffered_frame_count > 0 || active.buffered_event_count > 0 {
+            RuntimeRecordingCaptureCheckpointClass::Streaming
+        } else {
+            RuntimeRecordingCaptureCheckpointClass::Armed
+        };
+        let interruption_class = if self.last_error.is_some() {
+            RuntimeInterruptionClass::Terminal
+        } else if matches!(readiness, RuntimeReadiness::Degraded { .. }) {
+            RuntimeInterruptionClass::Resumable
+        } else {
+            RuntimeInterruptionClass::Steady
+        };
+        self.checkpoint_from_active(
+            active,
+            checkpoint_class,
+            interruption_class,
+            self.last_error.clone(),
+            if self.last_error.is_some() {
+                "active capture failed"
+            } else {
+                "active capture checkpoint"
+            },
+        )
+    }
+
+    fn checkpoint_from_active(
+        &self,
+        active: &RuntimeRecordingCaptureActiveSession,
+        checkpoint_class: RuntimeRecordingCaptureCheckpointClass,
+        interruption_class: RuntimeInterruptionClass,
+        last_error: Option<String>,
+        reason: &str,
+    ) -> RuntimeRecordingCaptureCheckpointSnapshot {
+        RuntimeRecordingCaptureCheckpointSnapshot {
+            capture_kind: active.capture_kind,
+            checkpoint_class,
+            interruption_class,
+            take_id: active.take_id.clone(),
+            track_id: active.track_id.clone(),
+            capture_start_samples: active.start_samples,
+            capture_path: active.capture_path.clone(),
+            buffered_block_count: active.buffered_block_count,
+            buffered_frame_count: active.buffered_frame_count,
+            buffered_event_count: active.buffered_event_count,
+            captured_channel_count: active.channel_count,
+            peak_level: (active.channel_count > 0).then_some(active.peak_level),
+            pressure_event_count: active.pressure_event_count,
+            last_error,
+            summary: format!(
+                "kind={:?} checkpoint={:?} interruption={:?} take={} track={} frames={} events={} blocks={} pressure={} reason={} path={}",
+                active.capture_kind,
+                checkpoint_class,
+                interruption_class,
+                active.take_id,
+                active.track_id,
+                active.buffered_frame_count,
+                active.buffered_event_count,
+                active.buffered_block_count,
+                active.pressure_event_count,
+                reason,
+                active.capture_path,
+            ),
+        }
+    }
+
+    fn interrupt_active_capture(
+        &mut self,
+        interruption_class: RuntimeInterruptionClass,
+        reason: &str,
+    ) {
+        let Some(active) = self.active.as_ref() else {
+            return;
+        };
+        let checkpoint_class = if interruption_class == RuntimeInterruptionClass::Terminal {
+            RuntimeRecordingCaptureCheckpointClass::Failed
+        } else if active.buffered_frame_count > 0 || active.buffered_event_count > 0 {
+            RuntimeRecordingCaptureCheckpointClass::Buffered
+        } else {
+            RuntimeRecordingCaptureCheckpointClass::Armed
+        };
+        self.last_checkpoint = Some(self.checkpoint_from_active(
+            active,
+            checkpoint_class,
+            interruption_class,
+            self.last_error.clone(),
+            reason,
+        ));
+        self.active = None;
+    }
+
+    fn reset_for_runtime_reconfigure(&mut self) {
+        self.policy = RuntimeRecordingCapturePolicy::default();
+        self.active = None;
+        self.last_error = None;
     }
 
     fn start_capture(
@@ -2141,6 +2277,7 @@ impl RuntimeRecordingCaptureStateModel {
         }
         self.last_error = None;
         self.active = Some(RuntimeRecordingCaptureActiveSession {
+            capture_kind: request.capture_kind,
             take_id: request.take_id,
             track_id: request.track_id,
             start_samples: request.start_samples,
@@ -2150,6 +2287,7 @@ impl RuntimeRecordingCaptureStateModel {
             samples: Vec::new(),
             buffered_block_count: 0,
             buffered_frame_count: 0,
+            buffered_event_count: 0,
             peak_level: 0.0,
             pressure_event_count: 0,
         });
@@ -2170,6 +2308,10 @@ impl RuntimeRecordingCaptureStateModel {
                 "capture channel-count mismatch: expected {} got {}",
                 active.channel_count, channel_count
             ));
+            self.interrupt_active_capture(
+                RuntimeInterruptionClass::Terminal,
+                "capture channel-count mismatch",
+            );
             return;
         }
 
@@ -2200,62 +2342,80 @@ impl RuntimeRecordingCaptureStateModel {
             ));
         }
 
-        let duration_samples = active.buffered_frame_count.min(u32::MAX as u64) as u32;
-        let capture_path = active.capture_path.clone();
-        if let Some(parent) = Path::new(&capture_path).parent() {
-            fs::create_dir_all(parent).map_err(|error| {
-                self.last_error = Some(error.to_string());
+        let committed_active = active.clone();
+        let duration_samples = committed_active.buffered_frame_count.min(u32::MAX as u64) as u32;
+        let capture_path = committed_active.capture_path.clone();
+        let write_result = (|| -> Result<(), RuntimeError> {
+            if let Some(parent) = Path::new(&capture_path).parent() {
+                fs::create_dir_all(parent).map_err(|error| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::ResourceUnavailable,
+                        format!("failed to create recording capture directory: {error}"),
+                    )
+                })?;
+            }
+
+            let spec = WavSpec {
+                channels: committed_active.channel_count as u16,
+                sample_rate: committed_active.sample_rate_hz,
+                bits_per_sample: 32,
+                sample_format: HoundSampleFormat::Float,
+            };
+            let mut writer = WavWriter::create(&capture_path, spec).map_err(|error| {
                 RuntimeError::new(
                     RuntimeErrorKind::ResourceUnavailable,
-                    format!("failed to create recording capture directory: {error}"),
+                    format!("failed to create recording capture wav: {error}"),
                 )
             })?;
-        }
-
-        let spec = WavSpec {
-            channels: active.channel_count as u16,
-            sample_rate: active.sample_rate_hz,
-            bits_per_sample: 32,
-            sample_format: HoundSampleFormat::Float,
-        };
-        let mut writer = WavWriter::create(&capture_path, spec).map_err(|error| {
-            self.last_error = Some(error.to_string());
-            RuntimeError::new(
-                RuntimeErrorKind::ResourceUnavailable,
-                format!("failed to create recording capture wav: {error}"),
-            )
-        })?;
-        for sample in &active.samples {
-            writer.write_sample(*sample).map_err(|error| {
-                self.last_error = Some(error.to_string());
+            for sample in &committed_active.samples {
+                writer.write_sample(*sample).map_err(|error| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::ResourceUnavailable,
+                        format!("failed to write recording capture sample: {error}"),
+                    )
+                })?;
+            }
+            writer.finalize().map_err(|error| {
                 RuntimeError::new(
                     RuntimeErrorKind::ResourceUnavailable,
-                    format!("failed to write recording capture sample: {error}"),
+                    format!("failed to finalize recording capture wav: {error}"),
                 )
             })?;
+            Ok(())
+        })();
+        if let Err(error) = write_result {
+            self.last_error = Some(error.message.clone());
+            self.interrupt_active_capture(
+                RuntimeInterruptionClass::Terminal,
+                "capture commit failed terminally",
+            );
+            return Err(error);
         }
-        writer.finalize().map_err(|error| {
-            self.last_error = Some(error.to_string());
-            RuntimeError::new(
-                RuntimeErrorKind::ResourceUnavailable,
-                format!("failed to finalize recording capture wav: {error}"),
-            )
-        })?;
 
+        let committed_checkpoint = self.checkpoint_from_active(
+            &committed_active,
+            RuntimeRecordingCaptureCheckpointClass::Committed,
+            RuntimeInterruptionClass::Steady,
+            None,
+            "capture committed",
+        );
         let receipt = RuntimeRecordingCaptureCommitReceipt {
-            take_id: active.take_id.clone(),
-            track_id: active.track_id.clone(),
-            start_samples: active.start_samples,
+            capture_kind: committed_active.capture_kind,
+            take_id: committed_active.take_id.clone(),
+            track_id: committed_active.track_id.clone(),
+            start_samples: committed_active.start_samples,
             duration_samples,
-            channel_count: active.channel_count,
-            peak_level: active.peak_level,
+            channel_count: committed_active.channel_count,
+            peak_level: committed_active.peak_level,
             capture_path,
+            committed_checkpoint,
         };
 
         self.last_error = None;
         self.last_committed_take_id = Some(receipt.take_id.clone());
         self.last_committed_path = Some(receipt.capture_path.clone());
         self.last_committed_duration_samples = Some(receipt.duration_samples);
+        self.last_checkpoint = Some(receipt.committed_checkpoint.clone());
         self.active = None;
         Ok(receipt)
     }
@@ -2268,7 +2428,10 @@ impl RuntimeRecordingCaptureStateModel {
             ));
         }
         self.last_error = None;
-        self.active = None;
+        self.interrupt_active_capture(
+            RuntimeInterruptionClass::Restartable,
+            "capture cancelled before commit",
+        );
         Ok(())
     }
 }
@@ -2281,6 +2444,7 @@ impl Default for RuntimeRecordingCaptureStateModel {
             last_committed_take_id: None,
             last_committed_path: None,
             last_committed_duration_samples: None,
+            last_checkpoint: None,
             last_error: None,
         }
     }
@@ -4164,10 +4328,12 @@ fn offline_render_directory_stats(path: &Path) -> Result<Option<(usize, u64)>, R
 
 fn summarize_deferred_service_receipt(receipt: &RuntimeDeferredServiceReceipt) -> String {
     format!(
-        "class={:?} decision={:?} reason={:?} queued={} admitted={} completed={} deferred={} running={} safe_mode={} degraded={} cleanup_pending={} deferred_retries={} recovery_overlap={}",
+        "class={:?} decision={:?} reason={:?} interruption={:?}/rebindable={} queued={} admitted={} completed={} deferred={} running={} safe_mode={} degraded={} cleanup_pending={} deferred_retries={} recovery_overlap={}",
         receipt.work_class,
         receipt.decision,
         receipt.reason,
+        receipt.interruption_class,
+        receipt.interruption_rebindable,
         receipt.queued_work_item_count,
         receipt.admitted_work_item_count,
         receipt.completed_work_item_count,
@@ -4179,6 +4345,30 @@ fn summarize_deferred_service_receipt(receipt: &RuntimeDeferredServiceReceipt) -
         receipt.pending_deferred_retry_work_items,
         receipt.recovery_overlap_session_count,
     )
+}
+
+fn deferred_service_interruption_class(
+    decision: RuntimeDeferredServiceDecision,
+) -> RuntimeInterruptionClass {
+    match decision {
+        RuntimeDeferredServiceDecision::Run => RuntimeInterruptionClass::Steady,
+        RuntimeDeferredServiceDecision::Defer | RuntimeDeferredServiceDecision::Throttle => {
+            RuntimeInterruptionClass::Resumable
+        }
+        RuntimeDeferredServiceDecision::Abort => RuntimeInterruptionClass::Terminal,
+    }
+}
+
+fn offline_render_execution_interruption_class(
+    state: RuntimeOfflineRenderExecutionState,
+) -> RuntimeInterruptionClass {
+    match state {
+        RuntimeOfflineRenderExecutionState::Running
+        | RuntimeOfflineRenderExecutionState::Completed => RuntimeInterruptionClass::Steady,
+        RuntimeOfflineRenderExecutionState::Paused
+        | RuntimeOfflineRenderExecutionState::Recoverable => RuntimeInterruptionClass::Resumable,
+        RuntimeOfflineRenderExecutionState::Cancelled => RuntimeInterruptionClass::Terminal,
+    }
 }
 
 fn purge_offline_render_file(path: &Path) -> Result<OfflineRenderPurgeOutcome, RuntimeError> {
@@ -7078,6 +7268,8 @@ impl SignalRuntime {
             work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
             decision,
             reason,
+            interruption_class: deferred_service_interruption_class(decision),
+            interruption_rebindable: false,
             queued_work_item_count: queue_count,
             admitted_work_item_count,
             completed_work_item_count: 0,
@@ -7130,6 +7322,8 @@ impl SignalRuntime {
             work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
             decision,
             reason,
+            interruption_class: deferred_service_interruption_class(decision),
+            interruption_rebindable: false,
             queued_work_item_count: 1,
             admitted_work_item_count,
             completed_work_item_count: 0,
@@ -8540,6 +8734,8 @@ impl SignalRuntime {
         RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: session.request.request_id.clone(),
             state: session.state,
+            interruption_class: offline_render_execution_interruption_class(session.state),
+            interruption_rebindable: false,
             emitted_checkpoint_count: session.emitted_checkpoint_count,
             checkpoint_count: session.checkpoint_count,
             checkpoint: None,
@@ -9136,6 +9332,10 @@ impl SignalRuntime {
         Ok(RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: request_id.clone(),
             state: RuntimeOfflineRenderExecutionState::Running,
+            interruption_class: offline_render_execution_interruption_class(
+                RuntimeOfflineRenderExecutionState::Running,
+            ),
+            interruption_rebindable: false,
             emitted_checkpoint_count,
             checkpoint_count,
             checkpoint: Some(checkpoint),
@@ -9347,6 +9547,10 @@ impl SignalRuntime {
                     return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
                         request_id: request_id.to_string(),
                         state: RuntimeOfflineRenderExecutionState::Running,
+                        interruption_class: offline_render_execution_interruption_class(
+                            RuntimeOfflineRenderExecutionState::Running,
+                        ),
+                        interruption_rebindable: false,
                         emitted_checkpoint_count,
                         checkpoint_count,
                         checkpoint: Some(checkpoint),
@@ -9389,6 +9593,10 @@ impl SignalRuntime {
             return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
                 request_id: request_id.to_string(),
                 state: RuntimeOfflineRenderExecutionState::Running,
+                interruption_class: offline_render_execution_interruption_class(
+                    RuntimeOfflineRenderExecutionState::Running,
+                ),
+                interruption_rebindable: false,
                 emitted_checkpoint_count,
                 checkpoint_count,
                 checkpoint: Some(checkpoint),
@@ -9430,6 +9638,10 @@ impl SignalRuntime {
             return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
                 request_id: request_id.to_string(),
                 state: RuntimeOfflineRenderExecutionState::Running,
+                interruption_class: offline_render_execution_interruption_class(
+                    RuntimeOfflineRenderExecutionState::Running,
+                ),
+                interruption_rebindable: false,
                 emitted_checkpoint_count,
                 checkpoint_count,
                 checkpoint: Some(checkpoint),
@@ -9450,6 +9662,10 @@ impl SignalRuntime {
         Ok(RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: request_id.to_string(),
             state: RuntimeOfflineRenderExecutionState::Completed,
+            interruption_class: offline_render_execution_interruption_class(
+                RuntimeOfflineRenderExecutionState::Completed,
+            ),
+            interruption_rebindable: false,
             emitted_checkpoint_count: session.emitted_checkpoint_count,
             checkpoint_count: session.checkpoint_count,
             checkpoint: None,
@@ -9500,6 +9716,8 @@ impl SignalRuntime {
                 work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
                 decision: RuntimeDeferredServiceDecision::Abort,
                 reason: RuntimeDeferredServiceReason::InvalidRequest,
+                interruption_class: RuntimeInterruptionClass::Terminal,
+                interruption_rebindable: false,
                 queued_work_item_count: 0,
                 admitted_work_item_count: 0,
                 completed_work_item_count: 0,
@@ -9584,6 +9802,8 @@ impl SignalRuntime {
                 work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
                 decision: RuntimeDeferredServiceDecision::Abort,
                 reason: RuntimeDeferredServiceReason::InvalidRequest,
+                interruption_class: RuntimeInterruptionClass::Terminal,
+                interruption_rebindable: false,
                 queued_work_item_count: 1,
                 admitted_work_item_count: 0,
                 completed_work_item_count: 0,
@@ -11697,7 +11917,11 @@ impl RuntimeLifecycleApi for SignalRuntime {
         self.timeline.reset();
         self.automation.reset();
         self.transport_concurrency.reset();
-        self.recording_capture = RuntimeRecordingCaptureStateModel::default();
+        self.recording_capture.interrupt_active_capture(
+            RuntimeInterruptionClass::Restartable,
+            "runtime reconfigured while capture active",
+        );
+        self.recording_capture.reset_for_runtime_reconfigure();
         self.media_pipeline = RuntimeMediaPipelineStateModel::default();
         self.tempo_map = RuntimeTempoMapStateModel::default();
         self.warp_pipeline = RuntimeWarpPipelineStateModel::default();
@@ -11747,7 +11971,10 @@ impl RuntimeLifecycleApi for SignalRuntime {
             .invalidate_prework_cache(RuntimePreworkInvalidationReason::RuntimeStopped);
         self.readiness = RuntimeReadiness::Stopped;
         self.control.running = false;
-        self.recording_capture.active = None;
+        self.recording_capture.interrupt_active_capture(
+            RuntimeInterruptionClass::Restartable,
+            "runtime stopped while capture active",
+        );
         self.engine
             .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.stop_count = self.control.stop_count.saturating_add(1);
@@ -12484,10 +12711,11 @@ mod tests {
         RuntimeClipRenderRequest, RuntimeConfigRequest, RuntimeDeferredServiceDecision,
         RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
         RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
-        RuntimeFaultStatusSnapshot, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
-        RuntimeMediaAssetState, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
-        RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
-        RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
+        RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
+        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
+        RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
+        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
+        RuntimeOfflinePluginDelegatedExecutionOutcome,
         RuntimeOfflinePluginDelegatedExecutionReceipt,
         RuntimeOfflinePluginDelegatedExecutionStageReceipt,
         RuntimeOfflinePluginDelegatedExecutionStatus,
@@ -12507,12 +12735,13 @@ mod tests {
         RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
         RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy,
         RuntimePreworkServiceState, RuntimePreworkWindowTarget, RuntimeProjectionApi,
-        RuntimeReadiness, RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState,
-        RuntimeRecoveryState, RuntimeSchedulerState, RuntimeSchedulerTopologyIssue,
-        RuntimeSupervisorReport, RuntimeTempoMapInterpolation, RuntimeTempoMapProjection,
-        RuntimeTempoSource, RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness,
-        RuntimeWatchdogTrigger, SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection,
-        StopReason, TransportAttachIntent, TransportProjection, TransportSessionProvenance,
+        RuntimeReadiness, RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
+        RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeRecoveryState,
+        RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport,
+        RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoSource,
+        RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
+        SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection, StopReason,
+        TransportAttachIntent, TransportProjection, TransportSessionProvenance,
         WatchdogRestartRecord,
     };
     use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
@@ -19335,6 +19564,11 @@ mod tests {
             .pause_offline_render_execution("render:pause:0001")
             .expect("offline render execution should pause");
         assert_eq!(paused.state, RuntimeOfflineRenderExecutionState::Paused);
+        assert_eq!(
+            paused.interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
+        assert!(!paused.interruption_rebindable);
         assert!(paused.summary.contains("state=paused"));
         assert!(!artifact_dir.exists());
 
@@ -19345,6 +19579,10 @@ mod tests {
             still_paused.state,
             RuntimeOfflineRenderExecutionState::Paused
         );
+        assert_eq!(
+            still_paused.interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
         assert!(still_paused.checkpoint.is_none());
         assert!(!artifact_dir.exists());
 
@@ -19352,6 +19590,7 @@ mod tests {
             .resume_offline_render_execution("render:pause:0001")
             .expect("offline render execution should resume");
         assert_eq!(resumed.state, RuntimeOfflineRenderExecutionState::Running);
+        assert_eq!(resumed.interruption_class, RuntimeInterruptionClass::Steady);
 
         let mut completed = None;
         for _ in 0..32 {
@@ -19416,6 +19655,10 @@ mod tests {
             recoverable.state,
             RuntimeOfflineRenderExecutionState::Recoverable
         );
+        assert_eq!(
+            recoverable.interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
         assert!(recoverable.summary.contains("state=recoverable"));
         assert!(!artifact_dir.exists());
 
@@ -19425,6 +19668,10 @@ mod tests {
         assert_eq!(
             still_recoverable.state,
             RuntimeOfflineRenderExecutionState::Recoverable
+        );
+        assert_eq!(
+            still_recoverable.interruption_class,
+            RuntimeInterruptionClass::Resumable
         );
         assert!(still_recoverable.checkpoint.is_none());
 
@@ -19500,6 +19747,10 @@ mod tests {
             RuntimeDeferredServiceDecision::Throttle
         );
         assert_eq!(
+            queue_result.orchestration.interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
+        assert_eq!(
             queue_result.orchestration.reason,
             RuntimeDeferredServiceReason::RealtimeActive
         );
@@ -19564,6 +19815,10 @@ mod tests {
             RuntimeDeferredServiceDecision::Defer
         );
         assert_eq!(
+            deferred.orchestration.interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
+        assert_eq!(
             deferred.orchestration.reason,
             RuntimeDeferredServiceReason::SafeMode
         );
@@ -19582,6 +19837,10 @@ mod tests {
         assert_eq!(
             resumed.orchestration.decision,
             RuntimeDeferredServiceDecision::Run
+        );
+        assert_eq!(
+            resumed.orchestration.interruption_class,
+            RuntimeInterruptionClass::Steady
         );
         assert_eq!(resumed.completed_job_count, 1);
         assert_eq!(resumed.results.len(), 1);
@@ -21499,6 +21758,79 @@ mod tests {
         );
         assert_eq!(soak.last_stop_reason, None);
         assert!(soak.render_json().contains("\"recovery_event_count\":1"));
+    }
+
+    #[test]
+    fn runtime_performance_snapshot_captures_scheduler_pressure_and_background_policy() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        runtime.set_cpu_load_percent(11.5);
+        runtime.set_graph_latency_ms(4.25);
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("enable safe mode");
+
+        let deferred = runtime
+            .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+                request_id: "render:queue:performance:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            }])
+            .expect("safe mode should defer offline render queue");
+
+        assert_eq!(
+            deferred.orchestration.decision,
+            RuntimeDeferredServiceDecision::Defer
+        );
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let performance = report.performance_snapshot();
+
+        assert_eq!(performance.sample_rate_hz, 48_000);
+        assert_eq!(performance.block_size, 256);
+        assert!((performance.cpu_load_percent - 11.5).abs() < 1.0e-6);
+        assert!((performance.graph_latency_ms - 4.25).abs() < 1.0e-6);
+        assert_eq!(
+            performance.prework_service_state,
+            runtime.get_engine_block_snapshot().prework_service_state
+        );
+        assert_eq!(
+            performance.prework_service_pressure,
+            runtime.get_engine_block_snapshot().prework_service_pressure
+        );
+        assert_eq!(
+            performance.background_service_class,
+            Some(RuntimeDeferredServiceClass::OfflineRenderQueue)
+        );
+        assert_eq!(
+            performance.background_service_decision,
+            Some(RuntimeDeferredServiceDecision::Defer)
+        );
+        assert_eq!(
+            performance.background_service_reason,
+            Some(RuntimeDeferredServiceReason::SafeMode)
+        );
+        assert_eq!(performance.background_queued_work_item_count, 1);
+        assert_eq!(performance.background_deferred_work_item_count, 1);
+        assert!(performance.render_json().contains("\"background_service_decision\":\"Defer\""));
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .expect("disable safe mode");
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]
@@ -23442,6 +23774,7 @@ mod tests {
             .unwrap();
         runtime
             .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
                 take_id: "take:test:0001".to_string(),
                 track_id: "track:test:0001".to_string(),
                 start_samples: 2_048,
@@ -23463,15 +23796,32 @@ mod tests {
             recording.state,
             Some(RuntimeRecordingCaptureState::Capturing)
         );
+        assert_eq!(
+            recording.capture_kind,
+            Some(RuntimeRecordingCaptureKind::Audio)
+        );
         assert_eq!(recording.active_take_id.as_deref(), Some("take:test:0001"));
         assert_eq!(recording.buffered_block_count, 1);
         assert_eq!(recording.buffered_frame_count, 16);
+        assert_eq!(recording.buffered_event_count, 0);
         assert_eq!(recording.captured_channel_count, 2);
+        assert_eq!(
+            recording
+                .active_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.checkpoint_class),
+            Some(RuntimeRecordingCaptureCheckpointClass::Streaming)
+        );
 
         let receipt = runtime.finish_recording_capture().unwrap();
+        assert_eq!(receipt.capture_kind, RuntimeRecordingCaptureKind::Audio);
         assert_eq!(receipt.take_id, "take:test:0001");
         assert_eq!(receipt.duration_samples, 16);
         assert_eq!(receipt.channel_count, 2);
+        assert_eq!(
+            receipt.committed_checkpoint.checkpoint_class,
+            RuntimeRecordingCaptureCheckpointClass::Committed
+        );
         assert!(capture_path.exists());
 
         let committed = runtime.get_recording_capture_snapshot();
@@ -23481,6 +23831,23 @@ mod tests {
             Some(capture_path.to_string_lossy().as_ref())
         );
         assert_eq!(committed.last_committed_duration_samples, Some(16));
+        assert_eq!(
+            committed
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.checkpoint_class),
+            Some(RuntimeRecordingCaptureCheckpointClass::Committed)
+        );
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            observation.recording_capture_snapshot.capture_kind,
+            Some(RuntimeRecordingCaptureKind::Audio)
+        );
+        let observation_json = observation.render_json();
+        assert!(observation_json.contains("\"recording_capture_snapshot\":{"));
+        assert!(observation_json.contains("\"checkpoint_class\":\"Committed\""));
 
         let _ = fs::remove_file(capture_path);
     }
@@ -23494,6 +23861,7 @@ mod tests {
         let capture_path = temp_capture_path("recording-cancel");
         runtime
             .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
                 take_id: "take:test:cancel".to_string(),
                 track_id: "track:test:cancel".to_string(),
                 start_samples: 512,
@@ -23513,7 +23881,202 @@ mod tests {
         assert_eq!(recording.state, Some(RuntimeRecordingCaptureState::Idle));
         assert_eq!(recording.active_take_id, None);
         assert_eq!(recording.last_committed_path, None);
+        assert_eq!(
+            recording
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.interruption_class),
+            Some(RuntimeInterruptionClass::Restartable)
+        );
         assert!(!capture_path.exists());
+    }
+
+    #[test]
+    fn runtime_recording_capture_preserves_restartable_checkpoint_across_stop_and_reconfigure() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:recording-restartable");
+        runtime.start().unwrap();
+
+        let capture_path = temp_capture_path("recording-restartable");
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
+                take_id: "take:test:restartable".to_string(),
+                track_id: "track:test:restartable".to_string(),
+                start_samples: 1_024,
+                capture_path: capture_path.display().to_string(),
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(12), 91),
+            )
+            .unwrap();
+
+        runtime.stop(StopReason::DeviceReconfigure).unwrap();
+        runtime
+            .configure(RuntimeConfigRequest {
+                sample_rate: SampleRate(48_000),
+                block_size: 256,
+                anticipative_enabled: true,
+                realtime_safe_mode: false,
+                max_graph_latency_ms: None,
+                max_background_load_percent: None,
+            })
+            .unwrap();
+
+        let recording = runtime.get_recording_capture_snapshot();
+        assert_eq!(recording.state, Some(RuntimeRecordingCaptureState::Idle));
+        assert_eq!(
+            recording.capture_kind,
+            Some(RuntimeRecordingCaptureKind::Audio)
+        );
+        assert_eq!(
+            recording
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.checkpoint_class),
+            Some(RuntimeRecordingCaptureCheckpointClass::Buffered)
+        );
+        assert_eq!(
+            recording
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.interruption_class),
+            Some(RuntimeInterruptionClass::Restartable)
+        );
+        assert_eq!(
+            recording
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.buffered_frame_count),
+            Some(12)
+        );
+        assert_eq!(recording.last_committed_path, None);
+    }
+
+    #[test]
+    fn runtime_recording_capture_resumes_same_identity_after_safe_mode_clears() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:recording-resumable");
+        runtime.start().unwrap();
+
+        let capture_path = temp_capture_path("recording-resumable");
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
+                take_id: "take:test:resumable".to_string(),
+                track_id: "track:test:resumable".to_string(),
+                start_samples: 4_096,
+                capture_path: capture_path.display().to_string(),
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(10), 55),
+            )
+            .unwrap();
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .unwrap();
+        let resumable =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            resumable
+                .recording_capture_snapshot
+                .active_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.interruption_class),
+            Some(RuntimeInterruptionClass::Resumable)
+        );
+        assert_eq!(
+            resumable
+                .recording_capture_snapshot
+                .active_take_id
+                .as_deref(),
+            Some("take:test:resumable")
+        );
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                2,
+                2,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(6), 56),
+            )
+            .unwrap();
+        let receipt = runtime.finish_recording_capture().unwrap();
+        assert_eq!(receipt.take_id, "take:test:resumable");
+        assert_eq!(receipt.duration_samples, 16);
+
+        let recording = runtime.get_recording_capture_snapshot();
+        assert_eq!(
+            recording
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.checkpoint_class),
+            Some(RuntimeRecordingCaptureCheckpointClass::Committed)
+        );
+        assert_eq!(
+            recording.last_committed_take_id.as_deref(),
+            Some("take:test:resumable")
+        );
+
+        let _ = fs::remove_file(capture_path);
+    }
+
+    #[test]
+    fn runtime_recording_capture_reports_terminal_checkpoint_on_commit_failure() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:recording-terminal");
+
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
+                take_id: "take:test:terminal".to_string(),
+                track_id: "track:test:terminal".to_string(),
+                start_samples: 2_560,
+                capture_path: "/dev/null/signal-runtime-recording-terminal.wav".to_string(),
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(8), 71),
+            )
+            .unwrap();
+
+        let error = runtime.finish_recording_capture().unwrap_err();
+        assert_eq!(error.kind, RuntimeErrorKind::ResourceUnavailable);
+
+        let failed = runtime.get_recording_capture_snapshot();
+        assert_eq!(failed.state, Some(RuntimeRecordingCaptureState::Failed));
+        assert_eq!(failed.active_take_id, None);
+        assert_eq!(
+            failed
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.checkpoint_class),
+            Some(RuntimeRecordingCaptureCheckpointClass::Failed)
+        );
+        assert_eq!(
+            failed
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.interruption_class),
+            Some(RuntimeInterruptionClass::Terminal)
+        );
     }
 
     #[test]
@@ -24666,6 +25229,76 @@ mod tests {
         assert_eq!(status.plugin_fault_count, 1);
         assert_eq!(status.watchdog_restart_count, 2);
         assert!(status.summary.contains("primary=Some(WatchdogRestart)"));
+    }
+
+    #[test]
+    fn runtime_fault_status_snapshot_clears_watchdog_active_after_safe_mode_recovery() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+        runtime.start().expect("start runtime");
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "sandbox-a".into(),
+            trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+            processing_epoch: 1,
+        });
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "sandbox-a".into(),
+            trigger: RuntimeWatchdogTrigger::DeadlineMisses,
+            processing_epoch: 2,
+        });
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .expect("safe mode should clear after watchdog recovery");
+
+        let status = RuntimeFaultStatusSnapshot::capture(
+            runtime.get_readiness(),
+            &runtime.get_control_snapshot(),
+            &runtime.get_diagnostics_snapshot(),
+            &runtime.get_supervision_snapshot(),
+            &runtime.get_engine_block_snapshot(),
+            &runtime.get_transport_concurrency_snapshot(),
+            &runtime.get_plugin_lifecycle_snapshot(),
+            false,
+            0,
+        );
+
+        assert_eq!(status.recovery_state, RuntimeRecoveryState::Steady);
+        assert_eq!(status.primary_fault_cause, None);
+        assert_eq!(status.active_fault_count, 0);
+        assert!(!status.watchdog_active);
+        assert!(!status.safe_mode_enabled);
+        assert_eq!(status.watchdog_restart_count, 2);
+    }
+
+    #[test]
+    fn runtime_observation_report_surfaces_restartable_interruption_summary() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        handshake_and_configure(&mut runtime);
+        runtime.start().expect("start runtime");
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "sandbox-a".into(),
+            trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+            processing_epoch: 1,
+        });
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+
+        assert_eq!(
+            observation.fault_status.primary_fault_cause,
+            Some(RuntimeFaultCause::WatchdogRestart)
+        );
+        assert_eq!(
+            observation.interruption_summary.class,
+            RuntimeInterruptionClass::Restartable
+        );
+        assert!(observation.interruption_summary.active);
+        assert!(!observation.interruption_summary.rebindable);
+
+        let observation_json = observation.render_json();
+        assert!(observation_json.contains("\"fault_status\":{"));
+        assert!(observation_json.contains("\"interruption_summary\":{"));
+        assert!(observation_json.contains("\"class\":\"Restartable\""));
     }
 
     #[test]

@@ -56,6 +56,24 @@ qa = [
   { run = "cargo test -p signal-host-local local_shared_host_edge_is_consumable_without_private_helpers" },
   { run = "cargo test -p signal-host-server server_shared_host_edge_is_consumable_without_private_helpers" },
 ]
+"acceptance:interruption-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_restartable_runtime_state" },
+  { run = "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_resumable_deferred_state" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_is_consumable_without_private_helpers" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_is_consumable_without_private_helpers" },
+  { run = "cargo test -p signal-supervisor-tools interruption_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-interruption-boundary --format=json" },
+]
+"acceptance:recording-continuity" = [
+  { run = "cargo test -p signal-runtime runtime_recording_capture_resumes_same_identity_after_safe_mode_clears" },
+  { run = "cargo test -p signal-runtime runtime_recording_capture_preserves_restartable_checkpoint_across_stop_and_reconfigure" },
+  { run = "cargo test -p signal-runtime runtime_recording_capture_reports_terminal_checkpoint_on_commit_failure" },
+  { run = "cargo test -p signal-runtime public_runtime_recording_continuity_boundary_reports_resumable_restartable_and_terminal_states" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_resumable_recording_checkpoint_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_restartable_and_terminal_recording_checkpoint_truth" },
+  { run = "cargo test -p signal-supervisor-tools recording_continuity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-recording-continuity-boundary --format=json" },
+]
 "acceptance:release-boundary" = [
   { task = "acceptance:conformance" },
   { run = "cargo test -p signal-supervisor-tools release_boundary_json_reports_packaging_baseline" },

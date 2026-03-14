@@ -90,7 +90,7 @@ rather than adapter-local:
 
 - `public_runtime_plugin_discovery_coverage_is_consumable_from_reexports`
 - `export_json_carries_runtime_owned_plugin_discovery_capability_coverage`
-- `effigy acceptance:plugin-backend-breadth --repo .`
+- `effigy acceptance:plugin-backend-breadth`
 
 ### Adapter breadth is additive, not substitutive
 

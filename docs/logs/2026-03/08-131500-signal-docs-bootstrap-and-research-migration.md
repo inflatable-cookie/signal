@@ -29,7 +29,7 @@ reusable DSP and analysis documentation authority.
 ## Validation
 
 - manual doc review
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next Task
 

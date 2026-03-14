@@ -1,11 +1,17 @@
+use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
 use signal_plugin::{
     PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,
     PluginStateContract,
 };
+use signal_primitives::{FrameCount, SampleRate};
 use signal_runtime::{
-    PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest, RuntimeConfig,
-    RuntimeEventRecorder, RuntimeObservationReport, RuntimePluginDiscoveredTypeRecord,
-    RuntimeSupervisorReport, SignalRuntime,
+    GraphNodeProjection, GraphProjection, HandshakeRequest, PluginSandboxLifecycleStage,
+    PluginSandboxSpec, PluginScanRequest, RuntimeConfig, RuntimeConfigRequest,
+    RuntimeEventRecorder, RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeObservationReport,
+    RuntimeOfflineRenderRequest, RuntimePluginDiscoveredTypeRecord, RuntimeProjectionApi,
+    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
+    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorReport,
+    RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, WatchdogRestartRecord,
 };
 
 fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
@@ -92,6 +98,29 @@ fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
     }
 }
 
+fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 2,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "inline".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                },
+                GraphNodeProjection {
+                    node_id: "latency".into(),
+                    execution_class: GraphNodeExecutionClass::LatencyBearing,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.6 }],
+                },
+            ],
+        })
+        .expect("public capture graph projection should succeed");
+}
+
 #[test]
 fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
@@ -125,6 +154,19 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     assert_eq!(profiling.sample_rate_hz, 48_000);
     assert_eq!(profiling.block_size, 512);
     assert_eq!(soak.event_stream_count, 0);
+    assert_eq!(
+        observation.fault_status.recovery_state,
+        RuntimeRecoveryState::Steady
+    );
+    assert_eq!(
+        observation.interruption_summary.class,
+        RuntimeInterruptionClass::Steady
+    );
+    assert!(!observation.interruption_summary.active);
+    assert_eq!(
+        observation.recording_capture_snapshot.state,
+        Some(signal_runtime::RuntimeRecordingCaptureState::Idle)
+    );
     assert_eq!(observation.plugin_discovery_snapshot.scan_count, 1);
     assert_eq!(
         observation.plugin_discovery_snapshot.discovered_type_count,
@@ -170,6 +212,10 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     assert!(observation_json.contains("\"sample_rate\":48000"));
     assert!(observation_json.contains("\"block_size\":512"));
     assert!(observation_json.contains("\"engine_block_snapshot\":{"));
+    assert!(observation_json.contains("\"fault_status\":{"));
+    assert!(observation_json.contains("\"interruption_summary\":{"));
+    assert!(observation_json.contains("\"recording_capture_snapshot\":{"));
+    assert!(observation_json.contains("\"class\":\"Steady\""));
     assert!(observation_json.contains("\"execution_topology_summary\":{"));
     assert!(observation_json.contains("\"plugin_discovery_snapshot\":{"));
     assert!(observation_json.contains("\"plugin_type_id\":\"plugin:clap:public-boundary\""));
@@ -182,6 +228,9 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     assert!(supervisor_json.contains("\"sample_rate\":48000"));
     assert!(supervisor_json.contains("\"block_size\":512"));
     assert!(supervisor_json.contains("\"event_stream\":0"));
+    assert!(supervisor_json.contains("\"fault_status\":{"));
+    assert!(supervisor_json.contains("\"interruption_summary\":{"));
+    assert!(supervisor_json.contains("\"recording_capture_snapshot\":{"));
     assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
     assert!(supervisor_json.contains("\"discovered_type_count\":2"));
     assert!(supervisor_json.contains("\"format_coverage\":["));
@@ -243,4 +292,245 @@ fn public_runtime_plugin_discovery_coverage_is_consumable_from_reexports() {
     assert!(observation_json.contains("\"format_coverage\":["));
     assert!(observation_json.contains("\"multi_format_catalog\":true"));
     assert!(observation_json.contains("\"requires_main_thread_for_state_count\":1"));
+}
+
+#[test]
+fn public_runtime_interruption_boundary_reports_restartable_runtime_state() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-interruption".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public interruption boundary handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public interruption boundary configure should succeed");
+    runtime
+        .start()
+        .expect("public interruption boundary start should succeed");
+    runtime.record_watchdog_restart(WatchdogRestartRecord {
+        sandbox_id: "public-runtime-boundary-sandbox".into(),
+        trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+        processing_epoch: 1,
+    });
+
+    let observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+
+    assert_eq!(
+        observation.fault_status.recovery_state,
+        RuntimeRecoveryState::Recovering
+    );
+    assert_eq!(
+        observation.interruption_summary.class,
+        RuntimeInterruptionClass::Restartable
+    );
+    assert!(!observation.interruption_summary.rebindable);
+
+    let rendered = observation.render_json();
+    assert!(rendered.contains("\"fault_status\":{"));
+    assert!(rendered.contains("\"interruption_summary\":{"));
+    assert!(rendered.contains("\"class\":\"Restartable\""));
+    assert!(rendered.contains("\"primary_fault_cause\":\"WatchdogRestart\""));
+}
+
+#[test]
+fn public_runtime_interruption_boundary_reports_resumable_deferred_state() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .set_safe_mode(SafeModeRequest { enabled: true })
+        .expect("public interruption boundary safe mode should enable");
+
+    let queue = runtime
+        .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+            request_id: "render:public-interruption:0001".into(),
+            timeline_start_samples: 0,
+            duration_samples: 64,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        }])
+        .expect("safe mode should defer public interruption boundary queue");
+
+    assert_eq!(
+        queue.orchestration.interruption_class,
+        RuntimeInterruptionClass::Resumable
+    );
+    assert!(!queue.orchestration.interruption_rebindable);
+
+    let observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+    let deferred = observation
+        .last_deferred_service_receipt
+        .expect("deferred receipt should be exported on the public observation boundary");
+    assert_eq!(
+        deferred.interruption_class,
+        RuntimeInterruptionClass::Resumable
+    );
+    assert!(!deferred.interruption_rebindable);
+}
+
+#[test]
+fn public_runtime_recording_continuity_boundary_reports_resumable_restartable_and_terminal_states()
+{
+    let recorder = RuntimeEventRecorder::default();
+
+    let mut resumable = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    resumable
+        .handshake(HandshakeRequest {
+            client_version: "public-recording-continuity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public recording continuity handshake should succeed");
+    resumable
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public recording continuity configure should succeed");
+    apply_public_capture_graph(&mut resumable, "graph:public:recording-resumable");
+    resumable
+        .start()
+        .expect("public recording continuity start should succeed");
+    resumable
+        .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+            capture_kind: RuntimeRecordingCaptureKind::Audio,
+            take_id: "take:public:resumable".into(),
+            track_id: "track:public:resumable".into(),
+            start_samples: 2_048,
+            capture_path: std::env::temp_dir()
+                .join("signal-public-recording-resumable.wav")
+                .display()
+                .to_string(),
+        })
+        .expect("public recording capture should start");
+    resumable
+        .process_engine_block(
+            1,
+            1,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(8), 44),
+        )
+        .expect("public recording block should process");
+    resumable
+        .set_safe_mode(SafeModeRequest { enabled: true })
+        .expect("public recording safe mode should enable");
+    let resumable_report = RuntimeObservationReport::capture(&resumable, &recorder);
+    assert_eq!(
+        resumable_report
+            .recording_capture_snapshot
+            .active_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.interruption_class),
+        Some(RuntimeInterruptionClass::Resumable)
+    );
+
+    let mut restartable = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    restartable
+        .handshake(HandshakeRequest {
+            client_version: "public-recording-continuity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public recording continuity handshake should succeed");
+    restartable
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public recording continuity configure should succeed");
+    apply_public_capture_graph(&mut restartable, "graph:public:recording-restartable");
+    restartable
+        .start()
+        .expect("public recording start should succeed");
+    restartable
+        .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+            capture_kind: RuntimeRecordingCaptureKind::Audio,
+            take_id: "take:public:restartable".into(),
+            track_id: "track:public:restartable".into(),
+            start_samples: 3_072,
+            capture_path: std::env::temp_dir()
+                .join("signal-public-recording-restartable.wav")
+                .display()
+                .to_string(),
+        })
+        .expect("public restartable capture should start");
+    restartable
+        .process_engine_block(
+            1,
+            1,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(8), 45),
+        )
+        .expect("public restartable block should process");
+    restartable
+        .stop(signal_runtime::StopReason::DeviceReconfigure)
+        .expect("public restartable stop should succeed");
+    let restartable_report = RuntimeObservationReport::capture(&restartable, &recorder);
+    assert_eq!(
+        restartable_report
+            .recording_capture_snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.interruption_class),
+        Some(RuntimeInterruptionClass::Restartable)
+    );
+    assert_eq!(
+        restartable_report
+            .recording_capture_snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.checkpoint_class),
+        Some(RuntimeRecordingCaptureCheckpointClass::Buffered)
+    );
+
+    let mut terminal = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    terminal
+        .handshake(HandshakeRequest {
+            client_version: "public-recording-continuity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public recording continuity handshake should succeed");
+    terminal
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public recording continuity configure should succeed");
+    apply_public_capture_graph(&mut terminal, "graph:public:recording-terminal");
+    terminal
+        .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+            capture_kind: RuntimeRecordingCaptureKind::Audio,
+            take_id: "take:public:terminal".into(),
+            track_id: "track:public:terminal".into(),
+            start_samples: 4_096,
+            capture_path: "/dev/null/signal-public-recording-terminal.wav".into(),
+        })
+        .expect("public terminal capture should start");
+    terminal
+        .process_engine_block(
+            1,
+            1,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(8), 46),
+        )
+        .expect("public terminal block should process");
+    let terminal_error = terminal.finish_recording_capture().unwrap_err();
+    assert_eq!(
+        terminal_error.kind,
+        signal_runtime::RuntimeErrorKind::ResourceUnavailable
+    );
+    let terminal_report = RuntimeObservationReport::capture(&terminal, &recorder);
+    assert_eq!(
+        terminal_report.recording_capture_snapshot.state,
+        Some(signal_runtime::RuntimeRecordingCaptureState::Failed)
+    );
+    assert_eq!(
+        terminal_report
+            .recording_capture_snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.checkpoint_class),
+        Some(RuntimeRecordingCaptureCheckpointClass::Failed)
+    );
+    assert_eq!(
+        terminal_report
+            .recording_capture_snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.interruption_class),
+        Some(RuntimeInterruptionClass::Terminal)
+    );
 }

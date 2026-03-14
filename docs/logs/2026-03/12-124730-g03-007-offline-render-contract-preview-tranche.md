@@ -50,9 +50,9 @@ clip-processing, and plugin recall handoff state already established by
 - `cargo fmt --all`
 - `cargo test -p signal-runtime`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 
 ## Next Task
 

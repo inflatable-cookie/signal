@@ -9,7 +9,7 @@ the widened shared automation surface.
 ## Work completed
 
 - added `signal-supervisor-tools --describe-downstream-fail-gates`
-- added `effigy acceptance:downstream-gate --repo .`
+- added `effigy acceptance:downstream-gate`
 - made the required downstream release gate explicit
 - kept optional broader depth explicit and non-blocking
 - recorded the currently deferred `server soak` fixture as a known non-gating
@@ -22,10 +22,10 @@ the widened shared automation surface.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_downstream_fail_gates_mode`
 - `cargo test -p signal-supervisor-tools downstream_fail_gates_json_reports_required_and_deferred_policy`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
-- `effigy acceptance:downstream-gate --repo .`
+- `effigy acceptance:downstream-gate`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual risk
 

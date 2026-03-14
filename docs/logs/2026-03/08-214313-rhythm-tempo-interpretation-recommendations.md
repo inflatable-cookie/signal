@@ -40,9 +40,9 @@ Added a Signal-owned tempo interpretation layer on top of the new local-tempo,
 
 - `cargo test -p signal-analysis-rhythm --no-run`
 - `cargo check -p signal-analysis-rhythm --example offline_rhythm_demo`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

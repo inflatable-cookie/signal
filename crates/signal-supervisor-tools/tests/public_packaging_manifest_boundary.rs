@@ -18,12 +18,13 @@ fn public_release_packaging_boundary_is_consumable_without_private_scripts() {
     let packaging_manifest = run_tools_descriptor("--describe-packaging-manifest");
     assert!(packaging_manifest.contains("\"manifest\":\"signal.release.packaging-manifest\""));
     assert!(packaging_manifest
-        .contains("\"acceptance_task\":\"effigy acceptance:release-packaging-consumer --repo .\""));
+        .contains("\"acceptance_task\":\"effigy acceptance:release-packaging-consumer\""));
     assert!(packaging_manifest.contains(
         "\"path_or_command\":\"cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json\""
     ));
-    assert!(packaging_manifest
-        .contains("\"surface\":\"effigy acceptance:release-packaging-consumer --repo .\""));
+    assert!(
+        packaging_manifest.contains("\"surface\":\"effigy acceptance:release-packaging-consumer\"")
+    );
     assert!(packaging_manifest
         .contains("\"signed installers, notarization, and platform distribution packaging\""));
 

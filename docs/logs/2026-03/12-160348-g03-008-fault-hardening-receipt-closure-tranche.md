@@ -43,9 +43,9 @@ dropping back to raw snapshot-only assertions.
 - `cargo test -p signal-host-local`
 - `cargo test -p signal-supervisor-tools`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 
 ## Completion
 

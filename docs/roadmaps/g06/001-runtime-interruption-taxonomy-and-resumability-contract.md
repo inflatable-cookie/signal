@@ -1,6 +1,6 @@
 # 001 - Runtime Interruption Taxonomy And Resumability Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-13
 Depends on: g05.005
@@ -37,12 +37,12 @@ and soak work can all share.
 
 ### Batch 1.2 - Runtime Surface Alignment
 
-- [ ] apply the contract to existing runtime-owned snapshots and receipts
-- [ ] keep local and server host consumers aligned to the same meaning
+- [x] apply the contract to existing runtime-owned snapshots and receipts
+- [x] keep local and server host consumers aligned to the same meaning
 
 ### Batch 1.3 - Public Boundary Proof
 
-- [ ] add focused proof that a downstream consumer can inspect interruption and
+- [x] add focused proof that a downstream consumer can inspect interruption and
   resumability state without host-local reconstruction
 
 ## Progress Notes
@@ -54,6 +54,16 @@ and soak work can all share.
   `recoverable`, `terminal`, and `rebindable`, and mapping that vocabulary
   directly onto current runtime-owned fault, degradation, recovery-history, and
   deferred/offline continuity surfaces.
+- 2026-03-13: completed Batch 1.2 by adding runtime-owned `fault_status` and
+  `interruption_summary` export to `RuntimeObservationReport` /
+  `RuntimeSupervisorReport`, tagging deferred-work and offline-render progress
+  receipts with interruption class, and proving local/server host-edge
+  consumers inherit the same meaning without host-local reconstruction.
+- 2026-03-14: completed Batch 1.3 by adding focused downstream-style runtime
+  proofs for restartable and resumable interruption inspection, a repo-owned
+  `acceptance:interruption-boundary` task, and a machine-readable
+  interruption-boundary descriptor so the milestone closes on consumable public
+  evidence rather than crate-local tests alone.
 
 ## Acceptance Criteria
 
@@ -76,6 +86,6 @@ and soak work can all share.
 
 ## Next Task
 
-Continue `g06.001` with Batch 1.2 by applying the new interruption contract to
-active runtime-owned snapshots and receipts, then keep local and server host
-consumers aligned to the same meaning.
+Continue `g06.002` with Batch 2.1 by defining the recording continuity and
+checkpoint contract for audio and MIDI capture, then freeze what capture
+evidence survives interruption, restart, and failed runtime boundaries.

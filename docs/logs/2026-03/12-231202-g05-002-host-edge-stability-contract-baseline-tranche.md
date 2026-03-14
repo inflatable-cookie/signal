@@ -26,8 +26,8 @@ API stability contract and moving the queue to receipt/export alignment.
 ## Validation
 
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual Risk
 

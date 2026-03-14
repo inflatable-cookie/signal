@@ -36,7 +36,7 @@ explicit first.
 - `cargo test -p signal-runtime runtime_realtime_block`
 - `cargo test -p signal-runtime runtime_recovery_overlap_throttles_realtime_scheduler_under_normal_pressure`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

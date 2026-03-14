@@ -49,9 +49,9 @@ output pump instead of only proving a flattened three-node path.
 - `cargo test -p signal-host-local local_host_executes_track_bus_output_topology_through_audio_pump -- --nocapture`
 - `cargo test -p signal-runtime`
 - `cargo test -p signal-host-local`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Next
 

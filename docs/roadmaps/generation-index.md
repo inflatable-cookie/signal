@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-13
+Updated: 2026-03-14
 
 ## Active generation
 
@@ -33,7 +33,7 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g06.001` with Batch 1.2 and keep the generation on Signal-owned
-reusable runtime surfaces that directly improve Loophole's remaining runtime
-hardening and feature-depth work, while keeping `g07` ready as the next full
+Continue `g06.003` with Batch 3.1 and keep the generation on Signal-owned
+reusable runtime surfaces by freezing shared plugin placement, rebind, and
+sandbox-continuity semantics while keeping `g07` ready as the next full
 feature-breadth queue.

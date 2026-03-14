@@ -31,7 +31,7 @@ fill activity.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy validate --repo .`
+- `effigy validate`
 - `cargo test --workspace`:
   failed only at `signal-ipc` doctest time because `signal-ipc/src/lib.rs`
   imports `memmap2` without the crate being available in that doctest context

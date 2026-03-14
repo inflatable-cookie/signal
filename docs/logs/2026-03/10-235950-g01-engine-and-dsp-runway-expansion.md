@@ -26,7 +26,7 @@ own next milestones.
 ## Validation
 
 - `git diff --check`
-- `effigy validate --repo .`
+- `effigy validate`
 
 ## Risks
 

@@ -37,9 +37,9 @@ surface from generic lifecycle supervision toward real plugin-state transport.
 - `cargo check -p signal-plugin-sandbox`
 - `cargo test -p signal-host-local --no-run`
 - `cargo test -p signal-host-server --no-run`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Ownership notes

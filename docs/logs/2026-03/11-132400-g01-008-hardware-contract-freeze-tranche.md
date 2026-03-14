@@ -50,9 +50,9 @@ work at the trust edge:
 - `cargo test -p signal-hardware`
 - `cargo test -p signal-hardware-coreaudio`
 - `cargo test -p signal-host-local`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Next

@@ -39,8 +39,8 @@ This batch adds:
 - `cargo test -p signal-host-local -p signal-host-server -p signal-supervisor-tools`
 - `cargo run -p signal-supervisor-tools -- local soak`
 - `cargo run -p signal-supervisor-tools -- server mixed`
-- `effigy validate --repo .`
-- `effigy health --repo .`
+- `effigy validate`
+- `effigy health`
 
 ## Validation Notes
 

@@ -21,8 +21,8 @@ owner: codex
 - `cargo test -p signal-host-local --no-run`
 - `cargo test -p signal-supervisor-tools --no-run`
 - `git diff --check`
-- `effigy validate --repo .`
-- `effigy health --repo .`
+- `effigy validate`
+- `effigy health`
 
 ## Notes
 

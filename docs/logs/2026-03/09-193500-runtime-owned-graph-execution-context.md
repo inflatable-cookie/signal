@@ -39,7 +39,7 @@ parameter state so graph execution reflects more than a bare block sequence.
 - Passed: `cargo test -p signal-host-local local_host_rolls_leases_forward_after_timeout -- --nocapture`
 - Passed: `cargo test -p signal-host-server server_host_rolls_leases_forward_after_timeout -- --nocapture`
 - Passed: `git diff --check`
-- Not rerun in this batch: `effigy health --repo .` and `effigy validate --repo .`, because the current repo-level legacy C++ blocker is already known and unrelated to these Rust engine changes.
+- Not rerun in this batch: `effigy health` and `effigy validate`, because the current repo-level legacy C++ blocker is already known and unrelated to these Rust engine changes.
 
 ## Next
 

@@ -19,7 +19,7 @@ exposing that matrix through repo-owned tooling.
   - the `signal-supervisor-tools` export-consumer proof
   - the host-free `signal-runtime` supervisor report example
   - the conformance-matrix introspection surface itself
-- added `effigy acceptance:conformance --repo .` so the same matrix is
+- added `effigy acceptance:conformance` so the same matrix is
   runnable through a repo-owned task without private implementation detail
 - updated roadmap/reference docs to point the queue at Batch 6.2 packaging
   work
@@ -29,7 +29,7 @@ exposing that matrix through repo-owned tooling.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_conformance_matrix_mode`
 - `cargo test -p signal-supervisor-tools conformance_matrix_json_reports_runnable_consumer_boundary`
 - `cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json`
-- `effigy acceptance:conformance --repo .`
+- `effigy acceptance:conformance`
 
 ## Residual Risk
 

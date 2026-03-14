@@ -38,7 +38,7 @@ decision surface.
 - `cargo test -p signal-runtime --lib runtime_purge_defers_in_safe_mode_and_observation_export_surfaces_last_decision`
 - `cargo test -p signal-supervisor-tools export_json_carries_last_deferred_service_receipt`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

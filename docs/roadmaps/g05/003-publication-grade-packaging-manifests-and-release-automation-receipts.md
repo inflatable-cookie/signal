@@ -62,13 +62,13 @@ Without a dedicated packaging-depth milestone:
   release-boundary descriptors rather than a new private release authority.
 - 2026-03-13: completed Batch 3.2 by adding
   `signal-supervisor-tools --describe-packaging-manifest`, wiring
-  `effigy acceptance:packaging-manifest --repo .`, and refreshing the older
+  `effigy acceptance:packaging-manifest`, and refreshing the older
   release-boundary descriptor so the repo-owned publication seam now includes
   the packaging manifest and explicit unsupported publication paths.
 - 2026-03-13: completed Batch 3.3 by adding a downstream-style binary-facing
   proof in `crates/signal-supervisor-tools/tests/public_packaging_manifest_boundary.rs`
   and promoting the stronger acceptance surface to
-  `effigy acceptance:release-packaging-consumer --repo .`, so packaging claims
+  `effigy acceptance:release-packaging-consumer`, so packaging claims
   now stay consumable without private release scripts or app-local orchestration.
 
 ## Acceptance Criteria

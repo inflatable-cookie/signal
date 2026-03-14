@@ -29,13 +29,13 @@ Publication-grade packaging has one authority chain:
    - `--describe-release-boundary`
 3. repo-owned Effigy tasks own the runnable validation spine for release
    automation:
-   - `effigy acceptance:plugin-backend-breadth --repo .`
-   - `effigy acceptance:host-edge-consumer --repo .`
-   - `effigy acceptance:conformance --repo .`
-   - `effigy acceptance:release-boundary --repo .`
-   - `effigy health --repo .`
-   - `effigy test --repo .`
-   - `effigy validate --repo .`
+   - `effigy acceptance:plugin-backend-breadth`
+   - `effigy acceptance:host-edge-consumer`
+   - `effigy acceptance:conformance`
+   - `effigy acceptance:release-boundary`
+   - `effigy health`
+   - `effigy test`
+   - `effigy validate`
 4. downstream consumers may inspect or archive the resulting manifests and
    receipts, but they must not become the source of truth for release scope,
    supported boundaries, or validation policy
@@ -177,12 +177,12 @@ The current repo-owned baseline that this contract builds on is:
 - `cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json`
-- `effigy acceptance:plugin-backend-breadth --repo .`
-- `effigy acceptance:host-edge-consumer --repo .`
-- `effigy acceptance:conformance --repo .`
-- `effigy acceptance:release-boundary --repo .`
-- `effigy acceptance:packaging-manifest --repo .`
-- `effigy acceptance:release-packaging-consumer --repo .`
+- `effigy acceptance:plugin-backend-breadth`
+- `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:conformance`
+- `effigy acceptance:release-boundary`
+- `effigy acceptance:packaging-manifest`
+- `effigy acceptance:release-packaging-consumer`
 
 ## Next Task
 

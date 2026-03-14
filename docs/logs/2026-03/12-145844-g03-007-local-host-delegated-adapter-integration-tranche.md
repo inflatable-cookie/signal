@@ -44,9 +44,9 @@ report finalization without rebuilding offline delivery surfaces locally.
 - `cargo test -p signal-runtime`
 - `cargo test -p signal-host-local`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 
 ## Next Task
 

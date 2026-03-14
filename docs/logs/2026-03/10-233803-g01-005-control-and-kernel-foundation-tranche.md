@@ -83,9 +83,9 @@ later comparison.
 
 - `cargo test -p signal-primitives`
 - `cargo test -p signal-dsp`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - `git diff --check` on touched DSP and roadmap files
 
 ## Notes

@@ -10,7 +10,7 @@ without private release scripts or app-local orchestration.
 
 - added `crates/signal-supervisor-tools/tests/public_packaging_manifest_boundary.rs`
 - promoted the stronger packaging acceptance task to
-  `effigy acceptance:release-packaging-consumer --repo .`
+  `effigy acceptance:release-packaging-consumer`
 - repointed the packaging manifest acceptance surface at the stronger consumer
   proof instead of the descriptor-only baseline
 - marked `g05.003` complete and activated `g05.004`
@@ -20,10 +20,10 @@ without private release scripts or app-local orchestration.
 - `cargo fmt --all`
 - `cargo test -p signal-supervisor-tools packaging_manifest_json_reports_release_bundle_and_receipts`
 - `cargo test -p signal-supervisor-tools --test public_packaging_manifest_boundary public_release_packaging_boundary_is_consumable_without_private_scripts`
-- `effigy acceptance:release-packaging-consumer --repo .`
+- `effigy acceptance:release-packaging-consumer`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual risk
 

@@ -9,7 +9,7 @@ pairing it with a runnable Effigy acceptance task.
 ## Work completed
 
 - added `signal-supervisor-tools --describe-packaging-manifest`
-- added `effigy acceptance:packaging-manifest --repo .`
+- added `effigy acceptance:packaging-manifest`
 - refreshed the older release-boundary descriptor so it now includes the
   packaging manifest descriptor in its artifact inventory
 - kept unsupported publication channels explicit in both the descriptor and the
@@ -22,10 +22,10 @@ pairing it with a runnable Effigy acceptance task.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_packaging_manifest_mode`
 - `cargo test -p signal-supervisor-tools packaging_manifest_json_reports_release_bundle_and_receipts`
 - `cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json`
-- `effigy acceptance:packaging-manifest --repo .`
+- `effigy acceptance:packaging-manifest`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual risk
 

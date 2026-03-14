@@ -35,13 +35,13 @@ layer.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy validate --repo .`
+- `effigy validate`
 - `cargo test --workspace`
 - `git diff --check`
 
 ## Notes
 
-- `effigy validate --repo .` completed successfully in this batch, but it still
+- `effigy validate` completed successfully in this batch, but it still
   drives the heavyweight CMake/C++ path rather than the Rust workspace only.
 - The rhythm crate now carries 22 targeted tests and has a cleaner reusable
   calibration surface for future confidence and ambiguity tuning.

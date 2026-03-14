@@ -27,8 +27,8 @@ and supervisor-export fixtures.
 - `cargo test -p signal-runtime public_runtime_contract_boundary_is_consumable_from_reexports`
 - `cargo test -p signal-supervisor-tools export_json_carries_runtime_owned_plugin_discovery_catalog`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual Risk
 

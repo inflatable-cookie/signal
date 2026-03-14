@@ -36,9 +36,9 @@ Investigated the consistent sub-BPM tempo error in `signal-analysis-rhythm`
 - `cargo test -p signal-analysis-rhythm`
 - `cargo run -p signal-analysis-rhythm --example offline_rhythm_demo -- --bpm 120 --seconds 8`
 - `cargo run -p signal-analysis-rhythm --example offline_rhythm_demo -- --bpm 90 --seconds 8`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

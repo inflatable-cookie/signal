@@ -20,7 +20,7 @@
 ## Validation
 
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Residual risk
 

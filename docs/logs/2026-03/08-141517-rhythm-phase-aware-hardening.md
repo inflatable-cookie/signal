@@ -43,7 +43,7 @@ less fragile on swung, syncopated, and subdivision-heavy material.
 - The offline demo remained stable at approximately 119.68 BPM for the 120 BPM
   click track and improved to approximately 90.73 BPM with 0.860 confidence for
   the 90 BPM click track.
-- `effigy health --repo .` was attempted first per repo guidance but behaved as
+- `effigy health` was attempted first per repo guidance but behaved as
   a heavyweight CMake/build path in this workspace, so Cargo validation was used
   for the Rust batch instead.
 - `cargo fmt --check` still reports pre-existing formatting drift in unrelated

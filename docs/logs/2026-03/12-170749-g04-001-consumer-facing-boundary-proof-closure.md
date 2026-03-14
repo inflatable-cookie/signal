@@ -31,7 +31,7 @@ before scheduling work deepens.
 
 - `cargo test -p signal-runtime`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

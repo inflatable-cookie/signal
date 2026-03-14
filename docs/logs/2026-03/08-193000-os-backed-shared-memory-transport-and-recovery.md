@@ -44,9 +44,9 @@ This batch adds:
 - `cargo run -p signal-host-server`
 - `cargo run -p signal-plugin-sandbox`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Validation Notes
 

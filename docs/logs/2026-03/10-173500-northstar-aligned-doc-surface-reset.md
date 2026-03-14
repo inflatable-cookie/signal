@@ -20,8 +20,8 @@ index.
 ## Validation Performed
 
 - `git diff --check`
-- `effigy signal/health --repo .`
-- `effigy signal/validate --repo .`
+- `effigy signal/health`
+- `effigy signal/validate`
 
 ## Evidence
 

@@ -44,9 +44,9 @@ host soak proof that consume those receipts directly.
 - `cargo test -p signal-supervisor-tools`
 - `cargo fmt --all`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 
 ## Next Task
 

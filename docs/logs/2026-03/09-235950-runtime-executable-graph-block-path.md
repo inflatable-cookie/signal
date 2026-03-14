@@ -33,8 +33,8 @@ real runtime execution by adding a concrete graph block-processing path.
 - `cargo test -p signal-host-local local_host_rolls_leases_forward_after_timeout -- --nocapture`
 - `cargo test -p signal-supervisor-tools --no-run`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy validate`
 
 ## Next Task
 

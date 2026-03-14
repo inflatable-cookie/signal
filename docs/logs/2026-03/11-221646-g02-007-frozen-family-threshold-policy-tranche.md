@@ -21,7 +21,7 @@ Implemented changes:
     already exist
   - performance kept report-only through harness `elapsed_ms` rather than
     hard-failed at this corpus size
-- promoted `effigy acceptance:analysis --repo .` into a real multi-family
+- promoted `effigy acceptance:analysis` into a real multi-family
   sequence covering:
   - shared harness smoke coverage in `signal-analysis`
   - character acceptance cases
@@ -51,9 +51,9 @@ Validation:
 - `cargo test -p signal-analysis-character`
 - `cargo test -p signal-analysis-loudness`
 - `cargo test -p signal-analysis-embed`
-- `effigy acceptance:analysis --repo .`
+- `effigy acceptance:analysis`
 - `git diff --check`
-- `effigy test --repo .`
+- `effigy test`
 
 Known limits after this tranche:
 

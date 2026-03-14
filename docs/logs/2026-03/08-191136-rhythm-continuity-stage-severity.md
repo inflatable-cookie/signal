@@ -39,9 +39,9 @@ their own thresholds from action labels alone.
 
 - `cargo test -p signal-analysis-rhythm`
 - `cargo run -p signal-analysis-rhythm --example offline_rhythm_demo -- --bpm 120 --seconds 8`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

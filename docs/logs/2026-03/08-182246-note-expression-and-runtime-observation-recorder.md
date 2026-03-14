@@ -45,9 +45,9 @@ This batch adds:
 - `cargo run -p signal-host-local`
 - `cargo run -p signal-host-server`
 - `cargo run -p signal-plugin-sandbox`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Validation Notes
 
@@ -64,7 +64,7 @@ This batch adds:
   - `generated_event_bytes=172`
 - The plugin-sandbox smoke binary reports the same seven-event output mix over
   the brokered transport.
-- `effigy validate --repo .` and `effigy test --repo .` both passed after
+- `effigy validate` and `effigy test` both passed after
   letting the in-flight `health` run finish; an earlier parallel attempt hit
   the expected workspace lock while `health` still owned it.
 

@@ -14,7 +14,7 @@ recording the next likely post-`g04` queue explicitly in backlog.
   - the existing conformance-matrix and release-boundary descriptions
   - explicit residual risks
   - the backlog path for the next likely post-`g04` queue
-- added `effigy acceptance:g04-closeout --repo .` so the generation closeout is
+- added `effigy acceptance:g04-closeout` so the generation closeout is
   runnable as one repo-owned acceptance task instead of a doc-only conclusion
 - recorded the post-`g04` candidate queue in
   `docs/roadmaps/backlog/post-g04-consumer-release-and-backend-breadth.md`
@@ -27,11 +27,11 @@ recording the next likely post-`g04` queue explicitly in backlog.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_generation_closeout_mode`
 - `cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue`
 - `cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json`
-- `effigy acceptance:g04-closeout --repo .`
+- `effigy acceptance:g04-closeout`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 
 ## Residual Risk
 

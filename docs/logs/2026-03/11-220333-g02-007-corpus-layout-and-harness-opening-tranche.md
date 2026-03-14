@@ -44,7 +44,7 @@ Implemented changes:
 - kept licensing and artifact-size posture explicit in the corpus README rather
   than implying that large or externally sourced audio belongs in the repo
 - added one repo-owned entry point for the harness through
-  `effigy acceptance:analysis --repo .`
+  `effigy acceptance:analysis`
 - updated roadmap and architecture docs to reflect that `007.1` is now opened
   and implemented
 
@@ -53,7 +53,7 @@ Validation:
 - `cargo fmt --all`
 - `cargo test -p signal-analysis`
 - `git diff --check`
-- `effigy test --repo .`
+- `effigy test`
 
 Known limits after this tranche:
 

@@ -25,7 +25,7 @@ Implemented changes:
     evidence
 - added closeout-evidence report tests so the accepted harness outputs are
   printed directly from the analyzer crates rather than reconstructed later
-- expanded `effigy acceptance:analysis --repo .` to include:
+- expanded `effigy acceptance:analysis` to include:
   - `signal-analysis-rhythm`
   - `signal-analysis-tonal`
   - the previously frozen character, loudness, and semantic families

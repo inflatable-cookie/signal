@@ -33,9 +33,9 @@ Simulated validation completed:
 - `cargo test -p signal-hardware-coreaudio`
 - `cargo test -p signal-runtime`
 - `cargo test -p signal-host-local`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 Real hardware smoke validation did not run in this tranche. The exercised

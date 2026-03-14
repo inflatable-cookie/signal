@@ -809,8 +809,43 @@ pub enum RuntimeRecordingCaptureState {
     Failed,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeRecordingCaptureKind {
+    Audio,
+    Midi,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeRecordingCaptureCheckpointClass {
+    Armed,
+    Streaming,
+    Buffered,
+    Committed,
+    Failed,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeRecordingCaptureCheckpointSnapshot {
+    pub capture_kind: RuntimeRecordingCaptureKind,
+    pub checkpoint_class: RuntimeRecordingCaptureCheckpointClass,
+    pub interruption_class: RuntimeInterruptionClass,
+    pub take_id: String,
+    pub track_id: String,
+    pub capture_start_samples: i64,
+    pub capture_path: String,
+    pub buffered_block_count: u64,
+    pub buffered_frame_count: u64,
+    pub buffered_event_count: u64,
+    pub captured_channel_count: usize,
+    pub peak_level: Option<f32>,
+    pub pressure_event_count: u64,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeRecordingCaptureStartRequest {
+    pub capture_kind: RuntimeRecordingCaptureKind,
     pub take_id: String,
     pub track_id: String,
     pub start_samples: i64,
@@ -819,6 +854,7 @@ pub struct RuntimeRecordingCaptureStartRequest {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeRecordingCaptureCommitReceipt {
+    pub capture_kind: RuntimeRecordingCaptureKind,
     pub take_id: String,
     pub track_id: String,
     pub start_samples: i64,
@@ -826,21 +862,26 @@ pub struct RuntimeRecordingCaptureCommitReceipt {
     pub channel_count: usize,
     pub peak_level: f32,
     pub capture_path: String,
+    pub committed_checkpoint: RuntimeRecordingCaptureCheckpointSnapshot,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RuntimeRecordingCaptureSnapshot {
     pub capture_ready: bool,
     pub state: Option<RuntimeRecordingCaptureState>,
+    pub capture_kind: Option<RuntimeRecordingCaptureKind>,
     pub active_take_id: Option<String>,
     pub active_track_id: Option<String>,
     pub capture_start_samples: Option<i64>,
     pub active_capture_path: Option<String>,
     pub buffered_block_count: u64,
     pub buffered_frame_count: u64,
+    pub buffered_event_count: u64,
     pub captured_channel_count: usize,
     pub peak_level: Option<f32>,
     pub pressure_event_count: u64,
+    pub active_checkpoint: Option<RuntimeRecordingCaptureCheckpointSnapshot>,
+    pub last_checkpoint: Option<RuntimeRecordingCaptureCheckpointSnapshot>,
     pub last_committed_take_id: Option<String>,
     pub last_committed_path: Option<String>,
     pub last_committed_duration_samples: Option<u32>,
@@ -1314,6 +1355,8 @@ pub struct RuntimeDeferredServiceReceipt {
     pub work_class: RuntimeDeferredServiceClass,
     pub decision: RuntimeDeferredServiceDecision,
     pub reason: RuntimeDeferredServiceReason,
+    pub interruption_class: RuntimeInterruptionClass,
+    pub interruption_rebindable: bool,
     pub queued_work_item_count: usize,
     pub admitted_work_item_count: usize,
     pub completed_work_item_count: usize,
@@ -1334,6 +1377,8 @@ impl RuntimeDeferredServiceReceipt {
                 "work_class={:?}",
                 "\ndecision={:?}",
                 "\nreason={:?}",
+                "\ninterruption_class={:?}",
+                "\ninterruption_rebindable={}",
                 "\nqueued_work_item_count={}",
                 "\nadmitted_work_item_count={}",
                 "\ncompleted_work_item_count={}",
@@ -1349,6 +1394,8 @@ impl RuntimeDeferredServiceReceipt {
             self.work_class,
             self.decision,
             self.reason,
+            self.interruption_class,
+            self.interruption_rebindable,
             self.queued_work_item_count,
             self.admitted_work_item_count,
             self.completed_work_item_count,
@@ -1370,6 +1417,8 @@ impl RuntimeDeferredServiceReceipt {
                 "\"work_class\":{},",
                 "\"decision\":{},",
                 "\"reason\":{},",
+                "\"interruption_class\":{},",
+                "\"interruption_rebindable\":{},",
                 "\"queued_work_item_count\":{},",
                 "\"admitted_work_item_count\":{},",
                 "\"completed_work_item_count\":{},",
@@ -1386,6 +1435,8 @@ impl RuntimeDeferredServiceReceipt {
             json_string(&format!("{:?}", self.work_class)),
             json_string(&format!("{:?}", self.decision)),
             json_string(&format!("{:?}", self.reason)),
+            json_string(&format!("{:?}", self.interruption_class)),
+            self.interruption_rebindable,
             self.queued_work_item_count,
             self.admitted_work_item_count,
             self.completed_work_item_count,
@@ -1407,6 +1458,8 @@ impl Default for RuntimeDeferredServiceReceipt {
             work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
             decision: RuntimeDeferredServiceDecision::Abort,
             reason: RuntimeDeferredServiceReason::InvalidRequest,
+            interruption_class: RuntimeInterruptionClass::Terminal,
+            interruption_rebindable: false,
             queued_work_item_count: 0,
             admitted_work_item_count: 0,
             completed_work_item_count: 0,
@@ -1476,6 +1529,8 @@ pub enum RuntimeOfflineRenderExecutionState {
 pub struct RuntimeOfflineRenderExecutionProgressReceipt {
     pub request_id: String,
     pub state: RuntimeOfflineRenderExecutionState,
+    pub interruption_class: RuntimeInterruptionClass,
+    pub interruption_rebindable: bool,
     pub emitted_checkpoint_count: usize,
     pub checkpoint_count: usize,
     pub checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
@@ -2582,6 +2637,15 @@ pub enum RuntimeRecoveryState {
     Faulted,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeInterruptionClass {
+    Steady,
+    Resumable,
+    Restartable,
+    Recoverable,
+    Terminal,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeFaultStatusSnapshot {
     pub recovery_state: RuntimeRecoveryState,
@@ -2619,7 +2683,8 @@ impl RuntimeFaultStatusSnapshot {
             .faulted_sandbox_count
             .saturating_add(plugin_lifecycle_snapshot.quarantined_sandbox_count);
         let plugin_fault_active = plugin_fault_count > 0;
-        let watchdog_active = supervision_snapshot.watchdog_restart_count > 0;
+        let watchdog_active = supervision_snapshot.safe_mode_enabled
+            && supervision_snapshot.watchdog_restart_count > 0;
         let transport_faulted_session_count =
             transport_concurrency_snapshot.current_detach_faulted_sessions;
         let transport_fault_active = transport_faulted_session_count > 0;
@@ -2698,6 +2763,90 @@ impl RuntimeFaultStatusSnapshot {
             snapshot.restart_count,
         );
         snapshot
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeInterruptionSummary {
+    pub active: bool,
+    pub class: RuntimeInterruptionClass,
+    pub rebindable: bool,
+    pub recovery_state: RuntimeRecoveryState,
+    pub primary_fault_cause: Option<RuntimeFaultCause>,
+    pub safe_mode_enabled: bool,
+    pub deferred_service_class: Option<RuntimeDeferredServiceClass>,
+    pub deferred_service_decision: Option<RuntimeDeferredServiceDecision>,
+    pub summary: String,
+}
+
+impl RuntimeInterruptionSummary {
+    pub fn capture(
+        fault_status: &RuntimeFaultStatusSnapshot,
+        last_deferred_service_receipt: Option<&RuntimeDeferredServiceReceipt>,
+    ) -> Self {
+        let class = match fault_status.recovery_state {
+            RuntimeRecoveryState::Faulted => RuntimeInterruptionClass::Terminal,
+            RuntimeRecoveryState::Recovering
+                if matches!(
+                    fault_status.primary_fault_cause,
+                    Some(
+                        RuntimeFaultCause::DeviceLoss
+                            | RuntimeFaultCause::WatchdogRestart
+                            | RuntimeFaultCause::PluginFault
+                            | RuntimeFaultCause::TransportFault
+                            | RuntimeFaultCause::MissingPluginBinding
+                    )
+                ) =>
+            {
+                RuntimeInterruptionClass::Restartable
+            }
+            RuntimeRecoveryState::Recovering => RuntimeInterruptionClass::Recoverable,
+            RuntimeRecoveryState::Steady
+                if matches!(
+                    last_deferred_service_receipt.map(|receipt| receipt.decision),
+                    Some(
+                        RuntimeDeferredServiceDecision::Defer
+                            | RuntimeDeferredServiceDecision::Throttle
+                    )
+                ) =>
+            {
+                RuntimeInterruptionClass::Resumable
+            }
+            RuntimeRecoveryState::Steady => RuntimeInterruptionClass::Steady,
+        };
+        let rebindable = matches!(
+            fault_status.primary_fault_cause,
+            Some(
+                RuntimeFaultCause::DeviceLoss
+                    | RuntimeFaultCause::PluginFault
+                    | RuntimeFaultCause::TransportFault
+                    | RuntimeFaultCause::MissingPluginBinding
+            )
+        );
+        let mut summary = Self {
+            active: class != RuntimeInterruptionClass::Steady,
+            class,
+            rebindable,
+            recovery_state: fault_status.recovery_state,
+            primary_fault_cause: fault_status.primary_fault_cause,
+            safe_mode_enabled: fault_status.safe_mode_enabled,
+            deferred_service_class: last_deferred_service_receipt.map(|receipt| receipt.work_class),
+            deferred_service_decision: last_deferred_service_receipt
+                .map(|receipt| receipt.decision),
+            summary: String::new(),
+        };
+        summary.summary = format!(
+            "class={:?} active={} rebindable={} recovery={:?} primary={:?} deferred={:?}/{:?} safe_mode={}",
+            summary.class,
+            summary.active,
+            summary.rebindable,
+            summary.recovery_state,
+            summary.primary_fault_cause,
+            summary.deferred_service_class,
+            summary.deferred_service_decision,
+            summary.safe_mode_enabled,
+        );
+        summary
     }
 }
 
@@ -3687,6 +3836,200 @@ impl RuntimeDegradationSummary {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePerformanceSnapshot {
+    pub sample_rate_hz: u32,
+    pub block_size: usize,
+    pub processed_block_count: u64,
+    pub last_block_sequence: Option<u64>,
+    pub cpu_load_percent: f32,
+    pub graph_latency_ms: f32,
+    pub xrun_count: u64,
+    pub scheduler_phase_count: usize,
+    pub scheduler_lane_count: usize,
+    pub scheduler_dispatch_count: usize,
+    pub prework_service_state: RuntimePreworkServiceState,
+    pub prework_service_pressure: RuntimePreworkServicePressure,
+    pub prework_service_semantic_policy: RuntimePreworkServiceSemanticPolicy,
+    pub pending_prework_target_count: usize,
+    pub pending_prework_deferred_target_count: usize,
+    pub prework_queue_depth: usize,
+    pub prework_peak_queue_depth: usize,
+    pub transport_gate_active: bool,
+    pub plugin_gate_active: bool,
+    pub background_service_class: Option<RuntimeDeferredServiceClass>,
+    pub background_service_decision: Option<RuntimeDeferredServiceDecision>,
+    pub background_service_reason: Option<RuntimeDeferredServiceReason>,
+    pub background_queued_work_item_count: usize,
+    pub background_deferred_work_item_count: usize,
+    pub background_pending_cleanup_work_item_count: usize,
+    pub background_pending_retry_work_item_count: usize,
+    pub summary: String,
+}
+
+impl RuntimePerformanceSnapshot {
+    pub fn capture(
+        effective_config: &EffectiveRuntimeConfig,
+        diagnostics_snapshot: &RuntimeDiagnosticsSnapshot,
+        engine_block_snapshot: &RuntimeEngineBlockSnapshot,
+        last_deferred_service_receipt: Option<&RuntimeDeferredServiceReceipt>,
+    ) -> Self {
+        let mut snapshot = Self {
+            sample_rate_hz: effective_config.sample_rate.0,
+            block_size: effective_config.block_size,
+            processed_block_count: engine_block_snapshot.processed_blocks,
+            last_block_sequence: engine_block_snapshot.last_block_sequence,
+            cpu_load_percent: diagnostics_snapshot.cpu_load_percent,
+            graph_latency_ms: diagnostics_snapshot.graph_latency_ms,
+            xrun_count: diagnostics_snapshot.xruns,
+            scheduler_phase_count: engine_block_snapshot.phase_count,
+            scheduler_lane_count: engine_block_snapshot.lane_count,
+            scheduler_dispatch_count: engine_block_snapshot.dispatch_count,
+            prework_service_state: engine_block_snapshot.prework_service_state,
+            prework_service_pressure: engine_block_snapshot.prework_service_pressure,
+            prework_service_semantic_policy: engine_block_snapshot
+                .prework_service_semantic_policy,
+            pending_prework_target_count: engine_block_snapshot.prework_pending_target_count,
+            pending_prework_deferred_target_count: engine_block_snapshot
+                .prework_pending_deferred_target_count,
+            prework_queue_depth: engine_block_snapshot.prework_cache_queue_depth,
+            prework_peak_queue_depth: engine_block_snapshot.prework_cache_peak_queue_depth,
+            transport_gate_active: engine_block_snapshot.prework_service_transport_gate_active,
+            plugin_gate_active: engine_block_snapshot.prework_service_plugin_gate_active,
+            background_service_class: last_deferred_service_receipt
+                .map(|receipt| receipt.work_class),
+            background_service_decision: last_deferred_service_receipt
+                .map(|receipt| receipt.decision),
+            background_service_reason: last_deferred_service_receipt.map(|receipt| receipt.reason),
+            background_queued_work_item_count: last_deferred_service_receipt
+                .map(|receipt| receipt.queued_work_item_count)
+                .unwrap_or(0),
+            background_deferred_work_item_count: last_deferred_service_receipt
+                .map(|receipt| receipt.deferred_work_item_count)
+                .unwrap_or(0),
+            background_pending_cleanup_work_item_count: last_deferred_service_receipt
+                .map(|receipt| receipt.pending_cleanup_work_items)
+                .unwrap_or(0),
+            background_pending_retry_work_item_count: last_deferred_service_receipt
+                .map(|receipt| receipt.pending_deferred_retry_work_items)
+                .unwrap_or(0),
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} xruns={} phases={} lanes={} dispatches={} prework={:?}/{:?}/{:?} pending_targets={}/{} queue={}/{} gates={}/{} background={:?}/{:?}/{:?} items={}/{}/{}",
+            snapshot.sample_rate_hz,
+            snapshot.block_size,
+            snapshot.processed_block_count,
+            snapshot.cpu_load_percent,
+            snapshot.graph_latency_ms,
+            snapshot.xrun_count,
+            snapshot.scheduler_phase_count,
+            snapshot.scheduler_lane_count,
+            snapshot.scheduler_dispatch_count,
+            snapshot.prework_service_state,
+            snapshot.prework_service_pressure,
+            snapshot.prework_service_semantic_policy,
+            snapshot.pending_prework_target_count,
+            snapshot.pending_prework_deferred_target_count,
+            snapshot.prework_queue_depth,
+            snapshot.prework_peak_queue_depth,
+            snapshot.transport_gate_active,
+            snapshot.plugin_gate_active,
+            snapshot.background_service_class,
+            snapshot.background_service_decision,
+            snapshot.background_service_reason,
+            snapshot.background_queued_work_item_count,
+            snapshot.background_deferred_work_item_count,
+            snapshot.background_pending_cleanup_work_item_count,
+            snapshot.background_pending_retry_work_item_count,
+        );
+        snapshot
+    }
+
+    pub fn render_json(&self) -> String {
+        format!(
+            concat!(
+                "{{",
+                "\"sample_rate_hz\":{},",
+                "\"block_size\":{},",
+                "\"processed_block_count\":{},",
+                "\"last_block_sequence\":{},",
+                "\"cpu_load_percent\":{},",
+                "\"graph_latency_ms\":{},",
+                "\"xrun_count\":{},",
+                "\"scheduler_phase_count\":{},",
+                "\"scheduler_lane_count\":{},",
+                "\"scheduler_dispatch_count\":{},",
+                "\"prework_service_state\":\"{:?}\",",
+                "\"prework_service_pressure\":\"{:?}\",",
+                "\"prework_service_semantic_policy\":\"{:?}\",",
+                "\"pending_prework_target_count\":{},",
+                "\"pending_prework_deferred_target_count\":{},",
+                "\"prework_queue_depth\":{},",
+                "\"prework_peak_queue_depth\":{},",
+                "\"transport_gate_active\":{},",
+                "\"plugin_gate_active\":{},",
+                "\"background_service_class\":{},",
+                "\"background_service_decision\":{},",
+                "\"background_service_reason\":{},",
+                "\"background_queued_work_item_count\":{},",
+                "\"background_deferred_work_item_count\":{},",
+                "\"background_pending_cleanup_work_item_count\":{},",
+                "\"background_pending_retry_work_item_count\":{},",
+                "\"summary\":{}}}",
+            ),
+            self.sample_rate_hz,
+            self.block_size,
+            self.processed_block_count,
+            json_option_u64(self.last_block_sequence),
+            self.cpu_load_percent,
+            self.graph_latency_ms,
+            self.xrun_count,
+            self.scheduler_phase_count,
+            self.scheduler_lane_count,
+            self.scheduler_dispatch_count,
+            self.prework_service_state,
+            self.prework_service_pressure,
+            self.prework_service_semantic_policy,
+            self.pending_prework_target_count,
+            self.pending_prework_deferred_target_count,
+            self.prework_queue_depth,
+            self.prework_peak_queue_depth,
+            self.transport_gate_active,
+            self.plugin_gate_active,
+            json_option_string(
+                self.background_service_class.as_ref().map(|value| match value {
+                    RuntimeDeferredServiceClass::OfflineRenderQueue => "OfflineRenderQueue",
+                    RuntimeDeferredServiceClass::OfflineRenderPurge => "OfflineRenderPurge",
+                }),
+            ),
+            json_option_string(
+                self.background_service_decision.as_ref().map(|value| match value {
+                    RuntimeDeferredServiceDecision::Run => "Run",
+                    RuntimeDeferredServiceDecision::Defer => "Defer",
+                    RuntimeDeferredServiceDecision::Throttle => "Throttle",
+                    RuntimeDeferredServiceDecision::Abort => "Abort",
+                }),
+            ),
+            json_option_string(
+                self.background_service_reason.as_ref().map(|value| match value {
+                    RuntimeDeferredServiceReason::Ready => "Ready",
+                    RuntimeDeferredServiceReason::RealtimeActive => "RealtimeActive",
+                    RuntimeDeferredServiceReason::PendingCleanup => "PendingCleanup",
+                    RuntimeDeferredServiceReason::RecoveryDegraded => "RecoveryDegraded",
+                    RuntimeDeferredServiceReason::SafeMode => "SafeMode",
+                    RuntimeDeferredServiceReason::InvalidRequest => "InvalidRequest",
+                }),
+            ),
+            self.background_queued_work_item_count,
+            self.background_deferred_work_item_count,
+            self.background_pending_cleanup_work_item_count,
+            self.background_pending_retry_work_item_count,
+            json_option_string(Some(self.summary.as_str())),
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeHostAudioStreamState {
     Stopped,
@@ -3973,6 +4316,8 @@ impl RuntimeHostObservationReport {
                 "\"readiness\":{},",
                 "\"xruns\":{},",
                 "\"engine_graph_id\":{},",
+                "\"fault_status\":{},",
+                "\"interruption_summary\":{},",
                 "\"degradation_summary\":{},",
                 "\"metering_snapshot\":{},",
                 "\"execution_topology_summary\":{}",
@@ -4045,6 +4390,8 @@ impl RuntimeHostObservationReport {
             })),
             self.observation.diagnostics_snapshot.xruns,
             json_option_string(self.observation.engine_block_snapshot.graph_id.as_deref()),
+            json_runtime_fault_status(&self.observation.fault_status),
+            json_runtime_interruption_summary(&self.observation.interruption_summary),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary),
@@ -4677,11 +5024,24 @@ impl RuntimeObservationReport {
     pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
         build_runtime_profiling_receipt(self, None)
     }
+
+    pub fn performance_snapshot(&self) -> RuntimePerformanceSnapshot {
+        RuntimePerformanceSnapshot::capture(
+            &self.effective_config,
+            &self.diagnostics_snapshot,
+            &self.engine_block_snapshot,
+            self.last_deferred_service_receipt.as_ref(),
+        )
+    }
 }
 
 impl RuntimeSupervisorReport {
     pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
         self.observation.profiling_receipt()
+    }
+
+    pub fn performance_snapshot(&self) -> RuntimePerformanceSnapshot {
+        self.observation.performance_snapshot()
     }
 
     pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
@@ -6323,10 +6683,13 @@ pub struct RuntimeObservationReport {
     pub diagnostics_snapshot: RuntimeDiagnosticsSnapshot,
     pub metering_snapshot: RuntimeMeteringSnapshot,
     pub supervision_snapshot: RuntimeSupervisionSnapshot,
+    pub fault_status: RuntimeFaultStatusSnapshot,
+    pub interruption_summary: RuntimeInterruptionSummary,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
     pub tempo_map_snapshot: RuntimeTempoMapSnapshot,
     pub warp_pipeline_snapshot: RuntimeWarpPipelineSnapshot,
     pub clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
+    pub recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
     pub automation_snapshot: RuntimeAutomationSnapshot,
     pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
     pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
@@ -6357,6 +6720,7 @@ impl RuntimeObservationReport {
         let tempo_map_snapshot = runtime.get_tempo_map_snapshot();
         let warp_pipeline_snapshot = runtime.get_warp_pipeline_snapshot();
         let clip_processing_pipeline_snapshot = runtime.get_clip_processing_pipeline_snapshot();
+        let recording_capture_snapshot = runtime.get_recording_capture_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
         let engine_block_snapshot = runtime.get_engine_block_snapshot();
         let execution_topology_summary = runtime.get_execution_topology_summary();
@@ -6368,6 +6732,17 @@ impl RuntimeObservationReport {
         let scheduler_summary =
             RuntimeSchedulerExportSummary::from_snapshot(&engine_block_snapshot);
         let block_summary = RuntimeBlockExecutionSummary::from_snapshot(&engine_block_snapshot);
+        let fault_status = RuntimeFaultStatusSnapshot::capture(
+            readiness.clone(),
+            &control_snapshot,
+            &diagnostics_snapshot,
+            &supervision_snapshot,
+            &engine_block_snapshot,
+            &transport_concurrency_snapshot,
+            &plugin_lifecycle_snapshot,
+            false,
+            0,
+        );
         let degradation_summary = RuntimeDegradationSummary::capture(
             &readiness,
             diagnostics_snapshot,
@@ -6375,6 +6750,10 @@ impl RuntimeObservationReport {
             &engine_block_snapshot,
             &transport_concurrency_snapshot,
             &observation,
+        );
+        let interruption_summary = RuntimeInterruptionSummary::capture(
+            &fault_status,
+            last_deferred_service_receipt.as_ref(),
         );
         Self {
             readiness: readiness.clone(),
@@ -6384,10 +6763,13 @@ impl RuntimeObservationReport {
             diagnostics_snapshot,
             metering_snapshot,
             supervision_snapshot: supervision_snapshot.clone(),
+            fault_status,
+            interruption_summary,
             timeline_snapshot,
             tempo_map_snapshot,
             warp_pipeline_snapshot,
             clip_processing_pipeline_snapshot,
+            recording_capture_snapshot,
             automation_snapshot,
             engine_block_snapshot,
             transport_concurrency_snapshot,
@@ -6482,9 +6864,14 @@ impl RuntimeObservationReport {
         let block_summary = format_runtime_block_summary_compact(&self.block_summary);
         let degradation_summary =
             format_runtime_degradation_summary_compact(&self.degradation_summary);
+        let fault_status = format_runtime_fault_status_compact(&self.fault_status);
+        let interruption_summary =
+            format_runtime_interruption_summary_compact(&self.interruption_summary);
         let execution_topology_summary =
             format_runtime_execution_topology_summary_compact(&self.execution_topology_summary);
         let metering_summary = format_runtime_metering_snapshot_compact(&self.metering_snapshot);
+        let recording_capture =
+            format_runtime_recording_capture_snapshot_compact(&self.recording_capture_snapshot);
         let deferred_service = self
             .last_deferred_service_receipt
             .as_ref()
@@ -6499,7 +6886,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -6533,6 +6920,8 @@ impl RuntimeObservationReport {
             scheduler_summary,
             block_summary,
             degradation_summary,
+            fault_status,
+            interruption_summary,
             self.engine_block_snapshot.graph_id,
             self.engine_block_snapshot.node_count,
             self.engine_block_snapshot.stateful_node_count,
@@ -6727,7 +7116,9 @@ impl RuntimeObservationReport {
                 self.transport_concurrency_snapshot.pending_cleanup_waves.len()
             )
         );
-        format!("{compact}{execution_topology_summary}{metering_summary}{deferred_service}")
+        format!(
+            "{compact}{recording_capture}{execution_topology_summary}{metering_summary}{deferred_service}"
+        )
     }
 }
 
@@ -6944,11 +7335,17 @@ impl RuntimeSupervisorReport {
         let block_summary = format_runtime_block_summary_multiline(&self.observation.block_summary);
         let degradation_summary =
             format_runtime_degradation_summary_multiline(&self.observation.degradation_summary);
+        let fault_status = format_runtime_fault_status_multiline(&self.observation.fault_status);
+        let interruption_summary =
+            format_runtime_interruption_summary_multiline(&self.observation.interruption_summary);
         let execution_topology_summary = format_runtime_execution_topology_summary_multiline(
             &self.observation.execution_topology_summary,
         );
         let metering_summary =
             format_runtime_metering_snapshot_multiline(&self.observation.metering_snapshot);
+        let recording_capture = format_runtime_recording_capture_snapshot_multiline(
+            &self.observation.recording_capture_snapshot,
+        );
         let deferred_service = self
             .observation
             .last_deferred_service_receipt
@@ -6956,7 +7353,7 @@ impl RuntimeSupervisorReport {
             .map(|receipt| format!("\nlast_deferred_service=\n{}", receipt.render_multiline()))
             .unwrap_or_default();
         let multiline = format!(
-            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
+            "readiness={:?}\nsample_rate={}\nblock_size={}\nhandshaken={}\nconfigured={}\nrunning={}\nhandshake_count={}\nconfigure_count={}\nstart_count={}\nstop_count={}\nrestart_count={:?}\nlast_client_version={:?}\nlast_stop_reason={:?}\nlast_reconfigure={:?}\nxruns={}\nactive_sandboxes={}\nsafe_mode={}\nnext_block_sequence={}\nsequence_segments={}\nsequence_segment_epochs={:?}\nsequence_first_block={:?}\nsequence_last_block={:?}\nsequence_gaps={}\nsequence_lease_rollovers={}{}{}{}{}{}{}{}{}\nengine_graph_id={:?}\nengine_node_count={}\nengine_stateful_nodes={}\nengine_latency_nodes={}\nengine_plugin_backed_nodes={}\nengine_planning_anticipative={}\nengine_inline_realtime_nodes={}\nengine_stateful_realtime_nodes={}\nengine_anticipative_eligible_nodes={}\nengine_phase_count={}\nengine_anticipative_phases={}\nengine_phase_order={:?}\nengine_lane_count={}\nengine_anticipative_lanes={}\nengine_lane_order={:?}\nengine_dispatch_count={}\nengine_dispatch_boundaries={}\nengine_dispatch_order={:?}\nengine_prepared_dispatches={}\nengine_realtime_dispatches={}\nengine_dispatch_handoffs={}{}\nengine_prework_cache_enabled={}\nengine_prework_cache_state={:?}\nengine_prework_service_state={:?}\nengine_prework_service_pressure={:?}\nengine_prework_service_semantic_policy={:?}\nengine_prework_service_active_plugin_sandboxes={}\nengine_prework_service_bound_plugin_sandboxes={}\nengine_prework_service_active_bound_plugin_sandboxes={}\nengine_prework_service_degraded_bound_plugin_sandboxes={}\nengine_prework_service_missing_bound_plugin_sandboxes={}\nengine_prework_service_plugin_gate_active={}\nengine_prework_pending_targets={}\nengine_prework_pending_immediate_targets={}\nengine_prework_pending_near_term_targets={}\nengine_prework_pending_deferred_targets={}\nengine_prework_next_pending_target_block={:?}\nengine_prework_service_cycles={}\nengine_prework_service_prepared_targets={}\nengine_prework_service_pauses={}\nengine_prework_service_resumes={}\nengine_prework_service_starvations={}\nengine_prework_service_throttles={}\nengine_prework_service_yields={}\nengine_last_prework_service_epoch={:?}\nengine_last_prework_service_requested_cycles={}\nengine_last_prework_service_effective_cycles={}\nengine_last_prework_service_cycle_count={}\nengine_last_prework_service_budget={:?}\nengine_last_prework_service_effective_budget={:?}\nengine_last_prework_service_prepared_targets={}\nengine_last_prework_serviced_target_block={:?}\nengine_last_prework_serviced_backlog_class={:?}\nengine_prework_requested_mode={:?}\nengine_prework_mode={:?}\nengine_prework_policy_configured={}\nengine_prework_profile={:?}\nengine_prework_profile_source={:?}\nengine_prework_profile_window_override={:?}\nengine_prework_policy_window_blocks={:?}\nengine_prework_queue_capacity={}\nengine_prework_queue_depth={}\nengine_prework_peak_queue_depth={}\nengine_prework_window_targets={}\nengine_prework_window_blocks={:?}\nengine_prework_freshness_state={:?}\nengine_prework_block_window={}\nengine_prework_remaining_valid_blocks={:?}\nengine_prework_cache_admissions={}\nengine_prework_cache_consumptions={}\nengine_prework_queued_admissions={}\nengine_prework_queued_consumptions={}\nengine_prework_cache_hits={}\nengine_prework_cache_misses={}\nengine_prework_cache_invalidations={}\nengine_last_prework_cache_hit={}\nengine_last_prework_invalidation={:?}\nengine_prework_cache_valid_until={:?}\nengine_prework_cache_valid_until_block={:?}\nengine_last_prework_source_epoch={:?}\nengine_last_prework_source_block={:?}\nengine_last_prework_admission_epoch={:?}\nengine_last_prework_admission_block={:?}\nengine_last_prework_admitted_from_block={:?}\nengine_last_prework_consumption_epoch={:?}\nengine_last_prework_consumption_block={:?}\nengine_last_prework_consumed_from_block={:?}\nengine_planned_nodes={:?}\nengine_stage_count={}\nengine_dynamic_kernel_stages={}\nengine_dynamic_stage_state_model={:?}\nengine_total_latency_samples={}\nengine_max_node_latency_samples={}\nengine_total_tail_samples={}\nengine_max_node_tail_samples={}\nengine_output_tail_samples={}\nengine_max_bus_tail_samples={}\nengine_processed_blocks={}\nengine_last_processing_epoch={:?}\nengine_last_block_sequence={:?}\nengine_last_frame_count={}\nengine_last_channel_count={}\nengine_last_input_peak={:?}\nengine_last_prework_output_peak={:?}\nengine_last_realtime_input_peak={:?}\nengine_last_output_peak={:?}\nengine_last_output_rms={:?}\nengine_last_first_output_sample={:?}\nengine_projection_epoch={:?}\nengine_parameter_epoch={:?}\nengine_context_anticipative={:?}\nengine_transport_playing={:?}\nengine_transport_tempo_bpm={:?}\nengine_timeline_position_samples={:?}{}{}\ntransport_concurrency_steady_limit={}\ntransport_concurrency_recovery_limit={}\ntransport_concurrency_current_attached={}\ntransport_concurrency_peak_attached={}\ntransport_concurrency_current_recovery_overlap={}\ntransport_concurrency_peak_recovery_overlap={}\ntransport_concurrency_current_lingering={}\ntransport_concurrency_peak_lingering={}\ntransport_concurrency_current_detach_requested={}\ntransport_concurrency_current_detach_faulted={}\ntransport_concurrency_active_sessions={:?}\ntransport_concurrency_pending_cleanup_waves={:?}\ntransport_concurrency_last_admitted_sandbox_id={:?}\ntransport_concurrency_last_rejected_sandbox_id={:?}\ntransport_concurrency_last_rejection_reason={:?}\ntransport_fault_boundary={:?}\ntransport_fault_host_broker_events={}\ntransport_fault_sandbox_operation_events={}\ntransport_fault_runtime_dispatch_events={}\ntransport_fault_prepare_events={}\ntransport_fault_dispatch_events={}\ntransport_fault_teardown_events={}\ntransport_fault_control_events={}\ntransport_fault_first_epoch={:?}\ntransport_fault_last_epoch={:?}\ntransport_fault_first_block={:?}\ntransport_fault_last_block={:?}\ntransport_session_boundary={:?}\ntransport_session_state={:?}\ntransport_session_currently_attached={}\ntransport_session_heartbeat_state={:?}\ntransport_session_dispatch_state={:?}\ntransport_session_current_attached_sessions={}\ntransport_session_max_attached_sessions={}\ntransport_session_attach_events={}\ntransport_session_detach_requested_events={}\ntransport_session_detached_events={}\ntransport_session_detach_fault_events={}\ntransport_session_heartbeat_requested_events={}\ntransport_session_heartbeat_responded_events={}\ntransport_session_heartbeat_missed_events={}\ntransport_session_dispatch_requested_events={}\ntransport_session_dispatch_completed_events={}\ntransport_session_dispatch_timed_out_events={}\ntransport_session_first_epoch={:?}\ntransport_session_last_epoch={:?}\ntransport_session_first_block={:?}\ntransport_session_last_block={:?}\ntransport_session_active_sandbox_id={:?}\ntransport_session_active_lease_id={:?}\ntransport_session_active_region_id={:?}\ntransport_session_active_block_sequence={:?}\ntransport_session_active_sessions={:?}\ntransport_session_last_sandbox_id={:?}\ntransport_session_last_lease_id={:?}\ntransport_session_last_region_id={:?}\nevent_stream={}\nsupervision_updates={}\nplugin_faults={}\nrecovery_events={}\nlifecycle_events={}\ntransport_events={}\nheartbeat_events={}\nblock_dispatch_events={}\nlease_rollover_events={}\ninvalidation_events={}\ncompletion_slot_events={}\ntransport_fault_events={}\nbroker_failure_events={}\nsandbox_operation_failure_events={}\nlast_watchdog={}\nlast_fault={}\nlast_recovery={:?}\nlast_lifecycle={:?}\nlast_transport={:?}\nlast_heartbeat={:?}\nlast_dispatch={:?}\nlast_rollover={:?}\nlast_invalidation={:?}\nlast_completion_slot={:?}\nlast_transport_fault={:?}\nlast_broker_failure={:?}\nlast_sandbox_operation_failure={:?}\nrecovery_sequence={:?}\nlifecycle_sequence={:?}\ntransport_sequence={:?}\nheartbeat_sequence={:?}\nblock_dispatch_sequence={:?}\nlease_rollover_sequence={:?}\ninvalidation_sequence={:?}\ncompletion_slot_sequence={:?}\ntransport_fault_sequence={:?}\nbroker_failure_sequence={:?}\nsandbox_operation_failure_sequence={:?}",
             self.observation.readiness,
             self.observation.effective_config.sample_rate.0,
             self.observation.effective_config.block_size,
@@ -7005,6 +7402,8 @@ impl RuntimeSupervisorReport {
             scheduler_summary,
             block_summary,
             degradation_summary,
+            fault_status,
+            interruption_summary,
             self.observation.engine_block_snapshot.graph_id,
             self.observation.engine_block_snapshot.node_count,
             self.observation.engine_block_snapshot.stateful_node_count,
@@ -7381,7 +7780,7 @@ impl RuntimeSupervisorReport {
             self.observation.observation.sandbox_operation_failure_events,
         );
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{plugin_discovery}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{plugin_discovery}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 
@@ -7437,10 +7836,13 @@ impl RuntimeSupervisorReport {
                 "\"scheduler_snapshot\":{},",
                 "\"scheduler_summary\":{},",
                 "\"block_summary\":{},",
+                "\"fault_status\":{},",
+                "\"interruption_summary\":{},",
                 "\"degradation_summary\":{},",
                 "\"tempo_map_snapshot\":{},",
                 "\"warp_pipeline_snapshot\":{},",
                 "\"clip_processing_pipeline_snapshot\":{},",
+                "\"recording_capture_snapshot\":{},",
                 "\"plugin_discovery_snapshot\":{},",
                 "\"plugin_chain_snapshot\":{},",
                 "\"metering_snapshot\":{},",
@@ -7562,12 +7964,15 @@ impl RuntimeSupervisorReport {
             json_runtime_scheduler_snapshot(&self.observation.scheduler_snapshot),
             json_runtime_scheduler_export_summary(&self.observation.scheduler_summary),
             json_runtime_block_execution_summary(&self.observation.block_summary),
+            json_runtime_fault_status(&self.observation.fault_status),
+            json_runtime_interruption_summary(&self.observation.interruption_summary),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_tempo_map_snapshot(&self.observation.tempo_map_snapshot),
             json_runtime_warp_pipeline_snapshot(&self.observation.warp_pipeline_snapshot),
             json_runtime_clip_processing_pipeline_snapshot(
                 &self.observation.clip_processing_pipeline_snapshot,
             ),
+            json_runtime_recording_capture_snapshot(&self.observation.recording_capture_snapshot,),
             json_runtime_plugin_discovery_snapshot(&self.observation.plugin_discovery_snapshot),
             json_runtime_plugin_chain_snapshot(&self.observation.plugin_chain_snapshot),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
@@ -8083,6 +8488,198 @@ fn format_runtime_degradation_summary_multiline(summary: &RuntimeDegradationSumm
         summary.plugin_gate_active,
         summary.transport_gate_active,
         summary.last_watchdog_trigger,
+    )
+}
+
+fn format_runtime_fault_status_compact(snapshot: &RuntimeFaultStatusSnapshot) -> String {
+    format!(
+        " fault_status={:?}/{:?}/faults={} xruns={} plugin_fault_active={} watchdog={} device_loss={} transport_fault={} missing_binding={} safe_mode={} restarts={}",
+        snapshot.recovery_state,
+        snapshot.primary_fault_cause,
+        snapshot.active_fault_count,
+        snapshot.xrun_overload_active,
+        snapshot.plugin_fault_active,
+        snapshot.watchdog_restart_count,
+        snapshot.device_loss_count,
+        snapshot.transport_faulted_session_count,
+        snapshot.missing_plugin_binding_active,
+        snapshot.safe_mode_enabled,
+        snapshot.restart_count,
+    )
+}
+
+fn format_runtime_recording_capture_snapshot_compact(
+    snapshot: &RuntimeRecordingCaptureSnapshot,
+) -> String {
+    let checkpoint_class = snapshot
+        .active_checkpoint
+        .as_ref()
+        .map(|checkpoint| checkpoint.checkpoint_class)
+        .or_else(|| {
+            snapshot
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.checkpoint_class)
+        });
+    let interruption_class = snapshot
+        .active_checkpoint
+        .as_ref()
+        .map(|checkpoint| checkpoint.interruption_class)
+        .or_else(|| {
+            snapshot
+                .last_checkpoint
+                .as_ref()
+                .map(|checkpoint| checkpoint.interruption_class)
+        });
+    format!(
+        " recording_capture={:?}/{:?}/{:?} ready={} take={:?} track={:?} frames={} events={} blocks={} pressure={} last_take={:?} last_path={:?} last_duration={:?}",
+        snapshot.state,
+        snapshot.capture_kind,
+        checkpoint_class,
+        snapshot.capture_ready,
+        snapshot.active_take_id,
+        snapshot.active_track_id,
+        snapshot.buffered_frame_count,
+        snapshot.buffered_event_count,
+        snapshot.buffered_block_count,
+        snapshot.pressure_event_count,
+        snapshot.last_committed_take_id,
+        snapshot.last_committed_path,
+        snapshot.last_committed_duration_samples,
+    ) + &format!(" recording_capture_interruption={interruption_class:?}")
+}
+
+fn format_runtime_recording_capture_snapshot_multiline(
+    snapshot: &RuntimeRecordingCaptureSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "\nrecording_capture_ready={}",
+            "\nrecording_capture_state={:?}",
+            "\nrecording_capture_kind={:?}",
+            "\nrecording_capture_active_take_id={:?}",
+            "\nrecording_capture_active_track_id={:?}",
+            "\nrecording_capture_start_samples={:?}",
+            "\nrecording_capture_active_path={:?}",
+            "\nrecording_capture_buffered_blocks={}",
+            "\nrecording_capture_buffered_frames={}",
+            "\nrecording_capture_buffered_events={}",
+            "\nrecording_capture_channel_count={}",
+            "\nrecording_capture_peak_level={:?}",
+            "\nrecording_capture_pressure_events={}",
+            "\nrecording_capture_active_checkpoint={}",
+            "\nrecording_capture_last_checkpoint={}",
+            "\nrecording_capture_last_committed_take_id={:?}",
+            "\nrecording_capture_last_committed_path={:?}",
+            "\nrecording_capture_last_committed_duration_samples={:?}",
+            "\nrecording_capture_last_error={:?}",
+            "\nrecording_capture_summary={}",
+        ),
+        snapshot.capture_ready,
+        snapshot.state,
+        snapshot.capture_kind,
+        snapshot.active_take_id,
+        snapshot.active_track_id,
+        snapshot.capture_start_samples,
+        snapshot.active_capture_path,
+        snapshot.buffered_block_count,
+        snapshot.buffered_frame_count,
+        snapshot.buffered_event_count,
+        snapshot.captured_channel_count,
+        snapshot.peak_level,
+        snapshot.pressure_event_count,
+        snapshot
+            .active_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.summary.as_str())
+            .unwrap_or("none"),
+        snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(|checkpoint| checkpoint.summary.as_str())
+            .unwrap_or("none"),
+        snapshot.last_committed_take_id,
+        snapshot.last_committed_path,
+        snapshot.last_committed_duration_samples,
+        snapshot.last_error,
+        snapshot.summary,
+    )
+}
+
+fn format_runtime_fault_status_multiline(snapshot: &RuntimeFaultStatusSnapshot) -> String {
+    format!(
+        concat!(
+            "\nfault_status_recovery_state={:?}",
+            "\nfault_status_primary_fault_cause={:?}",
+            "\nfault_status_active_fault_count={}",
+            "\nfault_status_xrun_overload_active={}",
+            "\nfault_status_plugin_fault_active={}",
+            "\nfault_status_watchdog_active={}",
+            "\nfault_status_device_loss_active={}",
+            "\nfault_status_transport_fault_active={}",
+            "\nfault_status_missing_plugin_binding_active={}",
+            "\nfault_status_safe_mode_enabled={}",
+            "\nfault_status_restart_count={}",
+            "\nfault_status_watchdog_restart_count={}",
+            "\nfault_status_plugin_fault_count={}",
+            "\nfault_status_transport_faulted_session_count={}",
+            "\nfault_status_device_loss_count={}",
+            "\nfault_status_summary={}",
+        ),
+        snapshot.recovery_state,
+        snapshot.primary_fault_cause,
+        snapshot.active_fault_count,
+        snapshot.xrun_overload_active,
+        snapshot.plugin_fault_active,
+        snapshot.watchdog_active,
+        snapshot.device_loss_active,
+        snapshot.transport_fault_active,
+        snapshot.missing_plugin_binding_active,
+        snapshot.safe_mode_enabled,
+        snapshot.restart_count,
+        snapshot.watchdog_restart_count,
+        snapshot.plugin_fault_count,
+        snapshot.transport_faulted_session_count,
+        snapshot.device_loss_count,
+        snapshot.summary,
+    )
+}
+
+fn format_runtime_interruption_summary_compact(summary: &RuntimeInterruptionSummary) -> String {
+    format!(
+        " interruption={:?}/active={} rebindable={} recovery={:?} primary={:?} deferred={:?}/{:?}",
+        summary.class,
+        summary.active,
+        summary.rebindable,
+        summary.recovery_state,
+        summary.primary_fault_cause,
+        summary.deferred_service_class,
+        summary.deferred_service_decision,
+    )
+}
+
+fn format_runtime_interruption_summary_multiline(summary: &RuntimeInterruptionSummary) -> String {
+    format!(
+        concat!(
+            "\ninterruption_active={}",
+            "\ninterruption_class={:?}",
+            "\ninterruption_rebindable={}",
+            "\ninterruption_recovery_state={:?}",
+            "\ninterruption_primary_fault_cause={:?}",
+            "\ninterruption_safe_mode_enabled={}",
+            "\ninterruption_deferred_service_class={:?}",
+            "\ninterruption_deferred_service_decision={:?}",
+            "\ninterruption_summary={}",
+        ),
+        summary.active,
+        summary.class,
+        summary.rebindable,
+        summary.recovery_state,
+        summary.primary_fault_cause,
+        summary.safe_mode_enabled,
+        summary.deferred_service_class,
+        summary.deferred_service_decision,
+        summary.summary,
     )
 }
 
@@ -9007,6 +9604,214 @@ fn json_runtime_degradation_summary(summary: &RuntimeDegradationSummary) -> Stri
                 .map(|value| format!("{value:?}"))
                 .as_deref()
         ),
+    )
+}
+
+fn json_runtime_fault_status(snapshot: &RuntimeFaultStatusSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"recovery_state\":{},",
+            "\"primary_fault_cause\":{},",
+            "\"active_fault_count\":{},",
+            "\"xrun_overload_active\":{},",
+            "\"plugin_fault_active\":{},",
+            "\"watchdog_active\":{},",
+            "\"device_loss_active\":{},",
+            "\"transport_fault_active\":{},",
+            "\"missing_plugin_binding_active\":{},",
+            "\"safe_mode_enabled\":{},",
+            "\"restart_count\":{},",
+            "\"watchdog_restart_count\":{},",
+            "\"plugin_fault_count\":{},",
+            "\"transport_faulted_session_count\":{},",
+            "\"device_loss_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.recovery_state)),
+        json_option_string(
+            snapshot
+                .primary_fault_cause
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        snapshot.active_fault_count,
+        snapshot.xrun_overload_active,
+        snapshot.plugin_fault_active,
+        snapshot.watchdog_active,
+        snapshot.device_loss_active,
+        snapshot.transport_fault_active,
+        snapshot.missing_plugin_binding_active,
+        snapshot.safe_mode_enabled,
+        snapshot.restart_count,
+        snapshot.watchdog_restart_count,
+        snapshot.plugin_fault_count,
+        snapshot.transport_faulted_session_count,
+        snapshot.device_loss_count,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_recording_capture_checkpoint(
+    checkpoint: &RuntimeRecordingCaptureCheckpointSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"capture_kind\":{},",
+            "\"checkpoint_class\":{},",
+            "\"interruption_class\":{},",
+            "\"take_id\":{},",
+            "\"track_id\":{},",
+            "\"capture_start_samples\":{},",
+            "\"capture_path\":{},",
+            "\"buffered_block_count\":{},",
+            "\"buffered_frame_count\":{},",
+            "\"buffered_event_count\":{},",
+            "\"captured_channel_count\":{},",
+            "\"peak_level\":{},",
+            "\"pressure_event_count\":{},",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(match checkpoint.capture_kind {
+            RuntimeRecordingCaptureKind::Audio => "Audio",
+            RuntimeRecordingCaptureKind::Midi => "Midi",
+        })),
+        json_option_string(Some(match checkpoint.checkpoint_class {
+            RuntimeRecordingCaptureCheckpointClass::Armed => "Armed",
+            RuntimeRecordingCaptureCheckpointClass::Streaming => "Streaming",
+            RuntimeRecordingCaptureCheckpointClass::Buffered => "Buffered",
+            RuntimeRecordingCaptureCheckpointClass::Committed => "Committed",
+            RuntimeRecordingCaptureCheckpointClass::Failed => "Failed",
+        })),
+        json_option_string(Some(match checkpoint.interruption_class {
+            RuntimeInterruptionClass::Steady => "Steady",
+            RuntimeInterruptionClass::Resumable => "Resumable",
+            RuntimeInterruptionClass::Restartable => "Restartable",
+            RuntimeInterruptionClass::Recoverable => "Recoverable",
+            RuntimeInterruptionClass::Terminal => "Terminal",
+        })),
+        json_option_string(Some(checkpoint.take_id.as_str())),
+        json_option_string(Some(checkpoint.track_id.as_str())),
+        checkpoint.capture_start_samples,
+        json_option_string(Some(checkpoint.capture_path.as_str())),
+        checkpoint.buffered_block_count,
+        checkpoint.buffered_frame_count,
+        checkpoint.buffered_event_count,
+        checkpoint.captured_channel_count,
+        json_option_f32(checkpoint.peak_level),
+        checkpoint.pressure_event_count,
+        json_option_string(checkpoint.last_error.as_deref()),
+        json_option_string(Some(checkpoint.summary.as_str())),
+    )
+}
+
+fn json_runtime_recording_capture_snapshot(snapshot: &RuntimeRecordingCaptureSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"capture_ready\":{},",
+            "\"state\":{},",
+            "\"capture_kind\":{},",
+            "\"active_take_id\":{},",
+            "\"active_track_id\":{},",
+            "\"capture_start_samples\":{},",
+            "\"active_capture_path\":{},",
+            "\"buffered_block_count\":{},",
+            "\"buffered_frame_count\":{},",
+            "\"buffered_event_count\":{},",
+            "\"captured_channel_count\":{},",
+            "\"peak_level\":{},",
+            "\"pressure_event_count\":{},",
+            "\"active_checkpoint\":{},",
+            "\"last_checkpoint\":{},",
+            "\"last_committed_take_id\":{},",
+            "\"last_committed_path\":{},",
+            "\"last_committed_duration_samples\":{},",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.capture_ready,
+        json_option_string(snapshot.state.map(|state| match state {
+            RuntimeRecordingCaptureState::Idle => "Idle",
+            RuntimeRecordingCaptureState::Capturing => "Capturing",
+            RuntimeRecordingCaptureState::Failed => "Failed",
+        })),
+        json_option_string(snapshot.capture_kind.map(|kind| match kind {
+            RuntimeRecordingCaptureKind::Audio => "Audio",
+            RuntimeRecordingCaptureKind::Midi => "Midi",
+        })),
+        json_option_string(snapshot.active_take_id.as_deref()),
+        json_option_string(snapshot.active_track_id.as_deref()),
+        json_option_i64(snapshot.capture_start_samples),
+        json_option_string(snapshot.active_capture_path.as_deref()),
+        snapshot.buffered_block_count,
+        snapshot.buffered_frame_count,
+        snapshot.buffered_event_count,
+        snapshot.captured_channel_count,
+        json_option_f32(snapshot.peak_level),
+        snapshot.pressure_event_count,
+        snapshot
+            .active_checkpoint
+            .as_ref()
+            .map(json_runtime_recording_capture_checkpoint)
+            .unwrap_or_else(|| "null".into()),
+        snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(json_runtime_recording_capture_checkpoint)
+            .unwrap_or_else(|| "null".into()),
+        json_option_string(snapshot.last_committed_take_id.as_deref()),
+        json_option_string(snapshot.last_committed_path.as_deref()),
+        json_option_u32(snapshot.last_committed_duration_samples),
+        json_option_string(snapshot.last_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_interruption_summary(summary: &RuntimeInterruptionSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"active\":{},",
+            "\"class\":{},",
+            "\"rebindable\":{},",
+            "\"recovery_state\":{},",
+            "\"primary_fault_cause\":{},",
+            "\"safe_mode_enabled\":{},",
+            "\"deferred_service_class\":{},",
+            "\"deferred_service_decision\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.active,
+        json_string(&format!("{:?}", summary.class)),
+        summary.rebindable,
+        json_string(&format!("{:?}", summary.recovery_state)),
+        json_option_string(
+            summary
+                .primary_fault_cause
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        summary.safe_mode_enabled,
+        json_option_string(
+            summary
+                .deferred_service_class
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            summary
+                .deferred_service_decision
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(Some(summary.summary.as_str())),
     )
 }
 

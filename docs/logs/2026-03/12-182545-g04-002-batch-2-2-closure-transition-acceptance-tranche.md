@@ -38,7 +38,7 @@ This tranche closes that gap and gives `g04.002` a tighter acceptance spine.
 - `cargo test -p signal-runtime runtime_restart_and_reconfigure_keep_realtime_scheduler_window_coherent`
 - `cargo test -p signal-runtime runtime_forecast_profile_change_keeps_realtime_scheduler_coherent`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

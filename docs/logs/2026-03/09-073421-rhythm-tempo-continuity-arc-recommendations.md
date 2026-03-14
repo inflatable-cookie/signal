@@ -32,9 +32,9 @@ Added an arc-level tempo continuity recommendation layer above the existing arc
 
 - `cargo test -p signal-analysis-rhythm --no-run`
 - `cargo check -p signal-analysis-rhythm --example offline_rhythm_demo`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

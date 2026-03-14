@@ -37,14 +37,14 @@ what actually won.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes
 
-- Running `effigy test --repo .` and `effigy validate --repo .` in parallel
+- Running `effigy test` and `effigy validate` in parallel
   still reproduces the known workspace lock conflict, so validation was rerun
   serially and passed cleanly.
 - One older relative meter-confidence ordering assertion became brittle once the

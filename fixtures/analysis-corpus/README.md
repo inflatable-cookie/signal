@@ -52,7 +52,7 @@ than by one analyzer crate:
 - `cargo test -p signal-analysis-character harness -- --nocapture`
 - `cargo test -p signal-analysis-loudness harness -- --nocapture`
 - `cargo test -p signal-analysis-embed harness -- --nocapture`
-- `effigy acceptance:analysis --repo .`
+- `effigy acceptance:analysis`
 
 ## Frozen Policy Manifests
 

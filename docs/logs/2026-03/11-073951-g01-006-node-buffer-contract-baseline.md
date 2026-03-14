@@ -75,9 +75,9 @@ instead of replacing.
 
 - `cargo test -p signal-graph`
 - `cargo test -p signal-runtime --no-run`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Notes

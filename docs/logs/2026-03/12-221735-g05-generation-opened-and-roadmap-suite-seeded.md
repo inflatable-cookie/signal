@@ -39,7 +39,7 @@ reusable Signal-owned answer.
 
 ## Validation
 
-- `effigy health --repo .`
+- `effigy health`
 - `git diff --check`
 
 ## Next

@@ -18,7 +18,7 @@ Milestone-close evidence:
   - `cargo test -p signal-analysis-character harness -- --nocapture`
   - `cargo test -p signal-analysis-loudness harness -- --nocapture`
   - `cargo test -p signal-analysis-embed harness -- --nocapture`
-  - `effigy acceptance:analysis --repo .`
+  - `effigy acceptance:analysis`
 - the frozen policy manifest `fixtures/analysis-corpus/manifests/frozen-family-policies-v1.md`
   now covers every current analyzer family in `g02`
 - closeout evidence exists for:
@@ -132,10 +132,10 @@ Generation decision:
 
 Validation:
 
-- `effigy health --repo .`
-- `effigy acceptance:analysis --repo .`
+- `effigy health`
+- `effigy acceptance:analysis`
 - `git diff --check`
-- `effigy validate --repo .`
+- `effigy validate`
 
 Completion note:
 

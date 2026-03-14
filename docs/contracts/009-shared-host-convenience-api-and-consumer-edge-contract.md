@@ -186,7 +186,7 @@ Batch 2.2 now exposes the shared host-edge boundary through a repo-owned,
 machine-readable inspection surface rather than prose alone:
 
 - `cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json`
-- `effigy acceptance:host-edge-consumer --repo .`
+- `effigy acceptance:host-edge-consumer`
 
 ## Current consumer proof surface
 
@@ -195,7 +195,7 @@ rather than private host internals:
 
 - `crates/signal-host-local/tests/public_host_edge_boundary.rs`
 - `crates/signal-host-server/tests/public_host_edge_boundary.rs`
-- `effigy acceptance:host-edge-consumer --repo .`
+- `effigy acceptance:host-edge-consumer`
 
 ## Next Task
 

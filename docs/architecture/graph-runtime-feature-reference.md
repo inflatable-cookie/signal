@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-12
+Updated: 2026-03-14
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -614,7 +614,7 @@ Implemented now:
     and local delegated executor helpers remain explicitly unstable until later
     `g05.002` tranches promote them
   - `signal-supervisor-tools --describe-host-edge-boundary` and
-    `effigy acceptance:host-edge-consumer --repo .` as the machine-readable
+    `effigy acceptance:host-edge-consumer` as the machine-readable
     inspection and consumer-proof surface for that stable/unstable split
 
 Planned elsewhere but not implemented in these crates yet:
@@ -649,26 +649,33 @@ Useful implementation entry points after this doc:
 - `cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
-- `effigy acceptance:host-edge-consumer --repo .`
-- `effigy acceptance:plugin-backend-breadth --repo .`
-- `effigy acceptance:conformance --repo .`
-- `effigy acceptance:release-boundary --repo .`
-- `effigy acceptance:packaging-manifest --repo .`
-- `effigy acceptance:release-packaging-consumer --repo .`
-- `effigy acceptance:downstream-release --repo .`
-- `effigy acceptance:downstream-depth --repo .`
-- `effigy acceptance:downstream-automation --repo .`
-- `effigy acceptance:downstream-gate --repo .`
-- `effigy acceptance:analysis --repo .`
+- `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:plugin-backend-breadth`
+- `effigy acceptance:conformance`
+- `effigy acceptance:release-boundary`
+- `effigy acceptance:packaging-manifest`
+- `effigy acceptance:release-packaging-consumer`
+- `effigy acceptance:downstream-release`
+- `effigy acceptance:downstream-depth`
+- `effigy acceptance:downstream-automation`
+- `effigy acceptance:downstream-gate`
+- `effigy acceptance:analysis`
 - `cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json`
-- `effigy acceptance:g05-closeout --repo .`
+- `effigy acceptance:g05-closeout`
 - `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`
 - `docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md`
 - `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`
+- `docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md`
+- `crates/signal-supervisor-tools/src/main.rs`
+- `effigy.toml`
+- `crates/signal-runtime/src/interfaces.rs`
+- `crates/signal-runtime/src/runtime.rs`
+- `crates/signal-runtime/tests/public_contract_boundary.rs`
+- `crates/signal-host-local/tests/public_host_edge_boundary.rs`
+- `crates/signal-host-server/tests/public_host_edge_boundary.rs`
 
 ## Next Task
 
-Continue `g06.001` with Batch 1.2 by applying the interruption and
-resumability contract to active runtime-owned snapshots, receipts, and shared
-host-edge surfaces before deeper recovery, profiling, plugin, hardware, and
-media-service milestones widen the implementation.
+Continue `g06.003` with Batch 3.1 by freezing shared plugin placement, rebind,
+and sandbox-continuity semantics before deeper recovery, profiling, plugin,
+hardware, and media-service milestones widen the implementation.

@@ -31,10 +31,10 @@ task.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_host_edge_boundary_mode`
 - `cargo test -p signal-supervisor-tools host_edge_boundary_json_reports_stable_and_unstable_edges`
 - `cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json`
-- `effigy acceptance:host-edge-boundary --repo .`
+- `effigy acceptance:host-edge-boundary`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual Risk
 

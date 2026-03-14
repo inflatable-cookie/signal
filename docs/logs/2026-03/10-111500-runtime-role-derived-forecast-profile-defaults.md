@@ -20,8 +20,8 @@ owner: codex
 - focused host recovery tests
 - `cargo test -p signal-supervisor-tools --no-run`
 - `git diff --check`
-- `effigy validate --repo .`
-- `effigy health --repo .`
+- `effigy validate`
+- `effigy health`
 
 ## Notes
 

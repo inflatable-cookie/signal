@@ -47,7 +47,7 @@ schedule-width changes should matter.
 - `cargo test -p signal-runtime runtime_rebuilds_missing_queued_prework_when_forecast_window_expands`
 - `cargo test -p signal-runtime runtime_scheduler`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

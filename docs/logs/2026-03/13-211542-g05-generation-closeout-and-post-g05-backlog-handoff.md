@@ -22,10 +22,10 @@ closing the generation.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_generation_closeout_mode`
 - `cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue`
 - `cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json`
-- `effigy acceptance:g05-closeout --repo .`
+- `effigy acceptance:g05-closeout`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual risk
 

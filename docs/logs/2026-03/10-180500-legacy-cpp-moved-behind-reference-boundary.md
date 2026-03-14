@@ -19,8 +19,8 @@ surface is now clearly the Rust workspace plus Northstar-shaped docs.
 ## Validation Performed
 
 - `git diff --check`
-- `effigy signal/health --repo .`
-- `effigy signal/validate --repo .`
+- `effigy signal/health`
+- `effigy signal/validate`
 
 ## Risks
 

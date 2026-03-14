@@ -28,9 +28,9 @@ The main result is that `cargo test -p signal-runtime` is green again after reco
 ## Validation
 
 - Passed: `cargo test -p signal-runtime -- --nocapture`
-- Passed: `effigy health --repo .`
-- Passed: `effigy validate --repo .`
-- Passed: `effigy test --repo .`
+- Passed: `effigy health`
+- Passed: `effigy validate`
+- Passed: `effigy test`
 - Passed: touched-file `git diff --check`
 
 ## Notes

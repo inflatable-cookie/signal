@@ -50,9 +50,9 @@ surface in `signal-plugin-clap`.
 - `cargo run -q -p signal-plugin-sandbox`
 - `cargo test -p signal-host-local --no-run`
 - `cargo test -p signal-host-server --no-run`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Outcome

@@ -32,7 +32,7 @@ behavior of the current meter and ambiguity surface.
 
 - `cargo test -p signal-analysis-rhythm` in a temporary four-crate Rust
   workspace copy rooted at `/tmp/signal-rhythm-validate-copy-152021`
-- `effigy validate --repo .`
+- `effigy validate`
 - `git diff --check`
 
 ## Notes

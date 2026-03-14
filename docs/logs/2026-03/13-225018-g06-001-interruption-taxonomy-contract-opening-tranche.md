@@ -19,8 +19,8 @@ can all build on one shared vocabulary.
 ## Validation
 
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual risk
 

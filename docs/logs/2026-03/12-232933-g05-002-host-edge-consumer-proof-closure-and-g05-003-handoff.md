@@ -32,11 +32,11 @@ host consumer tests and moving the active queue to `g05.003`.
 - `cargo test -p signal-supervisor-tools conformance_matrix_json_reports_runnable_consumer_boundary`
 - `cargo test -p signal-supervisor-tools host_edge_boundary_json_reports_stable_and_unstable_edges`
 - `cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json`
-- `effigy acceptance:host-edge-consumer --repo .`
-- `effigy acceptance:conformance --repo .`
+- `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:conformance`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy qa:docs --repo .`
+- `effigy health`
+- `effigy qa:docs`
 
 ## Residual Risk
 

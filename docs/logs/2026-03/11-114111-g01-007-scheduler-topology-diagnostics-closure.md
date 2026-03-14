@@ -37,9 +37,9 @@ own.
 ## Validation
 
 - `cargo test -p signal-runtime`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 - touched-file `git diff --check`
 
 ## Deferred

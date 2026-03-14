@@ -35,7 +35,7 @@ without prematurely freezing every consumer-facing crate.
 ## Validation
 
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

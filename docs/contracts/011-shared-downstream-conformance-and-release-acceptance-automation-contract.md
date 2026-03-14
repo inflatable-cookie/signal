@@ -59,14 +59,14 @@ Signal to claim the current shared consumer and release boundary.
 
 The mandatory tier includes:
 
-- `effigy acceptance:plugin-backend-breadth --repo .`
-- `effigy acceptance:host-edge-consumer --repo .`
-- `effigy acceptance:conformance --repo .`
-- `effigy acceptance:release-boundary --repo .`
-- `effigy acceptance:packaging-manifest --repo .`
-- `effigy acceptance:release-packaging-consumer --repo .`
-- `effigy acceptance:downstream-release --repo .`
-- `effigy acceptance:downstream-gate --repo .`
+- `effigy acceptance:plugin-backend-breadth`
+- `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:conformance`
+- `effigy acceptance:release-boundary`
+- `effigy acceptance:packaging-manifest`
+- `effigy acceptance:release-packaging-consumer`
+- `effigy acceptance:downstream-release`
+- `effigy acceptance:downstream-gate`
 
 Mandatory release acceptance may compose earlier tasks, but it must remain:
 
@@ -83,7 +83,7 @@ confidence but are not yet required for every release claim.
 
 The optional tier currently includes:
 
-- `effigy acceptance:analysis --repo .`
+- `effigy acceptance:analysis`
 - `signal-supervisor-tools` scenario runs that exercise `soak` or `mixed`
   watchdog/fault paths
 - broader runtime profiling and soak receipt inspection beyond the current
@@ -140,16 +140,16 @@ The first fail-gate policy uses three states:
 The current repo-owned fail-gate descriptor and task are:
 
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
-- `effigy acceptance:downstream-gate --repo .`
+- `effigy acceptance:downstream-gate`
 
 The first explicit policy is:
 
-- `effigy acceptance:downstream-release --repo .` is `required`
-- `effigy acceptance:downstream-depth --repo .` is `advisory`
+- `effigy acceptance:downstream-release` is `required`
+- `effigy acceptance:downstream-depth` is `advisory`
 - `cargo run -p signal-supervisor-tools -- --format=json server soak` is
   currently `deferred` because the recovery-overlap attach limit still trips
   that broader fixture
-- `effigy acceptance:analysis --repo .` remains `deferred` for release gating
+- `effigy acceptance:analysis` remains `deferred` for release gating
   even though it is shared and runnable
 
 ## Canonical automation order
@@ -191,17 +191,17 @@ The current repo-owned baseline that this contract builds on is:
 - `cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
-- `effigy acceptance:plugin-backend-breadth --repo .`
-- `effigy acceptance:host-edge-consumer --repo .`
-- `effigy acceptance:conformance --repo .`
-- `effigy acceptance:release-boundary --repo .`
-- `effigy acceptance:packaging-manifest --repo .`
-- `effigy acceptance:release-packaging-consumer --repo .`
-- `effigy acceptance:downstream-release --repo .`
-- `effigy acceptance:downstream-depth --repo .`
-- `effigy acceptance:downstream-automation --repo .`
-- `effigy acceptance:downstream-gate --repo .`
-- `effigy acceptance:analysis --repo .`
+- `effigy acceptance:plugin-backend-breadth`
+- `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:conformance`
+- `effigy acceptance:release-boundary`
+- `effigy acceptance:packaging-manifest`
+- `effigy acceptance:release-packaging-consumer`
+- `effigy acceptance:downstream-release`
+- `effigy acceptance:downstream-depth`
+- `effigy acceptance:downstream-automation`
+- `effigy acceptance:downstream-gate`
+- `effigy acceptance:analysis`
 
 ## Next Task
 

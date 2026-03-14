@@ -46,10 +46,10 @@ This batch adds:
 - `cargo run -p signal-host-server`
 - `cargo run -p signal-plugin-sandbox`
 - `git diff --check`
-- `effigy unlock workspace --repo .`
-- `effigy health --repo .`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy unlock workspace`
+- `effigy health`
+- `effigy validate`
+- `effigy test`
 
 ## Validation Notes
 
@@ -61,8 +61,8 @@ This batch adds:
   - `beat_tracker_matches_named_preset_surface_expectations`
 - Those failures are outside this engine/protocol batch and were not changed
   here. The touched IPC/plugin/host crates passed their targeted tests.
-- `effigy validate --repo .` and `effigy test --repo .` passed after clearing a
-  stale Effigy workspace lock with `effigy unlock workspace --repo .`.
+- `effigy validate` and `effigy test` passed after clearing a
+  stale Effigy workspace lock with `effigy unlock workspace`.
 
 ## Notes
 

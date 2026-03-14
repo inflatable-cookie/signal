@@ -44,7 +44,7 @@ or pushing policy decisions into host-local code.
 - `cargo test -p signal-runtime runtime_realtime_block_services_prework_window_under_normal_pressure`
 - `cargo test -p signal-runtime runtime_scheduler`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

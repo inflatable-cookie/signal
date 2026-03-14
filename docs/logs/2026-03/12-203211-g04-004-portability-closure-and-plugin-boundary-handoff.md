@@ -27,7 +27,7 @@
 - `cargo test -p signal-host-server server_host_recovers_after_crash`
 - `cargo test -p signal-runtime --no-run`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Residual risk
 

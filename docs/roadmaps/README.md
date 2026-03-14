@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-13
+Updated: 2026-03-14
 
 ## Why this section matters now
 
@@ -98,7 +98,7 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.001` with Batch 1.2 by applying the runtime interruption and
-resumability contract to active runtime-owned snapshots and receipts, then walk
-forward through the profiling, plugin-breadth, hardware, media-service, and
-acceptance lanes without reopening host-local ownership.
+Continue `g06.003` with Batch 3.1 by freezing shared plugin placement, rebind,
+and sandbox-continuity semantics, then continue through the profiling,
+plugin-breadth, hardware, media-service, and acceptance lanes without
+reopening host-local ownership.

@@ -1,6 +1,6 @@
 # 012 Runtime Interruption Taxonomy And Resumability Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-03-13
 Related contracts: `docs/contracts/002-supervisor-export-schema-and-report-boundary.md`, `docs/contracts/005-runtime-work-orchestration-and-deferred-service-policy.md`, `docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md`, `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`
@@ -225,6 +225,7 @@ The current repo-owned baseline that this contract builds on is:
 
 ## Next Task
 
-Continue `g06.001` with Batch 1.2 by applying this interruption vocabulary to
-the active runtime-owned snapshots, receipts, and host-facing shared boundary
-surfaces without creating host-local reconstruction paths.
+Continue `g06.002` with Batch 2.1 by defining the recording continuity and
+checkpoint contract on top of this now-closed interruption vocabulary,
+starting with audio and MIDI capture semantics that survive interruption and
+restart.

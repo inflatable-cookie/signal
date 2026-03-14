@@ -37,9 +37,9 @@ host-local inference.
 - `cargo test -p signal-host-local local_host_shared_report_surfaces_topology_aware_host_io`
 - `cargo test -p signal-host-server --no-run`
 - `git diff --check`
-- `effigy health --repo .`
-- `effigy test --repo .`
-- `effigy validate --repo .`
+- `effigy health`
+- `effigy test`
+- `effigy validate`
 
 ## Deferred
 

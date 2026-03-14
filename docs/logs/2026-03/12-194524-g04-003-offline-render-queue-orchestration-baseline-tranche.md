@@ -35,7 +35,7 @@ attach the first reusable orchestration decision model.
 - `cargo fmt --all`
 - `cargo test -p signal-runtime --lib runtime_offline_render_queue`
 - `git diff --check`
-- `effigy health --repo .`
+- `effigy health`
 
 ## Next
 

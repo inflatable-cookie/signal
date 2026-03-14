@@ -13,8 +13,8 @@ and downstream automation receipts.
 - widened the closeout descriptor to include conformance, host-edge, release,
   packaging, downstream automation, and downstream fail-gate machine-readable
   surfaces
-- replaced the stale `effigy acceptance:g04-closeout --repo .` task with
-  `effigy acceptance:g05-closeout --repo .`
+- replaced the stale `effigy acceptance:g04-closeout` task with
+  `effigy acceptance:g05-closeout`
 - made the closeout task depend on the widened downstream release-and-gate
   chain rather than the older narrower release-boundary-only path
 - advanced the roadmap, reference, and contract next-task pointers to
@@ -26,7 +26,7 @@ and downstream automation receipts.
 - `cargo test -p signal-supervisor-tools parse_args_supports_describe_generation_closeout_mode`
 - `cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue`
 - `cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json`
-- `effigy acceptance:g05-closeout --repo .`
+- `effigy acceptance:g05-closeout`
 
 ## Residual risk
 

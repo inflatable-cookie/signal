@@ -42,8 +42,8 @@ plugin-backed node remains part of the same engine path as native nodes.
 - `cargo test -p signal-runtime`
 - `cargo test -p signal-host-local`
 - `git diff --check`
-- `effigy validate --repo .`
-- `effigy test --repo .`
+- `effigy validate`
+- `effigy test`
 
 ## Follow-on
 
