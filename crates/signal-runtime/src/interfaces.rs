@@ -196,6 +196,44 @@ pub struct PluginBackedNodeBinding {
     pub sandbox_id: String,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginIsolationOutcome {
+    InProcess,
+    SharedSandbox,
+    #[default]
+    IsolatedSandbox,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimePluginPlacementRuleMatcher {
+    Any,
+    PluginFormat(PluginFormat),
+    PluginTypeId(String),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginPlacementRule {
+    pub rule_id: String,
+    pub matcher: RuntimePluginPlacementRuleMatcher,
+    pub outcome: RuntimePluginIsolationOutcome,
+    pub sandbox_group_key: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginPlacementPolicy {
+    pub default_outcome: RuntimePluginIsolationOutcome,
+    pub rules: Vec<RuntimePluginPlacementRule>,
+}
+
+impl Default for RuntimePluginPlacementPolicy {
+    fn default() -> Self {
+        Self {
+            default_outcome: RuntimePluginIsolationOutcome::IsolatedSandbox,
+            rules: Vec::new(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PluginBackedNodeBindingProjection {
     pub graph_id: String,
@@ -2255,9 +2293,15 @@ pub enum RuntimePluginLifecycleState {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginSandboxSnapshot {
     pub sandbox_id: String,
+    pub sandbox_group_key: String,
     pub plugin_type_id: Option<String>,
     pub plugin_format: Option<PluginFormat>,
     pub instance_id: Option<String>,
+    pub placement_outcome: RuntimePluginIsolationOutcome,
+    pub placement_rule_id: Option<String>,
+    pub shared_boundary_member_count: usize,
+    pub continuity_class: RuntimeInterruptionClass,
+    pub rebindable: bool,
     pub state: RuntimePluginLifecycleState,
     pub lifecycle_stage: Option<PluginSandboxLifecycleStage>,
     pub transport_stage: Option<PluginSandboxTransportStage>,
@@ -2282,6 +2326,8 @@ pub struct RuntimePluginSandboxSnapshot {
 pub struct RuntimePluginLifecycleSnapshot {
     pub sandbox_count: usize,
     pub active_sandbox_count: u32,
+    pub shared_sandbox_count: usize,
+    pub isolated_sandbox_count: usize,
     pub ready_sandbox_count: usize,
     pub booting_sandbox_count: usize,
     pub degraded_sandbox_count: usize,
@@ -2289,6 +2335,8 @@ pub struct RuntimePluginLifecycleSnapshot {
     pub restarting_sandbox_count: usize,
     pub quarantined_sandbox_count: usize,
     pub stopped_sandbox_count: usize,
+    pub rebindable_sandbox_count: usize,
+    pub terminal_sandbox_count: usize,
     pub sandboxes: Vec<RuntimePluginSandboxSnapshot>,
     pub summary: String,
 }
@@ -2345,11 +2393,19 @@ pub struct RuntimePluginChainStageSnapshot {
     pub node_id: String,
     pub stage_index: usize,
     pub sandbox_id: Option<String>,
+    pub sandbox_group_key: Option<String>,
     pub track_lane_id: Option<String>,
     pub bus_group_id: Option<String>,
     pub console_group_id: Option<String>,
     pub send_return_id: Option<String>,
+    pub placement_outcome: RuntimePluginIsolationOutcome,
+    pub placement_rule_id: Option<String>,
+    pub shared_boundary_member_count: usize,
+    pub continuity_class: RuntimeInterruptionClass,
+    pub rebindable: bool,
     pub lifecycle_state: Option<RuntimePluginLifecycleState>,
+    pub lifecycle_stage: Option<PluginSandboxLifecycleStage>,
+    pub transport_stage: Option<PluginSandboxTransportStage>,
     pub recall_state: RuntimePluginRecallState,
     pub recall: RuntimePluginRecallSnapshot,
     pub compensation_state: RuntimePluginCompensationState,
@@ -2370,12 +2426,17 @@ pub struct RuntimePluginExecutionChainSummary {
     pub console_group_id: Option<String>,
     pub send_return_id: Option<String>,
     pub stage_count: usize,
+    pub shared_sandbox_stage_count: usize,
+    pub isolated_sandbox_stage_count: usize,
+    pub in_process_stage_count: usize,
     pub pending_render_stage_count: usize,
     pub settling_stage_count: usize,
     pub compensated_stage_count: usize,
     pub degraded_stage_count: usize,
     pub bypassed_stage_count: usize,
     pub missing_binding_stage_count: usize,
+    pub rebindable_stage_count: usize,
+    pub terminal_stage_count: usize,
     pub total_planned_latency_samples: u32,
     pub total_realized_latency_samples: u32,
     pub total_tail_samples: u32,
@@ -2387,12 +2448,17 @@ pub struct RuntimePluginExecutionChainSummary {
 pub struct RuntimePluginChainSnapshot {
     pub chain_count: usize,
     pub stage_count: usize,
+    pub shared_sandbox_stage_count: usize,
+    pub isolated_sandbox_stage_count: usize,
+    pub in_process_stage_count: usize,
     pub pending_render_stage_count: usize,
     pub settling_stage_count: usize,
     pub compensated_stage_count: usize,
     pub degraded_stage_count: usize,
     pub bypassed_stage_count: usize,
     pub missing_binding_stage_count: usize,
+    pub rebindable_stage_count: usize,
+    pub terminal_stage_count: usize,
     pub total_planned_latency_samples: u32,
     pub total_realized_latency_samples: u32,
     pub total_tail_samples: u32,
@@ -2637,8 +2703,9 @@ pub enum RuntimeRecoveryState {
     Faulted,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimeInterruptionClass {
+    #[default]
     Steady,
     Resumable,
     Restartable,
@@ -3836,7 +3903,7 @@ impl RuntimeDegradationSummary {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RuntimePerformanceSnapshot {
     pub sample_rate_hz: u32,
     pub block_size: usize,
@@ -3848,6 +3915,12 @@ pub struct RuntimePerformanceSnapshot {
     pub scheduler_phase_count: usize,
     pub scheduler_lane_count: usize,
     pub scheduler_dispatch_count: usize,
+    pub scheduler_prepared_dispatch_count: usize,
+    pub scheduler_realtime_dispatch_count: usize,
+    pub scheduler_dispatch_handoff_count: usize,
+    pub scheduler_topology_compatible: bool,
+    pub scheduler_topology_requires_host_reinterpretation: bool,
+    pub scheduler_topology_issue_count: usize,
     pub prework_service_state: RuntimePreworkServiceState,
     pub prework_service_pressure: RuntimePreworkServicePressure,
     pub prework_service_semantic_policy: RuntimePreworkServiceSemanticPolicy,
@@ -3855,8 +3928,23 @@ pub struct RuntimePerformanceSnapshot {
     pub pending_prework_deferred_target_count: usize,
     pub prework_queue_depth: usize,
     pub prework_peak_queue_depth: usize,
+    pub prework_service_cycle_count: u64,
+    pub prework_service_starvation_count: u64,
+    pub prework_service_throttle_count: u64,
+    pub prework_service_yield_count: u64,
+    pub last_prework_service_effective_cycles: usize,
+    pub last_prework_service_budget_per_cycle: Option<usize>,
+    pub last_prework_service_effective_budget_per_cycle: Option<usize>,
+    pub last_prework_serviced_backlog_class: Option<String>,
     pub transport_gate_active: bool,
     pub plugin_gate_active: bool,
+    pub hot_latency_node_id: Option<String>,
+    pub hot_latency_node_group: Option<String>,
+    pub hot_latency_node_topology_role: Option<String>,
+    pub hot_latency_node_plugin_sandbox_id: Option<String>,
+    pub hot_latency_node_samples: u32,
+    pub hot_latency_group: Option<String>,
+    pub hot_latency_group_total_samples: u32,
     pub background_service_class: Option<RuntimeDeferredServiceClass>,
     pub background_service_decision: Option<RuntimeDeferredServiceDecision>,
     pub background_service_reason: Option<RuntimeDeferredServiceReason>,
@@ -3874,6 +3962,47 @@ impl RuntimePerformanceSnapshot {
         engine_block_snapshot: &RuntimeEngineBlockSnapshot,
         last_deferred_service_receipt: Option<&RuntimeDeferredServiceReceipt>,
     ) -> Self {
+        let hot_latency_node = engine_block_snapshot
+            .planned_nodes
+            .iter()
+            .max_by_key(|node| node.latency_samples)
+            .filter(|node| node.latency_samples > 0);
+        let mut inline_realtime_group_total_samples = 0u32;
+        let mut stateful_realtime_group_total_samples = 0u32;
+        let mut anticipative_group_total_samples = 0u32;
+        for node in &engine_block_snapshot.planned_nodes {
+            match node.group {
+                GraphNodePlanningGroup::InlineRealtime => {
+                    inline_realtime_group_total_samples =
+                        inline_realtime_group_total_samples.saturating_add(node.latency_samples);
+                }
+                GraphNodePlanningGroup::StatefulRealtime => {
+                    stateful_realtime_group_total_samples =
+                        stateful_realtime_group_total_samples.saturating_add(node.latency_samples);
+                }
+                GraphNodePlanningGroup::AnticipativeEligible => {
+                    anticipative_group_total_samples =
+                        anticipative_group_total_samples.saturating_add(node.latency_samples);
+                }
+            }
+        }
+        let hot_latency_group = [
+            (
+                GraphNodePlanningGroup::InlineRealtime,
+                inline_realtime_group_total_samples,
+            ),
+            (
+                GraphNodePlanningGroup::StatefulRealtime,
+                stateful_realtime_group_total_samples,
+            ),
+            (
+                GraphNodePlanningGroup::AnticipativeEligible,
+                anticipative_group_total_samples,
+            ),
+        ]
+        .into_iter()
+        .max_by_key(|(_, total_samples)| *total_samples)
+        .filter(|(_, total_samples)| *total_samples > 0);
         let mut snapshot = Self {
             sample_rate_hz: effective_config.sample_rate.0,
             block_size: effective_config.block_size,
@@ -3885,17 +4014,50 @@ impl RuntimePerformanceSnapshot {
             scheduler_phase_count: engine_block_snapshot.phase_count,
             scheduler_lane_count: engine_block_snapshot.lane_count,
             scheduler_dispatch_count: engine_block_snapshot.dispatch_count,
+            scheduler_prepared_dispatch_count: engine_block_snapshot.prepared_dispatch_count,
+            scheduler_realtime_dispatch_count: engine_block_snapshot.realtime_dispatch_count,
+            scheduler_dispatch_handoff_count: engine_block_snapshot.dispatch_handoff_count,
+            scheduler_topology_compatible: engine_block_snapshot.scheduler_topology.compatible,
+            scheduler_topology_requires_host_reinterpretation: engine_block_snapshot
+                .scheduler_topology
+                .requires_host_reinterpretation,
+            scheduler_topology_issue_count: engine_block_snapshot.scheduler_topology.issues.len(),
             prework_service_state: engine_block_snapshot.prework_service_state,
             prework_service_pressure: engine_block_snapshot.prework_service_pressure,
-            prework_service_semantic_policy: engine_block_snapshot
-                .prework_service_semantic_policy,
+            prework_service_semantic_policy: engine_block_snapshot.prework_service_semantic_policy,
             pending_prework_target_count: engine_block_snapshot.prework_pending_target_count,
             pending_prework_deferred_target_count: engine_block_snapshot
                 .prework_pending_deferred_target_count,
             prework_queue_depth: engine_block_snapshot.prework_cache_queue_depth,
             prework_peak_queue_depth: engine_block_snapshot.prework_cache_peak_queue_depth,
+            prework_service_cycle_count: engine_block_snapshot.prework_service_cycle_count,
+            prework_service_starvation_count: engine_block_snapshot
+                .prework_service_starvation_count,
+            prework_service_throttle_count: engine_block_snapshot.prework_service_throttle_count,
+            prework_service_yield_count: engine_block_snapshot.prework_service_yield_count,
+            last_prework_service_effective_cycles: engine_block_snapshot
+                .last_prework_service_effective_cycles,
+            last_prework_service_budget_per_cycle: engine_block_snapshot
+                .last_prework_service_budget_per_cycle,
+            last_prework_service_effective_budget_per_cycle: engine_block_snapshot
+                .last_prework_service_effective_budget_per_cycle,
+            last_prework_serviced_backlog_class: engine_block_snapshot
+                .last_prework_serviced_backlog_class
+                .map(|value| runtime_prework_backlog_class_name(value).to_string()),
             transport_gate_active: engine_block_snapshot.prework_service_transport_gate_active,
             plugin_gate_active: engine_block_snapshot.prework_service_plugin_gate_active,
+            hot_latency_node_id: hot_latency_node.map(|node| node.node_id.clone()),
+            hot_latency_node_group: hot_latency_node
+                .map(|node| runtime_graph_node_planning_group_name(node.group).to_string()),
+            hot_latency_node_topology_role: hot_latency_node
+                .map(|node| runtime_graph_node_topology_role_name(node.topology_role).to_string()),
+            hot_latency_node_plugin_sandbox_id: hot_latency_node
+                .and_then(|node| node.plugin_sandbox_id.clone()),
+            hot_latency_node_samples: hot_latency_node.map_or(0, |node| node.latency_samples),
+            hot_latency_group: hot_latency_group
+                .map(|(group, _)| runtime_graph_node_planning_group_name(group).to_string()),
+            hot_latency_group_total_samples: hot_latency_group
+                .map_or(0, |(_, total_samples)| total_samples),
             background_service_class: last_deferred_service_receipt
                 .map(|receipt| receipt.work_class),
             background_service_decision: last_deferred_service_receipt
@@ -3915,8 +4077,50 @@ impl RuntimePerformanceSnapshot {
                 .unwrap_or(0),
             summary: String::new(),
         };
+        let dispatch_summary = format!(
+            "{}/{}/{}",
+            snapshot.scheduler_dispatch_count,
+            snapshot.scheduler_prepared_dispatch_count,
+            snapshot.scheduler_realtime_dispatch_count
+        );
+        let topology_summary = format!(
+            "{}/{}/{}",
+            snapshot.scheduler_topology_compatible,
+            snapshot.scheduler_topology_requires_host_reinterpretation,
+            snapshot.scheduler_topology_issue_count
+        );
+        let prework_summary = format!(
+            "{:?}/{:?}/{:?}",
+            snapshot.prework_service_state,
+            snapshot.prework_service_pressure,
+            snapshot.prework_service_semantic_policy,
+        );
+        let service_summary = format!(
+            "{}/{}/{}/{}",
+            snapshot.prework_service_starvation_count,
+            snapshot.prework_service_throttle_count,
+            snapshot.prework_service_yield_count,
+            snapshot.last_prework_service_effective_cycles,
+        );
+        let hot_node_summary = format!(
+            "{:?}/{:?}/{:?}/{}",
+            snapshot.hot_latency_node_id,
+            snapshot.hot_latency_node_group,
+            snapshot.hot_latency_node_topology_role,
+            snapshot.hot_latency_node_samples,
+        );
+        let hot_group_summary = format!(
+            "{:?}/{}",
+            snapshot.hot_latency_group, snapshot.hot_latency_group_total_samples
+        );
+        let background_summary = format!(
+            "{:?}/{:?}/{:?}",
+            snapshot.background_service_class,
+            snapshot.background_service_decision,
+            snapshot.background_service_reason,
+        );
         snapshot.summary = format!(
-            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} xruns={} phases={} lanes={} dispatches={} prework={:?}/{:?}/{:?} pending_targets={}/{} queue={}/{} gates={}/{} background={:?}/{:?}/{:?} items={}/{}/{}",
+            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} xruns={} phases={} lanes={} dispatches={} handoff={} topology={} prework={} pending_targets={}/{} queue={}/{} service={} cycles={} budget={:?}/{:?} backlog={:?} gates={}/{} hot_node={} hot_group={} background={} items={}/{}/{}/{}",
             snapshot.sample_rate_hz,
             snapshot.block_size,
             snapshot.processed_block_count,
@@ -3925,19 +4129,24 @@ impl RuntimePerformanceSnapshot {
             snapshot.xrun_count,
             snapshot.scheduler_phase_count,
             snapshot.scheduler_lane_count,
-            snapshot.scheduler_dispatch_count,
-            snapshot.prework_service_state,
-            snapshot.prework_service_pressure,
-            snapshot.prework_service_semantic_policy,
+            dispatch_summary,
+            snapshot.scheduler_dispatch_handoff_count,
+            topology_summary,
+            prework_summary,
             snapshot.pending_prework_target_count,
             snapshot.pending_prework_deferred_target_count,
             snapshot.prework_queue_depth,
             snapshot.prework_peak_queue_depth,
+            service_summary,
+            snapshot.prework_service_cycle_count,
+            snapshot.last_prework_service_budget_per_cycle,
+            snapshot.last_prework_service_effective_budget_per_cycle,
+            snapshot.last_prework_serviced_backlog_class,
             snapshot.transport_gate_active,
             snapshot.plugin_gate_active,
-            snapshot.background_service_class,
-            snapshot.background_service_decision,
-            snapshot.background_service_reason,
+            hot_node_summary,
+            hot_group_summary,
+            background_summary,
             snapshot.background_queued_work_item_count,
             snapshot.background_deferred_work_item_count,
             snapshot.background_pending_cleanup_work_item_count,
@@ -3960,6 +4169,12 @@ impl RuntimePerformanceSnapshot {
                 "\"scheduler_phase_count\":{},",
                 "\"scheduler_lane_count\":{},",
                 "\"scheduler_dispatch_count\":{},",
+                "\"scheduler_prepared_dispatch_count\":{},",
+                "\"scheduler_realtime_dispatch_count\":{},",
+                "\"scheduler_dispatch_handoff_count\":{},",
+                "\"scheduler_topology_compatible\":{},",
+                "\"scheduler_topology_requires_host_reinterpretation\":{},",
+                "\"scheduler_topology_issue_count\":{},",
                 "\"prework_service_state\":\"{:?}\",",
                 "\"prework_service_pressure\":\"{:?}\",",
                 "\"prework_service_semantic_policy\":\"{:?}\",",
@@ -3967,8 +4182,23 @@ impl RuntimePerformanceSnapshot {
                 "\"pending_prework_deferred_target_count\":{},",
                 "\"prework_queue_depth\":{},",
                 "\"prework_peak_queue_depth\":{},",
+                "\"prework_service_cycle_count\":{},",
+                "\"prework_service_starvation_count\":{},",
+                "\"prework_service_throttle_count\":{},",
+                "\"prework_service_yield_count\":{},",
+                "\"last_prework_service_effective_cycles\":{},",
+                "\"last_prework_service_budget_per_cycle\":{},",
+                "\"last_prework_service_effective_budget_per_cycle\":{},",
+                "\"last_prework_serviced_backlog_class\":{},",
                 "\"transport_gate_active\":{},",
                 "\"plugin_gate_active\":{},",
+                "\"hot_latency_node_id\":{},",
+                "\"hot_latency_node_group\":{},",
+                "\"hot_latency_node_topology_role\":{},",
+                "\"hot_latency_node_plugin_sandbox_id\":{},",
+                "\"hot_latency_node_samples\":{},",
+                "\"hot_latency_group\":{},",
+                "\"hot_latency_group_total_samples\":{},",
                 "\"background_service_class\":{},",
                 "\"background_service_decision\":{},",
                 "\"background_service_reason\":{},",
@@ -3988,6 +4218,12 @@ impl RuntimePerformanceSnapshot {
             self.scheduler_phase_count,
             self.scheduler_lane_count,
             self.scheduler_dispatch_count,
+            self.scheduler_prepared_dispatch_count,
+            self.scheduler_realtime_dispatch_count,
+            self.scheduler_dispatch_handoff_count,
+            self.scheduler_topology_compatible,
+            self.scheduler_topology_requires_host_reinterpretation,
+            self.scheduler_topology_issue_count,
             self.prework_service_state,
             self.prework_service_pressure,
             self.prework_service_semantic_policy,
@@ -3995,31 +4231,56 @@ impl RuntimePerformanceSnapshot {
             self.pending_prework_deferred_target_count,
             self.prework_queue_depth,
             self.prework_peak_queue_depth,
+            self.prework_service_cycle_count,
+            self.prework_service_starvation_count,
+            self.prework_service_throttle_count,
+            self.prework_service_yield_count,
+            self.last_prework_service_effective_cycles,
+            json_option_u64(
+                self.last_prework_service_budget_per_cycle
+                    .map(|value| value as u64)
+            ),
+            json_option_u64(
+                self.last_prework_service_effective_budget_per_cycle
+                    .map(|value| value as u64),
+            ),
+            json_option_string(self.last_prework_serviced_backlog_class.as_deref()),
             self.transport_gate_active,
             self.plugin_gate_active,
+            json_option_string(self.hot_latency_node_id.as_deref()),
+            json_option_string(self.hot_latency_node_group.as_deref()),
+            json_option_string(self.hot_latency_node_topology_role.as_deref()),
+            json_option_string(self.hot_latency_node_plugin_sandbox_id.as_deref()),
+            self.hot_latency_node_samples,
+            json_option_string(self.hot_latency_group.as_deref()),
+            self.hot_latency_group_total_samples,
             json_option_string(
-                self.background_service_class.as_ref().map(|value| match value {
-                    RuntimeDeferredServiceClass::OfflineRenderQueue => "OfflineRenderQueue",
-                    RuntimeDeferredServiceClass::OfflineRenderPurge => "OfflineRenderPurge",
-                }),
+                self.background_service_class
+                    .as_ref()
+                    .map(|value| match value {
+                        RuntimeDeferredServiceClass::OfflineRenderQueue => "OfflineRenderQueue",
+                        RuntimeDeferredServiceClass::OfflineRenderPurge => "OfflineRenderPurge",
+                    }),
             ),
-            json_option_string(
-                self.background_service_decision.as_ref().map(|value| match value {
+            json_option_string(self.background_service_decision.as_ref().map(
+                |value| match value {
                     RuntimeDeferredServiceDecision::Run => "Run",
                     RuntimeDeferredServiceDecision::Defer => "Defer",
                     RuntimeDeferredServiceDecision::Throttle => "Throttle",
                     RuntimeDeferredServiceDecision::Abort => "Abort",
-                }),
-            ),
+                }
+            ),),
             json_option_string(
-                self.background_service_reason.as_ref().map(|value| match value {
-                    RuntimeDeferredServiceReason::Ready => "Ready",
-                    RuntimeDeferredServiceReason::RealtimeActive => "RealtimeActive",
-                    RuntimeDeferredServiceReason::PendingCleanup => "PendingCleanup",
-                    RuntimeDeferredServiceReason::RecoveryDegraded => "RecoveryDegraded",
-                    RuntimeDeferredServiceReason::SafeMode => "SafeMode",
-                    RuntimeDeferredServiceReason::InvalidRequest => "InvalidRequest",
-                }),
+                self.background_service_reason
+                    .as_ref()
+                    .map(|value| match value {
+                        RuntimeDeferredServiceReason::Ready => "Ready",
+                        RuntimeDeferredServiceReason::RealtimeActive => "RealtimeActive",
+                        RuntimeDeferredServiceReason::PendingCleanup => "PendingCleanup",
+                        RuntimeDeferredServiceReason::RecoveryDegraded => "RecoveryDegraded",
+                        RuntimeDeferredServiceReason::SafeMode => "SafeMode",
+                        RuntimeDeferredServiceReason::InvalidRequest => "InvalidRequest",
+                    }),
             ),
             self.background_queued_work_item_count,
             self.background_deferred_work_item_count,
@@ -4027,6 +4288,33 @@ impl RuntimePerformanceSnapshot {
             self.background_pending_retry_work_item_count,
             json_option_string(Some(self.summary.as_str())),
         )
+    }
+}
+
+fn runtime_graph_node_planning_group_name(group: GraphNodePlanningGroup) -> &'static str {
+    match group {
+        GraphNodePlanningGroup::InlineRealtime => "InlineRealtime",
+        GraphNodePlanningGroup::StatefulRealtime => "StatefulRealtime",
+        GraphNodePlanningGroup::AnticipativeEligible => "AnticipativeEligible",
+    }
+}
+
+fn runtime_graph_node_topology_role_name(role: GraphNodeTopologyRole) -> &'static str {
+    match role {
+        GraphNodeTopologyRole::Utility => "Utility",
+        GraphNodeTopologyRole::TrackLane => "TrackLane",
+        GraphNodeTopologyRole::Bus => "Bus",
+        GraphNodeTopologyRole::Send => "Send",
+        GraphNodeTopologyRole::Return => "Return",
+        GraphNodeTopologyRole::ConsoleNode => "ConsoleNode",
+    }
+}
+
+fn runtime_prework_backlog_class_name(value: RuntimePreworkBacklogClass) -> &'static str {
+    match value {
+        RuntimePreworkBacklogClass::Immediate => "Immediate",
+        RuntimePreworkBacklogClass::NearTerm => "NearTerm",
+        RuntimePreworkBacklogClass::Deferred => "Deferred",
     }
 }
 
@@ -6808,6 +7096,11 @@ impl RuntimeObservationReport {
                 format_runtime_plugin_discovery_snapshot_compact(&self.plugin_discovery_snapshot)
             })
             .unwrap_or_default();
+        let plugin_lifecycle = (self.plugin_lifecycle_snapshot.sandbox_count > 0)
+            .then(|| {
+                format_runtime_plugin_lifecycle_snapshot_compact(&self.plugin_lifecycle_snapshot)
+            })
+            .unwrap_or_default();
         let plugin_chain = (self.plugin_chain_snapshot.chain_count > 0)
             .then(|| format_runtime_plugin_chain_snapshot_compact(&self.plugin_chain_snapshot))
             .unwrap_or_default();
@@ -6886,7 +7179,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -6913,6 +7206,7 @@ impl RuntimeObservationReport {
             warp,
             clip_processing,
             plugin_discovery,
+            plugin_lifecycle,
             plugin_chain,
             automation,
             transport_timeline,
@@ -7243,6 +7537,13 @@ impl RuntimeSupervisorReport {
             .then(|| {
                 format_runtime_plugin_discovery_snapshot_multiline(
                     &self.observation.plugin_discovery_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let plugin_lifecycle = (self.observation.plugin_lifecycle_snapshot.sandbox_count > 0)
+            .then(|| {
+                format_runtime_plugin_lifecycle_snapshot_multiline(
+                    &self.observation.plugin_lifecycle_snapshot,
                 )
             })
             .unwrap_or_default();
@@ -7780,7 +8081,7 @@ impl RuntimeSupervisorReport {
             self.observation.observation.sandbox_operation_failure_events,
         );
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{plugin_discovery}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 
@@ -7844,6 +8145,7 @@ impl RuntimeSupervisorReport {
                 "\"clip_processing_pipeline_snapshot\":{},",
                 "\"recording_capture_snapshot\":{},",
                 "\"plugin_discovery_snapshot\":{},",
+                "\"plugin_lifecycle_snapshot\":{},",
                 "\"plugin_chain_snapshot\":{},",
                 "\"metering_snapshot\":{},",
                 "\"execution_topology_summary\":{},",
@@ -7974,6 +8276,7 @@ impl RuntimeSupervisorReport {
             ),
             json_runtime_recording_capture_snapshot(&self.observation.recording_capture_snapshot,),
             json_runtime_plugin_discovery_snapshot(&self.observation.plugin_discovery_snapshot),
+            json_runtime_plugin_lifecycle_snapshot(&self.observation.plugin_lifecycle_snapshot),
             json_runtime_plugin_chain_snapshot(&self.observation.plugin_chain_snapshot),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary,),
@@ -8838,15 +9141,20 @@ fn format_runtime_clip_processing_pipeline_snapshot_multiline(
 
 fn format_runtime_plugin_chain_snapshot_compact(snapshot: &RuntimePluginChainSnapshot) -> String {
     format!(
-        " plugin_chains={}/{} plugin_chain_pending={} plugin_chain_settling={} plugin_chain_compensated={} plugin_chain_degraded={} plugin_chain_bypassed={} plugin_chain_missing={} plugin_chain_latency={}/{} plugin_chain_tail={}",
+        " plugin_chains={}/{} plugin_chain_placement={}/{}/{} plugin_chain_pending={} plugin_chain_settling={} plugin_chain_compensated={} plugin_chain_degraded={} plugin_chain_bypassed={} plugin_chain_missing={} plugin_chain_rebindable={} plugin_chain_terminal={} plugin_chain_latency={}/{} plugin_chain_tail={}",
         snapshot.chain_count,
         snapshot.stage_count,
+        snapshot.shared_sandbox_stage_count,
+        snapshot.isolated_sandbox_stage_count,
+        snapshot.in_process_stage_count,
         snapshot.pending_render_stage_count,
         snapshot.settling_stage_count,
         snapshot.compensated_stage_count,
         snapshot.degraded_stage_count,
         snapshot.bypassed_stage_count,
         snapshot.missing_binding_stage_count,
+        snapshot.rebindable_stage_count,
+        snapshot.terminal_stage_count,
         snapshot.total_realized_latency_samples,
         snapshot.total_planned_latency_samples,
         snapshot.total_tail_samples,
@@ -8868,6 +9176,20 @@ fn format_runtime_plugin_discovery_snapshot_compact(
             .as_ref()
             .map(|scan| scan.summary.as_str())
             .unwrap_or("none"),
+    )
+}
+
+fn format_runtime_plugin_lifecycle_snapshot_compact(
+    snapshot: &RuntimePluginLifecycleSnapshot,
+) -> String {
+    format!(
+        " plugin_sandboxes={}/{} plugin_sandbox_placement={}/{} plugin_sandbox_rebindable={} plugin_sandbox_terminal={}",
+        snapshot.sandbox_count,
+        snapshot.active_sandbox_count,
+        snapshot.shared_sandbox_count,
+        snapshot.isolated_sandbox_count,
+        snapshot.rebindable_sandbox_count,
+        snapshot.terminal_sandbox_count,
     )
 }
 
@@ -8971,6 +9293,56 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
     )
 }
 
+fn format_runtime_plugin_lifecycle_snapshot_multiline(
+    snapshot: &RuntimePluginLifecycleSnapshot,
+) -> String {
+    let sandbox_lines = snapshot
+        .sandboxes
+        .iter()
+        .enumerate()
+        .map(|(index, sandbox)| {
+            format!(
+                "\nplugin_sandbox_{}={}/group={}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/state={:?}/lifecycle={:?}/transport={:?}/ready={:?}/restarts={}/recoveries={}/faults={}/active={}/transport_active={}/degraded={:?}",
+                index,
+                sandbox.sandbox_id,
+                sandbox.sandbox_group_key,
+                sandbox.placement_outcome,
+                sandbox.placement_rule_id,
+                sandbox.shared_boundary_member_count,
+                sandbox.continuity_class,
+                sandbox.rebindable,
+                sandbox.state,
+                sandbox.lifecycle_stage,
+                sandbox.transport_stage,
+                sandbox.readiness_state,
+                sandbox.restart_count,
+                sandbox.recovery_count,
+                sandbox.fault_count,
+                sandbox.active,
+                sandbox.active_transport,
+                sandbox.degraded_reasons,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nplugin_sandbox_count={}\nplugin_active_sandbox_count={}\nplugin_shared_sandbox_count={}\nplugin_isolated_sandbox_count={}\nplugin_ready_sandbox_count={}\nplugin_booting_sandbox_count={}\nplugin_degraded_sandbox_count={}\nplugin_faulted_sandbox_count={}\nplugin_restarting_sandbox_count={}\nplugin_quarantined_sandbox_count={}\nplugin_stopped_sandbox_count={}\nplugin_rebindable_sandbox_count={}\nplugin_terminal_sandbox_count={}{}",
+        snapshot.sandbox_count,
+        snapshot.active_sandbox_count,
+        snapshot.shared_sandbox_count,
+        snapshot.isolated_sandbox_count,
+        snapshot.ready_sandbox_count,
+        snapshot.booting_sandbox_count,
+        snapshot.degraded_sandbox_count,
+        snapshot.faulted_sandbox_count,
+        snapshot.restarting_sandbox_count,
+        snapshot.quarantined_sandbox_count,
+        snapshot.stopped_sandbox_count,
+        snapshot.rebindable_sandbox_count,
+        snapshot.terminal_sandbox_count,
+        sandbox_lines,
+    )
+}
+
 fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainSnapshot) -> String {
     let chain_lines = snapshot
         .chains
@@ -8983,12 +9355,20 @@ fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainS
                 .enumerate()
                 .map(|(stage_index, stage)| {
                     format!(
-                        "\nplugin_chain_{}_stage_{}={}/sandbox={:?}/lifecycle={:?}/recall={}/compensation={:?}/latency={}/{:?}/{:?}/bypassed={}/active_transport={}/degraded_reasons={:?}",
+                        "\nplugin_chain_{}_stage_{}={}/sandbox={:?}/group={:?}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/lifecycle={:?}/{:?}/transport={:?}/recall={}/compensation={:?}/latency={}/{:?}/{:?}/bypassed={}/active_transport={}/degraded_reasons={:?}",
                         chain_index,
                         stage_index,
                         stage.node_id,
                         stage.sandbox_id,
+                        stage.sandbox_group_key,
+                        stage.placement_outcome,
+                        stage.placement_rule_id,
+                        stage.shared_boundary_member_count,
+                        stage.continuity_class,
+                        stage.rebindable,
                         stage.lifecycle_state,
+                        stage.lifecycle_stage,
+                        stage.transport_stage,
                         format_runtime_plugin_recall_snapshot_compact(&stage.recall),
                         stage.compensation_state,
                         stage.planned_latency_samples,
@@ -9001,7 +9381,7 @@ fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainS
                 })
                 .collect::<String>();
             format!(
-                "\nplugin_chain_{}={}/track={:?}/bus={:?}/console={:?}/send_return={:?}/stages={}/pending={}/settling={}/compensated={}/degraded={}/bypassed={}/missing={}/latency={}/{}/{}{}",
+                "\nplugin_chain_{}={}/track={:?}/bus={:?}/console={:?}/send_return={:?}/stages={}/shared={}/isolated={}/in_process={}/pending={}/settling={}/compensated={}/degraded={}/bypassed={}/missing={}/rebindable={}/terminal={}/latency={}/{}/{}{}",
                 chain_index,
                 chain.chain_id,
                 chain.track_lane_id,
@@ -9009,12 +9389,17 @@ fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainS
                 chain.console_group_id,
                 chain.send_return_id,
                 chain.stage_count,
+                chain.shared_sandbox_stage_count,
+                chain.isolated_sandbox_stage_count,
+                chain.in_process_stage_count,
                 chain.pending_render_stage_count,
                 chain.settling_stage_count,
                 chain.compensated_stage_count,
                 chain.degraded_stage_count,
                 chain.bypassed_stage_count,
                 chain.missing_binding_stage_count,
+                chain.rebindable_stage_count,
+                chain.terminal_stage_count,
                 chain.total_planned_latency_samples,
                 chain.total_realized_latency_samples,
                 chain.total_tail_samples,
@@ -9023,15 +9408,20 @@ fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainS
         })
         .collect::<String>();
     format!(
-        "\nplugin_chain_count={}\nplugin_chain_stage_count={}\nplugin_chain_pending_render_stage_count={}\nplugin_chain_settling_stage_count={}\nplugin_chain_compensated_stage_count={}\nplugin_chain_degraded_stage_count={}\nplugin_chain_bypassed_stage_count={}\nplugin_chain_missing_binding_stage_count={}\nplugin_chain_total_planned_latency_samples={}\nplugin_chain_total_realized_latency_samples={}\nplugin_chain_total_tail_samples={}{}",
+        "\nplugin_chain_count={}\nplugin_chain_stage_count={}\nplugin_chain_shared_sandbox_stage_count={}\nplugin_chain_isolated_sandbox_stage_count={}\nplugin_chain_in_process_stage_count={}\nplugin_chain_pending_render_stage_count={}\nplugin_chain_settling_stage_count={}\nplugin_chain_compensated_stage_count={}\nplugin_chain_degraded_stage_count={}\nplugin_chain_bypassed_stage_count={}\nplugin_chain_missing_binding_stage_count={}\nplugin_chain_rebindable_stage_count={}\nplugin_chain_terminal_stage_count={}\nplugin_chain_total_planned_latency_samples={}\nplugin_chain_total_realized_latency_samples={}\nplugin_chain_total_tail_samples={}{}",
         snapshot.chain_count,
         snapshot.stage_count,
+        snapshot.shared_sandbox_stage_count,
+        snapshot.isolated_sandbox_stage_count,
+        snapshot.in_process_stage_count,
         snapshot.pending_render_stage_count,
         snapshot.settling_stage_count,
         snapshot.compensated_stage_count,
         snapshot.degraded_stage_count,
         snapshot.bypassed_stage_count,
         snapshot.missing_binding_stage_count,
+        snapshot.rebindable_stage_count,
+        snapshot.terminal_stage_count,
         snapshot.total_planned_latency_samples,
         snapshot.total_realized_latency_samples,
         snapshot.total_tail_samples,
@@ -10399,17 +10789,27 @@ fn json_runtime_plugin_discovered_type_record(
 
 fn json_runtime_plugin_chain_stage_snapshot(snapshot: &RuntimePluginChainStageSnapshot) -> String {
     let lifecycle_state = snapshot.lifecycle_state.map(|state| format!("{state:?}"));
+    let lifecycle_stage = snapshot.lifecycle_stage.map(|stage| format!("{stage:?}"));
+    let transport_stage = snapshot.transport_stage.map(|stage| format!("{stage:?}"));
     format!(
         concat!(
             "{{",
             "\"node_id\":{},",
             "\"stage_index\":{},",
             "\"sandbox_id\":{},",
+            "\"sandbox_group_key\":{},",
             "\"track_lane_id\":{},",
             "\"bus_group_id\":{},",
             "\"console_group_id\":{},",
             "\"send_return_id\":{},",
+            "\"placement_outcome\":\"{:?}\",",
+            "\"placement_rule_id\":{},",
+            "\"shared_boundary_member_count\":{},",
+            "\"continuity_class\":\"{:?}\",",
+            "\"rebindable\":{},",
             "\"lifecycle_state\":{},",
+            "\"lifecycle_stage\":{},",
+            "\"transport_stage\":{},",
             "\"recall_state\":\"{:?}\",",
             "\"recall\":{},",
             "\"compensation_state\":\"{:?}\",",
@@ -10425,11 +10825,19 @@ fn json_runtime_plugin_chain_stage_snapshot(snapshot: &RuntimePluginChainStageSn
         json_option_string(Some(snapshot.node_id.as_str())),
         snapshot.stage_index,
         json_option_string(snapshot.sandbox_id.as_deref()),
+        json_option_string(snapshot.sandbox_group_key.as_deref()),
         json_option_string(snapshot.track_lane_id.as_deref()),
         json_option_string(snapshot.bus_group_id.as_deref()),
         json_option_string(snapshot.console_group_id.as_deref()),
         json_option_string(snapshot.send_return_id.as_deref()),
+        snapshot.placement_outcome,
+        json_option_string(snapshot.placement_rule_id.as_deref()),
+        snapshot.shared_boundary_member_count,
+        snapshot.continuity_class,
+        snapshot.rebindable,
         json_option_string(lifecycle_state.as_deref()),
+        json_option_string(lifecycle_stage.as_deref()),
+        json_option_string(transport_stage.as_deref()),
         snapshot.recall_state,
         json_runtime_plugin_recall_snapshot(&snapshot.recall),
         snapshot.compensation_state,
@@ -10466,12 +10874,17 @@ fn json_runtime_plugin_execution_chain_summary(
             "\"console_group_id\":{},",
             "\"send_return_id\":{},",
             "\"stage_count\":{},",
+            "\"shared_sandbox_stage_count\":{},",
+            "\"isolated_sandbox_stage_count\":{},",
+            "\"in_process_stage_count\":{},",
             "\"pending_render_stage_count\":{},",
             "\"settling_stage_count\":{},",
             "\"compensated_stage_count\":{},",
             "\"degraded_stage_count\":{},",
             "\"bypassed_stage_count\":{},",
             "\"missing_binding_stage_count\":{},",
+            "\"rebindable_stage_count\":{},",
+            "\"terminal_stage_count\":{},",
             "\"total_planned_latency_samples\":{},",
             "\"total_realized_latency_samples\":{},",
             "\"total_tail_samples\":{},",
@@ -10485,12 +10898,17 @@ fn json_runtime_plugin_execution_chain_summary(
         json_option_string(summary.console_group_id.as_deref()),
         json_option_string(summary.send_return_id.as_deref()),
         summary.stage_count,
+        summary.shared_sandbox_stage_count,
+        summary.isolated_sandbox_stage_count,
+        summary.in_process_stage_count,
         summary.pending_render_stage_count,
         summary.settling_stage_count,
         summary.compensated_stage_count,
         summary.degraded_stage_count,
         summary.bypassed_stage_count,
         summary.missing_binding_stage_count,
+        summary.rebindable_stage_count,
+        summary.terminal_stage_count,
         summary.total_planned_latency_samples,
         summary.total_realized_latency_samples,
         summary.total_tail_samples,
@@ -10516,12 +10934,17 @@ fn json_runtime_plugin_chain_snapshot(snapshot: &RuntimePluginChainSnapshot) -> 
             "{{",
             "\"chain_count\":{},",
             "\"stage_count\":{},",
+            "\"shared_sandbox_stage_count\":{},",
+            "\"isolated_sandbox_stage_count\":{},",
+            "\"in_process_stage_count\":{},",
             "\"pending_render_stage_count\":{},",
             "\"settling_stage_count\":{},",
             "\"compensated_stage_count\":{},",
             "\"degraded_stage_count\":{},",
             "\"bypassed_stage_count\":{},",
             "\"missing_binding_stage_count\":{},",
+            "\"rebindable_stage_count\":{},",
+            "\"terminal_stage_count\":{},",
             "\"total_planned_latency_samples\":{},",
             "\"total_realized_latency_samples\":{},",
             "\"total_tail_samples\":{},",
@@ -10531,16 +10954,148 @@ fn json_runtime_plugin_chain_snapshot(snapshot: &RuntimePluginChainSnapshot) -> 
         ),
         snapshot.chain_count,
         snapshot.stage_count,
+        snapshot.shared_sandbox_stage_count,
+        snapshot.isolated_sandbox_stage_count,
+        snapshot.in_process_stage_count,
         snapshot.pending_render_stage_count,
         snapshot.settling_stage_count,
         snapshot.compensated_stage_count,
         snapshot.degraded_stage_count,
         snapshot.bypassed_stage_count,
         snapshot.missing_binding_stage_count,
+        snapshot.rebindable_stage_count,
+        snapshot.terminal_stage_count,
         snapshot.total_planned_latency_samples,
         snapshot.total_realized_latency_samples,
         snapshot.total_tail_samples,
         json_runtime_plugin_execution_chain_summary_vec(&snapshot.chains),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_sandbox_snapshot(snapshot: &RuntimePluginSandboxSnapshot) -> String {
+    let plugin_format = snapshot.plugin_format.map(|format| format!("{format:?}"));
+    let state = format!("{:?}", snapshot.state);
+    let continuity_class = format!("{:?}", snapshot.continuity_class);
+    let lifecycle_stage = snapshot.lifecycle_stage.map(|stage| format!("{stage:?}"));
+    let transport_stage = snapshot.transport_stage.map(|stage| format!("{stage:?}"));
+    let last_fault_kind = snapshot.last_fault_kind.map(|kind| format!("{kind:?}"));
+    let last_restart_intent = snapshot
+        .last_restart_intent
+        .map(|intent| format!("{intent:?}"));
+    let last_stop_reason = snapshot
+        .last_stop_reason
+        .map(|reason| format!("{reason:?}"));
+    format!(
+        concat!(
+            "{{",
+            "\"sandbox_id\":{},",
+            "\"sandbox_group_key\":{},",
+            "\"plugin_type_id\":{},",
+            "\"plugin_format\":{},",
+            "\"instance_id\":{},",
+            "\"placement_outcome\":\"{:?}\",",
+            "\"placement_rule_id\":{},",
+            "\"shared_boundary_member_count\":{},",
+            "\"continuity_class\":{},",
+            "\"rebindable\":{},",
+            "\"state\":{},",
+            "\"lifecycle_stage\":{},",
+            "\"transport_stage\":{},",
+            "\"active\":{},",
+            "\"active_transport\":{},",
+            "\"restart_count\":{},",
+            "\"recovery_count\":{},",
+            "\"fault_count\":{},",
+            "\"last_fault_kind\":{},",
+            "\"last_fault_detail\":{},",
+            "\"last_restart_intent\":{},",
+            "\"last_stop_reason\":{},",
+            "\"last_processing_epoch\":{},",
+            "\"readiness_state\":{},",
+            "\"degraded_reasons\":{},",
+            "\"active_lease_id\":{},",
+            "\"active_region_id\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.sandbox_id.as_str())),
+        json_option_string(Some(snapshot.sandbox_group_key.as_str())),
+        json_option_string(snapshot.plugin_type_id.as_deref()),
+        json_option_string(plugin_format.as_deref()),
+        json_option_string(snapshot.instance_id.as_deref()),
+        snapshot.placement_outcome,
+        json_option_string(snapshot.placement_rule_id.as_deref()),
+        snapshot.shared_boundary_member_count,
+        json_option_string(Some(continuity_class.as_str())),
+        snapshot.rebindable,
+        json_option_string(Some(state.as_str())),
+        json_option_string(lifecycle_stage.as_deref()),
+        json_option_string(transport_stage.as_deref()),
+        snapshot.active,
+        snapshot.active_transport,
+        snapshot.restart_count,
+        snapshot.recovery_count,
+        snapshot.fault_count,
+        json_option_string(last_fault_kind.as_deref()),
+        json_option_string(snapshot.last_fault_detail.as_deref()),
+        json_option_string(last_restart_intent.as_deref()),
+        json_option_string(last_stop_reason.as_deref()),
+        json_option_u64(snapshot.last_processing_epoch),
+        json_option_string(snapshot.readiness_state.as_deref()),
+        json_string_vec(&snapshot.degraded_reasons),
+        json_option_string(snapshot.active_lease_id.as_deref()),
+        json_option_string(snapshot.active_region_id.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_sandbox_snapshot_vec(sandboxes: &[RuntimePluginSandboxSnapshot]) -> String {
+    format!(
+        "[{}]",
+        sandboxes
+            .iter()
+            .map(json_runtime_plugin_sandbox_snapshot)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_plugin_lifecycle_snapshot(snapshot: &RuntimePluginLifecycleSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"sandbox_count\":{},",
+            "\"active_sandbox_count\":{},",
+            "\"shared_sandbox_count\":{},",
+            "\"isolated_sandbox_count\":{},",
+            "\"ready_sandbox_count\":{},",
+            "\"booting_sandbox_count\":{},",
+            "\"degraded_sandbox_count\":{},",
+            "\"faulted_sandbox_count\":{},",
+            "\"restarting_sandbox_count\":{},",
+            "\"quarantined_sandbox_count\":{},",
+            "\"stopped_sandbox_count\":{},",
+            "\"rebindable_sandbox_count\":{},",
+            "\"terminal_sandbox_count\":{},",
+            "\"sandboxes\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.sandbox_count,
+        snapshot.active_sandbox_count,
+        snapshot.shared_sandbox_count,
+        snapshot.isolated_sandbox_count,
+        snapshot.ready_sandbox_count,
+        snapshot.booting_sandbox_count,
+        snapshot.degraded_sandbox_count,
+        snapshot.faulted_sandbox_count,
+        snapshot.restarting_sandbox_count,
+        snapshot.quarantined_sandbox_count,
+        snapshot.stopped_sandbox_count,
+        snapshot.rebindable_sandbox_count,
+        snapshot.terminal_sandbox_count,
+        json_runtime_plugin_sandbox_snapshot_vec(&snapshot.sandboxes),
         json_option_string(Some(snapshot.summary.as_str())),
     )
 }
@@ -13258,6 +13813,7 @@ pub struct RuntimePluginDiscoverySnapshot {
 pub struct PluginSandboxSpec {
     pub sandbox_id: String,
     pub plugin_format: PluginFormat,
+    pub plugin_type_id: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13303,6 +13859,10 @@ pub trait RuntimeProjectionApi {
         &mut self,
         projection: PluginBackedNodeBindingProjection,
     ) -> Result<ProjectionReceipt, RuntimeError>;
+    fn apply_plugin_placement_policy(
+        &mut self,
+        policy: RuntimePluginPlacementPolicy,
+    ) -> Result<(), RuntimeError>;
     fn apply_graph_contract_projection(
         &mut self,
         projection: GraphContractProjection,

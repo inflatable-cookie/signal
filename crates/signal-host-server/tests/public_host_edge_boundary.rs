@@ -1,10 +1,17 @@
-use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
+use signal_graph::{
+    synthetic_stereo_block, GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec,
+};
 use signal_host_server::ServerRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_primitives::{FrameCount, SampleRate};
 use signal_runtime::{
-    GraphNodeProjection, GraphProjection, PluginSandboxSpec, PluginScanRequest, RuntimeConfig,
-    RuntimeConfigRequest, RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeProjectionApi,
+    GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeContractProjection,
+    GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, PluginBackedNodeBinding,
+    PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxLifecycleStage,
+    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig,
+    RuntimeConfigRequest, RuntimeInterruptionClass, RuntimeLifecycleApi,
+    RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
+    RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
     RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorApi, SignalRuntime,
     StopReason,
@@ -33,6 +40,87 @@ fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
         .expect("public host-edge capture graph should apply");
 }
 
+fn apply_public_plugin_continuity_graph(
+    runtime: &mut SignalRuntime,
+    graph_id: &str,
+    bindings: &[(&str, &str)],
+) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: bindings.len(),
+            nodes: bindings
+                .iter()
+                .map(|(node_id, _)| GraphNodeProjection {
+                    node_id: (*node_id).into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.65 }],
+                })
+                .collect(),
+        })
+        .expect("public host-edge plugin continuity graph should apply");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: bindings.len(),
+            nodes: bindings
+                .iter()
+                .map(|(node_id, _)| GraphNodeContractProjection {
+                    node_id: (*node_id).into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:host-server:plugin-continuity".into()),
+                        bus_group_id: Some("mix:host-server".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                })
+                .collect(),
+        })
+        .expect("public host-edge plugin continuity contracts should apply");
+    runtime
+        .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+            graph_id: graph_id.into(),
+            bindings: bindings
+                .iter()
+                .map(|(node_id, sandbox_id)| PluginBackedNodeBinding {
+                    node_id: (*node_id).into(),
+                    sandbox_id: (*sandbox_id).into(),
+                })
+                .collect(),
+        })
+        .expect("public host-edge plugin continuity bindings should apply");
+}
+
+fn record_public_plugin_sandbox_ready(
+    runtime: &mut SignalRuntime,
+    sandbox_id: &str,
+    plugin_format: PluginFormat,
+    plugin_type_id: &str,
+    epoch: u64,
+) {
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: sandbox_id.into(),
+        plugin_format,
+        plugin_type_id: Some(plugin_type_id.into()),
+    });
+    runtime.record_plugin_sandbox_lifecycle(
+        sandbox_id,
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(epoch),
+    );
+    runtime.record_plugin_sandbox_transport(
+        sandbox_id,
+        &format!("lease-{sandbox_id}"),
+        &format!("region-{sandbox_id}"),
+        PluginSandboxTransportStage::Attached,
+        Some(epoch),
+        None,
+    );
+}
+
 #[test]
 fn server_shared_host_edge_is_consumable_without_private_helpers() {
     let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
@@ -46,6 +134,7 @@ fn server_shared_host_edge_is_consumable_without_private_helpers() {
     host.ensure_plugin_sandbox(PluginSandboxSpec {
         sandbox_id: "public-host-edge-server".into(),
         plugin_format: PluginFormat::Clap,
+        plugin_type_id: None,
     })
     .expect("public host-edge sandbox ensure should succeed");
 
@@ -198,4 +287,104 @@ fn server_shared_host_edge_exports_restartable_and_terminal_recording_checkpoint
     let rendered = terminal_report.render_json();
     assert!(rendered.contains("\"recording_capture_snapshot\":{"));
     assert!(rendered.contains("\"interruption_class\":\"Terminal\""));
+}
+
+#[test]
+fn server_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuity_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-edge-plugin-continuity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .unwrap();
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .unwrap();
+    runtime
+        .apply_plugin_placement_policy(RuntimePluginPlacementPolicy {
+            default_outcome: RuntimePluginIsolationOutcome::IsolatedSandbox,
+            rules: vec![RuntimePluginPlacementRule {
+                rule_id: "share-verified-clap".into(),
+                matcher: RuntimePluginPlacementRuleMatcher::PluginTypeId(
+                    "plugin://host-server-shared".into(),
+                ),
+                outcome: RuntimePluginIsolationOutcome::SharedSandbox,
+                sandbox_group_key: Some("shared:host-server".into()),
+            }],
+        })
+        .unwrap();
+    apply_public_plugin_continuity_graph(
+        &mut runtime,
+        "graph:host-server:plugin-continuity",
+        &[
+            ("plugin-a", "sandbox-shared"),
+            ("plugin-b", "sandbox-shared"),
+            ("plugin-c", "sandbox-isolated"),
+        ],
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-shared",
+        PluginFormat::Clap,
+        "plugin://host-server-shared",
+        1,
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-isolated",
+        PluginFormat::Clap,
+        "plugin://host-server-isolated",
+        1,
+    );
+    runtime.record_plugin_sandbox_fault(
+        "sandbox-shared",
+        PluginFaultKind::Crash,
+        "server shared crash",
+        Some(2),
+    );
+    runtime.record_plugin_sandbox_fault(
+        "sandbox-shared",
+        PluginFaultKind::Timeout,
+        "server shared timeout",
+        Some(3),
+    );
+
+    let host = ServerRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+    let shared = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "sandbox-shared")
+        .expect("shared host-server boundary should be visible");
+    assert_eq!(
+        shared.placement_outcome,
+        RuntimePluginIsolationOutcome::SharedSandbox
+    );
+    assert_eq!(
+        shared.placement_rule_id.as_deref(),
+        Some("share-verified-clap")
+    );
+    assert_eq!(shared.sandbox_group_key, "shared:host-server");
+    assert_eq!(shared.shared_boundary_member_count, 2);
+    assert_eq!(shared.continuity_class, RuntimeInterruptionClass::Terminal);
+    assert!(!shared.rebindable);
+    let isolated = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "sandbox-isolated")
+        .expect("isolated host-server boundary should remain visible");
+    assert_eq!(isolated.continuity_class, RuntimeInterruptionClass::Steady);
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"plugin_lifecycle_snapshot\":{"));
+    assert!(rendered.contains("\"placement_outcome\":\"SharedSandbox\""));
+    assert!(rendered.contains("\"sandbox_group_key\":\"shared:host-server\""));
+    assert!(rendered.contains("\"shared_boundary_member_count\":2"));
+    assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
 }

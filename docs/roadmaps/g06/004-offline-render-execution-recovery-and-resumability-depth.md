@@ -1,6 +1,6 @@
 # 004 - Offline Render Execution Recovery And Resumability Depth
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.001
@@ -63,5 +63,7 @@ rebindability, resumability, and explicit non-resumable completion failure.
 
 ## Next Task
 
-Continue `g06.005` by turning narrower failure counters into stronger causal
-runtime diagnostics.
+Continue `g06.004` with Batch 4.1 by defining resumable, restartable,
+recoverable, and terminal offline-render session outcomes, then align render
+interruption and checkpoint survival semantics with the shared `g06.001`
+taxonomy before runtime session-depth work begins.

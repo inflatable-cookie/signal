@@ -63,9 +63,9 @@ surfaced in Chorus:
   - runtime interruption taxonomy and resumability contract
 - `g06.002` `complete`
   - recording continuity, MIDI capture, and checkpoint truth
-- `g06.003` `active`
+- `g06.003` `complete`
   - plugin isolation policy, transport rebind, and shared-sandbox continuity depth
-- `g06.004` `planned`
+- `g06.004` `active`
   - offline render execution recovery and resumability depth
 - `g06.005` `planned`
   - runtime fault-cause attribution and diagnostic receipts
@@ -154,6 +154,7 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.003` with Batch 3.1 by freezing placement-rule vocabulary,
-sandbox grouping keys, and shared plugin rebind or continuity semantics before
-widening deeper recovery implementation or feature breadth.
+Continue `g06.004` with Batch 4.1 by freezing resumable, restartable,
+recoverable, and terminal offline-render session outcomes so later render
+checkpoint, artifact, and restart-depth work can build on one runtime-owned
+recovery contract.

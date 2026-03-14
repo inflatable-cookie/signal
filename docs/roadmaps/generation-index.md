@@ -33,7 +33,7 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g06.003` with Batch 3.1 and keep the generation on Signal-owned
-reusable runtime surfaces by freezing shared plugin placement, rebind, and
-sandbox-continuity semantics while keeping `g07` ready as the next full
-feature-breadth queue.
+Continue `g06.004` with Batch 4.1 and keep the generation on Signal-owned
+reusable runtime surfaces by freezing offline-render recovery and resumability
+semantics before broader profiling, plugin, hardware, media, and acceptance
+lanes widen while `g07` remains the next full feature-breadth queue.

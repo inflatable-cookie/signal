@@ -650,6 +650,7 @@ Useful implementation entry points after this doc:
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json`
 - `cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json`
 - `effigy acceptance:host-edge-consumer`
+- `effigy acceptance:plugin-continuity`
 - `effigy acceptance:plugin-backend-breadth`
 - `effigy acceptance:conformance`
 - `effigy acceptance:release-boundary`
@@ -666,16 +667,18 @@ Useful implementation entry points after this doc:
 - `docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md`
 - `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`
 - `docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md`
+- `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
 - `crates/signal-supervisor-tools/src/main.rs`
 - `effigy.toml`
 - `crates/signal-runtime/src/interfaces.rs`
 - `crates/signal-runtime/src/runtime.rs`
+- `crates/signal-runtime/src/lib.rs`
 - `crates/signal-runtime/tests/public_contract_boundary.rs`
 - `crates/signal-host-local/tests/public_host_edge_boundary.rs`
 - `crates/signal-host-server/tests/public_host_edge_boundary.rs`
 
 ## Next Task
 
-Continue `g06.003` with Batch 3.1 by freezing shared plugin placement, rebind,
-and sandbox-continuity semantics before deeper recovery, profiling, plugin,
-hardware, and media-service milestones widen the implementation.
+Continue `g06.004` with Batch 4.1 by freezing offline-render recovery and
+resumability semantics before deeper recovery, profiling, plugin, hardware,
+and media-service milestones widen the implementation.

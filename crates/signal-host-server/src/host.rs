@@ -2668,6 +2668,7 @@ impl ServerDemoPluginSandboxAssembly {
         PluginSandboxSpec {
             sandbox_id: self.request.sandbox_id.clone(),
             plugin_format: self.plugin_format,
+            plugin_type_id: None,
         }
     }
 }

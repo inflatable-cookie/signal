@@ -44,6 +44,7 @@ enum CliMode {
     DescribeConformanceMatrix,
     DescribeInterruptionBoundary,
     DescribeRecordingContinuityBoundary,
+    DescribePluginContinuityBoundary,
     DescribeHostEdgeBoundary,
     DescribeReleaseBoundary,
     DescribePackagingManifest,
@@ -64,6 +65,10 @@ const RECORDING_CONTINUITY_BOUNDARY: &str = "signal.runtime.recording-continuity
 const RECORDING_CONTINUITY_CONTRACT_PATH: &str =
     "docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md";
 const RECORDING_CONTINUITY_ACCEPTANCE_TASK: &str = "effigy acceptance:recording-continuity";
+const PLUGIN_CONTINUITY_BOUNDARY: &str = "signal.runtime.plugin-continuity-boundary";
+const PLUGIN_CONTINUITY_CONTRACT_PATH: &str =
+    "docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md";
+const PLUGIN_CONTINUITY_ACCEPTANCE_TASK: &str = "effigy acceptance:plugin-continuity";
 const HOST_EDGE_BOUNDARY: &str = "signal.host.edge.boundary";
 const HOST_EDGE_CONTRACT_PATH: &str =
     "docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md";
@@ -176,6 +181,30 @@ struct RecordingContinuityBoundarySurface {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct RecordingContinuityValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PluginContinuityBoundarySurfaceKind {
+    RuntimeSnapshot,
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PluginContinuityBoundarySurface {
+    id: &'static str,
+    kind: PluginContinuityBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PluginContinuityValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -329,7 +358,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-recording-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-recording-continuity-boundary|--describe-plugin-continuity-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -375,6 +404,16 @@ impl InterruptionBoundarySurfaceKind {
         match self {
             Self::RuntimeReport => "runtime-report",
             Self::ContinuityReceipt => "continuity-receipt",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl PluginContinuityBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::RuntimeReport => "runtime-report",
             Self::HostEdge => "host-edge",
         }
     }
@@ -716,6 +755,95 @@ fn recording_continuity_validation_steps() -> &'static [RecordingContinuityValid
                 "cargo run -p signal-supervisor-tools -- --describe-recording-continuity-boundary --format=json",
             rationale:
                 "Lets consumers inspect the recording continuity proof boundary without reading private runtime or host implementation detail.",
+        },
+    ]
+}
+
+fn plugin_continuity_boundary_surfaces() -> &'static [PluginContinuityBoundarySurface] {
+    &[
+        PluginContinuityBoundarySurface {
+            id: "runtime-plugin-lifecycle-snapshot",
+            kind: PluginContinuityBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_lifecycle_snapshot and RuntimeSupervisorReport::observation.plugin_lifecycle_snapshot",
+            runtime_anchor: "RuntimePluginLifecycleSnapshot",
+            rationale:
+                "Carries runtime-owned placement outcome, grouping key, shared-boundary member count, continuity class, and rebindability directly on public reports.",
+        },
+        PluginContinuityBoundarySurface {
+            id: "runtime-plugin-chain-snapshot",
+            kind: PluginContinuityBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationApi::get_plugin_chain_snapshot()",
+            runtime_anchor: "RuntimePluginChainSnapshot",
+            rationale:
+                "Keeps stage-level placement and continuity truth inspectable without reconstructing blast radius from host-private transport notes.",
+        },
+        PluginContinuityBoundarySurface {
+            id: "runtime-plugin-placement-policy",
+            kind: PluginContinuityBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeProjectionApi::apply_plugin_placement_policy()",
+            runtime_anchor: "RuntimePluginPlacementPolicy",
+            rationale:
+                "Freezes one runtime-owned allowlist, denylist, and by-format placement surface instead of product-local sandbox policy tables.",
+        },
+        PluginContinuityBoundarySurface {
+            id: "shared-host-plugin-supervisor-report",
+            kind: PluginContinuityBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward plugin placement and shared-boundary continuity truth without host-local rule reconstruction.",
+        },
+    ]
+}
+
+fn plugin_continuity_validation_steps() -> &'static [PluginContinuityValidationStep] {
+    &[
+        PluginContinuityValidationStep {
+            id: "runtime-shared-boundary-blast-radius-proof",
+            command:
+                "cargo test -p signal-runtime runtime_shared_sandbox_blast_radius_stays_boundary_local_across_recovery_and_terminal_states",
+            rationale:
+                "Proves one shared boundary can degrade, recover, and fail terminally across several member instances without contaminating sibling boundaries.",
+        },
+        PluginContinuityValidationStep {
+            id: "runtime-placement-policy-proof",
+            command:
+                "cargo test -p signal-runtime runtime_plugin_placement_policy_exports_allowlist_denylist_and_by_format_receipts",
+            rationale:
+                "Proves runtime-owned allowlist, denylist, and by-format policy outcomes stay explicit on lifecycle and chain receipts.",
+        },
+        PluginContinuityValidationStep {
+            id: "runtime-public-boundary-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_plugin_continuity_boundary_reports_shared_boundary_and_policy_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect shared-boundary continuity and policy truth through public reexports.",
+        },
+        PluginContinuityValidationStep {
+            id: "local-host-plugin-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuity_truth",
+            rationale:
+                "Proves the local shared host edge preserves placement and shared-boundary continuity truth on supervisor export.",
+        },
+        PluginContinuityValidationStep {
+            id: "server-host-plugin-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuity_truth",
+            rationale:
+                "Proves the server shared host edge preserves placement and shared-boundary continuity truth on supervisor export.",
+        },
+        PluginContinuityValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-plugin-continuity-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared plugin continuity proof boundary without reading private runtime or host implementation detail.",
         },
     ]
 }
@@ -1868,6 +1996,120 @@ fn print_recording_continuity_boundary(format: OutputFormat) {
     }
 }
 
+fn render_plugin_continuity_boundary_text() -> String {
+    let mut rendered = format!(
+        "plugin_continuity_boundary: {PLUGIN_CONTINUITY_BOUNDARY}\ncontract_path: {PLUGIN_CONTINUITY_CONTRACT_PATH}\nacceptance_task: {PLUGIN_CONTINUITY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in plugin_continuity_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in plugin_continuity_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "shared-boundary blast radius is now explicit, but dedicated blast-radius DTOs are still deferred beyond the current lifecycle and chain receipts",
+        "the exercised proof path is still sandbox-first, so deeper in-process parity and broader adapter transport tuning remain later plugin-format work",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_plugin_continuity_boundary_json() -> String {
+    let surfaces = plugin_continuity_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = plugin_continuity_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "shared-boundary blast radius is now explicit, but dedicated blast-radius DTOs are still deferred beyond the current lifecycle and chain receipts",
+        "the exercised proof path is still sandbox-first, so deeper in-process parity and broader adapter transport tuning remain later plugin-format work",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(PLUGIN_CONTINUITY_BOUNDARY),
+        json_string(PLUGIN_CONTINUITY_CONTRACT_PATH),
+        json_string(PLUGIN_CONTINUITY_ACCEPTANCE_TASK),
+        plugin_continuity_boundary_surfaces().len(),
+        surfaces,
+        plugin_continuity_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_plugin_continuity_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_plugin_continuity_boundary_text()),
+        OutputFormat::Json => println!("{}", render_plugin_continuity_boundary_json()),
+    }
+}
+
 fn render_host_edge_boundary_text() -> String {
     let mut rendered = format!(
         "host_edge_boundary: {HOST_EDGE_BOUNDARY}\ncontract_path: {HOST_EDGE_CONTRACT_PATH}\nacceptance_task: {HOST_EDGE_ACCEPTANCE_TASK}\nstable_surfaces:\n"
@@ -2652,6 +2894,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_conformance_matrix = false;
     let mut describe_interruption_boundary = false;
     let mut describe_recording_continuity_boundary = false;
+    let mut describe_plugin_continuity_boundary = false;
     let mut describe_host_edge_boundary = false;
     let mut describe_release_boundary = false;
     let mut describe_packaging_manifest = false;
@@ -2687,6 +2930,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         }
         if arg == "--describe-recording-continuity-boundary" {
             describe_recording_continuity_boundary = true;
+            continue;
+        }
+        if arg == "--describe-plugin-continuity-boundary" {
+            describe_plugin_continuity_boundary = true;
             continue;
         }
         if arg == "--describe-host-edge-boundary" {
@@ -2725,6 +2972,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_conformance_matrix,
         describe_interruption_boundary,
         describe_recording_continuity_boundary,
+        describe_plugin_continuity_boundary,
         describe_host_edge_boundary,
         describe_release_boundary,
         describe_packaging_manifest,
@@ -2791,6 +3039,20 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeRecordingContinuityBoundary,
+        });
+    }
+
+    if describe_plugin_continuity_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-plugin-continuity-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribePluginContinuityBoundary,
         });
     }
 
@@ -2923,6 +3185,10 @@ fn main() {
             print_recording_continuity_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribePluginContinuityBoundary => {
+            print_plugin_continuity_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeHostEdgeBoundary => {
             print_host_edge_boundary(args.format);
             Ok(())
@@ -2966,6 +3232,7 @@ mod tests {
         render_host_edge_boundary_json, render_host_edge_boundary_text,
         render_interruption_boundary_json, render_interruption_boundary_text,
         render_packaging_manifest_json, render_packaging_manifest_text,
+        render_plugin_continuity_boundary_json, render_plugin_continuity_boundary_text,
         render_recording_continuity_boundary_json, render_recording_continuity_boundary_text,
         render_release_boundary_json, render_release_boundary_text, render_supervisor_export_json,
         CliArgs, CliMode, ExportDebugOptions, HostProfile, HostSummaryDebugSection, OutputFormat,
@@ -3329,6 +3596,32 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_plugin_continuity_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-plugin-continuity-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribePluginContinuityBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_plugin_continuity_boundary() {
+        let error = parse_args([
+            "--describe-plugin-continuity-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_rejects_multiple_describe_modes() {
         let error = parse_args([
             "--describe-export".into(),
@@ -3617,6 +3910,38 @@ mod tests {
     }
 
     #[test]
+    fn plugin_continuity_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_plugin_continuity_boundary_text();
+        assert!(rendered
+            .contains("plugin_continuity_boundary: signal.runtime.plugin-continuity-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:plugin-continuity"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_lifecycle_snapshot and RuntimeSupervisorReport::observation.plugin_lifecycle_snapshot"
+        ));
+        assert!(rendered.contains("surface: RuntimeObservationApi::get_plugin_chain_snapshot()"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_plugin_continuity_boundary_reports_shared_boundary_and_policy_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-plugin-continuity-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn plugin_continuity_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_plugin_continuity_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.plugin-continuity-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:plugin-continuity\""));
+        assert!(rendered.contains("\"id\":\"runtime-plugin-lifecycle-snapshot\""));
+        assert!(rendered.contains("\"id\":\"runtime-plugin-chain-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-plugin-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-placement-policy-proof\""));
+    }
+
+    #[test]
     fn host_edge_boundary_text_reports_stable_and_unstable_edges() {
         let rendered = render_host_edge_boundary_text();
         assert!(rendered.contains("host_edge_boundary: signal.host.edge.boundary"));
@@ -3885,6 +4210,7 @@ mod tests {
         runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
             sandbox_id: "export-consumer-sandbox".into(),
             plugin_format: PluginFormat::Clap,
+            plugin_type_id: None,
         });
         runtime.record_plugin_sandbox_lifecycle(
             "export-consumer-sandbox",

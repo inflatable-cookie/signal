@@ -1,6 +1,6 @@
 # 003 - Plugin Isolation Policy, Transport Rebind, And Shared-Sandbox Continuity Depth
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.002
@@ -37,33 +37,58 @@ explicitly.
 
 ### Batch 3.1 - Shared-Sandbox Recovery Contract
 
-- [ ] define placement rule vocabulary, sandbox grouping keys, and isolation
+- [x] define placement rule vocabulary, sandbox grouping keys, and isolation
   outcome receipts before adapter breadth widens further
-- [ ] define rebind, shared-boundary degradation, and terminal plugin outcomes
-- [ ] document multi-instance continuity semantics at the runtime boundary
+- [x] define rebind, shared-boundary degradation, and terminal plugin outcomes
+- [x] document multi-instance continuity semantics at the runtime boundary
+
+## Progress Notes
+
+- 2026-03-14: completed Batch 3.1 by freezing contract `014`, defining one
+  shared runtime-owned vocabulary for placement rules, placement policy,
+  sandbox grouping keys, isolation outcomes, shared-sandbox boundaries, rebind,
+  shared-boundary degradation, and terminal sandbox outcomes. The contract also
+  froze the first multi-instance continuity rules so later runtime receipts and
+  host-edge export extend one runtime-owned blast-radius model instead of
+  host-local grouping heuristics.
 
 ### Batch 3.2 - Runtime Rebind Depth
 
-- [ ] add runtime-owned policy evaluation and sandbox-assignment meaning for
+- [x] add runtime-owned policy evaluation and sandbox-assignment meaning for
   in-process, shared-sandbox, and stricter isolated placement
-- [ ] deepen transport-session and sandbox receipts for shared-instance recovery
-- [ ] keep lifecycle and fault surfaces aligned with the new continuity meaning
+- [x] deepen transport-session and sandbox receipts for shared-instance recovery
+- [x] keep lifecycle and fault surfaces aligned with the new continuity meaning
+
+- 2026-03-14: completed Batch 3.2 by adding a runtime-owned
+  `RuntimePluginPlacementPolicy` shell, widening plugin lifecycle and chain
+  snapshots with placement outcome, grouping key, matched rule, shared-boundary
+  member count, continuity class, and rebindability, and exporting
+  `plugin_lifecycle_snapshot` through observation or supervisor JSON so shared
+  sandbox restartable versus terminal truth no longer requires host-local
+  reconstruction.
 
 ### Batch 3.3 - Multi-Instance Proof
 
-- [ ] add focused proofs for shared-sandbox degradation, recovery, and terminal
+- [x] add focused proofs for shared-sandbox degradation, recovery, and terminal
   failure across several plugin instances
-- [ ] add focused proofs for allowlist, denylist, and by-format placement
+- [x] add focused proofs for allowlist, denylist, and by-format placement
   behavior without host-local rule reconstruction
+
+- 2026-03-14: completed Batch 3.3 by proving shared-boundary blast radius,
+  recovery, and terminal continuity across several plugin instances, adding
+  allowlist, denylist, and by-format policy proofs on runtime-owned lifecycle
+  and chain receipts, and promoting the consumer-facing boundary into the
+  machine-readable `signal.runtime.plugin-continuity-boundary` descriptor plus
+  the repo-owned `effigy acceptance:plugin-continuity` task.
 
 ## Acceptance Criteria
 
-- [ ] Signal has an explicit flexible plugin isolation and placement policy
+- [x] Signal has an explicit flexible plugin isolation and placement policy
   contract
-- [ ] Signal has explicit multi-instance sandbox continuity semantics
-- [ ] products can observe plugin recovery truth without local reconstruction
-- [ ] later CLAP, VST3, and AU depth can reuse one placement-policy surface
-- [ ] later adapter breadth can build on one runtime-owned recovery model
+- [x] Signal has explicit multi-instance sandbox continuity semantics
+- [x] products can observe plugin recovery truth without local reconstruction
+- [x] later CLAP, VST3, and AU depth can reuse one placement-policy surface
+- [x] later adapter breadth can build on one runtime-owned recovery model
 
 ## Risks And Mitigations
 
@@ -77,12 +102,13 @@ explicitly.
 
 ## Evidence Requirements
 
-- [ ] log each meaningful plugin-continuity tranche
-- [ ] run focused multi-instance recovery and placement-policy validation
-- [ ] record any deferred adapter-specific behavior explicitly
+- [x] log each meaningful plugin-continuity tranche
+- [x] run focused multi-instance recovery and placement-policy validation
+- [x] record any deferred adapter-specific behavior explicitly
 
 ## Next Task
 
-Continue `g06.003` with Batch 3.1 by defining placement-rule vocabulary,
-sandbox grouping keys, and shared rebind or terminal continuity semantics
-before deeper runtime policy evaluation and multi-instance proof work.
+Continue `g06.004` with Batch 4.1 by freezing resumable, restartable,
+recoverable, and terminal offline-render session outcomes, then align render
+checkpoint survival and interruption meaning with the shared `g06.001`
+taxonomy before runtime session-depth work begins.

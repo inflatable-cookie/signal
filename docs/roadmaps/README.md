@@ -98,7 +98,6 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.003` with Batch 3.1 by freezing shared plugin placement, rebind,
-and sandbox-continuity semantics, then continue through the profiling,
-plugin-breadth, hardware, media-service, and acceptance lanes without
-reopening host-local ownership.
+Continue `g06.004` with Batch 4.1 by freezing offline-render recovery and
+resumability semantics before the later profiling, plugin-breadth, hardware,
+media-service, and acceptance lanes widen further.

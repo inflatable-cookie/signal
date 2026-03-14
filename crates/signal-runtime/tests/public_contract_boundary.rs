@@ -1,3 +1,4 @@
+use signal_graph::GraphNodeTopologyRole;
 use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
 use signal_plugin::{
     PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,
@@ -5,10 +6,14 @@ use signal_plugin::{
 };
 use signal_primitives::{FrameCount, SampleRate};
 use signal_runtime::{
-    GraphNodeProjection, GraphProjection, HandshakeRequest, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginScanRequest, RuntimeConfig, RuntimeConfigRequest,
-    RuntimeEventRecorder, RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeObservationReport,
-    RuntimeOfflineRenderRequest, RuntimePluginDiscoveredTypeRecord, RuntimeProjectionApi,
+    GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeContractProjection,
+    GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, HandshakeRequest,
+    PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage,
+    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig,
+    RuntimeConfigRequest, RuntimeEventRecorder, RuntimeInterruptionClass, RuntimeLifecycleApi,
+    RuntimeObservationReport, RuntimeOfflineRenderRequest, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
+    RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
     RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorReport,
     RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, WatchdogRestartRecord,
@@ -121,6 +126,87 @@ fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
         .expect("public capture graph projection should succeed");
 }
 
+fn apply_public_plugin_continuity_graph(
+    runtime: &mut SignalRuntime,
+    graph_id: &str,
+    bindings: &[(&str, &str)],
+) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: bindings.len(),
+            nodes: bindings
+                .iter()
+                .map(|(node_id, _)| GraphNodeProjection {
+                    node_id: (*node_id).into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.65 }],
+                })
+                .collect(),
+        })
+        .expect("public plugin continuity graph projection should succeed");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: bindings.len(),
+            nodes: bindings
+                .iter()
+                .map(|(node_id, _)| GraphNodeContractProjection {
+                    node_id: (*node_id).into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:plugin-continuity".into()),
+                        bus_group_id: Some("mix:public".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                })
+                .collect(),
+        })
+        .expect("public plugin continuity contracts should succeed");
+    runtime
+        .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+            graph_id: graph_id.into(),
+            bindings: bindings
+                .iter()
+                .map(|(node_id, sandbox_id)| PluginBackedNodeBinding {
+                    node_id: (*node_id).into(),
+                    sandbox_id: (*sandbox_id).into(),
+                })
+                .collect(),
+        })
+        .expect("public plugin continuity bindings should succeed");
+}
+
+fn record_public_plugin_sandbox_ready(
+    runtime: &mut SignalRuntime,
+    sandbox_id: &str,
+    plugin_format: PluginFormat,
+    plugin_type_id: &str,
+    epoch: u64,
+) {
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: sandbox_id.into(),
+        plugin_format,
+        plugin_type_id: Some(plugin_type_id.into()),
+    });
+    runtime.record_plugin_sandbox_lifecycle(
+        sandbox_id,
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(epoch),
+    );
+    runtime.record_plugin_sandbox_transport(
+        sandbox_id,
+        &format!("lease-{sandbox_id}"),
+        &format!("region-{sandbox_id}"),
+        PluginSandboxTransportStage::Attached,
+        Some(epoch),
+        None,
+    );
+}
+
 #[test]
 fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
@@ -139,6 +225,7 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
     runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
         sandbox_id: "public-boundary-sandbox".into(),
         plugin_format: PluginFormat::Clap,
+        plugin_type_id: None,
     });
     runtime.record_plugin_sandbox_lifecycle(
         "public-boundary-sandbox",
@@ -292,6 +379,108 @@ fn public_runtime_plugin_discovery_coverage_is_consumable_from_reexports() {
     assert!(observation_json.contains("\"format_coverage\":["));
     assert!(observation_json.contains("\"multi_format_catalog\":true"));
     assert!(observation_json.contains("\"requires_main_thread_for_state_count\":1"));
+}
+
+#[test]
+fn public_runtime_plugin_continuity_boundary_reports_shared_boundary_and_policy_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-plugin-continuity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public plugin continuity handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public plugin continuity configure should succeed");
+    runtime
+        .apply_plugin_placement_policy(RuntimePluginPlacementPolicy {
+            default_outcome: RuntimePluginIsolationOutcome::IsolatedSandbox,
+            rules: vec![RuntimePluginPlacementRule {
+                rule_id: "share-verified-clap".into(),
+                matcher: RuntimePluginPlacementRuleMatcher::PluginTypeId(
+                    "plugin://public-shared".into(),
+                ),
+                outcome: RuntimePluginIsolationOutcome::SharedSandbox,
+                sandbox_group_key: Some("shared:public".into()),
+            }],
+        })
+        .expect("public plugin continuity policy should apply");
+    apply_public_plugin_continuity_graph(
+        &mut runtime,
+        "graph:public:plugin-continuity",
+        &[
+            ("plugin-a", "sandbox-shared"),
+            ("plugin-b", "sandbox-shared"),
+            ("plugin-c", "sandbox-isolated"),
+        ],
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-shared",
+        PluginFormat::Clap,
+        "plugin://public-shared",
+        1,
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-isolated",
+        PluginFormat::Clap,
+        "plugin://public-isolated",
+        1,
+    );
+    runtime.record_plugin_sandbox_fault(
+        "sandbox-shared",
+        signal_runtime::PluginFaultKind::Crash,
+        "shared public crash",
+        Some(2),
+    );
+    runtime.record_plugin_sandbox_fault(
+        "sandbox-shared",
+        signal_runtime::PluginFaultKind::Timeout,
+        "shared public timeout",
+        Some(3),
+    );
+
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+    let lifecycle = &supervisor.observation.plugin_lifecycle_snapshot;
+    let shared = lifecycle
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "sandbox-shared")
+        .expect("shared boundary should be visible on public runtime boundary");
+    assert_eq!(
+        shared.placement_outcome,
+        RuntimePluginIsolationOutcome::SharedSandbox
+    );
+    assert_eq!(
+        shared.placement_rule_id.as_deref(),
+        Some("share-verified-clap")
+    );
+    assert_eq!(shared.sandbox_group_key, "shared:public");
+    assert_eq!(shared.shared_boundary_member_count, 2);
+    assert_eq!(shared.continuity_class, RuntimeInterruptionClass::Terminal);
+    assert!(!shared.rebindable);
+
+    let isolated = lifecycle
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "sandbox-isolated")
+        .expect("isolated boundary should remain visible on public runtime boundary");
+    assert_eq!(
+        isolated.placement_outcome,
+        RuntimePluginIsolationOutcome::IsolatedSandbox
+    );
+    assert_eq!(isolated.continuity_class, RuntimeInterruptionClass::Steady);
+
+    let rendered = supervisor.render_json();
+    assert!(rendered.contains("\"plugin_lifecycle_snapshot\":{"));
+    assert!(rendered.contains("\"placement_outcome\":\"SharedSandbox\""));
+    assert!(rendered.contains("\"placement_rule_id\":\"share-verified-clap\""));
+    assert!(rendered.contains("\"sandbox_group_key\":\"shared:public\""));
+    assert!(rendered.contains("\"shared_boundary_member_count\":2"));
+    assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
 }
 
 #[test]

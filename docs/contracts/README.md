@@ -31,6 +31,7 @@ Use this section for:
 - `011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`
 - `012-runtime-interruption-taxonomy-and-resumability-contract.md`
 - `013-recording-continuity-midi-capture-and-checkpoint-contract.md`
+- `014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
 
 ## Rule
 
@@ -39,6 +40,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g06.003` with Batch 3.1 by freezing the shared plugin placement,
-rebind, and shared-sandbox continuity contract on top of the now-closed
-recording continuity baseline.
+Continue `g06.004` with Batch 4.1 by freezing offline-render recovery and
+resumability semantics on top of the completed interruption and plugin
+continuity contracts before deeper render session receipts widen.
