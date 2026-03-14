@@ -10,10 +10,10 @@ use signal_runtime::{
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxLifecycleStage,
     PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig,
     RuntimeConfigRequest, RuntimeInterruptionClass, RuntimeLifecycleApi,
-    RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
-    RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi, RuntimeRecordingCaptureKind,
-    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorApi,
-    SafeModeRequest, SignalRuntime,
+    RuntimeOfflineRenderRequest, RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy,
+    RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
+    RuntimeRecordingCaptureKind, RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState,
+    RuntimeSupervisorApi, SafeModeRequest, SignalRuntime,
 };
 
 fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
@@ -37,6 +37,29 @@ fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
             ],
         })
         .expect("public host-edge capture graph should apply");
+}
+
+fn apply_public_render_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 2,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "offline-inline".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.85 }],
+                },
+                GraphNodeProjection {
+                    node_id: "offline-latency".into(),
+                    execution_class: GraphNodeExecutionClass::LatencyBearing,
+                    latency_samples: 16,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                },
+            ],
+        })
+        .expect("public host-edge render graph should apply");
 }
 
 fn apply_public_plugin_continuity_graph(
@@ -325,4 +348,53 @@ fn local_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuit
     assert!(rendered.contains("\"sandbox_group_key\":\"shared:host-local\""));
     assert!(rendered.contains("\"shared_boundary_member_count\":2"));
     assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
+}
+
+#[test]
+fn local_shared_host_edge_exports_resumable_offline_render_session_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-edge-render".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .unwrap();
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .unwrap();
+    apply_public_render_graph(&mut runtime, "graph:host-local:render");
+    runtime
+        .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+            request_id: "render:host-local:resumable".into(),
+            timeline_start_samples: 0,
+            duration_samples: 512,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        })
+        .unwrap();
+    runtime
+        .advance_offline_render_execution("render:host-local:resumable")
+        .unwrap();
+    runtime
+        .pause_offline_render_execution("render:host-local:resumable")
+        .unwrap();
+
+    let host = LocalRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+    assert_eq!(
+        report
+            .observation
+            .offline_render_session_snapshot
+            .active_sessions
+            .first()
+            .map(|session| session.interruption_class),
+        Some(RuntimeInterruptionClass::Resumable)
+    );
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"offline_render_session_snapshot\":{"));
+    assert!(rendered.contains("\"interruption_class\":\"Resumable\""));
 }

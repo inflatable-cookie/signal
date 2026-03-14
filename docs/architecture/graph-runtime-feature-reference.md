@@ -565,6 +565,13 @@ Implemented now:
 - runtime-owned offline render queue and purge receipts for multi-request
   render advancement and artifact/report cleanup without rebuilding queue or
   purge meaning in host-local code
+- runtime-owned offline render session snapshots that preserve active and last
+  render continuity, checkpoints, cancellation, and purge receipts through
+  observation and supervisor export instead of filesystem or queue-ledger
+  inference
+- repo-owned `signal.runtime.offline-render-continuity-boundary` descriptor
+  plus acceptance task so consumers can inspect resumable, restartable, and
+  terminal render-session proof surfaces without private runtime or host code
 - runtime-owned deferred-service receipts for offline render queue execution,
   exposing typed `Run`, `Throttle`, and `Defer` decisions plus the runtime
   state that caused them
@@ -668,6 +675,8 @@ Useful implementation entry points after this doc:
 - `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`
 - `docs/contracts/013-recording-continuity-midi-capture-and-checkpoint-contract.md`
 - `docs/contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
+- `docs/contracts/015-offline-render-recovery-and-resumability-contract.md`
+- `docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
 - `crates/signal-supervisor-tools/src/main.rs`
 - `effigy.toml`
 - `crates/signal-runtime/src/interfaces.rs`
@@ -679,6 +688,7 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Continue `g06.004` with Batch 4.1 by freezing offline-render recovery and
-resumability semantics before deeper recovery, profiling, plugin, hardware,
-and media-service milestones widen the implementation.
+Continue `g06.005` with Batch 5.2 by materializing typed fault-cause and
+contributing-evidence receipts on runtime, supervisor, and host-edge surfaces
+before deeper profiling, plugin, hardware, and media-service milestones widen
+the implementation.

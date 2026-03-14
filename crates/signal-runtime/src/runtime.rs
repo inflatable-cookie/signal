@@ -129,6 +129,8 @@ struct RuntimeOfflineRenderExecutionSession {
     checkpoint_count: usize,
     emitted_checkpoint_count: usize,
     interruption_count: usize,
+    interruption_class_override: Option<RuntimeInterruptionClass>,
+    last_checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
     last_state_summary: String,
     materialized_result: Option<RuntimeOfflineRenderResult>,
     finalizing_checkpoint_emitted: bool,
@@ -199,6 +201,12 @@ pub struct SignalRuntime {
     diagnostics: RuntimeDiagnosticsSnapshot,
     supervision: RuntimeSupervisionState,
     last_deferred_service_receipt: RefCell<Option<RuntimeDeferredServiceReceipt>>,
+    last_offline_render_session_snapshot:
+        RefCell<Option<crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot>>,
+    last_offline_render_cancellation_receipt:
+        RefCell<Option<crate::interfaces::RuntimeOfflineRenderExecutionCancellationReceipt>>,
+    last_offline_render_purge_receipt:
+        RefCell<Option<crate::interfaces::RuntimeOfflineRenderPurgeReceipt>>,
     offline_render_executions: HashMap<String, RuntimeOfflineRenderExecutionSession>,
     next_subscription: u64,
     sinks: Vec<Box<dyn RuntimeEventSink>>,
@@ -4598,8 +4606,28 @@ fn offline_render_execution_interruption_class(
         | RuntimeOfflineRenderExecutionState::Completed => RuntimeInterruptionClass::Steady,
         RuntimeOfflineRenderExecutionState::Paused
         | RuntimeOfflineRenderExecutionState::Recoverable => RuntimeInterruptionClass::Resumable,
-        RuntimeOfflineRenderExecutionState::Cancelled => RuntimeInterruptionClass::Terminal,
+        RuntimeOfflineRenderExecutionState::Cancelled
+        | RuntimeOfflineRenderExecutionState::Failed => RuntimeInterruptionClass::Terminal,
     }
+}
+
+fn offline_render_execution_observed_interruption_class(
+    session: &RuntimeOfflineRenderExecutionSession,
+) -> RuntimeInterruptionClass {
+    session
+        .interruption_class_override
+        .unwrap_or_else(|| offline_render_execution_interruption_class(session.state))
+}
+
+fn offline_render_execution_interruption_rebindable(
+    session: &RuntimeOfflineRenderExecutionSession,
+) -> bool {
+    session.delegated_execution_request.stage_count > 0
+        && matches!(
+            session.state,
+            RuntimeOfflineRenderExecutionState::Paused
+                | RuntimeOfflineRenderExecutionState::Recoverable
+        )
 }
 
 fn purge_offline_render_file(path: &Path) -> Result<OfflineRenderPurgeOutcome, RuntimeError> {
@@ -7892,6 +7920,9 @@ impl SignalRuntime {
             },
             supervision: RuntimeSupervisionState::default(),
             last_deferred_service_receipt: RefCell::new(None),
+            last_offline_render_session_snapshot: RefCell::new(None),
+            last_offline_render_cancellation_receipt: RefCell::new(None),
+            last_offline_render_purge_receipt: RefCell::new(None),
             offline_render_executions: HashMap::new(),
             next_subscription: 1,
             sinks: Vec::new(),
@@ -8930,6 +8961,8 @@ impl SignalRuntime {
             checkpoint_count: Self::offline_render_checkpoint_count(total_block_count),
             emitted_checkpoint_count: 0,
             interruption_count: 0,
+            interruption_class_override: None,
+            last_checkpoint: None,
             last_state_summary: "state=running checkpoints=0".to_string(),
             materialized_result: None,
             finalizing_checkpoint_emitted: false,
@@ -8957,7 +8990,154 @@ impl SignalRuntime {
             summary,
         };
         session.emitted_checkpoint_count = session.emitted_checkpoint_count.saturating_add(1);
+        session.last_checkpoint = Some(checkpoint.clone());
         checkpoint
+    }
+
+    fn offline_render_session_state_snapshot(
+        session: &RuntimeOfflineRenderExecutionSession,
+    ) -> crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot {
+        let (report_path, artifact_count, report_materialized) = session
+            .materialized_result
+            .as_ref()
+            .map(|result| {
+                (
+                    result
+                        .manifest
+                        .report
+                        .as_ref()
+                        .map(|receipt| receipt.report_path.clone()),
+                    result.manifest.artifact_count,
+                    result.manifest.report.is_some(),
+                )
+            })
+            .unwrap_or((None, 0, false));
+        crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot {
+            request_id: session.request.request_id.clone(),
+            state: session.state,
+            interruption_class: offline_render_execution_observed_interruption_class(session),
+            interruption_rebindable: offline_render_execution_interruption_rebindable(session),
+            interruption_count: session.interruption_count,
+            emitted_checkpoint_count: session.emitted_checkpoint_count,
+            checkpoint_count: session.checkpoint_count,
+            rendered_frame_count: session.rendered_frames,
+            total_frame_count: session.total_frames,
+            rendered_block_count: session.block_count,
+            total_block_count: session.total_block_count,
+            artifact_root_path: session.request.artifact_root_path.clone(),
+            report_path,
+            materialized: session.materialized_result.is_some(),
+            artifact_count,
+            report_materialized,
+            active_checkpoint: (session.state != RuntimeOfflineRenderExecutionState::Completed
+                && session.state != RuntimeOfflineRenderExecutionState::Cancelled
+                && session.state != RuntimeOfflineRenderExecutionState::Failed)
+                .then(|| session.last_checkpoint.clone())
+                .flatten(),
+            last_checkpoint: session.last_checkpoint.clone(),
+            summary: session.last_state_summary.clone(),
+        }
+    }
+
+    fn offline_render_session_snapshot(
+        &self,
+    ) -> crate::interfaces::RuntimeOfflineRenderSessionSnapshot {
+        let active_sessions = self
+            .offline_render_executions
+            .values()
+            .map(Self::offline_render_session_state_snapshot)
+            .collect::<Vec<_>>();
+        let active_session_count = active_sessions.len();
+        let paused_session_count = active_sessions
+            .iter()
+            .filter(|session| session.state == RuntimeOfflineRenderExecutionState::Paused)
+            .count();
+        let recoverable_session_count = active_sessions
+            .iter()
+            .filter(|session| session.state == RuntimeOfflineRenderExecutionState::Recoverable)
+            .count();
+        let last_session = self.last_offline_render_session_snapshot.borrow().clone();
+        let last_cancellation = self
+            .last_offline_render_cancellation_receipt
+            .borrow()
+            .clone();
+        let last_purge = self.last_offline_render_purge_receipt.borrow().clone();
+        let last_session_present = last_session.is_some();
+        let last_cancellation_present = last_cancellation.is_some();
+        let last_purge_present = last_purge.is_some();
+        crate::interfaces::RuntimeOfflineRenderSessionSnapshot {
+            active_session_count,
+            paused_session_count,
+            recoverable_session_count,
+            active_sessions,
+            last_session,
+            last_cancellation,
+            last_purge,
+            summary: format!(
+                "active_sessions={} paused_sessions={} recoverable_sessions={} last_session={} last_cancellation={} last_purge={}",
+                active_session_count,
+                paused_session_count,
+                recoverable_session_count,
+                last_session_present,
+                last_cancellation_present,
+                last_purge_present,
+            ),
+        }
+    }
+
+    fn record_last_offline_render_session_snapshot(
+        &self,
+        snapshot: crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot,
+    ) {
+        self.last_offline_render_session_snapshot
+            .replace(Some(snapshot));
+    }
+
+    fn mark_offline_render_sessions_restartable(&mut self, reason: &str) {
+        let summary_snapshot = self
+            .offline_render_executions
+            .values_mut()
+            .map(|session| {
+                session.state = RuntimeOfflineRenderExecutionState::Recoverable;
+                session.interruption_count = session.interruption_count.saturating_add(1);
+                session.interruption_class_override = Some(RuntimeInterruptionClass::Restartable);
+                session.last_state_summary = format!(
+                    "request={} state=recoverable interruption=restartable checkpoints={}/{} interruptions={} reason={}",
+                    session.request.request_id,
+                    session.emitted_checkpoint_count,
+                    session.checkpoint_count,
+                    session.interruption_count,
+                    reason,
+                );
+                Self::offline_render_session_state_snapshot(session)
+            })
+            .last();
+        if let Some(snapshot) = summary_snapshot {
+            self.record_last_offline_render_session_snapshot(snapshot);
+        }
+    }
+
+    fn record_terminal_offline_render_session_failure(
+        &self,
+        session: &mut RuntimeOfflineRenderExecutionSession,
+        stage: RuntimeOfflineRenderCheckpointStage,
+        error: &RuntimeError,
+    ) {
+        session.state = RuntimeOfflineRenderExecutionState::Failed;
+        session.interruption_count = session.interruption_count.saturating_add(1);
+        session.interruption_class_override = Some(RuntimeInterruptionClass::Terminal);
+        session.last_state_summary = format!(
+            "request={} state=failed stage={:?} checkpoints={}/{} interruptions={} error={:?}",
+            session.request.request_id,
+            stage,
+            session.emitted_checkpoint_count,
+            session.checkpoint_count,
+            session.interruption_count,
+            error,
+        );
+        self.record_last_offline_render_session_snapshot(
+            Self::offline_render_session_state_snapshot(session),
+        );
     }
 
     fn offline_render_execution_status_receipt(
@@ -8966,8 +9146,8 @@ impl SignalRuntime {
         RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: session.request.request_id.clone(),
             state: session.state,
-            interruption_class: offline_render_execution_interruption_class(session.state),
-            interruption_rebindable: false,
+            interruption_class: offline_render_execution_observed_interruption_class(session),
+            interruption_rebindable: offline_render_execution_interruption_rebindable(session),
             emitted_checkpoint_count: session.emitted_checkpoint_count,
             checkpoint_count: session.checkpoint_count,
             checkpoint: None,
@@ -9561,13 +9741,47 @@ impl SignalRuntime {
         );
         self.offline_render_executions
             .insert(request_id.clone(), session);
+        let (interruption_rebindable, session_snapshot) = self
+            .offline_render_executions
+            .get(request_id.as_str())
+            .map(|session| {
+                (
+                    offline_render_execution_interruption_rebindable(session),
+                    Self::offline_render_session_state_snapshot(session),
+                )
+            })
+            .unwrap_or((
+                false,
+                crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot {
+                    request_id: request_id.clone(),
+                    state: RuntimeOfflineRenderExecutionState::Running,
+                    interruption_class: RuntimeInterruptionClass::Steady,
+                    interruption_rebindable: false,
+                    interruption_count: 0,
+                    emitted_checkpoint_count,
+                    checkpoint_count,
+                    rendered_frame_count: 0,
+                    total_frame_count: 0,
+                    rendered_block_count: 0,
+                    total_block_count: 0,
+                    artifact_root_path: None,
+                    report_path: None,
+                    materialized: false,
+                    artifact_count: 0,
+                    report_materialized: false,
+                    active_checkpoint: None,
+                    last_checkpoint: None,
+                    summary: "state=running".into(),
+                },
+            ));
+        self.record_last_offline_render_session_snapshot(session_snapshot);
         Ok(RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: request_id.clone(),
             state: RuntimeOfflineRenderExecutionState::Running,
             interruption_class: offline_render_execution_interruption_class(
                 RuntimeOfflineRenderExecutionState::Running,
             ),
-            interruption_rebindable: false,
+            interruption_rebindable,
             emitted_checkpoint_count,
             checkpoint_count,
             checkpoint: Some(checkpoint),
@@ -9583,49 +9797,65 @@ impl SignalRuntime {
         &mut self,
         request_id: &str,
     ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
-        let session = self
-            .offline_render_executions
-            .get_mut(request_id)
-            .ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!("offline render execution `{request_id}` is not active"),
-                )
-            })?;
-        session.state = RuntimeOfflineRenderExecutionState::Paused;
-        session.last_state_summary = format!(
-            "request={} state=paused checkpoints={}/{} rendered_frames={} rendered_blocks={}",
-            request_id,
-            session.emitted_checkpoint_count,
-            session.checkpoint_count,
-            session.rendered_frames,
-            session.block_count
-        );
-        Ok(Self::offline_render_execution_status_receipt(session))
+        let (snapshot, receipt) = {
+            let session = self
+                .offline_render_executions
+                .get_mut(request_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!("offline render execution `{request_id}` is not active"),
+                    )
+                })?;
+            session.state = RuntimeOfflineRenderExecutionState::Paused;
+            session.interruption_class_override = None;
+            session.last_state_summary = format!(
+                "request={} state=paused checkpoints={}/{} rendered_frames={} rendered_blocks={}",
+                request_id,
+                session.emitted_checkpoint_count,
+                session.checkpoint_count,
+                session.rendered_frames,
+                session.block_count
+            );
+            (
+                Self::offline_render_session_state_snapshot(session),
+                Self::offline_render_execution_status_receipt(session),
+            )
+        };
+        self.record_last_offline_render_session_snapshot(snapshot);
+        Ok(receipt)
     }
 
     pub fn resume_offline_render_execution(
         &mut self,
         request_id: &str,
     ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError> {
-        let session = self
-            .offline_render_executions
-            .get_mut(request_id)
-            .ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!("offline render execution `{request_id}` is not active"),
-                )
-            })?;
-        session.state = RuntimeOfflineRenderExecutionState::Running;
-        session.last_state_summary = format!(
-            "request={} state=running checkpoints={}/{} interruption_count={}",
-            request_id,
-            session.emitted_checkpoint_count,
-            session.checkpoint_count,
-            session.interruption_count
-        );
-        Ok(Self::offline_render_execution_status_receipt(session))
+        let (snapshot, receipt) = {
+            let session = self
+                .offline_render_executions
+                .get_mut(request_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!("offline render execution `{request_id}` is not active"),
+                    )
+                })?;
+            session.state = RuntimeOfflineRenderExecutionState::Running;
+            session.interruption_class_override = None;
+            session.last_state_summary = format!(
+                "request={} state=running checkpoints={}/{} interruption_count={}",
+                request_id,
+                session.emitted_checkpoint_count,
+                session.checkpoint_count,
+                session.interruption_count
+            );
+            (
+                Self::offline_render_session_state_snapshot(session),
+                Self::offline_render_execution_status_receipt(session),
+            )
+        };
+        self.record_last_offline_render_session_snapshot(snapshot);
+        Ok(receipt)
     }
 
     pub fn interrupt_offline_render_execution(
@@ -9640,26 +9870,34 @@ impl SignalRuntime {
                 "offline render execution interruption reason cannot be empty",
             ));
         }
-        let session = self
-            .offline_render_executions
-            .get_mut(request_id)
-            .ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!("offline render execution `{request_id}` is not active"),
-                )
-            })?;
-        session.state = RuntimeOfflineRenderExecutionState::Recoverable;
-        session.interruption_count = session.interruption_count.saturating_add(1);
-        session.last_state_summary = format!(
-            "request={} state=recoverable checkpoints={}/{} interruptions={} reason={}",
-            request_id,
-            session.emitted_checkpoint_count,
-            session.checkpoint_count,
-            session.interruption_count,
-            reason
-        );
-        Ok(Self::offline_render_execution_status_receipt(session))
+        let (snapshot, receipt) = {
+            let session = self
+                .offline_render_executions
+                .get_mut(request_id)
+                .ok_or_else(|| {
+                    RuntimeError::new(
+                        RuntimeErrorKind::InvalidRequest,
+                        format!("offline render execution `{request_id}` is not active"),
+                    )
+                })?;
+            session.state = RuntimeOfflineRenderExecutionState::Recoverable;
+            session.interruption_count = session.interruption_count.saturating_add(1);
+            session.interruption_class_override = None;
+            session.last_state_summary = format!(
+                "request={} state=recoverable checkpoints={}/{} interruptions={} reason={}",
+                request_id,
+                session.emitted_checkpoint_count,
+                session.checkpoint_count,
+                session.interruption_count,
+                reason
+            );
+            (
+                Self::offline_render_session_state_snapshot(session),
+                Self::offline_render_execution_status_receipt(session),
+            )
+        };
+        self.record_last_offline_render_session_snapshot(snapshot);
+        Ok(receipt)
     }
 
     pub fn advance_offline_render_execution(
@@ -9678,6 +9916,9 @@ impl SignalRuntime {
 
         if session.state != RuntimeOfflineRenderExecutionState::Running {
             let receipt = Self::offline_render_execution_status_receipt(&session);
+            self.record_last_offline_render_session_snapshot(
+                Self::offline_render_session_state_snapshot(&session),
+            );
             self.offline_render_executions
                 .insert(request_id.to_string(), session);
             return Ok(receipt);
@@ -9774,6 +10015,9 @@ impl SignalRuntime {
                         session.request.request_id, emitted_checkpoint_count, checkpoint_count
                     );
                     session.last_state_summary = summary.clone();
+                    self.record_last_offline_render_session_snapshot(
+                        Self::offline_render_session_state_snapshot(&session),
+                    );
                     self.offline_render_executions
                         .insert(request_id.to_string(), session);
                     return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
@@ -9794,7 +10038,17 @@ impl SignalRuntime {
         }
 
         if session.materialized_result.is_none() {
-            let result = self.materialize_offline_render_session_outputs(&mut session)?;
+            let result = match self.materialize_offline_render_session_outputs(&mut session) {
+                Ok(result) => result,
+                Err(error) => {
+                    self.record_terminal_offline_render_session_failure(
+                        &mut session,
+                        RuntimeOfflineRenderCheckpointStage::MaterializingOutputs,
+                        &error,
+                    );
+                    return Err(error);
+                }
+            };
             session.materialized_result = Some(result);
             let rendered_frames = session.rendered_frames;
             let block_count = session.block_count;
@@ -9820,6 +10074,9 @@ impl SignalRuntime {
                 request_id, emitted_checkpoint_count, checkpoint_count
             );
             session.last_state_summary = summary.clone();
+            self.record_last_offline_render_session_snapshot(
+                Self::offline_render_session_state_snapshot(&session),
+            );
             self.offline_render_executions
                 .insert(request_id.to_string(), session);
             return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
@@ -9865,6 +10122,9 @@ impl SignalRuntime {
                 request_id, emitted_checkpoint_count, checkpoint_count
             );
             session.last_state_summary = summary.clone();
+            self.record_last_offline_render_session_snapshot(
+                Self::offline_render_session_state_snapshot(&session),
+            );
             self.offline_render_executions
                 .insert(request_id.to_string(), session);
             return Ok(RuntimeOfflineRenderExecutionProgressReceipt {
@@ -9890,7 +10150,31 @@ impl SignalRuntime {
                 ),
             )
         })?;
-        result.manifest = materialize_offline_render_delivery(&result)?;
+        result.manifest = match materialize_offline_render_delivery(&result) {
+            Ok(manifest) => manifest,
+            Err(error) => {
+                self.record_terminal_offline_render_session_failure(
+                    &mut session,
+                    RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts,
+                    &error,
+                );
+                return Err(error);
+            }
+        };
+        session.state = RuntimeOfflineRenderExecutionState::Completed;
+        session.interruption_class_override = None;
+        session.last_state_summary = format!(
+            "request={} state=completed checkpoints={}/{} artifacts={} report={}",
+            request_id,
+            session.emitted_checkpoint_count,
+            session.checkpoint_count,
+            result.manifest.artifact_count,
+            result.manifest.report.is_some(),
+        );
+        session.materialized_result = Some(result.clone());
+        self.record_last_offline_render_session_snapshot(
+            Self::offline_render_session_state_snapshot(&session),
+        );
         Ok(RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: request_id.to_string(),
             state: RuntimeOfflineRenderExecutionState::Completed,
@@ -9922,7 +10206,7 @@ impl SignalRuntime {
                     format!("offline render execution `{request_id}` is not active"),
                 )
             })?;
-        Ok(RuntimeOfflineRenderExecutionCancellationReceipt {
+        let receipt = RuntimeOfflineRenderExecutionCancellationReceipt {
             request_id: request_id.to_string(),
             cancelled_after_checkpoint_count: session.emitted_checkpoint_count,
             checkpoint_count: session.checkpoint_count,
@@ -9936,7 +10220,17 @@ impl SignalRuntime {
                 session.rendered_frames,
                 session.block_count
             ),
-        })
+        };
+        self.last_offline_render_cancellation_receipt
+            .replace(Some(receipt.clone()));
+        let mut cancelled_session = session;
+        cancelled_session.state = RuntimeOfflineRenderExecutionState::Cancelled;
+        cancelled_session.interruption_class_override = None;
+        cancelled_session.last_state_summary = receipt.summary.clone();
+        self.record_last_offline_render_session_snapshot(
+            Self::offline_render_session_state_snapshot(&cancelled_session),
+        );
+        Ok(receipt)
     }
 
     pub fn render_offline_queue(
@@ -10012,6 +10306,40 @@ impl SignalRuntime {
             "queue_count={} completed_job_count={} deferred_job_count={} decision={:?}",
             queue_count, completed_job_count, deferred_job_count, decision
         );
+        if let Some(last_result) = results.last() {
+            self.record_last_offline_render_session_snapshot(
+                crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot {
+                    request_id: last_result.request_id.clone(),
+                    state: RuntimeOfflineRenderExecutionState::Completed,
+                    interruption_class: RuntimeInterruptionClass::Steady,
+                    interruption_rebindable: false,
+                    interruption_count: 0,
+                    emitted_checkpoint_count: 0,
+                    checkpoint_count: 0,
+                    rendered_frame_count: last_result.runtime_frame_count,
+                    total_frame_count: last_result.runtime_frame_count,
+                    rendered_block_count: last_result.block_count,
+                    total_block_count: last_result.block_count,
+                    artifact_root_path: last_result.manifest.artifact_root_path.clone(),
+                    report_path: last_result
+                        .manifest
+                        .report
+                        .as_ref()
+                        .map(|report| report.report_path.clone()),
+                    materialized: true,
+                    artifact_count: last_result.manifest.artifact_count,
+                    report_materialized: last_result.manifest.report.is_some(),
+                    active_checkpoint: None,
+                    last_checkpoint: None,
+                    summary: format!(
+                        "request={} state=completed queue_result=true artifacts={} report={}",
+                        last_result.request_id,
+                        last_result.manifest.artifact_count,
+                        last_result.manifest.report.is_some(),
+                    ),
+                },
+            );
+        }
         self.record_deferred_service_receipt(orchestration.clone());
         Ok(RuntimeOfflineRenderQueueResult {
             queue_count,
@@ -10066,7 +10394,7 @@ impl SignalRuntime {
                 "request={} deferred decision={:?} reason={:?}",
                 request_id, decision, reason
             );
-            return Ok(RuntimeOfflineRenderPurgeReceipt {
+            let receipt = RuntimeOfflineRenderPurgeReceipt {
                 request_id,
                 orchestration,
                 artifact_root_path: request.artifact_root_path,
@@ -10077,7 +10405,10 @@ impl SignalRuntime {
                 purged_report: false,
                 purged_report_byte_count: 0,
                 summary,
-            });
+            };
+            self.last_offline_render_purge_receipt
+                .replace(Some(receipt.clone()));
+            return Ok(receipt);
         }
         let purged_report = request
             .report_path
@@ -10097,7 +10428,7 @@ impl SignalRuntime {
         orchestration.deferred_work_item_count = 0;
         orchestration.summary = summarize_deferred_service_receipt(&orchestration);
         self.record_deferred_service_receipt(orchestration.clone());
-        Ok(RuntimeOfflineRenderPurgeReceipt {
+        let receipt = RuntimeOfflineRenderPurgeReceipt {
             request_id: request_id.clone(),
             orchestration,
             artifact_root_path: request.artifact_root_path,
@@ -10116,7 +10447,10 @@ impl SignalRuntime {
                 purged_artifact_root.file_count,
                 purged_artifact_root.byte_count
             ),
-        })
+        };
+        self.last_offline_render_purge_receipt
+            .replace(Some(receipt.clone()));
+        Ok(receipt)
     }
 
     pub fn prepare_offline_plugin_execution_boundary(
@@ -12238,6 +12572,7 @@ impl RuntimeLifecycleApi for SignalRuntime {
             "runtime reconfigured while capture active",
         );
         self.recording_capture.reset_for_runtime_reconfigure();
+        self.mark_offline_render_sessions_restartable("runtime reconfigured while render active");
         self.media_pipeline = RuntimeMediaPipelineStateModel::default();
         self.tempo_map = RuntimeTempoMapStateModel::default();
         self.warp_pipeline = RuntimeWarpPipelineStateModel::default();
@@ -12291,6 +12626,7 @@ impl RuntimeLifecycleApi for SignalRuntime {
             RuntimeInterruptionClass::Restartable,
             "runtime stopped while capture active",
         );
+        self.mark_offline_render_sessions_restartable("runtime stopped while render active");
         self.engine
             .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.stop_count = self.control.stop_count.saturating_add(1);
@@ -13002,6 +13338,12 @@ impl RuntimeObservationApi for SignalRuntime {
 
     fn get_plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot {
         self.plugin_recall_handoff_snapshot()
+    }
+
+    fn get_offline_render_session_snapshot(
+        &self,
+    ) -> crate::interfaces::RuntimeOfflineRenderSessionSnapshot {
+        self.offline_render_session_snapshot()
     }
 
     fn get_last_deferred_service_receipt(&self) -> Option<RuntimeDeferredServiceReceipt> {
@@ -20121,6 +20463,443 @@ mod tests {
     }
 
     #[test]
+    fn runtime_offline_render_session_snapshot_preserves_checkpoint_through_pause_and_recoverable_states(
+    ) {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-session-snapshot");
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:session:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("offline render execution should begin");
+        runtime
+            .advance_offline_render_execution("render:session:0001")
+            .expect("offline render execution should advance");
+
+        let running_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(running_snapshot.active_session_count, 1);
+        assert_eq!(
+            running_snapshot.active_sessions[0].request_id,
+            "render:session:0001"
+        );
+        assert!(running_snapshot.active_sessions[0]
+            .last_checkpoint
+            .as_ref()
+            .is_some());
+
+        runtime
+            .pause_offline_render_execution("render:session:0001")
+            .expect("offline render execution should pause");
+        let paused_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(paused_snapshot.active_session_count, 1);
+        assert_eq!(paused_snapshot.paused_session_count, 1);
+        assert_eq!(paused_snapshot.recoverable_session_count, 0);
+        assert_eq!(
+            paused_snapshot.active_sessions[0].state,
+            RuntimeOfflineRenderExecutionState::Paused
+        );
+        assert_eq!(
+            paused_snapshot.active_sessions[0].interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
+        assert!(paused_snapshot.active_sessions[0]
+            .active_checkpoint
+            .is_some());
+        assert!(paused_snapshot.active_sessions[0].last_checkpoint.is_some());
+        assert_eq!(
+            paused_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.state),
+            Some(RuntimeOfflineRenderExecutionState::Paused)
+        );
+
+        runtime
+            .resume_offline_render_execution("render:session:0001")
+            .expect("paused execution should resume");
+        runtime
+            .interrupt_offline_render_execution(
+                "render:session:0001",
+                "recoverable interruption".into(),
+            )
+            .expect("running execution should become recoverable");
+        let recoverable_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(recoverable_snapshot.active_session_count, 1);
+        assert_eq!(recoverable_snapshot.paused_session_count, 0);
+        assert_eq!(recoverable_snapshot.recoverable_session_count, 1);
+        assert_eq!(
+            recoverable_snapshot.active_sessions[0].state,
+            RuntimeOfflineRenderExecutionState::Recoverable
+        );
+        assert_eq!(
+            recoverable_snapshot.active_sessions[0].interruption_class,
+            RuntimeInterruptionClass::Resumable
+        );
+        assert_eq!(
+            recoverable_snapshot.active_sessions[0].interruption_count,
+            1
+        );
+        assert!(recoverable_snapshot.active_sessions[0]
+            .active_checkpoint
+            .is_some());
+        assert!(recoverable_snapshot.active_sessions[0]
+            .last_checkpoint
+            .is_some());
+        assert_eq!(
+            recoverable_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.state),
+            Some(RuntimeOfflineRenderExecutionState::Recoverable)
+        );
+
+        runtime
+            .cancel_offline_render_execution("render:session:0001")
+            .expect("recoverable execution should cancel for cleanup");
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_session_snapshot_tracks_completed_cancellation_and_purge_receipts() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let completed_artifact_dir = temp_artifact_dir("offline-render-session-completed");
+        let cancelled_artifact_dir = temp_artifact_dir("offline-render-session-cancelled");
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:session:completed".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(completed_artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("completed session should begin");
+        let mut completed_result = None;
+        for _ in 0..32 {
+            let receipt = runtime
+                .advance_offline_render_execution("render:session:completed")
+                .expect("completed session should advance");
+            if let Some(result) = receipt.result {
+                completed_result = Some(result);
+                break;
+            }
+        }
+        let completed_result = completed_result.expect("completed session should finish");
+        let completed_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(completed_snapshot.active_session_count, 0);
+        assert_eq!(
+            completed_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.state),
+            Some(RuntimeOfflineRenderExecutionState::Completed)
+        );
+        assert_eq!(
+            completed_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.request_id.as_str()),
+            Some("render:session:completed")
+        );
+        assert_eq!(
+            completed_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.materialized),
+            Some(true)
+        );
+        assert_eq!(
+            completed_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.artifact_count),
+            Some(completed_result.manifest.artifact_count)
+        );
+        assert_eq!(
+            completed_snapshot
+                .last_session
+                .as_ref()
+                .and_then(|session| session.report_path.as_deref()),
+            completed_result
+                .manifest
+                .report
+                .as_ref()
+                .map(|report| report.report_path.as_str())
+        );
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:session:cancelled".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(cancelled_artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("cancelled session should begin");
+        runtime
+            .advance_offline_render_execution("render:session:cancelled")
+            .expect("cancelled session should advance");
+        runtime
+            .cancel_offline_render_execution("render:session:cancelled")
+            .expect("cancelled session should cancel");
+        let cancelled_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(
+            cancelled_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.state),
+            Some(RuntimeOfflineRenderExecutionState::Cancelled)
+        );
+        assert_eq!(
+            cancelled_snapshot
+                .last_cancellation
+                .as_ref()
+                .map(|receipt| receipt.request_id.as_str()),
+            Some("render:session:cancelled")
+        );
+
+        let completed_report_path = completed_result
+            .manifest
+            .report
+            .as_ref()
+            .map(|receipt| receipt.report_path.clone())
+            .expect("completed session should materialize report");
+        runtime
+            .purge_offline_render_artifacts(RuntimeOfflineRenderPurgeRequest {
+                request_id: completed_result.request_id.clone(),
+                artifact_root_path: completed_result.manifest.artifact_root_path.clone(),
+                report_path: Some(completed_report_path.clone()),
+            })
+            .expect("purge should succeed");
+        let purged_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(
+            purged_snapshot
+                .last_purge
+                .as_ref()
+                .map(|receipt| receipt.request_id.as_str()),
+            Some("render:session:completed")
+        );
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
+        assert!(report
+            .render_json()
+            .contains("\"offline_render_session_snapshot\":{"));
+        assert!(report
+            .render_json()
+            .contains("\"request_id\":\"render:session:cancelled\""));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        let _ = fs::remove_dir(&completed_artifact_dir);
+        let _ = fs::remove_dir(&cancelled_artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_session_snapshot_reports_restartable_state_across_stop_restart_and_resume(
+    ) {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+        let artifact_dir = temp_artifact_dir("offline-render-session-restartable");
+        runtime.start().expect("runtime should start");
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:session:restartable".into(),
+                timeline_start_samples: 0,
+                duration_samples: 2048,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some(artifact_dir.display().to_string()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("restartable session should begin");
+        runtime
+            .advance_offline_render_execution("render:session:restartable")
+            .expect("restartable session should advance");
+
+        runtime
+            .stop(StopReason::DeviceReconfigure)
+            .expect("runtime stop should succeed");
+        let stopped_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(stopped_snapshot.active_session_count, 1);
+        assert_eq!(
+            stopped_snapshot.active_sessions[0].state,
+            RuntimeOfflineRenderExecutionState::Recoverable
+        );
+        assert_eq!(
+            stopped_snapshot.active_sessions[0].interruption_class,
+            RuntimeInterruptionClass::Restartable
+        );
+        assert_eq!(
+            stopped_snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.interruption_class),
+            Some(RuntimeInterruptionClass::Restartable)
+        );
+
+        runtime
+            .restart(RestartRequest { reconfigure: None })
+            .expect("runtime restart should succeed");
+        let restarted_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(restarted_snapshot.active_session_count, 1);
+        assert_eq!(
+            restarted_snapshot.active_sessions[0].interruption_class,
+            RuntimeInterruptionClass::Restartable
+        );
+
+        runtime
+            .resume_offline_render_execution("render:session:restartable")
+            .expect("restartable session should resume");
+        let resumed_snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(resumed_snapshot.active_session_count, 1);
+        assert_eq!(
+            resumed_snapshot.active_sessions[0].state,
+            RuntimeOfflineRenderExecutionState::Running
+        );
+        assert_eq!(
+            resumed_snapshot.active_sessions[0].interruption_class,
+            RuntimeInterruptionClass::Steady
+        );
+
+        let mut completed = None;
+        for _ in 0..32 {
+            let receipt = runtime
+                .advance_offline_render_execution("render:session:restartable")
+                .expect("resumed restartable session should advance");
+            if let Some(result) = receipt.result {
+                completed = Some(result);
+                break;
+            }
+        }
+        let completed = completed.expect("restartable session should complete after resume");
+        assert!(completed.manifest.report.is_some());
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+        for receipt in &completed.manifest.artifacts {
+            let _ = fs::remove_file(&receipt.output_path);
+        }
+        if let Some(report_receipt) = &completed.manifest.report {
+            let _ = fs::remove_file(&report_receipt.report_path);
+        }
+        let _ = fs::remove_dir(&artifact_dir);
+    }
+
+    #[test]
+    fn runtime_offline_render_session_snapshot_reports_failed_terminal_state_on_delivery_error() {
+        let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
+
+        runtime
+            .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+                request_id: "render:session:terminal".into(),
+                timeline_start_samples: 0,
+                duration_samples: 256,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: Some("/dev/null/signal-runtime-offline-render-terminal".into()),
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            })
+            .expect("terminal session should begin");
+
+        let mut failure = None;
+        for _ in 0..16 {
+            match runtime.advance_offline_render_execution("render:session:terminal") {
+                Ok(_) => continue,
+                Err(error) => {
+                    failure = Some(error);
+                    break;
+                }
+            }
+        }
+        let failure = failure.expect("terminal session should fail during delivery");
+        assert!(matches!(
+            failure.kind,
+            RuntimeErrorKind::ResourceUnavailable | RuntimeErrorKind::Fatal
+        ));
+
+        let snapshot = runtime.get_offline_render_session_snapshot();
+        assert_eq!(snapshot.active_session_count, 0);
+        assert_eq!(
+            snapshot.last_session.as_ref().map(|session| session.state),
+            Some(RuntimeOfflineRenderExecutionState::Failed)
+        );
+        assert_eq!(
+            snapshot
+                .last_session
+                .as_ref()
+                .map(|session| session.interruption_class),
+            Some(RuntimeInterruptionClass::Terminal)
+        );
+        assert_eq!(
+            snapshot
+                .last_session
+                .as_ref()
+                .and_then(|session| session.last_checkpoint.as_ref())
+                .map(|checkpoint| checkpoint.stage),
+            Some(RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts)
+        );
+
+        let report = RuntimeSupervisorReport::capture(&runtime, &Default::default());
+        assert!(report
+            .render_json()
+            .contains("\"offline_render_session_snapshot\":{"));
+        assert!(report.render_json().contains("\"state\":\"Failed\""));
+        assert!(report
+            .render_json()
+            .contains("\"interruption_class\":\"Terminal\""));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
     fn runtime_offline_render_queue_throttles_when_runtime_is_running() {
         let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
         runtime.start().expect("start runtime");
@@ -22350,6 +23129,115 @@ mod tests {
         {
             let _ = fs::remove_file(path);
         }
+    }
+
+    #[test]
+    fn runtime_performance_trace_receipt_summarizes_playback_recording_and_deferred_work_window() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+        apply_latency_runtime_graph(&mut runtime, "graph:runtime:performance-trace");
+        runtime.set_cpu_load_percent(13.5);
+        runtime.set_graph_latency_ms(5.25);
+
+        let capture_path = temp_capture_path("performance-trace");
+        let mut reports = Vec::new();
+        reports.push(RuntimeSupervisorReport::capture(
+            &runtime,
+            &RuntimeEventRecorder::default(),
+        ));
+
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: true,
+                timeline_position_samples: 4_096,
+                tempo_bpm: 120.0,
+                loop_state: None,
+            })
+            .unwrap();
+        runtime
+            .start_recording_capture(RuntimeRecordingCaptureStartRequest {
+                capture_kind: RuntimeRecordingCaptureKind::Audio,
+                take_id: "take:test:performance-trace".to_string(),
+                track_id: "track:test:performance-trace".to_string(),
+                start_samples: 4_096,
+                capture_path: capture_path.display().to_string(),
+            })
+            .unwrap();
+        runtime
+            .process_engine_block(
+                1,
+                1,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(16), 19),
+            )
+            .unwrap();
+        reports.push(RuntimeSupervisorReport::capture(
+            &runtime,
+            &RuntimeEventRecorder::default(),
+        ));
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("enable safe mode");
+        let deferred = runtime
+            .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+                request_id: "render:queue:performance-trace:0001".into(),
+                timeline_start_samples: 0,
+                duration_samples: 128,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            }])
+            .expect("safe mode should defer offline render queue");
+        assert_eq!(
+            deferred.orchestration.decision,
+            RuntimeDeferredServiceDecision::Defer
+        );
+        reports.push(RuntimeSupervisorReport::capture(
+            &runtime,
+            &RuntimeEventRecorder::default(),
+        ));
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: false })
+            .expect("disable safe mode");
+        runtime
+            .process_engine_block(
+                2,
+                2,
+                synthetic_stereo_block(SampleRate(48_000), FrameCount(12), 20),
+            )
+            .unwrap();
+        reports.push(RuntimeSupervisorReport::capture(
+            &runtime,
+            &RuntimeEventRecorder::default(),
+        ));
+
+        let trace = RuntimeSupervisorReport::build_performance_trace_receipt(&reports);
+        assert_eq!(trace.observation_count, reports.len());
+        assert_eq!(trace.first_block_sequence, None);
+        assert_eq!(trace.last_block_sequence, Some(2));
+        assert_eq!(trace.processed_block_span, 2);
+        assert_eq!(trace.peak_cpu_load_percent, 13.5);
+        assert_eq!(trace.peak_graph_latency_ms, 5.25);
+        assert!(trace.playback_active_observation_count >= 3);
+        assert!(trace.recording_active_observation_count >= 3);
+        assert!(trace.background_service_defer_count >= 1);
+        assert!(trace.background_service_while_playing_count >= 1);
+        assert!(trace.background_service_while_recording_count >= 1);
+        assert_eq!(trace.peak_background_queued_work_item_count, 1);
+        assert_eq!(trace.peak_background_deferred_work_item_count, 1);
+        assert_eq!(trace.peak_hot_latency_node_id.as_deref(), Some("latency"));
+        assert_eq!(trace.peak_hot_latency_node_samples, 24);
+        assert!(trace.summary.contains("recording_active="));
+        assert!(trace.summary.contains("background="));
+        assert!(trace
+            .render_json()
+            .contains("\"peak_hot_latency_node_id\":\"latency\""));
+
+        runtime.cancel_recording_capture().unwrap();
+        let _ = fs::remove_file(capture_path);
     }
 
     #[test]

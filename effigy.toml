@@ -74,6 +74,16 @@ qa = [
   { run = "cargo test -p signal-supervisor-tools recording_continuity_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-recording-continuity-boundary --format=json" },
 ]
+"acceptance:offline-render-continuity" = [
+  { run = "cargo test -p signal-runtime runtime_offline_render_session_snapshot_preserves_checkpoint_through_pause_and_recoverable_states" },
+  { run = "cargo test -p signal-runtime runtime_offline_render_session_snapshot_reports_restartable_state_across_stop_restart_and_resume" },
+  { run = "cargo test -p signal-runtime runtime_offline_render_session_snapshot_reports_failed_terminal_state_on_delivery_error" },
+  { run = "cargo test -p signal-runtime public_runtime_offline_render_continuity_boundary_reports_resumable_restartable_and_terminal_states" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_resumable_offline_render_session_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_restartable_and_terminal_offline_render_session_truth" },
+  { run = "cargo test -p signal-supervisor-tools offline_render_continuity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-offline-render-continuity-boundary --format=json" },
+]
 "acceptance:plugin-continuity" = [
   { run = "cargo test -p signal-runtime runtime_shared_sandbox_blast_radius_stays_boundary_local_across_recovery_and_terminal_states" },
   { run = "cargo test -p signal-runtime runtime_plugin_placement_policy_exports_allowlist_denylist_and_by_format_receipts" },

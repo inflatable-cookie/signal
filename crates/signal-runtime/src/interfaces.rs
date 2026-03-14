@@ -1561,6 +1561,7 @@ pub enum RuntimeOfflineRenderExecutionState {
     Recoverable,
     Completed,
     Cancelled,
+    Failed,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1583,6 +1584,41 @@ pub struct RuntimeOfflineRenderExecutionCancellationReceipt {
     pub checkpoint_count: usize,
     pub rendered_frame_count: usize,
     pub rendered_block_count: usize,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeOfflineRenderSessionStateSnapshot {
+    pub request_id: String,
+    pub state: RuntimeOfflineRenderExecutionState,
+    pub interruption_class: RuntimeInterruptionClass,
+    pub interruption_rebindable: bool,
+    pub interruption_count: usize,
+    pub emitted_checkpoint_count: usize,
+    pub checkpoint_count: usize,
+    pub rendered_frame_count: usize,
+    pub total_frame_count: usize,
+    pub rendered_block_count: usize,
+    pub total_block_count: usize,
+    pub artifact_root_path: Option<String>,
+    pub report_path: Option<String>,
+    pub materialized: bool,
+    pub artifact_count: usize,
+    pub report_materialized: bool,
+    pub active_checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
+    pub last_checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeOfflineRenderSessionSnapshot {
+    pub active_session_count: usize,
+    pub paused_session_count: usize,
+    pub recoverable_session_count: usize,
+    pub active_sessions: Vec<RuntimeOfflineRenderSessionStateSnapshot>,
+    pub last_session: Option<RuntimeOfflineRenderSessionStateSnapshot>,
+    pub last_cancellation: Option<RuntimeOfflineRenderExecutionCancellationReceipt>,
+    pub last_purge: Option<RuntimeOfflineRenderPurgeReceipt>,
     pub summary: String,
 }
 
@@ -4449,6 +4485,129 @@ pub struct RuntimeHostIoSummary {
     pub runtime_graph_id_matches_pump: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalIoHealthState {
+    Ready,
+    FallbackActive,
+    Recovering,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalIoDeviceChangeState {
+    Stable,
+    PendingRestart,
+    Recovering,
+    Failed,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeExternalIoSnapshot {
+    pub health_state: RuntimeExternalIoHealthState,
+    pub device_change_state: RuntimeExternalIoDeviceChangeState,
+    pub backend_name: String,
+    pub active_output_device_id: String,
+    pub active_output_device_name: String,
+    pub stream_state: RuntimeHostAudioStreamState,
+    pub clock_source: RuntimeHostClockSource,
+    pub clock_domain: RuntimeHostClockDomain,
+    pub fallback_state: RuntimeHostClockFallbackState,
+    pub transition_state: RuntimeHostClockTransitionState,
+    pub fallback_active: bool,
+    pub runtime_graph_id_matches_pump: bool,
+    pub output_latency_samples: u32,
+    pub estimated_output_latency_samples: u32,
+    pub xrun_count: u64,
+    pub callback_overrun_count: u64,
+    pub device_loss_count: u64,
+    pub restart_attempt_count: u64,
+    pub restart_failure_count: u64,
+    pub summary: String,
+}
+
+impl RuntimeHostIoSummary {
+    pub fn build_external_io_snapshot(&self) -> RuntimeExternalIoSnapshot {
+        let fallback_active = self.clocking.fallback_state != RuntimeHostClockFallbackState::Direct;
+        let health_state = if self.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted {
+            RuntimeExternalIoHealthState::Faulted
+        } else if fallback_active {
+            RuntimeExternalIoHealthState::FallbackActive
+        } else if self.hardware.device_loss_count > 0
+            || self.hardware.restart_attempt_count > 0
+            || self.clocking.transition_state != RuntimeHostClockTransitionState::Stable
+            || matches!(
+                self.hardware.backend_health,
+                BackendHealth::Degraded | BackendHealth::Recovering
+            )
+        {
+            RuntimeExternalIoHealthState::Recovering
+        } else {
+            RuntimeExternalIoHealthState::Ready
+        };
+        let device_change_state = if self.audio_pump.stream_state
+            == RuntimeHostAudioStreamState::Faulted
+            && self.restart_failure_count() > 0
+        {
+            RuntimeExternalIoDeviceChangeState::Failed
+        } else if self.hardware.restart_attempt_count > 0
+            || self.clocking.transition_state
+                == RuntimeHostClockTransitionState::EnteredRecoveryFallback
+        {
+            RuntimeExternalIoDeviceChangeState::Recovering
+        } else if self.hardware.device_loss_count > 0
+            || self.clocking.transition_state != RuntimeHostClockTransitionState::Stable
+        {
+            RuntimeExternalIoDeviceChangeState::PendingRestart
+        } else {
+            RuntimeExternalIoDeviceChangeState::Stable
+        };
+
+        RuntimeExternalIoSnapshot {
+            health_state,
+            device_change_state,
+            backend_name: self.hardware.backend_name.clone(),
+            active_output_device_id: self.hardware.device_id.clone(),
+            active_output_device_name: self.hardware.device_name.clone(),
+            stream_state: self.audio_pump.stream_state,
+            clock_source: self.clocking.clock_source,
+            clock_domain: self.clocking.clock_domain,
+            fallback_state: self.clocking.fallback_state,
+            transition_state: self.clocking.transition_state,
+            fallback_active,
+            runtime_graph_id_matches_pump: self.runtime_graph_id_matches_pump,
+            output_latency_samples: self.latency.output_latency_samples,
+            estimated_output_latency_samples: self.latency.estimated_output_latency_samples,
+            xrun_count: self.hardware.xrun_count,
+            callback_overrun_count: self.hardware.callback_overrun_count,
+            device_loss_count: self.hardware.device_loss_count,
+            restart_attempt_count: self.hardware.restart_attempt_count,
+            restart_failure_count: self.hardware.restart_failure_count,
+            summary: format!(
+                "health={health_state:?} device_change={device_change_state:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
+                self.hardware.backend_name,
+                self.hardware.device_id,
+                self.audio_pump.stream_state,
+                self.clocking.clock_source,
+                self.clocking.clock_domain,
+                self.clocking.transition_state,
+                fallback_active,
+                self.runtime_graph_id_matches_pump,
+                self.latency.output_latency_samples,
+                self.latency.estimated_output_latency_samples,
+                self.hardware.xrun_count,
+                self.hardware.callback_overrun_count,
+                self.hardware.device_loss_count,
+                self.hardware.restart_attempt_count,
+                self.hardware.restart_failure_count,
+            ),
+        }
+    }
+
+    fn restart_failure_count(&self) -> u64 {
+        self.hardware.restart_failure_count
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostObservationReport {
     pub observation: RuntimeObservationReport,
@@ -5110,6 +5269,108 @@ impl RuntimeProfilingReceipt {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimePerformanceTraceReceipt {
+    pub observation_count: usize,
+    pub first_block_sequence: Option<u64>,
+    pub last_block_sequence: Option<u64>,
+    pub processed_block_span: u64,
+    pub peak_cpu_load_percent: f32,
+    pub peak_graph_latency_ms: f32,
+    pub peak_pending_prework_target_count: usize,
+    pub peak_prework_queue_depth: usize,
+    pub peak_background_queued_work_item_count: usize,
+    pub peak_background_deferred_work_item_count: usize,
+    pub playback_active_observation_count: usize,
+    pub recording_active_observation_count: usize,
+    pub background_service_run_count: usize,
+    pub background_service_defer_count: usize,
+    pub background_service_throttle_count: usize,
+    pub background_service_abort_count: usize,
+    pub background_service_while_playing_count: usize,
+    pub background_service_while_recording_count: usize,
+    pub topology_incompatible_observation_count: usize,
+    pub xrun_count_delta: u64,
+    pub prework_service_starvation_count_delta: u64,
+    pub prework_service_throttle_count_delta: u64,
+    pub prework_service_yield_count_delta: u64,
+    pub peak_hot_latency_node_id: Option<String>,
+    pub peak_hot_latency_node_group: Option<String>,
+    pub peak_hot_latency_node_samples: u32,
+    pub peak_hot_latency_group: Option<String>,
+    pub peak_hot_latency_group_total_samples: u32,
+    pub summary: String,
+}
+
+impl RuntimePerformanceTraceReceipt {
+    pub fn render_json(&self) -> String {
+        format!(
+            concat!(
+                "{{",
+                "\"observation_count\":{},",
+                "\"first_block_sequence\":{},",
+                "\"last_block_sequence\":{},",
+                "\"processed_block_span\":{},",
+                "\"peak_cpu_load_percent\":{},",
+                "\"peak_graph_latency_ms\":{},",
+                "\"peak_pending_prework_target_count\":{},",
+                "\"peak_prework_queue_depth\":{},",
+                "\"peak_background_queued_work_item_count\":{},",
+                "\"peak_background_deferred_work_item_count\":{},",
+                "\"playback_active_observation_count\":{},",
+                "\"recording_active_observation_count\":{},",
+                "\"background_service_run_count\":{},",
+                "\"background_service_defer_count\":{},",
+                "\"background_service_throttle_count\":{},",
+                "\"background_service_abort_count\":{},",
+                "\"background_service_while_playing_count\":{},",
+                "\"background_service_while_recording_count\":{},",
+                "\"topology_incompatible_observation_count\":{},",
+                "\"xrun_count_delta\":{},",
+                "\"prework_service_starvation_count_delta\":{},",
+                "\"prework_service_throttle_count_delta\":{},",
+                "\"prework_service_yield_count_delta\":{},",
+                "\"peak_hot_latency_node_id\":{},",
+                "\"peak_hot_latency_node_group\":{},",
+                "\"peak_hot_latency_node_samples\":{},",
+                "\"peak_hot_latency_group\":{},",
+                "\"peak_hot_latency_group_total_samples\":{},",
+                "\"summary\":{}",
+                "}}"
+            ),
+            self.observation_count,
+            json_option_u64(self.first_block_sequence),
+            json_option_u64(self.last_block_sequence),
+            self.processed_block_span,
+            self.peak_cpu_load_percent,
+            self.peak_graph_latency_ms,
+            self.peak_pending_prework_target_count,
+            self.peak_prework_queue_depth,
+            self.peak_background_queued_work_item_count,
+            self.peak_background_deferred_work_item_count,
+            self.playback_active_observation_count,
+            self.recording_active_observation_count,
+            self.background_service_run_count,
+            self.background_service_defer_count,
+            self.background_service_throttle_count,
+            self.background_service_abort_count,
+            self.background_service_while_playing_count,
+            self.background_service_while_recording_count,
+            self.topology_incompatible_observation_count,
+            self.xrun_count_delta,
+            self.prework_service_starvation_count_delta,
+            self.prework_service_throttle_count_delta,
+            self.prework_service_yield_count_delta,
+            json_option_string(self.peak_hot_latency_node_id.as_deref()),
+            json_option_string(self.peak_hot_latency_node_group.as_deref()),
+            self.peak_hot_latency_node_samples,
+            json_option_string(self.peak_hot_latency_group.as_deref()),
+            self.peak_hot_latency_group_total_samples,
+            json_option_string(Some(self.summary.as_str())),
+        )
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeSoakReceipt {
     pub event_stream_count: usize,
@@ -5313,6 +5574,12 @@ impl RuntimeObservationReport {
         build_runtime_profiling_receipt(self, None)
     }
 
+    pub fn build_performance_trace_receipt(
+        observations: &[Self],
+    ) -> RuntimePerformanceTraceReceipt {
+        build_runtime_performance_trace_receipt(observations)
+    }
+
     pub fn performance_snapshot(&self) -> RuntimePerformanceSnapshot {
         RuntimePerformanceSnapshot::capture(
             &self.effective_config,
@@ -5326,6 +5593,14 @@ impl RuntimeObservationReport {
 impl RuntimeSupervisorReport {
     pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
         self.observation.profiling_receipt()
+    }
+
+    pub fn build_performance_trace_receipt(reports: &[Self]) -> RuntimePerformanceTraceReceipt {
+        let observations = reports
+            .iter()
+            .map(|report| report.observation.clone())
+            .collect::<Vec<_>>();
+        RuntimeObservationReport::build_performance_trace_receipt(&observations)
     }
 
     pub fn performance_snapshot(&self) -> RuntimePerformanceSnapshot {
@@ -6978,6 +7253,7 @@ pub struct RuntimeObservationReport {
     pub warp_pipeline_snapshot: RuntimeWarpPipelineSnapshot,
     pub clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
     pub recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
+    pub offline_render_session_snapshot: RuntimeOfflineRenderSessionSnapshot,
     pub automation_snapshot: RuntimeAutomationSnapshot,
     pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
     pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
@@ -7009,6 +7285,7 @@ impl RuntimeObservationReport {
         let warp_pipeline_snapshot = runtime.get_warp_pipeline_snapshot();
         let clip_processing_pipeline_snapshot = runtime.get_clip_processing_pipeline_snapshot();
         let recording_capture_snapshot = runtime.get_recording_capture_snapshot();
+        let offline_render_session_snapshot = runtime.get_offline_render_session_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
         let engine_block_snapshot = runtime.get_engine_block_snapshot();
         let execution_topology_summary = runtime.get_execution_topology_summary();
@@ -7058,6 +7335,7 @@ impl RuntimeObservationReport {
             warp_pipeline_snapshot,
             clip_processing_pipeline_snapshot,
             recording_capture_snapshot,
+            offline_render_session_snapshot,
             automation_snapshot,
             engine_block_snapshot,
             transport_concurrency_snapshot,
@@ -7165,6 +7443,20 @@ impl RuntimeObservationReport {
         let metering_summary = format_runtime_metering_snapshot_compact(&self.metering_snapshot);
         let recording_capture =
             format_runtime_recording_capture_snapshot_compact(&self.recording_capture_snapshot);
+        let offline_render_session = (self.offline_render_session_snapshot.active_session_count
+            > 0
+            || self.offline_render_session_snapshot.last_session.is_some()
+            || self
+                .offline_render_session_snapshot
+                .last_cancellation
+                .is_some()
+            || self.offline_render_session_snapshot.last_purge.is_some())
+        .then(|| {
+            format_runtime_offline_render_session_snapshot_compact(
+                &self.offline_render_session_snapshot,
+            )
+        })
+        .unwrap_or_default();
         let deferred_service = self
             .last_deferred_service_receipt
             .as_ref()
@@ -7411,7 +7703,7 @@ impl RuntimeObservationReport {
             )
         );
         format!(
-            "{compact}{recording_capture}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{compact}{recording_capture}{offline_render_session}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 }
@@ -7646,6 +7938,9 @@ impl RuntimeSupervisorReport {
             format_runtime_metering_snapshot_multiline(&self.observation.metering_snapshot);
         let recording_capture = format_runtime_recording_capture_snapshot_multiline(
             &self.observation.recording_capture_snapshot,
+        );
+        let offline_render_session = format_runtime_offline_render_session_snapshot_multiline(
+            &self.observation.offline_render_session_snapshot,
         );
         let deferred_service = self
             .observation
@@ -8081,7 +8376,7 @@ impl RuntimeSupervisorReport {
             self.observation.observation.sandbox_operation_failure_events,
         );
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 
@@ -8144,6 +8439,7 @@ impl RuntimeSupervisorReport {
                 "\"warp_pipeline_snapshot\":{},",
                 "\"clip_processing_pipeline_snapshot\":{},",
                 "\"recording_capture_snapshot\":{},",
+                "\"offline_render_session_snapshot\":{},",
                 "\"plugin_discovery_snapshot\":{},",
                 "\"plugin_lifecycle_snapshot\":{},",
                 "\"plugin_chain_snapshot\":{},",
@@ -8275,6 +8571,9 @@ impl RuntimeSupervisorReport {
                 &self.observation.clip_processing_pipeline_snapshot,
             ),
             json_runtime_recording_capture_snapshot(&self.observation.recording_capture_snapshot,),
+            json_runtime_offline_render_session_snapshot(
+                &self.observation.offline_render_session_snapshot,
+            ),
             json_runtime_plugin_discovery_snapshot(&self.observation.plugin_discovery_snapshot),
             json_runtime_plugin_lifecycle_snapshot(&self.observation.plugin_lifecycle_snapshot),
             json_runtime_plugin_chain_snapshot(&self.observation.plugin_chain_snapshot),
@@ -8434,6 +8733,198 @@ fn build_runtime_profiling_receipt(
             observation.degradation_summary.detach_faulted_sessions,
         ),
     }
+}
+
+fn build_runtime_performance_trace_receipt(
+    observations: &[RuntimeObservationReport],
+) -> RuntimePerformanceTraceReceipt {
+    if observations.is_empty() {
+        return RuntimePerformanceTraceReceipt {
+            observation_count: 0,
+            first_block_sequence: None,
+            last_block_sequence: None,
+            processed_block_span: 0,
+            peak_cpu_load_percent: 0.0,
+            peak_graph_latency_ms: 0.0,
+            peak_pending_prework_target_count: 0,
+            peak_prework_queue_depth: 0,
+            peak_background_queued_work_item_count: 0,
+            peak_background_deferred_work_item_count: 0,
+            playback_active_observation_count: 0,
+            recording_active_observation_count: 0,
+            background_service_run_count: 0,
+            background_service_defer_count: 0,
+            background_service_throttle_count: 0,
+            background_service_abort_count: 0,
+            background_service_while_playing_count: 0,
+            background_service_while_recording_count: 0,
+            topology_incompatible_observation_count: 0,
+            xrun_count_delta: 0,
+            prework_service_starvation_count_delta: 0,
+            prework_service_throttle_count_delta: 0,
+            prework_service_yield_count_delta: 0,
+            peak_hot_latency_node_id: None,
+            peak_hot_latency_node_group: None,
+            peak_hot_latency_node_samples: 0,
+            peak_hot_latency_group: None,
+            peak_hot_latency_group_total_samples: 0,
+            summary: "observations=0".to_string(),
+        };
+    }
+
+    let first_snapshot = observations[0].performance_snapshot();
+    let mut receipt = RuntimePerformanceTraceReceipt {
+        observation_count: observations.len(),
+        first_block_sequence: first_snapshot.last_block_sequence,
+        last_block_sequence: first_snapshot.last_block_sequence,
+        processed_block_span: 0,
+        peak_cpu_load_percent: first_snapshot.cpu_load_percent,
+        peak_graph_latency_ms: first_snapshot.graph_latency_ms,
+        peak_pending_prework_target_count: first_snapshot.pending_prework_target_count,
+        peak_prework_queue_depth: first_snapshot.prework_queue_depth,
+        peak_background_queued_work_item_count: first_snapshot.background_queued_work_item_count,
+        peak_background_deferred_work_item_count: first_snapshot
+            .background_deferred_work_item_count,
+        playback_active_observation_count: 0,
+        recording_active_observation_count: 0,
+        background_service_run_count: 0,
+        background_service_defer_count: 0,
+        background_service_throttle_count: 0,
+        background_service_abort_count: 0,
+        background_service_while_playing_count: 0,
+        background_service_while_recording_count: 0,
+        topology_incompatible_observation_count: 0,
+        xrun_count_delta: 0,
+        prework_service_starvation_count_delta: 0,
+        prework_service_throttle_count_delta: 0,
+        prework_service_yield_count_delta: 0,
+        peak_hot_latency_node_id: first_snapshot.hot_latency_node_id.clone(),
+        peak_hot_latency_node_group: first_snapshot.hot_latency_node_group.clone(),
+        peak_hot_latency_node_samples: first_snapshot.hot_latency_node_samples,
+        peak_hot_latency_group: first_snapshot.hot_latency_group.clone(),
+        peak_hot_latency_group_total_samples: first_snapshot.hot_latency_group_total_samples,
+        summary: String::new(),
+    };
+
+    let mut last_snapshot = first_snapshot.clone();
+    for observation in observations {
+        let snapshot = observation.performance_snapshot();
+        let playback_active = observation
+            .timeline_snapshot
+            .last_transport_playing
+            .unwrap_or(false);
+        let recording_active = matches!(
+            observation.recording_capture_snapshot.state,
+            Some(RuntimeRecordingCaptureState::Capturing)
+        );
+        if playback_active {
+            receipt.playback_active_observation_count =
+                receipt.playback_active_observation_count.saturating_add(1);
+        }
+        if recording_active {
+            receipt.recording_active_observation_count =
+                receipt.recording_active_observation_count.saturating_add(1);
+        }
+        match snapshot.background_service_decision {
+            Some(RuntimeDeferredServiceDecision::Run) => {
+                receipt.background_service_run_count =
+                    receipt.background_service_run_count.saturating_add(1);
+            }
+            Some(RuntimeDeferredServiceDecision::Defer) => {
+                receipt.background_service_defer_count =
+                    receipt.background_service_defer_count.saturating_add(1);
+            }
+            Some(RuntimeDeferredServiceDecision::Throttle) => {
+                receipt.background_service_throttle_count =
+                    receipt.background_service_throttle_count.saturating_add(1);
+            }
+            Some(RuntimeDeferredServiceDecision::Abort) => {
+                receipt.background_service_abort_count =
+                    receipt.background_service_abort_count.saturating_add(1);
+            }
+            None => {}
+        }
+        if snapshot.background_service_decision.is_some() && playback_active {
+            receipt.background_service_while_playing_count = receipt
+                .background_service_while_playing_count
+                .saturating_add(1);
+        }
+        if snapshot.background_service_decision.is_some() && recording_active {
+            receipt.background_service_while_recording_count = receipt
+                .background_service_while_recording_count
+                .saturating_add(1);
+        }
+        if !snapshot.scheduler_topology_compatible {
+            receipt.topology_incompatible_observation_count = receipt
+                .topology_incompatible_observation_count
+                .saturating_add(1);
+        }
+        receipt.last_block_sequence = snapshot.last_block_sequence;
+        receipt.peak_cpu_load_percent =
+            receipt.peak_cpu_load_percent.max(snapshot.cpu_load_percent);
+        receipt.peak_graph_latency_ms =
+            receipt.peak_graph_latency_ms.max(snapshot.graph_latency_ms);
+        receipt.peak_pending_prework_target_count = receipt
+            .peak_pending_prework_target_count
+            .max(snapshot.pending_prework_target_count);
+        receipt.peak_prework_queue_depth = receipt
+            .peak_prework_queue_depth
+            .max(snapshot.prework_queue_depth);
+        receipt.peak_background_queued_work_item_count = receipt
+            .peak_background_queued_work_item_count
+            .max(snapshot.background_queued_work_item_count);
+        receipt.peak_background_deferred_work_item_count = receipt
+            .peak_background_deferred_work_item_count
+            .max(snapshot.background_deferred_work_item_count);
+        if snapshot.hot_latency_node_samples > receipt.peak_hot_latency_node_samples {
+            receipt.peak_hot_latency_node_id = snapshot.hot_latency_node_id.clone();
+            receipt.peak_hot_latency_node_group = snapshot.hot_latency_node_group.clone();
+            receipt.peak_hot_latency_node_samples = snapshot.hot_latency_node_samples;
+            receipt.peak_hot_latency_group = snapshot.hot_latency_group.clone();
+            receipt.peak_hot_latency_group_total_samples = snapshot.hot_latency_group_total_samples;
+        }
+        last_snapshot = snapshot;
+    }
+
+    receipt.processed_block_span = last_snapshot
+        .processed_block_count
+        .saturating_sub(first_snapshot.processed_block_count);
+    receipt.xrun_count_delta = last_snapshot
+        .xrun_count
+        .saturating_sub(first_snapshot.xrun_count);
+    receipt.prework_service_starvation_count_delta = last_snapshot
+        .prework_service_starvation_count
+        .saturating_sub(first_snapshot.prework_service_starvation_count);
+    receipt.prework_service_throttle_count_delta = last_snapshot
+        .prework_service_throttle_count
+        .saturating_sub(first_snapshot.prework_service_throttle_count);
+    receipt.prework_service_yield_count_delta = last_snapshot
+        .prework_service_yield_count
+        .saturating_sub(first_snapshot.prework_service_yield_count);
+    receipt.summary = format!(
+        "observations={} blocks={} playback_active={} recording_active={} background={}/{}/{}/{} overlap={}/{} queue_peak={}/{} prework_delta={}/{}/{} hot_node={:?}/{} hot_group={:?}/{} topology_incompatible={}",
+        receipt.observation_count,
+        receipt.processed_block_span,
+        receipt.playback_active_observation_count,
+        receipt.recording_active_observation_count,
+        receipt.background_service_run_count,
+        receipt.background_service_defer_count,
+        receipt.background_service_throttle_count,
+        receipt.background_service_abort_count,
+        receipt.background_service_while_playing_count,
+        receipt.background_service_while_recording_count,
+        receipt.peak_pending_prework_target_count,
+        receipt.peak_prework_queue_depth,
+        receipt.prework_service_starvation_count_delta,
+        receipt.prework_service_throttle_count_delta,
+        receipt.prework_service_yield_count_delta,
+        receipt.peak_hot_latency_node_id,
+        receipt.peak_hot_latency_node_samples,
+        receipt.peak_hot_latency_group,
+        receipt.peak_hot_latency_group_total_samples,
+        receipt.topology_incompatible_observation_count,
+    );
+    receipt
 }
 
 fn build_runtime_soak_receipt(
@@ -10043,6 +10534,85 @@ fn json_runtime_fault_status(snapshot: &RuntimeFaultStatusSnapshot) -> String {
     )
 }
 
+fn format_runtime_offline_render_session_snapshot_compact(
+    snapshot: &RuntimeOfflineRenderSessionSnapshot,
+) -> String {
+    let active = snapshot
+        .active_sessions
+        .first()
+        .map(|session| format!("{}:{:?}", session.request_id, session.state))
+        .unwrap_or_else(|| "none".into());
+    let last = snapshot
+        .last_session
+        .as_ref()
+        .map(|session| format!("{}:{:?}", session.request_id, session.state))
+        .unwrap_or_else(|| "none".into());
+    let last_checkpoint = snapshot
+        .last_session
+        .as_ref()
+        .and_then(|session| session.last_checkpoint.as_ref())
+        .map(|checkpoint| format!("{:?}", checkpoint.stage))
+        .unwrap_or_else(|| "none".into());
+    format!(
+        " offline_render_sessions={}/{}/{} active={} last={} last_checkpoint={} last_cancellation={} last_purge={}",
+        snapshot.active_session_count,
+        snapshot.paused_session_count,
+        snapshot.recoverable_session_count,
+        active,
+        last,
+        last_checkpoint,
+        snapshot.last_cancellation.is_some(),
+        snapshot.last_purge.is_some(),
+    )
+}
+
+fn format_runtime_offline_render_session_snapshot_multiline(
+    snapshot: &RuntimeOfflineRenderSessionSnapshot,
+) -> String {
+    let active = snapshot
+        .active_sessions
+        .iter()
+        .map(|session| session.summary.as_str())
+        .collect::<Vec<_>>()
+        .join(" | ");
+    format!(
+        concat!(
+            "\noffline_render_session_active_count={}",
+            "\noffline_render_session_paused_count={}",
+            "\noffline_render_session_recoverable_count={}",
+            "\noffline_render_session_active_summaries={}",
+            "\noffline_render_session_last_summary={}",
+            "\noffline_render_session_last_cancellation={}",
+            "\noffline_render_session_last_purge={}",
+            "\noffline_render_session_summary={}",
+        ),
+        snapshot.active_session_count,
+        snapshot.paused_session_count,
+        snapshot.recoverable_session_count,
+        if active.is_empty() {
+            "none"
+        } else {
+            active.as_str()
+        },
+        snapshot
+            .last_session
+            .as_ref()
+            .map(|session| session.summary.as_str())
+            .unwrap_or("none"),
+        snapshot
+            .last_cancellation
+            .as_ref()
+            .map(|receipt| receipt.summary.as_str())
+            .unwrap_or("none"),
+        snapshot
+            .last_purge
+            .as_ref()
+            .map(|receipt| receipt.summary.as_str())
+            .unwrap_or("none"),
+        snapshot.summary,
+    )
+}
+
 fn json_runtime_recording_capture_checkpoint(
     checkpoint: &RuntimeRecordingCaptureCheckpointSnapshot,
 ) -> String {
@@ -10159,6 +10729,211 @@ fn json_runtime_recording_capture_snapshot(snapshot: &RuntimeRecordingCaptureSna
         json_option_string(snapshot.last_committed_path.as_deref()),
         json_option_u32(snapshot.last_committed_duration_samples),
         json_option_string(snapshot.last_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_offline_render_checkpoint_receipt(
+    checkpoint: &RuntimeOfflineRenderCheckpointReceipt,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"request_id\":{},",
+            "\"stage\":{},",
+            "\"checkpoint_index\":{},",
+            "\"checkpoint_count\":{},",
+            "\"rendered_frame_count\":{},",
+            "\"total_frame_count\":{},",
+            "\"rendered_block_count\":{},",
+            "\"total_block_count\":{},",
+            "\"progress_percent\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(checkpoint.request_id.as_str())),
+        json_option_string(Some(match checkpoint.stage {
+            RuntimeOfflineRenderCheckpointStage::PreparingInput => "PreparingInput",
+            RuntimeOfflineRenderCheckpointStage::RenderingGraph => "RenderingGraph",
+            RuntimeOfflineRenderCheckpointStage::MaterializingOutputs => "MaterializingOutputs",
+            RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts => "FinalizingArtifacts",
+        })),
+        checkpoint.checkpoint_index,
+        checkpoint.checkpoint_count,
+        checkpoint.rendered_frame_count,
+        checkpoint.total_frame_count,
+        checkpoint.rendered_block_count,
+        checkpoint.total_block_count,
+        checkpoint.progress_percent,
+        json_option_string(Some(checkpoint.summary.as_str())),
+    )
+}
+
+fn json_runtime_offline_render_execution_cancellation_receipt(
+    receipt: &RuntimeOfflineRenderExecutionCancellationReceipt,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"request_id\":{},",
+            "\"cancelled_after_checkpoint_count\":{},",
+            "\"checkpoint_count\":{},",
+            "\"rendered_frame_count\":{},",
+            "\"rendered_block_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(receipt.request_id.as_str())),
+        receipt.cancelled_after_checkpoint_count,
+        receipt.checkpoint_count,
+        receipt.rendered_frame_count,
+        receipt.rendered_block_count,
+        json_option_string(Some(receipt.summary.as_str())),
+    )
+}
+
+fn json_runtime_offline_render_purge_receipt(receipt: &RuntimeOfflineRenderPurgeReceipt) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"request_id\":{},",
+            "\"orchestration\":{},",
+            "\"artifact_root_path\":{},",
+            "\"report_path\":{},",
+            "\"purged_artifact_root\":{},",
+            "\"purged_artifact_file_count\":{},",
+            "\"purged_artifact_byte_count\":{},",
+            "\"purged_report\":{},",
+            "\"purged_report_byte_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(receipt.request_id.as_str())),
+        receipt.orchestration.render_json(),
+        json_option_string(receipt.artifact_root_path.as_deref()),
+        json_option_string(receipt.report_path.as_deref()),
+        receipt.purged_artifact_root,
+        receipt.purged_artifact_file_count,
+        receipt.purged_artifact_byte_count,
+        receipt.purged_report,
+        receipt.purged_report_byte_count,
+        json_option_string(Some(receipt.summary.as_str())),
+    )
+}
+
+fn json_runtime_offline_render_session_state_snapshot(
+    snapshot: &RuntimeOfflineRenderSessionStateSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"request_id\":{},",
+            "\"state\":{},",
+            "\"interruption_class\":{},",
+            "\"interruption_rebindable\":{},",
+            "\"interruption_count\":{},",
+            "\"emitted_checkpoint_count\":{},",
+            "\"checkpoint_count\":{},",
+            "\"rendered_frame_count\":{},",
+            "\"total_frame_count\":{},",
+            "\"rendered_block_count\":{},",
+            "\"total_block_count\":{},",
+            "\"artifact_root_path\":{},",
+            "\"report_path\":{},",
+            "\"materialized\":{},",
+            "\"artifact_count\":{},",
+            "\"report_materialized\":{},",
+            "\"active_checkpoint\":{},",
+            "\"last_checkpoint\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.request_id.as_str())),
+        json_option_string(Some(match snapshot.state {
+            RuntimeOfflineRenderExecutionState::Running => "Running",
+            RuntimeOfflineRenderExecutionState::Paused => "Paused",
+            RuntimeOfflineRenderExecutionState::Recoverable => "Recoverable",
+            RuntimeOfflineRenderExecutionState::Completed => "Completed",
+            RuntimeOfflineRenderExecutionState::Cancelled => "Cancelled",
+            RuntimeOfflineRenderExecutionState::Failed => "Failed",
+        })),
+        json_option_string(Some(match snapshot.interruption_class {
+            RuntimeInterruptionClass::Steady => "Steady",
+            RuntimeInterruptionClass::Resumable => "Resumable",
+            RuntimeInterruptionClass::Restartable => "Restartable",
+            RuntimeInterruptionClass::Recoverable => "Recoverable",
+            RuntimeInterruptionClass::Terminal => "Terminal",
+        })),
+        snapshot.interruption_rebindable,
+        snapshot.interruption_count,
+        snapshot.emitted_checkpoint_count,
+        snapshot.checkpoint_count,
+        snapshot.rendered_frame_count,
+        snapshot.total_frame_count,
+        snapshot.rendered_block_count,
+        snapshot.total_block_count,
+        json_option_string(snapshot.artifact_root_path.as_deref()),
+        json_option_string(snapshot.report_path.as_deref()),
+        snapshot.materialized,
+        snapshot.artifact_count,
+        snapshot.report_materialized,
+        snapshot
+            .active_checkpoint
+            .as_ref()
+            .map(json_runtime_offline_render_checkpoint_receipt)
+            .unwrap_or_else(|| "null".into()),
+        snapshot
+            .last_checkpoint
+            .as_ref()
+            .map(json_runtime_offline_render_checkpoint_receipt)
+            .unwrap_or_else(|| "null".into()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_offline_render_session_snapshot(
+    snapshot: &RuntimeOfflineRenderSessionSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"active_session_count\":{},",
+            "\"paused_session_count\":{},",
+            "\"recoverable_session_count\":{},",
+            "\"active_sessions\":{},",
+            "\"last_session\":{},",
+            "\"last_cancellation\":{},",
+            "\"last_purge\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.active_session_count,
+        snapshot.paused_session_count,
+        snapshot.recoverable_session_count,
+        format!(
+            "[{}]",
+            snapshot
+                .active_sessions
+                .iter()
+                .map(json_runtime_offline_render_session_state_snapshot)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        snapshot
+            .last_session
+            .as_ref()
+            .map(json_runtime_offline_render_session_state_snapshot)
+            .unwrap_or_else(|| "null".into()),
+        snapshot
+            .last_cancellation
+            .as_ref()
+            .map(json_runtime_offline_render_execution_cancellation_receipt)
+            .unwrap_or_else(|| "null".into()),
+        snapshot
+            .last_purge
+            .as_ref()
+            .map(json_runtime_offline_render_purge_receipt)
+            .unwrap_or_else(|| "null".into()),
         json_option_string(Some(snapshot.summary.as_str())),
     )
 }
@@ -13905,6 +14680,7 @@ pub trait RuntimeObservationApi {
     fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot;
     fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot;
     fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot;
+    fn get_offline_render_session_snapshot(&self) -> RuntimeOfflineRenderSessionSnapshot;
     fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot;
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot;
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
@@ -13991,4 +14767,149 @@ pub trait RuntimeSupervisorApi {
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     fn restart_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     fn set_backend_policy(&mut self, request: BackendPolicyOverride) -> Result<(), RuntimeError>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use signal_hardware::{AudioSampleFormat, BackendHealth};
+
+    fn host_io_summary(
+        fallback_state: RuntimeHostClockFallbackState,
+        transition_state: RuntimeHostClockTransitionState,
+        stream_state: RuntimeHostAudioStreamState,
+        backend_health: BackendHealth,
+        restart_attempt_count: u64,
+        restart_failure_count: u64,
+        device_loss_count: u64,
+    ) -> RuntimeHostIoSummary {
+        RuntimeHostIoSummary {
+            hardware: RuntimeHostHardwareSummary {
+                backend_name: "coreaudio".to_string(),
+                device_id: "device:main".to_string(),
+                device_name: "Main Output".to_string(),
+                sample_rate: 48_000,
+                buffer_size: 256,
+                output_channels: 2,
+                sample_format: AudioSampleFormat::F32,
+                simulated: false,
+                backend_health,
+                xrun_count: 0,
+                callback_overrun_count: 0,
+                device_loss_count,
+                restart_attempt_count,
+                restart_failure_count,
+            },
+            audio_pump: RuntimeHostAudioPumpSummary {
+                stream_state,
+                transfer_policy: RuntimeHostAudioTransferPolicy {
+                    max_callback_frames: 256,
+                    max_transfer_channels: 2,
+                    zero_fill_unwritten_output: true,
+                },
+                callback_count: 32,
+                total_callback_frames: 8_192,
+                total_runtime_output_frames: 8_192,
+                copied_output_samples: 16_384,
+                zero_filled_output_samples: 0,
+                dropped_output_samples: 0,
+                last_callback_output_peak: Some(0.42),
+                last_runtime_graph_id: Some("graph:main".to_string()),
+            },
+            clocking: RuntimeHostClockingSummary {
+                clock_source: RuntimeHostClockSource::Internal,
+                ownership: RuntimeHostLifecycleOwnership::HostDrivenCallback,
+                restart_policy: RuntimeHostRestartPolicy::HostMustRestart,
+                processing_sample_rate_hz: 48_000,
+                hardware_sample_rate_hz: 48_000,
+                clock_domain: RuntimeHostClockDomain::SameClock,
+                fallback_state,
+                transition_state,
+                crossing_required: false,
+                callback_interval_ms: 5.333,
+            },
+            latency: RuntimeHostLatencySummary {
+                input_latency_samples: None,
+                output_latency_samples: 256,
+                round_trip_latency_samples: None,
+                graph_latency_samples: 128,
+                estimated_output_latency_samples: 384,
+                estimated_round_trip_latency_samples: None,
+                output_latency_ms: 5.333,
+                graph_latency_ms: 2.667,
+                estimated_output_latency_ms: 8.0,
+                estimated_round_trip_latency_ms: None,
+            },
+            runtime_graph_id_matches_pump: true,
+        }
+    }
+
+    #[test]
+    fn runtime_external_io_snapshot_marks_clock_fallback_active() {
+        let summary = host_io_summary(
+            RuntimeHostClockFallbackState::RuntimeResampled,
+            RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Recovering,
+            1,
+            0,
+            0,
+        );
+
+        let snapshot = summary.build_external_io_snapshot();
+
+        assert_eq!(
+            snapshot.health_state,
+            RuntimeExternalIoHealthState::FallbackActive
+        );
+        assert_eq!(
+            snapshot.device_change_state,
+            RuntimeExternalIoDeviceChangeState::Recovering
+        );
+        assert!(snapshot.fallback_active);
+        assert_eq!(
+            snapshot.fallback_state,
+            RuntimeHostClockFallbackState::RuntimeResampled
+        );
+        assert!(snapshot.summary.contains("fallback=true"));
+    }
+
+    #[test]
+    fn runtime_external_io_snapshot_distinguishes_recovering_from_terminal_failure() {
+        let recovering = host_io_summary(
+            RuntimeHostClockFallbackState::Direct,
+            RuntimeHostClockTransitionState::EnteredRecoveryFallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Recovering,
+            2,
+            1,
+            1,
+        )
+        .build_external_io_snapshot();
+        assert_eq!(
+            recovering.health_state,
+            RuntimeExternalIoHealthState::Recovering
+        );
+        assert_eq!(
+            recovering.device_change_state,
+            RuntimeExternalIoDeviceChangeState::Recovering
+        );
+
+        let failed = host_io_summary(
+            RuntimeHostClockFallbackState::RecoveryConstrained,
+            RuntimeHostClockTransitionState::EnteredRecoveryFallback,
+            RuntimeHostAudioStreamState::Faulted,
+            BackendHealth::Recovering,
+            2,
+            1,
+            1,
+        )
+        .build_external_io_snapshot();
+        assert_eq!(failed.health_state, RuntimeExternalIoHealthState::Faulted);
+        assert_eq!(
+            failed.device_change_state,
+            RuntimeExternalIoDeviceChangeState::Failed
+        );
+        assert!(failed.fallback_active);
+    }
 }

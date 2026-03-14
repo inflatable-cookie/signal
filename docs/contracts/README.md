@@ -32,6 +32,8 @@ Use this section for:
 - `012-runtime-interruption-taxonomy-and-resumability-contract.md`
 - `013-recording-continuity-midi-capture-and-checkpoint-contract.md`
 - `014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md`
+- `015-offline-render-recovery-and-resumability-contract.md`
+- `016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
 
 ## Rule
 
@@ -40,6 +42,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g06.004` with Batch 4.1 by freezing offline-render recovery and
-resumability semantics on top of the completed interruption and plugin
-continuity contracts before deeper render session receipts widen.
+Continue `g06.005` with Batch 5.2 by materializing typed fault-cause
+attribution and diagnostic receipts on runtime, supervisor, and stable
+host-edge surfaces now that the causal contract boundary is frozen.

@@ -1,6 +1,6 @@
 # 005 - Runtime Fault-Cause Attribution And Diagnostic Receipts
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.001, g06.003, g06.004
@@ -28,9 +28,15 @@ degraded, recovering, or faulted posture.
 
 ### Batch 5.1 - Causal Receipt Contract
 
-- [ ] define causal receipt families for xrun, callback, plugin, device, and
+- [x] define causal receipt families for xrun, callback, plugin, device, and
   deferred-work pressure faults
-- [ ] align them with readiness, interruption, and recovery state
+- [x] align them with readiness, interruption, and recovery state
+
+Batch 5.1 froze the shared contract in
+`docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`,
+keeping primary-cause ownership in `signal-runtime` while explicitly treating
+host callback and backend counters as advisory evidence rather than a competing
+host taxonomy.
 
 ### Batch 5.2 - Runtime Diagnostic Depth
 
@@ -63,5 +69,7 @@ degraded, recovering, or faulted posture.
 
 ## Next Task
 
-Continue `g06.006` by turning fault and recovery state into measurable per-block
-timing and pressure observations.
+Continue `g06.005` with Batch 5.2 by materializing the typed causal diagnostic
+receipt family in runtime and supervisor surfaces, then keep local and server
+host exports aligned to the same primary-cause and contributing-evidence
+meaning without host-local reclassification.

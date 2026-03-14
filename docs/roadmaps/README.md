@@ -98,6 +98,7 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.004` with Batch 4.1 by freezing offline-render recovery and
-resumability semantics before the later profiling, plugin-breadth, hardware,
-media-service, and acceptance lanes widen further.
+Continue `g06.005` with Batch 5.2 by turning the new fault-cause contract into
+typed runtime, supervisor, and stable host-edge diagnostic receipts before the
+later profiling, plugin-breadth, hardware, media-service, and acceptance lanes
+widen further.

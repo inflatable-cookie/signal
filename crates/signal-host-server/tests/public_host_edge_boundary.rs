@@ -8,11 +8,11 @@ use signal_runtime::{
     GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeContractProjection,
     GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, PluginBackedNodeBinding,
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig,
-    RuntimeConfigRequest, RuntimeInterruptionClass, RuntimeLifecycleApi,
-    RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
-    RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
-    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
+    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RestartRequest,
+    RuntimeConfig, RuntimeConfigRequest, RuntimeInterruptionClass, RuntimeLifecycleApi,
+    RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderRequest, RuntimePluginIsolationOutcome,
+    RuntimePluginPlacementPolicy, RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
+    RuntimeProjectionApi, RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorApi, SignalRuntime,
     StopReason,
 };
@@ -38,6 +38,29 @@ fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
             ],
         })
         .expect("public host-edge capture graph should apply");
+}
+
+fn apply_public_render_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 2,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "offline-inline".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.85 }],
+                },
+                GraphNodeProjection {
+                    node_id: "offline-latency".into(),
+                    execution_class: GraphNodeExecutionClass::LatencyBearing,
+                    latency_samples: 16,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                },
+            ],
+        })
+        .expect("public host-edge render graph should apply");
 }
 
 fn apply_public_plugin_continuity_graph(
@@ -387,4 +410,118 @@ fn server_shared_host_edge_exports_plugin_placement_and_shared_boundary_continui
     assert!(rendered.contains("\"sandbox_group_key\":\"shared:host-server\""));
     assert!(rendered.contains("\"shared_boundary_member_count\":2"));
     assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
+}
+
+#[test]
+fn server_shared_host_edge_exports_restartable_and_terminal_offline_render_session_truth() {
+    let mut restartable_runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    restartable_runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-edge-render".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .unwrap();
+    restartable_runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .unwrap();
+    apply_public_render_graph(
+        &mut restartable_runtime,
+        "graph:host-server:render-restartable",
+    );
+    restartable_runtime.start().unwrap();
+    restartable_runtime
+        .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+            request_id: "render:host-server:restartable".into(),
+            timeline_start_samples: 0,
+            duration_samples: 512,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        })
+        .unwrap();
+    restartable_runtime
+        .advance_offline_render_execution("render:host-server:restartable")
+        .unwrap();
+    restartable_runtime
+        .stop(StopReason::DeviceReconfigure)
+        .unwrap();
+    restartable_runtime
+        .restart(RestartRequest { reconfigure: None })
+        .unwrap();
+
+    let restartable_host = ServerRuntimeHost::new(restartable_runtime);
+    let restartable_report = restartable_host.supervisor_report();
+    assert_eq!(
+        restartable_report
+            .observation
+            .offline_render_session_snapshot
+            .active_sessions
+            .first()
+            .map(|session| session.interruption_class),
+        Some(RuntimeInterruptionClass::Restartable)
+    );
+
+    let mut terminal_runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    terminal_runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-edge-render".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .unwrap();
+    terminal_runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .unwrap();
+    apply_public_render_graph(&mut terminal_runtime, "graph:host-server:render-terminal");
+    terminal_runtime
+        .begin_offline_render_execution(RuntimeOfflineRenderRequest {
+            request_id: "render:host-server:terminal".into(),
+            timeline_start_samples: 0,
+            duration_samples: 512,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: Some("/dev/null/signal-host-server-render-terminal".into()),
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        })
+        .unwrap();
+    let mut terminal_error_observed = false;
+    for _ in 0..16 {
+        match terminal_runtime.advance_offline_render_execution("render:host-server:terminal") {
+            Ok(_) => continue,
+            Err(_) => {
+                terminal_error_observed = true;
+                break;
+            }
+        }
+    }
+    assert!(terminal_error_observed);
+
+    let terminal_host = ServerRuntimeHost::new(terminal_runtime);
+    let terminal_report = terminal_host.supervisor_report();
+    assert_eq!(
+        terminal_report
+            .observation
+            .offline_render_session_snapshot
+            .last_session
+            .as_ref()
+            .map(|session| session.state),
+        Some(RuntimeOfflineRenderExecutionState::Failed)
+    );
+    assert_eq!(
+        terminal_report
+            .observation
+            .offline_render_session_snapshot
+            .last_session
+            .as_ref()
+            .map(|session| session.interruption_class),
+        Some(RuntimeInterruptionClass::Terminal)
+    );
+    let rendered = terminal_report.render_json();
+    assert!(rendered.contains("\"offline_render_session_snapshot\":{"));
+    assert!(rendered.contains("\"state\":\"Failed\""));
+    assert!(rendered.contains("\"interruption_class\":\"Terminal\""));
 }

@@ -65,9 +65,9 @@ surfaced in Chorus:
   - recording continuity, MIDI capture, and checkpoint truth
 - `g06.003` `complete`
   - plugin isolation policy, transport rebind, and shared-sandbox continuity depth
-- `g06.004` `active`
+- `g06.004` `complete`
   - offline render execution recovery and resumability depth
-- `g06.005` `planned`
+- `g06.005` `active`
   - runtime fault-cause attribution and diagnostic receipts
 - `g06.006` `planned`
   - per-block execution timing and pressure snapshots
@@ -154,7 +154,7 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.004` with Batch 4.1 by freezing resumable, restartable,
-recoverable, and terminal offline-render session outcomes so later render
-checkpoint, artifact, and restart-depth work can build on one runtime-owned
-recovery contract.
+Continue `g06.005` with Batch 5.2 by materializing typed causal diagnostic
+receipts on runtime, supervisor, and host-edge surfaces so the next profiling
+and soak lane can point at canonical primary-cause evidence instead of
+counter-only summaries.
