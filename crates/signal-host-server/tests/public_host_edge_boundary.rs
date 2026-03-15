@@ -3,16 +3,19 @@ use signal_graph::{
     GraphStageSpec,
 };
 use signal_host_server::ServerRuntimeHost;
-use signal_plugin::PluginFormat;
+use signal_plugin::{EventPacketSummary, PluginFormat};
 use signal_primitives::{FrameCount, SampleRate};
 use signal_runtime::{
     GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeContractProjection,
     GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, PluginBackedNodeBinding,
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxLifecycleStage,
     PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RestartRequest,
-    RuntimeBlockDeadlinePressure, RuntimeConfig, RuntimeConfigRequest, RuntimeInterruptionClass,
-    RuntimeLifecycleApi, RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderRequest,
-    RuntimePluginIsolationOutcome, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
+    RuntimeBlockDeadlinePressure, RuntimeConfig, RuntimeConfigRequest,
+    RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceDecision,
+    RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason, RuntimeInterruptionClass,
+    RuntimeLifecycleApi, RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderPurgeRequest,
+    RuntimeOfflineRenderRequest, RuntimePluginHostPlatform, RuntimePluginIsolationOutcome,
+    RuntimePluginParityBand, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
     RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
     RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorApi, SignalRuntime,
@@ -420,6 +423,277 @@ fn server_shared_host_edge_exports_plugin_placement_and_shared_boundary_continui
 }
 
 #[test]
+fn server_shared_host_edge_exports_runtime_vst3_baseline_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let mut host = ServerRuntimeHost::new(runtime);
+
+    host.start_plugin_scan(PluginScanRequest {
+        roots: vec!["~/.vst3".into(), "/usr/lib/vst3".into()],
+        formats: vec![PluginFormat::Vst3],
+    })
+    .expect("public server vst3 scan should succeed");
+    host.ensure_plugin_sandbox(PluginSandboxSpec {
+        sandbox_id: "public-host-edge-server-vst3".into(),
+        plugin_format: PluginFormat::Vst3,
+        plugin_type_id: Some("plugin:vst3:linux-synth".into()),
+    })
+    .expect("public server vst3 sandbox ensure should succeed");
+
+    let report = host.supervisor_report();
+    assert_eq!(
+        report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_type_count,
+        2
+    );
+    assert_eq!(
+        report
+            .observation
+            .plugin_discovery_snapshot
+            .last_scan
+            .as_ref()
+            .map(|scan| scan.formats.clone()),
+        Some(vec![PluginFormat::Vst3])
+    );
+    assert!(report
+        .observation
+        .plugin_discovery_snapshot
+        .discovered_types
+        .iter()
+        .any(|plugin| plugin.plugin_type_id == "plugin:vst3:linux-synth"
+            && plugin.format == PluginFormat::Vst3));
+    let sandbox = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "public-host-edge-server-vst3")
+        .expect("public server vst3 sandbox should be exported");
+    assert_eq!(sandbox.plugin_format, Some(PluginFormat::Vst3));
+    assert_eq!(
+        sandbox.lifecycle_stage,
+        Some(PluginSandboxLifecycleStage::TransportAttached)
+    );
+    assert_eq!(
+        sandbox.transport_stage,
+        Some(PluginSandboxTransportStage::Attached)
+    );
+    assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"plugin_type_id\":\"plugin:vst3:linux-synth\""));
+    assert!(rendered.contains("\"formats\":[\"Vst3\"]"));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_au_baseline_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let mut host = ServerRuntimeHost::new(runtime);
+
+    host.start_plugin_scan(PluginScanRequest {
+        roots: vec!["~/Library/Audio/Plug-Ins/Components".into()],
+        formats: vec![PluginFormat::Au],
+    })
+    .expect("public server au scan should succeed");
+    host.ensure_plugin_sandbox(PluginSandboxSpec {
+        sandbox_id: "public-host-edge-server-au".into(),
+        plugin_format: PluginFormat::Au,
+        plugin_type_id: Some("plugin:au:instrument".into()),
+    })
+    .expect("public server au sandbox ensure should succeed");
+
+    let report = host.supervisor_report();
+    assert_eq!(
+        report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_type_count,
+        2
+    );
+    assert_eq!(
+        report
+            .observation
+            .plugin_discovery_snapshot
+            .last_scan
+            .as_ref()
+            .map(|scan| scan.formats.clone()),
+        Some(vec![PluginFormat::Au])
+    );
+    assert!(report
+        .observation
+        .plugin_discovery_snapshot
+        .discovered_types
+        .iter()
+        .any(|plugin| plugin.plugin_type_id == "plugin:au:instrument"
+            && plugin.format == PluginFormat::Au));
+    let sandbox = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "public-host-edge-server-au")
+        .expect("public server au sandbox should be exported");
+    assert_eq!(sandbox.plugin_format, Some(PluginFormat::Au));
+    assert_eq!(
+        sandbox.lifecycle_stage,
+        Some(PluginSandboxLifecycleStage::TransportAttached)
+    );
+    assert_eq!(
+        sandbox.transport_stage,
+        Some(PluginSandboxTransportStage::Attached)
+    );
+    assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"plugin_type_id\":\"plugin:au:instrument\""));
+    assert!(rendered.contains("\"formats\":[\"Au\"]"));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let mut host = ServerRuntimeHost::new(runtime);
+
+    host.start_plugin_scan(PluginScanRequest {
+        roots: vec![
+            "~/.clap".into(),
+            "/usr/lib/vst3".into(),
+            "~/Library/Audio/Plug-Ins/Components".into(),
+        ],
+        formats: vec![PluginFormat::Clap, PluginFormat::Vst3, PluginFormat::Au],
+    })
+    .expect("public server parity scan should succeed");
+    host.ensure_plugin_sandbox(PluginSandboxSpec {
+        sandbox_id: "public-host-edge-server-parity-vst3".into(),
+        plugin_format: PluginFormat::Vst3,
+        plugin_type_id: Some("plugin:vst3:linux-synth".into()),
+    })
+    .expect("public server parity vst3 sandbox ensure should succeed");
+    host.ensure_plugin_sandbox(PluginSandboxSpec {
+        sandbox_id: "public-host-edge-server-parity-au".into(),
+        plugin_format: PluginFormat::Au,
+        plugin_type_id: Some("plugin:au:instrument".into()),
+    })
+    .expect("public server parity au sandbox ensure should succeed");
+
+    let report = host.supervisor_report();
+    let discovery = &report.observation.plugin_discovery_snapshot;
+    assert_eq!(discovery.parity_coverage.len(), 3);
+    let clap_parity = discovery
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Clap)
+        .expect("public server parity report should include clap parity");
+    assert_eq!(clap_parity.parity_band, RuntimePluginParityBand::Portable);
+    assert_eq!(
+        clap_parity.supported_platforms,
+        vec![
+            RuntimePluginHostPlatform::MacOs,
+            RuntimePluginHostPlatform::Linux,
+            RuntimePluginHostPlatform::Windows,
+        ]
+    );
+    let au_parity = discovery
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Au)
+        .expect("public server parity report should include au parity");
+    assert_eq!(au_parity.parity_band, RuntimePluginParityBand::Guarded);
+    assert_eq!(
+        au_parity.supported_platforms,
+        vec![RuntimePluginHostPlatform::MacOs]
+    );
+    assert_eq!(
+        au_parity.unsupported_platforms,
+        vec![
+            RuntimePluginHostPlatform::Linux,
+            RuntimePluginHostPlatform::Windows,
+        ]
+    );
+    let lifecycle_au = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Au)
+        .expect("public server parity lifecycle should include au parity");
+    assert_eq!(lifecycle_au.sandbox_count, 1);
+    assert_eq!(lifecycle_au.ready_sandbox_count, 1);
+    assert_eq!(lifecycle_au.active_transport_count, 1);
+    let lifecycle_vst3 = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Vst3)
+        .expect("public server parity lifecycle should include vst3 parity");
+    assert_eq!(
+        lifecycle_vst3.parity_band,
+        RuntimePluginParityBand::Portable
+    );
+    assert_eq!(lifecycle_vst3.sandbox_count, 1);
+    assert_eq!(lifecycle_vst3.ready_sandbox_count, 1);
+    assert_eq!(lifecycle_vst3.active_transport_count, 1);
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"parity_coverage\":["));
+    assert!(rendered.contains("\"parity_band\":\"Portable\""));
+    assert!(rendered.contains("\"parity_band\":\"Guarded\""));
+    assert!(rendered.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_generic_event_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    runtime.record_plugin_event_summary(
+        11,
+        "lease:public-server-events",
+        18,
+        212,
+        EventPacketSummary {
+            total_events: 9,
+            parameter_value_events: 1,
+            parameter_modulation_events: 1,
+            parameter_gesture_events: 1,
+            note_events: 2,
+            note_expression_events: 3,
+            midi_events: 1,
+        },
+    );
+    let mut host = ServerRuntimeHost::new(runtime);
+
+    host.start_plugin_scan(PluginScanRequest {
+        roots: vec!["~/.clap".into(), "/usr/lib/vst3".into()],
+        formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
+    })
+    .expect("public server generic event scan should succeed");
+
+    let report = host.supervisor_report();
+    let snapshot = &report.observation.plugin_event_snapshot;
+    assert_eq!(snapshot.last_processing_epoch, Some(11));
+    assert_eq!(snapshot.last_block_sequence, Some(18));
+    assert_eq!(snapshot.last_generated_event_bytes, 212);
+    assert_eq!(snapshot.total_events, 9);
+    assert_eq!(snapshot.note_expression_events, 3);
+    assert_eq!(snapshot.midi_events, 1);
+    assert_eq!(snapshot.segment_epochs, vec![11]);
+    assert!(
+        report
+            .observation
+            .plugin_discovery_snapshot
+            .capability_coverage
+            .supports_note_expression_count
+            >= 2
+    );
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"plugin_events\":{"));
+    assert!(rendered.contains("\"note_expression_events\":3"));
+    assert!(rendered.contains("\"supports_note_expression_count\":"));
+}
+
+#[test]
 fn server_shared_host_edge_exports_runtime_fault_diagnostic_truth() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     runtime
@@ -596,6 +870,72 @@ fn server_shared_host_edge_exports_runtime_critical_path_truth() {
     let rendered = performance.render_json();
     assert!(rendered.contains("\"critical_path_lane\":"));
     assert!(rendered.contains("\"worker_lane_summaries\":["));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_deferred_work_policy_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 48));
+    runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-edge-deferred-work".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("server host-edge deferred-work handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 48))
+        .expect("server host-edge deferred-work configure should succeed");
+    runtime
+        .purge_offline_render_artifacts(RuntimeOfflineRenderPurgeRequest {
+            request_id: String::new(),
+            artifact_root_path: None,
+            report_path: None,
+        })
+        .expect_err("empty purge request id should record terminal deferred-work policy");
+
+    let host = ServerRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+    let receipt = report
+        .observation
+        .last_deferred_service_receipt
+        .as_ref()
+        .expect("server host-edge report should expose deferred-work policy receipt");
+    assert_eq!(receipt.decision, RuntimeDeferredServiceDecision::Abort);
+    assert_eq!(receipt.reason, RuntimeDeferredServiceReason::InvalidRequest);
+    assert_eq!(
+        receipt.priority_band,
+        RuntimeDeferredServicePriorityBand::Maintenance
+    );
+    assert_eq!(receipt.blocking_priority_band, None);
+    assert_eq!(
+        receipt.cancellation_cause,
+        Some(RuntimeDeferredServiceCancellationCause::InvalidRequest)
+    );
+    assert_eq!(receipt.cancelled_work_item_count, 1);
+
+    let performance = report.performance_snapshot();
+    assert_eq!(
+        performance.background_service_decision,
+        Some(RuntimeDeferredServiceDecision::Abort)
+    );
+    assert_eq!(
+        performance.background_service_reason,
+        Some(RuntimeDeferredServiceReason::InvalidRequest)
+    );
+    assert_eq!(
+        performance.background_service_priority_band,
+        Some(RuntimeDeferredServicePriorityBand::Maintenance)
+    );
+    assert_eq!(
+        performance.background_service_cancellation_cause,
+        Some(RuntimeDeferredServiceCancellationCause::InvalidRequest)
+    );
+    assert_eq!(performance.background_service_cancelled_work_item_count, 1);
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"last_deferred_service\":{"));
+    assert!(rendered.contains("\"priority_band\":\"Maintenance\""));
+    assert!(rendered.contains("\"cancellation_cause\":\"InvalidRequest\""));
 }
 
 #[test]

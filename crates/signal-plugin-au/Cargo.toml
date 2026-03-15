@@ -1,0 +1,11 @@
+[package]
+name = "signal-plugin-au"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Audio Unit plugin adapter surfaces for Signal."
+
+[dependencies]
+signal-plugin = { path = "../signal-plugin" }

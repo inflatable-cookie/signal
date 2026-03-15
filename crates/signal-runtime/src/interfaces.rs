@@ -1433,6 +1433,14 @@ pub enum RuntimeDeferredServiceDecision {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeDeferredServicePriorityBand {
+    RealtimeCritical,
+    RecoveryCritical,
+    UserVisible,
+    Maintenance,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeDeferredServiceReason {
     Ready,
     RealtimeActive,
@@ -1442,11 +1450,31 @@ pub enum RuntimeDeferredServiceReason {
     InvalidRequest,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeDeferredServiceBackpressureSource {
+    RealtimeAudio,
+    RecoveryOverlap,
+    CleanupBacklog,
+    SafeMode,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeDeferredServiceCancellationCause {
+    InvalidRequest,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeDeferredServiceReceipt {
     pub work_class: RuntimeDeferredServiceClass,
     pub decision: RuntimeDeferredServiceDecision,
     pub reason: RuntimeDeferredServiceReason,
+    pub priority_band: RuntimeDeferredServicePriorityBand,
+    pub blocking_priority_band: Option<RuntimeDeferredServicePriorityBand>,
+    pub backpressure_source: Option<RuntimeDeferredServiceBackpressureSource>,
+    pub starvation_risk: bool,
+    pub starved_work_item_count: usize,
+    pub cancellation_cause: Option<RuntimeDeferredServiceCancellationCause>,
+    pub cancelled_work_item_count: usize,
     pub interruption_class: RuntimeInterruptionClass,
     pub interruption_rebindable: bool,
     pub queued_work_item_count: usize,
@@ -1469,6 +1497,13 @@ impl RuntimeDeferredServiceReceipt {
                 "work_class={:?}",
                 "\ndecision={:?}",
                 "\nreason={:?}",
+                "\npriority_band={:?}",
+                "\nblocking_priority_band={:?}",
+                "\nbackpressure_source={:?}",
+                "\nstarvation_risk={}",
+                "\nstarved_work_item_count={}",
+                "\ncancellation_cause={:?}",
+                "\ncancelled_work_item_count={}",
                 "\ninterruption_class={:?}",
                 "\ninterruption_rebindable={}",
                 "\nqueued_work_item_count={}",
@@ -1486,6 +1521,13 @@ impl RuntimeDeferredServiceReceipt {
             self.work_class,
             self.decision,
             self.reason,
+            self.priority_band,
+            self.blocking_priority_band,
+            self.backpressure_source,
+            self.starvation_risk,
+            self.starved_work_item_count,
+            self.cancellation_cause,
+            self.cancelled_work_item_count,
             self.interruption_class,
             self.interruption_rebindable,
             self.queued_work_item_count,
@@ -1509,6 +1551,13 @@ impl RuntimeDeferredServiceReceipt {
                 "\"work_class\":{},",
                 "\"decision\":{},",
                 "\"reason\":{},",
+                "\"priority_band\":{},",
+                "\"blocking_priority_band\":{},",
+                "\"backpressure_source\":{},",
+                "\"starvation_risk\":{},",
+                "\"starved_work_item_count\":{},",
+                "\"cancellation_cause\":{},",
+                "\"cancelled_work_item_count\":{},",
                 "\"interruption_class\":{},",
                 "\"interruption_rebindable\":{},",
                 "\"queued_work_item_count\":{},",
@@ -1527,6 +1576,28 @@ impl RuntimeDeferredServiceReceipt {
             json_string(&format!("{:?}", self.work_class)),
             json_string(&format!("{:?}", self.decision)),
             json_string(&format!("{:?}", self.reason)),
+            json_string(&format!("{:?}", self.priority_band)),
+            json_option_string(
+                self.blocking_priority_band
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            json_option_string(
+                self.backpressure_source
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            self.starvation_risk,
+            self.starved_work_item_count,
+            json_option_string(
+                self.cancellation_cause
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            self.cancelled_work_item_count,
             json_string(&format!("{:?}", self.interruption_class)),
             self.interruption_rebindable,
             self.queued_work_item_count,
@@ -1550,6 +1621,13 @@ impl Default for RuntimeDeferredServiceReceipt {
             work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
             decision: RuntimeDeferredServiceDecision::Abort,
             reason: RuntimeDeferredServiceReason::InvalidRequest,
+            priority_band: RuntimeDeferredServicePriorityBand::UserVisible,
+            blocking_priority_band: None,
+            backpressure_source: None,
+            starvation_risk: false,
+            starved_work_item_count: 0,
+            cancellation_cause: Some(RuntimeDeferredServiceCancellationCause::InvalidRequest),
+            cancelled_work_item_count: 0,
             interruption_class: RuntimeInterruptionClass::Terminal,
             interruption_rebindable: false,
             queued_work_item_count: 0,
@@ -2260,6 +2338,32 @@ pub struct RuntimeAutomationSnapshot {
     pub lease_rollovers: usize,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginEventSnapshot {
+    pub last_processing_epoch: Option<u64>,
+    pub last_block_sequence: Option<u64>,
+    pub last_generated_event_bytes: u32,
+    pub last_batch_total_events: usize,
+    pub last_batch_parameter_value_events: usize,
+    pub last_batch_parameter_modulation_events: usize,
+    pub last_batch_parameter_gesture_events: usize,
+    pub last_batch_note_events: usize,
+    pub last_batch_note_expression_events: usize,
+    pub last_batch_midi_events: usize,
+    pub total_events: usize,
+    pub parameter_value_events: usize,
+    pub parameter_modulation_events: usize,
+    pub parameter_gesture_events: usize,
+    pub note_events: usize,
+    pub note_expression_events: usize,
+    pub midi_events: usize,
+    pub first_epoch: Option<u64>,
+    pub last_epoch: Option<u64>,
+    pub segment_count: usize,
+    pub segment_epochs: Vec<u64>,
+    pub lease_rollovers: usize,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransportAttachIntent {
     SteadyState,
@@ -2427,6 +2531,7 @@ pub struct RuntimePluginLifecycleSnapshot {
     pub stopped_sandbox_count: usize,
     pub rebindable_sandbox_count: usize,
     pub terminal_sandbox_count: usize,
+    pub parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     pub sandboxes: Vec<RuntimePluginSandboxSnapshot>,
     pub summary: String,
 }
@@ -4310,6 +4415,13 @@ pub struct RuntimePerformanceSnapshot {
     pub background_service_class: Option<RuntimeDeferredServiceClass>,
     pub background_service_decision: Option<RuntimeDeferredServiceDecision>,
     pub background_service_reason: Option<RuntimeDeferredServiceReason>,
+    pub background_service_priority_band: Option<RuntimeDeferredServicePriorityBand>,
+    pub background_service_blocking_priority_band: Option<RuntimeDeferredServicePriorityBand>,
+    pub background_service_backpressure_source: Option<RuntimeDeferredServiceBackpressureSource>,
+    pub background_service_starvation_risk: bool,
+    pub background_service_starved_work_item_count: usize,
+    pub background_service_cancellation_cause: Option<RuntimeDeferredServiceCancellationCause>,
+    pub background_service_cancelled_work_item_count: usize,
     pub background_queued_work_item_count: usize,
     pub background_deferred_work_item_count: usize,
     pub background_pending_cleanup_work_item_count: usize,
@@ -4476,6 +4588,22 @@ impl RuntimePerformanceSnapshot {
             background_service_decision: last_deferred_service_receipt
                 .map(|receipt| receipt.decision),
             background_service_reason: last_deferred_service_receipt.map(|receipt| receipt.reason),
+            background_service_priority_band: last_deferred_service_receipt
+                .map(|receipt| receipt.priority_band),
+            background_service_blocking_priority_band: last_deferred_service_receipt
+                .and_then(|receipt| receipt.blocking_priority_band),
+            background_service_backpressure_source: last_deferred_service_receipt
+                .and_then(|receipt| receipt.backpressure_source),
+            background_service_starvation_risk: last_deferred_service_receipt
+                .is_some_and(|receipt| receipt.starvation_risk),
+            background_service_starved_work_item_count: last_deferred_service_receipt
+                .map(|receipt| receipt.starved_work_item_count)
+                .unwrap_or(0),
+            background_service_cancellation_cause: last_deferred_service_receipt
+                .and_then(|receipt| receipt.cancellation_cause),
+            background_service_cancelled_work_item_count: last_deferred_service_receipt
+                .map(|receipt| receipt.cancelled_work_item_count)
+                .unwrap_or(0),
             background_queued_work_item_count: last_deferred_service_receipt
                 .map(|receipt| receipt.queued_work_item_count)
                 .unwrap_or(0),
@@ -4553,13 +4681,18 @@ impl RuntimePerformanceSnapshot {
             .collect::<Vec<_>>()
             .join("|");
         let background_summary = format!(
-            "{:?}/{:?}/{:?}",
+            "{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{}/{}",
             snapshot.background_service_class,
             snapshot.background_service_decision,
             snapshot.background_service_reason,
+            snapshot.background_service_priority_band,
+            snapshot.background_service_blocking_priority_band,
+            snapshot.background_service_backpressure_source,
+            snapshot.background_service_starvation_risk,
+            snapshot.background_service_cancelled_work_item_count,
         );
         snapshot.summary = format!(
-            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} timing={:?}/{:?}/{:?}/{:?}/{:?}/{} xruns={} phases={} lanes={} dispatches={} handoff={} topology={} prework={} pending_targets={}/{} queue={}/{} service={} cycles={} budget={:?}/{:?} backlog={:?} gates={}/{} hot_node={} hot_group={} critical_lane={} worker_lanes={} background={} items={}/{}/{}/{}",
+            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} timing={:?}/{:?}/{:?}/{:?}/{:?}/{} xruns={} phases={} lanes={} dispatches={} handoff={} topology={} prework={} pending_targets={}/{} queue={}/{} service={} cycles={} budget={:?}/{:?} backlog={:?} gates={}/{} hot_node={} hot_group={} critical_lane={} worker_lanes={} background={} policy={:?}/{:?}/{:?}/{}/{} items={}/{}/{}/{}",
             snapshot.sample_rate_hz,
             snapshot.block_size,
             snapshot.processed_block_count,
@@ -4594,6 +4727,11 @@ impl RuntimePerformanceSnapshot {
             critical_lane_summary,
             worker_lane_summary,
             background_summary,
+            snapshot.background_service_priority_band,
+            snapshot.background_service_blocking_priority_band,
+            snapshot.background_service_backpressure_source,
+            snapshot.background_service_starved_work_item_count,
+            snapshot.background_service_cancelled_work_item_count,
             snapshot.background_queued_work_item_count,
             snapshot.background_deferred_work_item_count,
             snapshot.background_pending_cleanup_work_item_count,
@@ -4665,6 +4803,13 @@ impl RuntimePerformanceSnapshot {
                 "\"background_service_class\":{},",
                 "\"background_service_decision\":{},",
                 "\"background_service_reason\":{},",
+                "\"background_service_priority_band\":{},",
+                "\"background_service_blocking_priority_band\":{},",
+                "\"background_service_backpressure_source\":{},",
+                "\"background_service_starvation_risk\":{},",
+                "\"background_service_starved_work_item_count\":{},",
+                "\"background_service_cancellation_cause\":{},",
+                "\"background_service_cancelled_work_item_count\":{},",
                 "\"background_queued_work_item_count\":{},",
                 "\"background_deferred_work_item_count\":{},",
                 "\"background_pending_cleanup_work_item_count\":{},",
@@ -4761,6 +4906,33 @@ impl RuntimePerformanceSnapshot {
                         RuntimeDeferredServiceReason::InvalidRequest => "InvalidRequest",
                     }),
             ),
+            json_option_string(
+                self.background_service_priority_band
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            json_option_string(
+                self.background_service_blocking_priority_band
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            json_option_string(
+                self.background_service_backpressure_source
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            self.background_service_starvation_risk,
+            self.background_service_starved_work_item_count,
+            json_option_string(
+                self.background_service_cancellation_cause
+                    .as_ref()
+                    .map(|value| format!("{value:?}"))
+                    .as_deref(),
+            ),
+            self.background_service_cancelled_work_item_count,
             self.background_queued_work_item_count,
             self.background_deferred_work_item_count,
             self.background_pending_cleanup_work_item_count,
@@ -5805,6 +5977,12 @@ pub struct RuntimePerformanceTraceReceipt {
     pub background_service_abort_count: usize,
     pub background_service_while_playing_count: usize,
     pub background_service_while_recording_count: usize,
+    pub background_starvation_observation_count: usize,
+    pub peak_background_starved_work_item_count: usize,
+    pub background_cancellation_observation_count: usize,
+    pub peak_background_cancelled_work_item_count: usize,
+    pub background_realtime_backpressure_observation_count: usize,
+    pub background_recovery_backpressure_observation_count: usize,
     pub topology_incompatible_observation_count: usize,
     pub elevated_deadline_pressure_observation_count: usize,
     pub critical_deadline_pressure_observation_count: usize,
@@ -5853,6 +6031,12 @@ impl RuntimePerformanceTraceReceipt {
                 "\"background_service_abort_count\":{},",
                 "\"background_service_while_playing_count\":{},",
                 "\"background_service_while_recording_count\":{},",
+                "\"background_starvation_observation_count\":{},",
+                "\"peak_background_starved_work_item_count\":{},",
+                "\"background_cancellation_observation_count\":{},",
+                "\"peak_background_cancelled_work_item_count\":{},",
+                "\"background_realtime_backpressure_observation_count\":{},",
+                "\"background_recovery_backpressure_observation_count\":{},",
                 "\"topology_incompatible_observation_count\":{},",
                 "\"elevated_deadline_pressure_observation_count\":{},",
                 "\"critical_deadline_pressure_observation_count\":{},",
@@ -5896,6 +6080,12 @@ impl RuntimePerformanceTraceReceipt {
             self.background_service_abort_count,
             self.background_service_while_playing_count,
             self.background_service_while_recording_count,
+            self.background_starvation_observation_count,
+            self.peak_background_starved_work_item_count,
+            self.background_cancellation_observation_count,
+            self.peak_background_cancelled_work_item_count,
+            self.background_realtime_backpressure_observation_count,
+            self.background_recovery_backpressure_observation_count,
             self.topology_incompatible_observation_count,
             self.elevated_deadline_pressure_observation_count,
             self.critical_deadline_pressure_observation_count,
@@ -7835,6 +8025,7 @@ pub struct RuntimeObservationReport {
     pub recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
     pub offline_render_session_snapshot: RuntimeOfflineRenderSessionSnapshot,
     pub automation_snapshot: RuntimeAutomationSnapshot,
+    pub plugin_event_snapshot: RuntimePluginEventSnapshot,
     pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
     pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
     pub plugin_discovery_snapshot: RuntimePluginDiscoverySnapshot,
@@ -7867,6 +8058,7 @@ impl RuntimeObservationReport {
         let recording_capture_snapshot = runtime.get_recording_capture_snapshot();
         let offline_render_session_snapshot = runtime.get_offline_render_session_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
+        let plugin_event_snapshot = runtime.get_plugin_event_snapshot();
         let engine_block_snapshot = runtime.get_engine_block_snapshot();
         let execution_topology_summary = runtime.get_execution_topology_summary();
         let transport_concurrency_snapshot = runtime.get_transport_concurrency_snapshot();
@@ -7926,6 +8118,7 @@ impl RuntimeObservationReport {
             recording_capture_snapshot,
             offline_render_session_snapshot,
             automation_snapshot,
+            plugin_event_snapshot,
             engine_block_snapshot,
             transport_concurrency_snapshot,
             plugin_discovery_snapshot,
@@ -7990,6 +8183,35 @@ impl RuntimeObservationReport {
                     snapshot.first_epoch,
                     snapshot.last_epoch,
                     snapshot.lease_rollovers
+                )
+            })
+            .unwrap_or_default();
+        let plugin_events = (self.plugin_event_snapshot.total_events > 0
+            || self.plugin_event_snapshot.last_processing_epoch.is_some())
+            .then(|| {
+                let snapshot = &self.plugin_event_snapshot;
+                format!(
+                    " plugin_events_last_batch={}/{}/{}/{}/{}/{}/{} plugin_events_total={}/{}/{}/{}/{}/{}/{} plugin_events_segments={} plugin_events_first_epoch={:?} plugin_events_last_epoch={:?} plugin_events_lease_rollovers={} plugin_events_last_block={:?} plugin_events_last_bytes={}",
+                    snapshot.last_batch_total_events,
+                    snapshot.last_batch_parameter_value_events,
+                    snapshot.last_batch_parameter_modulation_events,
+                    snapshot.last_batch_parameter_gesture_events,
+                    snapshot.last_batch_note_events,
+                    snapshot.last_batch_note_expression_events,
+                    snapshot.last_batch_midi_events,
+                    snapshot.total_events,
+                    snapshot.parameter_value_events,
+                    snapshot.parameter_modulation_events,
+                    snapshot.parameter_gesture_events,
+                    snapshot.note_events,
+                    snapshot.note_expression_events,
+                    snapshot.midi_events,
+                    snapshot.segment_count,
+                    snapshot.first_epoch,
+                    snapshot.last_epoch,
+                    snapshot.lease_rollovers,
+                    snapshot.last_block_sequence,
+                    snapshot.last_generated_event_bytes,
                 )
             })
             .unwrap_or_default();
@@ -8062,7 +8284,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -8092,6 +8314,7 @@ impl RuntimeObservationReport {
             plugin_lifecycle,
             plugin_chain,
             automation,
+            plugin_events,
             transport_timeline,
             scheduler_snapshot,
             scheduler_summary,
@@ -8991,6 +9214,13 @@ impl RuntimeSupervisorReport {
         } else {
             json_runtime_automation_snapshot(automation)
         };
+        let plugin_events = &self.observation.plugin_event_snapshot;
+        let plugin_events =
+            if plugin_events.total_events == 0 && plugin_events.last_processing_epoch.is_none() {
+                "null".into()
+            } else {
+                json_runtime_plugin_event_snapshot(plugin_events)
+            };
         let deferred_service = self
             .observation
             .last_deferred_service_receipt
@@ -9089,7 +9319,8 @@ impl RuntimeSupervisorReport {
                 "\"broker_failure_sequence\":{},",
                 "\"sandbox_operation_failure_sequence\":{},",
                 "\"plugin_instance_state_sequence\":{},",
-                "\"automation\":{}",
+                "\"automation\":{},",
+                "\"plugin_events\":{}",
                 "}}"
             ),
             json_escape_string(&format!("{:?}", self.observation.readiness)),
@@ -9246,6 +9477,7 @@ impl RuntimeSupervisorReport {
                 &self.observation.observation.plugin_instance_states,
             ),
             automation,
+            plugin_events,
         )
     }
 }
@@ -9372,6 +9604,12 @@ fn build_runtime_performance_trace_receipt(
             background_service_abort_count: 0,
             background_service_while_playing_count: 0,
             background_service_while_recording_count: 0,
+            background_starvation_observation_count: 0,
+            peak_background_starved_work_item_count: 0,
+            background_cancellation_observation_count: 0,
+            peak_background_cancelled_work_item_count: 0,
+            background_realtime_backpressure_observation_count: 0,
+            background_recovery_backpressure_observation_count: 0,
             topology_incompatible_observation_count: 0,
             elevated_deadline_pressure_observation_count: 0,
             critical_deadline_pressure_observation_count: 0,
@@ -9419,6 +9657,12 @@ fn build_runtime_performance_trace_receipt(
         background_service_abort_count: 0,
         background_service_while_playing_count: 0,
         background_service_while_recording_count: 0,
+        background_starvation_observation_count: 0,
+        peak_background_starved_work_item_count: 0,
+        background_cancellation_observation_count: 0,
+        peak_background_cancelled_work_item_count: 0,
+        background_realtime_backpressure_observation_count: 0,
+        background_recovery_backpressure_observation_count: 0,
         topology_incompatible_observation_count: 0,
         elevated_deadline_pressure_observation_count: 0,
         critical_deadline_pressure_observation_count: 0,
@@ -9491,6 +9735,33 @@ fn build_runtime_performance_trace_receipt(
                 .background_service_while_recording_count
                 .saturating_add(1);
         }
+        if snapshot.background_service_starvation_risk {
+            receipt.background_starvation_observation_count = receipt
+                .background_starvation_observation_count
+                .saturating_add(1);
+        }
+        if snapshot.background_service_cancelled_work_item_count > 0 {
+            receipt.background_cancellation_observation_count = receipt
+                .background_cancellation_observation_count
+                .saturating_add(1);
+        }
+        match snapshot.background_service_backpressure_source {
+            Some(RuntimeDeferredServiceBackpressureSource::RealtimeAudio) => {
+                receipt.background_realtime_backpressure_observation_count = receipt
+                    .background_realtime_backpressure_observation_count
+                    .saturating_add(1);
+            }
+            Some(
+                RuntimeDeferredServiceBackpressureSource::RecoveryOverlap
+                | RuntimeDeferredServiceBackpressureSource::CleanupBacklog
+                | RuntimeDeferredServiceBackpressureSource::SafeMode,
+            ) => {
+                receipt.background_recovery_backpressure_observation_count = receipt
+                    .background_recovery_backpressure_observation_count
+                    .saturating_add(1);
+            }
+            None => {}
+        }
         if !snapshot.scheduler_topology_compatible {
             receipt.topology_incompatible_observation_count = receipt
                 .topology_incompatible_observation_count
@@ -9540,6 +9811,12 @@ fn build_runtime_performance_trace_receipt(
         receipt.peak_background_deferred_work_item_count = receipt
             .peak_background_deferred_work_item_count
             .max(snapshot.background_deferred_work_item_count);
+        receipt.peak_background_starved_work_item_count = receipt
+            .peak_background_starved_work_item_count
+            .max(snapshot.background_service_starved_work_item_count);
+        receipt.peak_background_cancelled_work_item_count = receipt
+            .peak_background_cancelled_work_item_count
+            .max(snapshot.background_service_cancelled_work_item_count);
         if snapshot.hot_latency_node_samples > receipt.peak_hot_latency_node_samples {
             receipt.peak_hot_latency_node_id = snapshot.hot_latency_node_id.clone();
             receipt.peak_hot_latency_node_group = snapshot.hot_latency_node_group.clone();
@@ -9580,7 +9857,7 @@ fn build_runtime_performance_trace_receipt(
         .prework_service_yield_count
         .saturating_sub(first_snapshot.prework_service_yield_count);
     receipt.summary = format!(
-        "observations={} blocks={} playback_active={} recording_active={} background={}/{}/{}/{} overlap={}/{} queue_peak={}/{} prework_delta={}/{}/{} deadline={}/{}/{} budget_overruns={} hot_node={:?}/{} hot_group={:?}/{}/{} critical_lane={:?}/{}/{}/{} topology_incompatible={}",
+        "observations={} blocks={} playback_active={} recording_active={} background={}/{}/{}/{} overlap={}/{} backpressure={}/{} starvation={}/{} cancel={}/{} queue_peak={}/{}/{} prework_delta={}/{}/{} deadline={}/{}/{} budget_overruns={} hot_node={:?}/{} hot_group={:?}/{}/{} critical_lane={:?}/{}/{}/{} topology_incompatible={}",
         receipt.observation_count,
         receipt.processed_block_span,
         receipt.playback_active_observation_count,
@@ -9591,8 +9868,15 @@ fn build_runtime_performance_trace_receipt(
         receipt.background_service_abort_count,
         receipt.background_service_while_playing_count,
         receipt.background_service_while_recording_count,
+        receipt.background_realtime_backpressure_observation_count,
+        receipt.background_recovery_backpressure_observation_count,
+        receipt.background_starvation_observation_count,
+        receipt.peak_background_starved_work_item_count,
+        receipt.background_cancellation_observation_count,
+        receipt.peak_background_cancelled_work_item_count,
         receipt.peak_pending_prework_target_count,
         receipt.peak_prework_queue_depth,
+        receipt.peak_background_queued_work_item_count,
         receipt.prework_service_starvation_count_delta,
         receipt.prework_service_throttle_count_delta,
         receipt.prework_service_yield_count_delta,
@@ -10484,11 +10768,12 @@ fn format_runtime_plugin_discovery_snapshot_compact(
     snapshot: &RuntimePluginDiscoverySnapshot,
 ) -> String {
     format!(
-        " plugin_scans={} plugin_filtered_scans={} plugin_discovered_types={} plugin_discovered_formats={} plugin_capability_coverage={} plugin_last_scan={}",
+        " plugin_scans={} plugin_filtered_scans={} plugin_discovered_types={} plugin_discovered_formats={} plugin_parity_formats={} plugin_capability_coverage={} plugin_last_scan={}",
         snapshot.scan_count,
         snapshot.format_filtered_scan_count,
         snapshot.discovered_type_count,
         snapshot.discovered_format_count,
+        snapshot.parity_coverage.len(),
         snapshot.capability_coverage.summary,
         snapshot
             .last_scan
@@ -10502,13 +10787,14 @@ fn format_runtime_plugin_lifecycle_snapshot_compact(
     snapshot: &RuntimePluginLifecycleSnapshot,
 ) -> String {
     format!(
-        " plugin_sandboxes={}/{} plugin_sandbox_placement={}/{} plugin_sandbox_rebindable={} plugin_sandbox_terminal={}",
+        " plugin_sandboxes={}/{} plugin_sandbox_placement={}/{} plugin_sandbox_rebindable={} plugin_sandbox_terminal={} plugin_parity_formats={}",
         snapshot.sandbox_count,
         snapshot.active_sandbox_count,
         snapshot.shared_sandbox_count,
         snapshot.isolated_sandbox_count,
         snapshot.rebindable_sandbox_count,
         snapshot.terminal_sandbox_count,
+        snapshot.parity_coverage.len(),
     )
 }
 
@@ -10556,7 +10842,7 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
         .enumerate()
         .map(|(index, coverage)| {
             format!(
-                "\nplugin_format_coverage_{}={:?}/types={}/features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} midi_out={} max_audio_buses={} max_parameters={}",
+                "\nplugin_format_coverage_{}={:?}/types={}/features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} note_expression={} midi_out={} max_audio_buses={} max_parameters={}",
                 index,
                 coverage.format,
                 coverage.discovered_type_count,
@@ -10569,9 +10855,36 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
                 coverage.supports_prepare_count,
                 coverage.supports_activate_count,
                 coverage.accepts_midi_count,
+                coverage.supports_note_expression_count,
                 coverage.produces_midi_count,
                 coverage.max_audio_bus_count,
                 coverage.max_parameter_count,
+            )
+        })
+        .collect::<String>();
+    let parity_coverage_lines = snapshot
+        .parity_coverage
+        .iter()
+        .enumerate()
+        .map(|(index, parity)| {
+            format!(
+                "\nplugin_parity_coverage_{}={:?}/{:?}/supported={:?}/unsupported={:?}/types={}/sandboxes={}/shared={}/isolated={}/ready={}/degraded={}/faulted={}/quarantined={}/terminal={}/transport_active={}/placement_rules={}",
+                index,
+                parity.format,
+                parity.parity_band,
+                parity.supported_platforms,
+                parity.unsupported_platforms,
+                parity.discovered_type_count,
+                parity.sandbox_count,
+                parity.shared_sandbox_count,
+                parity.isolated_sandbox_count,
+                parity.ready_sandbox_count,
+                parity.degraded_sandbox_count,
+                parity.faulted_sandbox_count,
+                parity.quarantined_sandbox_count,
+                parity.terminal_sandbox_count,
+                parity.active_transport_count,
+                parity.explicit_placement_rule_count,
             )
         })
         .collect::<String>();
@@ -10597,7 +10910,7 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
         })
         .collect::<String>();
     format!(
-        "\nplugin_scan_count={}\nplugin_format_filtered_scan_count={}\nplugin_discovered_type_count={}\nplugin_discovered_format_count={}\nplugin_capability_coverage_summary={}\nplugin_capability_coverage_multi_format_catalog={}\nplugin_capability_coverage_max_audio_bus_count={}\nplugin_capability_coverage_max_parameter_count={}{}{}{}",
+        "\nplugin_scan_count={}\nplugin_format_filtered_scan_count={}\nplugin_discovered_type_count={}\nplugin_discovered_format_count={}\nplugin_capability_coverage_summary={}\nplugin_capability_coverage_multi_format_catalog={}\nplugin_capability_coverage_max_audio_bus_count={}\nplugin_capability_coverage_max_parameter_count={}{}{}{}{}",
         snapshot.scan_count,
         snapshot.format_filtered_scan_count,
         snapshot.discovered_type_count,
@@ -10608,6 +10921,7 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
         snapshot.capability_coverage.max_parameter_count,
         last_scan,
         format_coverage_lines,
+        parity_coverage_lines,
         discovered_type_lines,
     )
 }
@@ -10615,6 +10929,32 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
 fn format_runtime_plugin_lifecycle_snapshot_multiline(
     snapshot: &RuntimePluginLifecycleSnapshot,
 ) -> String {
+    let parity_coverage_lines = snapshot
+        .parity_coverage
+        .iter()
+        .enumerate()
+        .map(|(index, parity)| {
+            format!(
+                "\nplugin_lifecycle_parity_coverage_{}={:?}/{:?}/supported={:?}/unsupported={:?}/types={}/sandboxes={}/shared={}/isolated={}/ready={}/degraded={}/faulted={}/quarantined={}/terminal={}/transport_active={}/placement_rules={}",
+                index,
+                parity.format,
+                parity.parity_band,
+                parity.supported_platforms,
+                parity.unsupported_platforms,
+                parity.discovered_type_count,
+                parity.sandbox_count,
+                parity.shared_sandbox_count,
+                parity.isolated_sandbox_count,
+                parity.ready_sandbox_count,
+                parity.degraded_sandbox_count,
+                parity.faulted_sandbox_count,
+                parity.quarantined_sandbox_count,
+                parity.terminal_sandbox_count,
+                parity.active_transport_count,
+                parity.explicit_placement_rule_count,
+            )
+        })
+        .collect::<String>();
     let sandbox_lines = snapshot
         .sandboxes
         .iter()
@@ -10644,7 +10984,7 @@ fn format_runtime_plugin_lifecycle_snapshot_multiline(
         })
         .collect::<String>();
     format!(
-        "\nplugin_sandbox_count={}\nplugin_active_sandbox_count={}\nplugin_shared_sandbox_count={}\nplugin_isolated_sandbox_count={}\nplugin_ready_sandbox_count={}\nplugin_booting_sandbox_count={}\nplugin_degraded_sandbox_count={}\nplugin_faulted_sandbox_count={}\nplugin_restarting_sandbox_count={}\nplugin_quarantined_sandbox_count={}\nplugin_stopped_sandbox_count={}\nplugin_rebindable_sandbox_count={}\nplugin_terminal_sandbox_count={}{}",
+        "\nplugin_sandbox_count={}\nplugin_active_sandbox_count={}\nplugin_shared_sandbox_count={}\nplugin_isolated_sandbox_count={}\nplugin_ready_sandbox_count={}\nplugin_booting_sandbox_count={}\nplugin_degraded_sandbox_count={}\nplugin_faulted_sandbox_count={}\nplugin_restarting_sandbox_count={}\nplugin_quarantined_sandbox_count={}\nplugin_stopped_sandbox_count={}\nplugin_rebindable_sandbox_count={}\nplugin_terminal_sandbox_count={}{}{}",
         snapshot.sandbox_count,
         snapshot.active_sandbox_count,
         snapshot.shared_sandbox_count,
@@ -10658,6 +10998,7 @@ fn format_runtime_plugin_lifecycle_snapshot_multiline(
         snapshot.stopped_sandbox_count,
         snapshot.rebindable_sandbox_count,
         snapshot.terminal_sandbox_count,
+        parity_coverage_lines,
         sandbox_lines,
     )
 }
@@ -12255,6 +12596,7 @@ fn json_runtime_plugin_discovery_snapshot(snapshot: &RuntimePluginDiscoverySnaps
             "\"discovered_format_count\":{},",
             "\"last_scan\":{},",
             "\"format_coverage\":{},",
+            "\"parity_coverage\":{},",
             "\"capability_coverage\":{},",
             "\"discovered_types\":{},",
             "\"summary\":{}",
@@ -12266,6 +12608,7 @@ fn json_runtime_plugin_discovery_snapshot(snapshot: &RuntimePluginDiscoverySnaps
         snapshot.discovered_format_count,
         last_scan,
         json_runtime_plugin_format_coverage_vec(&snapshot.format_coverage),
+        json_runtime_plugin_parity_coverage_vec(&snapshot.parity_coverage),
         json_runtime_plugin_capability_coverage_summary(&snapshot.capability_coverage),
         json_runtime_plugin_discovered_type_record_vec(&snapshot.discovered_types),
         json_option_string(Some(snapshot.summary.as_str())),
@@ -12283,6 +12626,7 @@ fn json_runtime_plugin_scan_receipt(receipt: &RuntimePluginScanReceipt) -> Strin
             "\"discovered_type_count\":{},",
             "\"discovered_format_count\":{},",
             "\"format_coverage\":{},",
+            "\"parity_coverage\":{},",
             "\"capability_coverage\":{},",
             "\"summary\":{}",
             "}}"
@@ -12294,6 +12638,7 @@ fn json_runtime_plugin_scan_receipt(receipt: &RuntimePluginScanReceipt) -> Strin
         receipt.discovered_type_count,
         receipt.discovered_format_count,
         json_runtime_plugin_format_coverage_vec(&receipt.format_coverage),
+        json_runtime_plugin_parity_coverage_vec(&receipt.parity_coverage),
         json_runtime_plugin_capability_coverage_summary(&receipt.capability_coverage),
         json_option_string(Some(receipt.summary.as_str())),
     )
@@ -12329,6 +12674,7 @@ fn json_runtime_plugin_format_coverage_record(
             "\"supports_prepare_count\":{},",
             "\"supports_activate_count\":{},",
             "\"accepts_midi_count\":{},",
+            "\"supports_note_expression_count\":{},",
             "\"produces_midi_count\":{},",
             "\"max_audio_bus_count\":{},",
             "\"max_parameter_count\":{},",
@@ -12346,9 +12692,73 @@ fn json_runtime_plugin_format_coverage_record(
         record.supports_prepare_count,
         record.supports_activate_count,
         record.accepts_midi_count,
+        record.supports_note_expression_count,
         record.produces_midi_count,
         record.max_audio_bus_count,
         record.max_parameter_count,
+        json_option_string(Some(record.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_parity_coverage_vec(records: &[RuntimePluginFormatParityRecord]) -> String {
+    format!(
+        "[{}]",
+        records
+            .iter()
+            .map(json_runtime_plugin_parity_coverage_record)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_plugin_host_platform_vec(platforms: &[RuntimePluginHostPlatform]) -> String {
+    format!(
+        "[{}]",
+        platforms
+            .iter()
+            .map(|platform| json_escape_string(&format!("{platform:?}")))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_plugin_parity_coverage_record(record: &RuntimePluginFormatParityRecord) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"format\":{},",
+            "\"parity_band\":{},",
+            "\"supported_platforms\":{},",
+            "\"unsupported_platforms\":{},",
+            "\"discovered_type_count\":{},",
+            "\"sandbox_count\":{},",
+            "\"shared_sandbox_count\":{},",
+            "\"isolated_sandbox_count\":{},",
+            "\"ready_sandbox_count\":{},",
+            "\"degraded_sandbox_count\":{},",
+            "\"faulted_sandbox_count\":{},",
+            "\"quarantined_sandbox_count\":{},",
+            "\"terminal_sandbox_count\":{},",
+            "\"active_transport_count\":{},",
+            "\"explicit_placement_rule_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_escape_string(&format!("{:?}", record.format)),
+        json_escape_string(&format!("{:?}", record.parity_band)),
+        json_runtime_plugin_host_platform_vec(&record.supported_platforms),
+        json_runtime_plugin_host_platform_vec(&record.unsupported_platforms),
+        record.discovered_type_count,
+        record.sandbox_count,
+        record.shared_sandbox_count,
+        record.isolated_sandbox_count,
+        record.ready_sandbox_count,
+        record.degraded_sandbox_count,
+        record.faulted_sandbox_count,
+        record.quarantined_sandbox_count,
+        record.terminal_sandbox_count,
+        record.active_transport_count,
+        record.explicit_placement_rule_count,
         json_option_string(Some(record.summary.as_str())),
     )
 }
@@ -12374,6 +12784,7 @@ fn json_runtime_plugin_capability_coverage_summary(
             "\"sample_accurate_automation_count\":{},",
             "\"accepts_midi_count\":{},",
             "\"accepts_note_events_count\":{},",
+            "\"supports_note_expression_count\":{},",
             "\"produces_midi_count\":{},",
             "\"silence_aware_count\":{},",
             "\"requires_main_thread_for_state_count\":{},",
@@ -12400,6 +12811,7 @@ fn json_runtime_plugin_capability_coverage_summary(
         summary.sample_accurate_automation_count,
         summary.accepts_midi_count,
         summary.accepts_note_events_count,
+        summary.supports_note_expression_count,
         summary.produces_midi_count,
         summary.silence_aware_count,
         summary.requires_main_thread_for_state_count,
@@ -12755,6 +13167,7 @@ fn json_runtime_plugin_lifecycle_snapshot(snapshot: &RuntimePluginLifecycleSnaps
             "\"stopped_sandbox_count\":{},",
             "\"rebindable_sandbox_count\":{},",
             "\"terminal_sandbox_count\":{},",
+            "\"parity_coverage\":{},",
             "\"sandboxes\":{},",
             "\"summary\":{}",
             "}}"
@@ -12772,6 +13185,7 @@ fn json_runtime_plugin_lifecycle_snapshot(snapshot: &RuntimePluginLifecycleSnaps
         snapshot.stopped_sandbox_count,
         snapshot.rebindable_sandbox_count,
         snapshot.terminal_sandbox_count,
+        json_runtime_plugin_parity_coverage_vec(&snapshot.parity_coverage),
         json_runtime_plugin_sandbox_snapshot_vec(&snapshot.sandboxes),
         json_option_string(Some(snapshot.summary.as_str())),
     )
@@ -13179,6 +13593,59 @@ fn json_runtime_automation_snapshot(snapshot: &RuntimeAutomationSnapshot) -> Str
         json_option_f32(snapshot.first_value),
         json_option_f32(snapshot.last_value),
         json_option_f32(snapshot.last_modulation),
+        json_option_u64(snapshot.first_epoch),
+        json_option_u64(snapshot.last_epoch),
+        snapshot.segment_count,
+        json_u64_vec(&snapshot.segment_epochs),
+        snapshot.lease_rollovers,
+    )
+}
+
+fn json_runtime_plugin_event_snapshot(snapshot: &RuntimePluginEventSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"last_processing_epoch\":{},",
+            "\"last_block_sequence\":{},",
+            "\"last_generated_event_bytes\":{},",
+            "\"last_batch_total_events\":{},",
+            "\"last_batch_parameter_value_events\":{},",
+            "\"last_batch_parameter_modulation_events\":{},",
+            "\"last_batch_parameter_gesture_events\":{},",
+            "\"last_batch_note_events\":{},",
+            "\"last_batch_note_expression_events\":{},",
+            "\"last_batch_midi_events\":{},",
+            "\"total_events\":{},",
+            "\"parameter_value_events\":{},",
+            "\"parameter_modulation_events\":{},",
+            "\"parameter_gesture_events\":{},",
+            "\"note_events\":{},",
+            "\"note_expression_events\":{},",
+            "\"midi_events\":{},",
+            "\"first_epoch\":{},",
+            "\"last_epoch\":{},",
+            "\"segment_count\":{},",
+            "\"segment_epochs\":{},",
+            "\"lease_rollovers\":{}",
+            "}}"
+        ),
+        json_option_u64(snapshot.last_processing_epoch),
+        json_option_u64(snapshot.last_block_sequence),
+        snapshot.last_generated_event_bytes,
+        snapshot.last_batch_total_events,
+        snapshot.last_batch_parameter_value_events,
+        snapshot.last_batch_parameter_modulation_events,
+        snapshot.last_batch_parameter_gesture_events,
+        snapshot.last_batch_note_events,
+        snapshot.last_batch_note_expression_events,
+        snapshot.last_batch_midi_events,
+        snapshot.total_events,
+        snapshot.parameter_value_events,
+        snapshot.parameter_modulation_events,
+        snapshot.parameter_gesture_events,
+        snapshot.note_events,
+        snapshot.note_expression_events,
+        snapshot.midi_events,
         json_option_u64(snapshot.first_epoch),
         json_option_u64(snapshot.last_epoch),
         snapshot.segment_count,
@@ -15449,6 +15916,7 @@ pub struct RuntimePluginScanReceipt {
     pub discovered_type_count: usize,
     pub discovered_format_count: usize,
     pub format_coverage: Vec<RuntimePluginFormatCoverageRecord>,
+    pub parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
     pub summary: String,
 }
@@ -15484,9 +15952,52 @@ pub struct RuntimePluginFormatCoverageRecord {
     pub supports_prepare_count: usize,
     pub supports_activate_count: usize,
     pub accepts_midi_count: usize,
+    pub supports_note_expression_count: usize,
     pub produces_midi_count: usize,
     pub max_audio_bus_count: usize,
     pub max_parameter_count: usize,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RuntimePluginHostPlatform {
+    MacOs,
+    Linux,
+    Windows,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePluginParityBand {
+    Portable,
+    Guarded,
+    Unsupported,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginFormatPlatformCoverageRecord {
+    pub format: PluginFormat,
+    pub supported_platforms: Vec<RuntimePluginHostPlatform>,
+    pub unsupported_platforms: Vec<RuntimePluginHostPlatform>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginFormatParityRecord {
+    pub format: PluginFormat,
+    pub parity_band: RuntimePluginParityBand,
+    pub supported_platforms: Vec<RuntimePluginHostPlatform>,
+    pub unsupported_platforms: Vec<RuntimePluginHostPlatform>,
+    pub discovered_type_count: usize,
+    pub sandbox_count: usize,
+    pub shared_sandbox_count: usize,
+    pub isolated_sandbox_count: usize,
+    pub ready_sandbox_count: usize,
+    pub degraded_sandbox_count: usize,
+    pub faulted_sandbox_count: usize,
+    pub quarantined_sandbox_count: usize,
+    pub terminal_sandbox_count: usize,
+    pub active_transport_count: usize,
+    pub explicit_placement_rule_count: usize,
     pub summary: String,
 }
 
@@ -15507,6 +16018,7 @@ pub struct RuntimePluginCapabilityCoverageSummary {
     pub sample_accurate_automation_count: usize,
     pub accepts_midi_count: usize,
     pub accepts_note_events_count: usize,
+    pub supports_note_expression_count: usize,
     pub produces_midi_count: usize,
     pub silence_aware_count: usize,
     pub requires_main_thread_for_state_count: usize,
@@ -15526,6 +16038,7 @@ pub struct RuntimePluginDiscoverySnapshot {
     pub discovered_format_count: usize,
     pub last_scan: Option<RuntimePluginScanReceipt>,
     pub format_coverage: Vec<RuntimePluginFormatCoverageRecord>,
+    pub parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
     pub discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
     pub summary: String,
@@ -15635,6 +16148,7 @@ pub trait RuntimeObservationApi {
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
     fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot;
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
+    fn get_plugin_event_snapshot(&self) -> RuntimePluginEventSnapshot;
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
     fn get_execution_topology_summary(&self) -> RuntimeExecutionTopologySummary;
     fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot;

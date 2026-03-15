@@ -118,6 +118,7 @@ pub struct PluginProcessingContract {
     pub sample_accurate_automation: bool,
     pub accepts_midi: bool,
     pub accepts_note_events: bool,
+    pub supports_note_expression: bool,
     pub produces_midi: bool,
     pub silence_aware: bool,
 }
@@ -298,6 +299,7 @@ impl PluginDescriptor {
                 sample_accurate_automation: false,
                 accepts_midi: false,
                 accepts_note_events: false,
+                supports_note_expression: false,
                 produces_midi: false,
                 silence_aware: false,
             },
@@ -1213,6 +1215,18 @@ pub struct EventPacketSummary {
     pub midi_events: usize,
 }
 
+impl EventPacketSummary {
+    pub fn merge(&mut self, other: Self) {
+        self.total_events += other.total_events;
+        self.parameter_value_events += other.parameter_value_events;
+        self.parameter_modulation_events += other.parameter_modulation_events;
+        self.parameter_gesture_events += other.parameter_gesture_events;
+        self.note_events += other.note_events;
+        self.note_expression_events += other.note_expression_events;
+        self.midi_events += other.midi_events;
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ParameterAutomationSummary {
     pub parameter_id: u32,
@@ -1350,6 +1364,93 @@ pub struct BlockSequenceContinuitySegment {
     pub first_block_sequence: u64,
     pub last_block_sequence: u64,
     pub observed_blocks: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EventPacketContinuitySegment {
+    pub processing_epoch: u64,
+    pub lease_id: String,
+    pub summary: EventPacketSummary,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct EventPacketContinuityReport {
+    pub segments: Vec<EventPacketContinuitySegment>,
+    pub lease_rollovers: usize,
+}
+
+impl EventPacketContinuityReport {
+    pub fn record(
+        &mut self,
+        processing_epoch: u64,
+        lease_id: impl Into<String>,
+        summary: EventPacketSummary,
+    ) {
+        if summary.total_events == 0 {
+            return;
+        }
+
+        let lease_id = lease_id.into();
+        match self.segments.last_mut() {
+            Some(last)
+                if last.processing_epoch == processing_epoch && last.lease_id == lease_id =>
+            {
+                last.summary.merge(summary);
+            }
+            Some(last) => {
+                if last.lease_id != lease_id {
+                    self.lease_rollovers = self.lease_rollovers.saturating_add(1);
+                }
+                self.segments.push(EventPacketContinuitySegment {
+                    processing_epoch,
+                    lease_id,
+                    summary,
+                });
+            }
+            None => {
+                self.segments.push(EventPacketContinuitySegment {
+                    processing_epoch,
+                    lease_id,
+                    summary,
+                });
+            }
+        }
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        for segment in other.segments {
+            self.record(segment.processing_epoch, segment.lease_id, segment.summary);
+        }
+    }
+
+    pub fn aggregate(&self) -> EventPacketSummary {
+        let mut aggregate = EventPacketSummary::default();
+        for segment in &self.segments {
+            aggregate.merge(segment.summary);
+        }
+        aggregate
+    }
+
+    pub fn segment_count(&self) -> usize {
+        self.segments.len()
+    }
+
+    pub fn first_epoch(&self) -> Option<u64> {
+        self.segments
+            .first()
+            .map(|segment| segment.processing_epoch)
+    }
+
+    pub fn last_epoch(&self) -> Option<u64> {
+        self.segments.last().map(|segment| segment.processing_epoch)
+    }
+
+    pub fn segment_epochs(&self) -> Vec<u64> {
+        self.segments
+            .iter()
+            .map(|segment| segment.processing_epoch)
+            .collect()
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -2291,6 +2392,7 @@ mod tests {
                     sample_accurate_automation: true,
                     accepts_midi: true,
                     accepts_note_events: true,
+                    supports_note_expression: true,
                     produces_midi: false,
                     silence_aware: true,
                 })

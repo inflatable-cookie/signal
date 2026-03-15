@@ -1,0 +1,11 @@
+[package]
+name = "signal-plugin-vst3"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "VST3 plugin adapter surfaces for Signal."
+
+[dependencies]
+signal-plugin = { path = "../signal-plugin" }

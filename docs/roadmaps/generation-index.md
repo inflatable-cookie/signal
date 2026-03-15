@@ -1,7 +1,7 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-14
+Updated: 2026-03-15
 
 ## Active generation
 
@@ -33,8 +33,7 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g06.008` with Batch 8.1 and keep the generation on Signal-owned
-runtime surfaces by defining deferred-work scheduler priority, backpressure,
-starvation, and cancellation semantics before broader scheduler, plugin,
-hardware, media, and acceptance lanes widen while `g07` remains the next full
-feature-breadth queue.
+Continue `g06.013` with Batch 13.1 and keep the generation on Signal-owned
+runtime surfaces by freezing plugin preset-state interchange, portable recall,
+and ARA-capable context vocabulary before deeper recall and export work begins
+while `g07` remains the next full feature-breadth queue.

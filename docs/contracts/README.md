@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-03-14
+Updated: 2026-03-15
 
 ## Why this section matters now
 
@@ -36,6 +36,11 @@ Use this section for:
 - `016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
 - `017-per-block-execution-timing-and-pressure-snapshot-contract.md`
 - `018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md`
+- `019-deferred-work-scheduler-priority-backpressure-and-cancellation-contract.md`
+- `020-vst3-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
+- `021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
+- `022-backend-capability-parity-linux-plugin-support-and-cross-adapter-conformance-contract.md`
+- `023-generic-midi-note-expression-and-plugin-event-model-contract.md`
 
 ## Rule
 
@@ -44,6 +49,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g06.008` with Batch 8.1 by freezing deferred-work scheduler
-priority, backpressure, starvation, and cancellation semantics before later
-scheduler and acceptance lanes widen them.
+Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
+interchange, portable recall, and ARA-capable context vocabulary before
+runtime recall/export depth begins.

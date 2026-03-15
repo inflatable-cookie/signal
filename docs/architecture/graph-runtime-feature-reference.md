@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-14
+Updated: 2026-03-15
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -418,14 +418,94 @@ Current plugin backend and delegation tracking includes:
   - discovered type and instance control surfaces
   - prepare and block protocol details
   - CLAP-specific event and shared-memory packet mapping
+- current adapter-specific VST3 realization in `signal-plugin-vst3` for:
+  - platform scan-root presets across macOS, Linux, and Windows
+  - VST3 class/controller pairing and descriptor projection
+  - bounded shared-memory session planning against the shared runtime contract
 - current host-neutral rule: delegated execution fulfillment may happen in a
   host adapter, but ownership of stage identity, recall payload, completion
   status, and finalization receipts stays in runtime-owned DTOs
-- current proof boundary: runtime public-boundary and supervisor-export
-  fixtures now consume the widened discovery catalog without adapter-local
-  reconstruction
+- contract-frozen VST3 alignment rule:
+  - `PluginFormat::Vst3` stays only the shared backend identity tag
+  - VST3 module/class, component/controller, and Linux scan/load detail now
+    widen shared Signal-owned discovery and lifecycle receipts through the new
+    adapter baseline rather than a parallel adapter-local lifecycle taxonomy
+- current VST3 host/runtime baseline:
+  - local and server hosts now feed VST3 discovery into
+    `RuntimePluginDiscoverySnapshot`
+  - VST3 sandbox ensure now records shared runtime lifecycle, instance-state,
+    and transport receipts on both hosts
+  - Linux-hosted VST3 roots are now explicit through the server-host proof path
+- current proof boundary: runtime public-boundary, stable host-edge, and
+  supervisor descriptor fixtures now consume VST3 discovery and lifecycle truth
+  without adapter-local reconstruction through the
+  `signal.runtime.vst3-boundary` acceptance seam
+- next adapter breadth contract:
+  - AU discovery, lifecycle, macOS-scoped support claims, and future
+    `signal-plugin-au` realization are now frozen against the same
+    backend-neutral runtime-owned discovery and lifecycle seams rather than a
+    product-local AU wrapper model
+- current adapter-specific AU realization in `signal-plugin-au` for:
+  - macOS component-root presets
+  - Audio Unit component identity projection
+  - bounded shared-memory session planning against the shared runtime contract
+- current AU host/runtime baseline:
+  - local and server hosts now feed AU discovery into
+    `RuntimePluginDiscoverySnapshot`
+  - AU sandbox ensure now records shared runtime lifecycle, instance-state, and
+    transport receipts on both hosts
+  - macOS-scoped AU roots are now explicit through focused host proof paths
+- current AU proof boundary:
+  - runtime public-boundary, stable host-edge, and supervisor descriptor
+    fixtures now consume AU discovery and lifecycle truth without
+    adapter-local reconstruction through the `signal.runtime.au-boundary`
+    acceptance seam
 - current limitation: broader backend-neutral capability projection and
-  adapter coverage beyond the CLAP-first path are still explicitly deferred
+  conformance beyond the new CLAP+VST3+AU baseline are still explicitly
+  deferred
+- contract-frozen cross-adapter parity rule:
+  - CLAP, VST3, and AU now have one bounded parity vocabulary separating
+    portable, format-guarded, adapter-private, and unsupported scope
+  - Linux plugin breadth is now explicitly guarded rather than implied by
+    adapter existence
+  - later runtime parity receipts must stay inside the existing discovery,
+    lifecycle, and supervisor/export families rather than a host-local
+    portability matrix
+- current runtime parity receipt family:
+  - `RuntimePluginScanReceipt`, `RuntimePluginDiscoverySnapshot`, and
+    `RuntimePluginLifecycleSnapshot` now carry per-format parity coverage with
+    platform scope, placement-rule counts, active-transport state, and
+    degraded or faulted lifecycle counts
+  - hosts now seed the same CLAP, VST3, and AU platform coverage into runtime
+    so Linux breadth and AU macOS-only scope stay explicit on shared receipts
+    instead of host-private matrices
+- current cross-adapter parity proof boundary:
+  - public runtime, stable host-edge, and supervisor descriptor fixtures now
+    consume the bounded parity receipt family without host-local portability
+    matrices through the `signal.runtime.cross-adapter-parity-boundary`
+    acceptance seam
+- contract-frozen generic event rule:
+  - `signal-plugin` now explicitly owns the bounded shared event vocabulary
+    through `PluginEvent` and `EventPacket`
+  - parameter value, parameter modulation, parameter gesture, note,
+    note-expression, and three-byte MIDI events are now the first shared
+    portable event families
+  - `PluginProcessingContract` now carries explicit
+    `supports_note_expression` capability across CLAP, VST3, AU, and runtime
+    discovery receipts instead of inferring note-expression depth indirectly
+  - `RuntimePluginEventSnapshot` now carries bounded last-batch and aggregate
+    generic event continuity for parameter, note, note-expression, and MIDI
+    output on runtime observation and supervisor surfaces
+  - local and server host processing now feed `EventPacket::summary()` back
+    into runtime-owned generic event receipts instead of keeping that widened
+    event truth only in host-private payload summaries
+  - the widened generic event, note-expression, and capability receipts are
+    now proven consumable through public runtime, stable host-edge, and
+    machine-readable supervisor surfaces via the
+    `signal.runtime.generic-event-boundary` acceptance seam
+  - richer packet families, editor semantics, controller mapping, and deeper
+    per-format event models remain deferred instead of being implied by the
+    CLAP-first path
 
 ## Runtime Scheduler And Prework
 
@@ -581,6 +661,18 @@ Implemented now:
 - runtime-owned lingering transport cleanup queue visibility through
   `RuntimeTransportConcurrencySnapshot`, including pending cleanup waves and
   deferred retry work counts
+- contract-frozen deferred-work scheduler-policy hierarchy:
+  - runtime-owned deferred-work classes and priority bands
+  - starvation, backpressure, and cancellation as Signal-owned scheduler terms
+  - per-block timing and bounded hotspot receipts as explicit policy context
+  - host or product queue state remaining advisory rather than authoritative
+- runtime-owned deferred-service receipts that now carry typed priority-band,
+  blocking-priority, backpressure-source, starvation, and cancellation fields,
+  with the same policy state preserved in `RuntimePerformanceSnapshot` and
+  `RuntimePerformanceTraceReceipt`
+- public runtime, stable host-edge, and `signal-supervisor-tools` boundary
+  proof for the widened deferred-work scheduler-policy seam through
+  `signal.runtime.deferred-work-policy-boundary`
 - runtime-owned routed topology summaries that carry aggregated plugin-chain
   latency/compensation state per track lane, bus group, console group, and
   send/return route, plus node-level recall payload/status and compensation
@@ -713,6 +805,7 @@ Useful implementation entry points after this doc:
 - `effigy acceptance:critical-path-boundary`
 - `effigy acceptance:plugin-continuity`
 - `effigy acceptance:plugin-backend-breadth`
+- `effigy acceptance:cross-adapter-parity-boundary`
 - `effigy acceptance:conformance`
 - `effigy acceptance:release-boundary`
 - `effigy acceptance:packaging-manifest`
@@ -732,6 +825,12 @@ Useful implementation entry points after this doc:
 - `docs/contracts/015-offline-render-recovery-and-resumability-contract.md`
 - `docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`
 - `docs/contracts/018-graph-critical-path-hot-node-and-worker-lane-instrumentation-contract.md`
+- `docs/contracts/019-deferred-work-scheduler-priority-backpressure-and-cancellation-contract.md`
+- `docs/contracts/020-vst3-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
+- `docs/contracts/021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
+- `docs/contracts/022-backend-capability-parity-linux-plugin-support-and-cross-adapter-conformance-contract.md`
+- `docs/contracts/023-generic-midi-note-expression-and-plugin-event-model-contract.md`
+- `crates/signal-plugin-vst3/src/lib.rs`
 - `crates/signal-supervisor-tools/src/main.rs`
 - `effigy.toml`
 - `crates/signal-runtime/src/interfaces.rs`
@@ -743,7 +842,6 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Continue `g06.008` with Batch 8.1 by defining deferred-work scheduler
-priority, backpressure, starvation, and cancellation semantics before later
-profiling, scheduler, and media-service work widen the runtime evidence
-surface further.
+Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
+interchange, portable recall, and ARA-capable context vocabulary before
+runtime recall/export depth begins.

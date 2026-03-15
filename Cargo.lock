@@ -289,7 +289,9 @@ dependencies = [
  "signal-hardware-coreaudio",
  "signal-ipc",
  "signal-plugin",
+ "signal-plugin-au",
  "signal-plugin-clap",
+ "signal-plugin-vst3",
  "signal-primitives",
  "signal-runtime",
 ]
@@ -302,7 +304,9 @@ dependencies = [
  "signal-hardware",
  "signal-ipc",
  "signal-plugin",
+ "signal-plugin-au",
  "signal-plugin-clap",
+ "signal-plugin-vst3",
  "signal-primitives",
  "signal-runtime",
 ]
@@ -322,6 +326,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal-plugin-au"
+version = "0.1.0"
+dependencies = [
+ "signal-plugin",
+]
+
+[[package]]
 name = "signal-plugin-clap"
 version = "0.1.0"
 dependencies = [
@@ -336,6 +347,13 @@ dependencies = [
  "signal-ipc",
  "signal-plugin",
  "signal-plugin-clap",
+]
+
+[[package]]
+name = "signal-plugin-vst3"
+version = "0.1.0"
+dependencies = [
+ "signal-plugin",
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-14
+Updated: 2026-03-15
 
 ## Why this section matters now
 
@@ -98,6 +98,6 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.008` with Batch 8.1 by defining deferred-work scheduler
-priority, backpressure, starvation, and cancellation semantics before the
-profiling lane widens into deeper scheduler attribution.
+Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
+interchange, portable recall, and ARA-capable context vocabulary before
+runtime recall/export depth begins.

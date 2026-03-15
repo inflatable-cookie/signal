@@ -16,6 +16,8 @@ members = [
   "crates/signal-ipc",
   "crates/signal-plugin",
   "crates/signal-plugin-clap",
+  "crates/signal-plugin-au",
+  "crates/signal-plugin-vst3",
   "crates/signal-plugin-sandbox",
   "crates/signal-hardware",
   "crates/signal-hardware-coreaudio",

@@ -19,7 +19,8 @@ use signal_graph::{
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
     AutomationContinuityReport, BlockSequenceContinuityReport, CompletionState,
-    ParameterAutomationSummary, PluginFeature, PluginFormat,
+    EventPacketContinuityReport, EventPacketSummary, ParameterAutomationSummary, PluginFeature,
+    PluginFormat,
 };
 use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 use symphonia::core::{
@@ -46,15 +47,17 @@ use crate::interfaces::{
     RuntimeClipProcessingPipelineSnapshot, RuntimeClipProcessingReadiness,
     RuntimeClipProcessingRegistration, RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage,
     RuntimeClipRenderInputStage, RuntimeClipRenderRequest, RuntimeClipRenderResult,
-    RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDeferredServiceClass,
-    RuntimeDeferredServiceDecision, RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt,
-    RuntimeDiagnosticsSnapshot, RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError,
-    RuntimeErrorKind, RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase,
-    RuntimeExecutionTopologySummary, RuntimeInterruptionClass, RuntimeLifecycleApi,
-    RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
-    RuntimeMediaIndexingState, RuntimeMediaPipelineSnapshot, RuntimeMediaPreviewState,
-    RuntimeMediaServiceSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
-    RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
+    RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDeferredServiceBackpressureSource,
+    RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceClass,
+    RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
+    RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt, RuntimeDiagnosticsSnapshot,
+    RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind,
+    RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase, RuntimeExecutionTopologySummary,
+    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
+    RuntimeMediaAssetSnapshot, RuntimeMediaAssetState, RuntimeMediaIndexingState,
+    RuntimeMediaPipelineSnapshot, RuntimeMediaPreviewState, RuntimeMediaServiceSnapshot,
+    RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeMeteringSnapshot,
+    RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
     RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
     RuntimeOfflinePluginDelegatedExecutionReceipt, RuntimeOfflinePluginDelegatedExecutionRequest,
     RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
@@ -71,9 +74,11 @@ use crate::interfaces::{
     RuntimePluginCapabilityCoverageSummary, RuntimePluginChainSnapshot,
     RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginDiscoverySnapshot, RuntimePluginDispatchState,
-    RuntimePluginExecutionChainSummary, RuntimePluginFormatCoverageRecord,
+    RuntimePluginEventSnapshot, RuntimePluginExecutionChainSummary,
+    RuntimePluginFormatCoverageRecord, RuntimePluginFormatParityRecord,
+    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
     RuntimePluginIsolationOutcome, RuntimePluginLifecycleSnapshot, RuntimePluginLifecycleState,
-    RuntimePluginPlacementPolicy, RuntimePluginPlacementRuleMatcher,
+    RuntimePluginParityBand, RuntimePluginPlacementPolicy, RuntimePluginPlacementRuleMatcher,
     RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload, RuntimePluginRecallSnapshot,
     RuntimePluginRecallState, RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt,
     RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
@@ -192,6 +197,7 @@ pub struct SignalRuntime {
     control: RuntimeControlSnapshot,
     timeline: RuntimeTimelineState,
     automation: RuntimeAutomationState,
+    plugin_events: RuntimePluginEventState,
     engine: RuntimeEngineState,
     transport_concurrency: RuntimeTransportConcurrencyState,
     plugin_discovery: RuntimePluginDiscoveryStateModel,
@@ -297,9 +303,17 @@ struct RuntimePluginDiscoveryStateModel {
     next_scan_handle: u64,
     last_scan: Option<RuntimePluginScanReceipt>,
     discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+    platform_coverage: Vec<RuntimePluginFormatPlatformCoverageRecord>,
 }
 
 impl RuntimePluginDiscoveryStateModel {
+    fn record_platform_coverage(
+        &mut self,
+        coverage: Vec<RuntimePluginFormatPlatformCoverageRecord>,
+    ) {
+        self.platform_coverage = coverage;
+    }
+
     fn record_scan(&mut self, request: &PluginScanRequest) -> ScanHandle {
         self.next_scan_handle = self.next_scan_handle.saturating_add(1);
         self.scan_count = self.scan_count.saturating_add(1);
@@ -315,6 +329,7 @@ impl RuntimePluginDiscoveryStateModel {
             discovered_type_count: 0,
             discovered_format_count: 0,
             format_coverage: Vec::new(),
+            parity_coverage: Vec::new(),
             capability_coverage: RuntimePluginCapabilityCoverageSummary {
                 summary: "formats=0 multi_format=false types=0".into(),
                 ..RuntimePluginCapabilityCoverageSummary::default()
@@ -333,6 +348,7 @@ impl RuntimePluginDiscoveryStateModel {
         &mut self,
         scan_handle: ScanHandle,
         discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+        parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     ) {
         let format_coverage = runtime_plugin_format_coverage(&discovered_types);
         let capability_coverage = runtime_plugin_capability_coverage(&discovered_types);
@@ -341,6 +357,7 @@ impl RuntimePluginDiscoveryStateModel {
                 last_scan.discovered_type_count = discovered_types.len();
                 last_scan.discovered_format_count = format_coverage.len();
                 last_scan.format_coverage = format_coverage;
+                last_scan.parity_coverage = parity_coverage;
                 last_scan.capability_coverage = capability_coverage;
                 last_scan.summary = format!(
                     "scan={} roots={} formats={:?} discovered_types={} discovered_formats={}",
@@ -355,7 +372,10 @@ impl RuntimePluginDiscoveryStateModel {
         }
     }
 
-    fn snapshot(&self) -> RuntimePluginDiscoverySnapshot {
+    fn snapshot(
+        &self,
+        parity_coverage: Vec<RuntimePluginFormatParityRecord>,
+    ) -> RuntimePluginDiscoverySnapshot {
         let format_coverage = runtime_plugin_format_coverage(&self.discovered_types);
         let capability_coverage = runtime_plugin_capability_coverage(&self.discovered_types);
         RuntimePluginDiscoverySnapshot {
@@ -365,6 +385,7 @@ impl RuntimePluginDiscoveryStateModel {
             discovered_format_count: format_coverage.len(),
             last_scan: self.last_scan.clone(),
             format_coverage,
+            parity_coverage,
             capability_coverage,
             discovered_types: self.discovered_types.clone(),
             summary: format!(
@@ -390,6 +411,38 @@ impl RuntimePluginDiscoveryStateModel {
             ),
         }
     }
+}
+
+fn runtime_plugin_host_platform_sort_key(platform: RuntimePluginHostPlatform) -> u8 {
+    match platform {
+        RuntimePluginHostPlatform::MacOs => 0,
+        RuntimePluginHostPlatform::Linux => 1,
+        RuntimePluginHostPlatform::Windows => 2,
+    }
+}
+
+fn runtime_plugin_parity_band(
+    coverage: Option<&RuntimePluginFormatPlatformCoverageRecord>,
+) -> RuntimePluginParityBand {
+    match coverage {
+        Some(coverage) if coverage.supported_platforms.is_empty() => {
+            RuntimePluginParityBand::Unsupported
+        }
+        Some(coverage) if coverage.unsupported_platforms.is_empty() => {
+            RuntimePluginParityBand::Portable
+        }
+        Some(_) => RuntimePluginParityBand::Guarded,
+        None => RuntimePluginParityBand::Guarded,
+    }
+}
+
+fn runtime_plugin_platform_scope_summary(
+    coverage: Option<&RuntimePluginFormatPlatformCoverageRecord>,
+) -> String {
+    if let Some(coverage) = coverage {
+        return coverage.summary.clone();
+    }
+    "platforms=unknown unsupported=unknown".into()
 }
 
 fn plugin_format_sort_key(format: PluginFormat) -> u8 {
@@ -437,6 +490,10 @@ fn runtime_plugin_format_coverage(
                 .iter()
                 .filter(|record| record.processing_contract.accepts_midi)
                 .count();
+            let supports_note_expression_count = records
+                .iter()
+                .filter(|record| record.processing_contract.supports_note_expression)
+                .count();
             let produces_midi_count = records
                 .iter()
                 .filter(|record| record.processing_contract.produces_midi)
@@ -463,11 +520,12 @@ fn runtime_plugin_format_coverage(
                 supports_prepare_count,
                 supports_activate_count,
                 accepts_midi_count,
+                supports_note_expression_count,
                 produces_midi_count,
                 max_audio_bus_count,
                 max_parameter_count,
                 summary: format!(
-                    "format={format:?} types={} features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} midi_out={} max_audio_buses={} max_parameters={}",
+                    "format={format:?} types={} features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} note_expression={} midi_out={} max_audio_buses={} max_parameters={}",
                     records.len(),
                     feature_count(PluginFeature::AudioEffect),
                     feature_count(PluginFeature::Instrument),
@@ -478,6 +536,7 @@ fn runtime_plugin_format_coverage(
                     supports_prepare_count,
                     supports_activate_count,
                     accepts_midi_count,
+                    supports_note_expression_count,
                     produces_midi_count,
                     max_audio_bus_count,
                     max_parameter_count,
@@ -543,6 +602,10 @@ fn runtime_plugin_capability_coverage(
             .iter()
             .filter(|record| record.processing_contract.accepts_note_events)
             .count(),
+        supports_note_expression_count: discovered_types
+            .iter()
+            .filter(|record| record.processing_contract.supports_note_expression)
+            .count(),
         produces_midi_count: discovered_types
             .iter()
             .filter(|record| record.processing_contract.produces_midi)
@@ -578,7 +641,7 @@ fn runtime_plugin_capability_coverage(
             .max()
             .unwrap_or(0),
         summary: format!(
-            "formats={} multi_format={} types={} features={}/{}/{}/{}/{} snapshot={} reset={} bypass={} latency={} tail={} sample_accurate={} midi_in={} note_in={} midi_out={} silence_aware={} main_thread_state={} prepare={} activate={} reset_while_active={} max_audio_buses={} max_parameters={}",
+            "formats={} multi_format={} types={} features={}/{}/{}/{}/{} snapshot={} reset={} bypass={} latency={} tail={} sample_accurate={} midi_in={} note_in={} note_expression={} midi_out={} silence_aware={} main_thread_state={} prepare={} activate={} reset_while_active={} max_audio_buses={} max_parameters={}",
             discovered_format_count,
             discovered_format_count > 1,
             discovered_types.len(),
@@ -595,6 +658,7 @@ fn runtime_plugin_capability_coverage(
             discovered_types.iter().filter(|record| record.processing_contract.sample_accurate_automation).count(),
             discovered_types.iter().filter(|record| record.processing_contract.accepts_midi).count(),
             discovered_types.iter().filter(|record| record.processing_contract.accepts_note_events).count(),
+            discovered_types.iter().filter(|record| record.processing_contract.supports_note_expression).count(),
             discovered_types.iter().filter(|record| record.processing_contract.produces_midi).count(),
             discovered_types.iter().filter(|record| record.processing_contract.silence_aware).count(),
             discovered_types.iter().filter(|record| record.lifecycle_contract.requires_main_thread_for_state).count(),
@@ -605,6 +669,156 @@ fn runtime_plugin_capability_coverage(
             discovered_types.iter().map(|record| record.parameter_count).max().unwrap_or(0),
         ),
     }
+}
+
+fn runtime_plugin_format_rule_count(
+    policy: &RuntimePluginPlacementPolicy,
+    format: PluginFormat,
+) -> usize {
+    policy
+        .rules
+        .iter()
+        .filter(|rule| {
+            matches!(
+                rule.matcher,
+                RuntimePluginPlacementRuleMatcher::PluginFormat(matcher) if matcher == format
+            )
+        })
+        .count()
+}
+
+fn runtime_plugin_parity_coverage(
+    discovered_types: &[RuntimePluginDiscoveredTypeRecord],
+    sandboxes: &[RuntimePluginSandboxSnapshot],
+    policy: &RuntimePluginPlacementPolicy,
+    platform_coverage: &[RuntimePluginFormatPlatformCoverageRecord],
+) -> Vec<RuntimePluginFormatParityRecord> {
+    let mut formats = discovered_types
+        .iter()
+        .map(|record| record.format)
+        .chain(sandboxes.iter().filter_map(|sandbox| sandbox.plugin_format))
+        .chain(platform_coverage.iter().map(|record| record.format))
+        .collect::<Vec<_>>();
+    formats.sort_by_key(|format| plugin_format_sort_key(*format));
+    formats.dedup();
+
+    formats
+        .into_iter()
+        .map(|format| {
+            let coverage = platform_coverage.iter().find(|record| record.format == format);
+            let mut supported_platforms = coverage
+                .map(|coverage| coverage.supported_platforms.clone())
+                .unwrap_or_default();
+            supported_platforms.sort_by_key(|platform| runtime_plugin_host_platform_sort_key(*platform));
+            supported_platforms.dedup();
+            let mut unsupported_platforms = coverage
+                .map(|coverage| coverage.unsupported_platforms.clone())
+                .unwrap_or_default();
+            unsupported_platforms
+                .sort_by_key(|platform| runtime_plugin_host_platform_sort_key(*platform));
+            unsupported_platforms.dedup();
+
+            let discovered_type_count = discovered_types
+                .iter()
+                .filter(|record| record.format == format)
+                .count();
+            let sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.plugin_format == Some(format))
+                .count();
+            let shared_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.placement_outcome == RuntimePluginIsolationOutcome::SharedSandbox
+                })
+                .count();
+            let isolated_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.placement_outcome
+                            == RuntimePluginIsolationOutcome::IsolatedSandbox
+                })
+                .count();
+            let ready_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Ready
+                })
+                .count();
+            let degraded_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Degraded
+                })
+                .count();
+            let faulted_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Faulted
+                })
+                .count();
+            let quarantined_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Quarantined
+                })
+                .count();
+            let terminal_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.continuity_class == RuntimeInterruptionClass::Terminal
+                })
+                .count();
+            let active_transport_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format) && sandbox.active_transport
+                })
+                .count();
+            let explicit_placement_rule_count = runtime_plugin_format_rule_count(policy, format);
+            let parity_band = runtime_plugin_parity_band(coverage);
+
+            RuntimePluginFormatParityRecord {
+                format,
+                parity_band,
+                supported_platforms,
+                unsupported_platforms,
+                discovered_type_count,
+                sandbox_count,
+                shared_sandbox_count,
+                isolated_sandbox_count,
+                ready_sandbox_count,
+                degraded_sandbox_count,
+                faulted_sandbox_count,
+                quarantined_sandbox_count,
+                terminal_sandbox_count,
+                active_transport_count,
+                explicit_placement_rule_count,
+                summary: format!(
+                    "format={format:?} parity={parity_band:?} {} discovered_types={} sandboxes={} shared={} isolated={} ready={} degraded={} faulted={} quarantined={} terminal={} active_transport={} placement_rules={}",
+                    runtime_plugin_platform_scope_summary(coverage),
+                    discovered_type_count,
+                    sandbox_count,
+                    shared_sandbox_count,
+                    isolated_sandbox_count,
+                    ready_sandbox_count,
+                    degraded_sandbox_count,
+                    faulted_sandbox_count,
+                    quarantined_sandbox_count,
+                    terminal_sandbox_count,
+                    active_transport_count,
+                    explicit_placement_rule_count,
+                ),
+            }
+        })
+        .collect()
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -743,6 +957,8 @@ impl RuntimePluginLifecycleStateModel {
         &self,
         policy: &RuntimePluginPlacementPolicy,
         boundary_stage_counts: &HashMap<String, usize>,
+        discovered_types: &[RuntimePluginDiscoveredTypeRecord],
+        platform_coverage: &[RuntimePluginFormatPlatformCoverageRecord],
     ) -> RuntimePluginLifecycleSnapshot {
         let sandboxes = self
             .sandboxes
@@ -809,6 +1025,12 @@ impl RuntimePluginLifecycleStateModel {
                 .iter()
                 .filter(|sandbox| sandbox.continuity_class == RuntimeInterruptionClass::Terminal)
                 .count(),
+            parity_coverage: runtime_plugin_parity_coverage(
+                discovered_types,
+                &sandboxes,
+                policy,
+                platform_coverage,
+            ),
             sandboxes,
             summary: String::new(),
         };
@@ -4726,10 +4948,17 @@ fn offline_render_directory_stats(path: &Path) -> Result<Option<(usize, u64)>, R
 
 fn summarize_deferred_service_receipt(receipt: &RuntimeDeferredServiceReceipt) -> String {
     format!(
-        "class={:?} decision={:?} reason={:?} interruption={:?}/rebindable={} queued={} admitted={} completed={} deferred={} running={} safe_mode={} degraded={} cleanup_pending={} deferred_retries={} recovery_overlap={}",
+        "class={:?} decision={:?} reason={:?} priority={:?} blocking={:?} backpressure={:?} starvation={}/{} cancellation={:?}/{} interruption={:?}/rebindable={} queued={} admitted={} completed={} deferred={} running={} safe_mode={} degraded={} cleanup_pending={} deferred_retries={} recovery_overlap={}",
         receipt.work_class,
         receipt.decision,
         receipt.reason,
+        receipt.priority_band,
+        receipt.blocking_priority_band,
+        receipt.backpressure_source,
+        receipt.starvation_risk,
+        receipt.starved_work_item_count,
+        receipt.cancellation_cause,
+        receipt.cancelled_work_item_count,
         receipt.interruption_class,
         receipt.interruption_rebindable,
         receipt.queued_work_item_count,
@@ -4754,6 +4983,123 @@ fn deferred_service_interruption_class(
             RuntimeInterruptionClass::Resumable
         }
         RuntimeDeferredServiceDecision::Abort => RuntimeInterruptionClass::Terminal,
+    }
+}
+
+fn deferred_service_receipt(
+    work_class: RuntimeDeferredServiceClass,
+    decision: RuntimeDeferredServiceDecision,
+    reason: RuntimeDeferredServiceReason,
+    queued_work_item_count: usize,
+    admitted_work_item_count: usize,
+    runtime_running: bool,
+    safe_mode_enabled: bool,
+    readiness_degraded: bool,
+    pending_cleanup_work_items: usize,
+    pending_deferred_retry_work_items: usize,
+    recovery_overlap_session_count: usize,
+) -> RuntimeDeferredServiceReceipt {
+    let priority_band = deferred_service_priority_band(work_class);
+    let deferred_work_item_count = queued_work_item_count.saturating_sub(admitted_work_item_count);
+    let starved_work_item_count = match decision {
+        RuntimeDeferredServiceDecision::Defer | RuntimeDeferredServiceDecision::Throttle => {
+            deferred_work_item_count
+        }
+        RuntimeDeferredServiceDecision::Run | RuntimeDeferredServiceDecision::Abort => 0,
+    };
+    let cancelled_work_item_count = match decision {
+        RuntimeDeferredServiceDecision::Abort => queued_work_item_count,
+        RuntimeDeferredServiceDecision::Run
+        | RuntimeDeferredServiceDecision::Defer
+        | RuntimeDeferredServiceDecision::Throttle => 0,
+    };
+    let mut receipt = RuntimeDeferredServiceReceipt {
+        work_class,
+        decision,
+        reason,
+        priority_band,
+        blocking_priority_band: deferred_service_blocking_priority_band(reason),
+        backpressure_source: deferred_service_backpressure_source(reason),
+        starvation_risk: starved_work_item_count > 0,
+        starved_work_item_count,
+        cancellation_cause: deferred_service_cancellation_cause(decision, reason),
+        cancelled_work_item_count,
+        interruption_class: deferred_service_interruption_class(decision),
+        interruption_rebindable: false,
+        queued_work_item_count,
+        admitted_work_item_count,
+        completed_work_item_count: 0,
+        deferred_work_item_count,
+        runtime_running,
+        safe_mode_enabled,
+        readiness_degraded,
+        pending_cleanup_work_items,
+        pending_deferred_retry_work_items,
+        recovery_overlap_session_count,
+        summary: String::new(),
+    };
+    receipt.summary = summarize_deferred_service_receipt(&receipt);
+    receipt
+}
+
+fn deferred_service_priority_band(
+    work_class: RuntimeDeferredServiceClass,
+) -> RuntimeDeferredServicePriorityBand {
+    match work_class {
+        RuntimeDeferredServiceClass::OfflineRenderQueue => {
+            RuntimeDeferredServicePriorityBand::UserVisible
+        }
+        RuntimeDeferredServiceClass::OfflineRenderPurge => {
+            RuntimeDeferredServicePriorityBand::Maintenance
+        }
+    }
+}
+
+fn deferred_service_blocking_priority_band(
+    reason: RuntimeDeferredServiceReason,
+) -> Option<RuntimeDeferredServicePriorityBand> {
+    match reason {
+        RuntimeDeferredServiceReason::RealtimeActive => {
+            Some(RuntimeDeferredServicePriorityBand::RealtimeCritical)
+        }
+        RuntimeDeferredServiceReason::PendingCleanup
+        | RuntimeDeferredServiceReason::RecoveryDegraded
+        | RuntimeDeferredServiceReason::SafeMode => {
+            Some(RuntimeDeferredServicePriorityBand::RecoveryCritical)
+        }
+        RuntimeDeferredServiceReason::Ready | RuntimeDeferredServiceReason::InvalidRequest => None,
+    }
+}
+
+fn deferred_service_backpressure_source(
+    reason: RuntimeDeferredServiceReason,
+) -> Option<RuntimeDeferredServiceBackpressureSource> {
+    match reason {
+        RuntimeDeferredServiceReason::RealtimeActive => {
+            Some(RuntimeDeferredServiceBackpressureSource::RealtimeAudio)
+        }
+        RuntimeDeferredServiceReason::PendingCleanup => {
+            Some(RuntimeDeferredServiceBackpressureSource::CleanupBacklog)
+        }
+        RuntimeDeferredServiceReason::RecoveryDegraded => {
+            Some(RuntimeDeferredServiceBackpressureSource::RecoveryOverlap)
+        }
+        RuntimeDeferredServiceReason::SafeMode => {
+            Some(RuntimeDeferredServiceBackpressureSource::SafeMode)
+        }
+        RuntimeDeferredServiceReason::Ready | RuntimeDeferredServiceReason::InvalidRequest => None,
+    }
+}
+
+fn deferred_service_cancellation_cause(
+    decision: RuntimeDeferredServiceDecision,
+    reason: RuntimeDeferredServiceReason,
+) -> Option<RuntimeDeferredServiceCancellationCause> {
+    match (decision, reason) {
+        (RuntimeDeferredServiceDecision::Abort, RuntimeDeferredServiceReason::InvalidRequest) => {
+            Some(RuntimeDeferredServiceCancellationCause::InvalidRequest)
+        }
+        _ => None,
     }
 }
 
@@ -5603,6 +5949,66 @@ impl RuntimeAutomationState {
             first_value: aggregate.first_value,
             last_value: aggregate.last_value,
             last_modulation: aggregate.last_modulation,
+            first_epoch: self.continuity.first_epoch(),
+            last_epoch: self.continuity.last_epoch(),
+            segment_count: self.continuity.segment_count(),
+            segment_epochs: self.continuity.segment_epochs(),
+            lease_rollovers: self.continuity.lease_rollovers,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct RuntimePluginEventState {
+    continuity: EventPacketContinuityReport,
+    last_processing_epoch: Option<u64>,
+    last_block_sequence: Option<u64>,
+    last_generated_event_bytes: u32,
+    last_batch_summary: EventPacketSummary,
+}
+
+impl RuntimePluginEventState {
+    fn record_summary(
+        &mut self,
+        processing_epoch: u64,
+        lease_id: impl Into<String>,
+        block_sequence: u64,
+        generated_event_bytes: u32,
+        summary: EventPacketSummary,
+    ) {
+        self.continuity.record(processing_epoch, lease_id, summary);
+        self.last_processing_epoch = Some(processing_epoch);
+        self.last_block_sequence = Some(block_sequence);
+        self.last_generated_event_bytes = generated_event_bytes;
+        self.last_batch_summary = summary;
+    }
+
+    fn reset(&mut self) {
+        *self = Self::default();
+    }
+
+    fn snapshot(&self) -> RuntimePluginEventSnapshot {
+        let aggregate = self.continuity.aggregate();
+        RuntimePluginEventSnapshot {
+            last_processing_epoch: self.last_processing_epoch,
+            last_block_sequence: self.last_block_sequence,
+            last_generated_event_bytes: self.last_generated_event_bytes,
+            last_batch_total_events: self.last_batch_summary.total_events,
+            last_batch_parameter_value_events: self.last_batch_summary.parameter_value_events,
+            last_batch_parameter_modulation_events: self
+                .last_batch_summary
+                .parameter_modulation_events,
+            last_batch_parameter_gesture_events: self.last_batch_summary.parameter_gesture_events,
+            last_batch_note_events: self.last_batch_summary.note_events,
+            last_batch_note_expression_events: self.last_batch_summary.note_expression_events,
+            last_batch_midi_events: self.last_batch_summary.midi_events,
+            total_events: aggregate.total_events,
+            parameter_value_events: aggregate.parameter_value_events,
+            parameter_modulation_events: aggregate.parameter_modulation_events,
+            parameter_gesture_events: aggregate.parameter_gesture_events,
+            note_events: aggregate.note_events,
+            note_expression_events: aggregate.note_expression_events,
+            midi_events: aggregate.midi_events,
             first_epoch: self.continuity.first_epoch(),
             last_epoch: self.continuity.last_epoch(),
             segment_count: self.continuity.segment_count(),
@@ -7682,27 +8088,19 @@ impl SignalRuntime {
                 queue_count,
             )
         };
-        let mut receipt = RuntimeDeferredServiceReceipt {
-            work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
+        deferred_service_receipt(
+            RuntimeDeferredServiceClass::OfflineRenderQueue,
             decision,
             reason,
-            interruption_class: deferred_service_interruption_class(decision),
-            interruption_rebindable: false,
-            queued_work_item_count: queue_count,
+            queue_count,
             admitted_work_item_count,
-            completed_work_item_count: 0,
-            deferred_work_item_count: queue_count.saturating_sub(admitted_work_item_count),
-            runtime_running: self.control.running,
-            safe_mode_enabled: self.safe_mode_enabled,
+            self.control.running,
+            self.safe_mode_enabled,
             readiness_degraded,
-            pending_cleanup_work_items: transport_concurrency.pending_cleanup_work_items,
-            pending_deferred_retry_work_items: transport_concurrency
-                .pending_deferred_retry_work_items,
-            recovery_overlap_session_count: transport_concurrency.current_recovery_overlap_sessions,
-            summary: String::new(),
-        };
-        receipt.summary = summarize_deferred_service_receipt(&receipt);
-        receipt
+            transport_concurrency.pending_cleanup_work_items,
+            transport_concurrency.pending_deferred_retry_work_items,
+            transport_concurrency.current_recovery_overlap_sessions,
+        )
     }
 
     fn offline_render_purge_receipt(&self) -> RuntimeDeferredServiceReceipt {
@@ -7736,27 +8134,19 @@ impl SignalRuntime {
                 1,
             )
         };
-        let mut receipt = RuntimeDeferredServiceReceipt {
-            work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
+        deferred_service_receipt(
+            RuntimeDeferredServiceClass::OfflineRenderPurge,
             decision,
             reason,
-            interruption_class: deferred_service_interruption_class(decision),
-            interruption_rebindable: false,
-            queued_work_item_count: 1,
+            1,
             admitted_work_item_count,
-            completed_work_item_count: 0,
-            deferred_work_item_count: 1usize.saturating_sub(admitted_work_item_count),
-            runtime_running: self.control.running,
-            safe_mode_enabled: self.safe_mode_enabled,
+            self.control.running,
+            self.safe_mode_enabled,
             readiness_degraded,
-            pending_cleanup_work_items: transport_concurrency.pending_cleanup_work_items,
-            pending_deferred_retry_work_items: transport_concurrency
-                .pending_deferred_retry_work_items,
-            recovery_overlap_session_count: transport_concurrency.current_recovery_overlap_sessions,
-            summary: String::new(),
-        };
-        receipt.summary = summarize_deferred_service_receipt(&receipt);
-        receipt
+            transport_concurrency.pending_cleanup_work_items,
+            transport_concurrency.pending_deferred_retry_work_items,
+            transport_concurrency.current_recovery_overlap_sessions,
+        )
     }
 
     fn summarize_plugin_backed_bindings(&self) -> RuntimePluginBackedBindingSummary {
@@ -8050,6 +8440,7 @@ impl SignalRuntime {
             control: RuntimeControlSnapshot::default(),
             timeline: RuntimeTimelineState::default(),
             automation: RuntimeAutomationState::default(),
+            plugin_events: RuntimePluginEventState::default(),
             engine: RuntimeEngineState::default(),
             transport_concurrency: RuntimeTransportConcurrencyState::default(),
             plugin_discovery: RuntimePluginDiscoveryStateModel::default(),
@@ -8714,13 +9105,27 @@ impl SignalRuntime {
         self.plugin_discovery.record_scan(request)
     }
 
+    pub fn record_plugin_format_platform_coverage(
+        &mut self,
+        coverage: Vec<RuntimePluginFormatPlatformCoverageRecord>,
+    ) {
+        self.plugin_discovery.record_platform_coverage(coverage);
+    }
+
     pub fn record_plugin_scan_results(
         &mut self,
         scan_handle: ScanHandle,
         discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
     ) {
+        let lifecycle = self.plugin_lifecycle_snapshot();
+        let parity_coverage = runtime_plugin_parity_coverage(
+            &discovered_types,
+            &lifecycle.sandboxes,
+            &self.plugin_placement_policy,
+            &self.plugin_discovery.platform_coverage,
+        );
         self.plugin_discovery
-            .record_scan_results(scan_handle, discovered_types);
+            .record_scan_results(scan_handle, discovered_types, parity_coverage);
     }
 
     pub fn record_plugin_sandbox_spec(&mut self, spec: &PluginSandboxSpec) {
@@ -8957,6 +9362,10 @@ impl SignalRuntime {
 
     pub fn reset_automation_tracking(&mut self) {
         self.automation.reset();
+    }
+
+    pub fn reset_plugin_event_tracking(&mut self) {
+        self.plugin_events.reset();
     }
 
     pub fn process_engine_block(
@@ -10459,28 +10868,20 @@ impl SignalRuntime {
         requests: Vec<RuntimeOfflineRenderRequest>,
     ) -> Result<RuntimeOfflineRenderQueueResult, RuntimeError> {
         if requests.is_empty() {
-            self.record_deferred_service_receipt(RuntimeDeferredServiceReceipt {
-                work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
-                decision: RuntimeDeferredServiceDecision::Abort,
-                reason: RuntimeDeferredServiceReason::InvalidRequest,
-                interruption_class: RuntimeInterruptionClass::Terminal,
-                interruption_rebindable: false,
-                queued_work_item_count: 0,
-                admitted_work_item_count: 0,
-                completed_work_item_count: 0,
-                deferred_work_item_count: 0,
-                runtime_running: self.control.running,
-                safe_mode_enabled: self.safe_mode_enabled,
-                readiness_degraded: matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
-                pending_cleanup_work_items: self.transport_concurrency.pending_work_item_count(),
-                pending_deferred_retry_work_items: self
-                    .transport_concurrency
+            self.record_deferred_service_receipt(deferred_service_receipt(
+                RuntimeDeferredServiceClass::OfflineRenderQueue,
+                RuntimeDeferredServiceDecision::Abort,
+                RuntimeDeferredServiceReason::InvalidRequest,
+                0,
+                0,
+                self.control.running,
+                self.safe_mode_enabled,
+                matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
+                self.transport_concurrency.pending_work_item_count(),
+                self.transport_concurrency
                     .pending_deferred_retry_work_count(),
-                recovery_overlap_session_count: self
-                    .transport_concurrency
-                    .recovery_overlap_session_count(),
-                summary: "class=OfflineRenderQueue decision=Abort reason=InvalidRequest queued=0 admitted=0 completed=0 deferred=0".into(),
-            });
+                self.transport_concurrency.recovery_overlap_session_count(),
+            ));
             return Err(RuntimeError::new(
                 RuntimeErrorKind::InvalidRequest,
                 "offline render queue requires at least one request",
@@ -10579,28 +10980,20 @@ impl SignalRuntime {
     ) -> Result<RuntimeOfflineRenderPurgeReceipt, RuntimeError> {
         let request_id = request.request_id.trim().to_string();
         if request_id.is_empty() {
-            self.record_deferred_service_receipt(RuntimeDeferredServiceReceipt {
-                work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
-                decision: RuntimeDeferredServiceDecision::Abort,
-                reason: RuntimeDeferredServiceReason::InvalidRequest,
-                interruption_class: RuntimeInterruptionClass::Terminal,
-                interruption_rebindable: false,
-                queued_work_item_count: 1,
-                admitted_work_item_count: 0,
-                completed_work_item_count: 0,
-                deferred_work_item_count: 1,
-                runtime_running: self.control.running,
-                safe_mode_enabled: self.safe_mode_enabled,
-                readiness_degraded: matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
-                pending_cleanup_work_items: self.transport_concurrency.pending_work_item_count(),
-                pending_deferred_retry_work_items: self
-                    .transport_concurrency
+            self.record_deferred_service_receipt(deferred_service_receipt(
+                RuntimeDeferredServiceClass::OfflineRenderPurge,
+                RuntimeDeferredServiceDecision::Abort,
+                RuntimeDeferredServiceReason::InvalidRequest,
+                1,
+                0,
+                self.control.running,
+                self.safe_mode_enabled,
+                matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
+                self.transport_concurrency.pending_work_item_count(),
+                self.transport_concurrency
                     .pending_deferred_retry_work_count(),
-                recovery_overlap_session_count: self
-                    .transport_concurrency
-                    .recovery_overlap_session_count(),
-                summary: "class=OfflineRenderPurge decision=Abort reason=InvalidRequest queued=1 admitted=0 completed=0 deferred=1".into(),
-            });
+                self.transport_concurrency.recovery_overlap_session_count(),
+            ));
             return Err(RuntimeError::new(
                 RuntimeErrorKind::InvalidRequest,
                 "offline render artifact purge requires a request id",
@@ -10781,6 +11174,8 @@ impl SignalRuntime {
             .snapshot(
                 &self.plugin_placement_policy,
                 &boundary_counts.sandbox_stage_counts,
+                &self.plugin_discovery.discovered_types,
+                &self.plugin_discovery.platform_coverage,
             )
             .sandboxes
             .into_iter()
@@ -10924,6 +11319,8 @@ impl SignalRuntime {
             .snapshot(
                 &self.plugin_placement_policy,
                 &boundary_counts.sandbox_stage_counts,
+                &self.plugin_discovery.discovered_types,
+                &self.plugin_discovery.platform_coverage,
             )
             .sandboxes
             .into_iter()
@@ -11882,6 +12279,23 @@ impl SignalRuntime {
             .record_summary(processing_epoch, lease_id, summary);
     }
 
+    pub fn record_plugin_event_summary(
+        &mut self,
+        processing_epoch: u64,
+        lease_id: impl Into<String>,
+        block_sequence: u64,
+        generated_event_bytes: u32,
+        summary: EventPacketSummary,
+    ) {
+        self.plugin_events.record_summary(
+            processing_epoch,
+            lease_id,
+            block_sequence,
+            generated_event_bytes,
+            summary,
+        );
+    }
+
     pub fn begin_transport_session(
         &mut self,
         sandbox_id: &str,
@@ -12234,6 +12648,8 @@ impl SignalRuntime {
         self.plugin_lifecycle.snapshot(
             &self.plugin_placement_policy,
             &boundary_counts.sandbox_stage_counts,
+            &self.plugin_discovery.discovered_types,
+            &self.plugin_discovery.platform_coverage,
         )
     }
 
@@ -12800,6 +13216,7 @@ impl RuntimeLifecycleApi for SignalRuntime {
         self.applied_parameter_batch = None;
         self.timeline.reset();
         self.automation.reset();
+        self.plugin_events.reset();
         self.transport_concurrency.reset();
         self.recording_capture.interrupt_active_capture(
             RuntimeInterruptionClass::Restartable,
@@ -13554,6 +13971,10 @@ impl RuntimeObservationApi for SignalRuntime {
         self.automation.snapshot()
     }
 
+    fn get_plugin_event_snapshot(&self) -> RuntimePluginEventSnapshot {
+        self.plugin_events.snapshot()
+    }
+
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot {
         self.engine.snapshot()
     }
@@ -13567,7 +13988,14 @@ impl RuntimeObservationApi for SignalRuntime {
     }
 
     fn get_plugin_discovery_snapshot(&self) -> RuntimePluginDiscoverySnapshot {
-        self.plugin_discovery.snapshot()
+        let lifecycle = self.plugin_lifecycle_snapshot();
+        let parity_coverage = runtime_plugin_parity_coverage(
+            &self.plugin_discovery.discovered_types,
+            &lifecycle.sandboxes,
+            &self.plugin_placement_policy,
+            &self.plugin_discovery.platform_coverage,
+        );
+        self.plugin_discovery.snapshot(parity_coverage)
     }
 
     fn get_plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot {
@@ -13618,7 +14046,9 @@ mod tests {
         RuntimeClipFadeShape, RuntimeClipGainEnvelope, RuntimeClipGainShape,
         RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
         RuntimeClipProcessingStage, RuntimeClipRenderInputStage, RuntimeClipRenderRequest,
-        RuntimeConfigRequest, RuntimeDeferredServiceClass, RuntimeDeferredServiceDecision,
+        RuntimeConfigRequest, RuntimeDeferredServiceBackpressureSource,
+        RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceClass,
+        RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
         RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
         RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
         RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
@@ -13636,8 +14066,9 @@ mod tests {
         RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderExecutionState,
         RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest,
         RuntimeOfflineRenderStemTarget, RuntimeOfflineRenderTargetKind,
-        RuntimePluginCompensationState, RuntimePluginIsolationOutcome, RuntimePluginLifecycleState,
-        RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
+        RuntimePluginCompensationState, RuntimePluginFormatPlatformCoverageRecord,
+        RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginLifecycleState,
+        RuntimePluginParityBand, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
         RuntimePluginPlacementRuleMatcher, RuntimePluginRecallHandoffSelection,
         RuntimePluginRecallHandoffStageId, RuntimePluginRecallPayload, RuntimePluginRecallState,
         RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
@@ -13663,7 +14094,9 @@ mod tests {
         GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec,
     };
     use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
-    use signal_plugin::{CompletionState, ParameterAutomationSummary, PluginFormat};
+    use signal_plugin::{
+        CompletionState, EventPacketSummary, ParameterAutomationSummary, PluginFormat,
+    };
     use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 
     #[derive(Default)]
@@ -14525,6 +14958,106 @@ mod tests {
         assert_eq!(automation.lease_rollovers, 1);
         assert_eq!(automation.first_epoch, Some(1));
         assert_eq!(automation.last_epoch, Some(2));
+    }
+
+    #[test]
+    fn runtime_plugin_event_tracking_rolls_across_leases() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        runtime.record_plugin_event_summary(
+            1,
+            "lease-a",
+            7,
+            96,
+            EventPacketSummary {
+                total_events: 6,
+                parameter_value_events: 1,
+                parameter_modulation_events: 1,
+                parameter_gesture_events: 1,
+                note_events: 1,
+                note_expression_events: 1,
+                midi_events: 1,
+            },
+        );
+        runtime.record_plugin_event_summary(
+            2,
+            "lease-b",
+            8,
+            64,
+            EventPacketSummary {
+                total_events: 5,
+                parameter_value_events: 1,
+                parameter_modulation_events: 0,
+                parameter_gesture_events: 1,
+                note_events: 1,
+                note_expression_events: 1,
+                midi_events: 1,
+            },
+        );
+
+        let snapshot = runtime.get_plugin_event_snapshot();
+        assert_eq!(snapshot.last_processing_epoch, Some(2));
+        assert_eq!(snapshot.last_block_sequence, Some(8));
+        assert_eq!(snapshot.last_generated_event_bytes, 64);
+        assert_eq!(snapshot.last_batch_total_events, 5);
+        assert_eq!(snapshot.last_batch_note_expression_events, 1);
+        assert_eq!(snapshot.total_events, 11);
+        assert_eq!(snapshot.parameter_value_events, 2);
+        assert_eq!(snapshot.parameter_modulation_events, 1);
+        assert_eq!(snapshot.parameter_gesture_events, 2);
+        assert_eq!(snapshot.note_events, 2);
+        assert_eq!(snapshot.note_expression_events, 2);
+        assert_eq!(snapshot.midi_events, 2);
+        assert_eq!(snapshot.first_epoch, Some(1));
+        assert_eq!(snapshot.last_epoch, Some(2));
+        assert_eq!(snapshot.segment_count, 2);
+        assert_eq!(snapshot.segment_epochs, vec![1, 2]);
+        assert_eq!(snapshot.lease_rollovers, 1);
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert!(observation
+            .render_json()
+            .contains("\"plugin_events\":{\"last_processing_epoch\":2"));
+        assert!(observation
+            .render_compact()
+            .contains("plugin_events_total=11/2/1/2/2/2/2"));
+    }
+
+    #[test]
+    fn runtime_plugin_event_tracking_resets_on_reconfigure() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "runtime-test".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .unwrap();
+        runtime.record_plugin_event_summary(
+            1,
+            "lease-a",
+            4,
+            80,
+            EventPacketSummary {
+                total_events: 4,
+                parameter_value_events: 1,
+                parameter_modulation_events: 1,
+                parameter_gesture_events: 0,
+                note_events: 1,
+                note_expression_events: 1,
+                midi_events: 0,
+            },
+        );
+
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 256))
+            .unwrap();
+
+        let snapshot = runtime.get_plugin_event_snapshot();
+        assert_eq!(snapshot.total_events, 0);
+        assert_eq!(snapshot.segment_count, 0);
+        assert_eq!(snapshot.first_epoch, None);
+        assert_eq!(snapshot.last_processing_epoch, None);
     }
 
     #[test]
@@ -19465,6 +19998,37 @@ mod tests {
     fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure(&mut runtime);
+        runtime.record_plugin_format_platform_coverage(vec![
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Clap,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Vst3,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Au,
+                supported_platforms: vec![RuntimePluginHostPlatform::MacOs],
+                unsupported_platforms: vec![
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+            },
+        ]);
 
         let first_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
             roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
@@ -19511,6 +20075,7 @@ mod tests {
                         sample_accurate_automation: true,
                         accepts_midi: true,
                         accepts_note_events: true,
+                        supports_note_expression: true,
                         produces_midi: true,
                         silence_aware: true,
                     },
@@ -19553,6 +20118,7 @@ mod tests {
                         sample_accurate_automation: false,
                         accepts_midi: true,
                         accepts_note_events: true,
+                        supports_note_expression: true,
                         produces_midi: false,
                         silence_aware: false,
                     },
@@ -19592,12 +20158,14 @@ mod tests {
         assert_eq!(last_scan.discovered_type_count, 2);
         assert_eq!(last_scan.discovered_format_count, 2);
         assert_eq!(last_scan.format_coverage.len(), 2);
+        assert_eq!(last_scan.parity_coverage.len(), 3);
         assert!(last_scan.capability_coverage.multi_format_catalog);
         assert_eq!(last_scan.capability_coverage.supports_snapshot_count, 1);
         assert_eq!(last_scan.capability_coverage.supports_activate_count, 1);
         assert_eq!(discovery.discovered_type_count, 2);
         assert_eq!(discovery.discovered_format_count, 2);
         assert_eq!(discovery.format_coverage.len(), 2);
+        assert_eq!(discovery.parity_coverage.len(), 3);
         assert_eq!(discovery.capability_coverage.instrument_count, 1);
         assert_eq!(discovery.capability_coverage.audio_effect_count, 1);
         assert_eq!(
@@ -19624,12 +20192,52 @@ mod tests {
         assert!(discovered_type.state_contract.supports_snapshot);
         assert!(discovered_type.processing_contract.produces_midi);
         assert!(discovered_type.lifecycle_contract.supports_activate);
+        let clap_parity = discovery
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Clap)
+            .expect("clap parity should be present");
+        assert_eq!(clap_parity.parity_band, RuntimePluginParityBand::Portable);
+        assert_eq!(
+            clap_parity.supported_platforms,
+            vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ]
+        );
+        assert_eq!(clap_parity.discovered_type_count, 1);
+        assert_eq!(clap_parity.sandbox_count, 1);
+        assert_eq!(clap_parity.explicit_placement_rule_count, 0);
+        let au_parity = discovery
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Au)
+            .expect("au parity should be present even before discovery");
+        assert_eq!(au_parity.parity_band, RuntimePluginParityBand::Guarded);
+        assert_eq!(
+            au_parity.unsupported_platforms,
+            vec![
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ]
+        );
+        assert_eq!(au_parity.discovered_type_count, 0);
 
         let lifecycle = runtime.get_plugin_lifecycle_snapshot();
         assert_eq!(lifecycle.sandbox_count, 1);
         assert_eq!(
             lifecycle.sandboxes[0].plugin_format,
             Some(PluginFormat::Clap)
+        );
+        assert_eq!(lifecycle.parity_coverage.len(), 3);
+        assert_eq!(
+            lifecycle
+                .parity_coverage
+                .iter()
+                .find(|record| record.format == PluginFormat::Clap)
+                .map(|record| record.active_transport_count),
+            Some(0)
         );
 
         let report = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
@@ -19659,6 +20267,13 @@ mod tests {
             .render_json()
             .contains("\"supports_activate_count\":1"));
         assert!(report.render_json().contains("\"format_coverage\":["));
+        assert!(report.render_json().contains("\"parity_coverage\":["));
+        assert!(report
+            .render_json()
+            .contains("\"parity_band\":\"Portable\""));
+        assert!(report
+            .render_json()
+            .contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
         assert!(report.render_json().contains("\"supports_snapshot\":true"));
     }
 
@@ -20222,6 +20837,16 @@ mod tests {
             queue_result.orchestration.reason,
             RuntimeDeferredServiceReason::Ready
         );
+        assert_eq!(
+            queue_result.orchestration.priority_band,
+            RuntimeDeferredServicePriorityBand::UserVisible
+        );
+        assert_eq!(queue_result.orchestration.blocking_priority_band, None);
+        assert_eq!(queue_result.orchestration.backpressure_source, None);
+        assert!(!queue_result.orchestration.starvation_risk);
+        assert_eq!(queue_result.orchestration.starved_work_item_count, 0);
+        assert_eq!(queue_result.orchestration.cancellation_cause, None);
+        assert_eq!(queue_result.orchestration.cancelled_work_item_count, 0);
         assert_eq!(queue_result.orchestration.admitted_work_item_count, 2);
         assert_eq!(queue_result.orchestration.completed_work_item_count, 2);
         assert_eq!(queue_result.orchestration.deferred_work_item_count, 0);
@@ -21186,6 +21811,22 @@ mod tests {
             queue_result.orchestration.reason,
             RuntimeDeferredServiceReason::RealtimeActive
         );
+        assert_eq!(
+            queue_result.orchestration.priority_band,
+            RuntimeDeferredServicePriorityBand::UserVisible
+        );
+        assert_eq!(
+            queue_result.orchestration.blocking_priority_band,
+            Some(RuntimeDeferredServicePriorityBand::RealtimeCritical)
+        );
+        assert_eq!(
+            queue_result.orchestration.backpressure_source,
+            Some(RuntimeDeferredServiceBackpressureSource::RealtimeAudio)
+        );
+        assert!(queue_result.orchestration.starvation_risk);
+        assert_eq!(queue_result.orchestration.starved_work_item_count, 1);
+        assert_eq!(queue_result.orchestration.cancellation_cause, None);
+        assert_eq!(queue_result.orchestration.cancelled_work_item_count, 0);
         assert_eq!(queue_result.orchestration.admitted_work_item_count, 1);
         assert_eq!(queue_result.orchestration.completed_work_item_count, 1);
         assert_eq!(queue_result.orchestration.deferred_work_item_count, 1);
@@ -21254,6 +21895,22 @@ mod tests {
             deferred.orchestration.reason,
             RuntimeDeferredServiceReason::SafeMode
         );
+        assert_eq!(
+            deferred.orchestration.priority_band,
+            RuntimeDeferredServicePriorityBand::UserVisible
+        );
+        assert_eq!(
+            deferred.orchestration.blocking_priority_band,
+            Some(RuntimeDeferredServicePriorityBand::RecoveryCritical)
+        );
+        assert_eq!(
+            deferred.orchestration.backpressure_source,
+            Some(RuntimeDeferredServiceBackpressureSource::SafeMode)
+        );
+        assert!(deferred.orchestration.starvation_risk);
+        assert_eq!(deferred.orchestration.starved_work_item_count, 1);
+        assert_eq!(deferred.orchestration.cancellation_cause, None);
+        assert_eq!(deferred.orchestration.cancelled_work_item_count, 0);
         assert_eq!(deferred.completed_job_count, 0);
         assert!(deferred.progress.is_empty());
         assert!(deferred.results.is_empty());
@@ -21337,6 +21994,16 @@ mod tests {
             purge_receipt.orchestration.reason,
             RuntimeDeferredServiceReason::Ready
         );
+        assert_eq!(
+            purge_receipt.orchestration.priority_band,
+            RuntimeDeferredServicePriorityBand::Maintenance
+        );
+        assert_eq!(purge_receipt.orchestration.blocking_priority_band, None);
+        assert_eq!(purge_receipt.orchestration.backpressure_source, None);
+        assert!(!purge_receipt.orchestration.starvation_risk);
+        assert_eq!(purge_receipt.orchestration.starved_work_item_count, 0);
+        assert_eq!(purge_receipt.orchestration.cancellation_cause, None);
+        assert_eq!(purge_receipt.orchestration.cancelled_work_item_count, 0);
         assert!(purge_receipt.purged_report);
         assert!(purge_receipt.purged_artifact_root);
         assert!(purge_receipt.purged_report_byte_count > 0);
@@ -21404,6 +22071,22 @@ mod tests {
             deferred.orchestration.reason,
             RuntimeDeferredServiceReason::SafeMode
         );
+        assert_eq!(
+            deferred.orchestration.priority_band,
+            RuntimeDeferredServicePriorityBand::Maintenance
+        );
+        assert_eq!(
+            deferred.orchestration.blocking_priority_band,
+            Some(RuntimeDeferredServicePriorityBand::RecoveryCritical)
+        );
+        assert_eq!(
+            deferred.orchestration.backpressure_source,
+            Some(RuntimeDeferredServiceBackpressureSource::SafeMode)
+        );
+        assert!(deferred.orchestration.starvation_risk);
+        assert_eq!(deferred.orchestration.starved_work_item_count, 1);
+        assert_eq!(deferred.orchestration.cancellation_cause, None);
+        assert_eq!(deferred.orchestration.cancelled_work_item_count, 0);
         assert!(!deferred.purged_report);
         assert!(!deferred.purged_artifact_root);
         assert!(PathBuf::from(&report_path).exists());
@@ -21452,6 +22135,45 @@ mod tests {
         {
             let _ = fs::remove_file(path);
         }
+    }
+
+    #[test]
+    fn runtime_offline_render_invalid_request_abort_surfaces_typed_cancellation_policy() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 64));
+
+        let error = runtime
+            .render_offline_queue(Vec::new())
+            .expect_err("empty offline render queue should be rejected");
+
+        assert_eq!(error.kind, RuntimeErrorKind::InvalidRequest);
+        let report = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let receipt = report
+            .observation
+            .last_deferred_service_receipt
+            .as_ref()
+            .expect("invalid request should record a deferred-service receipt");
+        assert_eq!(
+            receipt.work_class,
+            RuntimeDeferredServiceClass::OfflineRenderQueue
+        );
+        assert_eq!(receipt.decision, RuntimeDeferredServiceDecision::Abort);
+        assert_eq!(receipt.reason, RuntimeDeferredServiceReason::InvalidRequest);
+        assert_eq!(
+            receipt.priority_band,
+            RuntimeDeferredServicePriorityBand::UserVisible
+        );
+        assert_eq!(receipt.blocking_priority_band, None);
+        assert_eq!(receipt.backpressure_source, None);
+        assert!(!receipt.starvation_risk);
+        assert_eq!(receipt.starved_work_item_count, 0);
+        assert_eq!(
+            receipt.cancellation_cause,
+            Some(RuntimeDeferredServiceCancellationCause::InvalidRequest)
+        );
+        assert_eq!(receipt.cancelled_work_item_count, 0);
+        assert!(report
+            .render_json()
+            .contains("\"cancellation_cause\":\"InvalidRequest\""));
     }
 
     #[test]
@@ -23394,11 +24116,30 @@ mod tests {
             performance.background_service_reason,
             Some(RuntimeDeferredServiceReason::SafeMode)
         );
+        assert_eq!(
+            performance.background_service_priority_band,
+            Some(RuntimeDeferredServicePriorityBand::UserVisible)
+        );
+        assert_eq!(
+            performance.background_service_blocking_priority_band,
+            Some(RuntimeDeferredServicePriorityBand::RecoveryCritical)
+        );
+        assert_eq!(
+            performance.background_service_backpressure_source,
+            Some(RuntimeDeferredServiceBackpressureSource::SafeMode)
+        );
+        assert!(performance.background_service_starvation_risk);
+        assert_eq!(performance.background_service_starved_work_item_count, 1);
+        assert_eq!(performance.background_service_cancellation_cause, None);
+        assert_eq!(performance.background_service_cancelled_work_item_count, 0);
         assert_eq!(performance.background_queued_work_item_count, 1);
         assert_eq!(performance.background_deferred_work_item_count, 1);
         assert!(performance
             .render_json()
             .contains("\"background_service_decision\":\"Defer\""));
+        assert!(performance
+            .render_json()
+            .contains("\"background_service_backpressure_source\":\"SafeMode\""));
         assert!(performance
             .render_json()
             .contains("\"scheduler_dispatch_handoff_count\":"));
@@ -23634,6 +24375,12 @@ mod tests {
         assert!(trace.background_service_defer_count >= 1);
         assert!(trace.background_service_while_playing_count >= 1);
         assert!(trace.background_service_while_recording_count >= 1);
+        assert!(trace.background_starvation_observation_count >= 1);
+        assert_eq!(trace.peak_background_starved_work_item_count, 1);
+        assert_eq!(trace.background_cancellation_observation_count, 0);
+        assert_eq!(trace.peak_background_cancelled_work_item_count, 0);
+        assert_eq!(trace.background_realtime_backpressure_observation_count, 0);
+        assert!(trace.background_recovery_backpressure_observation_count >= 1);
         assert_eq!(trace.peak_background_queued_work_item_count, 1);
         assert_eq!(trace.peak_background_deferred_work_item_count, 1);
         assert_eq!(trace.peak_hot_latency_node_id.as_deref(), Some("latency"));
@@ -23665,6 +24412,8 @@ mod tests {
         assert!(trace.summary.contains("recording_active="));
         assert!(trace.summary.contains("deadline="));
         assert!(trace.summary.contains("background="));
+        assert!(trace.summary.contains("backpressure="));
+        assert!(trace.summary.contains("starvation="));
         assert!(trace.summary.contains("critical_lane="));
         assert!(trace
             .render_json()
@@ -23673,6 +24422,9 @@ mod tests {
         assert!(trace
             .render_json()
             .contains("\"peak_block_execution_time_ns\":"));
+        assert!(trace
+            .render_json()
+            .contains("\"peak_background_starved_work_item_count\":1"));
 
         runtime.cancel_recording_capture().unwrap();
         let _ = fs::remove_file(capture_path);

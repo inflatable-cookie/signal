@@ -78,6 +78,13 @@ qa = [
   { run = "cargo test -p signal-supervisor-tools block_timing_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-block-timing-boundary --format=json" },
 ]
+"acceptance:deferred-work-policy-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_deferred_work_policy_boundary_reports_runtime_owned_scheduler_receipts" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_deferred_work_policy_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_deferred_work_policy_truth" },
+  { run = "cargo test -p signal-supervisor-tools deferred_work_policy_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-deferred-work-policy-boundary --format=json" },
+]
 "acceptance:critical-path-boundary" = [
   { run = "cargo test -p signal-runtime public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts" },
   { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_critical_path_truth" },
@@ -113,6 +120,34 @@ qa = [
   { run = "cargo test -p signal-host-server server_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuity_truth" },
   { run = "cargo test -p signal-supervisor-tools plugin_continuity_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-plugin-continuity-boundary --format=json" },
+]
+"acceptance:vst3-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_vst3_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_vst3_baseline_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_vst3_baseline_truth" },
+  { run = "cargo test -p signal-supervisor-tools vst3_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-vst3-boundary --format=json" },
+]
+"acceptance:au-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_au_baseline_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_au_baseline_truth" },
+  { run = "cargo test -p signal-supervisor-tools au_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-au-boundary --format=json" },
+]
+"acceptance:cross-adapter-parity-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portability_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_cross_adapter_parity_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_cross_adapter_parity_truth" },
+  { run = "cargo test -p signal-supervisor-tools cross_adapter_parity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-cross-adapter-parity-boundary --format=json" },
+]
+"acceptance:generic-event-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capability_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_generic_event_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_generic_event_truth" },
+  { run = "cargo test -p signal-supervisor-tools generic_event_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-generic-event-boundary --format=json" },
 ]
 "acceptance:release-boundary" = [
   { task = "acceptance:conformance" },

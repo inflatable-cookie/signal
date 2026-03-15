@@ -1,7 +1,7 @@
 # g06 Milestones
 
 Status: active
-Updated: 2026-03-14
+Updated: 2026-03-15
 
 ## Why this generation matters now
 
@@ -73,17 +73,17 @@ surfaced in Chorus:
   - per-block execution timing and pressure snapshots
 - `g06.007` `complete`
   - graph critical-path, hot-node, and worker-lane instrumentation
-- `g06.008` `active`
+- `g06.008` `complete`
   - deferred-work scheduler priority, backpressure, and cancellation policy
-- `g06.009` `planned`
+- `g06.009` `complete`
   - VST3 adapter baseline and runtime-owned lifecycle depth
-- `g06.010` `planned`
+- `g06.010` `complete`
   - AU adapter baseline and runtime-owned lifecycle depth
-- `g06.011` `planned`
+- `g06.011` `complete`
   - backend capability parity, Linux plugin support, and cross-adapter conformance depth
-- `g06.012` `planned`
+- `g06.012` `complete`
   - generic MIDI, note-expression, and plugin-event model expansion
-- `g06.013` `planned`
+- `g06.013` `active`
   - plugin preset, ARA context, state interchange, and portable recall depth
 - `g06.014` `planned`
   - device supervision, restart-state machine, and fault-boundary depth
@@ -154,6 +154,6 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.008` with Batch 8.1 by defining deferred-work scheduler
-priority, backpressure, starvation, and cancellation semantics before deeper
-scheduler attribution, plugin breadth, and media-service evidence land.
+Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
+interchange, portable recall, and ARA-capable context vocabulary before
+runtime recall/export depth begins.

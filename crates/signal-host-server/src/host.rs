@@ -8,11 +8,13 @@ use signal_plugin::{
     CompletionState, PluginFormat, PluginSandboxRequest, SandboxPolicy, SandboxWatchdogState,
     WatchdogOutcome, WatchdogTriggerReason,
 };
+use signal_plugin_au::{AuDiscoveredPluginType, AuHostAdapter, AuHostPlatform};
 use signal_plugin_clap::{
     classify_sandbox_failure, sandbox_failure_event, BrokeredBlockOutcome, ClapBlockProtocol,
     ClapDiscoveredPluginType, ClapPluginHostAdapter, ClapSandboxFailureStage,
     ClapSandboxLifecycleHarness,
 };
+use signal_plugin_vst3::{Vst3DiscoveredPluginType, Vst3HostAdapter, Vst3HostPlatform};
 use signal_primitives::FrameCount;
 use signal_runtime::{
     BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
@@ -27,8 +29,9 @@ use signal_runtime::{
     RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
     RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
     RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
-    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord, RuntimePreworkServicePressure,
-    RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
+    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+    RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
     RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
     SignalRuntime, StopReason, TransportAttachIntent, WatchdogRestartRecord,
@@ -69,6 +72,94 @@ fn runtime_plugin_discovered_type_record(
         lifecycle_contract: descriptor.lifecycle_contract,
         summary,
     }
+}
+
+fn runtime_plugin_discovered_type_record_from_descriptor(
+    plugin_type_id: String,
+    default_io_layout: signal_plugin::PluginIoLayout,
+    descriptor: signal_plugin::PluginDescriptor,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let summary = format!(
+        "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
+        plugin_type_id,
+        descriptor.plugin_id,
+        descriptor.format,
+        descriptor.features.len(),
+        default_io_layout,
+        descriptor.parameters.len(),
+    );
+    RuntimePluginDiscoveredTypeRecord {
+        plugin_type_id,
+        plugin_id: descriptor.plugin_id.clone(),
+        vendor: descriptor.vendor.clone(),
+        name: descriptor.name.clone(),
+        format: descriptor.format,
+        version: descriptor.version.clone(),
+        features: descriptor.features.clone(),
+        default_io_layout,
+        audio_bus_count: descriptor.audio_buses.len(),
+        parameter_count: descriptor.parameters.len(),
+        state_contract: descriptor.state_contract,
+        processing_contract: descriptor.processing_contract,
+        lifecycle_contract: descriptor.lifecycle_contract,
+        summary,
+    }
+}
+
+fn runtime_vst3_discovered_type_record(
+    discovered: Vst3DiscoveredPluginType,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let descriptor = discovered.descriptor;
+    runtime_plugin_discovered_type_record_from_descriptor(
+        discovered.plugin_type_id.0,
+        discovered.default_io_layout,
+        descriptor,
+    )
+}
+
+fn runtime_au_discovered_type_record(
+    discovered: AuDiscoveredPluginType,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let descriptor = discovered.descriptor;
+    runtime_plugin_discovered_type_record_from_descriptor(
+        discovered.plugin_type_id.0,
+        discovered.default_io_layout,
+        descriptor,
+    )
+}
+
+fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformCoverageRecord> {
+    vec![
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Clap,
+            supported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            unsupported_platforms: Vec::new(),
+            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+        },
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Vst3,
+            supported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            unsupported_platforms: Vec::new(),
+            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+        },
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Au,
+            supported_platforms: vec![RuntimePluginHostPlatform::MacOs],
+            unsupported_platforms: vec![
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+        },
+    ]
 }
 
 #[derive(Clone, Debug, Default)]
@@ -173,6 +264,8 @@ pub struct ServerRuntimeHostSummary {
 pub struct ServerRuntimeHost {
     runtime: SignalRuntime,
     broker: SharedMemoryBroker,
+    au: AuHostAdapter,
+    vst3: Vst3HostAdapter,
     supervisor: ServerSupervisorState,
     events: RuntimeEventRecorder,
 }
@@ -182,10 +275,13 @@ impl ServerRuntimeHost {
         let events = RuntimeEventRecorder::default();
         let mut runtime = runtime;
         runtime.subscribe(Box::new(events.clone()));
+        runtime.record_plugin_format_platform_coverage(runtime_plugin_format_platform_coverage());
 
         Self {
             runtime,
             broker: SharedMemoryBroker::default(),
+            au: AuHostAdapter::default(),
+            vst3: Vst3HostAdapter::default(),
             supervisor: ServerSupervisorState::default(),
             events,
         }
@@ -195,18 +291,181 @@ impl ServerRuntimeHost {
         &self,
         request: &PluginScanRequest,
     ) -> Vec<RuntimePluginDiscoveredTypeRecord> {
+        let mut discovered = Vec::new();
         let include_clap =
             request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap);
-        if !include_clap {
-            return Vec::new();
+        if include_clap {
+            let clap = ClapPluginHostAdapter::default();
+            discovered.extend(
+                ["plugin:clap:server", "plugin:clap:sandbox"]
+                    .into_iter()
+                    .filter_map(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+                    .map(runtime_plugin_discovered_type_record),
+            );
         }
 
-        let clap = ClapPluginHostAdapter::default();
-        ["plugin:clap:server", "plugin:clap:sandbox"]
-            .into_iter()
-            .filter_map(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
-            .map(runtime_plugin_discovered_type_record)
-            .collect()
+        let include_vst3 =
+            request.formats.is_empty() || request.formats.contains(&PluginFormat::Vst3);
+        if include_vst3 {
+            discovered.extend(
+                self.vst3
+                    .discover_plugins_for_roots(Vst3HostPlatform::Linux, &request.roots)
+                    .into_iter()
+                    .map(runtime_vst3_discovered_type_record),
+            );
+        }
+
+        let include_au = request.formats.is_empty() || request.formats.contains(&PluginFormat::Au);
+        if include_au {
+            discovered.extend(
+                self.au
+                    .discover_plugins_for_roots(AuHostPlatform::MacOs, &request.roots)
+                    .into_iter()
+                    .map(runtime_au_discovered_type_record),
+            );
+        }
+
+        discovered
+    }
+
+    fn ensure_au_sandbox_session(&mut self, request: &PluginSandboxSpec) {
+        let Some(plugin_type_id) = request.plugin_type_id.as_deref() else {
+            return;
+        };
+        let Some(discovered) = self.au.discover_plugin_type(plugin_type_id) else {
+            return;
+        };
+        let instance = self.au.instantiate_plugin(
+            &discovered,
+            &format!("instance:server:au:{}", request.sandbox_id),
+        );
+        let session = self.au.prepare_session(
+            &instance,
+            self.runtime.config().sample_rate.0,
+            self.runtime.config().graph.block_size as u32,
+        );
+
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::SandboxHandshaken,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::PluginTypeLoaded,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::InstanceCreated,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::InstancePrepared,
+            None,
+        );
+        self.runtime
+            .record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
+                sandbox_id: request.sandbox_id.clone(),
+                plugin_type_id: instance.plugin_type_id.0.clone(),
+                instance_id: instance.instance_id.0.clone(),
+                lifecycle_state: "Prepared".into(),
+                readiness_state: "Ready".into(),
+                degraded_reasons: Vec::new(),
+                active: true,
+                processing_epoch: None,
+                processing_sample_rate_hz: Some(session.sample_rate_hz),
+                processing_max_block_frames: Some(session.max_block_frames),
+                audio_inputs: Some(session.io_layout.audio_inputs),
+                audio_outputs: Some(session.io_layout.audio_outputs),
+                midi_inputs: Some(session.io_layout.midi_inputs),
+                midi_outputs: Some(session.io_layout.midi_outputs),
+                last_fault: None,
+            });
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::TransportAttached,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_transport(
+            request.sandbox_id.as_str(),
+            format!("lease:{}", request.sandbox_id),
+            format!("region:{}", request.sandbox_id),
+            PluginSandboxTransportStage::Attached,
+            None,
+            Some(session.summary),
+        );
+    }
+
+    fn ensure_vst3_sandbox_session(&mut self, request: &PluginSandboxSpec) {
+        let Some(plugin_type_id) = request.plugin_type_id.as_deref() else {
+            return;
+        };
+        let Some(discovered) = self.vst3.discover_plugin_type(plugin_type_id) else {
+            return;
+        };
+        let instance = self.vst3.instantiate_plugin(
+            &discovered,
+            &format!("instance:server:vst3:{}", request.sandbox_id),
+        );
+        let session = self.vst3.prepare_session(
+            &instance,
+            self.runtime.config().sample_rate.0,
+            self.runtime.config().graph.block_size as u32,
+        );
+
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::SandboxHandshaken,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::PluginTypeLoaded,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::InstanceCreated,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::InstancePrepared,
+            None,
+        );
+        self.runtime
+            .record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
+                sandbox_id: request.sandbox_id.clone(),
+                plugin_type_id: instance.plugin_type_id.0.clone(),
+                instance_id: instance.instance_id.0.clone(),
+                lifecycle_state: "Prepared".into(),
+                readiness_state: "Ready".into(),
+                degraded_reasons: Vec::new(),
+                active: true,
+                processing_epoch: None,
+                processing_sample_rate_hz: Some(session.sample_rate_hz),
+                processing_max_block_frames: Some(session.max_block_frames),
+                audio_inputs: Some(session.io_layout.audio_inputs),
+                audio_outputs: Some(session.io_layout.audio_outputs),
+                midi_inputs: Some(session.io_layout.midi_inputs),
+                midi_outputs: Some(session.io_layout.midi_outputs),
+                last_fault: None,
+            });
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::TransportAttached,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_transport(
+            request.sandbox_id.as_str(),
+            format!("lease:{}", request.sandbox_id),
+            format!("region:{}", request.sandbox_id),
+            PluginSandboxTransportStage::Attached,
+            None,
+            Some(session.summary),
+        );
     }
 
     pub fn boot_default(&mut self) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -1543,6 +1802,13 @@ impl ServerRuntimeHost {
         run.last_note_expression_event_count = event_summary.note_expression_events;
         run.last_midi_event_count = event_summary.midi_events;
         run.last_generated_event_bytes = stored_result.result.generated_event_bytes;
+        self.runtime.record_plugin_event_summary(
+            run.processing_epoch,
+            run.shared_memory_lease_id.as_str(),
+            block_sequence,
+            stored_result.result.generated_event_bytes,
+            event_summary,
+        );
         let automation_summary = stored_result
             .output
             .events
@@ -3027,6 +3293,12 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             PluginSandboxLifecycleStage::SandboxEnsured,
             None,
         );
+        if request.plugin_format == PluginFormat::Au {
+            self.ensure_au_sandbox_session(&request);
+        }
+        if request.plugin_format == PluginFormat::Vst3 {
+            self.ensure_vst3_sandbox_session(&request);
+        }
         self.supervisor.last_sandbox_id = Some(request.sandbox_id);
         Ok(signal_runtime::SandboxHandle(self.supervisor.sandboxes))
     }
@@ -3185,11 +3457,11 @@ mod tests {
     use signal_runtime::{
         BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
         CompletionSlotStage, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
-        PluginSandboxLifecycleStage, PluginSandboxTransportStage, PluginScanRequest,
-        RecoveryRestartIntent, RuntimeConfig, RuntimeConfigRequest, RuntimeErrorKind,
-        RuntimeLifecycleApi, RuntimeObservationApi, RuntimeProjectionApi, RuntimeReadiness,
-        RuntimeSupervisorApi, RuntimeSupervisorReport, SandboxOperationFailureStage, SignalRuntime,
-        StopReason, TransportAttachIntent,
+        PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
+        PluginScanRequest, RecoveryRestartIntent, RuntimeConfig, RuntimeConfigRequest,
+        RuntimeErrorKind, RuntimeLifecycleApi, RuntimeObservationApi, RuntimePluginHostPlatform,
+        RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi, RuntimeSupervisorReport,
+        SandboxOperationFailureStage, SignalRuntime, StopReason, TransportAttachIntent,
     };
     use std::path::Path;
 
@@ -3233,6 +3505,27 @@ mod tests {
         assert_eq!(snapshot.segment_count, epochs.len());
         assert_eq!(snapshot.segment_epochs, epochs);
         assert_eq!(snapshot.lease_rollovers, lease_rollovers);
+    }
+
+    fn assert_runtime_plugin_event_snapshot(
+        supervisor: &RuntimeSupervisorReport,
+        first_epoch: u64,
+        last_epoch: u64,
+        epochs: &[u64],
+        lease_rollovers: usize,
+    ) {
+        let snapshot = &supervisor.observation.plugin_event_snapshot;
+        assert!(snapshot.total_events > 0, "{snapshot:?}");
+        assert!(snapshot.note_events > 0, "{snapshot:?}");
+        assert!(snapshot.note_expression_events > 0, "{snapshot:?}");
+        assert!(snapshot.midi_events > 0, "{snapshot:?}");
+        assert!(snapshot.last_generated_event_bytes > 0, "{snapshot:?}");
+        assert_eq!(snapshot.first_epoch, Some(first_epoch));
+        assert_eq!(snapshot.last_epoch, Some(last_epoch));
+        assert_eq!(snapshot.segment_count, epochs.len());
+        assert_eq!(snapshot.segment_epochs, epochs);
+        assert_eq!(snapshot.lease_rollovers, lease_rollovers);
+        assert!(snapshot.last_block_sequence.is_some(), "{snapshot:?}");
     }
 
     fn assert_runtime_sequence_continuity(
@@ -3843,6 +4136,7 @@ mod tests {
         );
         assert_runtime_automation_values(&supervisor, 8, 8, 2, 6, 0.2, 0.55, 0.10);
         assert_runtime_automation_continuity(&supervisor, 1, 2, &[1, 2], 1);
+        assert_runtime_plugin_event_snapshot(&supervisor, 2, 2, &[2], 0);
         assert_runtime_sequence_continuity(&supervisor, &[1, 2], 0, 9, 0, 1);
     }
 
@@ -4828,6 +5122,172 @@ mod tests {
             .transport_session_summary
             .active_sessions
             .is_empty());
+    }
+
+    #[test]
+    fn server_host_vst3_scan_and_sandbox_surface_linux_runtime_owned_receipts() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let mut host = ServerRuntimeHost::new(runtime);
+
+        host.start_plugin_scan(PluginScanRequest {
+            roots: vec!["~/.vst3".into(), "/usr/lib/vst3".into()],
+            formats: vec![PluginFormat::Vst3],
+        })
+        .expect("server vst3 plugin scan");
+        host.ensure_plugin_sandbox(PluginSandboxSpec {
+            sandbox_id: "server-vst3-sandbox".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:linux-synth".into()),
+        })
+        .expect("server vst3 sandbox ensure");
+
+        let report = host.supervisor_report();
+        assert_eq!(
+            report
+                .observation
+                .plugin_discovery_snapshot
+                .discovered_type_count,
+            2
+        );
+        assert_eq!(
+            report
+                .observation
+                .plugin_discovery_snapshot
+                .last_scan
+                .as_ref()
+                .map(|scan| scan.formats.clone()),
+            Some(vec![PluginFormat::Vst3])
+        );
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:vst3:linux-synth"
+                && plugin.format == PluginFormat::Vst3
+                && plugin.default_io_layout.midi_inputs == 1));
+        let sandbox = report
+            .observation
+            .plugin_lifecycle_snapshot
+            .sandboxes
+            .iter()
+            .find(|sandbox| sandbox.sandbox_id == "server-vst3-sandbox")
+            .expect("server vst3 sandbox should be exported");
+        assert_eq!(sandbox.plugin_format, Some(PluginFormat::Vst3));
+        assert_eq!(
+            sandbox.plugin_type_id.as_deref(),
+            Some("plugin:vst3:linux-synth")
+        );
+        assert_eq!(
+            sandbox.lifecycle_stage,
+            Some(PluginSandboxLifecycleStage::TransportAttached)
+        );
+        assert_eq!(
+            sandbox.transport_stage,
+            Some(PluginSandboxTransportStage::Attached)
+        );
+        assert!(sandbox.active);
+        assert!(sandbox.active_transport);
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"plugin_format\":\"Vst3\""));
+        assert!(rendered.contains("\"formats\":[\"Vst3\"]"));
+        assert!(rendered.contains("\"transport_stage\":\"Attached\""));
+    }
+
+    #[test]
+    fn server_host_au_scan_and_sandbox_surface_runtime_owned_receipts() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let mut host = ServerRuntimeHost::new(runtime);
+
+        host.start_plugin_scan(PluginScanRequest {
+            roots: vec!["~/Library/Audio/Plug-Ins/Components".into()],
+            formats: vec![PluginFormat::Au],
+        })
+        .expect("server au plugin scan");
+        host.ensure_plugin_sandbox(PluginSandboxSpec {
+            sandbox_id: "server-au-sandbox".into(),
+            plugin_format: PluginFormat::Au,
+            plugin_type_id: Some("plugin:au:instrument".into()),
+        })
+        .expect("server au sandbox ensure");
+
+        let report = host.supervisor_report();
+        assert_eq!(
+            report
+                .observation
+                .plugin_discovery_snapshot
+                .discovered_type_count,
+            2
+        );
+        assert_eq!(
+            report
+                .observation
+                .plugin_discovery_snapshot
+                .last_scan
+                .as_ref()
+                .map(|scan| scan.formats.clone()),
+            Some(vec![PluginFormat::Au])
+        );
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:au:instrument"
+                && plugin.format == PluginFormat::Au
+                && plugin.default_io_layout.midi_inputs == 1));
+        let sandbox = report
+            .observation
+            .plugin_lifecycle_snapshot
+            .sandboxes
+            .iter()
+            .find(|sandbox| sandbox.sandbox_id == "server-au-sandbox")
+            .expect("server au sandbox should be exported");
+        assert_eq!(sandbox.plugin_format, Some(PluginFormat::Au));
+        assert_eq!(
+            sandbox.plugin_type_id.as_deref(),
+            Some("plugin:au:instrument")
+        );
+        assert_eq!(
+            sandbox.lifecycle_stage,
+            Some(PluginSandboxLifecycleStage::TransportAttached)
+        );
+        assert_eq!(
+            sandbox.transport_stage,
+            Some(PluginSandboxTransportStage::Attached)
+        );
+        assert!(sandbox.active);
+        assert!(sandbox.active_transport);
+        let au_parity = report
+            .observation
+            .plugin_discovery_snapshot
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Au)
+            .expect("server au parity should be present");
+        assert_eq!(
+            au_parity.supported_platforms,
+            vec![RuntimePluginHostPlatform::MacOs]
+        );
+        assert_eq!(
+            au_parity.unsupported_platforms,
+            vec![
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ]
+        );
+        assert_eq!(au_parity.discovered_type_count, 2);
+        assert_eq!(au_parity.sandbox_count, 1);
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"plugin_format\":\"Au\""));
+        assert!(rendered.contains("\"formats\":[\"Au\"]"));
+        assert!(rendered.contains("\"transport_stage\":\"Attached\""));
+        assert!(rendered.contains("\"parity_coverage\":["));
+        assert!(rendered.contains("\"parity_band\":\"Guarded\""));
+        assert!(rendered.contains("\"supported_platforms\":[\"MacOs\"]"));
+        assert!(rendered.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
     }
 
     #[test]

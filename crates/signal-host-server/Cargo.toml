@@ -13,5 +13,7 @@ signal-graph = { path = "../signal-graph" }
 signal-ipc = { path = "../signal-ipc" }
 signal-plugin = { path = "../signal-plugin" }
 signal-plugin-clap = { path = "../signal-plugin-clap" }
+signal-plugin-au = { path = "../signal-plugin-au" }
+signal-plugin-vst3 = { path = "../signal-plugin-vst3" }
 signal-primitives = { path = "../signal-primitives" }
 signal-runtime = { path = "../signal-runtime" }

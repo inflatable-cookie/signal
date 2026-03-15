@@ -2100,6 +2100,7 @@ fn clap_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> P
         sample_accurate_automation: true,
         accepts_midi: io_layout.midi_inputs > 0,
         accepts_note_events: true,
+        supports_note_expression: true,
         produces_midi: io_layout.midi_outputs > 0,
         silence_aware: true,
     })

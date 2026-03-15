@@ -1,6 +1,6 @@
 # 013 - Plugin Preset, ARA Context, State Interchange, And Portable Recall Depth
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.011, g06.012
@@ -75,5 +75,6 @@ portable recall constraints.
 
 ## Next Task
 
-Continue `g06.014` by pushing hardware supervision depth further down into
-Signal instead of leaving restart logic to products.
+Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
+interchange, portable recall, and ARA-capable context vocabulary before
+runtime recall/export depth begins.
