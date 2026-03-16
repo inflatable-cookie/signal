@@ -1035,6 +1035,84 @@ pub struct RuntimeMediaServiceSnapshot {
     pub summary: String,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaAnalysisDescriptorState {
+    #[default]
+    Missing,
+    Pending,
+    Ready,
+    Invalidated,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaAnalysisFamilyState {
+    #[default]
+    Deferred,
+    Ready,
+    Unavailable,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeMediaLoudnessDescriptor {
+    pub integrated_lufs: f32,
+    pub loudness_range_lu: f32,
+    pub true_peak_dbtp: f32,
+    pub target_offset_lu: f32,
+    pub peak_to_loudness_lu: f32,
+    pub confidence: f32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeMediaCharacterDescriptor {
+    pub centroid_hz: f32,
+    pub rolloff_95_hz: f32,
+    pub flatness: f32,
+    pub contrast_db: f32,
+    pub onset_density: f32,
+    pub transient_density: f32,
+    pub sustain_ratio: f32,
+    pub rms_energy: f32,
+    pub dynamic_range: f32,
+    pub confidence: f32,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeMediaLibraryAssetDescriptor {
+    pub asset_id: String,
+    pub content_hash: String,
+    pub file_name: String,
+    pub asset_state: Option<RuntimeMediaAssetState>,
+    pub metadata_state: RuntimeMediaAnalysisDescriptorState,
+    pub loudness_state: RuntimeMediaAnalysisFamilyState,
+    pub character_state: RuntimeMediaAnalysisFamilyState,
+    pub rhythm_state: RuntimeMediaAnalysisFamilyState,
+    pub tonal_state: RuntimeMediaAnalysisFamilyState,
+    pub embedding_state: RuntimeMediaAnalysisFamilyState,
+    pub loudness: Option<RuntimeMediaLoudnessDescriptor>,
+    pub character: Option<RuntimeMediaCharacterDescriptor>,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeMediaLibraryServiceSnapshot {
+    pub indexed_asset_count: usize,
+    pub ready_descriptor_count: usize,
+    pub pending_descriptor_count: usize,
+    pub invalidated_descriptor_count: usize,
+    pub unavailable_descriptor_count: usize,
+    pub loudness_ready_descriptor_count: usize,
+    pub character_ready_descriptor_count: usize,
+    pub rhythm_deferred_descriptor_count: usize,
+    pub tonal_deferred_descriptor_count: usize,
+    pub embedding_deferred_descriptor_count: usize,
+    pub descriptors: Vec<RuntimeMediaLibraryAssetDescriptor>,
+    pub summary: String,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeWarpMode {
     Off,
@@ -2491,6 +2569,8 @@ pub struct RuntimePluginSandboxSnapshot {
     pub plugin_type_id: Option<String>,
     pub plugin_format: Option<PluginFormat>,
     pub instance_id: Option<String>,
+    pub preset_descriptor: Option<RuntimePluginPresetDescriptor>,
+    pub ara_context: Option<RuntimePluginAraContextSnapshot>,
     pub placement_outcome: RuntimePluginIsolationOutcome,
     pub placement_rule_id: Option<String>,
     pub shared_boundary_member_count: usize,
@@ -2546,6 +2626,75 @@ pub enum RuntimePluginRecallState {
     Unavailable,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginRecallPortabilityClass {
+    Portable,
+    Guarded,
+    NativeOnly,
+    ContextOnly,
+    #[default]
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginPresetOrigin {
+    Factory,
+    User,
+    Embedded,
+    Document,
+    #[default]
+    Transient,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginPresetDescriptor {
+    pub preset_id: Option<String>,
+    pub label: Option<String>,
+    pub origin: RuntimePluginPresetOrigin,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginInterchangeSnapshot {
+    pub portability_class: RuntimePluginRecallPortabilityClass,
+    pub shared_payload_available: bool,
+    pub native_supplement_required: bool,
+    pub preset_descriptor: Option<RuntimePluginPresetDescriptor>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginAraDocumentContext {
+    pub document_id: String,
+    pub display_label: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginAraSourceContext {
+    pub source_id: String,
+    pub display_label: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginAraRegionContext {
+    pub region_id: String,
+    pub display_label: Option<String>,
+    pub timeline_start_samples: Option<i64>,
+    pub duration_samples: Option<u32>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginAraContextSnapshot {
+    pub portability_class: RuntimePluginRecallPortabilityClass,
+    pub document_context: Option<RuntimePluginAraDocumentContext>,
+    pub source_context: Option<RuntimePluginAraSourceContext>,
+    pub region_context: Option<RuntimePluginAraRegionContext>,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginRecallPayload {
     pub sandbox_id: Option<String>,
@@ -2563,6 +2712,8 @@ pub struct RuntimePluginRecallPayload {
     pub last_fault_kind: Option<PluginFaultKind>,
     pub last_fault_detail: Option<String>,
     pub degraded_reasons: Vec<String>,
+    pub interchange: RuntimePluginInterchangeSnapshot,
+    pub ara_context: Option<RuntimePluginAraContextSnapshot>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -3353,6 +3504,207 @@ impl RuntimeInterruptionSummary {
             summary.safe_mode_enabled,
         );
         summary
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeDeviceRestartState {
+    #[default]
+    Unneeded,
+    Attempting,
+    Recovered,
+    Exhausted,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeDeviceFaultBoundaryState {
+    #[default]
+    Clear,
+    Restartable,
+    Exhausted,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeDeviceSupervisionState {
+    #[default]
+    Stable,
+    Recovering,
+    Exhausted,
+    Faulted,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeDeviceSupervisionSnapshot {
+    pub state: RuntimeDeviceSupervisionState,
+    pub restart_state: RuntimeDeviceRestartState,
+    pub fault_boundary: RuntimeDeviceFaultBoundaryState,
+    pub recovery_state: RuntimeRecoveryState,
+    pub interruption_class: RuntimeInterruptionClass,
+    pub primary_fault_cause: Option<RuntimeFaultCause>,
+    pub safe_mode_enabled: bool,
+    pub device_loss_active: bool,
+    pub active_output_device: Option<String>,
+    pub device_id: Option<String>,
+    pub device_name: Option<String>,
+    pub restart_policy: Option<RuntimeHostRestartPolicy>,
+    pub backend_health: Option<BackendHealth>,
+    pub stream_state: Option<RuntimeHostAudioStreamState>,
+    pub device_loss_count: u64,
+    pub restart_attempt_count: Option<u64>,
+    pub restart_failure_count: Option<u64>,
+    pub watchdog_restart_count: u32,
+    pub last_watchdog_trigger: Option<RuntimeWatchdogTrigger>,
+    pub summary: String,
+}
+
+impl Default for RuntimeDeviceSupervisionSnapshot {
+    fn default() -> Self {
+        Self {
+            state: RuntimeDeviceSupervisionState::Stable,
+            restart_state: RuntimeDeviceRestartState::Unneeded,
+            fault_boundary: RuntimeDeviceFaultBoundaryState::Clear,
+            recovery_state: RuntimeRecoveryState::Steady,
+            interruption_class: RuntimeInterruptionClass::Steady,
+            primary_fault_cause: None,
+            safe_mode_enabled: false,
+            device_loss_active: false,
+            active_output_device: None,
+            device_id: None,
+            device_name: None,
+            restart_policy: None,
+            backend_health: None,
+            stream_state: None,
+            device_loss_count: 0,
+            restart_attempt_count: None,
+            restart_failure_count: None,
+            watchdog_restart_count: 0,
+            last_watchdog_trigger: None,
+            summary: "state=Stable restart_state=Unneeded fault_boundary=Clear interruption_class=Steady recovery_state=Steady device_loss_active=false safe_mode=false device_loss_count=0".to_string(),
+        }
+    }
+}
+
+impl RuntimeDeviceSupervisionSnapshot {
+    pub fn capture(
+        effective_config: &EffectiveRuntimeConfig,
+        supervision_snapshot: &RuntimeSupervisionSnapshot,
+        fault_status: &RuntimeFaultStatusSnapshot,
+        interruption_summary: &RuntimeInterruptionSummary,
+        host_io: Option<&RuntimeHostIoSummary>,
+    ) -> Self {
+        let device_loss_count = host_io
+            .map(|host_io| host_io.hardware.device_loss_count)
+            .unwrap_or(fault_status.device_loss_count);
+        let restart_attempt_count = host_io.map(|host_io| host_io.hardware.restart_attempt_count);
+        let restart_failure_count = host_io.map(|host_io| host_io.hardware.restart_failure_count);
+        let primary_fault_cause = fault_status.primary_fault_cause;
+
+        let host_reports_restart_failure = restart_failure_count.unwrap_or(0) > 0;
+        let host_reports_device_restart_boundary = host_io
+            .map(|host_io| {
+                host_io.hardware.device_loss_count > 0
+                    || host_io.hardware.backend_health == BackendHealth::Degraded
+                    || host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted
+            })
+            .unwrap_or(false);
+
+        let restart_state = if fault_status.recovery_state == RuntimeRecoveryState::Faulted {
+            RuntimeDeviceRestartState::Faulted
+        } else if host_reports_restart_failure
+            && (matches!(primary_fault_cause, Some(RuntimeFaultCause::DeviceLoss))
+                || fault_status.device_loss_active
+                || device_loss_count > 0
+                || host_reports_device_restart_boundary)
+        {
+            RuntimeDeviceRestartState::Exhausted
+        } else if fault_status.device_loss_active
+            || host_io
+                .map(|host_io| {
+                    host_io.hardware.backend_health == BackendHealth::Recovering
+                        || host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted
+                })
+                .unwrap_or(false)
+        {
+            RuntimeDeviceRestartState::Attempting
+        } else if device_loss_count > 0
+            || restart_attempt_count.unwrap_or(0) > 0
+            || supervision_snapshot.watchdog_restart_count > 0
+        {
+            RuntimeDeviceRestartState::Recovered
+        } else {
+            RuntimeDeviceRestartState::Unneeded
+        };
+
+        let state = match restart_state {
+            RuntimeDeviceRestartState::Faulted => RuntimeDeviceSupervisionState::Faulted,
+            RuntimeDeviceRestartState::Exhausted => RuntimeDeviceSupervisionState::Exhausted,
+            RuntimeDeviceRestartState::Attempting => RuntimeDeviceSupervisionState::Recovering,
+            RuntimeDeviceRestartState::Recovered
+                if supervision_snapshot.safe_mode_enabled
+                    || interruption_summary.active
+                    || fault_status.device_loss_active =>
+            {
+                RuntimeDeviceSupervisionState::Recovering
+            }
+            RuntimeDeviceRestartState::Recovered | RuntimeDeviceRestartState::Unneeded => {
+                RuntimeDeviceSupervisionState::Stable
+            }
+        };
+
+        let fault_boundary = match restart_state {
+            RuntimeDeviceRestartState::Faulted => RuntimeDeviceFaultBoundaryState::Faulted,
+            RuntimeDeviceRestartState::Exhausted => RuntimeDeviceFaultBoundaryState::Exhausted,
+            RuntimeDeviceRestartState::Attempting
+                if matches!(primary_fault_cause, Some(RuntimeFaultCause::DeviceLoss))
+                    || fault_status.device_loss_active =>
+            {
+                RuntimeDeviceFaultBoundaryState::Restartable
+            }
+            _ => RuntimeDeviceFaultBoundaryState::Clear,
+        };
+
+        let mut snapshot = Self {
+            state,
+            restart_state,
+            fault_boundary,
+            recovery_state: fault_status.recovery_state,
+            interruption_class: interruption_summary.class,
+            primary_fault_cause,
+            safe_mode_enabled: supervision_snapshot.safe_mode_enabled,
+            device_loss_active: fault_status.device_loss_active,
+            active_output_device: effective_config.active_output_device.clone(),
+            device_id: host_io.map(|host_io| host_io.hardware.device_id.clone()),
+            device_name: host_io.map(|host_io| host_io.hardware.device_name.clone()),
+            restart_policy: host_io.map(|host_io| host_io.clocking.restart_policy),
+            backend_health: host_io.map(|host_io| host_io.hardware.backend_health),
+            stream_state: host_io.map(|host_io| host_io.audio_pump.stream_state),
+            device_loss_count,
+            restart_attempt_count,
+            restart_failure_count,
+            watchdog_restart_count: supervision_snapshot.watchdog_restart_count,
+            last_watchdog_trigger: supervision_snapshot.last_watchdog_trigger,
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "state={:?} restart={:?} boundary={:?} recovery={:?} interruption={:?} primary={:?} safe_mode={} device_loss_active={} device_losses={} restart_attempts={:?} restart_failures={:?} watchdog_restarts={} backend_health={:?} stream_state={:?}",
+            snapshot.state,
+            snapshot.restart_state,
+            snapshot.fault_boundary,
+            snapshot.recovery_state,
+            snapshot.interruption_class,
+            snapshot.primary_fault_cause,
+            snapshot.safe_mode_enabled,
+            snapshot.device_loss_active,
+            snapshot.device_loss_count,
+            snapshot.restart_attempt_count,
+            snapshot.restart_failure_count,
+            snapshot.watchdog_restart_count,
+            snapshot.backend_health,
+            snapshot.stream_state,
+        );
+        snapshot
     }
 }
 
@@ -5088,6 +5440,42 @@ pub enum RuntimeHostClockTransitionState {
     Reconfigured,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostClockDriftState {
+    Stable,
+    CrossClockManaged,
+    AggregateManaged,
+    Resyncing,
+    Unconfigured,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostClockDiscontinuityState {
+    Continuous,
+    Reconfigured,
+    Recovering,
+    LostConfiguration,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostDuplexMismatchState {
+    NotApplicable,
+    Aligned,
+    CrossClockDiverged,
+    PartialAvailability,
+    Degraded,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeHostEndpointTopology {
+    Unconfigured,
+    OutputOnly,
+    InputOnly,
+    Duplex,
+    Aggregate,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RuntimeHostClockingSummary {
     pub clock_source: RuntimeHostClockSource,
@@ -5098,6 +5486,11 @@ pub struct RuntimeHostClockingSummary {
     pub clock_domain: RuntimeHostClockDomain,
     pub fallback_state: RuntimeHostClockFallbackState,
     pub transition_state: RuntimeHostClockTransitionState,
+    pub drift_state: RuntimeHostClockDriftState,
+    pub discontinuity_state: RuntimeHostClockDiscontinuityState,
+    pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+    pub endpoint_topology: RuntimeHostEndpointTopology,
+    pub partial_availability: bool,
     pub crossing_required: bool,
     pub callback_interval_ms: f32,
 }
@@ -5159,6 +5552,7 @@ pub struct RuntimeHostIoSummary {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeExternalIoHealthState {
+    Unavailable,
     Ready,
     FallbackActive,
     Recovering,
@@ -5167,16 +5561,57 @@ pub enum RuntimeExternalIoHealthState {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeExternalIoDeviceChangeState {
+    Unavailable,
     Stable,
     PendingRestart,
     Recovering,
     Failed,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalIoPrimaryRole {
+    Unavailable,
+    ProgramOutput,
+    ExternalInput,
+    ProgramDuplex,
+    AggregateProgram,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalIoMonitoringState {
+    Unavailable,
+    Direct,
+    Guarded,
+    Degraded,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalIoMonitoringTapPoint {
+    Unavailable,
+    PreGraphInput,
+    PostRuntimeOutput,
+    PostHardwareOutput,
+    PostLoopbackReturn,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalIoLoopbackState {
+    Unavailable,
+    Ready,
+    Guarded,
+    Recovering,
+    Faulted,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeExternalIoSnapshot {
     pub health_state: RuntimeExternalIoHealthState,
     pub device_change_state: RuntimeExternalIoDeviceChangeState,
+    pub primary_role: RuntimeExternalIoPrimaryRole,
+    pub monitoring_state: RuntimeExternalIoMonitoringState,
+    pub monitoring_tap_point: RuntimeExternalIoMonitoringTapPoint,
+    pub loopback_state: RuntimeExternalIoLoopbackState,
     pub backend_name: String,
     pub active_output_device_id: String,
     pub active_output_device_name: String,
@@ -5185,6 +5620,11 @@ pub struct RuntimeExternalIoSnapshot {
     pub clock_domain: RuntimeHostClockDomain,
     pub fallback_state: RuntimeHostClockFallbackState,
     pub transition_state: RuntimeHostClockTransitionState,
+    pub drift_state: RuntimeHostClockDriftState,
+    pub discontinuity_state: RuntimeHostClockDiscontinuityState,
+    pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+    pub endpoint_topology: RuntimeHostEndpointTopology,
+    pub partial_availability: bool,
     pub fallback_active: bool,
     pub runtime_graph_id_matches_pump: bool,
     pub output_latency_samples: u32,
@@ -5198,6 +5638,99 @@ pub struct RuntimeExternalIoSnapshot {
 }
 
 impl RuntimeHostIoSummary {
+    pub fn unavailable_external_io_snapshot(
+        effective_config: &EffectiveRuntimeConfig,
+        device_supervision_snapshot: &RuntimeDeviceSupervisionSnapshot,
+    ) -> RuntimeExternalIoSnapshot {
+        let faulted = matches!(
+            device_supervision_snapshot.state,
+            RuntimeDeviceSupervisionState::Faulted | RuntimeDeviceSupervisionState::Exhausted
+        );
+        RuntimeExternalIoSnapshot {
+            health_state: if faulted {
+                RuntimeExternalIoHealthState::Faulted
+            } else {
+                RuntimeExternalIoHealthState::Unavailable
+            },
+            device_change_state: RuntimeExternalIoDeviceChangeState::Unavailable,
+            primary_role: RuntimeExternalIoPrimaryRole::Unavailable,
+            monitoring_state: if faulted {
+                RuntimeExternalIoMonitoringState::Faulted
+            } else {
+                RuntimeExternalIoMonitoringState::Unavailable
+            },
+            monitoring_tap_point: RuntimeExternalIoMonitoringTapPoint::Unavailable,
+            loopback_state: if faulted {
+                RuntimeExternalIoLoopbackState::Faulted
+            } else {
+                RuntimeExternalIoLoopbackState::Unavailable
+            },
+            backend_name: "runtime-unavailable".into(),
+            active_output_device_id: effective_config
+                .active_output_device
+                .clone()
+                .unwrap_or_else(|| "runtime:unavailable".into()),
+            active_output_device_name: effective_config
+                .active_output_device
+                .clone()
+                .unwrap_or_else(|| "Unavailable External I/O".into()),
+            stream_state: if faulted {
+                RuntimeHostAudioStreamState::Faulted
+            } else {
+                RuntimeHostAudioStreamState::Stopped
+            },
+            clock_source: RuntimeHostClockSource::Internal,
+            clock_domain: RuntimeHostClockDomain::Degraded,
+            fallback_state: RuntimeHostClockFallbackState::Unconfigured,
+            transition_state: RuntimeHostClockTransitionState::LostConfiguration,
+            drift_state: RuntimeHostClockDriftState::Unconfigured,
+            discontinuity_state: RuntimeHostClockDiscontinuityState::LostConfiguration,
+            duplex_mismatch_state: RuntimeHostDuplexMismatchState::NotApplicable,
+            endpoint_topology: RuntimeHostEndpointTopology::Unconfigured,
+            partial_availability: false,
+            fallback_active: false,
+            runtime_graph_id_matches_pump: false,
+            output_latency_samples: 0,
+            estimated_output_latency_samples: 0,
+            xrun_count: 0,
+            callback_overrun_count: 0,
+            device_loss_count: device_supervision_snapshot.device_loss_count,
+            restart_attempt_count: device_supervision_snapshot.restart_attempt_count.unwrap_or(0),
+            restart_failure_count: device_supervision_snapshot.restart_failure_count.unwrap_or(0),
+            summary: format!(
+                "health={:?} device_change={:?} role={:?} monitor={:?}/{:?} loopback={:?} backend=runtime-unavailable device={} stream={:?} endpoint={:?}",
+                if faulted {
+                    RuntimeExternalIoHealthState::Faulted
+                } else {
+                    RuntimeExternalIoHealthState::Unavailable
+                },
+                RuntimeExternalIoDeviceChangeState::Unavailable,
+                RuntimeExternalIoPrimaryRole::Unavailable,
+                if faulted {
+                    RuntimeExternalIoMonitoringState::Faulted
+                } else {
+                    RuntimeExternalIoMonitoringState::Unavailable
+                },
+                RuntimeExternalIoMonitoringTapPoint::Unavailable,
+                if faulted {
+                    RuntimeExternalIoLoopbackState::Faulted
+                } else {
+                    RuntimeExternalIoLoopbackState::Unavailable
+                },
+                effective_config
+                    .active_output_device
+                    .as_deref()
+                    .unwrap_or("runtime:unavailable"),
+                if faulted {
+                    RuntimeHostAudioStreamState::Faulted
+                } else {
+                    RuntimeHostAudioStreamState::Stopped
+                },
+                RuntimeHostEndpointTopology::Unconfigured,
+            ),
+        }
+    }
+
     pub fn build_external_io_snapshot(&self) -> RuntimeExternalIoSnapshot {
         let fallback_active = self.clocking.fallback_state != RuntimeHostClockFallbackState::Direct;
         let health_state = if self.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted {
@@ -5233,10 +5766,82 @@ impl RuntimeHostIoSummary {
         } else {
             RuntimeExternalIoDeviceChangeState::Stable
         };
+        let primary_role = match self.clocking.endpoint_topology {
+            RuntimeHostEndpointTopology::Unconfigured => RuntimeExternalIoPrimaryRole::Unavailable,
+            RuntimeHostEndpointTopology::OutputOnly => RuntimeExternalIoPrimaryRole::ProgramOutput,
+            RuntimeHostEndpointTopology::InputOnly => RuntimeExternalIoPrimaryRole::ExternalInput,
+            RuntimeHostEndpointTopology::Duplex => RuntimeExternalIoPrimaryRole::ProgramDuplex,
+            RuntimeHostEndpointTopology::Aggregate => {
+                RuntimeExternalIoPrimaryRole::AggregateProgram
+            }
+        };
+        let monitoring_state = if self.audio_pump.stream_state
+            == RuntimeHostAudioStreamState::Faulted
+        {
+            RuntimeExternalIoMonitoringState::Faulted
+        } else if matches!(
+            self.clocking.endpoint_topology,
+            RuntimeHostEndpointTopology::Unconfigured
+        ) {
+            RuntimeExternalIoMonitoringState::Unavailable
+        } else if matches!(
+            self.hardware.backend_health,
+            BackendHealth::Degraded | BackendHealth::Recovering
+        ) {
+            RuntimeExternalIoMonitoringState::Degraded
+        } else if fallback_active
+            || self.clocking.partial_availability
+            || self.clocking.duplex_mismatch_state != RuntimeHostDuplexMismatchState::NotApplicable
+            || self.clocking.endpoint_topology == RuntimeHostEndpointTopology::Aggregate
+        {
+            RuntimeExternalIoMonitoringState::Guarded
+        } else {
+            RuntimeExternalIoMonitoringState::Direct
+        };
+        let monitoring_tap_point = match primary_role {
+            RuntimeExternalIoPrimaryRole::Unavailable => {
+                RuntimeExternalIoMonitoringTapPoint::Unavailable
+            }
+            RuntimeExternalIoPrimaryRole::ExternalInput => {
+                RuntimeExternalIoMonitoringTapPoint::PreGraphInput
+            }
+            RuntimeExternalIoPrimaryRole::ProgramOutput
+            | RuntimeExternalIoPrimaryRole::ProgramDuplex
+            | RuntimeExternalIoPrimaryRole::AggregateProgram => {
+                RuntimeExternalIoMonitoringTapPoint::PostHardwareOutput
+            }
+        };
+        let loopback_state = if self.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted
+        {
+            RuntimeExternalIoLoopbackState::Faulted
+        } else if matches!(
+            self.hardware.backend_health,
+            BackendHealth::Degraded | BackendHealth::Recovering
+        ) {
+            RuntimeExternalIoLoopbackState::Recovering
+        } else if self.clocking.endpoint_topology == RuntimeHostEndpointTopology::Duplex
+            && !self.clocking.partial_availability
+            && self.clocking.clock_domain == RuntimeHostClockDomain::SameClock
+        {
+            RuntimeExternalIoLoopbackState::Ready
+        } else if matches!(
+            self.clocking.endpoint_topology,
+            RuntimeHostEndpointTopology::Duplex | RuntimeHostEndpointTopology::Aggregate
+        ) || self.clocking.partial_availability
+            || fallback_active
+        {
+            RuntimeExternalIoLoopbackState::Guarded
+        } else {
+            RuntimeExternalIoLoopbackState::Unavailable
+        };
 
         RuntimeExternalIoSnapshot {
             health_state,
             device_change_state,
+            primary_role,
+            monitoring_state,
+            monitoring_tap_point,
+            loopback_state,
             backend_name: self.hardware.backend_name.clone(),
             active_output_device_id: self.hardware.device_id.clone(),
             active_output_device_name: self.hardware.device_name.clone(),
@@ -5245,6 +5850,11 @@ impl RuntimeHostIoSummary {
             clock_domain: self.clocking.clock_domain,
             fallback_state: self.clocking.fallback_state,
             transition_state: self.clocking.transition_state,
+            drift_state: self.clocking.drift_state,
+            discontinuity_state: self.clocking.discontinuity_state,
+            duplex_mismatch_state: self.clocking.duplex_mismatch_state,
+            endpoint_topology: self.clocking.endpoint_topology,
+            partial_availability: self.clocking.partial_availability,
             fallback_active,
             runtime_graph_id_matches_pump: self.runtime_graph_id_matches_pump,
             output_latency_samples: self.latency.output_latency_samples,
@@ -5255,13 +5865,18 @@ impl RuntimeHostIoSummary {
             restart_attempt_count: self.hardware.restart_attempt_count,
             restart_failure_count: self.hardware.restart_failure_count,
             summary: format!(
-                "health={health_state:?} device_change={device_change_state:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
+                "health={health_state:?} device_change={device_change_state:?} role={primary_role:?} monitor={monitoring_state:?}/{monitoring_tap_point:?} loopback={loopback_state:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
                 self.hardware.backend_name,
                 self.hardware.device_id,
                 self.audio_pump.stream_state,
                 self.clocking.clock_source,
                 self.clocking.clock_domain,
                 self.clocking.transition_state,
+                self.clocking.drift_state,
+                self.clocking.discontinuity_state,
+                self.clocking.duplex_mismatch_state,
+                self.clocking.endpoint_topology,
+                self.clocking.partial_availability,
                 fallback_active,
                 self.runtime_graph_id_matches_pump,
                 self.latency.output_latency_samples,
@@ -5296,7 +5911,7 @@ impl RuntimeHostObservationReport {
 
     pub fn render_compact(&self) -> String {
         format!(
-            "{} host_backend={} host_device={} host_stream_state={:?} host_clock_source={:?} host_clock_domain={:?} host_clock_fallback_state={:?} host_clock_transition_state={:?} host_clock_crossing_required={} host_clock_processing_sample_rate={} host_clock_hardware_sample_rate={} host_clock_ownership={:?} host_clock_restart_policy={:?} host_callback_interval_ms={:.3} host_output_latency_samples={} host_graph_latency_samples={} host_estimated_output_latency_samples={} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
+            "{} host_backend={} host_device={} host_stream_state={:?} host_clock_source={:?} host_clock_domain={:?} host_clock_fallback_state={:?} host_clock_transition_state={:?} host_clock_drift_state={:?} host_clock_discontinuity_state={:?} host_duplex_mismatch_state={:?} host_endpoint_topology={:?} host_partial_availability={} host_clock_crossing_required={} host_clock_processing_sample_rate={} host_clock_hardware_sample_rate={} host_clock_ownership={:?} host_clock_restart_policy={:?} host_callback_interval_ms={:.3} host_output_latency_samples={} host_graph_latency_samples={} host_estimated_output_latency_samples={} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
             self.observation.render_compact(),
             self.host_io.hardware.backend_name,
             self.host_io.hardware.device_id,
@@ -5305,6 +5920,11 @@ impl RuntimeHostObservationReport {
             self.host_io.clocking.clock_domain,
             self.host_io.clocking.fallback_state,
             self.host_io.clocking.transition_state,
+            self.host_io.clocking.drift_state,
+            self.host_io.clocking.discontinuity_state,
+            self.host_io.clocking.duplex_mismatch_state,
+            self.host_io.clocking.endpoint_topology,
+            self.host_io.clocking.partial_availability,
             self.host_io.clocking.crossing_required,
             self.host_io.clocking.processing_sample_rate_hz,
             self.host_io.clocking.hardware_sample_rate_hz,
@@ -5346,6 +5966,11 @@ impl RuntimeHostObservationReport {
                 "\nhost_clock_domain={:?}",
                 "\nhost_clock_fallback_state={:?}",
                 "\nhost_clock_transition_state={:?}",
+                "\nhost_clock_drift_state={:?}",
+                "\nhost_clock_discontinuity_state={:?}",
+                "\nhost_duplex_mismatch_state={:?}",
+                "\nhost_endpoint_topology={:?}",
+                "\nhost_partial_availability={}",
                 "\nhost_clock_crossing_required={}",
                 "\nhost_clock_processing_sample_rate_hz={}",
                 "\nhost_clock_hardware_sample_rate_hz={}",
@@ -5392,6 +6017,11 @@ impl RuntimeHostObservationReport {
             self.host_io.clocking.clock_domain,
             self.host_io.clocking.fallback_state,
             self.host_io.clocking.transition_state,
+            self.host_io.clocking.drift_state,
+            self.host_io.clocking.discontinuity_state,
+            self.host_io.clocking.duplex_mismatch_state,
+            self.host_io.clocking.endpoint_topology,
+            self.host_io.clocking.partial_availability,
             self.host_io.clocking.crossing_required,
             self.host_io.clocking.processing_sample_rate_hz,
             self.host_io.clocking.hardware_sample_rate_hz,
@@ -5438,9 +6068,13 @@ impl RuntimeHostObservationReport {
                 "\"fault_status\":{},",
                 "\"fault_diagnostic_receipt\":{},",
                 "\"interruption_summary\":{},",
+                "\"device_supervision_snapshot\":{},",
                 "\"degradation_summary\":{},",
                 "\"metering_snapshot\":{},",
-                "\"execution_topology_summary\":{}",
+                "\"execution_topology_summary\":{},",
+                "\"media_pipeline_snapshot\":{},",
+                "\"media_service_snapshot\":{},",
+                "\"media_library_snapshot\":{}",
                 "}},",
                 "\"host_io\":{{",
                 "\"hardware\":{{",
@@ -5457,6 +6091,11 @@ impl RuntimeHostObservationReport {
                 "\"clock_domain\":{},",
                 "\"fallback_state\":{},",
                 "\"transition_state\":{},",
+                "\"drift_state\":{},",
+                "\"discontinuity_state\":{},",
+                "\"duplex_mismatch_state\":{},",
+                "\"endpoint_topology\":{},",
+                "\"partial_availability\":{},",
                 "\"crossing_required\":{},",
                 "\"processing_sample_rate_hz\":{},",
                 "\"hardware_sample_rate_hz\":{},",
@@ -5513,9 +6152,13 @@ impl RuntimeHostObservationReport {
             json_runtime_fault_status(&self.observation.fault_status),
             json_runtime_fault_diagnostic_receipt(&self.observation.fault_diagnostic_receipt),
             json_runtime_interruption_summary(&self.observation.interruption_summary),
+            json_runtime_device_supervision_snapshot(&self.observation.device_supervision_snapshot,),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary),
+            json_runtime_media_pipeline_snapshot(&self.observation.media_pipeline_snapshot),
+            json_runtime_media_service_snapshot(&self.observation.media_service_snapshot),
+            json_runtime_media_library_service_snapshot(&self.observation.media_library_snapshot),
             json_option_string(Some(self.host_io.hardware.backend_name.as_str())),
             json_option_string(Some(self.host_io.hardware.device_id.as_str())),
             json_option_string(Some(self.host_io.hardware.device_name.as_str())),
@@ -5562,6 +6205,35 @@ impl RuntimeHostObservationReport {
                 RuntimeHostClockTransitionState::LostConfiguration => "LostConfiguration",
                 RuntimeHostClockTransitionState::Reconfigured => "Reconfigured",
             })),
+            json_option_string(Some(match self.host_io.clocking.drift_state {
+                RuntimeHostClockDriftState::Stable => "Stable",
+                RuntimeHostClockDriftState::CrossClockManaged => "CrossClockManaged",
+                RuntimeHostClockDriftState::AggregateManaged => "AggregateManaged",
+                RuntimeHostClockDriftState::Resyncing => "Resyncing",
+                RuntimeHostClockDriftState::Unconfigured => "Unconfigured",
+            })),
+            json_option_string(Some(match self.host_io.clocking.discontinuity_state {
+                RuntimeHostClockDiscontinuityState::Continuous => "Continuous",
+                RuntimeHostClockDiscontinuityState::Reconfigured => "Reconfigured",
+                RuntimeHostClockDiscontinuityState::Recovering => "Recovering",
+                RuntimeHostClockDiscontinuityState::LostConfiguration => "LostConfiguration",
+                RuntimeHostClockDiscontinuityState::Faulted => "Faulted",
+            })),
+            json_option_string(Some(match self.host_io.clocking.duplex_mismatch_state {
+                RuntimeHostDuplexMismatchState::NotApplicable => "NotApplicable",
+                RuntimeHostDuplexMismatchState::Aligned => "Aligned",
+                RuntimeHostDuplexMismatchState::CrossClockDiverged => "CrossClockDiverged",
+                RuntimeHostDuplexMismatchState::PartialAvailability => "PartialAvailability",
+                RuntimeHostDuplexMismatchState::Degraded => "Degraded",
+            })),
+            json_option_string(Some(match self.host_io.clocking.endpoint_topology {
+                RuntimeHostEndpointTopology::Unconfigured => "Unconfigured",
+                RuntimeHostEndpointTopology::OutputOnly => "OutputOnly",
+                RuntimeHostEndpointTopology::InputOnly => "InputOnly",
+                RuntimeHostEndpointTopology::Duplex => "Duplex",
+                RuntimeHostEndpointTopology::Aggregate => "Aggregate",
+            })),
+            self.host_io.clocking.partial_availability,
             self.host_io.clocking.crossing_required,
             self.host_io.clocking.processing_sample_rate_hz,
             self.host_io.clocking.hardware_sample_rate_hz,
@@ -8018,11 +8690,16 @@ pub struct RuntimeObservationReport {
     pub fault_status: RuntimeFaultStatusSnapshot,
     pub fault_diagnostic_receipt: RuntimeFaultDiagnosticReceipt,
     pub interruption_summary: RuntimeInterruptionSummary,
+    pub device_supervision_snapshot: RuntimeDeviceSupervisionSnapshot,
+    pub external_io_snapshot: RuntimeExternalIoSnapshot,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
     pub tempo_map_snapshot: RuntimeTempoMapSnapshot,
     pub warp_pipeline_snapshot: RuntimeWarpPipelineSnapshot,
     pub clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
     pub recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
+    pub media_pipeline_snapshot: RuntimeMediaPipelineSnapshot,
+    pub media_service_snapshot: RuntimeMediaServiceSnapshot,
+    pub media_library_snapshot: RuntimeMediaLibraryServiceSnapshot,
     pub offline_render_session_snapshot: RuntimeOfflineRenderSessionSnapshot,
     pub automation_snapshot: RuntimeAutomationSnapshot,
     pub plugin_event_snapshot: RuntimePluginEventSnapshot,
@@ -8056,6 +8733,9 @@ impl RuntimeObservationReport {
         let warp_pipeline_snapshot = runtime.get_warp_pipeline_snapshot();
         let clip_processing_pipeline_snapshot = runtime.get_clip_processing_pipeline_snapshot();
         let recording_capture_snapshot = runtime.get_recording_capture_snapshot();
+        let media_pipeline_snapshot = runtime.get_media_pipeline_snapshot();
+        let media_service_snapshot = runtime.get_media_service_snapshot();
+        let media_library_snapshot = runtime.get_media_library_service_snapshot();
         let offline_render_session_snapshot = runtime.get_offline_render_session_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
         let plugin_event_snapshot = runtime.get_plugin_event_snapshot();
@@ -8100,6 +8780,17 @@ impl RuntimeObservationReport {
             last_deferred_service_receipt.as_ref(),
             None,
         );
+        let device_supervision_snapshot = RuntimeDeviceSupervisionSnapshot::capture(
+            &effective_config,
+            &supervision_snapshot,
+            &fault_status,
+            &interruption_summary,
+            None,
+        );
+        let external_io_snapshot = RuntimeHostIoSummary::unavailable_external_io_snapshot(
+            &effective_config,
+            &device_supervision_snapshot,
+        );
         Self {
             readiness: readiness.clone(),
             effective_config,
@@ -8111,11 +8802,16 @@ impl RuntimeObservationReport {
             fault_status,
             fault_diagnostic_receipt,
             interruption_summary,
+            device_supervision_snapshot,
+            external_io_snapshot,
             timeline_snapshot,
             tempo_map_snapshot,
             warp_pipeline_snapshot,
             clip_processing_pipeline_snapshot,
             recording_capture_snapshot,
+            media_pipeline_snapshot,
+            media_service_snapshot,
+            media_library_snapshot,
             offline_render_session_snapshot,
             automation_snapshot,
             plugin_event_snapshot,
@@ -8137,6 +8833,22 @@ impl RuntimeObservationReport {
         }
     }
 
+    pub fn with_host_device_supervision(mut self, host_io: &RuntimeHostIoSummary) -> Self {
+        self.device_supervision_snapshot = RuntimeDeviceSupervisionSnapshot::capture(
+            &self.effective_config,
+            &self.supervision_snapshot,
+            &self.fault_status,
+            &self.interruption_summary,
+            Some(host_io),
+        );
+        self
+    }
+
+    pub fn with_host_external_io(mut self, host_io: &RuntimeHostIoSummary) -> Self {
+        self.external_io_snapshot = host_io.build_external_io_snapshot();
+        self
+    }
+
     pub fn render_compact(&self) -> String {
         let tempo_map = (self.tempo_map_snapshot.segment_count > 0)
             .then(|| format_runtime_tempo_map_snapshot_compact(&self.tempo_map_snapshot))
@@ -8149,6 +8861,22 @@ impl RuntimeObservationReport {
                 format_runtime_clip_processing_pipeline_snapshot_compact(
                     &self.clip_processing_pipeline_snapshot,
                 )
+            })
+            .unwrap_or_default();
+        let media_pipeline = (self.media_pipeline_snapshot.asset_count > 0)
+            .then(|| format_runtime_media_pipeline_snapshot_compact(&self.media_pipeline_snapshot))
+            .unwrap_or_default();
+        let media_service = (self.media_service_snapshot.indexed_asset_count > 0
+            || self.media_service_snapshot.invalidation_active
+            || matches!(
+                self.media_service_snapshot.preview_state,
+                RuntimeMediaPreviewState::Previewing | RuntimeMediaPreviewState::Invalidated
+            ))
+        .then(|| format_runtime_media_service_snapshot_compact(&self.media_service_snapshot))
+        .unwrap_or_default();
+        let media_library = (self.media_library_snapshot.indexed_asset_count > 0)
+            .then(|| {
+                format_runtime_media_library_service_snapshot_compact(&self.media_library_snapshot)
             })
             .unwrap_or_default();
         let plugin_discovery = (self.plugin_discovery_snapshot.scan_count > 0)
@@ -8251,6 +8979,10 @@ impl RuntimeObservationReport {
             format_runtime_fault_diagnostic_receipt_compact(&self.fault_diagnostic_receipt);
         let interruption_summary =
             format_runtime_interruption_summary_compact(&self.interruption_summary);
+        let device_supervision_summary =
+            format_runtime_device_supervision_snapshot_compact(&self.device_supervision_snapshot);
+        let external_io_summary =
+            format_runtime_external_io_snapshot_compact(&self.external_io_snapshot);
         let execution_topology_summary =
             format_runtime_execution_topology_summary_compact(&self.execution_topology_summary);
         let metering_summary = format_runtime_metering_snapshot_compact(&self.metering_snapshot);
@@ -8284,7 +9016,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -8310,6 +9042,9 @@ impl RuntimeObservationReport {
             tempo_map,
             warp,
             clip_processing,
+            media_pipeline,
+            media_service,
+            media_library,
             plugin_discovery,
             plugin_lifecycle,
             plugin_chain,
@@ -8323,6 +9058,8 @@ impl RuntimeObservationReport {
             fault_status,
             fault_diagnostic_receipt,
             interruption_summary,
+            device_supervision_summary,
+            external_io_summary,
             self.engine_block_snapshot.graph_id,
             self.engine_block_snapshot.node_count,
             self.engine_block_snapshot.stateful_node_count,
@@ -8518,7 +9255,7 @@ impl RuntimeObservationReport {
             )
         );
         format!(
-            "{compact}{recording_capture}{offline_render_session}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{compact}{recording_capture}{media_pipeline}{media_service}{offline_render_session}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 }
@@ -8640,6 +9377,32 @@ impl RuntimeSupervisorReport {
             )
         })
         .unwrap_or_default();
+        let media_pipeline = (self.observation.media_pipeline_snapshot.asset_count > 0)
+            .then(|| {
+                format_runtime_media_pipeline_snapshot_multiline(
+                    &self.observation.media_pipeline_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let media_service = (self.observation.media_service_snapshot.indexed_asset_count > 0
+            || self.observation.media_service_snapshot.invalidation_active
+            || matches!(
+                self.observation.media_service_snapshot.preview_state,
+                RuntimeMediaPreviewState::Previewing | RuntimeMediaPreviewState::Invalidated
+            ))
+        .then(|| {
+            format_runtime_media_service_snapshot_multiline(
+                &self.observation.media_service_snapshot,
+            )
+        })
+        .unwrap_or_default();
+        let media_library = (self.observation.media_library_snapshot.indexed_asset_count > 0)
+            .then(|| {
+                format_runtime_media_library_service_snapshot_multiline(
+                    &self.observation.media_library_snapshot,
+                )
+            })
+            .unwrap_or_default();
         let plugin_discovery = (self.observation.plugin_discovery_snapshot.scan_count > 0)
             .then(|| {
                 format_runtime_plugin_discovery_snapshot_multiline(
@@ -8750,6 +9513,11 @@ impl RuntimeSupervisorReport {
         );
         let _interruption_summary =
             format_runtime_interruption_summary_multiline(&self.observation.interruption_summary);
+        let device_supervision_summary = format_runtime_device_supervision_snapshot_multiline(
+            &self.observation.device_supervision_snapshot,
+        );
+        let external_io_summary =
+            format_runtime_external_io_snapshot_multiline(&self.observation.external_io_snapshot);
         let execution_topology_summary = format_runtime_execution_topology_summary_multiline(
             &self.observation.execution_topology_summary,
         );
@@ -9197,7 +9965,7 @@ impl RuntimeSupervisorReport {
         ); */
         let multiline = self.observation.render_compact().replace(' ', "\n");
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{tempo_map}{warp}{clip_processing}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{device_supervision_summary}{external_io_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 
@@ -9263,11 +10031,16 @@ impl RuntimeSupervisorReport {
                 "\"fault_status\":{},",
                 "\"fault_diagnostic_receipt\":{},",
                 "\"interruption_summary\":{},",
+                "\"device_supervision_snapshot\":{},",
+                "\"external_io_snapshot\":{},",
                 "\"degradation_summary\":{},",
                 "\"tempo_map_snapshot\":{},",
                 "\"warp_pipeline_snapshot\":{},",
                 "\"clip_processing_pipeline_snapshot\":{},",
                 "\"recording_capture_snapshot\":{},",
+                "\"media_pipeline_snapshot\":{},",
+                "\"media_service_snapshot\":{},",
+                "\"media_library_snapshot\":{},",
                 "\"offline_render_session_snapshot\":{},",
                 "\"plugin_discovery_snapshot\":{},",
                 "\"plugin_lifecycle_snapshot\":{},",
@@ -9395,6 +10168,8 @@ impl RuntimeSupervisorReport {
             json_runtime_fault_status(&self.observation.fault_status),
             json_runtime_fault_diagnostic_receipt(&self.observation.fault_diagnostic_receipt),
             json_runtime_interruption_summary(&self.observation.interruption_summary),
+            json_runtime_device_supervision_snapshot(&self.observation.device_supervision_snapshot,),
+            json_runtime_external_io_snapshot(&self.observation.external_io_snapshot),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_tempo_map_snapshot(&self.observation.tempo_map_snapshot),
             json_runtime_warp_pipeline_snapshot(&self.observation.warp_pipeline_snapshot),
@@ -9402,6 +10177,9 @@ impl RuntimeSupervisorReport {
                 &self.observation.clip_processing_pipeline_snapshot,
             ),
             json_runtime_recording_capture_snapshot(&self.observation.recording_capture_snapshot,),
+            json_runtime_media_pipeline_snapshot(&self.observation.media_pipeline_snapshot),
+            json_runtime_media_service_snapshot(&self.observation.media_service_snapshot),
+            json_runtime_media_library_service_snapshot(&self.observation.media_library_snapshot),
             json_runtime_offline_render_session_snapshot(
                 &self.observation.offline_render_session_snapshot,
             ),
@@ -10589,6 +11367,157 @@ fn format_runtime_interruption_summary_multiline(summary: &RuntimeInterruptionSu
     )
 }
 
+fn format_runtime_device_supervision_snapshot_compact(
+    snapshot: &RuntimeDeviceSupervisionSnapshot,
+) -> String {
+    format!(
+        " device_supervision={:?}/{:?}/{:?} recovery={:?} interruption={:?} primary={:?} safe_mode={} device_loss_active={} device_losses={} restart_attempts={:?} restart_failures={:?} watchdog_restarts={}",
+        snapshot.state,
+        snapshot.restart_state,
+        snapshot.fault_boundary,
+        snapshot.recovery_state,
+        snapshot.interruption_class,
+        snapshot.primary_fault_cause,
+        snapshot.safe_mode_enabled,
+        snapshot.device_loss_active,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        snapshot.watchdog_restart_count,
+    )
+}
+
+fn format_runtime_device_supervision_snapshot_multiline(
+    snapshot: &RuntimeDeviceSupervisionSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "\ndevice_supervision_state={:?}",
+            "\ndevice_supervision_restart_state={:?}",
+            "\ndevice_supervision_fault_boundary={:?}",
+            "\ndevice_supervision_recovery_state={:?}",
+            "\ndevice_supervision_interruption_class={:?}",
+            "\ndevice_supervision_primary_fault_cause={:?}",
+            "\ndevice_supervision_safe_mode_enabled={}",
+            "\ndevice_supervision_device_loss_active={}",
+            "\ndevice_supervision_active_output_device={:?}",
+            "\ndevice_supervision_device_id={:?}",
+            "\ndevice_supervision_device_name={:?}",
+            "\ndevice_supervision_restart_policy={:?}",
+            "\ndevice_supervision_backend_health={:?}",
+            "\ndevice_supervision_stream_state={:?}",
+            "\ndevice_supervision_device_loss_count={}",
+            "\ndevice_supervision_restart_attempt_count={:?}",
+            "\ndevice_supervision_restart_failure_count={:?}",
+            "\ndevice_supervision_watchdog_restart_count={}",
+            "\ndevice_supervision_last_watchdog_trigger={:?}",
+            "\ndevice_supervision_summary={}",
+        ),
+        snapshot.state,
+        snapshot.restart_state,
+        snapshot.fault_boundary,
+        snapshot.recovery_state,
+        snapshot.interruption_class,
+        snapshot.primary_fault_cause,
+        snapshot.safe_mode_enabled,
+        snapshot.device_loss_active,
+        snapshot.active_output_device,
+        snapshot.device_id,
+        snapshot.device_name,
+        snapshot.restart_policy,
+        snapshot.backend_health,
+        snapshot.stream_state,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        snapshot.watchdog_restart_count,
+        snapshot.last_watchdog_trigger,
+        snapshot.summary,
+    )
+}
+
+fn format_runtime_external_io_snapshot_compact(snapshot: &RuntimeExternalIoSnapshot) -> String {
+    format!(
+        " external_io={:?}/{:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} endpoint={:?} fallback={} device_losses={} restart_attempts={} restart_failures={}",
+        snapshot.health_state,
+        snapshot.device_change_state,
+        snapshot.primary_role,
+        snapshot.monitoring_state,
+        snapshot.loopback_state,
+        snapshot.backend_name,
+        snapshot.active_output_device_id,
+        snapshot.stream_state,
+        snapshot.endpoint_topology,
+        snapshot.fallback_active,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+    )
+}
+
+fn format_runtime_external_io_snapshot_multiline(snapshot: &RuntimeExternalIoSnapshot) -> String {
+    format!(
+        concat!(
+            "\nexternal_io_health_state={:?}",
+            "\nexternal_io_device_change_state={:?}",
+            "\nexternal_io_primary_role={:?}",
+            "\nexternal_io_monitoring_state={:?}",
+            "\nexternal_io_monitoring_tap_point={:?}",
+            "\nexternal_io_loopback_state={:?}",
+            "\nexternal_io_backend_name={}",
+            "\nexternal_io_active_output_device_id={}",
+            "\nexternal_io_active_output_device_name={}",
+            "\nexternal_io_stream_state={:?}",
+            "\nexternal_io_clock_domain={:?}",
+            "\nexternal_io_fallback_state={:?}",
+            "\nexternal_io_transition_state={:?}",
+            "\nexternal_io_drift_state={:?}",
+            "\nexternal_io_discontinuity_state={:?}",
+            "\nexternal_io_duplex_mismatch_state={:?}",
+            "\nexternal_io_endpoint_topology={:?}",
+            "\nexternal_io_partial_availability={}",
+            "\nexternal_io_fallback_active={}",
+            "\nexternal_io_runtime_graph_id_matches_pump={}",
+            "\nexternal_io_output_latency_samples={}",
+            "\nexternal_io_estimated_output_latency_samples={}",
+            "\nexternal_io_xrun_count={}",
+            "\nexternal_io_callback_overrun_count={}",
+            "\nexternal_io_device_loss_count={}",
+            "\nexternal_io_restart_attempt_count={}",
+            "\nexternal_io_restart_failure_count={}",
+            "\nexternal_io_summary={}",
+        ),
+        snapshot.health_state,
+        snapshot.device_change_state,
+        snapshot.primary_role,
+        snapshot.monitoring_state,
+        snapshot.monitoring_tap_point,
+        snapshot.loopback_state,
+        snapshot.backend_name,
+        snapshot.active_output_device_id,
+        snapshot.active_output_device_name,
+        snapshot.stream_state,
+        snapshot.clock_domain,
+        snapshot.fallback_state,
+        snapshot.transition_state,
+        snapshot.drift_state,
+        snapshot.discontinuity_state,
+        snapshot.duplex_mismatch_state,
+        snapshot.endpoint_topology,
+        snapshot.partial_availability,
+        snapshot.fallback_active,
+        snapshot.runtime_graph_id_matches_pump,
+        snapshot.output_latency_samples,
+        snapshot.estimated_output_latency_samples,
+        snapshot.xrun_count,
+        snapshot.callback_overrun_count,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        snapshot.summary,
+    )
+}
+
 fn format_runtime_tempo_map_snapshot_compact(snapshot: &RuntimeTempoMapSnapshot) -> String {
     format!(
         " tempo_map_segments={} tempo_map_active={:?}/{:?} tempo_map_source={:?} tempo_map_tempo={:.3} tempo_map_next_segment={:?}",
@@ -10630,6 +11559,153 @@ fn format_runtime_tempo_map_snapshot_multiline(snapshot: &RuntimeTempoMapSnapsho
         snapshot.tempo_source,
         snapshot.timeline_position_samples,
         segment_lines,
+    )
+}
+
+fn format_runtime_media_pipeline_snapshot_compact(
+    snapshot: &RuntimeMediaPipelineSnapshot,
+) -> String {
+    format!(
+        " media_assets={} media_ready_assets={} media_invalid_assets={} media_ingesting_assets={} media_conforming_assets={} media_rebuilding_assets={} media_cache_root={}",
+        snapshot.asset_count,
+        snapshot.ready_asset_count,
+        snapshot.invalid_asset_count,
+        snapshot.ingesting_asset_count,
+        snapshot.conforming_asset_count,
+        snapshot.rebuilding_asset_count,
+        snapshot.cache_root_path,
+    )
+}
+
+fn format_runtime_media_pipeline_snapshot_multiline(
+    snapshot: &RuntimeMediaPipelineSnapshot,
+) -> String {
+    let asset_lines = snapshot
+        .assets
+        .iter()
+        .enumerate()
+        .map(|(index, asset)| {
+            format!(
+                "\nmedia_asset_{}={}/state={:?}/waveform_bins={}/cache={:?}/cache_bytes={:?}/rebuilds={}/error={:?}",
+                index,
+                asset.asset_id,
+                asset.state,
+                asset.waveform_bin_count,
+                asset.cache_path,
+                asset.cache_byte_size,
+                asset.rebuild_count,
+                asset.last_error,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nmedia_cache_root_path={}\nmedia_asset_count={}\nmedia_ready_asset_count={}\nmedia_invalid_asset_count={}\nmedia_ingesting_asset_count={}\nmedia_conforming_asset_count={}\nmedia_rebuilding_asset_count={}{}",
+        snapshot.cache_root_path,
+        snapshot.asset_count,
+        snapshot.ready_asset_count,
+        snapshot.invalid_asset_count,
+        snapshot.ingesting_asset_count,
+        snapshot.conforming_asset_count,
+        snapshot.rebuilding_asset_count,
+        asset_lines,
+    )
+}
+
+fn format_runtime_media_service_snapshot_compact(snapshot: &RuntimeMediaServiceSnapshot) -> String {
+    format!(
+        " media_indexed_assets={} media_analysis_ready_assets={} media_waveform_ready_assets={} media_waveform_pending_assets={} media_previewable_assets={} media_invalidated_assets={} media_invalidation_active={} media_indexing_state={:?} media_preview_state={:?} media_previewing_asset={} media_last_invalidated_asset={}",
+        snapshot.indexed_asset_count,
+        snapshot.analysis_ready_asset_count,
+        snapshot.waveform_ready_asset_count,
+        snapshot.waveform_pending_asset_count,
+        snapshot.previewable_asset_count,
+        snapshot.invalidated_asset_count,
+        snapshot.invalidation_active,
+        snapshot.indexing_state,
+        snapshot.preview_state,
+        snapshot.previewing_asset_id.as_deref().unwrap_or("none"),
+        snapshot
+            .last_invalidated_asset_id
+            .as_deref()
+            .unwrap_or("none"),
+    )
+}
+
+fn format_runtime_media_service_snapshot_multiline(
+    snapshot: &RuntimeMediaServiceSnapshot,
+) -> String {
+    format!(
+        "\nmedia_indexed_asset_count={}\nmedia_analysis_ready_asset_count={}\nmedia_waveform_ready_asset_count={}\nmedia_waveform_pending_asset_count={}\nmedia_previewable_asset_count={}\nmedia_invalidated_asset_count={}\nmedia_invalidation_active={}\nmedia_indexing_state={:?}\nmedia_preview_state={:?}\nmedia_previewing_asset_id={:?}\nmedia_last_invalidated_asset_id={:?}\nmedia_last_invalidation_error={:?}\nmedia_last_preview_error={:?}",
+        snapshot.indexed_asset_count,
+        snapshot.analysis_ready_asset_count,
+        snapshot.waveform_ready_asset_count,
+        snapshot.waveform_pending_asset_count,
+        snapshot.previewable_asset_count,
+        snapshot.invalidated_asset_count,
+        snapshot.invalidation_active,
+        snapshot.indexing_state,
+        snapshot.preview_state,
+        snapshot.previewing_asset_id,
+        snapshot.last_invalidated_asset_id,
+        snapshot.last_invalidation_error,
+        snapshot.last_preview_error,
+    )
+}
+
+fn format_runtime_media_library_service_snapshot_compact(
+    snapshot: &RuntimeMediaLibraryServiceSnapshot,
+) -> String {
+    format!(
+        " media_library_assets={} media_library_ready={} media_library_pending={} media_library_invalidated={} media_library_unavailable={} media_library_loudness_ready={} media_library_character_ready={} media_library_rhythm_deferred={} media_library_tonal_deferred={} media_library_embedding_deferred={}",
+        snapshot.indexed_asset_count,
+        snapshot.ready_descriptor_count,
+        snapshot.pending_descriptor_count,
+        snapshot.invalidated_descriptor_count,
+        snapshot.unavailable_descriptor_count,
+        snapshot.loudness_ready_descriptor_count,
+        snapshot.character_ready_descriptor_count,
+        snapshot.rhythm_deferred_descriptor_count,
+        snapshot.tonal_deferred_descriptor_count,
+        snapshot.embedding_deferred_descriptor_count,
+    )
+}
+
+fn format_runtime_media_library_service_snapshot_multiline(
+    snapshot: &RuntimeMediaLibraryServiceSnapshot,
+) -> String {
+    let descriptor_lines = snapshot
+        .descriptors
+        .iter()
+        .enumerate()
+        .map(|(index, descriptor)| {
+            format!(
+                "\nmedia_library_descriptor_{}={}/state={:?}/asset_state={:?}/loudness={:?}/character={:?}/rhythm={:?}/tonal={:?}/embedding={:?}/error={:?}",
+                index,
+                descriptor.asset_id,
+                descriptor.metadata_state,
+                descriptor.asset_state,
+                descriptor.loudness_state,
+                descriptor.character_state,
+                descriptor.rhythm_state,
+                descriptor.tonal_state,
+                descriptor.embedding_state,
+                descriptor.last_error,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nmedia_library_indexed_asset_count={}\nmedia_library_ready_descriptor_count={}\nmedia_library_pending_descriptor_count={}\nmedia_library_invalidated_descriptor_count={}\nmedia_library_unavailable_descriptor_count={}\nmedia_library_loudness_ready_descriptor_count={}\nmedia_library_character_ready_descriptor_count={}\nmedia_library_rhythm_deferred_descriptor_count={}\nmedia_library_tonal_deferred_descriptor_count={}\nmedia_library_embedding_deferred_descriptor_count={}{}",
+        snapshot.indexed_asset_count,
+        snapshot.ready_descriptor_count,
+        snapshot.pending_descriptor_count,
+        snapshot.invalidated_descriptor_count,
+        snapshot.unavailable_descriptor_count,
+        snapshot.loudness_ready_descriptor_count,
+        snapshot.character_ready_descriptor_count,
+        snapshot.rhythm_deferred_descriptor_count,
+        snapshot.tonal_deferred_descriptor_count,
+        snapshot.embedding_deferred_descriptor_count,
+        descriptor_lines,
     )
 }
 
@@ -10800,7 +11876,7 @@ fn format_runtime_plugin_lifecycle_snapshot_compact(
 
 fn format_runtime_plugin_recall_snapshot_compact(snapshot: &RuntimePluginRecallSnapshot) -> String {
     format!(
-        "{:?}/sandbox={:?}/plugin={:?}/{:?}/lifecycle={:?}/{:?}/{:?}/readiness={:?}/recoveries={}/restarts={}/faults={}/fault_kind={:?}/stop_reason={:?}/degraded={:?}",
+        "{:?}/sandbox={:?}/plugin={:?}/{:?}/lifecycle={:?}/{:?}/{:?}/readiness={:?}/recoveries={}/restarts={}/faults={}/fault_kind={:?}/stop_reason={:?}/portability={:?}/preset={:?}/ara={}/degraded={:?}",
         snapshot.state,
         snapshot.payload.sandbox_id.as_deref(),
         snapshot.payload.plugin_type_id.as_deref(),
@@ -10814,6 +11890,14 @@ fn format_runtime_plugin_recall_snapshot_compact(snapshot: &RuntimePluginRecallS
         snapshot.payload.fault_count,
         snapshot.payload.last_fault_kind,
         snapshot.payload.last_stop_reason,
+        snapshot.payload.interchange.portability_class,
+        snapshot
+            .payload
+            .interchange
+            .preset_descriptor
+            .as_ref()
+            .and_then(|descriptor| descriptor.label.as_deref()),
+        snapshot.payload.ara_context.is_some(),
         &snapshot.payload.degraded_reasons,
     )
 }
@@ -10961,7 +12045,7 @@ fn format_runtime_plugin_lifecycle_snapshot_multiline(
         .enumerate()
         .map(|(index, sandbox)| {
             format!(
-                "\nplugin_sandbox_{}={}/group={}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/state={:?}/lifecycle={:?}/transport={:?}/ready={:?}/restarts={}/recoveries={}/faults={}/active={}/transport_active={}/degraded={:?}",
+                "\nplugin_sandbox_{}={}/group={}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/state={:?}/lifecycle={:?}/transport={:?}/preset={:?}/ara={}/ready={:?}/restarts={}/recoveries={}/faults={}/active={}/transport_active={}/degraded={:?}",
                 index,
                 sandbox.sandbox_id,
                 sandbox.sandbox_group_key,
@@ -10973,6 +12057,11 @@ fn format_runtime_plugin_lifecycle_snapshot_multiline(
                 sandbox.state,
                 sandbox.lifecycle_stage,
                 sandbox.transport_stage,
+                sandbox
+                    .preset_descriptor
+                    .as_ref()
+                    .and_then(|descriptor| descriptor.label.as_deref()),
+                sandbox.ara_context.is_some(),
                 sandbox.readiness_state,
                 sandbox.restart_count,
                 sandbox.recovery_count,
@@ -12223,6 +13312,147 @@ fn json_runtime_interruption_summary(summary: &RuntimeInterruptionSummary) -> St
     )
 }
 
+fn json_runtime_device_supervision_snapshot(snapshot: &RuntimeDeviceSupervisionSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"state\":{},",
+            "\"restart_state\":{},",
+            "\"fault_boundary\":{},",
+            "\"recovery_state\":{},",
+            "\"interruption_class\":{},",
+            "\"primary_fault_cause\":{},",
+            "\"safe_mode_enabled\":{},",
+            "\"device_loss_active\":{},",
+            "\"active_output_device\":{},",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"restart_policy\":{},",
+            "\"backend_health\":{},",
+            "\"stream_state\":{},",
+            "\"device_loss_count\":{},",
+            "\"restart_attempt_count\":{},",
+            "\"restart_failure_count\":{},",
+            "\"watchdog_restart_count\":{},",
+            "\"last_watchdog_trigger\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.state)),
+        json_string(&format!("{:?}", snapshot.restart_state)),
+        json_string(&format!("{:?}", snapshot.fault_boundary)),
+        json_string(&format!("{:?}", snapshot.recovery_state)),
+        json_string(&format!("{:?}", snapshot.interruption_class)),
+        json_option_string(
+            snapshot
+                .primary_fault_cause
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        snapshot.safe_mode_enabled,
+        snapshot.device_loss_active,
+        json_option_string(snapshot.active_output_device.as_deref()),
+        json_option_string(snapshot.device_id.as_deref()),
+        json_option_string(snapshot.device_name.as_deref()),
+        json_option_string(
+            snapshot
+                .restart_policy
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            snapshot
+                .backend_health
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(
+            snapshot
+                .stream_state
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        snapshot.device_loss_count,
+        json_option_u64(snapshot.restart_attempt_count),
+        json_option_u64(snapshot.restart_failure_count),
+        snapshot.watchdog_restart_count,
+        json_option_string(
+            snapshot
+                .last_watchdog_trigger
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_external_io_snapshot(snapshot: &RuntimeExternalIoSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"health_state\":{},",
+            "\"device_change_state\":{},",
+            "\"primary_role\":{},",
+            "\"monitoring_state\":{},",
+            "\"monitoring_tap_point\":{},",
+            "\"loopback_state\":{},",
+            "\"backend_name\":{},",
+            "\"active_output_device_id\":{},",
+            "\"active_output_device_name\":{},",
+            "\"stream_state\":{},",
+            "\"clock_source\":{},",
+            "\"clock_domain\":{},",
+            "\"fallback_state\":{},",
+            "\"transition_state\":{},",
+            "\"drift_state\":{},",
+            "\"discontinuity_state\":{},",
+            "\"duplex_mismatch_state\":{},",
+            "\"endpoint_topology\":{},",
+            "\"partial_availability\":{},",
+            "\"fallback_active\":{},",
+            "\"runtime_graph_id_matches_pump\":{},",
+            "\"output_latency_samples\":{},",
+            "\"estimated_output_latency_samples\":{},",
+            "\"xrun_count\":{},",
+            "\"callback_overrun_count\":{},",
+            "\"device_loss_count\":{},",
+            "\"restart_attempt_count\":{},",
+            "\"restart_failure_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.health_state)),
+        json_string(&format!("{:?}", snapshot.device_change_state)),
+        json_string(&format!("{:?}", snapshot.primary_role)),
+        json_string(&format!("{:?}", snapshot.monitoring_state)),
+        json_string(&format!("{:?}", snapshot.monitoring_tap_point)),
+        json_string(&format!("{:?}", snapshot.loopback_state)),
+        json_option_string(Some(snapshot.backend_name.as_str())),
+        json_option_string(Some(snapshot.active_output_device_id.as_str())),
+        json_option_string(Some(snapshot.active_output_device_name.as_str())),
+        json_string(&format!("{:?}", snapshot.stream_state)),
+        json_string(&format!("{:?}", snapshot.clock_source)),
+        json_string(&format!("{:?}", snapshot.clock_domain)),
+        json_string(&format!("{:?}", snapshot.fallback_state)),
+        json_string(&format!("{:?}", snapshot.transition_state)),
+        json_string(&format!("{:?}", snapshot.drift_state)),
+        json_string(&format!("{:?}", snapshot.discontinuity_state)),
+        json_string(&format!("{:?}", snapshot.duplex_mismatch_state)),
+        json_string(&format!("{:?}", snapshot.endpoint_topology)),
+        snapshot.partial_availability,
+        snapshot.fallback_active,
+        snapshot.runtime_graph_id_matches_pump,
+        snapshot.output_latency_samples,
+        snapshot.estimated_output_latency_samples,
+        snapshot.xrun_count,
+        snapshot.callback_overrun_count,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
 fn json_runtime_meter_source_snapshot(snapshot: &RuntimeMeterSourceSnapshot) -> String {
     format!(
         concat!(
@@ -12324,6 +13554,280 @@ fn json_runtime_tempo_map_snapshot(snapshot: &RuntimeTempoMapSnapshot) -> String
         snapshot.tempo_source,
         json_option_i64(snapshot.timeline_position_samples),
         json_runtime_tempo_map_segment_snapshot_vec(&snapshot.segments),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_asset_snapshot(snapshot: &RuntimeMediaAssetSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"asset_id\":{},",
+            "\"content_hash\":{},",
+            "\"source_path\":{},",
+            "\"file_name\":{},",
+            "\"byte_size\":{},",
+            "\"sample_rate_hz\":{},",
+            "\"channel_count\":{},",
+            "\"duration_samples\":{},",
+            "\"waveform_bin_count\":{},",
+            "\"state\":{},",
+            "\"cache_path\":{},",
+            "\"cache_byte_size\":{},",
+            "\"rebuild_count\":{},",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.asset_id.as_str())),
+        json_option_string(Some(snapshot.content_hash.as_str())),
+        json_option_string(Some(snapshot.source_path.as_str())),
+        json_option_string(Some(snapshot.file_name.as_str())),
+        snapshot.byte_size,
+        snapshot.sample_rate_hz,
+        snapshot.channel_count,
+        snapshot.duration_samples,
+        snapshot.waveform_bin_count,
+        json_option_string(snapshot.state.map(|value| format!("{value:?}")).as_deref()),
+        json_option_string(snapshot.cache_path.as_deref()),
+        json_option_u64(snapshot.cache_byte_size),
+        snapshot.rebuild_count,
+        json_option_string(snapshot.last_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_asset_snapshot_vec(snapshots: &[RuntimeMediaAssetSnapshot]) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_media_asset_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_media_pipeline_snapshot(snapshot: &RuntimeMediaPipelineSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"cache_root_path\":{},",
+            "\"asset_count\":{},",
+            "\"ready_asset_count\":{},",
+            "\"invalid_asset_count\":{},",
+            "\"ingesting_asset_count\":{},",
+            "\"conforming_asset_count\":{},",
+            "\"rebuilding_asset_count\":{},",
+            "\"assets\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.cache_root_path.as_str())),
+        snapshot.asset_count,
+        snapshot.ready_asset_count,
+        snapshot.invalid_asset_count,
+        snapshot.ingesting_asset_count,
+        snapshot.conforming_asset_count,
+        snapshot.rebuilding_asset_count,
+        json_runtime_media_asset_snapshot_vec(&snapshot.assets),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_service_snapshot(snapshot: &RuntimeMediaServiceSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"indexed_asset_count\":{},",
+            "\"analysis_ready_asset_count\":{},",
+            "\"waveform_ready_asset_count\":{},",
+            "\"waveform_pending_asset_count\":{},",
+            "\"previewable_asset_count\":{},",
+            "\"invalidated_asset_count\":{},",
+            "\"invalidation_active\":{},",
+            "\"indexing_state\":{},",
+            "\"preview_state\":{},",
+            "\"previewing_asset_id\":{},",
+            "\"last_invalidated_asset_id\":{},",
+            "\"last_invalidation_error\":{},",
+            "\"last_preview_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.indexed_asset_count,
+        snapshot.analysis_ready_asset_count,
+        snapshot.waveform_ready_asset_count,
+        snapshot.waveform_pending_asset_count,
+        snapshot.previewable_asset_count,
+        snapshot.invalidated_asset_count,
+        snapshot.invalidation_active,
+        json_option_string(Some(&format!("{:?}", snapshot.indexing_state))),
+        json_option_string(Some(&format!("{:?}", snapshot.preview_state))),
+        json_option_string(snapshot.previewing_asset_id.as_deref()),
+        json_option_string(snapshot.last_invalidated_asset_id.as_deref()),
+        json_option_string(snapshot.last_invalidation_error.as_deref()),
+        json_option_string(snapshot.last_preview_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_analysis_descriptor_state(
+    state: RuntimeMediaAnalysisDescriptorState,
+) -> String {
+    json_option_string(Some(&format!("{state:?}")))
+}
+
+fn json_runtime_media_analysis_family_state(state: RuntimeMediaAnalysisFamilyState) -> String {
+    json_option_string(Some(&format!("{state:?}")))
+}
+
+fn json_runtime_media_loudness_descriptor(descriptor: &RuntimeMediaLoudnessDescriptor) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"integrated_lufs\":{},",
+            "\"loudness_range_lu\":{},",
+            "\"true_peak_dbtp\":{},",
+            "\"target_offset_lu\":{},",
+            "\"peak_to_loudness_lu\":{},",
+            "\"confidence\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        descriptor.integrated_lufs,
+        descriptor.loudness_range_lu,
+        descriptor.true_peak_dbtp,
+        descriptor.target_offset_lu,
+        descriptor.peak_to_loudness_lu,
+        descriptor.confidence,
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_character_descriptor(descriptor: &RuntimeMediaCharacterDescriptor) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"centroid_hz\":{},",
+            "\"rolloff_95_hz\":{},",
+            "\"flatness\":{},",
+            "\"contrast_db\":{},",
+            "\"onset_density\":{},",
+            "\"transient_density\":{},",
+            "\"sustain_ratio\":{},",
+            "\"rms_energy\":{},",
+            "\"dynamic_range\":{},",
+            "\"confidence\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        descriptor.centroid_hz,
+        descriptor.rolloff_95_hz,
+        descriptor.flatness,
+        descriptor.contrast_db,
+        descriptor.onset_density,
+        descriptor.transient_density,
+        descriptor.sustain_ratio,
+        descriptor.rms_energy,
+        descriptor.dynamic_range,
+        descriptor.confidence,
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_library_asset_descriptor(
+    descriptor: &RuntimeMediaLibraryAssetDescriptor,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"asset_id\":{},",
+            "\"content_hash\":{},",
+            "\"file_name\":{},",
+            "\"asset_state\":{},",
+            "\"metadata_state\":{},",
+            "\"loudness_state\":{},",
+            "\"character_state\":{},",
+            "\"rhythm_state\":{},",
+            "\"tonal_state\":{},",
+            "\"embedding_state\":{},",
+            "\"loudness\":{},",
+            "\"character\":{},",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(descriptor.asset_id.as_str())),
+        json_option_string(Some(descriptor.content_hash.as_str())),
+        json_option_string(Some(descriptor.file_name.as_str())),
+        json_option_string(
+            descriptor
+                .asset_state
+                .map(|state| format!("{state:?}"))
+                .as_deref()
+        ),
+        json_runtime_media_analysis_descriptor_state(descriptor.metadata_state),
+        json_runtime_media_analysis_family_state(descriptor.loudness_state),
+        json_runtime_media_analysis_family_state(descriptor.character_state),
+        json_runtime_media_analysis_family_state(descriptor.rhythm_state),
+        json_runtime_media_analysis_family_state(descriptor.tonal_state),
+        json_runtime_media_analysis_family_state(descriptor.embedding_state),
+        descriptor
+            .loudness
+            .as_ref()
+            .map(json_runtime_media_loudness_descriptor)
+            .unwrap_or_else(|| "null".into()),
+        descriptor
+            .character
+            .as_ref()
+            .map(json_runtime_media_character_descriptor)
+            .unwrap_or_else(|| "null".into()),
+        json_option_string(descriptor.last_error.as_deref()),
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_media_library_asset_descriptor_vec(
+    descriptors: &[RuntimeMediaLibraryAssetDescriptor],
+) -> String {
+    let entries = descriptors
+        .iter()
+        .map(json_runtime_media_library_asset_descriptor)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{}]", entries)
+}
+
+fn json_runtime_media_library_service_snapshot(
+    snapshot: &RuntimeMediaLibraryServiceSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"indexed_asset_count\":{},",
+            "\"ready_descriptor_count\":{},",
+            "\"pending_descriptor_count\":{},",
+            "\"invalidated_descriptor_count\":{},",
+            "\"unavailable_descriptor_count\":{},",
+            "\"loudness_ready_descriptor_count\":{},",
+            "\"character_ready_descriptor_count\":{},",
+            "\"rhythm_deferred_descriptor_count\":{},",
+            "\"tonal_deferred_descriptor_count\":{},",
+            "\"embedding_deferred_descriptor_count\":{},",
+            "\"descriptors\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.indexed_asset_count,
+        snapshot.ready_descriptor_count,
+        snapshot.pending_descriptor_count,
+        snapshot.invalidated_descriptor_count,
+        snapshot.unavailable_descriptor_count,
+        snapshot.loudness_ready_descriptor_count,
+        snapshot.character_ready_descriptor_count,
+        snapshot.rhythm_deferred_descriptor_count,
+        snapshot.tonal_deferred_descriptor_count,
+        snapshot.embedding_deferred_descriptor_count,
+        json_runtime_media_library_asset_descriptor_vec(&snapshot.descriptors),
         json_option_string(Some(snapshot.summary.as_str())),
     )
 }
@@ -12556,7 +14060,9 @@ fn json_runtime_plugin_recall_snapshot(snapshot: &RuntimePluginRecallSnapshot) -
             "\"last_stop_reason\":{},",
             "\"last_fault_kind\":{},",
             "\"last_fault_detail\":{},",
-            "\"degraded_reasons\":{}",
+            "\"degraded_reasons\":{},",
+            "\"interchange\":{},",
+            "\"ara_context\":{}",
             "}},",
             "\"summary\":{}",
             "}}"
@@ -12577,6 +14083,128 @@ fn json_runtime_plugin_recall_snapshot(snapshot: &RuntimePluginRecallSnapshot) -
         json_option_string(last_fault_kind.as_deref()),
         json_option_string(snapshot.payload.last_fault_detail.as_deref()),
         json_string_vec(&snapshot.payload.degraded_reasons),
+        json_runtime_plugin_interchange_snapshot(&snapshot.payload.interchange),
+        snapshot
+            .payload
+            .ara_context
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_ara_context_snapshot,),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_preset_descriptor(descriptor: &RuntimePluginPresetDescriptor) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"preset_id\":{},",
+            "\"label\":{},",
+            "\"origin\":\"{:?}\",",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(descriptor.preset_id.as_deref()),
+        json_option_string(descriptor.label.as_deref()),
+        descriptor.origin,
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_interchange_snapshot(snapshot: &RuntimePluginInterchangeSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"portability_class\":\"{:?}\",",
+            "\"shared_payload_available\":{},",
+            "\"native_supplement_required\":{},",
+            "\"preset_descriptor\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.portability_class,
+        snapshot.shared_payload_available,
+        snapshot.native_supplement_required,
+        snapshot
+            .preset_descriptor
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_preset_descriptor,),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_ara_document_context(context: &RuntimePluginAraDocumentContext) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"document_id\":{},",
+            "\"display_label\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(context.document_id.as_str())),
+        json_option_string(context.display_label.as_deref()),
+        json_option_string(Some(context.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_ara_source_context(context: &RuntimePluginAraSourceContext) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"source_id\":{},",
+            "\"display_label\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(context.source_id.as_str())),
+        json_option_string(context.display_label.as_deref()),
+        json_option_string(Some(context.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_ara_region_context(context: &RuntimePluginAraRegionContext) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"region_id\":{},",
+            "\"display_label\":{},",
+            "\"timeline_start_samples\":{},",
+            "\"duration_samples\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(context.region_id.as_str())),
+        json_option_string(context.display_label.as_deref()),
+        json_option_i64(context.timeline_start_samples),
+        json_option_u32(context.duration_samples),
+        json_option_string(Some(context.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_ara_context_snapshot(snapshot: &RuntimePluginAraContextSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"portability_class\":\"{:?}\",",
+            "\"document_context\":{},",
+            "\"source_context\":{},",
+            "\"region_context\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.portability_class,
+        snapshot
+            .document_context
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_ara_document_context,),
+        snapshot
+            .source_context
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_ara_source_context,),
+        snapshot
+            .region_context
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_ara_region_context,),
         json_option_string(Some(snapshot.summary.as_str())),
     )
 }
@@ -13083,6 +14711,8 @@ fn json_runtime_plugin_sandbox_snapshot(snapshot: &RuntimePluginSandboxSnapshot)
             "\"plugin_type_id\":{},",
             "\"plugin_format\":{},",
             "\"instance_id\":{},",
+            "\"preset_descriptor\":{},",
+            "\"ara_context\":{},",
             "\"placement_outcome\":\"{:?}\",",
             "\"placement_rule_id\":{},",
             "\"shared_boundary_member_count\":{},",
@@ -13113,6 +14743,14 @@ fn json_runtime_plugin_sandbox_snapshot(snapshot: &RuntimePluginSandboxSnapshot)
         json_option_string(snapshot.plugin_type_id.as_deref()),
         json_option_string(plugin_format.as_deref()),
         json_option_string(snapshot.instance_id.as_deref()),
+        snapshot
+            .preset_descriptor
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_preset_descriptor,),
+        snapshot
+            .ara_context
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_plugin_ara_context_snapshot,),
         snapshot.placement_outcome,
         json_option_string(snapshot.placement_rule_id.as_deref()),
         snapshot.shared_boundary_member_count,
@@ -16144,6 +17782,7 @@ pub trait RuntimeObservationApi {
     fn get_offline_render_session_snapshot(&self) -> RuntimeOfflineRenderSessionSnapshot;
     fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot;
     fn get_media_service_snapshot(&self) -> RuntimeMediaServiceSnapshot;
+    fn get_media_library_service_snapshot(&self) -> RuntimeMediaLibraryServiceSnapshot;
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot;
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
     fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot;
@@ -16290,6 +17929,11 @@ mod tests {
                 clock_domain: RuntimeHostClockDomain::SameClock,
                 fallback_state,
                 transition_state,
+                drift_state: RuntimeHostClockDriftState::Stable,
+                discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+                duplex_mismatch_state: RuntimeHostDuplexMismatchState::NotApplicable,
+                endpoint_topology: RuntimeHostEndpointTopology::OutputOnly,
+                partial_availability: false,
                 crossing_required: false,
                 callback_interval_ms: 5.333,
             },
@@ -16331,11 +17975,41 @@ mod tests {
             snapshot.device_change_state,
             RuntimeExternalIoDeviceChangeState::Recovering
         );
+        assert_eq!(
+            snapshot.primary_role,
+            RuntimeExternalIoPrimaryRole::ProgramOutput
+        );
+        assert_eq!(
+            snapshot.monitoring_state,
+            RuntimeExternalIoMonitoringState::Degraded
+        );
+        assert_eq!(
+            snapshot.monitoring_tap_point,
+            RuntimeExternalIoMonitoringTapPoint::PostHardwareOutput
+        );
+        assert_eq!(
+            snapshot.loopback_state,
+            RuntimeExternalIoLoopbackState::Recovering
+        );
         assert!(snapshot.fallback_active);
         assert_eq!(
             snapshot.fallback_state,
             RuntimeHostClockFallbackState::RuntimeResampled
         );
+        assert_eq!(snapshot.drift_state, RuntimeHostClockDriftState::Stable);
+        assert_eq!(
+            snapshot.discontinuity_state,
+            RuntimeHostClockDiscontinuityState::Continuous
+        );
+        assert_eq!(
+            snapshot.duplex_mismatch_state,
+            RuntimeHostDuplexMismatchState::NotApplicable
+        );
+        assert_eq!(
+            snapshot.endpoint_topology,
+            RuntimeHostEndpointTopology::OutputOnly
+        );
+        assert!(!snapshot.partial_availability);
         assert!(snapshot.summary.contains("fallback=true"));
     }
 
@@ -16359,6 +18033,14 @@ mod tests {
             recovering.device_change_state,
             RuntimeExternalIoDeviceChangeState::Recovering
         );
+        assert_eq!(
+            recovering.monitoring_state,
+            RuntimeExternalIoMonitoringState::Degraded
+        );
+        assert_eq!(
+            recovering.loopback_state,
+            RuntimeExternalIoLoopbackState::Recovering
+        );
 
         let failed = host_io_summary(
             RuntimeHostClockFallbackState::RecoveryConstrained,
@@ -16375,6 +18057,332 @@ mod tests {
             failed.device_change_state,
             RuntimeExternalIoDeviceChangeState::Failed
         );
+        assert_eq!(
+            failed.monitoring_state,
+            RuntimeExternalIoMonitoringState::Faulted
+        );
+        assert_eq!(
+            failed.loopback_state,
+            RuntimeExternalIoLoopbackState::Faulted
+        );
         assert!(failed.fallback_active);
+        assert_eq!(failed.drift_state, RuntimeHostClockDriftState::Stable);
+        assert_eq!(
+            failed.endpoint_topology,
+            RuntimeHostEndpointTopology::OutputOnly
+        );
+    }
+
+    #[test]
+    fn runtime_external_io_snapshot_surfaces_duplex_and_topology_receipts() {
+        let mut summary = host_io_summary(
+            RuntimeHostClockFallbackState::RuntimeResampled,
+            RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        summary.clocking.drift_state = RuntimeHostClockDriftState::CrossClockManaged;
+        summary.clocking.discontinuity_state = RuntimeHostClockDiscontinuityState::Reconfigured;
+        summary.clocking.duplex_mismatch_state = RuntimeHostDuplexMismatchState::CrossClockDiverged;
+        summary.clocking.endpoint_topology = RuntimeHostEndpointTopology::Duplex;
+        summary.clocking.partial_availability = false;
+
+        let snapshot = summary.build_external_io_snapshot();
+
+        assert_eq!(
+            snapshot.drift_state,
+            RuntimeHostClockDriftState::CrossClockManaged
+        );
+        assert_eq!(
+            snapshot.discontinuity_state,
+            RuntimeHostClockDiscontinuityState::Reconfigured
+        );
+        assert_eq!(
+            snapshot.duplex_mismatch_state,
+            RuntimeHostDuplexMismatchState::CrossClockDiverged
+        );
+        assert_eq!(
+            snapshot.endpoint_topology,
+            RuntimeHostEndpointTopology::Duplex
+        );
+        assert_eq!(
+            snapshot.primary_role,
+            RuntimeExternalIoPrimaryRole::ProgramDuplex
+        );
+        assert_eq!(
+            snapshot.monitoring_state,
+            RuntimeExternalIoMonitoringState::Guarded
+        );
+        assert_eq!(
+            snapshot.loopback_state,
+            RuntimeExternalIoLoopbackState::Ready
+        );
+        assert!(!snapshot.partial_availability);
+        assert!(snapshot.summary.contains("CrossClockManaged"));
+    }
+
+    #[test]
+    fn runtime_external_io_snapshot_defaults_to_unavailable_without_host_context() {
+        let effective_config = EffectiveRuntimeConfig {
+            sample_rate: SampleRate(48_000),
+            block_size: 256,
+            anticipative_enabled: true,
+            safe_mode_enabled: false,
+            active_output_device: None,
+        };
+        let device_supervision_snapshot = RuntimeDeviceSupervisionSnapshot {
+            state: RuntimeDeviceSupervisionState::Stable,
+            restart_state: RuntimeDeviceRestartState::Unneeded,
+            fault_boundary: RuntimeDeviceFaultBoundaryState::Clear,
+            recovery_state: RuntimeRecoveryState::Steady,
+            interruption_class: RuntimeInterruptionClass::Steady,
+            primary_fault_cause: None,
+            safe_mode_enabled: false,
+            device_loss_active: false,
+            active_output_device: None,
+            device_id: None,
+            device_name: None,
+            restart_policy: None,
+            backend_health: None,
+            stream_state: None,
+            device_loss_count: 0,
+            restart_attempt_count: None,
+            restart_failure_count: None,
+            watchdog_restart_count: 0,
+            last_watchdog_trigger: None,
+            summary: "steady".into(),
+        };
+
+        let snapshot = RuntimeHostIoSummary::unavailable_external_io_snapshot(
+            &effective_config,
+            &device_supervision_snapshot,
+        );
+
+        assert_eq!(
+            snapshot.health_state,
+            RuntimeExternalIoHealthState::Unavailable
+        );
+        assert_eq!(
+            snapshot.device_change_state,
+            RuntimeExternalIoDeviceChangeState::Unavailable
+        );
+        assert_eq!(
+            snapshot.primary_role,
+            RuntimeExternalIoPrimaryRole::Unavailable
+        );
+        assert_eq!(
+            snapshot.monitoring_state,
+            RuntimeExternalIoMonitoringState::Unavailable
+        );
+        assert_eq!(
+            snapshot.monitoring_tap_point,
+            RuntimeExternalIoMonitoringTapPoint::Unavailable
+        );
+        assert_eq!(
+            snapshot.loopback_state,
+            RuntimeExternalIoLoopbackState::Unavailable
+        );
+        assert_eq!(
+            snapshot.endpoint_topology,
+            RuntimeHostEndpointTopology::Unconfigured
+        );
+        assert!(snapshot.summary.contains("runtime-unavailable"));
+    }
+
+    #[test]
+    fn runtime_device_supervision_snapshot_tracks_recovered_device_episode() {
+        let effective_config = EffectiveRuntimeConfig {
+            sample_rate: SampleRate(48_000),
+            block_size: 256,
+            anticipative_enabled: true,
+            safe_mode_enabled: false,
+            active_output_device: Some("device:main".into()),
+        };
+        let supervision_snapshot = RuntimeSupervisionSnapshot {
+            watchdog_restart_count: 1,
+            safe_mode_enabled: false,
+            xrun_overload_active: false,
+            last_watchdog_trigger: Some(RuntimeWatchdogTrigger::HeartbeatMisses),
+            last_sandbox_id: Some("sandbox:main".into()),
+            last_processing_epoch: Some(7),
+        };
+        let fault_status = RuntimeFaultStatusSnapshot {
+            recovery_state: RuntimeRecoveryState::Steady,
+            primary_fault_cause: None,
+            active_fault_count: 0,
+            xrun_overload_active: false,
+            plugin_fault_active: false,
+            watchdog_active: false,
+            device_loss_active: false,
+            transport_fault_active: false,
+            missing_plugin_binding_active: false,
+            safe_mode_enabled: false,
+            restart_count: 0,
+            watchdog_restart_count: 1,
+            plugin_fault_count: 0,
+            transport_faulted_session_count: 0,
+            device_loss_count: 1,
+            summary: "steady".into(),
+        };
+        let interruption_summary = RuntimeInterruptionSummary {
+            active: false,
+            class: RuntimeInterruptionClass::Steady,
+            rebindable: false,
+            recovery_state: RuntimeRecoveryState::Steady,
+            primary_fault_cause: None,
+            safe_mode_enabled: false,
+            deferred_service_class: None,
+            deferred_service_decision: None,
+            summary: "steady".into(),
+        };
+        let host_io = host_io_summary(
+            RuntimeHostClockFallbackState::Direct,
+            RuntimeHostClockTransitionState::ReturnedToDirect,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            1,
+            0,
+            1,
+        );
+
+        let snapshot = RuntimeDeviceSupervisionSnapshot::capture(
+            &effective_config,
+            &supervision_snapshot,
+            &fault_status,
+            &interruption_summary,
+            Some(&host_io),
+        );
+
+        assert_eq!(snapshot.state, RuntimeDeviceSupervisionState::Stable);
+        assert_eq!(snapshot.restart_state, RuntimeDeviceRestartState::Recovered);
+        assert_eq!(
+            snapshot.fault_boundary,
+            RuntimeDeviceFaultBoundaryState::Clear
+        );
+        assert_eq!(snapshot.device_loss_count, 1);
+        assert_eq!(snapshot.restart_attempt_count, Some(1));
+        assert_eq!(snapshot.restart_failure_count, Some(0));
+        assert_eq!(snapshot.backend_health, Some(BackendHealth::Healthy));
+    }
+
+    #[test]
+    fn runtime_device_supervision_snapshot_distinguishes_exhausted_from_faulted() {
+        let effective_config = EffectiveRuntimeConfig {
+            sample_rate: SampleRate(48_000),
+            block_size: 256,
+            anticipative_enabled: true,
+            safe_mode_enabled: true,
+            active_output_device: Some("device:main".into()),
+        };
+        let supervision_snapshot = RuntimeSupervisionSnapshot {
+            watchdog_restart_count: 2,
+            safe_mode_enabled: true,
+            xrun_overload_active: false,
+            last_watchdog_trigger: Some(RuntimeWatchdogTrigger::DeadlineMisses),
+            last_sandbox_id: Some("sandbox:main".into()),
+            last_processing_epoch: Some(11),
+        };
+        let exhausted_status = RuntimeFaultStatusSnapshot {
+            recovery_state: RuntimeRecoveryState::Recovering,
+            primary_fault_cause: Some(RuntimeFaultCause::DeviceLoss),
+            active_fault_count: 1,
+            xrun_overload_active: false,
+            plugin_fault_active: false,
+            watchdog_active: false,
+            device_loss_active: true,
+            transport_fault_active: false,
+            missing_plugin_binding_active: false,
+            safe_mode_enabled: true,
+            restart_count: 0,
+            watchdog_restart_count: 2,
+            plugin_fault_count: 0,
+            transport_faulted_session_count: 0,
+            device_loss_count: 1,
+            summary: "recovering".into(),
+        };
+        let exhausted_interruption = RuntimeInterruptionSummary {
+            active: true,
+            class: RuntimeInterruptionClass::Restartable,
+            rebindable: true,
+            recovery_state: RuntimeRecoveryState::Recovering,
+            primary_fault_cause: Some(RuntimeFaultCause::DeviceLoss),
+            safe_mode_enabled: true,
+            deferred_service_class: None,
+            deferred_service_decision: None,
+            summary: "restartable".into(),
+        };
+        let exhausted_host_io = host_io_summary(
+            RuntimeHostClockFallbackState::RecoveryConstrained,
+            RuntimeHostClockTransitionState::EnteredRecoveryFallback,
+            RuntimeHostAudioStreamState::Faulted,
+            BackendHealth::Recovering,
+            1,
+            1,
+            1,
+        );
+
+        let exhausted = RuntimeDeviceSupervisionSnapshot::capture(
+            &effective_config,
+            &supervision_snapshot,
+            &exhausted_status,
+            &exhausted_interruption,
+            Some(&exhausted_host_io),
+        );
+        assert_eq!(exhausted.state, RuntimeDeviceSupervisionState::Exhausted);
+        assert_eq!(
+            exhausted.restart_state,
+            RuntimeDeviceRestartState::Exhausted
+        );
+        assert_eq!(
+            exhausted.fault_boundary,
+            RuntimeDeviceFaultBoundaryState::Exhausted
+        );
+
+        let faulted_status = RuntimeFaultStatusSnapshot {
+            recovery_state: RuntimeRecoveryState::Faulted,
+            primary_fault_cause: Some(RuntimeFaultCause::RuntimeError),
+            active_fault_count: 1,
+            xrun_overload_active: false,
+            plugin_fault_active: false,
+            watchdog_active: false,
+            device_loss_active: false,
+            transport_fault_active: false,
+            missing_plugin_binding_active: false,
+            safe_mode_enabled: true,
+            restart_count: 0,
+            watchdog_restart_count: 2,
+            plugin_fault_count: 0,
+            transport_faulted_session_count: 0,
+            device_loss_count: 1,
+            summary: "faulted".into(),
+        };
+        let faulted_interruption = RuntimeInterruptionSummary {
+            active: true,
+            class: RuntimeInterruptionClass::Terminal,
+            rebindable: false,
+            recovery_state: RuntimeRecoveryState::Faulted,
+            primary_fault_cause: Some(RuntimeFaultCause::RuntimeError),
+            safe_mode_enabled: true,
+            deferred_service_class: None,
+            deferred_service_decision: None,
+            summary: "terminal".into(),
+        };
+
+        let faulted = RuntimeDeviceSupervisionSnapshot::capture(
+            &effective_config,
+            &supervision_snapshot,
+            &faulted_status,
+            &faulted_interruption,
+            None,
+        );
+        assert_eq!(faulted.state, RuntimeDeviceSupervisionState::Faulted);
+        assert_eq!(faulted.restart_state, RuntimeDeviceRestartState::Faulted);
+        assert_eq!(
+            faulted.fault_boundary,
+            RuntimeDeviceFaultBoundaryState::Faulted
+        );
     }
 }

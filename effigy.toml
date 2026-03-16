@@ -149,6 +149,77 @@ qa = [
   { run = "cargo test -p signal-supervisor-tools generic_event_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-generic-event-boundary --format=json" },
 ]
+"acceptance:recall-portability-boundary" = [
+  { run = "cargo test -p signal-runtime --test public_contract_boundary public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_reexports" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_recall_portability_truth" },
+  { run = "cargo test -p signal-host-server --test public_host_edge_boundary server_shared_host_edge_exports_runtime_recall_portability_truth" },
+  { run = "cargo test -p signal-supervisor-tools recall_portability_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-recall-portability-boundary --format=json" },
+]
+"acceptance:device-supervision-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_device_supervision_boundary_reports_recovering_and_faulted_runtime_states" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_device_supervision_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_device_supervision_truth" },
+  { run = "cargo test -p signal-supervisor-tools device_supervision_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-device-supervision-boundary --format=json" },
+]
+"acceptance:clock-topology-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_receipts" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_clock_topology_truth" },
+  { run = "cargo test -p signal-host-local local_host_shared_report_surfaces_duplex_ -- --nocapture" },
+  { run = "cargo test -p signal-supervisor-tools clock_topology_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-clock-topology-boundary --format=json" },
+]
+"acceptance:external-io-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_external_io_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_external_io_truth" },
+  { run = "cargo test -p signal-supervisor-tools external_io_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-external-io-boundary --format=json" },
+]
+"acceptance:media-service-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_invalidation_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_media_service_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_media_service_truth" },
+  { run = "cargo test -p signal-supervisor-tools media_service_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-media-service-boundary --format=json" },
+]
+"acceptance:analysis-metadata-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_analysis_metadata_boundary_reports_runtime_owned_library_descriptors" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_analysis_metadata_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_analysis_metadata_truth" },
+  { run = "cargo test -p signal-supervisor-tools analysis_metadata_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-analysis-metadata-boundary --format=json" },
+]
+"acceptance:integrated-acceptance-lane" = [
+  { task = "acceptance:interruption-boundary" },
+  { task = "acceptance:fault-diagnostic-boundary" },
+  { task = "acceptance:critical-path-boundary" },
+  { task = "acceptance:deferred-work-policy-boundary" },
+  { task = "acceptance:plugin-continuity" },
+  { task = "acceptance:cross-adapter-parity-boundary" },
+  { task = "acceptance:device-supervision-boundary" },
+  { task = "acceptance:clock-topology-boundary" },
+  { task = "acceptance:external-io-boundary" },
+  { task = "acceptance:media-service-boundary" },
+  { task = "acceptance:analysis-metadata-boundary" },
+  { run = "cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_acceptance_evidence" },
+  { run = "cargo test -p signal-supervisor-tools integrated_acceptance_lane_json_reports_required_and_advisory_policy" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json" },
+]
+"acceptance:g06-soak-lane" = [
+  { run = "cargo run -p signal-supervisor-tools -- --format=json local soak" },
+  { run = "cargo run -p signal-supervisor-tools -- --format=json local mixed" },
+  { run = "cargo test -p signal-supervisor-tools g06_soak_lane_json_reports_required_and_deferred_policy" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json" },
+]
+"acceptance:g06-closeout" = [
+  { task = "acceptance:integrated-acceptance-lane" },
+  { task = "acceptance:g06-soak-lane" },
+  { run = "cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json" },
+  { task = "validate" },
+]
 "acceptance:release-boundary" = [
   { task = "acceptance:conformance" },
   { run = "cargo test -p signal-supervisor-tools release_boundary_json_reports_packaging_baseline" },

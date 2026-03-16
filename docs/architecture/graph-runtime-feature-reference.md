@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-15
+Updated: 2026-03-16
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -388,8 +388,188 @@ Current host-I/O and hardware-portability tracking includes:
   negotiated host sample-rate reporting plus explicit host clock-domain export
 - current cross-clock live-path visibility through explicit runtime-owned
   fallback-state export rather than backend-local inference
+- contract-frozen device supervision rule:
+  - runtime supervision remains authoritative for recovering versus faulted
+    hardware state and later recovery exhaustion meaning
+  - backend diagnostics and callback loss are additive evidence rather than a
+    competing consumer-facing restart taxonomy
+  - later clock-domain, endpoint-topology, and external-I/O work must build on
+    the same supervision substrate instead of redefining hardware fault
+    ownership
+- contract-frozen drift and endpoint-topology rule:
+  - runtime-owned receipts remain authoritative for consumer-visible drift,
+    discontinuity, duplex mismatch, partial availability, and endpoint-topology
+    meaning
+  - backend timestamps, callback deltas, and device lists remain contributing
+    evidence rather than a competing topology or drift model
+  - later external-I/O, monitoring, and loopback work must deepen this shared
+    topology contract instead of inventing host-local endpoint semantics
+- contract-frozen monitoring and loopback rule:
+  - runtime-owned receipts will remain authoritative for external-I/O role,
+    monitor tap-point, loopback, and bounded measurement meaning
+  - hardware callbacks, endpoint inventories, and product-local routing labels
+    remain contributing evidence rather than a competing monitor-path model
+  - later calibration, waveform, and media-service work must deepen the shared
+    monitoring contract instead of moving loopback truth into host-local code
+- current runtime-owned device supervision receipt depth through:
+  - `RuntimeDeviceSupervisionSnapshot` on runtime observation and supervisor
+    report surfaces
+  - explicit supervision state, restart state, and hardware fault-boundary
+    classification
+  - additive host-fed evidence for device-loss counts, restart attempts,
+    restart failures, watchdog restarts, restart policy, backend health, stream
+    state, and active device identity
+  - machine-readable boundary proof through
+    `signal.runtime.device-supervision-boundary` and
+    `effigy acceptance:device-supervision-boundary`
 - current aggregate-clock live-path visibility through the same runtime-owned
   host clocking receipt family
+- current drift and endpoint-topology receipt depth through:
+  - `RuntimeHostClockingSummary` carrying explicit:
+    - `drift_state`
+    - `discontinuity_state`
+    - `duplex_mismatch_state`
+    - `endpoint_topology`
+    - `partial_availability`
+  - `RuntimeExternalIoSnapshot` preserving the same bounded drift or topology
+    meaning instead of collapsing to fallback-only health
+  - `signal-host-local` deriving the shared fields from the active stream
+    contract, backend health, transition state, and stream state in one place
+  - shared host-edge alignment that now reuses one `host_io` receipt per
+    outward report instead of recomputing divergent first-observation
+    transition states
+  - machine-readable boundary proof through
+    `signal.runtime.clock-topology-boundary` and
+    `effigy acceptance:clock-topology-boundary`
+- current external-I/O monitoring and loopback receipt depth through:
+  - `RuntimeExternalIoSnapshot` carrying explicit:
+    - `health_state`
+    - `device_change_state`
+    - `primary_role`
+    - `monitoring_state`
+    - `monitoring_tap_point`
+    - `loopback_state`
+  - `RuntimeObservationReport` exporting the same bounded snapshot even when
+    live host-I/O context is unavailable
+  - `signal-host-local` mapping live host-I/O state into the shared runtime
+    receipt family instead of a host-private monitor model
+  - `signal-host-server` exporting the same receipt shape with explicit
+    `Unavailable` classifications where live monitoring state is not present
+  - machine-readable boundary proof through
+    `signal.runtime.external-io-boundary` and
+    `effigy acceptance:external-io-boundary`
+- contract-frozen media-service rule:
+  - runtime-owned media asset identity, indexing, invalidation, waveform
+    readiness, preview readiness, and analysis-ready state remain authoritative
+    for reusable consumers
+  - shared `signal-analysis*` crates own algorithm families and result types,
+    while `signal-runtime` owns the service-state boundary
+  - the bounded reusable media-service seam is now frozen in
+    `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`
+  - later library, waveform, preview, and metadata work must deepen that
+    shared contract instead of moving preview or cache readiness back into
+    product-local code
+- implemented media-service baseline depth:
+  - `RuntimeObservationReport` now carries runtime-owned
+    `media_pipeline_snapshot` and `media_service_snapshot`
+  - `RuntimeSupervisorReport` and the shared local/server `supervisor_report()`
+    paths now expose the same indexing, invalidation, waveform, and preview
+    readiness state
+  - the media pipeline is no longer only a direct runtime API seam; it now
+    participates in shared observation and export surfaces
+  - machine-readable boundary proof now exists through
+    `signal.runtime.media-service-boundary` and
+    `effigy acceptance:media-service-boundary`
+- contract-frozen analysis-metadata rule:
+  - reusable asset-analysis descriptors and library-service meaning must stay
+    aligned with runtime-owned media indexing, waveform, preview, and
+    invalidation receipts rather than product-local metadata tables
+  - shared `signal-analysis*` crates remain the algorithm family authority,
+    while `signal-runtime` owns reusable descriptor readiness, staleness, and
+    bounded family-coverage meaning
+  - the bounded reusable analysis-metadata seam is now frozen in
+    `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`
+  - later metadata extraction and library-service depth must widen that shared
+    contract instead of rebuilding private product extraction pipelines
+- implemented reusable metadata baseline:
+  - `RuntimeObservationReport` and `RuntimeSupervisorReport` now carry
+    `media_library_snapshot` alongside the earlier media pipeline and service
+    snapshots
+  - `RuntimeMediaLibraryServiceSnapshot` now exposes per-asset
+    `RuntimeMediaLibraryAssetDescriptor` records with runtime-owned descriptor
+    state plus the first real bounded payload depth:
+    `RuntimeMediaLoudnessDescriptor` and `RuntimeMediaCharacterDescriptor`
+  - loudness and character family coverage can be `Ready`, while rhythm,
+    tonal, and embedding stay explicitly `Deferred` instead of being inferred
+    from product-local extraction gaps
+  - shared local and server host reports now expose the same library-service
+    descriptor family, including explicit `Unavailable` outcomes when indexed
+    media is not analyzable
+  - machine-readable consumer-boundary proof now exists through
+    `signal.runtime.analysis-metadata-boundary` and
+    `effigy acceptance:analysis-metadata-boundary`
+- contract-frozen integrated acceptance lane policy:
+  - the first bounded shared fault-injection and multi-backend acceptance
+    contract now composes the already-closed recovery, timing, adapter,
+    hardware, media-service, and analysis-metadata boundaries
+  - integrated acceptance depth is now explicitly split into `required`,
+    `advisory`, and `deferred` tiers so later harness work does not hide
+    unstable or long-session soak paths inside the bounded lane
+  - later `g06.019` implementation must build a machine-readable integrated
+    harness descriptor and Effigy lane on top of that policy before `g06.020`
+    widens into promotion and soak gates
+  - the bounded policy is now frozen in
+    `docs/contracts/030-fault-injection-harness-and-multi-backend-acceptance-contract.md`
+- implemented integrated acceptance lane baseline:
+  - `signal-supervisor-tools` now exposes the machine-readable
+    `signal.runtime.integrated-acceptance-lane` descriptor with explicit
+    `required`, `advisory`, and deferred depth
+  - Effigy now owns `acceptance:integrated-acceptance-lane`, grouping the
+    required cross-family path across interruption, diagnostics, scheduling,
+    plugin continuity, parity, supervision, external-I/O, media-service, and
+    analysis-metadata boundaries
+  - the grouped lane also repaired stale watchdog-restart expectations in the
+    interruption proofs so the required path stays aligned with the current
+    runtime safe-mode restart threshold
+- integrated acceptance lane now has cross-family export proof:
+  - `signal-supervisor-tools` now proves one `signal.supervisor.export`
+    artifact can carry recovery, deferred-work, adapter breadth, hardware,
+    and media/library receipts together
+  - the integrated acceptance descriptor and Effigy lane now both point at
+    that shared export proof explicitly instead of only enumerating the
+    milestone-local boundary tasks they compose
+- contract-frozen `g06` closeout and soak policy:
+  - the final `g06` closeout authority is now frozen as bounded soak plus
+    promotion-gate policy layered on top of the integrated acceptance lane
+  - required, advisory, and deferred closeout evidence is now explicit, with
+    the integrated lane fixed as the required fast-path base and broader
+    rerun, remote, and unstable overlap-heavy depth kept outside the required
+    gate
+  - the bounded policy is now frozen in
+    `docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md`
+- implemented `g06` soak lane and closeout gate baseline:
+  - `signal-supervisor-tools` now exposes the machine-readable
+    `signal.g06.long-session-soak-lane` descriptor alongside an updated `g06`
+    generation-closeout descriptor
+  - Effigy now owns `acceptance:g06-soak-lane` and `acceptance:g06-closeout`,
+    making the bounded closeout gate runnable instead of policy-only
+  - the soak lane keeps local `soak` and `mixed` required, keeps the
+    integrated acceptance lane visible as advisory context, and leaves the
+    broader `server soak` path explicitly deferred because the recovery-overlap
+    attach-limit issue is still unstable
+  - the generation-closeout descriptor now reports `g06`-specific residual
+    risks and pending-readiness-review status instead of carrying forward the
+    stale earlier-generation release shape
+- `g06` closeout now carries an explicit promotion verdict:
+  - the generation-closeout descriptor now resolves to `promote-g07` with all
+    Loophole-facing readiness areas at `sufficient-for-promotion`
+  - this closes `g06` as a reusable hardening and baseline-breadth generation
+    without turning the closeout into a product-launch claim
+  - unstable broader `server soak` and wider advisory rerun depth stay visible
+    as deferred scope while `g07` becomes the single active queue
+    unstable or product-local depth kept out of the final gate
+  - the closeout policy is now frozen in
+    `docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md`
 - runtime-owned resampling on offline/export paths rather than backend-private
   sample-rate conversion
 - current limitation: multi-member aggregate detail, drift compensation, and
@@ -601,6 +781,29 @@ Implemented now:
 - runtime-owned plugin recall handoff snapshots that separate authoritative
   recall payload from export-only summary fields for later offline
   render/freeze consumers
+- contract-frozen preset/interchange/ARA rule:
+  - runtime recall payload remains the authority for later portable recall
+    classification rather than adapter-native preset blobs or host storage
+    location
+  - preset descriptors are explicitly descriptive and non-authoritative until
+    later runtime-owned interchange payload receipts exist
+  - ARA-capable work is now bounded to document, source, and region context
+    descriptors instead of product-local editor or arrangement semantics
+  - later runtime/export depth must classify outcomes as `Portable`,
+    `Guarded`, `NativeOnly`, `ContextOnly`, or `Unsupported` rather than
+    inventing portability heuristics in host code
+- runtime-owned preset/interchange/ARA receipt depth:
+  - `RuntimePluginRecallPayload` now carries typed interchange classification,
+    optional preset descriptor, and optional bounded ARA document/source/region
+    context on the same recall path already used by plugin-chain snapshots,
+    execution topology summaries, and offline render boundaries
+  - stable host-edge `supervisor_report()` delivery now forwards the widened
+    recall payload without adapter-local preset or ARA taxonomy
+- runtime-owned recall portability consumer boundary:
+  - downstream-style runtime proofs, both stable host edges, and
+    `signal-supervisor-tools` now expose the
+    `signal.runtime.recall-portability-boundary` acceptance seam for portable
+    versus non-portable recall outcomes and bounded ARA-context transfer
 - runtime-owned offline render request and contract-preview surfaces that let
   later render/freeze callers resolve stem topology, clip readiness, tempo, and
   plugin recall dependencies directly from runtime-owned state before a full
@@ -768,6 +971,10 @@ Implemented now:
 
 Planned elsewhere but not implemented in these crates yet:
 
+- `g07.001` now freezes the canonical multichannel layout and channel-role
+  contract on top of the current narrow `ChannelLayout` primitive, so broader
+  multichannel meaning is no longer purely implicit even though the runtime and
+  graph surfaces are still mostly mono/stereo in practice
 - broader multichannel adaptation beyond mono/stereo
 - richer graph stage catalogs and plugin-hosted stage execution inside
   `signal-graph` itself
@@ -816,7 +1023,7 @@ Useful implementation entry points after this doc:
 - `effigy acceptance:downstream-gate`
 - `effigy acceptance:analysis`
 - `cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json`
-- `effigy acceptance:g05-closeout`
+- `effigy acceptance:g06-closeout`
 - `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`
 - `docs/contracts/010-publication-grade-packaging-manifest-and-release-receipt-contract.md`
 - `docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`
@@ -842,6 +1049,6 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
-interchange, portable recall, and ARA-capable context vocabulary before
-runtime recall/export depth begins.
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.

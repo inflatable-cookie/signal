@@ -1,7 +1,7 @@
 # g06 Milestones
 
-Status: active
-Updated: 2026-03-15
+Status: complete
+Updated: 2026-03-16
 
 ## Why this generation matters now
 
@@ -83,21 +83,21 @@ surfaced in Chorus:
   - backend capability parity, Linux plugin support, and cross-adapter conformance depth
 - `g06.012` `complete`
   - generic MIDI, note-expression, and plugin-event model expansion
-- `g06.013` `active`
+- `g06.013` `complete`
   - plugin preset, ARA context, state interchange, and portable recall depth
-- `g06.014` `planned`
+- `g06.014` `complete`
   - device supervision, restart-state machine, and fault-boundary depth
-- `g06.015` `planned`
+- `g06.015` `complete`
   - clock-domain drift, duplex mismatch, and endpoint-topology depth
-- `g06.016` `planned`
+- `g06.016` `complete`
   - external I/O, monitoring tap-point, and loopback measurement contracts
-- `g06.017` `planned`
+- `g06.017` `complete`
   - media indexing, waveform analysis, and preview service baseline
-- `g06.018` `planned`
+- `g06.018` `complete`
   - analysis metadata extraction and library-service depth
-- `g06.019` `planned`
+- `g06.019` `complete`
   - fault-injection harnesses and multi-backend acceptance depth
-- `g06.020` `planned`
+- `g06.020` `complete`
   - long-session soak, promotion gate, and Loophole-readiness closeout
 
 ## Lane structure
@@ -154,6 +154,6 @@ runtime evidence.
 
 ## Next Task
 
-Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
-interchange, portable recall, and ARA-capable context vocabulary before
-runtime recall/export depth begins.
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.

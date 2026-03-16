@@ -1,7 +1,12 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use signal_graph::GraphNodeTopologyRole;
 use signal_graph::{
     synthetic_stereo_block, GraphExecutionLane, GraphNodeExecutionClass, GraphStageSpec,
 };
+use signal_hardware::{AudioSampleFormat, BackendHealth};
 use signal_plugin::{
     EventPacketSummary, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
     PluginProcessingContract, PluginStateContract,
@@ -15,12 +20,24 @@ use signal_runtime::{
     RestartRequest, RuntimeBlockDeadlinePressure, RuntimeConfig, RuntimeConfigRequest,
     RuntimeDeferredServiceBackpressureSource, RuntimeDeferredServiceCancellationCause,
     RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
-    RuntimeDeferredServiceReason, RuntimeEventRecorder, RuntimeInterruptionClass,
-    RuntimeLifecycleApi, RuntimeObservationReport, RuntimeOfflineRenderExecutionState,
-    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest,
+    RuntimeDeferredServiceReason, RuntimeDeviceFaultBoundaryState, RuntimeDeviceRestartState,
+    RuntimeDeviceSupervisionState, RuntimeError, RuntimeErrorKind, RuntimeEventRecorder,
+    RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
+    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeHostAudioPumpSummary,
+    RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
+    RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
+    RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
+    RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
+    RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
+    RuntimeHostLifecycleOwnership, RuntimeHostObservationReport, RuntimeHostRestartPolicy,
+    RuntimeHostSupervisorReport, RuntimeInterruptionClass, RuntimeLifecycleApi,
+    RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineRenderExecutionState,
+    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot,
+    RuntimePluginAraDocumentContext, RuntimePluginAraRegionContext, RuntimePluginAraSourceContext,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginFormatPlatformCoverageRecord,
     RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginParityBand,
     RuntimePluginPlacementPolicy, RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
+    RuntimePluginPresetDescriptor, RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass,
     RuntimeProjectionApi, RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorReport,
     RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, StopReason, WatchdogRestartRecord,
@@ -110,6 +127,127 @@ fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
         },
         summary: "public boundary backend breadth plugin".into(),
     }
+}
+
+fn sample_public_clock_topology_host_io(
+    clock_domain: RuntimeHostClockDomain,
+    fallback_state: RuntimeHostClockFallbackState,
+    transition_state: RuntimeHostClockTransitionState,
+    drift_state: RuntimeHostClockDriftState,
+    discontinuity_state: RuntimeHostClockDiscontinuityState,
+    duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+    endpoint_topology: RuntimeHostEndpointTopology,
+    partial_availability: bool,
+) -> RuntimeHostIoSummary {
+    RuntimeHostIoSummary {
+        hardware: RuntimeHostHardwareSummary {
+            backend_name: "coreaudio".into(),
+            device_id: "device:public-clock-topology".into(),
+            device_name: "Public Clock Topology".into(),
+            sample_rate: 48_000,
+            buffer_size: 256,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            simulated: false,
+            backend_health: BackendHealth::Healthy,
+            xrun_count: 0,
+            callback_overrun_count: 0,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+        },
+        audio_pump: RuntimeHostAudioPumpSummary {
+            stream_state: RuntimeHostAudioStreamState::Running,
+            transfer_policy: RuntimeHostAudioTransferPolicy {
+                max_callback_frames: 256,
+                max_transfer_channels: 2,
+                zero_fill_unwritten_output: true,
+            },
+            callback_count: 12,
+            total_callback_frames: 3_072,
+            total_runtime_output_frames: 3_072,
+            copied_output_samples: 6_144,
+            zero_filled_output_samples: 0,
+            dropped_output_samples: 0,
+            last_callback_output_peak: Some(0.35),
+            last_runtime_graph_id: Some("graph:public-clock-topology".into()),
+        },
+        clocking: RuntimeHostClockingSummary {
+            clock_source: RuntimeHostClockSource::Internal,
+            ownership: RuntimeHostLifecycleOwnership::HostDrivenCallback,
+            restart_policy: RuntimeHostRestartPolicy::HostMustRestart,
+            processing_sample_rate_hz: 44_100,
+            hardware_sample_rate_hz: 48_000,
+            clock_domain,
+            fallback_state,
+            transition_state,
+            drift_state,
+            discontinuity_state,
+            duplex_mismatch_state,
+            endpoint_topology,
+            partial_availability,
+            crossing_required: matches!(
+                clock_domain,
+                RuntimeHostClockDomain::CrossClock | RuntimeHostClockDomain::Aggregate
+            ),
+            callback_interval_ms: 5.333,
+        },
+        latency: RuntimeHostLatencySummary {
+            input_latency_samples: Some(128),
+            output_latency_samples: 256,
+            round_trip_latency_samples: Some(384),
+            graph_latency_samples: 24,
+            estimated_output_latency_samples: 280,
+            estimated_round_trip_latency_samples: Some(408),
+            output_latency_ms: 5.333,
+            graph_latency_ms: 0.5,
+            estimated_output_latency_ms: 5.833,
+            estimated_round_trip_latency_ms: Some(8.5),
+        },
+        runtime_graph_id_matches_pump: true,
+    }
+}
+
+fn public_media_fixture_path(label: &str) -> PathBuf {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock should be monotonic enough for test files")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "signal-runtime-public-media-{label}-{}-{unique}.wav",
+        std::process::id()
+    ))
+}
+
+fn write_public_test_wav(path: &Path) {
+    let channels = 1u16;
+    let sample_rate = 48_000u32;
+    let bits_per_sample = 16u16;
+    let frame_count = 128u32;
+    let block_align = channels * (bits_per_sample / 8);
+    let byte_rate = sample_rate * block_align as u32;
+    let data_size = frame_count * block_align as u32;
+    let riff_size = 36 + data_size;
+    let mut bytes = Vec::with_capacity((44 + data_size) as usize);
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&riff_size.to_le_bytes());
+    bytes.extend_from_slice(b"WAVE");
+    bytes.extend_from_slice(b"fmt ");
+    bytes.extend_from_slice(&16u32.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&channels.to_le_bytes());
+    bytes.extend_from_slice(&sample_rate.to_le_bytes());
+    bytes.extend_from_slice(&byte_rate.to_le_bytes());
+    bytes.extend_from_slice(&block_align.to_le_bytes());
+    bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&data_size.to_le_bytes());
+    for index in 0..frame_count {
+        let sample =
+            (((index as f32 / (frame_count - 1) as f32) * 2.0) - 1.0) * i16::MAX as f32 * 0.5;
+        bytes.extend_from_slice(&(sample as i16).to_le_bytes());
+    }
+    fs::write(path, bytes).expect("public media fixture should be written");
 }
 
 fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
@@ -280,6 +418,46 @@ fn record_public_plugin_sandbox_ready(
         Some(epoch),
         None,
     );
+}
+
+fn sample_public_preset_descriptor() -> RuntimePluginPresetDescriptor {
+    RuntimePluginPresetDescriptor {
+        preset_id: Some("preset:factory:init".into()),
+        label: Some("Init".into()),
+        origin: RuntimePluginPresetOrigin::Factory,
+        summary: "public runtime preset descriptor".into(),
+    }
+}
+
+fn sample_public_ara_context(
+    portability_class: RuntimePluginRecallPortabilityClass,
+    document_id: &str,
+    source_id: &str,
+    region_id: &str,
+    timeline_start_samples: i64,
+    duration_samples: u32,
+) -> RuntimePluginAraContextSnapshot {
+    RuntimePluginAraContextSnapshot {
+        portability_class,
+        document_context: Some(RuntimePluginAraDocumentContext {
+            document_id: document_id.into(),
+            display_label: Some("Session".into()),
+            summary: "public runtime ara document".into(),
+        }),
+        source_context: Some(RuntimePluginAraSourceContext {
+            source_id: source_id.into(),
+            display_label: Some("Lead Vocal".into()),
+            summary: "public runtime ara source".into(),
+        }),
+        region_context: Some(RuntimePluginAraRegionContext {
+            region_id: region_id.into(),
+            display_label: Some("Verse".into()),
+            timeline_start_samples: Some(timeline_start_samples),
+            duration_samples: Some(duration_samples),
+            summary: "public runtime ara region".into(),
+        }),
+        summary: "public runtime ara context".into(),
+    }
 }
 
 #[test]
@@ -1029,6 +1207,164 @@ fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capabil
 }
 
 #[test]
+fn public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_reexports() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-recall-portability".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime recall portability handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public runtime recall portability configure should succeed");
+    let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+        roots: vec!["~/.clap".into(), "~/.vst3".into()],
+        formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
+    });
+    runtime.record_plugin_scan_results(
+        scan_handle,
+        vec![
+            sample_discovered_type_record(),
+            sample_backend_breadth_record(),
+        ],
+    );
+    apply_public_plugin_continuity_graph(
+        &mut runtime,
+        "graph:public:recall-portability",
+        &[("node-clap", "sandbox-clap"), ("node-vst3", "sandbox-vst3")],
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-clap",
+        PluginFormat::Clap,
+        "plugin:clap:public-boundary",
+        31,
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-vst3",
+        PluginFormat::Vst3,
+        "plugin:vst3:public-instrument",
+        32,
+    );
+    runtime.record_plugin_preset_descriptor("sandbox-clap", sample_public_preset_descriptor());
+    runtime.record_plugin_ara_context(
+        "sandbox-clap",
+        sample_public_ara_context(
+            RuntimePluginRecallPortabilityClass::ContextOnly,
+            "doc:public-runtime",
+            "source:lead-vocal",
+            "region:verse-a",
+            1_024,
+            4_096,
+        ),
+    );
+    runtime.record_plugin_ara_context(
+        "sandbox-vst3",
+        sample_public_ara_context(
+            RuntimePluginRecallPortabilityClass::ContextOnly,
+            "doc:public-runtime",
+            "source:synth-bus",
+            "region:hook-b",
+            8_192,
+            2_048,
+        ),
+    );
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let clap_stage = observation
+        .plugin_chain_snapshot
+        .chains
+        .iter()
+        .flat_map(|chain| chain.stages.iter())
+        .find(|stage| stage.node_id == "node-clap")
+        .expect("public runtime recall boundary should export clap stage");
+    assert_eq!(
+        clap_stage.recall.payload.interchange.portability_class,
+        RuntimePluginRecallPortabilityClass::Portable
+    );
+    assert!(
+        clap_stage
+            .recall
+            .payload
+            .interchange
+            .shared_payload_available
+    );
+    assert!(
+        !clap_stage
+            .recall
+            .payload
+            .interchange
+            .native_supplement_required
+    );
+    assert_eq!(
+        clap_stage
+            .recall
+            .payload
+            .interchange
+            .preset_descriptor
+            .as_ref()
+            .and_then(|descriptor| descriptor.label.as_deref()),
+        Some("Init")
+    );
+    assert_eq!(
+        clap_stage
+            .recall
+            .payload
+            .ara_context
+            .as_ref()
+            .and_then(|context| context.document_context.as_ref())
+            .map(|context| context.document_id.as_str()),
+        Some("doc:public-runtime")
+    );
+    let vst3_stage = observation
+        .plugin_chain_snapshot
+        .chains
+        .iter()
+        .flat_map(|chain| chain.stages.iter())
+        .find(|stage| stage.node_id == "node-vst3")
+        .expect("public runtime recall boundary should export vst3 stage");
+    assert_eq!(
+        vst3_stage.recall.payload.interchange.portability_class,
+        RuntimePluginRecallPortabilityClass::ContextOnly
+    );
+    assert!(
+        !vst3_stage
+            .recall
+            .payload
+            .interchange
+            .shared_payload_available
+    );
+    assert_eq!(
+        observation
+            .execution_topology_summary
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "node-clap")
+            .and_then(|node| node.plugin_recall.as_ref())
+            .map(|recall| recall.payload.interchange.portability_class),
+        Some(RuntimePluginRecallPortabilityClass::Portable)
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"interchange\":{"));
+    assert!(observation_json.contains("\"portability_class\":\"Portable\""));
+    assert!(observation_json.contains("\"portability_class\":\"ContextOnly\""));
+    assert!(observation_json.contains("\"preset_descriptor\":{"));
+    assert!(observation_json.contains("\"document_context\":{"));
+    assert!(observation_json.contains("\"region_id\":\"region:verse-a\""));
+
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"plugin_chain_snapshot\":{"));
+    assert!(supervisor_json.contains("\"execution_topology_summary\":{"));
+    assert!(supervisor_json.contains("\"preset_id\":\"preset:factory:init\""));
+}
+
+#[test]
 fn public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     runtime
@@ -1086,6 +1422,578 @@ fn public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts()
     let supervisor_json = supervisor.render_json();
     assert!(supervisor_json.contains("\"fault_diagnostic_receipt\":{"));
     assert!(supervisor_json.contains("\"primary_family\":\"DeferredWorkPressure\""));
+}
+
+#[test]
+fn public_runtime_device_supervision_boundary_reports_recovering_and_faulted_runtime_states() {
+    let mut recovering = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    recovering
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-device-supervision-recovering".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public device supervision recovering handshake should succeed");
+    recovering
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public device supervision recovering configure should succeed");
+    recovering
+        .start()
+        .expect("public device supervision recovering start should succeed");
+    recovering.record_watchdog_restart(WatchdogRestartRecord {
+        sandbox_id: "public-runtime-device-supervision-watchdog".into(),
+        trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+        processing_epoch: 2,
+    });
+
+    let recovering_observation =
+        RuntimeObservationReport::capture(&recovering, &RuntimeEventRecorder::default());
+    assert_eq!(
+        recovering_observation.device_supervision_snapshot.state,
+        RuntimeDeviceSupervisionState::Stable
+    );
+    assert_eq!(
+        recovering_observation
+            .device_supervision_snapshot
+            .restart_state,
+        RuntimeDeviceRestartState::Recovered
+    );
+    assert_eq!(
+        recovering_observation
+            .device_supervision_snapshot
+            .fault_boundary,
+        RuntimeDeviceFaultBoundaryState::Clear
+    );
+    assert_eq!(
+        recovering_observation
+            .device_supervision_snapshot
+            .interruption_class,
+        RuntimeInterruptionClass::Steady
+    );
+    assert_eq!(
+        recovering_observation
+            .device_supervision_snapshot
+            .recovery_state,
+        RuntimeRecoveryState::Steady
+    );
+    assert_eq!(
+        recovering_observation
+            .device_supervision_snapshot
+            .watchdog_restart_count,
+        1
+    );
+
+    let mut faulted = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    faulted
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-device-supervision-faulted".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public device supervision faulted handshake should succeed");
+    faulted
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public device supervision faulted configure should succeed");
+    faulted
+        .start()
+        .expect("public device supervision faulted start should succeed");
+    let readiness = faulted.fail_runtime(RuntimeError::new(
+        RuntimeErrorKind::HardwareFailure,
+        "public runtime device supervision fault boundary",
+    ));
+    assert!(matches!(
+        readiness,
+        signal_runtime::RuntimeReadiness::Failed { .. }
+    ));
+
+    let faulted_observation =
+        RuntimeObservationReport::capture(&faulted, &RuntimeEventRecorder::default());
+    let faulted_supervisor =
+        RuntimeSupervisorReport::capture(&faulted, &RuntimeEventRecorder::default());
+    assert_eq!(
+        faulted_observation.device_supervision_snapshot.state,
+        RuntimeDeviceSupervisionState::Faulted
+    );
+    assert_eq!(
+        faulted_observation
+            .device_supervision_snapshot
+            .restart_state,
+        RuntimeDeviceRestartState::Faulted
+    );
+    assert_eq!(
+        faulted_observation
+            .device_supervision_snapshot
+            .fault_boundary,
+        RuntimeDeviceFaultBoundaryState::Faulted
+    );
+    assert_eq!(
+        faulted_observation
+            .device_supervision_snapshot
+            .recovery_state,
+        RuntimeRecoveryState::Faulted
+    );
+    assert_eq!(
+        faulted_observation
+            .device_supervision_snapshot
+            .primary_fault_cause,
+        Some(signal_runtime::RuntimeFaultCause::RuntimeError)
+    );
+
+    let rendered = faulted_supervisor.render_json();
+    assert!(rendered.contains("\"device_supervision_snapshot\":{"));
+    assert!(rendered.contains("\"state\":\"Faulted\""));
+    assert!(rendered.contains("\"fault_boundary\":\"Faulted\""));
+}
+
+#[test]
+fn public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_receipts() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-clock-topology".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime clock topology handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(44_100, 256))
+        .expect("public runtime clock topology configure should succeed");
+    let recorder = RuntimeEventRecorder::default();
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let cross_clock_duplex = sample_public_clock_topology_host_io(
+        RuntimeHostClockDomain::CrossClock,
+        RuntimeHostClockFallbackState::RuntimeResampled,
+        RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+        RuntimeHostClockDriftState::CrossClockManaged,
+        RuntimeHostClockDiscontinuityState::Reconfigured,
+        RuntimeHostDuplexMismatchState::CrossClockDiverged,
+        RuntimeHostEndpointTopology::Duplex,
+        false,
+    );
+    let host_observation = RuntimeHostObservationReport::new(
+        observation
+            .clone()
+            .with_host_device_supervision(&cross_clock_duplex),
+        cross_clock_duplex.clone(),
+    );
+
+    assert_eq!(
+        host_observation.host_io.clocking.drift_state,
+        RuntimeHostClockDriftState::CrossClockManaged
+    );
+    assert_eq!(
+        host_observation.host_io.clocking.discontinuity_state,
+        RuntimeHostClockDiscontinuityState::Reconfigured
+    );
+    assert_eq!(
+        host_observation.host_io.clocking.duplex_mismatch_state,
+        RuntimeHostDuplexMismatchState::CrossClockDiverged
+    );
+    assert_eq!(
+        host_observation.host_io.clocking.endpoint_topology,
+        RuntimeHostEndpointTopology::Duplex
+    );
+    assert!(!host_observation.host_io.clocking.partial_availability);
+
+    let partial_duplex = sample_public_clock_topology_host_io(
+        RuntimeHostClockDomain::SameClock,
+        RuntimeHostClockFallbackState::Direct,
+        RuntimeHostClockTransitionState::Stable,
+        RuntimeHostClockDriftState::Stable,
+        RuntimeHostClockDiscontinuityState::Continuous,
+        RuntimeHostDuplexMismatchState::PartialAvailability,
+        RuntimeHostEndpointTopology::Duplex,
+        true,
+    );
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_host_device_supervision(&partial_duplex);
+    let host_supervisor = RuntimeHostSupervisorReport::new(supervisor, partial_duplex);
+
+    assert_eq!(
+        host_supervisor
+            .observation
+            .host_io
+            .clocking
+            .duplex_mismatch_state,
+        RuntimeHostDuplexMismatchState::PartialAvailability
+    );
+    assert_eq!(
+        host_supervisor
+            .observation
+            .host_io
+            .clocking
+            .endpoint_topology,
+        RuntimeHostEndpointTopology::Duplex
+    );
+    assert!(
+        host_supervisor
+            .observation
+            .host_io
+            .clocking
+            .partial_availability
+    );
+
+    let rendered = host_supervisor.render_json();
+    assert!(rendered.contains("\"drift_state\":\"Stable\""));
+    assert!(rendered.contains("\"discontinuity_state\":\"Continuous\""));
+    assert!(rendered.contains("\"duplex_mismatch_state\":\"PartialAvailability\""));
+    assert!(rendered.contains("\"endpoint_topology\":\"Duplex\""));
+    assert!(rendered.contains("\"partial_availability\":true"));
+}
+
+#[test]
+fn public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-external-io".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime external io handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(44_100, 256))
+        .expect("public runtime external io configure should succeed");
+    let recorder = RuntimeEventRecorder::default();
+
+    let baseline = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        baseline.external_io_snapshot.monitoring_state,
+        RuntimeExternalIoMonitoringState::Unavailable
+    );
+    assert_eq!(
+        baseline.external_io_snapshot.loopback_state,
+        RuntimeExternalIoLoopbackState::Unavailable
+    );
+
+    let cross_clock_duplex = sample_public_clock_topology_host_io(
+        RuntimeHostClockDomain::CrossClock,
+        RuntimeHostClockFallbackState::RuntimeResampled,
+        RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+        RuntimeHostClockDriftState::CrossClockManaged,
+        RuntimeHostClockDiscontinuityState::Reconfigured,
+        RuntimeHostDuplexMismatchState::CrossClockDiverged,
+        RuntimeHostEndpointTopology::Duplex,
+        false,
+    );
+    let observation = baseline.with_host_external_io(&cross_clock_duplex);
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_host_external_io(&cross_clock_duplex);
+
+    assert_eq!(
+        observation.external_io_snapshot.primary_role,
+        RuntimeExternalIoPrimaryRole::ProgramDuplex
+    );
+    assert_eq!(
+        observation.external_io_snapshot.monitoring_state,
+        RuntimeExternalIoMonitoringState::Guarded
+    );
+    assert_eq!(
+        observation.external_io_snapshot.monitoring_tap_point,
+        RuntimeExternalIoMonitoringTapPoint::PostHardwareOutput
+    );
+    assert_eq!(
+        observation.external_io_snapshot.loopback_state,
+        RuntimeExternalIoLoopbackState::Guarded
+    );
+    assert_eq!(
+        supervisor.observation.external_io_snapshot.monitoring_state,
+        RuntimeExternalIoMonitoringState::Guarded
+    );
+    assert_eq!(
+        supervisor.observation.external_io_snapshot.loopback_state,
+        RuntimeExternalIoLoopbackState::Guarded
+    );
+
+    let rendered = supervisor.render_json();
+    assert!(rendered.contains("\"external_io_snapshot\":{"));
+    assert!(rendered.contains("\"primary_role\":\"ProgramDuplex\""));
+    assert!(rendered.contains("\"monitoring_state\":\"Guarded\""));
+    assert!(rendered.contains("\"monitoring_tap_point\":\"PostHardwareOutput\""));
+    assert!(rendered.contains("\"loopback_state\":\"Guarded\""));
+}
+
+#[test]
+fn public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_invalidation_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-media-service".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime media-service handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime media-service configure should succeed");
+    let recorder = RuntimeEventRecorder::default();
+
+    let ready_path = public_media_fixture_path("ready");
+    let missing_path = public_media_fixture_path("missing");
+    write_public_test_wav(&ready_path);
+
+    runtime
+        .reconcile_media_assets(vec![
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:public-media-ready".into(),
+                content_hash: "public-media-ready".into(),
+                source_path: ready_path.display().to_string(),
+                file_name: "public-media-ready.wav".into(),
+                byte_size: fs::metadata(&ready_path)
+                    .expect("public media fixture should exist")
+                    .len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:public-media-missing".into(),
+                content_hash: "public-media-missing".into(),
+                source_path: missing_path.display().to_string(),
+                file_name: "public-media-missing.wav".into(),
+                byte_size: 0,
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+        ])
+        .expect("public runtime media assets should reconcile");
+    runtime
+        .start_media_preview("asset:sha256:public-media-ready")
+        .expect("public runtime media preview should start");
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+
+    assert_eq!(observation.media_pipeline_snapshot.asset_count, 2);
+    assert_eq!(observation.media_pipeline_snapshot.ready_asset_count, 1);
+    assert_eq!(observation.media_pipeline_snapshot.invalid_asset_count, 1);
+    assert_eq!(observation.media_service_snapshot.indexed_asset_count, 2);
+    assert_eq!(
+        observation
+            .media_service_snapshot
+            .analysis_ready_asset_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .media_service_snapshot
+            .waveform_ready_asset_count,
+        1
+    );
+    assert_eq!(
+        observation.media_service_snapshot.previewable_asset_count,
+        1
+    );
+    assert_eq!(
+        observation.media_service_snapshot.invalidated_asset_count,
+        1
+    );
+    assert!(observation.media_service_snapshot.invalidation_active);
+    assert_eq!(
+        observation.media_service_snapshot.preview_state,
+        signal_runtime::RuntimeMediaPreviewState::Previewing
+    );
+    assert_eq!(
+        observation
+            .media_service_snapshot
+            .previewing_asset_id
+            .as_deref(),
+        Some("asset:sha256:public-media-ready")
+    );
+    assert_eq!(
+        observation
+            .media_service_snapshot
+            .last_invalidated_asset_id
+            .as_deref(),
+        Some("asset:sha256:public-media-missing")
+    );
+    assert!(observation
+        .media_service_snapshot
+        .last_invalidation_error
+        .is_some());
+    assert_eq!(
+        supervisor.observation.media_pipeline_snapshot.asset_count,
+        observation.media_pipeline_snapshot.asset_count
+    );
+    assert_eq!(
+        supervisor.observation.media_service_snapshot.preview_state,
+        signal_runtime::RuntimeMediaPreviewState::Previewing
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"media_pipeline_snapshot\":{"));
+    assert!(observation_json.contains("\"media_service_snapshot\":{"));
+    assert!(observation_json.contains("\"invalidated_asset_count\":1"));
+    assert!(observation_json.contains("\"preview_state\":\"Previewing\""));
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"media_pipeline_snapshot\":{"));
+    assert!(supervisor_json.contains("\"media_service_snapshot\":{"));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = runtime
+        .get_media_pipeline_snapshot()
+        .assets
+        .iter()
+        .find(|asset| asset.asset_id == "asset:sha256:public-media-ready")
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
+fn public_runtime_analysis_metadata_boundary_reports_runtime_owned_library_descriptors() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-analysis-metadata".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime analysis-metadata handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime analysis-metadata configure should succeed");
+    let recorder = RuntimeEventRecorder::default();
+
+    let ready_path = public_media_fixture_path("analysis-ready");
+    let missing_path = public_media_fixture_path("analysis-missing");
+    write_public_test_wav(&ready_path);
+
+    runtime
+        .reconcile_media_assets(vec![
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:public-analysis-ready".into(),
+                content_hash: "public-analysis-ready".into(),
+                source_path: ready_path.display().to_string(),
+                file_name: "public-analysis-ready.wav".into(),
+                byte_size: fs::metadata(&ready_path)
+                    .expect("public analysis fixture should exist")
+                    .len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:public-analysis-missing".into(),
+                content_hash: "public-analysis-missing".into(),
+                source_path: missing_path.display().to_string(),
+                file_name: "public-analysis-missing.wav".into(),
+                byte_size: 0,
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+        ])
+        .expect("public runtime analysis metadata assets should reconcile");
+
+    let library_snapshot = runtime.get_media_library_service_snapshot();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+
+    assert_eq!(library_snapshot.indexed_asset_count, 2);
+    assert_eq!(library_snapshot.ready_descriptor_count, 1);
+    assert_eq!(library_snapshot.invalidated_descriptor_count, 1);
+    assert_eq!(library_snapshot.unavailable_descriptor_count, 0);
+    assert_eq!(library_snapshot.loudness_ready_descriptor_count, 1);
+    assert_eq!(library_snapshot.character_ready_descriptor_count, 1);
+    let ready = library_snapshot
+        .descriptors
+        .iter()
+        .find(|descriptor| descriptor.asset_id == "asset:sha256:public-analysis-ready")
+        .expect("public ready analysis descriptor");
+    assert_eq!(
+        ready.metadata_state,
+        signal_runtime::RuntimeMediaAnalysisDescriptorState::Ready
+    );
+    assert_eq!(
+        ready.loudness_state,
+        signal_runtime::RuntimeMediaAnalysisFamilyState::Ready
+    );
+    assert_eq!(
+        ready.character_state,
+        signal_runtime::RuntimeMediaAnalysisFamilyState::Ready
+    );
+    assert_eq!(
+        ready.rhythm_state,
+        signal_runtime::RuntimeMediaAnalysisFamilyState::Deferred
+    );
+    assert_eq!(
+        ready.tonal_state,
+        signal_runtime::RuntimeMediaAnalysisFamilyState::Deferred
+    );
+    assert_eq!(
+        ready.embedding_state,
+        signal_runtime::RuntimeMediaAnalysisFamilyState::Deferred
+    );
+    assert!(ready.loudness.is_some());
+    assert!(ready.character.is_some());
+    let loudness = ready.loudness.as_ref().expect("public loudness descriptor");
+    assert!(loudness.integrated_lufs.is_finite());
+    assert!(loudness.true_peak_dbtp.is_finite());
+    let character = ready
+        .character
+        .as_ref()
+        .expect("public character descriptor");
+    assert!(character.centroid_hz.is_finite());
+    assert!(character.dynamic_range.is_finite());
+
+    let invalidated = library_snapshot
+        .descriptors
+        .iter()
+        .find(|descriptor| descriptor.asset_id == "asset:sha256:public-analysis-missing")
+        .expect("public invalidated analysis descriptor");
+    assert_eq!(
+        invalidated.metadata_state,
+        signal_runtime::RuntimeMediaAnalysisDescriptorState::Invalidated
+    );
+    assert!(invalidated.last_error.is_some());
+
+    assert_eq!(
+        observation.media_library_snapshot.ready_descriptor_count,
+        library_snapshot.ready_descriptor_count
+    );
+    assert_eq!(
+        supervisor
+            .observation
+            .media_library_snapshot
+            .invalidated_descriptor_count,
+        library_snapshot.invalidated_descriptor_count
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"media_library_snapshot\":{"));
+    assert!(observation_json.contains("\"ready_descriptor_count\":1"));
+    assert!(observation_json.contains("\"invalidated_descriptor_count\":1"));
+    assert!(observation_json.contains("\"loudness_ready_descriptor_count\":1"));
+    assert!(observation_json.contains("\"character_ready_descriptor_count\":1"));
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"media_library_snapshot\":{"));
+    assert!(supervisor_json.contains("\"metadata_state\":\"Ready\""));
+    assert!(supervisor_json.contains("\"metadata_state\":\"Invalidated\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = runtime
+        .get_media_pipeline_snapshot()
+        .assets
+        .iter()
+        .find(|asset| asset.asset_id == "asset:sha256:public-analysis-ready")
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
 }
 
 #[test]
@@ -1469,6 +2377,11 @@ fn public_runtime_interruption_boundary_reports_restartable_runtime_state() {
         sandbox_id: "public-runtime-boundary-sandbox".into(),
         trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
         processing_epoch: 1,
+    });
+    runtime.record_watchdog_restart(WatchdogRestartRecord {
+        sandbox_id: "public-runtime-boundary-sandbox".into(),
+        trigger: RuntimeWatchdogTrigger::DeadlineMisses,
+        processing_epoch: 2,
     });
 
     let observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());

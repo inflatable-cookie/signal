@@ -10,6 +10,8 @@ description = "Embeddable runtime orchestration and diagnostics surfaces for Sig
 [dependencies]
 hound = "3.5"
 signal-analysis = { path = "../signal-analysis" }
+signal-analysis-character = { path = "../signal-analysis-character" }
+signal-analysis-loudness = { path = "../signal-analysis-loudness" }
 signal-graph = { path = "../signal-graph" }
 signal-hardware = { path = "../signal-hardware" }
 signal-plugin = { path = "../signal-plugin" }

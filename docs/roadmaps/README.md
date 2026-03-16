@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-15
+Updated: 2026-03-16
 
 ## Why this section matters now
 
@@ -24,19 +24,18 @@ Use this section for:
 
 ## Current posture
 
-`g06` is now active and `g07` is now seeded as the next planned generation.
+`g06` is now complete and `g07` is now the active generation.
 `g01` established the Rust workspace, engine, host/device
 path, and plugin/runtime baseline; `g02` completed the first reusable DSP and
 deep-analysis expansion on top of that foundation; `g03` completed the next
 engine-oriented runtime depth queue; `g04` completed the reusable contract,
 scheduling, portability, conformance, and release-baseline queue; `g05`
 completed the widened backend, host-edge, publication-packaging,
-downstream-automation, and generation-closeout queue; and `g06` now opens the
+downstream-automation, and generation-closeout queue; `g06` then closed the
 next deeper Signal-owned runway around runtime recovery, instrumentation,
 plugin-format breadth, MIDI/event expansion, hardware and external-I/O depth,
-media-service depth, and shared acceptance evidence that will tangibly move
-Loophole forward. `g07` is already laid out behind it for the next major
-feature-expansion queue.
+media-service depth, and shared acceptance evidence that tangibly moved
+Loophole forward; and `g07` is now the active feature-expansion queue.
 
 The previously completed continuation runway was:
 
@@ -74,7 +73,7 @@ The latest completed continuation runway was:
 - downstream conformance soak and release-acceptance automation
 - generation closeout and promotion gate
 
-The newly active continuation runway is:
+The latest completed continuation runway was:
 
 - runtime interruption, resumability, and recovery truth
 - profiling, causal diagnostics, and deferred-work orchestration
@@ -83,12 +82,17 @@ The newly active continuation runway is:
 - media indexing, waveform analysis, preview, and metadata services
 - fault injection, long-session soak, and Loophole-facing runtime readiness
 
-The next planned continuation runway after `g06` is:
+The newly active continuation runway is:
 
 - spatial, multichannel, sidechain, and complex plugin-I/O depth
 - LV2 plus deeper Linux plugin and hardware backend breadth
 - external MIDI, control-surface, and advanced hardware device substrate
 - fuller sample-domain time-stretch and transform-service depth
+
+The deferred continuation scope after `g06` is:
+
+- broader unstable `server soak` and recovery-overlap depth
+- wider advisory rerun confidence beyond the bounded closeout gate
 
 ## Working Rule
 
@@ -98,6 +102,6 @@ The next planned continuation runway after `g06` is:
 
 ## Next Task
 
-Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
-interchange, portable recall, and ARA-capable context vocabulary before
-runtime recall/export depth begins.
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.

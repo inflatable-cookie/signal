@@ -54,6 +54,14 @@ enum CliMode {
     DescribeAuBoundary,
     DescribeCrossAdapterParityBoundary,
     DescribeGenericEventBoundary,
+    DescribeRecallPortabilityBoundary,
+    DescribeDeviceSupervisionBoundary,
+    DescribeClockTopologyBoundary,
+    DescribeExternalIoBoundary,
+    DescribeMediaServiceBoundary,
+    DescribeAnalysisMetadataBoundary,
+    DescribeIntegratedAcceptanceLane,
+    DescribeG06SoakLane,
     DescribeHostEdgeBoundary,
     DescribeReleaseBoundary,
     DescribePackagingManifest,
@@ -118,6 +126,94 @@ const GENERIC_EVENT_BOUNDARY: &str = "signal.runtime.generic-event-boundary";
 const GENERIC_EVENT_CONTRACT_PATH: &str =
     "docs/contracts/023-generic-midi-note-expression-and-plugin-event-model-contract.md";
 const GENERIC_EVENT_ACCEPTANCE_TASK: &str = "effigy acceptance:generic-event-boundary";
+const RECALL_PORTABILITY_BOUNDARY: &str = "signal.runtime.recall-portability-boundary";
+const RECALL_PORTABILITY_CONTRACT_PATH: &str =
+    "docs/contracts/024-plugin-preset-state-interchange-portable-recall-and-ara-context-contract.md";
+const RECALL_PORTABILITY_ACCEPTANCE_TASK: &str = "effigy acceptance:recall-portability-boundary";
+const DEVICE_SUPERVISION_BOUNDARY: &str = "signal.runtime.device-supervision-boundary";
+const DEVICE_SUPERVISION_CONTRACT_PATH: &str =
+    "docs/contracts/025-device-supervision-restart-state-machine-and-fault-boundary-contract.md";
+const DEVICE_SUPERVISION_ACCEPTANCE_TASK: &str = "effigy acceptance:device-supervision-boundary";
+const CLOCK_TOPOLOGY_BOUNDARY: &str = "signal.runtime.clock-topology-boundary";
+const CLOCK_TOPOLOGY_CONTRACT_PATH: &str =
+    "docs/contracts/026-clock-domain-drift-duplex-mismatch-and-endpoint-topology-contract.md";
+const CLOCK_TOPOLOGY_ACCEPTANCE_TASK: &str = "effigy acceptance:clock-topology-boundary";
+const EXTERNAL_IO_BOUNDARY: &str = "signal.runtime.external-io-boundary";
+const EXTERNAL_IO_CONTRACT_PATH: &str =
+    "docs/contracts/027-external-io-monitoring-tap-point-and-loopback-measurement-contract.md";
+const EXTERNAL_IO_ACCEPTANCE_TASK: &str = "effigy acceptance:external-io-boundary";
+const MEDIA_SERVICE_BOUNDARY: &str = "signal.runtime.media-service-boundary";
+const MEDIA_SERVICE_CONTRACT_PATH: &str =
+    "docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md";
+const MEDIA_SERVICE_ACCEPTANCE_TASK: &str = "effigy acceptance:media-service-boundary";
+const ANALYSIS_METADATA_BOUNDARY: &str = "signal.runtime.analysis-metadata-boundary";
+const ANALYSIS_METADATA_CONTRACT_PATH: &str =
+    "docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md";
+const ANALYSIS_METADATA_ACCEPTANCE_TASK: &str = "effigy acceptance:analysis-metadata-boundary";
+const INTEGRATED_ACCEPTANCE_LANE: &str = "signal.runtime.integrated-acceptance-lane";
+const INTEGRATED_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/030-fault-injection-harness-and-multi-backend-acceptance-contract.md";
+const INTEGRATED_ACCEPTANCE_TASK: &str = "effigy acceptance:integrated-acceptance-lane";
+const G06_SOAK_LANE: &str = "signal.g06.long-session-soak-lane";
+const G06_SOAK_CONTRACT_PATH: &str =
+    "docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md";
+const G06_SOAK_ACCEPTANCE_TASK: &str = "effigy acceptance:g06-soak-lane";
+const INTEGRATED_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[
+    INTERRUPTION_ACCEPTANCE_TASK,
+    FAULT_DIAGNOSTIC_ACCEPTANCE_TASK,
+    CRITICAL_PATH_ACCEPTANCE_TASK,
+    DEFERRED_WORK_POLICY_ACCEPTANCE_TASK,
+    PLUGIN_CONTINUITY_ACCEPTANCE_TASK,
+    CROSS_ADAPTER_PARITY_ACCEPTANCE_TASK,
+    DEVICE_SUPERVISION_ACCEPTANCE_TASK,
+    CLOCK_TOPOLOGY_ACCEPTANCE_TASK,
+    EXTERNAL_IO_ACCEPTANCE_TASK,
+    MEDIA_SERVICE_ACCEPTANCE_TASK,
+    ANALYSIS_METADATA_ACCEPTANCE_TASK,
+];
+const INTEGRATED_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[
+    RECORDING_CONTINUITY_ACCEPTANCE_TASK,
+    OFFLINE_RENDER_CONTINUITY_ACCEPTANCE_TASK,
+    VST3_ACCEPTANCE_TASK,
+    AU_ACCEPTANCE_TASK,
+    GENERIC_EVENT_ACCEPTANCE_TASK,
+    RECALL_PORTABILITY_ACCEPTANCE_TASK,
+];
+const RECOVERY_AND_FAULT_REQUIRED_TASKS: &[&str] = &[
+    INTERRUPTION_ACCEPTANCE_TASK,
+    FAULT_DIAGNOSTIC_ACCEPTANCE_TASK,
+    DEVICE_SUPERVISION_ACCEPTANCE_TASK,
+];
+const RECOVERY_AND_FAULT_ADVISORY_TASKS: &[&str] = &[
+    RECORDING_CONTINUITY_ACCEPTANCE_TASK,
+    OFFLINE_RENDER_CONTINUITY_ACCEPTANCE_TASK,
+];
+const SCHEDULING_AND_PRESSURE_REQUIRED_TASKS: &[&str] = &[
+    CRITICAL_PATH_ACCEPTANCE_TASK,
+    DEFERRED_WORK_POLICY_ACCEPTANCE_TASK,
+];
+const SCHEDULING_AND_PRESSURE_ADVISORY_TASKS: &[&str] = &[BLOCK_TIMING_ACCEPTANCE_TASK];
+const ADAPTER_AND_PORTABILITY_REQUIRED_TASKS: &[&str] = &[
+    PLUGIN_CONTINUITY_ACCEPTANCE_TASK,
+    CROSS_ADAPTER_PARITY_ACCEPTANCE_TASK,
+];
+const ADAPTER_AND_PORTABILITY_ADVISORY_TASKS: &[&str] = &[
+    VST3_ACCEPTANCE_TASK,
+    AU_ACCEPTANCE_TASK,
+    GENERIC_EVENT_ACCEPTANCE_TASK,
+    RECALL_PORTABILITY_ACCEPTANCE_TASK,
+];
+const HARDWARE_AND_EXTERNAL_IO_REQUIRED_TASKS: &[&str] = &[
+    DEVICE_SUPERVISION_ACCEPTANCE_TASK,
+    CLOCK_TOPOLOGY_ACCEPTANCE_TASK,
+    EXTERNAL_IO_ACCEPTANCE_TASK,
+];
+const HARDWARE_AND_EXTERNAL_IO_ADVISORY_TASKS: &[&str] = &[];
+const MEDIA_AND_LIBRARY_REQUIRED_TASKS: &[&str] = &[
+    MEDIA_SERVICE_ACCEPTANCE_TASK,
+    ANALYSIS_METADATA_ACCEPTANCE_TASK,
+];
+const MEDIA_AND_LIBRARY_ADVISORY_TASKS: &[&str] = &[];
 const HOST_EDGE_BOUNDARY: &str = "signal.host.edge.boundary";
 const HOST_EDGE_CONTRACT_PATH: &str =
     "docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md";
@@ -139,11 +235,14 @@ const DOWNSTREAM_AUTOMATION_COMBINED_TASK: &str = "effigy acceptance:downstream-
 const DOWNSTREAM_FAIL_GATES: &str = "signal.downstream.fail-gates";
 const DOWNSTREAM_FAIL_GATE_TASK: &str = "effigy acceptance:downstream-gate";
 const GENERATION_CLOSEOUT: &str = "signal.generation.closeout";
-const GENERATION_CLOSEOUT_GENERATION: &str = "g05";
-const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g05-closeout";
-const POST_G05_QUEUE_PATH: &str =
-    "docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md";
-const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "recorded-backlog-candidate";
+const GENERATION_CLOSEOUT_GENERATION: &str = "g06";
+const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g06-closeout";
+const GENERATION_CLOSEOUT_CONTRACT_PATH: &str =
+    "docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md";
+const G07_README_PATH: &str = "docs/roadmaps/g07/README.md";
+const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "promoted-g07-active";
+const GENERATION_CLOSEOUT_PROMOTION_DECISION: &str = "promote-g07";
+const GENERATION_CLOSEOUT_NEXT_GENERATION_STATUS: &str = "active";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ConformanceMatrixEntryKind {
@@ -476,6 +575,189 @@ struct GenericEventBoundaryValidationStep {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RecallPortabilityBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct RecallPortabilityBoundarySurface {
+    id: &'static str,
+    kind: RecallPortabilityBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct RecallPortabilityBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DeviceSupervisionBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DeviceSupervisionBoundarySurface {
+    id: &'static str,
+    kind: DeviceSupervisionBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DeviceSupervisionBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ClockTopologyBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ClockTopologyBoundarySurface {
+    id: &'static str,
+    kind: ClockTopologyBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ClockTopologyBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ExternalIoBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ExternalIoBoundarySurface {
+    id: &'static str,
+    kind: ExternalIoBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ExternalIoBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MediaServiceBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MediaServiceBoundarySurface {
+    id: &'static str,
+    kind: MediaServiceBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MediaServiceBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AnalysisMetadataBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct AnalysisMetadataBoundarySurface {
+    id: &'static str,
+    kind: AnalysisMetadataBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct AnalysisMetadataBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct IntegratedAcceptanceFamily {
+    id: &'static str,
+    title: &'static str,
+    required_tasks: &'static [&'static str],
+    advisory_tasks: &'static [&'static str],
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct IntegratedAcceptanceValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct G06SoakLaneScenarioRecord {
+    id: &'static str,
+    status: &'static str,
+    command: &'static str,
+    typed_output: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct G06SoakLaneValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct GenerationReadinessArea {
+    id: &'static str,
+    status: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ReleaseBoundaryArtifactKind {
     Document,
     ExportDescription,
@@ -623,7 +905,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-cross-adapter-parity-boundary|--describe-generic-event-boundary|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-cross-adapter-parity-boundary|--describe-generic-event-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-integrated-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -755,6 +1037,66 @@ impl CrossAdapterParityBoundarySurfaceKind {
 }
 
 impl GenericEventBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl RecallPortabilityBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl DeviceSupervisionBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl ClockTopologyBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl ExternalIoBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl MediaServiceBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl AnalysisMetadataBoundarySurfaceKind {
     fn label(self) -> &'static str {
         match self {
             Self::RuntimeReport => "runtime-report",
@@ -1823,6 +2165,603 @@ fn generic_event_boundary_validation_steps() -> &'static [GenericEventBoundaryVa
     ]
 }
 
+fn recall_portability_boundary_surfaces() -> &'static [RecallPortabilityBoundarySurface] {
+    &[
+        RecallPortabilityBoundarySurface {
+            id: "runtime-plugin-chain-recall-report",
+            kind: RecallPortabilityBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_chain_snapshot and RuntimeSupervisorReport::observation.plugin_chain_snapshot",
+            runtime_anchor: "RuntimePluginRecallPayload",
+            rationale:
+                "Keeps portable versus guarded, native-only, context-only, and unsupported recall truth on the shared plugin-chain report seam instead of adapter-native preset heuristics.",
+        },
+        RecallPortabilityBoundarySurface {
+            id: "runtime-plugin-recall-handoff",
+            kind: RecallPortabilityBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationApi::get_plugin_recall_handoff_snapshot()",
+            runtime_anchor: "RuntimePluginRecallHandoffSnapshot",
+            rationale:
+                "Lets offline, export, and downstream consumers inspect widened preset descriptor and bounded ARA-context transfer on a runtime-owned handoff snapshot instead of host-local blob planning.",
+        },
+        RecallPortabilityBoundarySurface {
+            id: "shared-host-recall-supervisor-report",
+            kind: RecallPortabilityBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward the same runtime-owned portability and ARA-context truth without adapter-local preset reconstruction or host-owned portability classes.",
+        },
+    ]
+}
+
+fn recall_portability_boundary_validation_steps(
+) -> &'static [RecallPortabilityBoundaryValidationStep] {
+    &[
+        RecallPortabilityBoundaryValidationStep {
+            id: "runtime-recall-portability-public-proof",
+            command:
+                "cargo test -p signal-runtime --test public_contract_boundary public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_reexports",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect portable versus non-portable recall outcomes and bounded ARA-context transfer through public runtime reexports alone.",
+        },
+        RecallPortabilityBoundaryValidationStep {
+            id: "local-host-recall-portability-proof",
+            command:
+                "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_recall_portability_truth",
+            rationale:
+                "Proves the local stable host edge forwards runtime-owned recall portability and ARA-context truth on supervisor export.",
+        },
+        RecallPortabilityBoundaryValidationStep {
+            id: "server-host-recall-portability-proof",
+            command:
+                "cargo test -p signal-host-server --test public_host_edge_boundary server_shared_host_edge_exports_runtime_recall_portability_truth",
+            rationale:
+                "Proves the server stable host edge forwards runtime-owned recall portability and bounded ARA-context transfer on supervisor export.",
+        },
+        RecallPortabilityBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools recall_portability_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable recall portability descriptor aligned with the focused proof spine instead of drifting into prose-only documentation.",
+        },
+        RecallPortabilityBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-recall-portability-boundary --format=json",
+            rationale:
+                "Lets consumers inspect portable versus native-only recall outcomes and bounded ARA-context transfer without reading private host glue or adapter-native preset parsing code.",
+        },
+    ]
+}
+
+fn device_supervision_boundary_surfaces() -> &'static [DeviceSupervisionBoundarySurface] {
+    &[
+        DeviceSupervisionBoundarySurface {
+            id: "runtime-device-supervision-report",
+            kind: DeviceSupervisionBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::device_supervision_snapshot and RuntimeSupervisorReport::observation.device_supervision_snapshot",
+            runtime_anchor: "RuntimeDeviceSupervisionSnapshot",
+            rationale:
+                "Keeps restart-state, exhaustion, and fault-boundary meaning on a shared runtime-owned report seam instead of host-private restart heuristics.",
+        },
+        DeviceSupervisionBoundarySurface {
+            id: "runtime-supervision-fault-alignment",
+            kind: DeviceSupervisionBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::fault_status and RuntimeObservationReport::interruption_summary",
+            runtime_anchor: "RuntimeFaultStatusSnapshot + RuntimeInterruptionSummary",
+            rationale:
+                "Keeps device supervision classification aligned with shared runtime fault and interruption truth instead of a second hardware-only taxonomy.",
+        },
+        DeviceSupervisionBoundarySurface {
+            id: "shared-host-device-supervision-supervisor-report",
+            kind: DeviceSupervisionBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned device supervision truth without private restart-loop reconstruction or host-local fault classes.",
+        },
+    ]
+}
+
+fn device_supervision_boundary_validation_steps(
+) -> &'static [DeviceSupervisionBoundaryValidationStep] {
+    &[
+        DeviceSupervisionBoundaryValidationStep {
+            id: "runtime-device-supervision-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_device_supervision_boundary_reports_recovering_and_faulted_runtime_states",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect recovering and explicit faulted device supervision truth through public runtime reexports alone.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "local-host-device-supervision-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_device_supervision_truth",
+            rationale:
+                "Proves the local stable host edge forwards recovered, exhausted, and faulted device supervision outcomes on the shared supervisor report seam.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "server-host-device-supervision-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_device_supervision_truth",
+            rationale:
+                "Proves the server stable host edge forwards runtime-owned recovering and faulted device supervision outcomes without host-private restart policy.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools device_supervision_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable device supervision boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-device-supervision-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared recovery, exhaustion, and fault-boundary proof seam without reading private host restart code.",
+        },
+    ]
+}
+
+fn clock_topology_boundary_surfaces() -> &'static [ClockTopologyBoundarySurface] {
+    &[
+        ClockTopologyBoundarySurface {
+            id: "runtime-host-clocking-report",
+            kind: ClockTopologyBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeHostObservationReport::host_io and RuntimeHostSupervisorReport::observation.host_io",
+            runtime_anchor: "RuntimeHostClockingSummary + RuntimeExternalIoSnapshot",
+            rationale:
+                "Keeps drift, discontinuity, duplex-mismatch, and endpoint-topology meaning on one runtime-owned live-path seam instead of backend-private callback or device-list heuristics.",
+        },
+        ClockTopologyBoundarySurface {
+            id: "runtime-external-io-alignment",
+            kind: ClockTopologyBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationApi::get_external_io_snapshot() and RuntimeObservationReport::device_supervision_snapshot",
+            runtime_anchor: "RuntimeExternalIoSnapshot + RuntimeDeviceSupervisionSnapshot",
+            rationale:
+                "Keeps clocking and endpoint-topology classification aligned with supervision and fault-boundary truth instead of a second host-local hardware taxonomy.",
+        },
+        ClockTopologyBoundarySurface {
+            id: "shared-local-host-clock-topology-report",
+            kind: ClockTopologyBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local",
+            surface: "LocalRuntimeHost::host_supervisor_report() -> RuntimeHostSupervisorReport",
+            runtime_anchor: "RuntimeHostSupervisorReport",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned clocking and endpoint-topology receipts without recomputing drift or duplex meaning in product code.",
+        },
+    ]
+}
+
+fn clock_topology_boundary_validation_steps() -> &'static [ClockTopologyBoundaryValidationStep] {
+    &[
+        ClockTopologyBoundaryValidationStep {
+            id: "runtime-clock-topology-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_receipts",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect drift, duplex-mismatch, and endpoint-topology truth through public runtime reexports and host-report DTOs alone.",
+        },
+        ClockTopologyBoundaryValidationStep {
+            id: "local-host-clock-topology-public-proof",
+            command:
+                "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_clock_topology_truth",
+            rationale:
+                "Proves the stable local host edge exposes runtime-owned steady and explicit faulted clock-topology receipts without private host helpers.",
+        },
+        ClockTopologyBoundaryValidationStep {
+            id: "local-host-clock-topology-focused-proof",
+            command:
+                "cargo test -p signal-host-local local_host_shared_report_surfaces_duplex_ -- --nocapture",
+            rationale:
+                "Keeps the richer live duplex-mismatch and partial-availability cases on one focused host-owned proof spine even though the stable server edge does not yet expose live host-io receipts.",
+        },
+        ClockTopologyBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools clock_topology_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable clock-topology boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        ClockTopologyBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-clock-topology-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared drift, duplex-mismatch, and endpoint-topology seam without reading private host derivation code.",
+        },
+    ]
+}
+
+fn external_io_boundary_surfaces() -> &'static [ExternalIoBoundarySurface] {
+    &[
+        ExternalIoBoundarySurface {
+            id: "runtime-external-io-report",
+            kind: ExternalIoBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot",
+            runtime_anchor: "RuntimeExternalIoSnapshot",
+            rationale:
+                "Keeps external-I/O role, monitor state, tap-point, and bounded loopback meaning on one runtime-owned observation seam instead of host-local monitor routing prose.",
+        },
+        ExternalIoBoundarySurface {
+            id: "runtime-host-external-io-report",
+            kind: ExternalIoBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeHostObservationReport::observation.external_io_snapshot and RuntimeHostSupervisorReport::observation.observation.external_io_snapshot",
+            runtime_anchor: "RuntimeHostObservationReport + RuntimeHostSupervisorReport",
+            rationale:
+                "Shows the same runtime-owned external-I/O receipt family remains aligned when host-I/O context is added to broader host observation exports.",
+        },
+        ExternalIoBoundarySurface {
+            id: "shared-local-host-external-io-report",
+            kind: ExternalIoBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local",
+            surface: "LocalRuntimeHost::supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorReport",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned direct and faulted external-I/O monitoring truth without private monitor helpers.",
+        },
+        ExternalIoBoundarySurface {
+            id: "shared-server-host-external-io-report",
+            kind: ExternalIoBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-server",
+            surface: "ServerRuntimeHost::supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorReport",
+            rationale:
+                "Proves the stable server host edge exports the same runtime-owned external-I/O receipt shape with explicit unavailable monitoring and loopback state instead of adapter-local reconstruction.",
+        },
+    ]
+}
+
+fn external_io_boundary_validation_steps() -> &'static [ExternalIoBoundaryValidationStep] {
+    &[
+        ExternalIoBoundaryValidationStep {
+            id: "runtime-external-io-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect runtime-owned monitoring, tap-point, and loopback truth without host-private helper code.",
+        },
+        ExternalIoBoundaryValidationStep {
+            id: "local-host-external-io-public-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_external_io_truth",
+            rationale:
+                "Proves the stable local host edge exposes runtime-owned direct and explicit faulted external-I/O receipts without local monitor reconstruction.",
+        },
+        ExternalIoBoundaryValidationStep {
+            id: "server-host-external-io-public-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_external_io_truth",
+            rationale:
+                "Proves the stable server host edge exports explicit unavailable monitoring and loopback state through the shared runtime receipt family.",
+        },
+        ExternalIoBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools external_io_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable external-I/O boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        ExternalIoBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-external-io-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared external-I/O, monitoring, tap-point, and loopback seam without reading private host derivation code.",
+        },
+    ]
+}
+
+fn media_service_boundary_surfaces() -> &'static [MediaServiceBoundarySurface] {
+    &[
+        MediaServiceBoundarySurface {
+            id: "runtime-media-service-report",
+            kind: MediaServiceBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::media_pipeline_snapshot, RuntimeObservationReport::media_service_snapshot, and RuntimeSupervisorReport::observation.{media_pipeline_snapshot,media_service_snapshot}",
+            runtime_anchor: "RuntimeMediaPipelineSnapshot + RuntimeMediaServiceSnapshot",
+            rationale:
+                "Keeps indexing, waveform readiness, preview readiness, and invalidation truth on one runtime-owned report seam instead of product-local preview or cache heuristics.",
+        },
+        MediaServiceBoundarySurface {
+            id: "runtime-media-service-snapshot",
+            kind: MediaServiceBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationApi::get_media_pipeline_snapshot() and RuntimeObservationApi::get_media_service_snapshot()",
+            runtime_anchor: "RuntimeObservationApi media service accessors",
+            rationale:
+                "Lets downstream consumers inspect the same media indexing and service truth directly from runtime-owned snapshots instead of bespoke media-service facades.",
+        },
+        MediaServiceBoundarySurface {
+            id: "shared-host-media-service-report",
+            kind: MediaServiceBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned media readiness, invalidation, and preview state without product-local reconstruction.",
+        },
+    ]
+}
+
+fn media_service_boundary_validation_steps() -> &'static [MediaServiceBoundaryValidationStep] {
+    &[
+        MediaServiceBoundaryValidationStep {
+            id: "runtime-media-service-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_invalidation_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect indexing, waveform readiness, preview state, and invalidation truth through public runtime reexports alone.",
+        },
+        MediaServiceBoundaryValidationStep {
+            id: "local-host-media-service-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_media_service_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned media pipeline and media-service receipts on supervisor export.",
+        },
+        MediaServiceBoundaryValidationStep {
+            id: "server-host-media-service-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_media_service_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned media readiness and invalidation receipt family on supervisor export.",
+        },
+        MediaServiceBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools media_service_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable media-service boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        MediaServiceBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-media-service-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared media indexing, waveform, preview, and invalidation seam without reading private product pipelines.",
+        },
+    ]
+}
+
+fn analysis_metadata_boundary_surfaces() -> &'static [AnalysisMetadataBoundarySurface] {
+    &[
+        AnalysisMetadataBoundarySurface {
+            id: "runtime-analysis-metadata-report",
+            kind: AnalysisMetadataBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::media_library_snapshot and RuntimeSupervisorReport::observation.media_library_snapshot",
+            runtime_anchor: "RuntimeMediaLibraryServiceSnapshot",
+            rationale:
+                "Keeps reusable loudness, character, and explicit deferred-family coverage on one runtime-owned report seam instead of product-local metadata caches.",
+        },
+        AnalysisMetadataBoundarySurface {
+            id: "runtime-analysis-metadata-snapshot",
+            kind: AnalysisMetadataBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationApi::get_media_library_service_snapshot()",
+            runtime_anchor: "RuntimeObservationApi media library accessor",
+            rationale:
+                "Lets downstream consumers inspect the same asset-analysis descriptor family directly from runtime-owned snapshots instead of reconstructing availability from media-service state alone.",
+        },
+        AnalysisMetadataBoundarySurface {
+            id: "shared-host-analysis-metadata-report",
+            kind: AnalysisMetadataBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned analysis-metadata and library-service receipts without product-local extraction or metadata forks.",
+        },
+    ]
+}
+
+fn analysis_metadata_boundary_validation_steps() -> &'static [AnalysisMetadataBoundaryValidationStep]
+{
+    &[
+        AnalysisMetadataBoundaryValidationStep {
+            id: "runtime-analysis-metadata-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_analysis_metadata_boundary_reports_runtime_owned_library_descriptors",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect the reusable library descriptor family, including ready and invalidated outcomes, through public runtime reexports alone.",
+        },
+        AnalysisMetadataBoundaryValidationStep {
+            id: "local-host-analysis-metadata-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_analysis_metadata_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned analysis metadata and library-service descriptors on supervisor export.",
+        },
+        AnalysisMetadataBoundaryValidationStep {
+            id: "server-host-analysis-metadata-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_analysis_metadata_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned analysis descriptor family without private metadata reconstruction.",
+        },
+        AnalysisMetadataBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools analysis_metadata_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable analysis-metadata boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        AnalysisMetadataBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-analysis-metadata-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared analysis-metadata and library-service seam without reading private product extraction code.",
+        },
+    ]
+}
+
+fn integrated_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "recovery-and-fault-attribution",
+            title: "Recovery And Fault Attribution",
+            required_tasks: RECOVERY_AND_FAULT_REQUIRED_TASKS,
+            advisory_tasks: RECOVERY_AND_FAULT_ADVISORY_TASKS,
+            rationale:
+                "Keeps interruption, fault diagnostics, and device supervision in the bounded lane while leaving broader continuity depth explicit but non-blocking.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "scheduling-and-execution-pressure",
+            title: "Scheduling And Execution Pressure",
+            required_tasks: SCHEDULING_AND_PRESSURE_REQUIRED_TASKS,
+            advisory_tasks: SCHEDULING_AND_PRESSURE_ADVISORY_TASKS,
+            rationale:
+                "Pins execution pressure to bounded hot-path and deferred-work policy receipts without forcing every timing-adjacent proof into the required lane.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "adapter-and-portability-breadth",
+            title: "Adapter And Portability Breadth",
+            required_tasks: ADAPTER_AND_PORTABILITY_REQUIRED_TASKS,
+            advisory_tasks: ADAPTER_AND_PORTABILITY_ADVISORY_TASKS,
+            rationale:
+                "Requires one shared plugin continuity and portability lane while keeping richer per-format and event-depth checks visible as advisory breadth.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "hardware-and-external-io-continuity",
+            title: "Hardware And External-I/O Continuity",
+            required_tasks: HARDWARE_AND_EXTERNAL_IO_REQUIRED_TASKS,
+            advisory_tasks: HARDWARE_AND_EXTERNAL_IO_ADVISORY_TASKS,
+            rationale:
+                "Makes hardware restart, topology, and external-I/O truth part of the integrated lane instead of leaving them as isolated subsystem proofs.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "media-and-library-service-continuity",
+            title: "Media And Library-Service Continuity",
+            required_tasks: MEDIA_AND_LIBRARY_REQUIRED_TASKS,
+            advisory_tasks: MEDIA_AND_LIBRARY_ADVISORY_TASKS,
+            rationale:
+                "Keeps reusable media readiness and analysis-metadata descriptors in the shared lane without expanding into product-local browser workflows.",
+        },
+    ]
+}
+
+fn integrated_acceptance_validation_steps() -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_acceptance_evidence",
+            rationale:
+                "Proves one repo-owned supervisor export carries recovery, deferred-work, adapter breadth, hardware, and media/library evidence together instead of reducing the lane to a checklist of isolated boundary tasks.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools integrated_acceptance_lane_json_reports_required_and_advisory_policy",
+            rationale:
+                "Keeps the machine-readable integrated acceptance descriptor aligned with the frozen required, advisory, and deferred policy.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the integrated acceptance lane without reading contract prose or Effigy internals.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: INTEGRATED_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded required acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist.",
+        },
+    ]
+}
+
+fn g06_soak_lane_records() -> &'static [G06SoakLaneScenarioRecord] {
+    &[
+        G06SoakLaneScenarioRecord {
+            id: "required-local-soak-export",
+            status: "required",
+            command: "cargo run -p signal-supervisor-tools -- --format=json local soak",
+            typed_output:
+                "signal.supervisor.export JSON with profiling_receipt, soak_receipt, and supervisor_report",
+            rationale:
+                "Provides one bounded long-session local-host soak artifact carrying runtime profiling, soak, and supervisor receipts together.",
+        },
+        G06SoakLaneScenarioRecord {
+            id: "required-local-mixed-soak-export",
+            status: "required",
+            command: "cargo run -p signal-supervisor-tools -- --format=json local mixed",
+            typed_output:
+                "signal.supervisor.export JSON with profiling_receipt, soak_receipt, and supervisor_report",
+            rationale:
+                "Keeps mixed watchdog and recovery churn inside the bounded soak lane without depending on deferred server-host overlap behavior.",
+        },
+        G06SoakLaneScenarioRecord {
+            id: "advisory-integrated-acceptance-base",
+            status: "advisory",
+            command: INTEGRATED_ACCEPTANCE_TASK,
+            typed_output:
+                "machine-readable integrated acceptance descriptors plus boundary proof outputs",
+            rationale:
+                "The bounded soak lane still depends on the fast integrated lane staying green, but that fast path remains a separate required base rather than the soak lane itself.",
+        },
+        G06SoakLaneScenarioRecord {
+            id: "deferred-server-soak-export",
+            status: "deferred",
+            command: "cargo run -p signal-supervisor-tools -- --format=json server soak",
+            typed_output:
+                "signal.supervisor.export JSON with profiling_receipt, soak_receipt, and supervisor_report",
+            rationale:
+                "The broader server-host soak path remains outside the bounded lane because the recovery-overlap attach limit still trips that scenario.",
+        },
+    ]
+}
+
+fn g06_soak_lane_validation_steps() -> &'static [G06SoakLaneValidationStep] {
+    &[
+        G06SoakLaneValidationStep {
+            id: "g06-soak-lane-proof",
+            command:
+                "cargo test -p signal-supervisor-tools g06_soak_lane_json_reports_required_and_deferred_policy",
+            rationale:
+                "Keeps the machine-readable bounded soak descriptor aligned with the required, advisory, and deferred policy frozen in the closeout contract.",
+        },
+        G06SoakLaneValidationStep {
+            id: "g06-soak-lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json",
+            rationale:
+                "Lets maintainers inspect the bounded soak lane without reading closeout contract prose or Effigy internals.",
+        },
+        G06SoakLaneValidationStep {
+            id: "g06-soak-lane-task",
+            command: G06_SOAK_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded soak lane is runnable as one repo-owned Effigy task instead of a loose list of scenario commands.",
+        },
+    ]
+}
+
 fn host_edge_validation_steps() -> &'static [HostEdgeValidationStep] {
     &[
         HostEdgeValidationStep {
@@ -2163,23 +3102,29 @@ fn downstream_deferred_depth_records() -> &'static [DownstreamDeferredDepthRecor
 fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidationStep] {
     &[
         GenerationCloseoutValidationStep {
-            id: "widened-release-and-automation-gate",
-            command: "effigy acceptance:downstream-gate",
+            id: "integrated-acceptance-base",
+            command: INTEGRATED_ACCEPTANCE_TASK,
             rationale:
-                "The combined closeout must prove the widened backend, host-edge, packaging, and downstream fail-gate chain as one repo-owned release surface.",
+                "The final g06 closeout gate must build on the already-closed integrated acceptance lane instead of replacing it with a prose-only summary.",
+        },
+        GenerationCloseoutValidationStep {
+            id: "bounded-soak-lane",
+            command: G06_SOAK_ACCEPTANCE_TASK,
+            rationale:
+                "The final gate must include one bounded long-session soak lane that stays repo-owned and typed rather than relying on manual endurance folklore.",
         },
         GenerationCloseoutValidationStep {
             id: "generation-closeout-description",
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json",
             rationale:
-                "Consumers and maintainers need one host-free machine-readable closeout record for the completed generation.",
+                "Consumers and maintainers need one machine-readable g06 closeout record tying together integrated acceptance, soak, and provisional readiness status.",
         },
         GenerationCloseoutValidationStep {
             id: "repo-validation",
             command: "effigy validate",
             rationale:
-                "Generation closure still requires the repo-owned configure/build/test chain to stay green.",
+                "The closeout gate still requires the repo-owned configure/build/test chain to stay green.",
         },
     ]
 }
@@ -2187,13 +3132,42 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
 fn generation_closeout_residual_risks() -> &'static [&'static str] {
     &[
         "the broader server-host soak path remains deferred because the recovery-overlap attach limit still trips that fixture",
-        "optional analysis and wider confidence depth still remain outside the mandatory release gate",
-        "publication/distribution automation beyond the current repo-owned manifest descriptor still remains deferred",
+        "wider rerun counts and advisory continuity lanes still remain outside the bounded required closeout gate",
+        "the g06 closeout verdict is sufficient to promote g07, but it is still a reusable substrate verdict rather than a Loophole product-launch verdict",
     ]
 }
 
 fn generation_closeout_next_queue_summary() -> &'static str {
-    "The explicit post-g05 candidate queue is recorded in backlog for later promotion when maintainers want broader publication/distribution automation and deeper shared acceptance promotion."
+    "g06 now closes cleanly enough to promote g07. Residual unstable soak and broader advisory confidence depth stay explicitly deferred instead of blocking the next generation."
+}
+
+fn generation_closeout_readiness_areas() -> &'static [GenerationReadinessArea] {
+    &[
+        GenerationReadinessArea {
+            id: "runtime-hardening-and-recovery",
+            status: "sufficient-for-promotion",
+            rationale:
+                "Integrated acceptance plus the bounded soak lane now give Signal enough reusable runtime-hardening and recovery evidence to stop treating Loophole's hardening concerns as a blocker for the next generation.",
+        },
+        GenerationReadinessArea {
+            id: "adapter-and-portability-breadth",
+            status: "sufficient-for-promotion",
+            rationale:
+                "CLAP, VST3, AU, parity, generic-event, and recall boundaries now give Loophole a materially broader shared plugin substrate, even though richer per-format depth is still later work.",
+        },
+        GenerationReadinessArea {
+            id: "hardware-and-external-io-substrate",
+            status: "sufficient-for-promotion",
+            rationale:
+                "Device supervision, clock-topology, and external-I/O boundaries now form a reusable hardware substrate strong enough to move feature expansion forward without reopening host-local recovery ownership.",
+        },
+        GenerationReadinessArea {
+            id: "media-and-analysis-service-substrate",
+            status: "sufficient-for-promotion",
+            rationale:
+                "Media-service and analysis-metadata boundaries now provide a bounded shared service baseline, which is enough for g07 feature work even though richer metadata and library workflows remain deferred.",
+        },
+    ]
 }
 
 fn render_host_summary_sections_text(debug: ExportDebugOptions) -> String {
@@ -4121,6 +5095,951 @@ fn print_generic_event_boundary(format: OutputFormat) {
     }
 }
 
+fn render_recall_portability_boundary_text() -> String {
+    let mut rendered = format!(
+        "recall_portability_boundary: {RECALL_PORTABILITY_BOUNDARY}\ncontract_path: {RECALL_PORTABILITY_CONTRACT_PATH}\nacceptance_task: {RECALL_PORTABILITY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in recall_portability_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in recall_portability_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "shared preset-state portability truth is now consumable, but lossless cross-adapter preset interchange, richer preset families, and adapter-native document models remain later work",
+        "the current boundary proves bounded ARA document, source, and region context transfer through runtime and stable host edges, not fuller ARA editor workflow or persistent product document semantics",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_recall_portability_boundary_json() -> String {
+    let surfaces = recall_portability_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = recall_portability_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "shared preset-state portability truth is now consumable, but lossless cross-adapter preset interchange, richer preset families, and adapter-native document models remain later work",
+        "the current boundary proves bounded ARA document, source, and region context transfer through runtime and stable host edges, not fuller ARA editor workflow or persistent product document semantics",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(RECALL_PORTABILITY_BOUNDARY),
+        json_string(RECALL_PORTABILITY_CONTRACT_PATH),
+        json_string(RECALL_PORTABILITY_ACCEPTANCE_TASK),
+        recall_portability_boundary_surfaces().len(),
+        surfaces,
+        recall_portability_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_recall_portability_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_recall_portability_boundary_text()),
+        OutputFormat::Json => println!("{}", render_recall_portability_boundary_json()),
+    }
+}
+
+fn render_device_supervision_boundary_text() -> String {
+    let mut rendered = format!(
+        "device_supervision_boundary: {DEVICE_SUPERVISION_BOUNDARY}\ncontract_path: {DEVICE_SUPERVISION_CONTRACT_PATH}\nacceptance_task: {DEVICE_SUPERVISION_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in device_supervision_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in device_supervision_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "shared device supervision truth is now public, but broader backend-matrix breadth and endpoint-topology depth still remain later hardware work",
+        "the current boundary proves recovering, exhausted, and faulted device outcomes on shared runtime and host edges, not product-local recovery UX or remote hardware orchestration",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_device_supervision_boundary_json() -> String {
+    let surfaces = device_supervision_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = device_supervision_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "shared device supervision truth is now public, but broader backend-matrix breadth and endpoint-topology depth still remain later hardware work",
+        "the current boundary proves recovering, exhausted, and faulted device outcomes on shared runtime and host edges, not product-local recovery UX or remote hardware orchestration",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(DEVICE_SUPERVISION_BOUNDARY),
+        json_string(DEVICE_SUPERVISION_CONTRACT_PATH),
+        json_string(DEVICE_SUPERVISION_ACCEPTANCE_TASK),
+        device_supervision_boundary_surfaces().len(),
+        surfaces,
+        device_supervision_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_device_supervision_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_device_supervision_boundary_text()),
+        OutputFormat::Json => println!("{}", render_device_supervision_boundary_json()),
+    }
+}
+
+fn render_clock_topology_boundary_text() -> String {
+    let mut rendered = format!(
+        "clock_topology_boundary: {CLOCK_TOPOLOGY_BOUNDARY}\ncontract_path: {CLOCK_TOPOLOGY_CONTRACT_PATH}\nacceptance_task: {CLOCK_TOPOLOGY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in clock_topology_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in clock_topology_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned drift, discontinuity, duplex-mismatch, and endpoint-topology meaning, but broader external-I/O, monitoring, and loopback depth still belongs to g06.016",
+        "the stable local host edge exposes live host-io receipts directly, while the stable server host edge still omits that live clocking seam and remains outside this focused boundary",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_clock_topology_boundary_json() -> String {
+    let surfaces = clock_topology_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = clock_topology_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned drift, discontinuity, duplex-mismatch, and endpoint-topology meaning, but broader external-I/O, monitoring, and loopback depth still belongs to g06.016",
+        "the stable local host edge exposes live host-io receipts directly, while the stable server host edge still omits that live clocking seam and remains outside this focused boundary",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(CLOCK_TOPOLOGY_BOUNDARY),
+        json_string(CLOCK_TOPOLOGY_CONTRACT_PATH),
+        json_string(CLOCK_TOPOLOGY_ACCEPTANCE_TASK),
+        clock_topology_boundary_surfaces().len(),
+        surfaces,
+        clock_topology_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_clock_topology_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_clock_topology_boundary_text()),
+        OutputFormat::Json => println!("{}", render_clock_topology_boundary_json()),
+    }
+}
+
+fn render_external_io_boundary_text() -> String {
+    let mut rendered = format!(
+        "external_io_boundary: {EXTERNAL_IO_BOUNDARY}\ncontract_path: {EXTERNAL_IO_CONTRACT_PATH}\nacceptance_task: {EXTERNAL_IO_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in external_io_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in external_io_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned external-I/O role, monitor state, tap-point, and bounded loopback meaning, but richer measurement-session and calibration workflows still belong to later g06.016 and media-service work",
+        "the stable server host edge currently proves explicit unavailable monitoring and loopback state rather than a live server-host hardware seam, so broader live server-side external-I/O depth remains deferred",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_external_io_boundary_json() -> String {
+    let surfaces = external_io_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = external_io_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned external-I/O role, monitor state, tap-point, and bounded loopback meaning, but richer measurement-session and calibration workflows still belong to later g06.016 and media-service work",
+        "the stable server host edge currently proves explicit unavailable monitoring and loopback state rather than a live server-host hardware seam, so broader live server-side external-I/O depth remains deferred",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(EXTERNAL_IO_BOUNDARY),
+        json_string(EXTERNAL_IO_CONTRACT_PATH),
+        json_string(EXTERNAL_IO_ACCEPTANCE_TASK),
+        external_io_boundary_surfaces().len(),
+        surfaces,
+        external_io_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_external_io_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_external_io_boundary_text()),
+        OutputFormat::Json => println!("{}", render_external_io_boundary_json()),
+    }
+}
+
+fn render_media_service_boundary_text() -> String {
+    let mut rendered = format!(
+        "media_service_boundary: {MEDIA_SERVICE_BOUNDARY}\ncontract_path: {MEDIA_SERVICE_CONTRACT_PATH}\nacceptance_task: {MEDIA_SERVICE_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in media_service_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in media_service_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned media indexing, waveform readiness, preview state, and invalidation receipts, but richer metadata extraction and broader library-service depth still belong to later g06.018 work",
+        "this closes the bounded consumer seam for shared media-service state, not product-local browser, collection, or editorial media-management workflows",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_media_service_boundary_json() -> String {
+    let surfaces = media_service_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = media_service_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned media indexing, waveform readiness, preview state, and invalidation receipts, but richer metadata extraction and broader library-service depth still belong to later g06.018 work",
+        "this closes the bounded consumer seam for shared media-service state, not product-local browser, collection, or editorial media-management workflows",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(MEDIA_SERVICE_BOUNDARY),
+        json_string(MEDIA_SERVICE_CONTRACT_PATH),
+        json_string(MEDIA_SERVICE_ACCEPTANCE_TASK),
+        media_service_boundary_surfaces().len(),
+        surfaces,
+        media_service_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_media_service_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_media_service_boundary_text()),
+        OutputFormat::Json => println!("{}", render_media_service_boundary_json()),
+    }
+}
+
+fn render_analysis_metadata_boundary_text() -> String {
+    let mut rendered = format!(
+        "analysis_metadata_boundary: {ANALYSIS_METADATA_BOUNDARY}\ncontract_path: {ANALYSIS_METADATA_CONTRACT_PATH}\nacceptance_task: {ANALYSIS_METADATA_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in analysis_metadata_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in analysis_metadata_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned reusable loudness and character descriptors plus explicit deferred-family coverage, but broader rhythm, tonal, and embedding payload depth still belongs to later work",
+        "this closes the bounded consumer seam for analysis-metadata and library-service truth, not product-local browser, collection, tagging, or recommendation workflows",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_analysis_metadata_boundary_json() -> String {
+    let surfaces = analysis_metadata_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = analysis_metadata_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned reusable loudness and character descriptors plus explicit deferred-family coverage, but broader rhythm, tonal, and embedding payload depth still belongs to later work",
+        "this closes the bounded consumer seam for analysis-metadata and library-service truth, not product-local browser, collection, tagging, or recommendation workflows",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(ANALYSIS_METADATA_BOUNDARY),
+        json_string(ANALYSIS_METADATA_CONTRACT_PATH),
+        json_string(ANALYSIS_METADATA_ACCEPTANCE_TASK),
+        analysis_metadata_boundary_surfaces().len(),
+        surfaces,
+        analysis_metadata_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_analysis_metadata_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_analysis_metadata_boundary_text()),
+        OutputFormat::Json => println!("{}", render_analysis_metadata_boundary_json()),
+    }
+}
+
+fn render_integrated_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "integrated_acceptance_lane: {INTEGRATED_ACCEPTANCE_LANE}\ncontract_path: {INTEGRATED_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {INTEGRATED_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in INTEGRATED_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in INTEGRATED_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in integrated_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in integrated_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane now groups one required cross-family acceptance path, but long-session soak thresholds and promotion policy still belong to g06.020",
+        "unstable broader server-host recovery-overlap scenarios remain explicitly deferred until the integrated lane is real and bounded",
+        "product-local QA dashboards, browser workflows, and exhaustive environment certification remain outside the shared Signal acceptance lane",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_integrated_acceptance_lane_json() -> String {
+    let required_tasks = INTEGRATED_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = INTEGRATED_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = integrated_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = integrated_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane now groups one required cross-family acceptance path, but long-session soak thresholds and promotion policy still belong to g06.020",
+        "unstable broader server-host recovery-overlap scenarios remain explicitly deferred until the integrated lane is real and bounded",
+        "product-local QA dashboards, browser workflows, and exhaustive environment certification remain outside the shared Signal acceptance lane",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(INTEGRATED_ACCEPTANCE_LANE),
+        json_string(INTEGRATED_ACCEPTANCE_CONTRACT_PATH),
+        json_string(INTEGRATED_ACCEPTANCE_TASK),
+        INTEGRATED_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        INTEGRATED_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        integrated_acceptance_families().len(),
+        families,
+        integrated_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_integrated_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_integrated_acceptance_lane_text()),
+        OutputFormat::Json => println!("{}", render_integrated_acceptance_lane_json()),
+    }
+}
+
+fn render_g06_soak_lane_text() -> String {
+    let mut rendered = format!(
+        "g06_soak_lane: {G06_SOAK_LANE}\ncontract_path: {G06_SOAK_CONTRACT_PATH}\nacceptance_task: {G06_SOAK_ACCEPTANCE_TASK}\nrecords:\n"
+    );
+    for record in g06_soak_lane_records() {
+        rendered.push_str(&format!(
+            "- id: {}\n  status: {}\n  command: {}\n  typed_output: {}\n  rationale: {}\n",
+            record.id, record.status, record.command, record.typed_output, record.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in g06_soak_lane_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the broader server-host soak path remains deferred because the recovery-overlap attach limit still trips that scenario",
+        "wider rerun counts and promotion thresholds still belong to later g06.020 closeout review work",
+        "remote or distributed soak orchestration remains outside the shared bounded lane",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_g06_soak_lane_json() -> String {
+    let records = g06_soak_lane_records()
+        .iter()
+        .map(|record| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"status\":{},",
+                    "\"command\":{},",
+                    "\"typed_output\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(record.id),
+                json_string(record.status),
+                json_string(record.command),
+                json_string(record.typed_output),
+                json_string(record.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = g06_soak_lane_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the broader server-host soak path remains deferred because the recovery-overlap attach limit still trips that scenario",
+        "wider rerun counts and promotion thresholds still belong to later g06.020 closeout review work",
+        "remote or distributed soak orchestration remains outside the shared bounded lane",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"record_count\":{},",
+            "\"records\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(G06_SOAK_LANE),
+        json_string(G06_SOAK_CONTRACT_PATH),
+        json_string(G06_SOAK_ACCEPTANCE_TASK),
+        g06_soak_lane_records().len(),
+        records,
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_g06_soak_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_g06_soak_lane_text()),
+        OutputFormat::Json => println!("{}", render_g06_soak_lane_json()),
+    }
+}
+
 fn render_host_edge_boundary_text() -> String {
     let mut rendered = format!(
         "host_edge_boundary: {HOST_EDGE_BOUNDARY}\ncontract_path: {HOST_EDGE_CONTRACT_PATH}\nacceptance_task: {HOST_EDGE_ACCEPTANCE_TASK}\nstable_surfaces:\n"
@@ -4693,12 +6612,19 @@ fn print_downstream_fail_gates(format: OutputFormat) {
 
 fn render_generation_closeout_text() -> String {
     let mut rendered = format!(
-        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\nconformance_matrix_command: cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json\nhost_edge_boundary_command: cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json\nrelease_boundary_command: cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json\npackaging_manifest_command: cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json\ndownstream_automation_command: cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json\ndownstream_fail_gates_command: cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json\npost_g05_queue_path: {POST_G05_QUEUE_PATH}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
+        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncontract_path: {GENERATION_CLOSEOUT_CONTRACT_PATH}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\npromotion_decision: {GENERATION_CLOSEOUT_PROMOTION_DECISION}\nintegrated_acceptance_command: cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json\ng06_soak_lane_command: cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json\nnext_generation_path: {G07_README_PATH}\nnext_generation_status: {GENERATION_CLOSEOUT_NEXT_GENERATION_STATUS}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
     );
     for step in generation_closeout_validation_steps() {
         rendered.push_str(&format!(
             "- id: {}\n  command: {}\n  rationale: {}\n",
             step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("loophole_readiness_areas:\n");
+    for area in generation_closeout_readiness_areas() {
+        rendered.push_str(&format!(
+            "- id: {}\n  status: {}\n  rationale: {}\n",
+            area.id, area.status, area.rationale,
         ));
     }
     rendered.push_str("residual_risks:\n");
@@ -4731,6 +6657,24 @@ fn render_generation_closeout_json() -> String {
         })
         .collect::<Vec<_>>()
         .join(",");
+    let readiness_areas = generation_closeout_readiness_areas()
+        .iter()
+        .map(|area| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"status\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(area.id),
+                json_string(area.status),
+                json_string(area.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
     let residual_risks = generation_closeout_residual_risks()
         .iter()
         .map(|risk| json_string(risk))
@@ -4741,44 +6685,36 @@ fn render_generation_closeout_json() -> String {
             "{{",
             "\"closeout\":{},",
             "\"generation\":{},",
+            "\"contract_path\":{},",
             "\"closeout_task\":{},",
-            "\"conformance_matrix_command\":{},",
-            "\"host_edge_boundary_command\":{},",
-            "\"release_boundary_command\":{},",
-            "\"packaging_manifest_command\":{},",
-            "\"downstream_automation_command\":{},",
-            "\"downstream_fail_gates_command\":{},",
-            "\"post_g05_queue_path\":{},",
+            "\"promotion_decision\":{},",
+            "\"integrated_acceptance_command\":{},",
+            "\"g06_soak_lane_command\":{},",
+            "\"next_generation_path\":{},",
+            "\"next_generation_status\":{},",
             "\"next_queue_status\":{},",
             "\"validation_steps\":[{}],",
+            "\"loophole_readiness_areas\":[{}],",
             "\"residual_risks\":[{}],",
             "\"next_queue_summary\":{}",
             "}}"
         ),
         json_string(GENERATION_CLOSEOUT),
         json_string(GENERATION_CLOSEOUT_GENERATION),
+        json_string(GENERATION_CLOSEOUT_CONTRACT_PATH),
         json_string(GENERATION_CLOSEOUT_TASK),
+        json_string(GENERATION_CLOSEOUT_PROMOTION_DECISION),
         json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json",
+            "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json",
         ),
         json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json",
+            "cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json",
         ),
-        json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json",
-        ),
-        json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json",
-        ),
-        json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json",
-        ),
-        json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json",
-        ),
-        json_string(POST_G05_QUEUE_PATH),
+        json_string(G07_README_PATH),
+        json_string(GENERATION_CLOSEOUT_NEXT_GENERATION_STATUS),
         json_string(GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS),
         validation_steps,
+        readiness_areas,
         residual_risks,
         json_string(generation_closeout_next_queue_summary()),
     )
@@ -4915,6 +6851,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_au_boundary = false;
     let mut describe_cross_adapter_parity_boundary = false;
     let mut describe_generic_event_boundary = false;
+    let mut describe_recall_portability_boundary = false;
+    let mut describe_device_supervision_boundary = false;
+    let mut describe_clock_topology_boundary = false;
+    let mut describe_external_io_boundary = false;
+    let mut describe_media_service_boundary = false;
+    let mut describe_analysis_metadata_boundary = false;
+    let mut describe_integrated_acceptance_lane = false;
+    let mut describe_g06_soak_lane = false;
     let mut describe_host_edge_boundary = false;
     let mut describe_release_boundary = false;
     let mut describe_packaging_manifest = false;
@@ -4992,6 +6936,38 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             describe_generic_event_boundary = true;
             continue;
         }
+        if arg == "--describe-recall-portability-boundary" {
+            describe_recall_portability_boundary = true;
+            continue;
+        }
+        if arg == "--describe-device-supervision-boundary" {
+            describe_device_supervision_boundary = true;
+            continue;
+        }
+        if arg == "--describe-clock-topology-boundary" {
+            describe_clock_topology_boundary = true;
+            continue;
+        }
+        if arg == "--describe-external-io-boundary" {
+            describe_external_io_boundary = true;
+            continue;
+        }
+        if arg == "--describe-media-service-boundary" {
+            describe_media_service_boundary = true;
+            continue;
+        }
+        if arg == "--describe-analysis-metadata-boundary" {
+            describe_analysis_metadata_boundary = true;
+            continue;
+        }
+        if arg == "--describe-integrated-acceptance-lane" {
+            describe_integrated_acceptance_lane = true;
+            continue;
+        }
+        if arg == "--describe-g06-soak-lane" {
+            describe_g06_soak_lane = true;
+            continue;
+        }
         if arg == "--describe-host-edge-boundary" {
             describe_host_edge_boundary = true;
             continue;
@@ -5038,6 +7014,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_au_boundary,
         describe_cross_adapter_parity_boundary,
         describe_generic_event_boundary,
+        describe_recall_portability_boundary,
+        describe_device_supervision_boundary,
+        describe_clock_topology_boundary,
+        describe_external_io_boundary,
+        describe_media_service_boundary,
+        describe_analysis_metadata_boundary,
+        describe_integrated_acceptance_lane,
+        describe_g06_soak_lane,
         describe_host_edge_boundary,
         describe_release_boundary,
         describe_packaging_manifest,
@@ -5246,6 +7230,118 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_recall_portability_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-recall-portability-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeRecallPortabilityBoundary,
+        });
+    }
+
+    if describe_device_supervision_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-device-supervision-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeDeviceSupervisionBoundary,
+        });
+    }
+
+    if describe_clock_topology_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-clock-topology-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeClockTopologyBoundary,
+        });
+    }
+
+    if describe_external_io_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-external-io-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeExternalIoBoundary,
+        });
+    }
+
+    if describe_media_service_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-media-service-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeMediaServiceBoundary,
+        });
+    }
+
+    if describe_analysis_metadata_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-analysis-metadata-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeAnalysisMetadataBoundary,
+        });
+    }
+
+    if describe_integrated_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-integrated-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeIntegratedAcceptanceLane,
+        });
+    }
+
+    if describe_g06_soak_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-g06-soak-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeG06SoakLane,
+        });
+    }
+
     if describe_host_edge_boundary {
         if !positional.is_empty() {
             return Err(
@@ -5415,6 +7511,38 @@ fn main() {
             print_generic_event_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribeRecallPortabilityBoundary => {
+            print_recall_portability_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeDeviceSupervisionBoundary => {
+            print_device_supervision_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeClockTopologyBoundary => {
+            print_clock_topology_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeExternalIoBoundary => {
+            print_external_io_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeMediaServiceBoundary => {
+            print_media_service_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeAnalysisMetadataBoundary => {
+            print_analysis_metadata_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeIntegratedAcceptanceLane => {
+            print_integrated_acceptance_lane(args.format);
+            Ok(())
+        }
+        CliMode::DescribeG06SoakLane => {
+            print_g06_soak_lane(args.format);
+            Ok(())
+        }
         CliMode::DescribeHostEdgeBoundary => {
             print_host_edge_boundary(args.format);
             Ok(())
@@ -5449,32 +7577,43 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
     use super::{
-        parse_args, render_au_boundary_json, render_au_boundary_text,
-        render_block_timing_boundary_json, render_block_timing_boundary_text,
-        render_conformance_matrix_json, render_conformance_matrix_text,
-        render_critical_path_boundary_json, render_critical_path_boundary_text,
-        render_cross_adapter_parity_boundary_json, render_cross_adapter_parity_boundary_text,
-        render_deferred_work_policy_boundary_json, render_deferred_work_policy_boundary_text,
-        render_downstream_automation_json, render_downstream_automation_text,
-        render_downstream_fail_gates_json, render_downstream_fail_gates_text,
-        render_export_description_json, render_export_description_text,
-        render_fault_diagnostic_boundary_json, render_fault_diagnostic_boundary_text,
-        render_generation_closeout_json, render_generation_closeout_text,
-        render_generic_event_boundary_json, render_generic_event_boundary_text,
-        render_host_edge_boundary_json, render_host_edge_boundary_text,
-        render_interruption_boundary_json, render_interruption_boundary_text,
-        render_offline_render_continuity_boundary_json,
+        parse_args, render_analysis_metadata_boundary_json, render_analysis_metadata_boundary_text,
+        render_au_boundary_json, render_au_boundary_text, render_block_timing_boundary_json,
+        render_block_timing_boundary_text, render_clock_topology_boundary_json,
+        render_clock_topology_boundary_text, render_conformance_matrix_json,
+        render_conformance_matrix_text, render_critical_path_boundary_json,
+        render_critical_path_boundary_text, render_cross_adapter_parity_boundary_json,
+        render_cross_adapter_parity_boundary_text, render_deferred_work_policy_boundary_json,
+        render_deferred_work_policy_boundary_text, render_device_supervision_boundary_json,
+        render_device_supervision_boundary_text, render_downstream_automation_json,
+        render_downstream_automation_text, render_downstream_fail_gates_json,
+        render_downstream_fail_gates_text, render_export_description_json,
+        render_export_description_text, render_external_io_boundary_json,
+        render_external_io_boundary_text, render_fault_diagnostic_boundary_json,
+        render_fault_diagnostic_boundary_text, render_g06_soak_lane_json,
+        render_g06_soak_lane_text, render_generation_closeout_json,
+        render_generation_closeout_text, render_generic_event_boundary_json,
+        render_generic_event_boundary_text, render_host_edge_boundary_json,
+        render_host_edge_boundary_text, render_integrated_acceptance_lane_json,
+        render_integrated_acceptance_lane_text, render_interruption_boundary_json,
+        render_interruption_boundary_text, render_media_service_boundary_json,
+        render_media_service_boundary_text, render_offline_render_continuity_boundary_json,
         render_offline_render_continuity_boundary_text, render_packaging_manifest_json,
         render_packaging_manifest_text, render_plugin_continuity_boundary_json,
-        render_plugin_continuity_boundary_text, render_recording_continuity_boundary_json,
+        render_plugin_continuity_boundary_text, render_recall_portability_boundary_json,
+        render_recall_portability_boundary_text, render_recording_continuity_boundary_json,
         render_recording_continuity_boundary_text, render_release_boundary_json,
         render_release_boundary_text, render_supervisor_export_json, render_vst3_boundary_json,
         render_vst3_boundary_text, CliArgs, CliMode, ExportDebugOptions, HostProfile,
         HostSummaryDebugSection, OutputFormat, Scenario,
     };
     use signal_hardware::{
-        AudioSampleFormat, HardwareDiagnosticsSnapshot, HardwareLifecycleContract,
+        AudioSampleFormat, BackendHealth, HardwareDiagnosticsSnapshot, HardwareLifecycleContract,
         HardwareLifecycleOwnership, HardwareRestartPolicy,
     };
     use signal_host_local::host::{
@@ -5489,12 +7628,21 @@ mod tests {
     };
     use signal_runtime::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-        HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxSpec,
-        PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig, RuntimeEvent,
-        RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionTopologySummary,
-        RuntimeLifecycleApi, RuntimeOfflineRenderPurgeRequest, RuntimePluginDiscoveredTypeRecord,
-        RuntimeSupervisorReport, SafeModeRequest, SandboxOperationFailureStage, SignalRuntime,
-        StopReason, TransportDispatchState, TransportHeartbeatFreshness, TransportSessionState,
+        HandshakeRequest, HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxSpec,
+        PluginSandboxTransportStage, PluginScanRequest, RuntimeConfig, RuntimeConfigRequest,
+        RuntimeEvent, RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionTopologySummary,
+        RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
+        RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
+        RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
+        RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
+        RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
+        RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy, RuntimeLifecycleApi,
+        RuntimeMediaAssetRegistration, RuntimeObservationApi, RuntimeOfflineRenderPurgeRequest,
+        RuntimeOfflineRenderRequest, RuntimePluginDiscoveredTypeRecord,
+        RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+        RuntimeSupervisorReport, RuntimeWatchdogTrigger, SafeModeRequest,
+        SandboxOperationFailureStage, SignalRuntime, StopReason, TransportDispatchState,
+        TransportHeartbeatFreshness, TransportSessionState, WatchdogRestartRecord,
     };
 
     fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
@@ -5581,6 +7729,158 @@ mod tests {
             },
             summary: "supervisor export backend breadth plugin".into(),
         }
+    }
+
+    fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
+        RuntimePluginDiscoveredTypeRecord {
+            plugin_type_id: "plugin:au:export-au".into(),
+            plugin_id: "com.signal.export-au".into(),
+            vendor: "Signal".into(),
+            name: "Signal Export AU".into(),
+            format: PluginFormat::Au,
+            version: Some("1.0.0".into()),
+            features: vec![PluginFeature::Instrument, PluginFeature::Analyzer],
+            default_io_layout: PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+            audio_bus_count: 1,
+            parameter_count: 10,
+            state_contract: PluginStateContract {
+                supports_snapshot: true,
+                supports_reset: true,
+                supports_bypass: true,
+                exposes_latency: false,
+                exposes_tail: true,
+            },
+            processing_contract: PluginProcessingContract {
+                max_block_frames: 2048,
+                sample_accurate_automation: false,
+                accepts_midi: true,
+                accepts_note_events: true,
+                supports_note_expression: true,
+                produces_midi: false,
+                silence_aware: false,
+            },
+            lifecycle_contract: PluginLifecycleContract {
+                requires_main_thread_for_state: true,
+                supports_prepare: true,
+                supports_activate: true,
+                supports_reset_while_active: false,
+            },
+            summary: "supervisor export au breadth plugin".into(),
+        }
+    }
+
+    fn sample_integrated_acceptance_host_io() -> RuntimeHostIoSummary {
+        RuntimeHostIoSummary {
+            hardware: RuntimeHostHardwareSummary {
+                backend_name: "coreaudio".into(),
+                device_id: "device:integrated-acceptance".into(),
+                device_name: "Integrated Acceptance Device".into(),
+                sample_rate: 48_000,
+                buffer_size: 256,
+                output_channels: 2,
+                sample_format: AudioSampleFormat::F32,
+                simulated: false,
+                backend_health: BackendHealth::Healthy,
+                xrun_count: 0,
+                callback_overrun_count: 0,
+                device_loss_count: 0,
+                restart_attempt_count: 0,
+                restart_failure_count: 0,
+            },
+            audio_pump: RuntimeHostAudioPumpSummary {
+                stream_state: RuntimeHostAudioStreamState::Running,
+                transfer_policy: RuntimeHostAudioTransferPolicy {
+                    max_callback_frames: 256,
+                    max_transfer_channels: 2,
+                    zero_fill_unwritten_output: true,
+                },
+                callback_count: 12,
+                total_callback_frames: 3_072,
+                total_runtime_output_frames: 3_072,
+                copied_output_samples: 6_144,
+                zero_filled_output_samples: 0,
+                dropped_output_samples: 0,
+                last_callback_output_peak: Some(0.35),
+                last_runtime_graph_id: Some("graph:integrated-acceptance".into()),
+            },
+            clocking: RuntimeHostClockingSummary {
+                clock_source: RuntimeHostClockSource::Internal,
+                ownership: RuntimeHostLifecycleOwnership::HostDrivenCallback,
+                restart_policy: RuntimeHostRestartPolicy::HostMustRestart,
+                processing_sample_rate_hz: 44_100,
+                hardware_sample_rate_hz: 48_000,
+                clock_domain: RuntimeHostClockDomain::CrossClock,
+                fallback_state: RuntimeHostClockFallbackState::RuntimeResampled,
+                transition_state: RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+                drift_state: RuntimeHostClockDriftState::CrossClockManaged,
+                discontinuity_state: RuntimeHostClockDiscontinuityState::Reconfigured,
+                duplex_mismatch_state: RuntimeHostDuplexMismatchState::CrossClockDiverged,
+                endpoint_topology: RuntimeHostEndpointTopology::Duplex,
+                partial_availability: false,
+                crossing_required: true,
+                callback_interval_ms: 5.333,
+            },
+            latency: RuntimeHostLatencySummary {
+                input_latency_samples: Some(128),
+                output_latency_samples: 256,
+                round_trip_latency_samples: Some(384),
+                graph_latency_samples: 24,
+                estimated_output_latency_samples: 280,
+                estimated_round_trip_latency_samples: Some(408),
+                output_latency_ms: 5.333,
+                graph_latency_ms: 0.5,
+                estimated_output_latency_ms: 5.833,
+                estimated_round_trip_latency_ms: Some(8.5),
+            },
+            runtime_graph_id_matches_pump: true,
+        }
+    }
+
+    fn integrated_acceptance_media_fixture_path(label: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be monotonic enough for media fixture paths")
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "signal-supervisor-tools-integrated-{label}-{}-{unique}.wav",
+            std::process::id()
+        ))
+    }
+
+    fn write_integrated_acceptance_test_wav(path: &Path) {
+        let channels = 1u16;
+        let sample_rate = 48_000u32;
+        let bits_per_sample = 16u16;
+        let frame_count = 128u32;
+        let block_align = channels * (bits_per_sample / 8);
+        let byte_rate = sample_rate * block_align as u32;
+        let data_size = frame_count * block_align as u32;
+        let riff_size = 36 + data_size;
+        let mut bytes = Vec::with_capacity((44 + data_size) as usize);
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&riff_size.to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16u32.to_le_bytes());
+        bytes.extend_from_slice(&1u16.to_le_bytes());
+        bytes.extend_from_slice(&channels.to_le_bytes());
+        bytes.extend_from_slice(&sample_rate.to_le_bytes());
+        bytes.extend_from_slice(&byte_rate.to_le_bytes());
+        bytes.extend_from_slice(&block_align.to_le_bytes());
+        bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_size.to_le_bytes());
+        for index in 0..frame_count {
+            let sample =
+                (((index as f32 / (frame_count - 1) as f32) * 2.0) - 1.0) * i16::MAX as f32 * 0.5;
+            bytes.extend_from_slice(&(sample as i16).to_le_bytes());
+        }
+        fs::write(path, bytes).expect("integrated acceptance media fixture should be written");
     }
 
     fn sample_local_summary() -> LocalRuntimeHostSummary {
@@ -6029,6 +8329,200 @@ mod tests {
                 mode: CliMode::DescribeGenericEventBoundary,
             })
         );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_recall_portability_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-recall-portability-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeRecallPortabilityBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_device_supervision_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-device-supervision-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeDeviceSupervisionBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_clock_topology_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-clock-topology-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeClockTopologyBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_external_io_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-external-io-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeExternalIoBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_media_service_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-media-service-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeMediaServiceBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_analysis_metadata_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-analysis-metadata-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeAnalysisMetadataBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_integrated_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-integrated-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeIntegratedAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_g06_soak_lane_mode() {
+        assert_eq!(
+            parse_args(["--format=json".into(), "--describe-g06-soak-lane".into()]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeG06SoakLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_device_supervision_boundary() {
+        let error = parse_args([
+            "--describe-device-supervision-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_clock_topology_boundary() {
+        let error = parse_args([
+            "--describe-clock-topology-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_external_io_boundary() {
+        let error = parse_args([
+            "--describe-external-io-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_media_service_boundary() {
+        let error = parse_args([
+            "--describe-media-service-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_analysis_metadata_boundary() {
+        let error = parse_args([
+            "--describe-analysis-metadata-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_integrated_acceptance_lane() {
+        let error = parse_args([
+            "--describe-integrated-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_g06_soak_lane() {
+        let error = parse_args([
+            "--describe-g06-soak-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
     }
 
     #[test]
@@ -6677,6 +9171,277 @@ mod tests {
     }
 
     #[test]
+    fn recall_portability_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_recall_portability_boundary_text();
+        assert!(rendered
+            .contains("recall_portability_boundary: signal.runtime.recall-portability-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:recall-portability-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_chain_snapshot and RuntimeSupervisorReport::observation.plugin_chain_snapshot"
+        ));
+        assert!(rendered
+            .contains("surface: RuntimeObservationApi::get_plugin_recall_handoff_snapshot()"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime --test public_contract_boundary public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_reexports"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-recall-portability-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn recall_portability_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_recall_portability_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.recall-portability-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/024-plugin-preset-state-interchange-portable-recall-and-ara-context-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:recall-portability-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-plugin-chain-recall-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-plugin-recall-handoff\""));
+        assert!(rendered.contains("\"id\":\"shared-host-recall-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-recall-portability-public-proof\""));
+    }
+
+    #[test]
+    fn device_supervision_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_device_supervision_boundary_text();
+        assert!(rendered
+            .contains("device_supervision_boundary: signal.runtime.device-supervision-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:device-supervision-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::device_supervision_snapshot and RuntimeSupervisorReport::observation.device_supervision_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::fault_status and RuntimeObservationReport::interruption_summary"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_device_supervision_boundary_reports_recovering_and_faulted_runtime_states"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-device-supervision-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn device_supervision_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_device_supervision_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.device-supervision-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/025-device-supervision-restart-state-machine-and-fault-boundary-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:device-supervision-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-device-supervision-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-supervision-fault-alignment\""));
+        assert!(rendered.contains("\"id\":\"shared-host-device-supervision-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-device-supervision-public-proof\""));
+    }
+
+    #[test]
+    fn clock_topology_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_clock_topology_boundary_text();
+        assert!(
+            rendered.contains("clock_topology_boundary: signal.runtime.clock-topology-boundary")
+        );
+        assert!(rendered.contains("acceptance_task: effigy acceptance:clock-topology-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeHostObservationReport::host_io and RuntimeHostSupervisorReport::observation.host_io"
+        ));
+        assert!(rendered.contains(
+            "surface: LocalRuntimeHost::host_supervisor_report() -> RuntimeHostSupervisorReport"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_receipts"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-clock-topology-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn clock_topology_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_clock_topology_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.clock-topology-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/026-clock-domain-drift-duplex-mismatch-and-endpoint-topology-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:clock-topology-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-host-clocking-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-external-io-alignment\""));
+        assert!(rendered.contains("\"id\":\"shared-local-host-clock-topology-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-clock-topology-public-proof\""));
+    }
+
+    #[test]
+    fn external_io_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_external_io_boundary_text();
+        assert!(rendered.contains("external_io_boundary: signal.runtime.external-io-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:external-io-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: ServerRuntimeHost::supervisor_report() -> RuntimeSupervisorReport"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-external-io-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn external_io_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_external_io_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.external-io-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/027-external-io-monitoring-tap-point-and-loopback-measurement-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:external-io-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-external-io-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-host-external-io-report\""));
+        assert!(rendered.contains("\"id\":\"shared-local-host-external-io-report\""));
+        assert!(rendered.contains("\"id\":\"shared-server-host-external-io-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-external-io-public-proof\""));
+    }
+
+    #[test]
+    fn media_service_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_media_service_boundary_text();
+        assert!(rendered.contains("media_service_boundary: signal.runtime.media-service-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:media-service-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::media_pipeline_snapshot, RuntimeObservationReport::media_service_snapshot, and RuntimeSupervisorReport::observation.{media_pipeline_snapshot,media_service_snapshot}"
+        ));
+        assert!(rendered.contains("surface: supervisor_report() -> RuntimeSupervisorReport"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_invalidation_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-media-service-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn media_service_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_media_service_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.media-service-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:media-service-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-media-service-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-media-service-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-media-service-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-media-service-public-proof\""));
+    }
+
+    #[test]
+    fn analysis_metadata_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_analysis_metadata_boundary_text();
+        assert!(rendered
+            .contains("analysis_metadata_boundary: signal.runtime.analysis-metadata-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:analysis-metadata-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::media_library_snapshot and RuntimeSupervisorReport::observation.media_library_snapshot"
+        ));
+        assert!(rendered
+            .contains("surface: RuntimeObservationApi::get_media_library_service_snapshot()"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_analysis_metadata_boundary_reports_runtime_owned_library_descriptors"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-analysis-metadata-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn analysis_metadata_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_analysis_metadata_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.analysis-metadata-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:analysis-metadata-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-analysis-metadata-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-analysis-metadata-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-analysis-metadata-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-analysis-metadata-public-proof\""));
+    }
+
+    #[test]
+    fn integrated_acceptance_lane_text_reports_required_and_advisory_policy() {
+        let rendered = render_integrated_acceptance_lane_text();
+        assert!(rendered
+            .contains("integrated_acceptance_lane: signal.runtime.integrated-acceptance-lane"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:integrated-acceptance-lane"));
+        assert!(rendered.contains("- effigy acceptance:interruption-boundary"));
+        assert!(rendered.contains("- effigy acceptance:analysis-metadata-boundary"));
+        assert!(rendered.contains("- effigy acceptance:recording-continuity"));
+        assert!(rendered.contains("- effigy acceptance:vst3-boundary"));
+        assert!(rendered.contains("title: Adapter And Portability Breadth"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn integrated_acceptance_lane_json_reports_required_and_advisory_policy() {
+        let rendered = render_integrated_acceptance_lane_json();
+        assert!(rendered.contains("\"lane\":\"signal.runtime.integrated-acceptance-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/030-fault-injection-harness-and-multi-backend-acceptance-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:integrated-acceptance-lane\""));
+        assert!(rendered.contains("\"required_task_count\":11"));
+        assert!(rendered.contains("\"advisory_task_count\":6"));
+        assert!(rendered.contains("\"id\":\"recovery-and-fault-attribution\""));
+        assert!(rendered.contains("\"id\":\"adapter-and-portability-breadth\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_acceptance_evidence\""
+        ));
+        assert!(rendered.contains("\"command\":\"effigy acceptance:integrated-acceptance-lane\""));
+    }
+
+    #[test]
+    fn g06_soak_lane_text_reports_required_and_deferred_policy() {
+        let rendered = render_g06_soak_lane_text();
+        assert!(rendered.contains("g06_soak_lane: signal.g06.long-session-soak-lane"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:g06-soak-lane"));
+        assert!(rendered.contains("id: required-local-soak-export"));
+        assert!(rendered.contains("status: required"));
+        assert!(rendered.contains("id: deferred-server-soak-export"));
+        assert!(rendered.contains("status: deferred"));
+        assert!(rendered.contains("id: g06-soak-lane-task"));
+    }
+
+    #[test]
+    fn g06_soak_lane_json_reports_required_and_deferred_policy() {
+        let rendered = render_g06_soak_lane_json();
+        assert!(rendered.contains("\"lane\":\"signal.g06.long-session-soak-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:g06-soak-lane\""));
+        assert!(rendered.contains("\"id\":\"required-local-soak-export\""));
+        assert!(rendered.contains("\"status\":\"required\""));
+        assert!(rendered.contains("\"id\":\"deferred-server-soak-export\""));
+        assert!(rendered.contains("\"status\":\"deferred\""));
+        assert!(rendered.contains("\"id\":\"g06-soak-lane-proof\""));
+    }
+
+    #[test]
     fn host_edge_boundary_text_reports_stable_and_unstable_edges() {
         let rendered = render_host_edge_boundary_text();
         assert!(rendered.contains("host_edge_boundary: signal.host.edge.boundary"));
@@ -6821,57 +9586,51 @@ mod tests {
     fn generation_closeout_text_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_text();
         assert!(rendered.contains("generation_closeout: signal.generation.closeout"));
-        assert!(rendered.contains("generation: g05"));
-        assert!(rendered.contains("closeout_task: effigy acceptance:g05-closeout"));
+        assert!(rendered.contains("generation: g06"));
         assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-conformance-matrix --format=json"
+            "contract_path: docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md"
+        ));
+        assert!(rendered.contains("closeout_task: effigy acceptance:g06-closeout"));
+        assert!(rendered.contains("promotion_decision: promote-g07"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json"
         ));
         assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json"
+            "cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json"
         ));
-        assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json"
-        ));
-        assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json"
-        ));
-        assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json"
-        ));
-        assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json"
-        ));
-        assert!(rendered.contains(
-            "post_g05_queue_path: docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md"
-        ));
-        assert!(rendered.contains("next_queue_status: recorded-backlog-candidate"));
-        assert!(rendered.contains("The explicit post-g05 candidate queue is recorded in backlog"));
+        assert!(rendered.contains("next_generation_path: docs/roadmaps/g07/README.md"));
+        assert!(rendered.contains("next_generation_status: active"));
+        assert!(rendered.contains("next_queue_status: promoted-g07-active"));
+        assert!(rendered.contains("id: runtime-hardening-and-recovery"));
+        assert!(rendered.contains("status: sufficient-for-promotion"));
+        assert!(rendered.contains("g06 now closes cleanly enough to promote g07"));
     }
 
     #[test]
     fn generation_closeout_json_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_json();
         assert!(rendered.contains("\"closeout\":\"signal.generation.closeout\""));
-        assert!(rendered.contains("\"generation\":\"g05\""));
-        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g05-closeout\""));
+        assert!(rendered.contains("\"generation\":\"g06\""));
         assert!(rendered.contains(
-            "\"host_edge_boundary_command\":\"cargo run -p signal-supervisor-tools -- --describe-host-edge-boundary --format=json\""
+            "\"contract_path\":\"docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md\""
+        ));
+        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g06-closeout\""));
+        assert!(rendered.contains("\"promotion_decision\":\"promote-g07\""));
+        assert!(rendered.contains(
+            "\"integrated_acceptance_command\":\"cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json\""
         ));
         assert!(rendered.contains(
-            "\"packaging_manifest_command\":\"cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json\""
+            "\"g06_soak_lane_command\":\"cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json\""
         ));
-        assert!(rendered.contains(
-            "\"downstream_fail_gates_command\":\"cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json\""
-        ));
-        assert!(rendered.contains(
-            "\"post_g05_queue_path\":\"docs/roadmaps/backlog/post-g05-publication-promotion-and-shared-acceptance-depth.md\""
-        ));
-        assert!(rendered.contains("\"next_queue_status\":\"recorded-backlog-candidate\""));
-        assert!(rendered.contains("\"id\":\"widened-release-and-automation-gate\""));
+        assert!(rendered.contains("\"next_generation_path\":\"docs/roadmaps/g07/README.md\""));
+        assert!(rendered.contains("\"next_generation_status\":\"active\""));
+        assert!(rendered.contains("\"next_queue_status\":\"promoted-g07-active\""));
+        assert!(rendered.contains("\"id\":\"integrated-acceptance-base\""));
+        assert!(rendered.contains("\"id\":\"bounded-soak-lane\""));
         assert!(rendered.contains("\"id\":\"generation-closeout-description\""));
-        assert!(rendered.contains(
-            "\"publication/distribution automation beyond the current repo-owned manifest descriptor still remains deferred\""
-        ));
+        assert!(rendered.contains("\"id\":\"runtime-hardening-and-recovery\""));
+        assert!(rendered.contains("\"status\":\"sufficient-for-promotion\""));
+        assert!(rendered.contains("\"the g06 closeout verdict is sufficient to promote g07"));
     }
 
     #[test]
@@ -7265,6 +10024,201 @@ mod tests {
         assert!(export.contains("\"sandbox_operation_failure_events\":1"));
         assert!(export.contains("\"sandbox_operation_failure_sequence\":[{"));
         assert!(export.contains("\"stage\":\"ProcessAttach\""));
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_integrated_acceptance_evidence() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "integrated-acceptance-export".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("integrated acceptance export handshake should succeed");
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("integrated acceptance export configure should succeed");
+        runtime
+            .start()
+            .expect("integrated acceptance export start should succeed");
+
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "integrated-acceptance-sandbox".into(),
+            trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+            processing_epoch: 1,
+        });
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "integrated-acceptance-sandbox".into(),
+            trigger: RuntimeWatchdogTrigger::DeadlineMisses,
+            processing_epoch: 2,
+        });
+
+        runtime.record_plugin_format_platform_coverage(vec![
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Clap,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Vst3,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Au,
+                supported_platforms: vec![RuntimePluginHostPlatform::MacOs],
+                unsupported_platforms: vec![
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+            },
+        ]);
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec![
+                "~/.clap".into(),
+                "~/.vst3".into(),
+                "~/Library/Audio/Plug-Ins/Components".into(),
+            ],
+            formats: vec![PluginFormat::Clap, PluginFormat::Vst3, PluginFormat::Au],
+        });
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                sample_discovered_type_record(),
+                sample_backend_breadth_record(),
+                sample_au_breadth_record(),
+            ],
+        );
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "integrated-acceptance-vst3".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:export-instrument".into()),
+        });
+        runtime.record_plugin_sandbox_lifecycle(
+            "integrated-acceptance-vst3",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(2),
+        );
+
+        runtime
+            .set_safe_mode(SafeModeRequest { enabled: true })
+            .expect("integrated acceptance export safe mode should enable");
+        let deferred = runtime
+            .render_offline_queue(vec![RuntimeOfflineRenderRequest {
+                request_id: "render:integrated-acceptance".into(),
+                timeline_start_samples: 0,
+                duration_samples: 64,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            }])
+            .expect("integrated acceptance export queue should defer in safe mode");
+        assert_eq!(deferred.orchestration.deferred_work_item_count, 1);
+
+        let ready_path = integrated_acceptance_media_fixture_path("ready");
+        let missing_path = integrated_acceptance_media_fixture_path("missing");
+        write_integrated_acceptance_test_wav(&ready_path);
+        runtime
+            .reconcile_media_assets(vec![
+                RuntimeMediaAssetRegistration {
+                    asset_id: "asset:sha256:integrated-ready".into(),
+                    content_hash: "integrated-ready".into(),
+                    source_path: ready_path.display().to_string(),
+                    file_name: "integrated-ready.wav".into(),
+                    byte_size: fs::metadata(&ready_path)
+                        .expect("integrated acceptance media fixture should exist")
+                        .len(),
+                    sample_rate_hz: 48_000,
+                    channel_count: 1,
+                    duration_samples: 128,
+                    waveform_bin_count: 16,
+                },
+                RuntimeMediaAssetRegistration {
+                    asset_id: "asset:sha256:integrated-missing".into(),
+                    content_hash: "integrated-missing".into(),
+                    source_path: missing_path.display().to_string(),
+                    file_name: "integrated-missing.wav".into(),
+                    byte_size: 0,
+                    sample_rate_hz: 48_000,
+                    channel_count: 1,
+                    duration_samples: 128,
+                    waveform_bin_count: 16,
+                },
+            ])
+            .expect("integrated acceptance media assets should reconcile");
+        runtime
+            .start_media_preview("asset:sha256:integrated-ready")
+            .expect("integrated acceptance media preview should start");
+
+        let recorder = RuntimeEventRecorder::default();
+        let mut report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        report.observation = report
+            .observation
+            .clone()
+            .with_host_external_io(&sample_integrated_acceptance_host_io());
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"fault_status\":{"));
+        assert!(export.contains("\"primary_fault_cause\":\"WatchdogRestart\""));
+        assert!(export.contains("\"interruption_summary\":{"));
+        assert!(export.contains("\"watchdog_restart_count\":2"));
+        assert!(export.contains("\"fault_diagnostic_receipt\":{"));
+        assert!(export.contains("\"primary_family\":\"DeferredWorkPressure\""));
+        assert!(export.contains("\"last_deferred_service\":{"));
+        assert!(export.contains("\"decision\":\"Defer\""));
+        assert!(export.contains("\"plugin_discovery_snapshot\":{"));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:clap:export-consumer\""));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:vst3:export-instrument\""));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:au:export-au\""));
+        assert!(export.contains("\"parity_coverage\":[{"));
+        assert!(export.contains("\"supported_platforms\":[\"MacOs\"]"));
+        assert!(export.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
+        assert!(export.contains("\"device_supervision_snapshot\":{"));
+        assert!(export.contains("\"external_io_snapshot\":{"));
+        assert!(export.contains("\"monitoring_state\":\"Guarded\""));
+        assert!(export.contains("\"drift_state\":\"CrossClockManaged\""));
+        assert!(export.contains("\"duplex_mismatch_state\":\"CrossClockDiverged\""));
+        assert!(export.contains("\"endpoint_topology\":\"Duplex\""));
+        assert!(export.contains("\"media_pipeline_snapshot\":{"));
+        assert!(export.contains("\"media_service_snapshot\":{"));
+        assert!(export.contains("\"preview_state\":\"Previewing\""));
+        assert!(export.contains("\"invalidated_asset_count\":1"));
+        assert!(export.contains("\"media_library_snapshot\":{"));
+        assert!(export.contains("\"ready_descriptor_count\":1"));
+        assert!(export.contains("\"loudness_ready_descriptor_count\":1"));
+        assert!(export.contains("\"character_ready_descriptor_count\":1"));
+
+        let _ = fs::remove_file(&ready_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .iter()
+            .find(|asset| asset.asset_id == "asset:sha256:integrated-ready")
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]

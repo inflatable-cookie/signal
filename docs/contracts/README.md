@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-03-15
+Updated: 2026-03-16
 
 ## Why this section matters now
 
@@ -41,6 +41,15 @@ Use this section for:
 - `021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
 - `022-backend-capability-parity-linux-plugin-support-and-cross-adapter-conformance-contract.md`
 - `023-generic-midi-note-expression-and-plugin-event-model-contract.md`
+- `024-plugin-preset-state-interchange-portable-recall-and-ara-context-contract.md`
+- `025-device-supervision-restart-state-machine-and-fault-boundary-contract.md`
+- `026-clock-domain-drift-duplex-mismatch-and-endpoint-topology-contract.md`
+- `027-external-io-monitoring-tap-point-and-loopback-measurement-contract.md`
+- `028-media-indexing-waveform-analysis-and-preview-service-contract.md`
+- `029-analysis-metadata-extraction-and-library-service-contract.md`
+- `030-fault-injection-harness-and-multi-backend-acceptance-contract.md`
+- `031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md`
+- `032-canonical-multichannel-layout-and-channel-role-contract.md`
 
 ## Rule
 
@@ -49,6 +58,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
-interchange, portable recall, and ARA-capable context vocabulary before
-runtime recall/export depth begins.
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.

@@ -1,3 +1,7 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use signal_graph::{
     synthetic_stereo_block, GraphExecutionLane, GraphNodeExecutionClass, GraphNodeTopologyRole,
     GraphStageSpec,
@@ -12,14 +16,20 @@ use signal_runtime::{
     PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RestartRequest,
     RuntimeBlockDeadlinePressure, RuntimeConfig, RuntimeConfigRequest,
     RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceDecision,
-    RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason, RuntimeInterruptionClass,
-    RuntimeLifecycleApi, RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderPurgeRequest,
-    RuntimeOfflineRenderRequest, RuntimePluginHostPlatform, RuntimePluginIsolationOutcome,
-    RuntimePluginParityBand, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
-    RuntimePluginPlacementRuleMatcher, RuntimeProjectionApi,
+    RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason,
+    RuntimeDeviceFaultBoundaryState, RuntimeDeviceRestartState, RuntimeDeviceSupervisionState,
+    RuntimeError, RuntimeErrorKind, RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState,
+    RuntimeExternalIoMonitoringState, RuntimeExternalIoMonitoringTapPoint,
+    RuntimeExternalIoPrimaryRole, RuntimeInterruptionClass, RuntimeLifecycleApi,
+    RuntimeObservationApi, RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderPurgeRequest,
+    RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot, RuntimePluginAraDocumentContext,
+    RuntimePluginAraRegionContext, RuntimePluginAraSourceContext, RuntimePluginHostPlatform,
+    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePluginPlacementPolicy,
+    RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
+    RuntimePluginRecallPortabilityClass, RuntimeProjectionApi,
     RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
-    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorApi, SignalRuntime,
-    StopReason,
+    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorApi,
+    RuntimeWatchdogTrigger, SignalRuntime, StopReason, WatchdogRestartRecord,
 };
 
 fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
@@ -122,6 +132,48 @@ fn apply_public_plugin_continuity_graph(
         .expect("public host-edge plugin continuity bindings should apply");
 }
 
+fn public_server_media_fixture_path(label: &str) -> PathBuf {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock should be monotonic enough for test files")
+        .as_nanos();
+    std::env::temp_dir().join(format!(
+        "signal-host-server-public-media-{label}-{}-{unique}.wav",
+        std::process::id()
+    ))
+}
+
+fn write_public_test_wav(path: &Path) {
+    let channels = 1u16;
+    let sample_rate = 48_000u32;
+    let bits_per_sample = 16u16;
+    let frame_count = 128u32;
+    let block_align = channels * (bits_per_sample / 8);
+    let byte_rate = sample_rate * block_align as u32;
+    let data_size = frame_count * block_align as u32;
+    let riff_size = 36 + data_size;
+    let mut bytes = Vec::with_capacity((44 + data_size) as usize);
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&riff_size.to_le_bytes());
+    bytes.extend_from_slice(b"WAVE");
+    bytes.extend_from_slice(b"fmt ");
+    bytes.extend_from_slice(&16u32.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&channels.to_le_bytes());
+    bytes.extend_from_slice(&sample_rate.to_le_bytes());
+    bytes.extend_from_slice(&byte_rate.to_le_bytes());
+    bytes.extend_from_slice(&block_align.to_le_bytes());
+    bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&data_size.to_le_bytes());
+    for index in 0..frame_count {
+        let sample =
+            (((index as f32 / (frame_count - 1) as f32) * 2.0) - 1.0) * i16::MAX as f32 * 0.5;
+        bytes.extend_from_slice(&(sample as i16).to_le_bytes());
+    }
+    fs::write(path, bytes).expect("public server media fixture should be written");
+}
+
 fn record_public_plugin_sandbox_ready(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -147,6 +199,30 @@ fn record_public_plugin_sandbox_ready(
         Some(epoch),
         None,
     );
+}
+
+fn sample_server_ara_context() -> RuntimePluginAraContextSnapshot {
+    RuntimePluginAraContextSnapshot {
+        portability_class: RuntimePluginRecallPortabilityClass::ContextOnly,
+        document_context: Some(RuntimePluginAraDocumentContext {
+            document_id: "doc:host-server".into(),
+            display_label: Some("Server Session".into()),
+            summary: "server host ara document".into(),
+        }),
+        source_context: Some(RuntimePluginAraSourceContext {
+            source_id: "source:stem-bus".into(),
+            display_label: Some("Stem Bus".into()),
+            summary: "server host ara source".into(),
+        }),
+        region_context: Some(RuntimePluginAraRegionContext {
+            region_id: "region:bridge".into(),
+            display_label: Some("Bridge".into()),
+            timeline_start_samples: Some(16_384),
+            duration_samples: Some(4_096),
+            summary: "server host ara region".into(),
+        }),
+        summary: "server host ara context".into(),
+    }
 }
 
 #[test]
@@ -694,6 +770,369 @@ fn server_shared_host_edge_exports_runtime_generic_event_truth() {
 }
 
 #[test]
+fn server_shared_host_edge_exports_runtime_recall_portability_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-server-recall-portability".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("server host-edge recall portability handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("server host-edge recall portability configure should succeed");
+    let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+        roots: vec!["/usr/lib/vst3".into()],
+        formats: vec![PluginFormat::Vst3],
+    });
+    runtime.record_plugin_scan_results(
+        scan_handle,
+        vec![signal_runtime::RuntimePluginDiscoveredTypeRecord {
+            plugin_type_id: "plugin:vst3:server-recall".into(),
+            plugin_id: "com.signal.server-recall".into(),
+            vendor: "Signal".into(),
+            name: "Signal Server Recall".into(),
+            format: PluginFormat::Vst3,
+            version: Some("1.0.0".into()),
+            features: vec![signal_plugin::PluginFeature::Instrument],
+            default_io_layout: signal_plugin::PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+            audio_bus_count: 1,
+            parameter_count: 6,
+            state_contract: signal_plugin::PluginStateContract {
+                supports_snapshot: false,
+                supports_reset: true,
+                supports_bypass: false,
+                exposes_latency: false,
+                exposes_tail: true,
+            },
+            processing_contract: signal_plugin::PluginProcessingContract {
+                max_block_frames: 1024,
+                sample_accurate_automation: false,
+                accepts_midi: true,
+                accepts_note_events: true,
+                supports_note_expression: true,
+                produces_midi: false,
+                silence_aware: false,
+            },
+            lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                requires_main_thread_for_state: true,
+                supports_prepare: true,
+                supports_activate: true,
+                supports_reset_while_active: false,
+            },
+            summary: "server host recall portability type".into(),
+        }],
+    );
+    apply_public_plugin_continuity_graph(
+        &mut runtime,
+        "graph:host-server:recall-portability",
+        &[("node-server-vst3", "sandbox-server-vst3")],
+    );
+    record_public_plugin_sandbox_ready(
+        &mut runtime,
+        "sandbox-server-vst3",
+        PluginFormat::Vst3,
+        "plugin:vst3:server-recall",
+        52,
+    );
+    runtime.record_plugin_ara_context("sandbox-server-vst3", sample_server_ara_context());
+
+    let host = ServerRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+    let recall = report
+        .observation
+        .execution_topology_summary
+        .nodes
+        .iter()
+        .find(|node| node.node_id == "node-server-vst3")
+        .and_then(|node| node.plugin_recall.as_ref())
+        .expect("server host-edge recall portability should be exported");
+    assert_eq!(
+        recall.payload.interchange.portability_class,
+        RuntimePluginRecallPortabilityClass::ContextOnly
+    );
+    assert!(!recall.payload.interchange.shared_payload_available);
+    assert_eq!(
+        recall
+            .payload
+            .ara_context
+            .as_ref()
+            .and_then(|context| context.document_context.as_ref())
+            .map(|document| document.document_id.as_str()),
+        Some("doc:host-server")
+    );
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"interchange\":{"));
+    assert!(rendered.contains("\"portability_class\":\"ContextOnly\""));
+    assert!(rendered.contains("\"source_id\":\"source:stem-bus\""));
+    assert!(rendered.contains("\"region_id\":\"region:bridge\""));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_media_service_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-server-media-service".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("server host-edge media-service handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("server host-edge media-service configure should succeed");
+
+    let ready_path = public_server_media_fixture_path("ready");
+    let missing_path = public_server_media_fixture_path("missing");
+    write_public_test_wav(&ready_path);
+
+    runtime
+        .reconcile_media_assets(vec![
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:host-server-media-ready".into(),
+                content_hash: "host-server-media-ready".into(),
+                source_path: ready_path.display().to_string(),
+                file_name: "host-server-media-ready.wav".into(),
+                byte_size: fs::metadata(&ready_path)
+                    .expect("public server media fixture should exist")
+                    .len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:host-server-media-missing".into(),
+                content_hash: "host-server-media-missing".into(),
+                source_path: missing_path.display().to_string(),
+                file_name: "host-server-media-missing.wav".into(),
+                byte_size: 0,
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+        ])
+        .expect("server host-edge media assets should reconcile");
+    runtime
+        .start_media_preview("asset:sha256:host-server-media-ready")
+        .expect("server host-edge media preview should start");
+
+    let host = ServerRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+
+    assert_eq!(report.observation.media_pipeline_snapshot.asset_count, 2);
+    assert_eq!(
+        report.observation.media_pipeline_snapshot.ready_asset_count,
+        1
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_pipeline_snapshot
+            .invalid_asset_count,
+        1
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_service_snapshot
+            .indexed_asset_count,
+        2
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_service_snapshot
+            .waveform_ready_asset_count,
+        1
+    );
+    assert_eq!(
+        report.observation.media_service_snapshot.preview_state,
+        signal_runtime::RuntimeMediaPreviewState::Previewing
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_service_snapshot
+            .previewing_asset_id
+            .as_deref(),
+        Some("asset:sha256:host-server-media-ready")
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_service_snapshot
+            .last_invalidated_asset_id
+            .as_deref(),
+        Some("asset:sha256:host-server-media-missing")
+    );
+    assert!(
+        report
+            .observation
+            .media_service_snapshot
+            .invalidation_active
+    );
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"media_pipeline_snapshot\":{"));
+    assert!(rendered.contains("\"media_service_snapshot\":{"));
+    assert!(rendered.contains("\"invalidated_asset_count\":1"));
+    assert!(rendered.contains("\"preview_state\":\"Previewing\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = host
+        .runtime()
+        .get_media_pipeline_snapshot()
+        .assets
+        .iter()
+        .find(|asset| asset.asset_id == "asset:sha256:host-server-media-ready")
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_analysis_metadata_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-server-analysis-metadata".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("server host-edge analysis-metadata handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("server host-edge analysis-metadata configure should succeed");
+
+    let ready_path = public_server_media_fixture_path("analysis-ready");
+    let missing_path = public_server_media_fixture_path("analysis-missing");
+    write_public_test_wav(&ready_path);
+
+    runtime
+        .reconcile_media_assets(vec![
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:host-server-analysis-ready".into(),
+                content_hash: "host-server-analysis-ready".into(),
+                source_path: ready_path.display().to_string(),
+                file_name: "host-server-analysis-ready.wav".into(),
+                byte_size: fs::metadata(&ready_path)
+                    .expect("public server analysis fixture should exist")
+                    .len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+            signal_runtime::RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:host-server-analysis-missing".into(),
+                content_hash: "host-server-analysis-missing".into(),
+                source_path: missing_path.display().to_string(),
+                file_name: "host-server-analysis-missing.wav".into(),
+                byte_size: 0,
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            },
+        ])
+        .expect("server host-edge analysis metadata assets should reconcile");
+
+    let host = ServerRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+
+    assert_eq!(
+        report
+            .observation
+            .media_library_snapshot
+            .indexed_asset_count,
+        2
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_library_snapshot
+            .ready_descriptor_count,
+        1
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_library_snapshot
+            .invalidated_descriptor_count,
+        1
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_library_snapshot
+            .loudness_ready_descriptor_count,
+        1
+    );
+    assert_eq!(
+        report
+            .observation
+            .media_library_snapshot
+            .character_ready_descriptor_count,
+        1
+    );
+    let ready = report
+        .observation
+        .media_library_snapshot
+        .descriptors
+        .iter()
+        .find(|descriptor| descriptor.asset_id == "asset:sha256:host-server-analysis-ready")
+        .expect("server host-edge ready analysis descriptor");
+    assert_eq!(
+        ready.metadata_state,
+        signal_runtime::RuntimeMediaAnalysisDescriptorState::Ready
+    );
+    assert!(ready.loudness.is_some());
+    assert!(ready.character.is_some());
+    let invalidated = report
+        .observation
+        .media_library_snapshot
+        .descriptors
+        .iter()
+        .find(|descriptor| descriptor.asset_id == "asset:sha256:host-server-analysis-missing")
+        .expect("server host-edge invalidated analysis descriptor");
+    assert_eq!(
+        invalidated.metadata_state,
+        signal_runtime::RuntimeMediaAnalysisDescriptorState::Invalidated
+    );
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"media_library_snapshot\":{"));
+    assert!(rendered.contains("\"ready_descriptor_count\":1"));
+    assert!(rendered.contains("\"invalidated_descriptor_count\":1"));
+    assert!(rendered.contains("\"loudness_ready_descriptor_count\":1"));
+    assert!(rendered.contains("\"character_ready_descriptor_count\":1"));
+    assert!(rendered.contains("\"metadata_state\":\"Ready\""));
+    assert!(rendered.contains("\"metadata_state\":\"Invalidated\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = host
+        .runtime()
+        .get_media_pipeline_snapshot()
+        .assets
+        .iter()
+        .find(|asset| asset.asset_id == "asset:sha256:host-server-analysis-ready")
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
 fn server_shared_host_edge_exports_runtime_fault_diagnostic_truth() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     runtime
@@ -739,6 +1178,107 @@ fn server_shared_host_edge_exports_runtime_fault_diagnostic_truth() {
     let rendered = report.render_json();
     assert!(rendered.contains("\"fault_diagnostic_receipt\":{"));
     assert!(rendered.contains("\"primary_family\":\"DeferredWorkPressure\""));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_device_supervision_truth() {
+    let mut recovering_runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    recovering_runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-server-device-supervision-recovering".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public server device supervision recovering handshake should succeed");
+    recovering_runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public server device supervision recovering configure should succeed");
+    recovering_runtime
+        .start()
+        .expect("public server device supervision recovering start should succeed");
+    recovering_runtime.record_watchdog_restart(WatchdogRestartRecord {
+        sandbox_id: "public-host-server-device-supervision-watchdog".into(),
+        trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
+        processing_epoch: 3,
+    });
+    let recovering_host = ServerRuntimeHost::new(recovering_runtime);
+    let recovering = recovering_host.supervisor_report();
+    assert_eq!(
+        recovering.observation.device_supervision_snapshot.state,
+        RuntimeDeviceSupervisionState::Stable
+    );
+    assert_eq!(
+        recovering
+            .observation
+            .device_supervision_snapshot
+            .restart_state,
+        RuntimeDeviceRestartState::Recovered
+    );
+    assert_eq!(
+        recovering
+            .observation
+            .device_supervision_snapshot
+            .fault_boundary,
+        RuntimeDeviceFaultBoundaryState::Clear
+    );
+    assert_eq!(
+        recovering
+            .observation
+            .device_supervision_snapshot
+            .interruption_class,
+        RuntimeInterruptionClass::Steady
+    );
+
+    let mut faulted_runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    faulted_runtime
+        .handshake(signal_runtime::HandshakeRequest {
+            client_version: "public-host-server-device-supervision-faulted".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public server device supervision faulted handshake should succeed");
+    faulted_runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public server device supervision faulted configure should succeed");
+    faulted_runtime
+        .start()
+        .expect("public server device supervision faulted start should succeed");
+    faulted_runtime.fail_runtime(RuntimeError::new(
+        RuntimeErrorKind::HardwareFailure,
+        "public server host device supervision fault",
+    ));
+    let faulted_host = ServerRuntimeHost::new(faulted_runtime);
+    let faulted = faulted_host.supervisor_report();
+    assert_eq!(
+        faulted.observation.device_supervision_snapshot.state,
+        RuntimeDeviceSupervisionState::Faulted
+    );
+    assert_eq!(
+        faulted
+            .observation
+            .device_supervision_snapshot
+            .restart_state,
+        RuntimeDeviceRestartState::Faulted
+    );
+    assert_eq!(
+        faulted
+            .observation
+            .device_supervision_snapshot
+            .fault_boundary,
+        RuntimeDeviceFaultBoundaryState::Faulted
+    );
+    assert_eq!(
+        faulted
+            .observation
+            .device_supervision_snapshot
+            .recovery_state,
+        RuntimeRecoveryState::Faulted
+    );
+
+    let rendered = faulted.render_json();
+    assert!(rendered.contains("\"device_supervision_snapshot\":{"));
+    assert!(rendered.contains("\"state\":\"Faulted\""));
+    assert!(rendered.contains("\"fault_boundary\":\"Faulted\""));
 }
 
 #[test]
@@ -812,6 +1352,40 @@ fn server_shared_host_edge_exports_runtime_block_timing_truth() {
     assert!(rendered.contains("\"engine_block_snapshot\":{"));
     assert!(rendered.contains("\"last_block_execution_time_ns\":"));
     assert!(rendered.contains("\"last_block_deadline_pressure\":"));
+}
+
+#[test]
+fn server_shared_host_edge_exports_runtime_external_io_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let host = ServerRuntimeHost::new(runtime);
+    let report = host.supervisor_report();
+
+    assert_eq!(
+        report.observation.external_io_snapshot.health_state,
+        RuntimeExternalIoHealthState::Unavailable
+    );
+    assert_eq!(
+        report.observation.external_io_snapshot.primary_role,
+        RuntimeExternalIoPrimaryRole::Unavailable
+    );
+    assert_eq!(
+        report.observation.external_io_snapshot.monitoring_state,
+        RuntimeExternalIoMonitoringState::Unavailable
+    );
+    assert_eq!(
+        report.observation.external_io_snapshot.monitoring_tap_point,
+        RuntimeExternalIoMonitoringTapPoint::Unavailable
+    );
+    assert_eq!(
+        report.observation.external_io_snapshot.loopback_state,
+        RuntimeExternalIoLoopbackState::Unavailable
+    );
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"external_io_snapshot\":{"));
+    assert!(rendered.contains("\"health_state\":\"Unavailable\""));
+    assert!(rendered.contains("\"monitoring_state\":\"Unavailable\""));
+    assert!(rendered.contains("\"loopback_state\":\"Unavailable\""));
 }
 
 #[test]

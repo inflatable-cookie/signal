@@ -129,7 +129,6 @@ Promote this backlog item when at least one of the following becomes true:
 
 ## Next Task
 
-PROMOTED into `g07` on 2026-03-13. Keep `g06` active until maintainers decide
-to switch queues, then start `g07.001` by freezing the routing and
-multichannel substrate before widening sidechain, spatial, Linux, control, or
-time-stretch implementation depth.
+PROMOTED into active `g07` on 2026-03-16 after `g06` closeout. Continue
+`g07.001` by freezing the routing and multichannel substrate before widening
+sidechain, spatial, Linux, control, or time-stretch implementation depth.

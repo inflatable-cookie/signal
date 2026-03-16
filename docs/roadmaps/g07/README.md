@@ -1,15 +1,15 @@
 # g07 Milestones
 
-Status: planned
-Updated: 2026-03-13
+Status: active
+Updated: 2026-03-16
 
 ## Why this generation matters next
 
-`g06` is the active runtime-hardening and feature-baseline queue. Once that
-work is far enough along, Loophole's next product-visible pressure is no longer
-only resilience and first adapter breadth. The remaining reusable Signal work
-shifts toward deeper routing and multichannel semantics, Linux-native runtime
-breadth, external MIDI and control-surface substrate, and fuller sample-domain
+`g06` is now closed as the runtime-hardening and feature-baseline queue.
+Loophole's next product-visible pressure is no longer only resilience and
+first adapter breadth. The remaining reusable Signal work now shifts toward
+deeper routing and multichannel semantics, Linux-native runtime breadth,
+external MIDI and control-surface substrate, and fuller sample-domain
 time-stretch capability.
 
 This generation therefore focuses on feature-expansion depth that still belongs
@@ -52,7 +52,7 @@ This generation is intentionally shaped by repeated Chorus demand in:
 
 ## Milestone map
 
-- `g07.001` `planned`
+- `g07.001` `active`
   - canonical multichannel layout and channel-role substrate
 - `g07.002` `planned`
   - sidechain routing and secondary-input execution depth
@@ -141,11 +141,11 @@ the generation is ready for downstream reliance.
   reusable runtime work rather than host convenience wrappers
 - prefer machine-readable receipts, descriptors, and Effigy tasks over prose
   claims
-- keep `g06` active until maintainers explicitly promote `g07`
+- keep `g07` as the single active queue and push any non-generation-critical
+  spillover back into backlog instead of reopening `g06`
 
 ## Next Task
 
-When maintainers promote this generation, start with `g07.001` and freeze the
-multichannel and channel-role substrate before widening sidechain, spatial,
-Linux, control-surface, or time-stretch implementation depth.
-
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.

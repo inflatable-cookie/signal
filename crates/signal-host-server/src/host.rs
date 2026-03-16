@@ -3459,11 +3459,19 @@ mod tests {
         CompletionSlotStage, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
         PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
         PluginScanRequest, RecoveryRestartIntent, RuntimeConfig, RuntimeConfigRequest,
-        RuntimeErrorKind, RuntimeLifecycleApi, RuntimeObservationApi, RuntimePluginHostPlatform,
-        RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi, RuntimeSupervisorReport,
-        SandboxOperationFailureStage, SignalRuntime, StopReason, TransportAttachIntent,
+        RuntimeErrorKind, RuntimeExternalIoDeviceChangeState, RuntimeExternalIoHealthState,
+        RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
+        RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeLifecycleApi,
+        RuntimeMediaAssetRegistration, RuntimeMediaPreviewState, RuntimeObservationApi,
+        RuntimePluginHostPlatform, RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi,
+        RuntimeSupervisorReport, SandboxOperationFailureStage, SignalRuntime, StopReason,
+        TransportAttachIntent,
     };
-    use std::path::Path;
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     fn assert_runtime_automation_values(
         supervisor: &RuntimeSupervisorReport,
@@ -3546,6 +3554,17 @@ mod tests {
         assert_eq!(timeline.last_block_sequence(), Some(last_block_sequence));
         assert_eq!(timeline.sequence_gaps, sequence_gaps);
         assert_eq!(timeline.lease_rollovers, lease_rollovers);
+    }
+
+    fn temp_media_fixture_path(label: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be monotonic enough for tests")
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "signal-host-server-{label}-{}-{unique}.bin",
+            std::process::id()
+        ))
     }
 
     fn prepare_server_host_with_lifecycle() -> (
@@ -5122,6 +5141,168 @@ mod tests {
             .transport_session_summary
             .active_sessions
             .is_empty());
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_unavailable_external_io_monitoring_state() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(
+            report.observation.external_io_snapshot.health_state,
+            RuntimeExternalIoHealthState::Unavailable
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.device_change_state,
+            RuntimeExternalIoDeviceChangeState::Unavailable
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.primary_role,
+            RuntimeExternalIoPrimaryRole::Unavailable
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.monitoring_state,
+            RuntimeExternalIoMonitoringState::Unavailable
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.monitoring_tap_point,
+            RuntimeExternalIoMonitoringTapPoint::Unavailable
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.loopback_state,
+            RuntimeExternalIoLoopbackState::Unavailable
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.endpoint_topology,
+            signal_runtime::RuntimeHostEndpointTopology::Unconfigured
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.fallback_state,
+            signal_runtime::RuntimeHostClockFallbackState::Unconfigured
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"external_io_snapshot\":{"));
+        assert!(rendered.contains("\"health_state\":\"Unavailable\""));
+        assert!(rendered.contains("\"monitoring_state\":\"Unavailable\""));
+        assert!(rendered.contains("\"loopback_state\":\"Unavailable\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_media_service_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let mut host = ServerRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-server".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("configure");
+
+        let imported_path = temp_media_fixture_path("server-media-service");
+        fs::write(&imported_path, b"signal media fixture").expect("write media fixture");
+        host.runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:server-media".into(),
+                content_hash: "server-media".into(),
+                source_path: imported_path.display().to_string(),
+                file_name: "server-media.bin".into(),
+                byte_size: fs::metadata(&imported_path)
+                    .expect("fixture metadata")
+                    .len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 12,
+            }])
+            .expect("media reconcile");
+        host.runtime
+            .start_media_preview("asset:sha256:server-media")
+            .expect("start media preview");
+
+        let report = host.supervisor_report();
+        assert_eq!(report.observation.media_pipeline_snapshot.asset_count, 1);
+        assert_eq!(
+            report.observation.media_pipeline_snapshot.ready_asset_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_service_snapshot
+                .indexed_asset_count,
+            1
+        );
+        assert_eq!(
+            report.observation.media_service_snapshot.preview_state,
+            RuntimeMediaPreviewState::Previewing
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_service_snapshot
+                .previewing_asset_id
+                .as_deref(),
+            Some("asset:sha256:server-media")
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_library_snapshot
+                .indexed_asset_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_library_snapshot
+                .ready_descriptor_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_library_snapshot
+                .loudness_ready_descriptor_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_library_snapshot
+                .character_ready_descriptor_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .media_library_snapshot
+                .unavailable_descriptor_count,
+            1
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"media_pipeline_snapshot\":{"));
+        assert!(rendered.contains("\"media_service_snapshot\":{"));
+        assert!(rendered.contains("\"media_library_snapshot\":{"));
+        assert!(rendered.contains("\"preview_state\":\"Previewing\""));
+        assert!(rendered.contains("\"unavailable_descriptor_count\":1"));
+
+        let _ = fs::remove_file(&imported_path);
+        if let Some(path) = host
+            .runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]

@@ -9,6 +9,9 @@ use std::{
 };
 
 use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
+use signal_analysis::AnalysisStage;
+use signal_analysis_character::{CharacterAnalyzer, CharacterAnalyzerConfig};
+use signal_analysis_loudness::{LoudnessMeter, LoudnessMeterConfig};
 use signal_graph::{
     synthetic_stereo_block, ExecutableGraph, GraphBlockReport, GraphCapturedBusOutput, GraphConfig,
     GraphExecutionContext, GraphNodeBufferContract, GraphNodeExecutionClass,
@@ -53,11 +56,13 @@ use crate::interfaces::{
     RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt, RuntimeDiagnosticsSnapshot,
     RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind,
     RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase, RuntimeExecutionTopologySummary,
-    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
-    RuntimeMediaAssetSnapshot, RuntimeMediaAssetState, RuntimeMediaIndexingState,
-    RuntimeMediaPipelineSnapshot, RuntimeMediaPreviewState, RuntimeMediaServiceSnapshot,
-    RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeMeteringSnapshot,
-    RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
+    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeMediaAnalysisDescriptorState,
+    RuntimeMediaAnalysisFamilyState, RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot,
+    RuntimeMediaAssetState, RuntimeMediaCharacterDescriptor, RuntimeMediaIndexingState,
+    RuntimeMediaLibraryAssetDescriptor, RuntimeMediaLibraryServiceSnapshot,
+    RuntimeMediaLoudnessDescriptor, RuntimeMediaPipelineSnapshot, RuntimeMediaPreviewState,
+    RuntimeMediaServiceSnapshot, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
+    RuntimeMeteringSnapshot, RuntimeObservationApi, RuntimeOfflineFreezeArtifactResult,
     RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
     RuntimeOfflinePluginDelegatedExecutionReceipt, RuntimeOfflinePluginDelegatedExecutionRequest,
     RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
@@ -71,20 +76,22 @@ use crate::interfaces::{
     RuntimeOfflineRenderQueueProgressReceipt, RuntimeOfflineRenderQueueResult,
     RuntimeOfflineRenderReportReceipt, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
     RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult,
-    RuntimePluginCapabilityCoverageSummary, RuntimePluginChainSnapshot,
-    RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
+    RuntimePluginAraContextSnapshot, RuntimePluginCapabilityCoverageSummary,
+    RuntimePluginChainSnapshot, RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginDiscoverySnapshot, RuntimePluginDispatchState,
     RuntimePluginEventSnapshot, RuntimePluginExecutionChainSummary,
     RuntimePluginFormatCoverageRecord, RuntimePluginFormatParityRecord,
     RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginLifecycleSnapshot, RuntimePluginLifecycleState,
-    RuntimePluginParityBand, RuntimePluginPlacementPolicy, RuntimePluginPlacementRuleMatcher,
-    RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload, RuntimePluginRecallSnapshot,
-    RuntimePluginRecallState, RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt,
-    RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
-    RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
-    RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
-    RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
+    RuntimePluginInterchangeSnapshot, RuntimePluginIsolationOutcome,
+    RuntimePluginLifecycleSnapshot, RuntimePluginLifecycleState, RuntimePluginParityBand,
+    RuntimePluginPlacementPolicy, RuntimePluginPlacementRuleMatcher, RuntimePluginPresetDescriptor,
+    RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload,
+    RuntimePluginRecallPortabilityClass, RuntimePluginRecallSnapshot, RuntimePluginRecallState,
+    RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt, RuntimePreworkBacklogClass,
+    RuntimePreworkCacheState, RuntimePreworkForecastMode, RuntimePreworkForecastPolicy,
+    RuntimePreworkForecastProfile, RuntimePreworkForecastProfileSelection,
+    RuntimePreworkForecastProfileSource, RuntimePreworkFreshnessState,
+    RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
     RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
     RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureCheckpointSnapshot,
@@ -840,6 +847,8 @@ struct RuntimePluginSandboxStateModel {
     plugin_type_id: Option<String>,
     plugin_format: Option<PluginFormat>,
     instance_id: Option<String>,
+    preset_descriptor: Option<RuntimePluginPresetDescriptor>,
+    ara_context: Option<RuntimePluginAraContextSnapshot>,
     state: RuntimePluginLifecycleState,
     lifecycle_stage: Option<PluginSandboxLifecycleStage>,
     transport_stage: Option<PluginSandboxTransportStage>,
@@ -866,6 +875,8 @@ impl RuntimePluginSandboxStateModel {
             plugin_type_id: None,
             plugin_format: None,
             instance_id: None,
+            preset_descriptor: None,
+            ara_context: None,
             state: RuntimePluginLifecycleState::Stopped,
             lifecycle_stage: None,
             transport_stage: None,
@@ -893,6 +904,8 @@ impl RuntimePluginSandboxStateModel {
             plugin_type_id: self.plugin_type_id.clone(),
             plugin_format: self.plugin_format,
             instance_id: self.instance_id.clone(),
+            preset_descriptor: self.preset_descriptor.clone(),
+            ara_context: self.ara_context.clone(),
             placement_outcome: RuntimePluginIsolationOutcome::IsolatedSandbox,
             placement_rule_id: None,
             shared_boundary_member_count: 1,
@@ -916,7 +929,7 @@ impl RuntimePluginSandboxStateModel {
             active_lease_id: self.active_lease_id.clone(),
             active_region_id: self.active_region_id.clone(),
             summary: format!(
-                "state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} fault={}",
+                "state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} preset={} ara_region={} fault={}",
                 self.state,
                 self.plugin_format,
                 self.lifecycle_stage,
@@ -927,6 +940,15 @@ impl RuntimePluginSandboxStateModel {
                 self.active,
                 self.active_transport,
                 self.instance_id.as_deref().unwrap_or("none"),
+                self.preset_descriptor
+                    .as_ref()
+                    .and_then(|descriptor| descriptor.label.as_deref())
+                    .unwrap_or("none"),
+                self.ara_context
+                    .as_ref()
+                    .and_then(|context| context.region_context.as_ref())
+                    .map(|region| region.region_id.as_str())
+                    .unwrap_or("none"),
                 self.last_fault_detail.as_deref().unwrap_or("none"),
             ),
         }
@@ -951,6 +973,18 @@ impl RuntimePluginLifecycleStateModel {
         let sandbox = self.sandbox_mut(spec.sandbox_id.as_str());
         sandbox.plugin_format = Some(spec.plugin_format);
         sandbox.plugin_type_id = spec.plugin_type_id.clone();
+    }
+
+    fn record_preset_descriptor(
+        &mut self,
+        sandbox_id: &str,
+        descriptor: RuntimePluginPresetDescriptor,
+    ) {
+        self.sandbox_mut(sandbox_id).preset_descriptor = Some(descriptor);
+    }
+
+    fn record_ara_context(&mut self, sandbox_id: &str, context: RuntimePluginAraContextSnapshot) {
+        self.sandbox_mut(sandbox_id).ara_context = Some(context);
     }
 
     fn snapshot(
@@ -1075,6 +1109,7 @@ impl RuntimePluginLifecycleStateModel {
         sandbox.transport_stage = Some(PluginSandboxTransportStage::DetachFault);
         sandbox.active_lease_id = None;
         sandbox.active_region_id = None;
+        sandbox.ara_context = None;
         sandbox.state = if sandbox.fault_count >= threshold {
             RuntimePluginLifecycleState::Quarantined
         } else {
@@ -1098,6 +1133,7 @@ impl RuntimePluginLifecycleStateModel {
         sandbox.active_transport = false;
         sandbox.active_lease_id = None;
         sandbox.active_region_id = None;
+        sandbox.ara_context = None;
         if sandbox.state != RuntimePluginLifecycleState::Quarantined {
             sandbox.state = RuntimePluginLifecycleState::Restarting;
         }
@@ -1149,6 +1185,7 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active_transport = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
+                sandbox.ara_context = None;
             }
             PluginSandboxLifecycleStage::SandboxRestarted => {
                 sandbox.restart_count = sandbox.restart_count.saturating_add(1);
@@ -1156,6 +1193,7 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active_transport = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
+                sandbox.ara_context = None;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined {
                     sandbox.state = RuntimePluginLifecycleState::Restarting;
                 }
@@ -1223,6 +1261,7 @@ impl RuntimePluginLifecycleStateModel {
             PluginSandboxTransportStage::DetachRequested => {
                 sandbox.active_transport = false;
                 sandbox.active = false;
+                sandbox.ara_context = None;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined
                     && sandbox.state != RuntimePluginLifecycleState::Faulted
                 {
@@ -1234,6 +1273,7 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
+                sandbox.ara_context = None;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined
                     && sandbox.state != RuntimePluginLifecycleState::Faulted
                     && sandbox.state != RuntimePluginLifecycleState::Stopped
@@ -1246,6 +1286,7 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
+                sandbox.ara_context = None;
                 sandbox.last_fault_detail = detail;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined {
                     sandbox.state = RuntimePluginLifecycleState::Degraded;
@@ -1476,7 +1517,26 @@ impl Default for RuntimeMediaPipelinePolicy {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
+struct RuntimeMediaAnalysisStateModel {
+    descriptor_state: RuntimeMediaAnalysisDescriptorState,
+    loudness: Option<RuntimeMediaLoudnessDescriptor>,
+    character: Option<RuntimeMediaCharacterDescriptor>,
+    last_error: Option<String>,
+}
+
+impl Default for RuntimeMediaAnalysisStateModel {
+    fn default() -> Self {
+        Self {
+            descriptor_state: RuntimeMediaAnalysisDescriptorState::Missing,
+            loudness: None,
+            character: None,
+            last_error: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 struct RuntimeMediaPipelineAsset {
     registration: RuntimeMediaAssetRegistration,
     state: RuntimeMediaAssetState,
@@ -1484,9 +1544,10 @@ struct RuntimeMediaPipelineAsset {
     cache_byte_size: Option<u64>,
     rebuild_count: u32,
     last_error: Option<String>,
+    analysis: RuntimeMediaAnalysisStateModel,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 struct RuntimeMediaPipelineStateModel {
     policy: RuntimeMediaPipelinePolicy,
     assets: BTreeMap<String, RuntimeMediaPipelineAsset>,
@@ -1665,6 +1726,143 @@ impl RuntimeMediaPipelineStateModel {
         }
     }
 
+    fn library_service_snapshot(&self) -> RuntimeMediaLibraryServiceSnapshot {
+        let descriptors = self
+            .assets
+            .values()
+            .map(|asset| self.asset_library_descriptor(asset))
+            .collect::<Vec<_>>();
+        let ready_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.metadata_state == RuntimeMediaAnalysisDescriptorState::Ready
+            })
+            .count();
+        let pending_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.metadata_state == RuntimeMediaAnalysisDescriptorState::Pending
+            })
+            .count();
+        let invalidated_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.metadata_state == RuntimeMediaAnalysisDescriptorState::Invalidated
+            })
+            .count();
+        let unavailable_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.metadata_state == RuntimeMediaAnalysisDescriptorState::Unavailable
+            })
+            .count();
+        let loudness_ready_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.loudness_state == RuntimeMediaAnalysisFamilyState::Ready
+            })
+            .count();
+        let character_ready_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.character_state == RuntimeMediaAnalysisFamilyState::Ready
+            })
+            .count();
+        let rhythm_deferred_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.rhythm_state == RuntimeMediaAnalysisFamilyState::Deferred
+            })
+            .count();
+        let tonal_deferred_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.tonal_state == RuntimeMediaAnalysisFamilyState::Deferred
+            })
+            .count();
+        let embedding_deferred_descriptor_count = descriptors
+            .iter()
+            .filter(|descriptor| {
+                descriptor.embedding_state == RuntimeMediaAnalysisFamilyState::Deferred
+            })
+            .count();
+
+        RuntimeMediaLibraryServiceSnapshot {
+            indexed_asset_count: descriptors.len(),
+            ready_descriptor_count,
+            pending_descriptor_count,
+            invalidated_descriptor_count,
+            unavailable_descriptor_count,
+            loudness_ready_descriptor_count,
+            character_ready_descriptor_count,
+            rhythm_deferred_descriptor_count,
+            tonal_deferred_descriptor_count,
+            embedding_deferred_descriptor_count,
+            descriptors,
+            summary: format!(
+                "indexed={} ready={} pending={} invalidated={} unavailable={} loudness_ready={} character_ready={} rhythm_deferred={} tonal_deferred={} embedding_deferred={}",
+                self.assets.len(),
+                ready_descriptor_count,
+                pending_descriptor_count,
+                invalidated_descriptor_count,
+                unavailable_descriptor_count,
+                loudness_ready_descriptor_count,
+                character_ready_descriptor_count,
+                rhythm_deferred_descriptor_count,
+                tonal_deferred_descriptor_count,
+                embedding_deferred_descriptor_count,
+            ),
+        }
+    }
+
+    fn asset_library_descriptor(
+        &self,
+        asset: &RuntimeMediaPipelineAsset,
+    ) -> RuntimeMediaLibraryAssetDescriptor {
+        RuntimeMediaLibraryAssetDescriptor {
+            asset_id: asset.registration.asset_id.clone(),
+            content_hash: asset.registration.content_hash.clone(),
+            file_name: asset.registration.file_name.clone(),
+            asset_state: Some(asset.state),
+            metadata_state: asset.analysis.descriptor_state,
+            loudness_state: media_family_state(
+                asset.analysis.descriptor_state,
+                asset.analysis.loudness.is_some(),
+            ),
+            character_state: media_family_state(
+                asset.analysis.descriptor_state,
+                asset.analysis.character.is_some(),
+            ),
+            rhythm_state: RuntimeMediaAnalysisFamilyState::Deferred,
+            tonal_state: RuntimeMediaAnalysisFamilyState::Deferred,
+            embedding_state: RuntimeMediaAnalysisFamilyState::Deferred,
+            loudness: asset.analysis.loudness.clone(),
+            character: asset.analysis.character.clone(),
+            last_error: asset
+                .analysis
+                .last_error
+                .clone()
+                .or_else(|| asset.last_error.clone()),
+            summary: format!(
+                "asset={} state={:?} metadata={:?} loudness={:?} character={:?} rhythm={:?} tonal={:?} embedding={:?}",
+                asset.registration.asset_id,
+                asset.state,
+                asset.analysis.descriptor_state,
+                media_family_state(
+                    asset.analysis.descriptor_state,
+                    asset.analysis.loudness.is_some(),
+                ),
+                media_family_state(
+                    asset.analysis.descriptor_state,
+                    asset.analysis.character.is_some(),
+                ),
+                RuntimeMediaAnalysisFamilyState::Deferred,
+                RuntimeMediaAnalysisFamilyState::Deferred,
+                RuntimeMediaAnalysisFamilyState::Deferred,
+            ),
+        }
+    }
+
     fn start_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError> {
         let asset = self.assets.get(asset_id).ok_or_else(|| {
             RuntimeError::new(
@@ -1755,6 +1953,7 @@ impl RuntimeMediaPipelineStateModel {
                         cache_byte_size: None,
                         rebuild_count: 0,
                         last_error: None,
+                        analysis: RuntimeMediaAnalysisStateModel::default(),
                     });
             asset.registration = registration;
             if rebuild {
@@ -1778,7 +1977,10 @@ impl RuntimeMediaPipelineStateModel {
             asset.state = RuntimeMediaAssetState::Invalid;
             asset.cache_path = None;
             asset.cache_byte_size = None;
-            asset.last_error = Some("source path must not be empty".to_string());
+            let message = "source path must not be empty".to_string();
+            asset.last_error = Some(message.clone());
+            asset.analysis.descriptor_state = RuntimeMediaAnalysisDescriptorState::Invalidated;
+            asset.analysis.last_error = Some(message);
             return;
         }
         let source_path = Path::new(&asset.registration.source_path);
@@ -1786,7 +1988,10 @@ impl RuntimeMediaPipelineStateModel {
             asset.state = RuntimeMediaAssetState::Invalid;
             asset.cache_path = None;
             asset.cache_byte_size = None;
-            asset.last_error = Some(format!("source media missing at {}", source_path.display()));
+            let message = format!("source media missing at {}", source_path.display());
+            asset.last_error = Some(message.clone());
+            asset.analysis.descriptor_state = RuntimeMediaAnalysisDescriptorState::Invalidated;
+            asset.analysis.last_error = Some(message);
             return;
         }
         asset.state = if asset.rebuild_count > 0 {
@@ -1794,6 +1999,8 @@ impl RuntimeMediaPipelineStateModel {
         } else {
             RuntimeMediaAssetState::Ingesting
         };
+        asset.analysis.descriptor_state = RuntimeMediaAnalysisDescriptorState::Pending;
+        asset.analysis.last_error = None;
         asset.state = RuntimeMediaAssetState::Conforming;
         match fs::copy(source_path, cache_path) {
             Ok(_) => match fs::metadata(cache_path) {
@@ -1802,21 +2009,38 @@ impl RuntimeMediaPipelineStateModel {
                     asset.cache_path = Some(cache_path.display().to_string());
                     asset.cache_byte_size = Some(metadata.len());
                     asset.last_error = None;
+                    match analyze_runtime_media_asset(cache_path, &asset.registration) {
+                        Ok(analysis) => asset.analysis = analysis,
+                        Err(error) => {
+                            asset.analysis = RuntimeMediaAnalysisStateModel {
+                                descriptor_state: RuntimeMediaAnalysisDescriptorState::Unavailable,
+                                loudness: None,
+                                character: None,
+                                last_error: Some(error),
+                            };
+                        }
+                    }
                 }
                 Err(error) => {
                     asset.state = RuntimeMediaAssetState::Invalid;
                     asset.cache_path = None;
                     asset.cache_byte_size = None;
-                    asset.last_error = Some(format!(
-                        "cached media written but metadata lookup failed: {error}"
-                    ));
+                    let message =
+                        format!("cached media written but metadata lookup failed: {error}");
+                    asset.last_error = Some(message.clone());
+                    asset.analysis.descriptor_state =
+                        RuntimeMediaAnalysisDescriptorState::Invalidated;
+                    asset.analysis.last_error = Some(message);
                 }
             },
             Err(error) => {
                 asset.state = RuntimeMediaAssetState::Invalid;
                 asset.cache_path = None;
                 asset.cache_byte_size = None;
-                asset.last_error = Some(format!("cache conform failed: {error}"));
+                let message = format!("cache conform failed: {error}");
+                asset.last_error = Some(message.clone());
+                asset.analysis.descriptor_state = RuntimeMediaAnalysisDescriptorState::Invalidated;
+                asset.analysis.last_error = Some(message);
             }
         }
     }
@@ -1843,6 +2067,22 @@ impl Default for RuntimeMediaPipelineStateModel {
             previewing_asset_id: None,
             last_preview_error: None,
         }
+    }
+}
+
+fn media_family_state(
+    descriptor_state: RuntimeMediaAnalysisDescriptorState,
+    available: bool,
+) -> RuntimeMediaAnalysisFamilyState {
+    if available && descriptor_state == RuntimeMediaAnalysisDescriptorState::Ready {
+        RuntimeMediaAnalysisFamilyState::Ready
+    } else if matches!(
+        descriptor_state,
+        RuntimeMediaAnalysisDescriptorState::Unavailable
+    ) {
+        RuntimeMediaAnalysisFamilyState::Unavailable
+    } else {
+        RuntimeMediaAnalysisFamilyState::Deferred
     }
 }
 
@@ -4102,6 +4342,85 @@ fn rms(samples: &[f32]) -> f32 {
         .sum::<f64>()
         / samples.len() as f64;
     mean_square.sqrt() as f32
+}
+
+fn analyze_runtime_media_asset(
+    cache_path: &Path,
+    registration: &RuntimeMediaAssetRegistration,
+) -> Result<RuntimeMediaAnalysisStateModel, String> {
+    let decoded = if cache_path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("wav"))
+    {
+        decode_runtime_wav_asset(cache_path, &registration.asset_id)
+            .map_err(|error| error.message)?
+    } else {
+        decode_runtime_media_asset_with_symphonia(cache_path, &registration.asset_id)
+            .map_err(|error| error.message)?
+    };
+    let mut loudness_meter = LoudnessMeter::new(LoudnessMeterConfig::default());
+    let mut character_analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::default());
+    let loudness = loudness_descriptor_from_result(loudness_meter.analyze(&decoded));
+    let character = character_descriptor_from_result(character_analyzer.analyze(&decoded));
+    Ok(RuntimeMediaAnalysisStateModel {
+        descriptor_state: RuntimeMediaAnalysisDescriptorState::Ready,
+        loudness: Some(loudness),
+        character: Some(character),
+        last_error: None,
+    })
+}
+
+fn loudness_descriptor_from_result(
+    result: signal_analysis_loudness::LoudnessAnalysisResult,
+) -> RuntimeMediaLoudnessDescriptor {
+    RuntimeMediaLoudnessDescriptor {
+        integrated_lufs: result.integrated_lufs,
+        loudness_range_lu: result.loudness_range_lu,
+        true_peak_dbtp: result.true_peak_dbtp,
+        target_offset_lu: result.dynamics.target_offset_lu,
+        peak_to_loudness_lu: result.dynamics.peak_to_loudness_lu,
+        confidence: result.confidence.0,
+        summary: format!(
+            "integrated_lufs={:.3} true_peak_dbtp={:.3} loudness_range_lu={:.3} target_offset_lu={:.3} peak_to_loudness_lu={:.3} confidence={:.3}",
+            result.integrated_lufs,
+            result.true_peak_dbtp,
+            result.loudness_range_lu,
+            result.dynamics.target_offset_lu,
+            result.dynamics.peak_to_loudness_lu,
+            result.confidence.0,
+        ),
+    }
+}
+
+fn character_descriptor_from_result(
+    result: signal_analysis_character::CharacterAnalysisResult,
+) -> RuntimeMediaCharacterDescriptor {
+    RuntimeMediaCharacterDescriptor {
+        centroid_hz: result.spectral_shape.centroid_hz,
+        rolloff_95_hz: result.spectral_shape.rolloff_95_hz,
+        flatness: result.spectral_shape.flatness,
+        contrast_db: result.spectral_contrast.contrast_db,
+        onset_density: result.temporal.onset_density,
+        transient_density: result.temporal.transient_density,
+        sustain_ratio: result.temporal.sustain_ratio,
+        rms_energy: result.dynamics.rms_energy,
+        dynamic_range: result.dynamics.dynamic_range,
+        confidence: result.confidence.0,
+        summary: format!(
+            "centroid_hz={:.3} rolloff_95_hz={:.3} flatness={:.3} contrast_db={:.3} onset_density={:.3} transient_density={:.3} sustain_ratio={:.3} rms_energy={:.3} dynamic_range={:.3} confidence={:.3}",
+            result.spectral_shape.centroid_hz,
+            result.spectral_shape.rolloff_95_hz,
+            result.spectral_shape.flatness,
+            result.spectral_contrast.contrast_db,
+            result.temporal.onset_density,
+            result.temporal.transient_density,
+            result.temporal.sustain_ratio,
+            result.dynamics.rms_energy,
+            result.dynamics.dynamic_range,
+            result.confidence.0,
+        ),
+    }
 }
 
 fn adapt_audio_buffer_layout(input: &AudioBuffer, target_layout: ChannelLayout) -> AudioBuffer {
@@ -9132,6 +9451,72 @@ impl SignalRuntime {
         self.plugin_lifecycle.record_spec(spec);
     }
 
+    pub fn record_plugin_preset_descriptor(
+        &mut self,
+        sandbox_id: impl Into<String>,
+        mut descriptor: RuntimePluginPresetDescriptor,
+    ) {
+        let sandbox_id = sandbox_id.into();
+        if descriptor.summary.is_empty() {
+            descriptor.summary = format!(
+                "preset={:?} label={:?} origin={:?}",
+                descriptor.preset_id.as_deref(),
+                descriptor.label.as_deref(),
+                descriptor.origin,
+            );
+        }
+        self.plugin_lifecycle
+            .record_preset_descriptor(sandbox_id.as_str(), descriptor);
+    }
+
+    pub fn record_plugin_ara_context(
+        &mut self,
+        sandbox_id: impl Into<String>,
+        mut context: RuntimePluginAraContextSnapshot,
+    ) {
+        let sandbox_id = sandbox_id.into();
+        if let Some(document_context) = context.document_context.as_mut() {
+            if document_context.summary.is_empty() {
+                document_context.summary = format!(
+                    "document={} label={:?}",
+                    document_context.document_id,
+                    document_context.display_label.as_deref(),
+                );
+            }
+        }
+        if let Some(source_context) = context.source_context.as_mut() {
+            if source_context.summary.is_empty() {
+                source_context.summary = format!(
+                    "source={} label={:?}",
+                    source_context.source_id,
+                    source_context.display_label.as_deref(),
+                );
+            }
+        }
+        if let Some(region_context) = context.region_context.as_mut() {
+            if region_context.summary.is_empty() {
+                region_context.summary = format!(
+                    "region={} label={:?} start={:?} duration={:?}",
+                    region_context.region_id,
+                    region_context.display_label.as_deref(),
+                    region_context.timeline_start_samples,
+                    region_context.duration_samples,
+                );
+            }
+        }
+        if context.summary.is_empty() {
+            context.summary = format!(
+                "class={:?} document={} source={} region={}",
+                context.portability_class,
+                context.document_context.is_some(),
+                context.source_context.is_some(),
+                context.region_context.is_some(),
+            );
+        }
+        self.plugin_lifecycle
+            .record_ara_context(sandbox_id.as_str(), context);
+    }
+
     pub fn record_plugin_sandbox_lifecycle(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -12637,6 +13022,10 @@ impl SignalRuntime {
         self.media_pipeline.service_snapshot()
     }
 
+    fn media_library_service_snapshot(&self) -> RuntimeMediaLibraryServiceSnapshot {
+        self.media_pipeline.library_service_snapshot()
+    }
+
     fn metering_snapshot(&self) -> RuntimeMeteringSnapshot {
         self.metering
             .snapshot()
@@ -12708,7 +13097,11 @@ impl SignalRuntime {
             let lifecycle_state = sandbox.map(|sandbox| sandbox.state);
             let lifecycle_stage = sandbox.and_then(|sandbox| sandbox.lifecycle_stage);
             let transport_stage = sandbox.and_then(|sandbox| sandbox.transport_stage);
-            let recall = runtime_plugin_recall_snapshot(sandbox_id.as_deref(), sandbox);
+            let recall = runtime_plugin_recall_snapshot(
+                sandbox_id.as_deref(),
+                sandbox,
+                &self.plugin_discovery.discovered_types,
+            );
             let recall_state = recall.state;
             let compensation = runtime_plugin_compensation_observation(
                 sandbox_id.as_deref(),
@@ -13711,9 +14104,78 @@ fn runtime_plugin_chain_id(
         .unwrap_or_else(|| "global".into())
 }
 
+fn runtime_plugin_discovered_type_for_recall<'a>(
+    plugin_type_id: Option<&str>,
+    discovered_types: &'a [RuntimePluginDiscoveredTypeRecord],
+) -> Option<&'a RuntimePluginDiscoveredTypeRecord> {
+    let plugin_type_id = plugin_type_id?;
+    discovered_types
+        .iter()
+        .find(|record| record.plugin_type_id == plugin_type_id)
+}
+
+fn runtime_plugin_interchange_snapshot_from_snapshot(
+    sandbox: Option<&RuntimePluginSandboxSnapshot>,
+    discovered_types: &[RuntimePluginDiscoveredTypeRecord],
+) -> RuntimePluginInterchangeSnapshot {
+    let preset_descriptor = sandbox.and_then(|sandbox| sandbox.preset_descriptor.clone());
+    let ara_context = sandbox.and_then(|sandbox| sandbox.ara_context.as_ref());
+    let discovered_type = runtime_plugin_discovered_type_for_recall(
+        sandbox.and_then(|sandbox| sandbox.plugin_type_id.as_deref()),
+        discovered_types,
+    );
+    let portability_class = if let Some(record) = discovered_type {
+        if record.state_contract.supports_snapshot {
+            match sandbox.and_then(|sandbox| sandbox.plugin_format) {
+                Some(PluginFormat::Clap)
+                    if !record.lifecycle_contract.requires_main_thread_for_state =>
+                {
+                    RuntimePluginRecallPortabilityClass::Portable
+                }
+                Some(_) => RuntimePluginRecallPortabilityClass::Guarded,
+                None => RuntimePluginRecallPortabilityClass::Guarded,
+            }
+        } else if ara_context.is_some() {
+            RuntimePluginRecallPortabilityClass::ContextOnly
+        } else {
+            RuntimePluginRecallPortabilityClass::NativeOnly
+        }
+    } else if ara_context.is_some() {
+        RuntimePluginRecallPortabilityClass::ContextOnly
+    } else {
+        RuntimePluginRecallPortabilityClass::Unsupported
+    };
+    let shared_payload_available = matches!(
+        portability_class,
+        RuntimePluginRecallPortabilityClass::Portable
+            | RuntimePluginRecallPortabilityClass::Guarded
+    );
+    let native_supplement_required = matches!(
+        portability_class,
+        RuntimePluginRecallPortabilityClass::Guarded
+            | RuntimePluginRecallPortabilityClass::NativeOnly
+    );
+    RuntimePluginInterchangeSnapshot {
+        portability_class,
+        shared_payload_available,
+        native_supplement_required,
+        preset_descriptor,
+        summary: format!(
+            "class={:?} shared_payload={} native_supplement={} preset={:?}",
+            portability_class,
+            shared_payload_available,
+            native_supplement_required,
+            sandbox
+                .and_then(|sandbox| sandbox.preset_descriptor.as_ref())
+                .and_then(|descriptor| descriptor.label.as_deref()),
+        ),
+    }
+}
+
 fn runtime_plugin_recall_snapshot(
     sandbox_id: Option<&str>,
     sandbox: Option<&RuntimePluginSandboxSnapshot>,
+    discovered_types: &[RuntimePluginDiscoveredTypeRecord],
 ) -> RuntimePluginRecallSnapshot {
     let state = match (sandbox_id, sandbox) {
         (None, _) => RuntimePluginRecallState::Unbound,
@@ -13741,11 +14203,11 @@ fn runtime_plugin_recall_snapshot(
 
     let mut snapshot = RuntimePluginRecallSnapshot {
         state,
-        payload: runtime_plugin_recall_payload(sandbox_id, sandbox),
+        payload: runtime_plugin_recall_payload(sandbox_id, sandbox, discovered_types),
         summary: String::new(),
     };
     snapshot.summary = format!(
-        "state={:?} sandbox={:?} plugin={:?}/{:?} lifecycle={:?}/{:?}/{:?} readiness={:?} recoveries={} restarts={} faults={} restart_intent={:?} stop_reason={:?} fault_kind={:?}",
+        "state={:?} sandbox={:?} plugin={:?}/{:?} lifecycle={:?}/{:?}/{:?} readiness={:?} recoveries={} restarts={} faults={} restart_intent={:?} stop_reason={:?} fault_kind={:?} portability={:?} ara={}",
         snapshot.state,
         snapshot.payload.sandbox_id.as_deref(),
         snapshot.payload.plugin_type_id.as_deref(),
@@ -13760,6 +14222,8 @@ fn runtime_plugin_recall_snapshot(
         snapshot.payload.last_restart_intent,
         snapshot.payload.last_stop_reason,
         snapshot.payload.last_fault_kind,
+        snapshot.payload.interchange.portability_class,
+        snapshot.payload.ara_context.is_some(),
     );
     snapshot
 }
@@ -13767,6 +14231,7 @@ fn runtime_plugin_recall_snapshot(
 fn runtime_plugin_recall_payload(
     sandbox_id: Option<&str>,
     sandbox: Option<&RuntimePluginSandboxSnapshot>,
+    discovered_types: &[RuntimePluginDiscoveredTypeRecord],
 ) -> RuntimePluginRecallPayload {
     RuntimePluginRecallPayload {
         sandbox_id: sandbox_id.map(str::to_string),
@@ -13786,6 +14251,8 @@ fn runtime_plugin_recall_payload(
         degraded_reasons: sandbox
             .map(|sandbox| sandbox.degraded_reasons.clone())
             .unwrap_or_default(),
+        interchange: runtime_plugin_interchange_snapshot_from_snapshot(sandbox, discovered_types),
+        ara_context: sandbox.and_then(|sandbox| sandbox.ara_context.clone()),
     }
 }
 
@@ -13955,6 +14422,10 @@ impl RuntimeObservationApi for SignalRuntime {
         self.media_service_snapshot()
     }
 
+    fn get_media_library_service_snapshot(&self) -> RuntimeMediaLibraryServiceSnapshot {
+        self.media_library_service_snapshot()
+    }
+
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot {
         self.tempo_map_snapshot()
     }
@@ -14052,10 +14523,10 @@ mod tests {
         RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
         RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
         RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
-        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMeterSourceRole,
-        RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
-        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
-        RuntimeOfflinePluginDelegatedExecutionOutcome,
+        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMediaPreviewState,
+        RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeObservationApi,
+        RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
+        RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
         RuntimeOfflinePluginDelegatedExecutionReceipt,
         RuntimeOfflinePluginDelegatedExecutionStageReceipt,
         RuntimeOfflinePluginDelegatedExecutionStatus,
@@ -26815,6 +27286,42 @@ mod tests {
         );
         assert!(service.last_invalidation_error.is_some());
 
+        let library = runtime.get_media_library_service_snapshot();
+        assert_eq!(library.indexed_asset_count, 2);
+        assert_eq!(library.ready_descriptor_count, 1);
+        assert_eq!(library.invalidated_descriptor_count, 1);
+        assert_eq!(library.unavailable_descriptor_count, 0);
+        assert_eq!(library.loudness_ready_descriptor_count, 1);
+        assert_eq!(library.character_ready_descriptor_count, 1);
+        let ready = library
+            .descriptors
+            .iter()
+            .find(|descriptor| descriptor.asset_id == "asset:sha256:ready")
+            .expect("ready descriptor");
+        assert_eq!(
+            ready.metadata_state,
+            crate::RuntimeMediaAnalysisDescriptorState::Ready
+        );
+        assert_eq!(
+            ready.loudness_state,
+            crate::RuntimeMediaAnalysisFamilyState::Ready
+        );
+        assert_eq!(
+            ready.character_state,
+            crate::RuntimeMediaAnalysisFamilyState::Ready
+        );
+        assert!(ready.loudness.is_some());
+        assert!(ready.character.is_some());
+        let missing = library
+            .descriptors
+            .iter()
+            .find(|descriptor| descriptor.asset_id == "asset:sha256:missing")
+            .expect("missing descriptor");
+        assert_eq!(
+            missing.metadata_state,
+            crate::RuntimeMediaAnalysisDescriptorState::Invalidated
+        );
+
         let _ = fs::remove_file(ready_path);
         if let Some(path) = runtime
             .get_media_pipeline_snapshot()
@@ -26965,6 +27472,104 @@ mod tests {
         );
 
         let _ = fs::remove_file(ready_path);
+    }
+
+    #[test]
+    fn runtime_observation_and_supervisor_reports_surface_media_service_baseline() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let ready_path = temp_capture_path("media-observation-preview");
+        write_test_wav(&ready_path);
+
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:observation".to_string(),
+                content_hash: "observation".to_string(),
+                source_path: ready_path.display().to_string(),
+                file_name: "observation.wav".to_string(),
+                byte_size: fs::metadata(&ready_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            }])
+            .expect("ready media should reconcile");
+        runtime
+            .start_media_preview("asset:sha256:observation")
+            .expect("preview should start for ready media");
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.media_pipeline_snapshot.asset_count, 1);
+        assert_eq!(observation.media_pipeline_snapshot.ready_asset_count, 1);
+        assert_eq!(observation.media_service_snapshot.indexed_asset_count, 1);
+        assert_eq!(
+            observation
+                .media_service_snapshot
+                .waveform_ready_asset_count,
+            1
+        );
+        assert_eq!(
+            observation.media_service_snapshot.preview_state,
+            RuntimeMediaPreviewState::Previewing
+        );
+        assert_eq!(
+            observation
+                .media_service_snapshot
+                .previewing_asset_id
+                .as_deref(),
+            Some("asset:sha256:observation")
+        );
+        assert_eq!(observation.media_library_snapshot.indexed_asset_count, 1);
+        assert_eq!(observation.media_library_snapshot.ready_descriptor_count, 1);
+        assert_eq!(
+            observation
+                .media_library_snapshot
+                .loudness_ready_descriptor_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .media_library_snapshot
+                .character_ready_descriptor_count,
+            1
+        );
+        assert_eq!(
+            observation.media_library_snapshot.descriptors[0].metadata_state,
+            crate::RuntimeMediaAnalysisDescriptorState::Ready
+        );
+        assert!(observation.media_library_snapshot.descriptors[0]
+            .loudness
+            .is_some());
+        assert!(observation.media_library_snapshot.descriptors[0]
+            .character
+            .is_some());
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let multiline = supervisor.render_multiline();
+        assert!(multiline.contains("media_asset_count=1"));
+        assert!(multiline.contains("media_preview_state=Previewing"));
+        assert!(multiline.contains("media_library_ready_descriptor_count=1"));
+
+        let json = supervisor.render_json();
+        assert!(json.contains("\"media_pipeline_snapshot\":{"));
+        assert!(json.contains("\"media_service_snapshot\":{"));
+        assert!(json.contains("\"media_library_snapshot\":{"));
+        assert!(json.contains("\"preview_state\":\"Previewing\""));
+        assert!(json.contains("\"waveform_ready_asset_count\":1"));
+        assert!(json.contains("\"ready_descriptor_count\":1"));
+
+        let _ = fs::remove_file(&ready_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]
@@ -28894,6 +29499,11 @@ mod tests {
             sandbox_id: "sandbox-a".into(),
             trigger: RuntimeWatchdogTrigger::HeartbeatMisses,
             processing_epoch: 1,
+        });
+        runtime.record_watchdog_restart(WatchdogRestartRecord {
+            sandbox_id: "sandbox-a".into(),
+            trigger: RuntimeWatchdogTrigger::DeadlineMisses,
+            processing_epoch: 2,
         });
 
         let observation =

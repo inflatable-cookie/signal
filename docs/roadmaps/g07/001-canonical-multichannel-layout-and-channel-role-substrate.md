@@ -1,6 +1,6 @@
 # 001 - Canonical Multichannel Layout And Channel-Role Substrate
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-03-13
 Depends on: g06.011, g06.015
@@ -27,8 +27,8 @@ layout, channel roles, bus intent, and safe fallback behavior.
 
 ### Batch 1.1 - Layout Contract
 
-- [ ] define canonical layouts, channel roles, and custom-layout fallback rules
-- [ ] align the contract with existing graph, hardware, and plugin receipts
+- [x] define canonical layouts, channel roles, and custom-layout fallback rules
+- [x] align the contract with existing graph, hardware, and plugin receipts
 
 ### Batch 1.2 - Runtime Alignment
 
@@ -57,8 +57,27 @@ layout, channel roles, bus intent, and safe fallback behavior.
 - [ ] run focused contract validation and public-boundary proof
 - [ ] record deferred layout cases explicitly
 
+## Batch 1.1 Outcome
+
+Batch 1.1 freezes the first reusable multichannel vocabulary in
+`docs/contracts/032-canonical-multichannel-layout-and-channel-role-contract.md`.
+That contract makes canonical layouts, channel roles, bus intent, and
+custom-layout fallback Signal-owned meaning instead of leaving later sidechain,
+spatial, Linux, and complex plugin-I/O work to infer semantics from raw
+channel counts.
+
+It also gives Batch 1.2 one fixed target:
+
+- canonical layouts now include `Mono`, `Stereo`, `Lcr`, `Quad`,
+  `Surround5_0`, `Surround5_1`, and `Surround7_1`
+- channel roles and bus intents now have explicit bounded shared vocabularies
+- `ChannelLayout::Count` is still valid as a primitive, but no longer carries
+  enough meaning to stand in for multichannel semantics by itself
+- custom layouts must now stay explicit and conservative through
+  `Discrete(index)` fallback instead of being guessed into a surround mapping
+
 ## Next Task
 
-Continue `g07.002` by applying the new layout substrate to sidechain and
-secondary-input execution depth.
-
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.

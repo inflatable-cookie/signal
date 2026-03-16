@@ -1,17 +1,16 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-15
+Updated: 2026-03-16
 
 ## Active generation
 
-- `g06`
-- opened on 2026-03-13 after `g05` closeout to deepen runtime recovery,
-  profiling, plugin-format breadth, hardware/external-I/O depth, media-service
-  depth, and shared soak evidence for downstream consumers such as Loophole
-- `g07` is now seeded as the next planned generation for spatial or
-  multichannel depth, Linux-native runtime breadth, control-surface or MIDI
-  hardware substrate, and fuller sample-domain time-stretch work
+- `g07`
+- promoted into the active queue on 2026-03-16 after `g06` closeout to deepen
+  routing and multichannel execution, Linux-native runtime breadth, external
+  MIDI/control-surface substrate, and sample-domain time-stretch depth
+- `g06` is now complete and remains the immediate hardening and baseline-format
+  predecessor to the active feature-expansion queue
 
 ## Generation log
 
@@ -22,8 +21,8 @@ Updated: 2026-03-15
 | `g03` | 2026-03-12 | Continue beyond analysis depth with engine-oriented runtime substrate work | Closed on 2026-03-12 after routed mixer topology, metering, automation playback, warp/render, plugin-chain execution, offline render/freeze, and hardening depth landed |
 | `g04` | 2026-03-12 | Continue beyond engine depth with reusable-runtime productization, multicore execution, and consumer-facing contract work | Closed on 2026-03-12 after contract freezing, scheduler depth, deferred work policy, portability, plugin breadth, and generation-closeout conformance/release proof landed |
 | `g05` | 2026-03-12 | Continue beyond the first stable Signal boundary with broader backend breadth, host-edge stability, publication-grade packaging, and downstream release confidence | Closed on 2026-03-13 after backend-neutral plugin breadth, shared host-edge contracts, publication-grade packaging manifests, downstream automation, and the combined generation-closeout proof landed |
-| `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Active; opened with a 20-milestone runway covering recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, and shared acceptance/soak promotion |
-| `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Planned; seeded with a 20-milestone runway covering multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, and integrated acceptance depth |
+| `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
+| `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Active; promoted on 2026-03-16 with a 20-milestone runway covering multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, and integrated acceptance depth |
 
 ## Rollover policy
 
@@ -33,7 +32,6 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g06.013` with Batch 13.1 and keep the generation on Signal-owned
-runtime surfaces by freezing plugin preset-state interchange, portable recall,
-and ARA-capable context vocabulary before deeper recall and export work begins
-while `g07` remains the next full feature-breadth queue.
+Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
+layout and channel-role meaning through runtime-owned topology, hardware, and
+plugin-facing receipts before the public proof batch closes the milestone.
