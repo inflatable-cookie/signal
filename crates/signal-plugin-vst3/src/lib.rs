@@ -170,9 +170,24 @@ impl Vst3HostAdapter {
         }
 
         let fixture_ids = match platform {
-            Vst3HostPlatform::MacOs => vec!["plugin:vst3:instrument", "plugin:vst3:utility"],
-            Vst3HostPlatform::Linux => vec!["plugin:vst3:linux-synth", "plugin:vst3:utility"],
-            Vst3HostPlatform::Windows => vec!["plugin:vst3:instrument", "plugin:vst3:utility"],
+            Vst3HostPlatform::MacOs => vec![
+                "plugin:vst3:instrument",
+                "plugin:vst3:multiout-instrument",
+                "plugin:vst3:utility",
+                "plugin:vst3:bus-fx",
+            ],
+            Vst3HostPlatform::Linux => vec![
+                "plugin:vst3:linux-synth",
+                "plugin:vst3:multiout-instrument",
+                "plugin:vst3:utility",
+                "plugin:vst3:bus-fx",
+            ],
+            Vst3HostPlatform::Windows => vec![
+                "plugin:vst3:instrument",
+                "plugin:vst3:multiout-instrument",
+                "plugin:vst3:utility",
+                "plugin:vst3:bus-fx",
+            ],
         };
 
         fixture_ids
@@ -246,18 +261,32 @@ fn known_root_matches(known_roots: &[String], root: &str) -> bool {
 fn vst3_fixture_bundle_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:vst3:instrument" => "Signal Instrument.vst3",
+        "plugin:vst3:multiout-instrument" => "Signal Multi Output Instrument.vst3",
         "plugin:vst3:linux-synth" => "Signal Linux Synth.vst3",
         "plugin:vst3:utility" => "Signal Utility.vst3",
+        "plugin:vst3:bus-fx" => "Signal Bus FX.vst3",
         _ => "Signal Unknown.vst3",
     }
 }
 
 fn vst3_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
     match plugin_type_id {
+        "plugin:vst3:multiout-instrument" => PluginIoLayout {
+            audio_inputs: 0,
+            audio_outputs: 6,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        },
         "plugin:vst3:instrument" | "plugin:vst3:linux-synth" => PluginIoLayout {
             audio_inputs: 0,
             audio_outputs: 2,
             midi_inputs: 1,
+            midi_outputs: 0,
+        },
+        "plugin:vst3:bus-fx" => PluginIoLayout {
+            audio_inputs: 4,
+            audio_outputs: 4,
+            midi_inputs: 0,
             midi_outputs: 0,
         },
         "plugin:vst3:utility" => PluginIoLayout {
@@ -278,17 +307,22 @@ fn vst3_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
 fn vst3_fixture_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:vst3:instrument" => "Signal Instrument VST3 Plugin",
+        "plugin:vst3:multiout-instrument" => "Signal Multi Output Instrument VST3 Plugin",
         "plugin:vst3:linux-synth" => "Signal Linux Synth VST3 Plugin",
         "plugin:vst3:utility" => "Signal Utility VST3 Plugin",
+        "plugin:vst3:bus-fx" => "Signal Bus FX VST3 Plugin",
         _ => "Signal Generic VST3 Plugin",
     }
 }
 
 fn vst3_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     match plugin_type_id {
-        "plugin:vst3:instrument" | "plugin:vst3:linux-synth" => {
+        "plugin:vst3:instrument"
+        | "plugin:vst3:multiout-instrument"
+        | "plugin:vst3:linux-synth" => {
             vec![PluginFeature::Instrument, PluginFeature::Analyzer]
         }
+        "plugin:vst3:bus-fx" => vec![PluginFeature::AudioEffect, PluginFeature::Utility],
         "plugin:vst3:utility" => vec![PluginFeature::AudioEffect, PluginFeature::Utility],
         _ => vec![PluginFeature::Utility],
     }
@@ -360,6 +394,11 @@ fn vst3_discovered_plugin_type(plugin_type_id: &str) -> Option<Vst3DiscoveredPlu
             Some("7E1D8F8A4D874D56A2C44DE250100002"),
             "Instrument",
         ),
+        "plugin:vst3:multiout-instrument" => (
+            "7E1D8F8A4D874D56A2C44DE250100011",
+            Some("7E1D8F8A4D874D56A2C44DE250100012"),
+            "Instrument",
+        ),
         "plugin:vst3:linux-synth" => (
             "7E1D8F8A4D874D56A2C44DE250100101",
             Some("7E1D8F8A4D874D56A2C44DE250100102"),
@@ -368,6 +407,11 @@ fn vst3_discovered_plugin_type(plugin_type_id: &str) -> Option<Vst3DiscoveredPlu
         "plugin:vst3:utility" => (
             "7E1D8F8A4D874D56A2C44DE250100201",
             Some("7E1D8F8A4D874D56A2C44DE250100202"),
+            "Fx",
+        ),
+        "plugin:vst3:bus-fx" => (
+            "7E1D8F8A4D874D56A2C44DE250100211",
+            Some("7E1D8F8A4D874D56A2C44DE250100212"),
             "Fx",
         ),
         _ => return None,
@@ -413,11 +457,17 @@ mod tests {
             Vst3HostPlatform::Linux,
             &[String::from("~/.vst3"), String::from("/usr/lib/vst3")],
         );
-        assert_eq!(discovered.len(), 2);
+        assert_eq!(discovered.len(), 4);
         assert_eq!(discovered[0].descriptor.format, PluginFormat::Vst3);
         assert!(discovered
             .iter()
             .any(|plugin| plugin.plugin_type_id.0 == "plugin:vst3:linux-synth"));
+        assert!(discovered
+            .iter()
+            .any(|plugin| plugin.plugin_type_id.0 == "plugin:vst3:multiout-instrument"));
+        assert!(discovered
+            .iter()
+            .any(|plugin| plugin.plugin_type_id.0 == "plugin:vst3:bus-fx"));
         assert!(discovered
             .iter()
             .all(|plugin| plugin.module_root.starts_with("~/.vst3/")));

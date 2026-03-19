@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-03-16
+Updated: 2026-03-19
 
 ## Why this section matters now
 
@@ -50,6 +50,27 @@ Use this section for:
 - `030-fault-injection-harness-and-multi-backend-acceptance-contract.md`
 - `031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md`
 - `032-canonical-multichannel-layout-and-channel-role-contract.md`
+- `033-sidechain-routing-and-secondary-input-execution-contract.md`
+- `034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`
+- `035-plugin-complex-io-topology-and-multi-output-instrument-contract.md`
+- `036-spatial-adapter-execution-contract.md`
+- `037-surround-bed-object-and-mix-policy-expansion-contract.md`
+- `038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md`
+- `039-linux-cross-adapter-plugin-parity-and-sandbox-policy-contract.md`
+- `040-linux-audio-backend-portability-across-alsa-jack-and-pipewire-contract.md`
+- `041-linux-backend-clocking-duplex-and-endpoint-topology-parity-contract.md`
+- `042-external-midi-endpoint-graph-and-device-identity-contract.md`
+- `043-midi-2-0-mpe-and-richer-controller-expression-contract.md`
+- `044-control-surface-transport-mapping-and-feedback-contract.md`
+- `045-advanced-hardware-extensibility-and-scripting-safe-device-policy-contract.md`
+- `046-sample-domain-time-stretch-engine-contract.md`
+- `047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md`
+- `048-post-warp-render-cache-and-transform-artifact-contract.md`
+- `049-low-latency-audition-scrub-and-preview-transform-service-contract.md`
+- `050-multichannel-linux-time-stretch-and-control-surface-acceptance-contract.md`
+- `051-generation-closeout-and-loophole-feature-readiness-gate-contract.md`
+- `052-live-linux-audio-backend-ownership-and-session-lifecycle-contract.md`
+- `053-jack-transport-graph-and-backend-native-coordination-contract.md`
 
 ## Rule
 
@@ -58,6 +79,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
-layout and channel-role meaning through runtime-owned topology, hardware, and
-plugin-facing receipts before the public proof batch closes the milestone.
+Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
+session-role, device-claim, and stream-policy parity meaning on top of the
+closed live Linux ownership and JACK coordination seams.

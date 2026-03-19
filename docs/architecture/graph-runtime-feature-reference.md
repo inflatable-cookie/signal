@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-16
+Updated: 2026-03-18
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -971,10 +971,416 @@ Implemented now:
 
 Planned elsewhere but not implemented in these crates yet:
 
-- `g07.001` now freezes the canonical multichannel layout and channel-role
-  contract on top of the current narrow `ChannelLayout` primitive, so broader
-  multichannel meaning is no longer purely implicit even though the runtime and
-  graph surfaces are still mostly mono/stereo in practice
+- `g07.001` now freezes and partially realizes the canonical multichannel
+  layout and channel-role contract on top of the current narrow `ChannelLayout`
+  primitive: runtime topology, external-I/O, and plugin discovery or stage
+  receipts now expose canonical layout, channel-role, and bus-intent meaning
+  instead of leaving multichannel truth as raw count-only host inference
+  - the shared consumer boundary is now closed through:
+    - public runtime proof for multichannel topology and discovery receipts
+    - stable local and server host-edge `supervisor_report()` proof
+    - `signal-supervisor-tools --describe-multichannel-boundary`
+    - `effigy acceptance:multichannel-boundary`
+- `g07.002` now freezes and partially realizes the first sidechain and
+  secondary-input routing boundary on top of that multichannel substrate:
+  - sidechain source, target, attachment policy, and fallback outcome are now
+    explicit Signal-owned routing vocabulary rather than host patching
+    convention
+  - `signal-runtime` now carries that meaning through:
+    - `GraphNodeBufferContractProjection.secondary_input`
+    - planned-node and execution-topology sidechain route receipts
+    - plugin-chain stage sidechain receipts
+    - offline render chain-dependency sidechain receipts
+  - focused runtime proof now covers:
+    - live topology and plugin-chain sidechain routing
+    - offline render dependency preview sidechain alignment
+  - the shared consumer boundary is now closed through:
+    - public runtime proof for sidechain routing and fallback receipts
+    - stable local and server host-edge `supervisor_report()` proof
+    - `signal-supervisor-tools --describe-sidechain-boundary`
+    - `effigy acceptance:sidechain-boundary`
+  - broader multi-bus, complex plugin-I/O, and spatial routing behavior remain
+    later work rather than implicit sidechain scope
+- `g07.003` now freezes the first reusable multi-bus and auxiliary-topology
+  contract, realizes it on runtime-owned execution surfaces, and proves the
+  shared consumer seam on top
+  of the closed multichannel and sidechain seams:
+  - bus role, auxiliary path, connection identity, attachment class, and
+    fallback outcome are now explicit Signal-owned routing vocabulary
+  - execution topology, metering diagnostics, and offline render dependency
+    preview now share typed multi-bus connection and auxiliary-path receipts
+  - public runtime, stable host-edge, and supervisor-tools descriptor proof now
+    close the bounded shared multi-bus consumer seam before later complex
+    plugin-I/O or spatial depth
+- `g07.004` now freezes the first reusable complex plugin-I/O contract on top
+  of the closed multichannel, sidechain, and multi-bus routing seams:
+  - plugin port class, complex plugin-I/O topology, multi-output instrument,
+    and bus-capable FX are now explicit Signal-owned routing vocabulary
+  - adapter capability and later runtime receipts now have one bounded target
+    for richer plugin bus behavior rather than drifting into format-private pin
+    naming
+  - runtime realization, render/export depth, and the shared consumer boundary
+    remain later `g07.004` work rather than implied by the contract freeze
+- `g07.004` Batch 4.2 now materializes bounded complex plugin-I/O meaning on
+  shared runtime surfaces:
+  - discovered plugin-type receipts, format coverage, and capability coverage
+    now carry typed complex plugin-I/O summaries instead of only raw feature
+    and bus counts
+  - plugin-chain stage snapshots and offline render dependency preview now
+    preserve multi-output instrument and bus-capable FX topology through the
+    same runtime-owned receipt family
+  - VST3 and AU baseline fixtures now expose multi-output instrument and
+    bus-capable FX shapes so the widened runtime surface is exercised against
+    richer adapter catalogs before the public proof tranche
+- `g07.004` Batch 4.3 now closes the bounded complex plugin-I/O consumer seam:
+  - public runtime proof now covers complex discovery, live stage topology, and
+    offline render dependency preview through one runtime-owned receipt family
+  - stable local and server host edges now prove they forward the same
+    multi-output instrument and bus-capable FX topology without adapter-local
+    pin reconstruction
+  - `signal-supervisor-tools` now exposes a machine-readable
+    `signal.runtime.complex-io-boundary` descriptor and repo-owned acceptance
+    task so the seam is inspectable rather than prose-only
+- `g07.005` Batch 5.1 now freezes the first reusable spatial execution
+  contract on top of those routing seams:
+  - spatial adapter class, execution mode, target environment, control family,
+    activation policy, and fallback outcome are now explicit Signal-owned
+    vocabulary
+  - later runtime execution, surround-bed expansion, and adapter breadth now
+    have one bounded authority line instead of product-local pan policy or
+    adapter-private renderer semantics
+  - unsupported layouts, unsupported adapters, and target-environment gaps now
+    must explain themselves through bounded fallback meaning rather than hidden
+    host heuristics
+- `g07.005` Batch 5.2 now materializes the first bounded runtime spatial path:
+  - planned-node, execution-topology, and plugin-chain stage receipts now carry
+    typed spatial execution summaries instead of leaving balance or fallback
+    behavior implicit in raw stage lists
+  - `RuntimeExecutionTopologySummary` now reports active, bypassed, and
+    fallback spatial-node counts directly on the shared runtime observation
+    surface
+  - offline-render dependency preview now carries aligned spatial stage
+    receipts so render planning no longer needs a separate spatial-only model
+  - the current executable baseline is intentionally narrow and explicit:
+    stereo `StereoBalance` stages realize bounded `BalanceGroups`, while
+    non-stereo layouts surface `BypassSpatialProcessing` fallback
+- `g07.005` Batch 5.3 now closes the shared consumer seam for that bounded
+  spatial baseline:
+  - public runtime proofs now verify execution-topology, plugin-chain, and
+    offline-render spatial receipts without private helpers
+  - both stable host edges now forward the same runtime-owned spatial execution
+    and fallback vocabulary on supervisor export
+  - `signal-supervisor-tools` now exposes a machine-readable
+    `signal.runtime.spatial-boundary` descriptor and repo-owned acceptance task
+    so the seam is inspectable rather than prose-only
+- `g07.006` Batch 6.1 now freezes the next richer-spatial expansion boundary:
+  - surround-bed class, object role, mix policy, render scope, and expanded
+    fallback outcome are now explicit Signal-owned vocabulary
+  - later surround or object runtime work now has one bounded authority line on
+    top of the closed multichannel, multi-bus, complex plugin-I/O, and
+    baseline spatial seams
+  - richer immersive execution is still deferred, but the meaning it must obey
+    is now explicit instead of living in product-local or renderer-private
+    assumptions
+- `g07.006` Batch 6.2 now materializes the first runtime-owned richer-spatial
+  receipt layer on top of that contract:
+  - the existing spatial execution summaries now also carry explicit bed class,
+    object-role placeholder, object count, mix policy, render scope, and
+    expanded fallback meaning rather than treating richer spatial depth as an
+    implied property of channel layout alone
+  - `RuntimeExecutionTopologySummary` now reports surround-bed, object-aware,
+    and expanded-fallback spatial-node counts directly on the shared runtime
+    observation surface
+  - offline-render dependency preview now carries the same richer spatial
+    counts and per-stage receipts so live execution and render planning stay on
+    one bounded model
+  - the current executable path is still intentionally narrow and explicit:
+    stereo `StereoBalance` stages realize `StereoBed` plus `BedOnly`, while
+    canonical surround stages surface `CanonicalSurroundBed` plus
+    `CollapseToBaselineSpatial` instead of silent non-stereo bypass
+- `g07.006` Batch 6.3 now closes the shared consumer seam for that richer
+  spatial substrate:
+  - public runtime proofs now verify surround-bed, mix-policy, render-scope,
+    and expanded-fallback receipts through observation, supervisor, and
+    offline-render preview surfaces without private helpers
+  - both stable host edges now forward the same richer spatial model on
+    supervisor export without host-local speaker or renderer reinterpretation
+  - `signal-supervisor-tools` now keeps the existing
+    `signal.runtime.spatial-boundary` descriptor aligned to the richer
+    `g07.006` contract instead of the earlier baseline-only spatial contract
+- `g07.007` Batch 7.1 now freezes the first LV2 adapter alignment boundary:
+  - LV2 discovery, lifecycle, and Linux-native support are now mapped onto the
+    existing backend-neutral plugin and runtime contract family instead of
+    being left as Linux-only host intent
+  - the current gaps are now explicit: no shared LV2 backend identity, no Rust
+    LV2 adapter realization, and no runtime-owned Linux-native scan or load
+    receipts exist yet
+  - later LV2 runtime work now has one bounded authority line to extend
+    without reopening host-local Linux plugin ownership or adapter-private
+    lifecycle semantics
+- `g07.007` Batch 7.2 now realizes the first Linux-native LV2 adapter slice:
+  - `signal-plugin` now exposes `PluginFormat::Lv2`, and
+    `signal-plugin-lv2` now owns bounded LV2 scan-root, URI, manifest-path,
+    and session-planning fixtures instead of leaving LV2 as contract-only
+    breadth
+  - the server host now feeds LV2 discovery and sandbox ensure through the
+    same runtime-owned discovered-type, lifecycle, instance-state, transport,
+    and parity receipts already used by the other plugin formats
+  - Linux-only LV2 platform scope is now explicit on runtime-owned parity and
+    platform-coverage surfaces rather than implied by Linux roadmap intent
+- `g07.007` Batch 7.3 now closes the shared LV2 proof seam:
+  - public runtime proofs now verify Linux-native LV2 discovery, lifecycle,
+    transport, and platform-scope truth through shared runtime reports
+  - the stable server host edge now forwards the same LV2 truth on supervisor
+    export without adapter-local or host-local Linux reconstruction
+  - `signal-supervisor-tools` now exposes `signal.runtime.lv2-boundary`, and
+    Effigy now owns an LV2 boundary acceptance lane for downstream consumers
+- `g07.008` Batch 8.1 now freezes the bounded Linux cross-adapter plugin parity
+  and sandbox-policy contract:
+  - CLAP, VST3, and LV2 now share one Linux-facing parity vocabulary for
+    portable, guarded, adapter-private, and unsupported behavior
+  - Linux sandbox and placement-policy meaning is now explicitly reused from
+    the shared runtime-owned continuity and shared-sandbox contract rather than
+    a Linux-only wrapper taxonomy
+  - later runtime work now has one bounded Linux parity target for lifecycle,
+    render, failure, and placement receipts instead of separate adapter claims
+- `g07.008` Batch 8.2 now realizes that bounded Linux parity contract on
+  runtime-owned receipt surfaces:
+  - `RuntimePluginFormatPlatformCoverageRecord` and
+    `RuntimePluginFormatParityRecord` now carry Linux-specific parity band,
+    Linux support, preferred sandbox outcome, strict-sandbox default,
+    render-capable type counts, and restart or rebindability counts
+  - `RuntimePluginDiscoverySnapshot`, `RuntimePluginScanReceipt`, and
+    `RuntimePluginLifecycleSnapshot` now share the same widened Linux parity
+    record family instead of forcing Linux consumers to infer policy from
+    broader cross-platform parity bands
+  - the Linux server host now feeds that widened parity surface directly on the
+    same runtime-owned discovery and lifecycle path for VST3 and LV2
+- `g07.008` Batch 8.3 now closes the shared Linux parity proof seam:
+  - public runtime proofs now verify Linux-specific parity band, Linux support,
+    preferred sandbox outcome, strict-sandbox default, and restart or failure
+    posture through shared runtime observation and supervisor reports
+  - the stable server host edge now forwards the same CLAP, VST3, and LV2
+    Linux parity truth without host-local Linux portability matrices
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.linux-plugin-parity-boundary`, and Effigy now owns a Linux
+    parity acceptance lane for downstream consumers
+- `g07.009` Batch 9.1 now freezes the bounded Linux hardware backend
+  portability contract:
+  - ALSA, JACK, and PipeWire now have one explicit Signal-owned portability
+    vocabulary instead of remaining future backend-private breadth
+  - Linux backend lifecycle, supervision, clocking, and endpoint interpretation
+    are now explicitly required to compose through the shared hardware,
+    supervision, and clock-domain contracts
+  - later backend baseline work now has one bounded Linux hardware contract
+    target instead of separate backend narratives
+- `g07.010` Batch 10.1 now freezes the bounded Linux backend clocking, duplex,
+  and endpoint-topology parity contract:
+  - ALSA, JACK, and PipeWire now have one explicit Linux-facing parity target
+    for clocking, duplex, and endpoint-topology meaning
+  - Linux backend identity remains anchored in the closed portability contract,
+    while clocking and topology parity are now required to compose through the
+    shared drift, discontinuity, duplex-mismatch, and supervision boundaries
+  - backend-native daemon, graph, and node detail remains advisory until later
+    runtime receipt work promotes it
+- `g07.010` Batch 10.2 now materializes the first runtime-owned Linux backend
+  parity receipt depth:
+  - `RuntimeHostClockingSummary` and `RuntimeExternalIoSnapshot` now carry
+    explicit Linux-specific clocking, duplex, and endpoint-topology parity
+    classification alongside the generic hardware and clocking fields
+  - ALSA-style steady same-clock paths now classify as portable, guarded
+    aggregate or recovering Linux paths stay explicit, and non-Linux or
+    unavailable host contexts export typed unsupported parity instead of
+    implied gaps
+  - local-host and server-host shared reports now forward the same Linux
+    parity vocabulary, which narrows the remaining work to the public proof
+    seam
+- `g07.010` Batch 10.3 now closes the bounded Linux backend clock-topology
+  consumer seam:
+  - public runtime proofs now verify ALSA, JACK, PipeWire, non-Linux, and
+    unavailable host contexts keep Linux-specific clocking, duplex, and
+    endpoint-topology parity consumable through shared observation and
+    supervisor receipts
+  - the stable local and server host edges now forward explicit unsupported or
+    unavailable Linux parity on shared export instead of falling back to
+    backend-private Linux capability matrices
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.linux-backend-clock-topology-boundary`, and Effigy now
+    owns `acceptance:linux-backend-clock-topology-boundary` as the repo-owned
+    rerun lane
+- `g07.011` Batch 11.1 now freezes the bounded external MIDI endpoint and
+  device-identity contract:
+  - external MIDI device identity, endpoint identity, endpoint graph, bounded
+    capability, lifecycle, and route meaning now have one explicit
+    runtime-owned target instead of product-local browser or patchbay models
+  - generic MIDI event meaning remains anchored in the closed `g06.012`
+    contract, which prevents later endpoint work from reopening a second
+    transport-private event vocabulary
+  - later runtime baseline work now has one fixed contract target for external
+    MIDI endpoint receipts rather than backend-private patchbay semantics
+- `g07.011` Batch 11.2 now materializes the first runtime-owned external MIDI
+  endpoint baseline:
+  - `RuntimeObservationReport` and `RuntimeSupervisorReport` now carry typed
+    external MIDI graph, device, endpoint, capability, and route receipts
+    instead of leaving endpoint truth implicit or host-private
+  - runtime capture now defaults to explicit `Unavailable` external MIDI state,
+    while local and server host edges both project the same `Empty` graph
+    baseline through shared runtime-owned export
+  - compact, multiline, and JSON report rendering now all carry the same
+    bounded external MIDI receipt family, which narrows the remaining work to
+    the public proof seam
+- `g07.011` Batch 11.3 now closes the bounded external MIDI consumer seam:
+  - public runtime proof now keeps typed `Unavailable` and `Empty` external
+    MIDI endpoint graph state consumable through shared observation and
+    supervisor receipts
+  - both stable host edges now prove they forward the same runtime-owned empty
+    external MIDI graph baseline instead of host-local MIDI device
+    reconstruction
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.external-midi-boundary`, and Effigy now owns
+    `acceptance:external-midi-boundary` as the repo-owned rerun lane
+- `g07.012` Batch 12.1 now freezes the widened MIDI 2.0 and controller-
+  expression contract:
+  - richer controller-expression, MPE posture, MIDI 2.0 posture, and guarded
+    widening now have one explicit runtime-owned contract target instead of
+    adapter-private packet models becoming the consumer boundary
+  - generic event meaning from `g06.012` and external MIDI endpoint meaning
+    from `g07.011` remain the anchors, which prevents later widening from
+    reopening a second event or device shell
+  - later runtime, plugin, and hardware work now has one fixed widened
+    expressive-event contract target rather than speculative controller-depth
+    drift
+- `g07.012` Batch 12.2 now materializes the first widened controller-
+  expression receipt family:
+  - `signal-plugin::EventPacketSummary` now breaks widened note expression into
+    pressure, timbre, and tuning families instead of one opaque widened count
+  - `RuntimePluginEventSnapshot` now carries those richer family totals plus
+    runtime-owned `MPE` and `MIDI 2.0` posture derived from shared event
+    evidence
+  - `RuntimeExternalMidiEndpointCapabilitySummary` now exposes explicit
+    guarded-or-unsupported widened capability posture for richer expression
+    families on the external MIDI hardware boundary
+- `g07.012` Batch 12.3 now closes the widened controller-expression proof
+  seam:
+  - public runtime now proves widened note-expression family totals, `MPE`
+    posture, `MIDI 2.0` posture, and bounded external-device controller-
+    expression capability posture through shared runtime DTOs
+  - both stable host edges now prove they forward the same widened
+    controller-expression truth instead of host-private packet or capability
+    reconstruction
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.controller-expression-boundary`, and Effigy now owns
+    `acceptance:controller-expression-boundary` as the repo-owned rerun lane
+- `g07.013` Batch 13.1 now freezes the bounded control-surface transport and
+  feedback contract:
+  - control-surface device identity, transport posture, feedback readiness,
+    mapping posture, and bounded capability meaning now have one explicit
+    runtime-owned contract target instead of host-local controller integration
+    logic
+  - external MIDI endpoint meaning from `g07.011` and widened controller-
+    expression meaning from `g07.012` remain the anchors, which prevents later
+    control-surface work from reopening a second device or event shell
+  - later runtime work now has one fixed control-surface contract target
+    before mapping, feedback, and extensibility depth widens
+- `g07.013` Batch 13.2 now materializes the first runtime-owned control-surface
+  baseline:
+  - `RuntimeControlSurfaceSnapshot` and per-device descriptors now derive
+    transport posture, mapping posture, feedback readiness, and widened-
+    expression capability directly from the closed external MIDI endpoint graph
+  - observation, supervisor, and both stable host-edge report paths now carry
+    the same control-surface snapshot family, including explicit unavailable,
+    empty, and guarded outcomes
+  - this keeps controller transport and feedback meaning inside shared runtime
+    receipts instead of host-local controller-policy reconstruction, while
+    leaving the public proof seam for Batch 13.3
+- `g07.013` Batch 13.3 now closes the bounded control-surface proof seam:
+  - public runtime now proves `RuntimeControlSurfaceSnapshot` remains
+    consumable through shared runtime reports without host-local controller
+    policy
+  - both stable host edges now prove they forward the same control-surface
+    transport, mapping-posture, feedback-readiness, and capability truth
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.control-surface-boundary`, and Effigy now owns
+    `acceptance:control-surface-boundary` as the repo-owned rerun lane
+- `g07.014` Batch 14.1 now freezes the bounded advanced-hardware extensibility
+  and scripting-safe device-policy contract:
+  - advanced device capability classes, guarded feedback channels, and typed
+    device action classes now have one explicit runtime-owned contract target
+    instead of host-local hardware exception handling
+  - scripting-safe policy posture is now explicitly runtime-owned and separates
+    portable, guarded, context-only, denied, and unsupported outcomes without
+    absorbing product-local controller setup or scripting workflow
+  - external MIDI endpoint and control-surface meaning remain the anchors,
+    which prevents later advanced hardware work from reopening a second device
+    or scripting shell
+- `g07.014` Batch 14.2 now materializes the first runtime-owned
+  advanced-hardware receipt family:
+  - `RuntimeAdvancedHardwareSnapshot` now derives advanced-hardware graph
+    state, scripting-safe device-policy posture, guarded feedback-channel
+    posture, and typed action classes from the closed control-surface baseline
+  - observation, supervisor, and stable host-edge report paths now carry
+    explicit unavailable, empty, guarded, and ready advanced-hardware outcomes
+    instead of host-local controller-policy reconstruction
+  - the baseline stays intentionally bounded to guarded display and navigation
+    posture while richer vendor protocols, motor or haptic depth, and
+    executable scripting remain deferred
+- `g07.014` Batch 14.3 now closes the bounded advanced-hardware proof seam:
+  - public runtime now proves `RuntimeAdvancedHardwareSnapshot` remains
+    consumable through shared runtime reports without host-local hardware or
+    controller-policy reconstruction
+  - both stable host edges now prove they forward the same advanced-hardware
+    graph state, scripting-safe device-policy posture, guarded feedback-channel
+    posture, and typed action-class truth
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.advanced-hardware-boundary`, and Effigy now owns
+    `acceptance:advanced-hardware-boundary` as the repo-owned rerun lane
+- `g07.015` Batch 15.3 now closes the bounded sample-domain stretch consumer
+  seam:
+  - public runtime now proves `RuntimeStretchEngineSnapshot` remains
+    consumable through shared runtime reports, clip-render receipts, and
+    offline-render preview without host-local transform reconstruction
+  - both stable host edges now prove they forward the same stretch-engine
+    class, readiness, degraded-state, and fallback truth through supervisor
+    export
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.stretch-boundary`, and Effigy now owns
+    `acceptance:stretch-boundary` as the repo-owned rerun lane
+- `g07.016` Batch 16.1 now freezes the bounded warp-marker, transient-anchor,
+  and tempo-assist analysis contract:
+  - marker, anchor, tempo-assist, readiness, degraded-state, and invalidation
+    meaning must now widen from the closed media-service, analysis-metadata,
+    and sample-domain stretch-engine seams instead of host-local marker tools
+  - later artifact-cache, preview, and audition work is now forced to deepen
+    one shared runtime-owned analysis boundary instead of reopening a second
+    transform-analysis shell
+- `g07.016` Batch 16.2 now materializes the first bounded runtime-owned
+  marker-analysis receipt family:
+  - `RuntimeMarkerAnalysisSnapshot` now derives warp-marker counts,
+    transient-anchor counts, tempo-assist posture, readiness, and invalidation
+    from shared clip-processing, stretch, warp, and media-library truth
+  - runtime observation, supervisor export, and both stable host edges now
+    surface the same marker-analysis receipts instead of reconstructing
+    host-local stretch-analysis state
+  - the realized baseline stays bounded to current reusable analysis
+    descriptors rather than claiming a fuller editor-grade marker engine
+- `g07.016` Batch 16.3 now closes the bounded marker-analysis consumer seam:
+  - public runtime now proves `RuntimeMarkerAnalysisSnapshot` remains
+    consumable through shared runtime reports without host-local
+    stretch-analysis reconstruction
+  - both stable host edges now prove they forward the same runtime-owned
+    warp-marker, transient-anchor, tempo-assist, readiness, and invalidation
+    receipts through supervisor export
+  - `signal-supervisor-tools` now exposes
+    `signal.runtime.marker-analysis-boundary`, and Effigy now owns
+    `acceptance:marker-analysis-boundary` as the repo-owned rerun lane
+- `g07.017` Batch 17.1 now freezes the bounded post-warp render and
+  transform-artifact contract:
+  - transform-artifact identity, readiness, invalidation, reuse, and degraded
+    posture must now widen from the closed media, stretch-engine, and
+    marker-analysis seams instead of host-local preview caches
+  - later preview and audition work is now forced to deepen one shared
+    runtime-owned transform-artifact boundary instead of reopening a second
+    preview-cache shell
 - broader multichannel adaptation beyond mono/stereo
 - richer graph stage catalogs and plugin-hosted stage execution inside
   `signal-graph` itself
@@ -1013,6 +1419,7 @@ Useful implementation entry points after this doc:
 - `effigy acceptance:plugin-continuity`
 - `effigy acceptance:plugin-backend-breadth`
 - `effigy acceptance:cross-adapter-parity-boundary`
+- `effigy acceptance:linux-plugin-parity-boundary`
 - `effigy acceptance:conformance`
 - `effigy acceptance:release-boundary`
 - `effigy acceptance:packaging-manifest`
@@ -1037,6 +1444,7 @@ Useful implementation entry points after this doc:
 - `docs/contracts/021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
 - `docs/contracts/022-backend-capability-parity-linux-plugin-support-and-cross-adapter-conformance-contract.md`
 - `docs/contracts/023-generic-midi-note-expression-and-plugin-event-model-contract.md`
+- `docs/contracts/040-linux-audio-backend-portability-across-alsa-jack-and-pipewire-contract.md`
 - `crates/signal-plugin-vst3/src/lib.rs`
 - `crates/signal-supervisor-tools/src/main.rs`
 - `effigy.toml`
@@ -1047,8 +1455,190 @@ Useful implementation entry points after this doc:
 - `crates/signal-host-local/tests/public_host_edge_boundary.rs`
 - `crates/signal-host-server/tests/public_host_edge_boundary.rs`
 
+## Batch 17.2 Outcome
+
+- `signal-runtime` now owns `RuntimeTransformArtifactSnapshot` and
+  `RuntimeTransformArtifactClipSnapshot`, derived from shared clip-processing,
+  stretch-engine, marker-analysis, and media-pipeline truth instead of
+  preview-cache or export-local inference.
+- the same transform-artifact receipt family now flows through runtime
+  observation, supervisor export, clip-render results, offline-render preview,
+  and stable host-edge JSON.
+- the bounded artifact baseline now exposes readiness, invalidation,
+  cached-media readiness, and reuse posture directly for later cache and
+  audition depth.
+
+## Batch 17.3 Outcome
+
+- public runtime, stable host-edge, and `signal-supervisor-tools` surfaces now
+  prove transform-artifact readiness, invalidation, cached-media readiness,
+  and reuse remain consumable without host-local preview-cache reconstruction.
+- Effigy now owns `acceptance:transform-artifact-boundary` as the repo-owned
+  rerun lane for the bounded post-warp artifact seam.
+
+## Batch 18.1 Outcome
+
+- Signal now has a frozen runtime-owned contract for low-latency audition,
+  scrub preview, preview service class, readiness, degraded state, fallback,
+  and artifact alignment on top of the closed stretch, marker-analysis, and
+  transform-artifact seams.
+- later preview-service work is now forced to deepen one shared runtime-owned
+  preview vocabulary instead of reopening host-local preview players,
+  product-local browser shells, or private scrub transform models.
+
+## Batch 18.2 Outcome
+
+- `signal-runtime` now owns `RuntimePreviewTransformServiceSnapshot`, derived
+  directly from the closed media-service, stretch-engine, marker-analysis, and
+  transform-artifact seams instead of host-local preview playback state.
+- runtime observation, supervisor export, clip-render results, offline render
+  contract preview, and both stable host-edge JSON paths now expose the same
+  preview service class, readiness, degraded state, fallback, active audition,
+  and scrub-supported receipts.
+
+## Batch 18.3 Outcome
+
+- public runtime, both stable host edges, and `signal-supervisor-tools` now
+  prove one shared `signal.runtime.preview-transform-boundary` for preview
+  readiness, degraded-state, fallback, active audition, and scrub-supported
+  truth.
+- Effigy now owns `acceptance:preview-transform-boundary` as the repo-owned
+  rerun lane for the bounded preview-transform seam.
+
+## Batch 19.1 Outcome
+
+- Signal now has a frozen integrated acceptance contract for the widened
+  multichannel, Linux, controller, and stretch surfaces instead of only
+  milestone-local boundary reruns.
+- later `g07.019` work is now constrained to one shared required, advisory,
+  and deferred policy for grouped acceptance descriptors and lanes.
+
+## Batch 19.2 Outcome
+
+- `signal-supervisor-tools` now exposes the first grouped `g07` acceptance-lane
+  descriptor, and Effigy now owns a repo-owned rerun lane across the required
+  routing, Linux, controller, and stretch families.
+- the acceptance surface is now runnable as one grouped lane instead of only a
+  roadmap promise over separate boundary tasks.
+
+## Batch 19.3 Outcome
+
+- the grouped `g07` acceptance lane now proves one `signal.supervisor.export`
+  payload can carry routing, Linux backend, control-surface or advanced-hardware,
+  and stretch or preview receipts together instead of only replaying the
+  component boundary tasks.
+- Effigy now keeps that cross-family export proof inside the repo-owned
+  `acceptance:g07-integrated-acceptance-lane` rerun task, so later closeout
+  work can build on one coherent evidence surface.
+
+## Batch 20.1 Outcome
+
+- `g07` closeout now has a frozen repo-owned policy in
+  `docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md`
+  instead of an open-ended final review shape.
+- the final gate is now constrained to one authority line: the closed routing,
+  Linux, controller, and stretch seams, the grouped integrated acceptance lane,
+  one future machine-readable closeout descriptor, and one explicit
+  Loophole-facing readiness verdict.
+
+## Batch 20.2 Outcome
+
+- `signal-supervisor-tools` now emits one machine-readable `g07` closeout
+  descriptor through `--describe-generation-closeout`, with `g07`-specific
+  contract, roadmap, grouped-acceptance, provisional readiness, and residual
+  risk state.
+- Effigy now owns `acceptance:g07-closeout`, making the closeout gate runnable
+  on top of the grouped `g07` acceptance lane instead of leaving Batch 20.3 to
+  invent its own validation surface.
+- the final Loophole-facing readiness verdict and any next-generation or
+  backlog decision remain intentionally deferred, but they now have one typed
+  gate to review instead of a prose-only milestone close.
+
+## Batch 20.3 Outcome
+
+- the `g07` closeout descriptor now records a real promotion verdict:
+  `promote-g08`, with all `g07` readiness areas resolved to
+  `sufficient-for-promotion`
+- the bounded `g07` gate is now enough to treat routing, Linux breadth,
+  controller substrate, and sample-domain transform services as closed reusable
+  Signal substrate instead of an active blocker
+- richer Linux live ownership, immersive routing, vendor-protocol hardware,
+  and preview-browser workflow depth stay explicit as `g08` scope rather than
+  silently blocking `g07` closeout
+
+## g08.001 Batch 1.1 Outcome
+
+- `g08` now has a frozen live Linux backend ownership contract in
+  `docs/contracts/052-live-linux-audio-backend-ownership-and-session-lifecycle-contract.md`
+  instead of relying on the bounded portability and parity seams alone
+- ALSA, JACK, and PipeWire live attach, running, recovery, release, and
+  unavailable posture are now required to compose through shared hardware,
+  supervision, and external-I/O receipts instead of backend-private daemon or
+  graph lifecycle shells
+- backend-native graph, transport, node, and session-manager detail remains
+  explicitly private until later `g08` promotion
+
+## g08.001 Batch 1.2 Outcome
+
+- `signal-runtime` now owns `RuntimeLinuxBackendSessionSnapshot` plus typed
+  ownership, lifecycle, device-claim, role, and fallback state for live Linux
+  backend sessions
+- the first derivation path composes from `RuntimeHostIoSummary`, keeping live
+  Linux ownership meaning runtime-owned instead of daemon-local or host-local
+- host-local now exports an explicit `NotLinux` answer, while server-host
+  exports a bounded simulated PipeWire backend-managed session baseline on the
+  same shared runtime seam
+
+## g08.001 Batch 1.3 Outcome
+
+- public runtime, both stable host edges, and supervisor-tools now prove the
+  live Linux backend ownership seam through one shared
+  `RuntimeLinuxBackendSessionSnapshot` contract instead of backend-private
+  Linux session stories
+- local host proves explicit `NotLinux` export, while server host proves the
+  bounded PipeWire-style live-session baseline stays runtime-owned
+- Effigy now owns `acceptance:linux-live-ownership-boundary` so this seam can
+  be rerun as a repo-owned contract before deeper JACK and backend-native work
+  widens
+
+## g08.002 Batch 2.1 Outcome
+
+- `g08` now has a frozen JACK transport, graph, and backend-native
+  coordination contract in
+  `docs/contracts/053-jack-transport-graph-and-backend-native-coordination-contract.md`
+  instead of relying on the closed live Linux ownership seam alone
+- JACK transport posture, graph attachment, client role, and guarded
+  coordination are now required to compose through shared runtime, hardware,
+  and supervision receipts instead of host-private callback policy
+- JACK callback-thread, daemon, port-ID, and session-manager details remain
+  explicitly private until later `g08` promotion
+
+## g08.002 Batch 2.2 Outcome
+
+- `signal-runtime` now owns a bounded `RuntimeJackCoordinationSnapshot`
+  derived from shared Linux host-I/O and transport-session evidence instead of
+  host-private JACK callback policy
+- JACK transport posture, graph-state, client-role, and guarded-coordination
+  answers now stay typed on shared runtime, observation, and supervisor
+  surfaces
+- stable host edges export explicit bounded answers on that same seam:
+  `NotJack` on local host and a simulated guarded JACK graph baseline on
+  server host
+## g08.002 Batch 2.3 Outcome
+
+- public runtime now proves JACK transport posture, graph coordination,
+  client role, and guarded state through one downstream-style observation and
+  supervisor boundary
+- stable host edges now keep that seam explicit:
+  `NotJack` on local host and a bounded guarded JACK graph baseline on server
+  host
+- supervisor-tools and Effigy now expose
+  `signal.runtime.jack-coordination-boundary` plus
+  `acceptance:jack-coordination-boundary` as the repo-owned consumer-proof
+  seam
+
 ## Next Task
 
-Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
-layout and channel-role meaning through runtime-owned topology, hardware, and
-plugin-facing receipts before the public proof batch closes the milestone.
+Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
+session-role, device-claim, and stream-policy parity meaning on top of the
+closed live Linux ownership and JACK coordination seams.

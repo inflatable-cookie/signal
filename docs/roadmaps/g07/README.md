@@ -1,7 +1,7 @@
 # g07 Milestones
 
-Status: active
-Updated: 2026-03-16
+Status: complete
+Updated: 2026-03-19
 
 ## Why this generation matters next
 
@@ -52,45 +52,45 @@ This generation is intentionally shaped by repeated Chorus demand in:
 
 ## Milestone map
 
-- `g07.001` `active`
+- `g07.001` `complete`
   - canonical multichannel layout and channel-role substrate
-- `g07.002` `planned`
+- `g07.002` `complete`
   - sidechain routing and secondary-input execution depth
-- `g07.003` `planned`
+- `g07.003` `complete`
   - multi-bus graph execution and auxiliary topology depth
-- `g07.004` `planned`
+- `g07.004` `complete`
   - plugin complex I/O topology and multi-output instrument depth
-- `g07.005` `planned`
+- `g07.005` `complete`
   - spatial adapter execution baseline
-- `g07.006` `planned`
+- `g07.006` `complete`
   - surround bed, object, and mix-policy expansion
-- `g07.007` `planned`
+- `g07.007` `complete`
   - LV2 adapter baseline and Linux-native plugin lifecycle depth
-- `g07.008` `planned`
+- `g07.008` `complete`
   - Linux cross-adapter plugin parity and sandbox policy
-- `g07.009` `planned`
+- `g07.009` `complete`
   - Linux audio backend portability across ALSA, JACK, and PipeWire
-- `g07.010` `planned`
+- `g07.010` `complete`
   - Linux backend clocking, duplex, and endpoint-topology parity
-- `g07.011` `planned`
+- `g07.011` `complete`
   - external MIDI endpoint graph and device-identity baseline
-- `g07.012` `planned`
+- `g07.012` `complete`
   - MIDI 2.0, MPE, and richer controller-expression depth
-- `g07.013` `planned`
+- `g07.013` `complete`
   - control-surface transport, mapping, and feedback baseline
-- `g07.014` `planned`
+- `g07.014` `complete`
   - advanced hardware extensibility and scripting-safe device policy
-- `g07.015` `planned`
+- `g07.015` `complete`
   - sample-domain time-stretch engine baseline
-- `g07.016` `planned`
+- `g07.016` `complete`
   - warp-marker, transient-anchor, and tempo-assist analysis depth
-- `g07.017` `planned`
+- `g07.017` `complete`
   - post-warp render, cache, and transform-artifact depth
-- `g07.018` `planned`
+- `g07.018` `complete`
   - low-latency audition, scrub, and preview transform services
-- `g07.019` `planned`
+- `g07.019` `complete`
   - multichannel, Linux, time-stretch, and control-surface acceptance depth
-- `g07.020` `planned`
+- `g07.020` `complete`
   - generation closeout and Loophole feature-readiness gate
 
 ## Lane structure
@@ -146,6 +146,6 @@ the generation is ready for downstream reliance.
 
 ## Next Task
 
-Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
-layout and channel-role meaning through runtime-owned topology, hardware, and
-plugin-facing receipts before the public proof batch closes the milestone.
+Continue `g08.001` with Batch 1.1 by freezing the runtime-owned live Linux
+audio backend ownership and session-lifecycle contract before deeper ALSA,
+JACK, and PipeWire runtime realization widens.

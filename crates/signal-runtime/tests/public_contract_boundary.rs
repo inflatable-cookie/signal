@@ -6,41 +6,56 @@ use signal_graph::GraphNodeTopologyRole;
 use signal_graph::{
     synthetic_stereo_block, GraphExecutionLane, GraphNodeExecutionClass, GraphStageSpec,
 };
-use signal_hardware::{AudioSampleFormat, BackendHealth};
+use signal_hardware::{
+    AudioSampleFormat, BackendHealth, HardwareBackendIdentity, LinuxAudioBackendKind,
+};
 use signal_plugin::{
     EventPacketSummary, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
     PluginProcessingContract, PluginStateContract,
 };
-use signal_primitives::{FrameCount, SampleRate};
+use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, FrameCount, SampleRate};
 use signal_runtime::{
     GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeContractProjection,
     GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, HandshakeRequest,
     PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxInstanceStateRecord,
     PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest,
-    RestartRequest, RuntimeBlockDeadlinePressure, RuntimeConfig, RuntimeConfigRequest,
+    RestartRequest, RuntimeAuxiliaryPathKind, RuntimeBlockDeadlinePressure, RuntimeBusIntent,
+    RuntimeBusRole, RuntimeCanonicalChannelLayout, RuntimeConfig, RuntimeConfigRequest,
     RuntimeDeferredServiceBackpressureSource, RuntimeDeferredServiceCancellationCause,
     RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
     RuntimeDeferredServiceReason, RuntimeDeviceFaultBoundaryState, RuntimeDeviceRestartState,
     RuntimeDeviceSupervisionState, RuntimeError, RuntimeErrorKind, RuntimeEventRecorder,
     RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
-    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeHostAudioPumpSummary,
+    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole,
+    RuntimeExternalMidiDiscoveryState, RuntimeExternalMidiGraphState, RuntimeHostAudioPumpSummary,
     RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
     RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
     RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
     RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
     RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
     RuntimeHostLifecycleOwnership, RuntimeHostObservationReport, RuntimeHostRestartPolicy,
-    RuntimeHostSupervisorReport, RuntimeInterruptionClass, RuntimeLifecycleApi,
-    RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineRenderExecutionState,
-    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot,
-    RuntimePluginAraDocumentContext, RuntimePluginAraRegionContext, RuntimePluginAraSourceContext,
-    RuntimePluginDiscoveredTypeRecord, RuntimePluginFormatPlatformCoverageRecord,
-    RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginParityBand,
-    RuntimePluginPlacementPolicy, RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
-    RuntimePluginPresetDescriptor, RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass,
-    RuntimeProjectionApi, RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
-    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeSupervisorReport,
-    RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, StopReason, WatchdogRestartRecord,
+    RuntimeHostSupervisorReport, RuntimeInterruptionClass, RuntimeJackClientRole,
+    RuntimeJackGraphCoordinationState, RuntimeJackGuardedCoordinationState,
+    RuntimeJackTransportPosture, RuntimeLifecycleApi, RuntimeObservationApi,
+    RuntimeObservationReport, RuntimeOfflineRenderContractPreview,
+    RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderPurgeRequest,
+    RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot, RuntimePluginAraDocumentContext,
+    RuntimePluginAraRegionContext, RuntimePluginAraSourceContext, RuntimePluginBusCapableFxClass,
+    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePluginPlacementPolicy,
+    RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher, RuntimePluginPresetDescriptor,
+    RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass, RuntimeProjectionApi,
+    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
+    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState,
+    RuntimeSecondaryInputAttachmentPolicy, RuntimeSecondaryInputContractProjection,
+    RuntimeSecondaryInputFallbackOutcome, RuntimeSecondaryInputTargetKind,
+    RuntimeSpatialAdapterClass, RuntimeSpatialBedClass, RuntimeSpatialExecutionMode,
+    RuntimeSpatialExpandedFallbackOutcome, RuntimeSpatialFallbackOutcome, RuntimeSpatialMixPolicy,
+    RuntimeSpatialRenderScope, RuntimeSpatialTargetEnvironment, RuntimeSupervisorReport,
+    RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, StopReason, TransportDispatchState,
+    TransportHeartbeatFreshness, TransportSessionBoundaryMode, TransportSessionState,
+    TransportSessionSummary, WatchdogRestartRecord,
 };
 
 fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
@@ -58,6 +73,23 @@ fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
             midi_inputs: 1,
             midi_outputs: 1,
         },
+        default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+            PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 1,
+            },
+        ),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &[PluginFeature::AudioEffect, PluginFeature::Utility],
+            PluginIoLayout {
+                audio_inputs: 2,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 1,
+            },
+        ),
         audio_bus_count: 2,
         parameter_count: 8,
         state_contract: PluginStateContract {
@@ -101,6 +133,23 @@ fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             midi_inputs: 1,
             midi_outputs: 0,
         },
+        default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &[PluginFeature::Instrument, PluginFeature::Analyzer],
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
         audio_bus_count: 1,
         parameter_count: 12,
         state_contract: PluginStateContract {
@@ -129,6 +178,126 @@ fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
     }
 }
 
+fn sample_complex_multi_output_record() -> RuntimePluginDiscoveredTypeRecord {
+    RuntimePluginDiscoveredTypeRecord {
+        plugin_type_id: "plugin:vst3:public-multiout".into(),
+        plugin_id: "com.signal.public-multiout".into(),
+        vendor: "Signal".into(),
+        name: "Signal Public Multi Output".into(),
+        format: PluginFormat::Vst3,
+        version: Some("2.1.0".into()),
+        features: vec![PluginFeature::Instrument, PluginFeature::Analyzer],
+        default_io_layout: PluginIoLayout {
+            audio_inputs: 0,
+            audio_outputs: 6,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        },
+        default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 6,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &[PluginFeature::Instrument, PluginFeature::Analyzer],
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 6,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
+        audio_bus_count: 1,
+        parameter_count: 24,
+        state_contract: PluginStateContract {
+            supports_snapshot: false,
+            supports_reset: true,
+            supports_bypass: false,
+            exposes_latency: false,
+            exposes_tail: true,
+        },
+        processing_contract: PluginProcessingContract {
+            max_block_frames: 2048,
+            sample_accurate_automation: false,
+            accepts_midi: true,
+            accepts_note_events: true,
+            supports_note_expression: true,
+            produces_midi: false,
+            silence_aware: false,
+        },
+        lifecycle_contract: PluginLifecycleContract {
+            requires_main_thread_for_state: true,
+            supports_prepare: true,
+            supports_activate: true,
+            supports_reset_while_active: false,
+        },
+        summary: "public boundary complex multi-output instrument".into(),
+    }
+}
+
+fn sample_complex_bus_fx_record() -> RuntimePluginDiscoveredTypeRecord {
+    RuntimePluginDiscoveredTypeRecord {
+        plugin_type_id: "plugin:vst3:public-bus-fx".into(),
+        plugin_id: "com.signal.public-bus-fx".into(),
+        vendor: "Signal".into(),
+        name: "Signal Public Bus FX".into(),
+        format: PluginFormat::Vst3,
+        version: Some("2.1.0".into()),
+        features: vec![PluginFeature::AudioEffect, PluginFeature::Utility],
+        default_io_layout: PluginIoLayout {
+            audio_inputs: 4,
+            audio_outputs: 4,
+            midi_inputs: 0,
+            midi_outputs: 0,
+        },
+        default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+            PluginIoLayout {
+                audio_inputs: 4,
+                audio_outputs: 4,
+                midi_inputs: 0,
+                midi_outputs: 0,
+            },
+        ),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &[PluginFeature::AudioEffect, PluginFeature::Utility],
+            PluginIoLayout {
+                audio_inputs: 4,
+                audio_outputs: 4,
+                midi_inputs: 0,
+                midi_outputs: 0,
+            },
+        ),
+        audio_bus_count: 2,
+        parameter_count: 18,
+        state_contract: PluginStateContract {
+            supports_snapshot: true,
+            supports_reset: true,
+            supports_bypass: true,
+            exposes_latency: true,
+            exposes_tail: true,
+        },
+        processing_contract: PluginProcessingContract {
+            max_block_frames: 4096,
+            sample_accurate_automation: true,
+            accepts_midi: false,
+            accepts_note_events: false,
+            supports_note_expression: false,
+            produces_midi: false,
+            silence_aware: true,
+        },
+        lifecycle_contract: PluginLifecycleContract {
+            requires_main_thread_for_state: false,
+            supports_prepare: true,
+            supports_activate: true,
+            supports_reset_while_active: true,
+        },
+        summary: "public boundary bus-capable fx".into(),
+    }
+}
+
 fn sample_public_clock_topology_host_io(
     clock_domain: RuntimeHostClockDomain,
     fallback_state: RuntimeHostClockFallbackState,
@@ -139,13 +308,29 @@ fn sample_public_clock_topology_host_io(
     endpoint_topology: RuntimeHostEndpointTopology,
     partial_availability: bool,
 ) -> RuntimeHostIoSummary {
+    let linux_backend_identity =
+        signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            HardwareBackendIdentity::CoreAudio,
+        );
     RuntimeHostIoSummary {
         hardware: RuntimeHostHardwareSummary {
+            backend_identity: HardwareBackendIdentity::CoreAudio,
             backend_name: "coreaudio".into(),
+            linux_backend_identity,
+            linux_backend_portability:
+                signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                    HardwareBackendIdentity::CoreAudio,
+                    false,
+                    BackendHealth::Healthy,
+                    0,
+                    0,
+                    0,
+                ),
             device_id: "device:public-clock-topology".into(),
             device_name: "Public Clock Topology".into(),
             sample_rate: 48_000,
             buffer_size: 256,
+            input_channels: 0,
             output_channels: 2,
             sample_format: AudioSampleFormat::F32,
             simulated: false,
@@ -185,6 +370,38 @@ fn sample_public_clock_topology_host_io(
             discontinuity_state,
             duplex_mismatch_state,
             endpoint_topology,
+            linux_clocking_parity:
+                signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
+                    linux_backend_identity,
+                    BackendHealth::Healthy,
+                    RuntimeHostAudioStreamState::Running,
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                ),
+            linux_duplex_parity: signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
+                linux_backend_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                clock_domain,
+                fallback_state,
+                transition_state,
+                duplex_mismatch_state,
+                endpoint_topology,
+                partial_availability,
+            ),
+            linux_endpoint_topology_parity:
+                signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                    linux_backend_identity,
+                    BackendHealth::Healthy,
+                    transition_state,
+                    discontinuity_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                ),
             partial_availability,
             crossing_required: matches!(
                 clock_domain,
@@ -205,6 +422,282 @@ fn sample_public_clock_topology_host_io(
             estimated_round_trip_latency_ms: Some(8.5),
         },
         runtime_graph_id_matches_pump: true,
+    }
+}
+
+fn sample_public_linux_backend_host_io(
+    backend_identity: HardwareBackendIdentity,
+    backend_name: &str,
+    device_id: &str,
+    device_name: &str,
+    simulated: bool,
+    backend_health: BackendHealth,
+    device_loss_count: u64,
+    restart_attempt_count: u64,
+    restart_failure_count: u64,
+) -> RuntimeHostIoSummary {
+    let linux_backend_identity =
+        signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            backend_identity,
+        );
+    let clock_source = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostClockSource::Internal
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack) => {
+            RuntimeHostClockSource::ExternalWordClock
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostClockSource::Virtual
+        }
+        _ => RuntimeHostClockSource::Internal,
+    };
+    let clock_domain = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostClockDomain::SameClock
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostClockDomain::Aggregate
+        }
+        _ => RuntimeHostClockDomain::SameClock,
+    };
+    let fallback_state = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostClockFallbackState::Direct
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostClockFallbackState::RuntimeResampled
+        }
+        _ => RuntimeHostClockFallbackState::Direct,
+    };
+    let transition_state = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostClockTransitionState::Stable
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostClockTransitionState::EnteredAggregateClock
+        }
+        _ => RuntimeHostClockTransitionState::Stable,
+    };
+    let drift_state = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostClockDriftState::Stable
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostClockDriftState::AggregateManaged
+        }
+        _ => RuntimeHostClockDriftState::Stable,
+    };
+    let discontinuity_state = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostClockDiscontinuityState::Continuous
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostClockDiscontinuityState::Reconfigured
+        }
+        _ => RuntimeHostClockDiscontinuityState::Continuous,
+    };
+    let duplex_mismatch_state = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostDuplexMismatchState::Aligned
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostDuplexMismatchState::CrossClockDiverged
+        }
+        _ => RuntimeHostDuplexMismatchState::NotApplicable,
+    };
+    let endpoint_topology = match backend_identity {
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+            RuntimeHostEndpointTopology::Duplex
+        }
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        | HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+            RuntimeHostEndpointTopology::Aggregate
+        }
+        _ => RuntimeHostEndpointTopology::Duplex,
+    };
+    let partial_availability = false;
+    let stream_state = RuntimeHostAudioStreamState::Running;
+    RuntimeHostIoSummary {
+        hardware: RuntimeHostHardwareSummary {
+            backend_identity,
+            backend_name: backend_name.into(),
+            linux_backend_identity,
+            linux_backend_portability:
+                signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                    backend_identity,
+                    simulated,
+                    backend_health,
+                    device_loss_count,
+                    restart_attempt_count,
+                    restart_failure_count,
+                ),
+            device_id: device_id.into(),
+            device_name: device_name.into(),
+            sample_rate: 48_000,
+            buffer_size: 256,
+            input_channels: 2,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            simulated,
+            backend_health,
+            xrun_count: 0,
+            callback_overrun_count: 0,
+            device_loss_count,
+            restart_attempt_count,
+            restart_failure_count,
+        },
+        audio_pump: RuntimeHostAudioPumpSummary {
+            stream_state,
+            transfer_policy: RuntimeHostAudioTransferPolicy {
+                max_callback_frames: 256,
+                max_transfer_channels: 2,
+                zero_fill_unwritten_output: true,
+            },
+            callback_count: 12,
+            total_callback_frames: 3_072,
+            total_runtime_output_frames: 3_072,
+            copied_output_samples: 6_144,
+            zero_filled_output_samples: 0,
+            dropped_output_samples: 0,
+            last_callback_output_peak: Some(0.25),
+            last_runtime_graph_id: Some("graph:public-linux-backend".into()),
+        },
+        clocking: RuntimeHostClockingSummary {
+            clock_source,
+            ownership: RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            restart_policy: RuntimeHostRestartPolicy::BackendMayRestart,
+            processing_sample_rate_hz: 48_000,
+            hardware_sample_rate_hz: 48_000,
+            clock_domain,
+            fallback_state,
+            transition_state,
+            drift_state,
+            discontinuity_state,
+            duplex_mismatch_state,
+            endpoint_topology,
+            linux_clocking_parity:
+                signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                ),
+            linux_duplex_parity: signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
+                linux_backend_identity,
+                backend_health,
+                stream_state,
+                clock_domain,
+                fallback_state,
+                transition_state,
+                duplex_mismatch_state,
+                endpoint_topology,
+                partial_availability,
+            ),
+            linux_endpoint_topology_parity:
+                signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                    linux_backend_identity,
+                    backend_health,
+                    transition_state,
+                    discontinuity_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                ),
+            partial_availability,
+            crossing_required: matches!(
+                clock_domain,
+                RuntimeHostClockDomain::CrossClock | RuntimeHostClockDomain::Aggregate
+            ),
+            callback_interval_ms: 5.333,
+        },
+        latency: RuntimeHostLatencySummary {
+            input_latency_samples: Some(128),
+            output_latency_samples: 256,
+            round_trip_latency_samples: Some(384),
+            graph_latency_samples: 24,
+            estimated_output_latency_samples: 280,
+            estimated_round_trip_latency_samples: Some(408),
+            output_latency_ms: 5.333,
+            graph_latency_ms: 0.5,
+            estimated_output_latency_ms: 5.833,
+            estimated_round_trip_latency_ms: Some(8.5),
+        },
+        runtime_graph_id_matches_pump: true,
+    }
+}
+
+fn sample_public_transport_session_summary(
+    current_state: TransportSessionState,
+    currently_attached: bool,
+    heartbeat_freshness: TransportHeartbeatFreshness,
+    dispatch_state: TransportDispatchState,
+    attach_events: usize,
+    detach_requested_events: usize,
+    detached_events: usize,
+) -> TransportSessionSummary {
+    TransportSessionSummary {
+        boundary_mode: TransportSessionBoundaryMode::HealthyPathVisible,
+        current_state,
+        currently_attached,
+        heartbeat_freshness,
+        dispatch_state,
+        current_attached_session_count: usize::from(currently_attached),
+        max_concurrent_attached_sessions: usize::from(currently_attached),
+        attach_events,
+        detach_requested_events,
+        detached_events,
+        detach_fault_events: 0,
+        heartbeat_requested_events: usize::from(matches!(
+            heartbeat_freshness,
+            TransportHeartbeatFreshness::Requested
+                | TransportHeartbeatFreshness::Fresh
+                | TransportHeartbeatFreshness::Missed
+        )),
+        heartbeat_responded_events: usize::from(matches!(
+            heartbeat_freshness,
+            TransportHeartbeatFreshness::Fresh
+        )),
+        heartbeat_missed_events: usize::from(matches!(
+            heartbeat_freshness,
+            TransportHeartbeatFreshness::Missed
+        )),
+        dispatch_requested_events: usize::from(matches!(
+            dispatch_state,
+            TransportDispatchState::Requested
+                | TransportDispatchState::Completed
+                | TransportDispatchState::TimedOut
+        )),
+        dispatch_completed_events: usize::from(matches!(
+            dispatch_state,
+            TransportDispatchState::Completed
+        )),
+        dispatch_timed_out_events: usize::from(matches!(
+            dispatch_state,
+            TransportDispatchState::TimedOut
+        )),
+        first_processing_epoch: None,
+        last_processing_epoch: None,
+        first_block_sequence: None,
+        last_block_sequence: None,
+        active_sandbox_id: None,
+        active_lease_id: None,
+        active_region_id: None,
+        active_block_sequence: None,
+        active_sessions: Vec::new(),
+        last_sandbox_id: None,
+        last_lease_id: None,
+        last_region_id: None,
     }
 }
 
@@ -250,6 +743,36 @@ fn write_public_test_wav(path: &Path) {
     fs::write(path, bytes).expect("public media fixture should be written");
 }
 
+fn write_public_transient_test_wav(path: &Path) {
+    let channels = 1u16;
+    let sample_rate = 48_000u32;
+    let bits_per_sample = 16u16;
+    let frame_count = 48_000u32;
+    let block_align = channels * (bits_per_sample / 8);
+    let byte_rate = sample_rate * block_align as u32;
+    let data_size = frame_count * block_align as u32;
+    let riff_size = 36 + data_size;
+    let mut bytes = Vec::with_capacity((44 + data_size) as usize);
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&riff_size.to_le_bytes());
+    bytes.extend_from_slice(b"WAVE");
+    bytes.extend_from_slice(b"fmt ");
+    bytes.extend_from_slice(&16u32.to_le_bytes());
+    bytes.extend_from_slice(&1u16.to_le_bytes());
+    bytes.extend_from_slice(&channels.to_le_bytes());
+    bytes.extend_from_slice(&sample_rate.to_le_bytes());
+    bytes.extend_from_slice(&byte_rate.to_le_bytes());
+    bytes.extend_from_slice(&block_align.to_le_bytes());
+    bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&data_size.to_le_bytes());
+    for index in 0..frame_count {
+        let sample = if index % 6_000 == 0 { i16::MAX } else { 0 };
+        bytes.extend_from_slice(&sample.to_le_bytes());
+    }
+    fs::write(path, bytes).expect("public transient media fixture should be written");
+}
+
 fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
     RuntimePluginDiscoveredTypeRecord {
         plugin_type_id: "plugin:au:public-instrument".into(),
@@ -265,6 +788,23 @@ fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             midi_inputs: 1,
             midi_outputs: 0,
         },
+        default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &[PluginFeature::Instrument, PluginFeature::Analyzer],
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
         audio_bus_count: 1,
         parameter_count: 10,
         state_contract: PluginStateContract {
@@ -290,6 +830,66 @@ fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_reset_while_active: false,
         },
         summary: "public boundary au breadth plugin".into(),
+    }
+}
+
+fn sample_lv2_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
+    RuntimePluginDiscoveredTypeRecord {
+        plugin_type_id: "plugin:lv2:public-linux-synth".into(),
+        plugin_id: "com.signal.public-lv2-linux-synth".into(),
+        vendor: "Signal".into(),
+        name: "Signal Public LV2 Linux Synth".into(),
+        format: PluginFormat::Lv2,
+        version: Some("1.0.0".into()),
+        features: vec![PluginFeature::Instrument, PluginFeature::Analyzer],
+        default_io_layout: PluginIoLayout {
+            audio_inputs: 0,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        },
+        default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &[PluginFeature::Instrument, PluginFeature::Analyzer],
+            PluginIoLayout {
+                audio_inputs: 0,
+                audio_outputs: 2,
+                midi_inputs: 1,
+                midi_outputs: 0,
+            },
+        ),
+        audio_bus_count: 1,
+        parameter_count: 10,
+        state_contract: PluginStateContract {
+            supports_snapshot: true,
+            supports_reset: true,
+            supports_bypass: true,
+            exposes_latency: true,
+            exposes_tail: true,
+        },
+        processing_contract: PluginProcessingContract {
+            max_block_frames: 2048,
+            sample_accurate_automation: false,
+            accepts_midi: true,
+            accepts_note_events: true,
+            supports_note_expression: false,
+            produces_midi: false,
+            silence_aware: true,
+        },
+        lifecycle_contract: PluginLifecycleContract {
+            requires_main_thread_for_state: false,
+            supports_prepare: true,
+            supports_activate: true,
+            supports_reset_while_active: false,
+        },
+        summary: "public lv2 boundary plugin".into(),
     }
 }
 
@@ -391,6 +991,559 @@ fn apply_public_plugin_continuity_graph(
                 .collect(),
         })
         .expect("public plugin continuity bindings should succeed");
+}
+
+fn apply_public_multichannel_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 2,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "surround-track".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 32,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.95 }],
+                },
+                GraphNodeProjection {
+                    node_id: "analysis-send".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.75 }],
+                },
+            ],
+        })
+        .expect("public multichannel graph projection should succeed");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: 2,
+            nodes: vec![
+                GraphNodeContractProjection {
+                    node_id: "surround-track".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:out".into(),
+                            channels: ChannelLayout::Count(ChannelCount(6)),
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:surround".into()),
+                        bus_group_id: Some("mix:public:surround".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "analysis-send".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Count(ChannelCount(6)),
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:out".into(),
+                            channels: ChannelLayout::Count(ChannelCount(4)),
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Send),
+                        track_lane_id: Some("track:public:surround".into()),
+                        bus_group_id: Some("mix:public:surround".into()),
+                        console_group_id: None,
+                        send_return_id: Some("send:return:public:analysis".into()),
+                    },
+                },
+            ],
+        })
+        .expect("public multichannel graph contract should succeed");
+}
+
+fn apply_public_sidechain_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 3,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "program-track".into(),
+                    execution_class: GraphNodeExecutionClass::Stateful,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.92 }],
+                },
+                GraphNodeProjection {
+                    node_id: "kick-sidechain".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.7 }],
+                },
+                GraphNodeProjection {
+                    node_id: "compressor".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.78 }],
+                },
+            ],
+        })
+        .expect("public sidechain graph projection should succeed");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: 3,
+            nodes: vec![
+                GraphNodeContractProjection {
+                    node_id: "program-track".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:program".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:sidechain".into()),
+                        bus_group_id: Some("mix:public:sidechain".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "kick-sidechain".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:sidechain:kick".into(),
+                            channels: ChannelLayout::Mono,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Utility),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "compressor".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:program".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:out".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        secondary_input: Some(RuntimeSecondaryInputContractProjection {
+                            source_kind:
+                                signal_runtime::RuntimeSecondaryInputSourceKind::NodeOutput,
+                            source_id: "kick-sidechain".into(),
+                            source_bus_id: Some("bus:sidechain:kick".into()),
+                            target_bus_id: "plugin:compressor:sidechain".into(),
+                            attachment_policy: RuntimeSecondaryInputAttachmentPolicy::Required,
+                            fallback_outcome:
+                                RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation,
+                        }),
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:sidechain".into()),
+                        bus_group_id: Some("mix:public:sidechain".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+            ],
+        })
+        .expect("public sidechain graph contract should succeed");
+    runtime
+        .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+            graph_id: graph_id.into(),
+            bindings: vec![PluginBackedNodeBinding {
+                node_id: "compressor".into(),
+                sandbox_id: "sandbox:public:sidechain".into(),
+            }],
+        })
+        .expect("public sidechain plugin binding should succeed");
+}
+
+fn apply_public_multi_bus_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 5,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "track-input".into(),
+                    execution_class: GraphNodeExecutionClass::Stateful,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.8 }],
+                },
+                GraphNodeProjection {
+                    node_id: "bus-dry".into(),
+                    execution_class: GraphNodeExecutionClass::Stateful,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.95 }],
+                },
+                GraphNodeProjection {
+                    node_id: "send-fx".into(),
+                    execution_class: GraphNodeExecutionClass::Stateful,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::Gain { linear: 0.4 }],
+                },
+                GraphNodeProjection {
+                    node_id: "return-fx".into(),
+                    execution_class: GraphNodeExecutionClass::LatencyBearing,
+                    latency_samples: 16,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.82 }],
+                },
+                GraphNodeProjection {
+                    node_id: "output-main".into(),
+                    execution_class: GraphNodeExecutionClass::PureTransform,
+                    latency_samples: 0,
+                    stages: vec![GraphStageSpec::StereoBalance { balance: -0.1 }],
+                },
+            ],
+        })
+        .expect("public multi-bus graph projection should succeed");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: 5,
+            nodes: vec![
+                GraphNodeContractProjection {
+                    node_id: "track-input".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:track:lead".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:multi-bus".into()),
+                        bus_group_id: Some("mix:tracks".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "bus-dry".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:track:lead".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:mix:master".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Bus),
+                        track_lane_id: None,
+                        bus_group_id: Some("mix:master".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "send-fx".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:track:lead".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:fx:plate".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Send),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: Some("fx:plate".into()),
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "return-fx".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:fx:plate".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:mix:master".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::Return),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: None,
+                        send_return_id: Some("fx:plate".into()),
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "output-main".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:mix:master".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:out".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::ConsoleNode),
+                        track_lane_id: None,
+                        bus_group_id: None,
+                        console_group_id: Some("console:public:main".into()),
+                        send_return_id: None,
+                    },
+                },
+            ],
+        })
+        .expect("public multi-bus graph contract should succeed");
+}
+
+fn apply_public_complex_io_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 2,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "plugin-multiout".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 24,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.7 }],
+                },
+                GraphNodeProjection {
+                    node_id: "plugin-bus-fx".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 12,
+                    stages: vec![GraphStageSpec::HardClip { threshold: 0.5 }],
+                },
+            ],
+        })
+        .expect("public complex io graph should apply");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: 2,
+            nodes: vec![
+                GraphNodeContractProjection {
+                    node_id: "plugin-multiout".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:complex-io".into()),
+                        bus_group_id: Some("mix:public:complex-io".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "plugin-bus-fx".into(),
+                    buffer_contract: GraphNodeBufferContractProjection::default(),
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:complex-io".into()),
+                        bus_group_id: Some("mix:public:complex-io".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+            ],
+        })
+        .expect("public complex io contracts should apply");
+    runtime
+        .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+            graph_id: graph_id.into(),
+            bindings: vec![
+                PluginBackedNodeBinding {
+                    node_id: "plugin-multiout".into(),
+                    sandbox_id: "sandbox:public:multiout".into(),
+                },
+                PluginBackedNodeBinding {
+                    node_id: "plugin-bus-fx".into(),
+                    sandbox_id: "sandbox:public:bus-fx".into(),
+                },
+            ],
+        })
+        .expect("public complex io bindings should apply");
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "sandbox:public:multiout".into(),
+        plugin_format: PluginFormat::Vst3,
+        plugin_type_id: Some("plugin:vst3:public-multiout".into()),
+    });
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "sandbox:public:bus-fx".into(),
+        plugin_format: PluginFormat::Vst3,
+        plugin_type_id: Some("plugin:vst3:public-bus-fx".into()),
+    });
+    runtime.record_plugin_sandbox_lifecycle(
+        "sandbox:public:multiout",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(1),
+    );
+    runtime.record_plugin_sandbox_transport(
+        "sandbox:public:multiout",
+        "lease-public-multiout",
+        "region-public-multiout",
+        PluginSandboxTransportStage::Attached,
+        Some(1),
+        Some("public complex io multiout attached".into()),
+    );
+    runtime.record_plugin_sandbox_lifecycle(
+        "sandbox:public:bus-fx",
+        PluginSandboxLifecycleStage::SandboxRestarted,
+        Some(2),
+    );
+    runtime.record_plugin_sandbox_lifecycle(
+        "sandbox:public:bus-fx",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(2),
+    );
+    runtime.record_plugin_sandbox_transport(
+        "sandbox:public:bus-fx",
+        "lease-public-bus-fx",
+        "region-public-bus-fx",
+        PluginSandboxTransportStage::Attached,
+        Some(2),
+        Some("public complex io bus fx attached".into()),
+    );
+}
+
+fn apply_public_spatial_graph(runtime: &mut SignalRuntime, graph_id: &str) {
+    runtime
+        .apply_graph_projection(GraphProjection {
+            graph_id: graph_id.into(),
+            node_count: 2,
+            nodes: vec![
+                GraphNodeProjection {
+                    node_id: "spatial-stereo".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 12,
+                    stages: vec![GraphStageSpec::StereoBalance { balance: -0.2 }],
+                },
+                GraphNodeProjection {
+                    node_id: "spatial-surround".into(),
+                    execution_class: GraphNodeExecutionClass::PluginBacked,
+                    latency_samples: 20,
+                    stages: vec![GraphStageSpec::StereoBalance { balance: 0.35 }],
+                },
+            ],
+        })
+        .expect("public spatial graph projection should succeed");
+    runtime
+        .apply_graph_contract_projection(GraphContractProjection {
+            graph_id: graph_id.into(),
+            contract_count: 2,
+            nodes: vec![
+                GraphNodeContractProjection {
+                    node_id: "spatial-stereo".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:in".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:spatial:stereo".into(),
+                            channels: ChannelLayout::Stereo,
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:spatial-stereo".into()),
+                        bus_group_id: Some("bus:public:spatial-stereo".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+                GraphNodeContractProjection {
+                    node_id: "spatial-surround".into(),
+                    buffer_contract: GraphNodeBufferContractProjection {
+                        input: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "main:surround-in".into(),
+                            channels: ChannelLayout::Count(ChannelCount(6)),
+                        },
+                        output: signal_runtime::GraphNodeBusEndpointProjection {
+                            bus_id: "bus:spatial:surround".into(),
+                            channels: ChannelLayout::Count(ChannelCount(6)),
+                        },
+                        ..GraphNodeBufferContractProjection::default()
+                    },
+                    topology: GraphNodeTopologyProjection {
+                        role: Some(GraphNodeTopologyRole::TrackLane),
+                        track_lane_id: Some("track:public:spatial-surround".into()),
+                        bus_group_id: Some("bus:public:spatial-surround".into()),
+                        console_group_id: None,
+                        send_return_id: None,
+                    },
+                },
+            ],
+        })
+        .expect("public spatial contracts should succeed");
+    runtime
+        .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+            graph_id: graph_id.into(),
+            bindings: vec![
+                PluginBackedNodeBinding {
+                    node_id: "spatial-stereo".into(),
+                    sandbox_id: "sandbox:public:spatial-stereo".into(),
+                },
+                PluginBackedNodeBinding {
+                    node_id: "spatial-surround".into(),
+                    sandbox_id: "sandbox:public:spatial-surround".into(),
+                },
+            ],
+        })
+        .expect("public spatial bindings should succeed");
+    runtime.record_plugin_sandbox_lifecycle(
+        "sandbox:public:spatial-stereo",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(1),
+    );
+    runtime.record_plugin_sandbox_lifecycle(
+        "sandbox:public:spatial-surround",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(1),
+    );
 }
 
 fn record_public_plugin_sandbox_ready(
@@ -953,6 +2106,146 @@ fn public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_trut
 }
 
 #[test]
+fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime.record_plugin_format_platform_coverage(
+        vec![RuntimePluginFormatPlatformCoverageRecord {
+        format: PluginFormat::Lv2,
+        supported_platforms: vec![RuntimePluginHostPlatform::Linux],
+        unsupported_platforms: vec![
+            RuntimePluginHostPlatform::MacOs,
+            RuntimePluginHostPlatform::Windows,
+        ],
+        linux_parity_band: RuntimePluginParityBand::Portable,
+        linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+        linux_strict_sandbox_default: true,
+        summary:
+            "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
+                .into(),
+    }],
+    );
+    let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+        roots: vec!["~/.lv2".into(), "/usr/lib/lv2".into()],
+        formats: vec![PluginFormat::Lv2],
+    });
+    runtime.record_plugin_scan_results(scan_handle, vec![sample_lv2_breadth_record()]);
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "public-lv2-sandbox".into(),
+        plugin_format: PluginFormat::Lv2,
+        plugin_type_id: Some("plugin:lv2:public-linux-synth".into()),
+    });
+    runtime.record_plugin_sandbox_lifecycle(
+        "public-lv2-sandbox",
+        PluginSandboxLifecycleStage::PluginTypeLoaded,
+        Some(1),
+    );
+    runtime.record_plugin_sandbox_lifecycle(
+        "public-lv2-sandbox",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(1),
+    );
+    runtime.record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
+        sandbox_id: "public-lv2-sandbox".into(),
+        plugin_type_id: "plugin:lv2:public-linux-synth".into(),
+        instance_id: "instance:public:lv2".into(),
+        lifecycle_state: "Prepared".into(),
+        readiness_state: "Ready".into(),
+        degraded_reasons: Vec::new(),
+        active: true,
+        processing_epoch: Some(1),
+        processing_sample_rate_hz: Some(48_000),
+        processing_max_block_frames: Some(512),
+        audio_inputs: Some(0),
+        audio_outputs: Some(2),
+        midi_inputs: Some(1),
+        midi_outputs: Some(0),
+        last_fault: None,
+    });
+    runtime.record_plugin_sandbox_transport(
+        "public-lv2-sandbox",
+        "lease-public-lv2",
+        "region-public-lv2",
+        PluginSandboxTransportStage::Attached,
+        Some(1),
+        Some("public lv2 transport attached".into()),
+    );
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+
+    assert_eq!(
+        observation.plugin_discovery_snapshot.discovered_type_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .plugin_discovery_snapshot
+            .last_scan
+            .as_ref()
+            .map(|scan| scan.formats.clone()),
+        Some(vec![PluginFormat::Lv2])
+    );
+    assert_eq!(
+        observation.plugin_discovery_snapshot.discovered_types[0].plugin_type_id,
+        "plugin:lv2:public-linux-synth"
+    );
+    assert_eq!(
+        observation.plugin_discovery_snapshot.discovered_types[0].format,
+        PluginFormat::Lv2
+    );
+    let parity = observation
+        .plugin_discovery_snapshot
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Lv2)
+        .expect("public lv2 parity should be visible");
+    assert_eq!(
+        parity.supported_platforms,
+        vec![RuntimePluginHostPlatform::Linux]
+    );
+    assert_eq!(
+        parity.unsupported_platforms,
+        vec![
+            RuntimePluginHostPlatform::MacOs,
+            RuntimePluginHostPlatform::Windows,
+        ]
+    );
+    let sandbox = observation
+        .plugin_lifecycle_snapshot
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "public-lv2-sandbox")
+        .expect("public lv2 sandbox should be visible");
+    assert_eq!(sandbox.plugin_format, Some(PluginFormat::Lv2));
+    assert_eq!(
+        sandbox.plugin_type_id.as_deref(),
+        Some("plugin:lv2:public-linux-synth")
+    );
+    assert_eq!(
+        sandbox.lifecycle_stage,
+        Some(PluginSandboxLifecycleStage::InstancePrepared)
+    );
+    assert_eq!(
+        sandbox.transport_stage,
+        Some(PluginSandboxTransportStage::Attached)
+    );
+    assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
+    assert!(sandbox.active_transport);
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"formats\":[\"Lv2\"]"));
+    assert!(observation_json.contains("\"plugin_type_id\":\"plugin:lv2:public-linux-synth\""));
+    assert!(observation_json.contains("\"transport_stage\":\"Attached\""));
+    assert!(observation_json.contains("\"supported_platforms\":[\"Linux\"]"));
+
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
+    assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
+    assert!(supervisor_json.contains("\"plugin_type_id\":\"plugin:lv2:public-linux-synth\""));
+}
+
+#[test]
 fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portability_truth() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let recorder = RuntimeEventRecorder::default();
@@ -965,7 +2258,12 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
                 RuntimePluginHostPlatform::Windows,
             ],
             unsupported_platforms: Vec::new(),
-            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -975,7 +2273,12 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
                 RuntimePluginHostPlatform::Windows,
             ],
             unsupported_platforms: Vec::new(),
-            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Au,
@@ -984,7 +2287,10 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
                 RuntimePluginHostPlatform::Linux,
                 RuntimePluginHostPlatform::Windows,
             ],
-            summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+            linux_parity_band: RuntimePluginParityBand::Unsupported,
+            linux_preferred_sandbox_outcome: None,
+            linux_strict_sandbox_default: false,
+            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
         },
     ]);
     let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
@@ -1144,6 +2450,811 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
 }
 
 #[test]
+fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_policy_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-linux-plugin-parity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public linux parity handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public linux parity configure should succeed");
+    runtime.record_plugin_format_platform_coverage(vec![
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Clap,
+            supported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            unsupported_platforms: Vec::new(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
+        },
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Vst3,
+            supported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Linux,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            unsupported_platforms: Vec::new(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
+        },
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Lv2,
+            supported_platforms: vec![RuntimePluginHostPlatform::Linux],
+            unsupported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
+                    .into(),
+        },
+    ]);
+    runtime
+        .apply_plugin_placement_policy(RuntimePluginPlacementPolicy {
+            default_outcome: RuntimePluginIsolationOutcome::IsolatedSandbox,
+            rules: vec![
+                RuntimePluginPlacementRule {
+                    rule_id: "public-linux-share-clap".into(),
+                    matcher: RuntimePluginPlacementRuleMatcher::PluginFormat(PluginFormat::Clap),
+                    outcome: RuntimePluginIsolationOutcome::SharedSandbox,
+                    sandbox_group_key: Some("linux:clap".into()),
+                },
+                RuntimePluginPlacementRule {
+                    rule_id: "public-linux-inline-vst3".into(),
+                    matcher: RuntimePluginPlacementRuleMatcher::PluginFormat(PluginFormat::Vst3),
+                    outcome: RuntimePluginIsolationOutcome::InProcess,
+                    sandbox_group_key: None,
+                },
+            ],
+        })
+        .expect("public linux parity placement policy should apply");
+
+    let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+        roots: vec!["~/.clap".into(), "~/.vst3".into(), "~/.lv2".into()],
+        formats: vec![PluginFormat::Clap, PluginFormat::Vst3, PluginFormat::Lv2],
+    });
+    runtime.record_plugin_scan_results(
+        scan_handle,
+        vec![
+            sample_discovered_type_record(),
+            sample_backend_breadth_record(),
+            sample_lv2_breadth_record(),
+        ],
+    );
+
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "public-linux-clap-sandbox".into(),
+        plugin_format: PluginFormat::Clap,
+        plugin_type_id: Some("plugin:clap:public-boundary".into()),
+    });
+    runtime.record_plugin_sandbox_lifecycle(
+        "public-linux-clap-sandbox",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(1),
+    );
+    runtime.record_plugin_sandbox_transport(
+        "public-linux-clap-sandbox",
+        "lease-public-linux-clap",
+        "region-public-linux-clap",
+        PluginSandboxTransportStage::Attached,
+        Some(1),
+        None,
+    );
+
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "public-linux-vst3-sandbox".into(),
+        plugin_format: PluginFormat::Vst3,
+        plugin_type_id: Some("plugin:vst3:public-instrument".into()),
+    });
+    runtime.record_recovery_cycle(
+        "public-linux-vst3-sandbox",
+        signal_runtime::RecoveryRestartIntent::CrashRecovery,
+        StopReason::DegradedModeRecovery,
+        Some(2),
+    );
+    runtime.record_plugin_sandbox_lifecycle(
+        "public-linux-vst3-sandbox",
+        PluginSandboxLifecycleStage::SandboxRestarted,
+        Some(2),
+    );
+
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "public-linux-lv2-sandbox".into(),
+        plugin_format: PluginFormat::Lv2,
+        plugin_type_id: Some("plugin:lv2:public-linux-synth".into()),
+    });
+    runtime.record_plugin_sandbox_fault(
+        "public-linux-lv2-sandbox",
+        signal_runtime::PluginFaultKind::Crash,
+        "public linux lv2 sandbox fault",
+        Some(3),
+    );
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+
+    let clap_discovery = observation
+        .plugin_discovery_snapshot
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Clap)
+        .expect("public linux clap parity should be visible");
+    assert_eq!(
+        clap_discovery.linux_parity_band,
+        RuntimePluginParityBand::Portable
+    );
+    assert!(clap_discovery.linux_supported);
+    assert_eq!(
+        clap_discovery.linux_preferred_sandbox_outcome,
+        Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
+    );
+    assert!(clap_discovery.linux_strict_sandbox_default);
+
+    let vst3_lifecycle = observation
+        .plugin_lifecycle_snapshot
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Vst3)
+        .expect("public linux vst3 parity should be visible");
+    assert_eq!(
+        vst3_lifecycle.linux_parity_band,
+        RuntimePluginParityBand::Portable
+    );
+    assert!(vst3_lifecycle.linux_supported);
+    assert_eq!(vst3_lifecycle.in_process_sandbox_count, 1);
+    assert_eq!(vst3_lifecycle.restarting_sandbox_count, 1);
+    assert_eq!(vst3_lifecycle.rebindable_sandbox_count, 1);
+    assert_eq!(vst3_lifecycle.prepare_capable_type_count, 1);
+
+    let lv2_lifecycle = observation
+        .plugin_lifecycle_snapshot
+        .parity_coverage
+        .iter()
+        .find(|record| record.format == PluginFormat::Lv2)
+        .expect("public linux lv2 parity should be visible");
+    assert_eq!(
+        lv2_lifecycle.linux_parity_band,
+        RuntimePluginParityBand::Portable
+    );
+    assert!(lv2_lifecycle.linux_supported);
+    assert_eq!(lv2_lifecycle.faulted_sandbox_count, 1);
+    assert_eq!(
+        lv2_lifecycle.unsupported_platforms,
+        vec![
+            RuntimePluginHostPlatform::MacOs,
+            RuntimePluginHostPlatform::Windows,
+        ]
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"linux_parity_band\":\"Portable\""));
+    assert!(observation_json.contains("\"linux_supported\":true"));
+    assert!(observation_json.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
+    assert!(observation_json.contains("\"restarting_sandbox_count\":1"));
+    assert!(observation_json.contains("\"faulted_sandbox_count\":1"));
+
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
+    assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
+    assert!(supervisor_json.contains("\"linux_strict_sandbox_default\":true"));
+}
+
+#[test]
+fn public_runtime_linux_audio_backend_boundary_reports_runtime_owned_backend_identity_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-linux-audio-backend".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public linux audio backend handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public linux audio backend configure should succeed");
+
+    let baseline = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        baseline.external_io_snapshot.linux_backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::Unavailable
+    );
+    assert_eq!(
+        baseline.external_io_snapshot.linux_backend_portability,
+        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
+    );
+
+    let alsa = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        "alsa",
+        "alsa:default-output",
+        "ALSA Default Output",
+        false,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    let jack = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        "jack",
+        "jack:graph-main",
+        "JACK Graph Main",
+        true,
+        BackendHealth::Recovering,
+        1,
+        1,
+        0,
+    );
+    let pipewire = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        "pipewire",
+        "pipewire:default-graph",
+        "PipeWire Default Graph",
+        false,
+        BackendHealth::Degraded,
+        0,
+        1,
+        1,
+    );
+
+    let alsa_observation = baseline.clone().with_host_external_io(&alsa);
+    let jack_observation = baseline.clone().with_host_external_io(&jack);
+    let pipewire_observation = baseline.with_host_external_io(&pipewire);
+
+    assert_eq!(
+        alsa_observation.external_io_snapshot.linux_backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::Alsa
+    );
+    assert_eq!(
+        alsa_observation
+            .external_io_snapshot
+            .linux_backend_portability,
+        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Portable
+    );
+    assert_eq!(
+        jack_observation.external_io_snapshot.linux_backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::Jack
+    );
+    assert_eq!(
+        jack_observation
+            .external_io_snapshot
+            .linux_backend_portability,
+        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Guarded
+    );
+    assert_eq!(
+        pipewire_observation
+            .external_io_snapshot
+            .linux_backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::PipeWire
+    );
+    assert_eq!(
+        pipewire_observation
+            .external_io_snapshot
+            .linux_backend_portability,
+        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Guarded
+    );
+
+    let observation_json = pipewire_observation.render_json();
+    assert!(observation_json.contains("\"linux_backend_identity\":\"PipeWire\""));
+    assert!(observation_json.contains("\"linux_backend_portability\":\"Guarded\""));
+    assert!(observation_json.contains("\"backend_name\":\"pipewire\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor.observation.clone().with_host_external_io(&alsa);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"external_io_snapshot\":{"));
+    assert!(supervisor_json.contains("\"linux_backend_identity\":\"Alsa\""));
+    assert!(supervisor_json.contains("\"linux_backend_portability\":\"Portable\""));
+}
+
+#[test]
+fn public_runtime_linux_live_ownership_boundary_reports_runtime_owned_session_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-linux-live-ownership".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public linux live ownership handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public linux live ownership configure should succeed");
+
+    let baseline = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        baseline.linux_backend_session_snapshot.backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::Unavailable
+    );
+    assert_eq!(
+        baseline.linux_backend_session_snapshot.ownership,
+        signal_runtime::RuntimeLinuxBackendSessionOwnership::Unavailable
+    );
+
+    let mut alsa = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        "alsa",
+        "alsa:default-output",
+        "ALSA Default Output",
+        false,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    alsa.clocking.ownership = RuntimeHostLifecycleOwnership::HostDrivenCallback;
+    alsa.clocking.restart_policy = RuntimeHostRestartPolicy::HostMustRestart;
+    alsa.clocking.clock_domain = RuntimeHostClockDomain::SameClock;
+    alsa.clocking.fallback_state = RuntimeHostClockFallbackState::Direct;
+    alsa.clocking.transition_state = RuntimeHostClockTransitionState::Stable;
+    alsa.clocking.drift_state = RuntimeHostClockDriftState::Stable;
+    alsa.clocking.discontinuity_state = RuntimeHostClockDiscontinuityState::Continuous;
+    alsa.clocking.duplex_mismatch_state = RuntimeHostDuplexMismatchState::Aligned;
+    alsa.clocking.endpoint_topology = RuntimeHostEndpointTopology::Duplex;
+
+    let jack = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        "jack",
+        "jack:graph-main",
+        "JACK Graph Main",
+        true,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    let mut pipewire = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        "pipewire",
+        "pipewire:default-graph",
+        "PipeWire Default Graph",
+        true,
+        BackendHealth::Recovering,
+        1,
+        1,
+        1,
+    );
+    pipewire.audio_pump.stream_state = RuntimeHostAudioStreamState::Faulted;
+
+    let alsa_observation = baseline.clone().with_linux_backend_session_snapshot(&alsa);
+    let jack_observation = baseline.clone().with_linux_backend_session_snapshot(&jack);
+    let pipewire_observation = baseline.with_linux_backend_session_snapshot(&pipewire);
+
+    assert_eq!(
+        alsa_observation
+            .linux_backend_session_snapshot
+            .backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::Alsa
+    );
+    assert_eq!(
+        alsa_observation.linux_backend_session_snapshot.ownership,
+        signal_runtime::RuntimeLinuxBackendSessionOwnership::HostBrokeredCallback
+    );
+    assert_eq!(
+        alsa_observation
+            .linux_backend_session_snapshot
+            .device_claim_posture,
+        signal_runtime::RuntimeLinuxBackendDeviceClaimPosture::DirectClaim
+    );
+    assert_eq!(
+        jack_observation
+            .linux_backend_session_snapshot
+            .backend_identity,
+        signal_runtime::RuntimeLinuxAudioBackendIdentity::Jack
+    );
+    assert_eq!(
+        jack_observation.linux_backend_session_snapshot.ownership,
+        signal_runtime::RuntimeLinuxBackendSessionOwnership::BackendManagedGraph
+    );
+    assert_eq!(
+        jack_observation
+            .linux_backend_session_snapshot
+            .ownership_fallback,
+        signal_runtime::RuntimeLinuxBackendOwnershipFallbackState::BackendManagedGuarded
+    );
+    assert_eq!(
+        pipewire_observation
+            .linux_backend_session_snapshot
+            .lifecycle_state,
+        signal_runtime::RuntimeLinuxBackendSessionLifecycleState::Recovering
+    );
+    assert_eq!(
+        pipewire_observation
+            .linux_backend_session_snapshot
+            .device_claim_posture,
+        signal_runtime::RuntimeLinuxBackendDeviceClaimPosture::Lost
+    );
+    assert_eq!(
+        pipewire_observation
+            .linux_backend_session_snapshot
+            .session_role,
+        signal_runtime::RuntimeLinuxBackendSessionRole::FallbackContinuation
+    );
+
+    let observation_json = pipewire_observation.render_json();
+    assert!(observation_json.contains("\"linux_backend_session_snapshot\":{"));
+    assert!(observation_json.contains("\"backend_identity\":\"PipeWire\""));
+    assert!(observation_json.contains("\"lifecycle_state\":\"Recovering\""));
+    assert!(observation_json.contains("\"device_claim_posture\":\"Lost\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_linux_backend_session_snapshot(&alsa);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"linux_backend_session_snapshot\":{"));
+    assert!(supervisor_json.contains("\"backend_identity\":\"Alsa\""));
+    assert!(supervisor_json.contains("\"ownership\":\"HostBrokeredCallback\""));
+}
+
+#[test]
+fn public_runtime_jack_coordination_boundary_reports_runtime_owned_transport_graph_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-jack-coordination".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public jack coordination handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public jack coordination configure should succeed");
+
+    let alsa = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        "alsa",
+        "alsa:default-output",
+        "ALSA Default Output",
+        false,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    let jack = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        "jack",
+        "jack:main-graph",
+        "JACK Main Graph",
+        true,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    let mut recovering_jack = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        "jack",
+        "jack:recovering-graph",
+        "JACK Recovering Graph",
+        true,
+        BackendHealth::Recovering,
+        1,
+        1,
+        0,
+    );
+    recovering_jack.audio_pump.stream_state = RuntimeHostAudioStreamState::Faulted;
+
+    let not_jack_observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_host_external_io(&alsa)
+        .with_linux_backend_session_snapshot(&alsa)
+        .with_jack_coordination_snapshot(&alsa);
+    assert_eq!(
+        not_jack_observation
+            .jack_coordination_snapshot
+            .transport_posture,
+        RuntimeJackTransportPosture::NotJack
+    );
+    assert_eq!(
+        not_jack_observation.jack_coordination_snapshot.graph_state,
+        RuntimeJackGraphCoordinationState::NotJack
+    );
+    assert_eq!(
+        not_jack_observation.jack_coordination_snapshot.client_role,
+        RuntimeJackClientRole::NotJack
+    );
+    assert_eq!(
+        not_jack_observation
+            .jack_coordination_snapshot
+            .guarded_state,
+        RuntimeJackGuardedCoordinationState::NotJack
+    );
+
+    let mut following_observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_host_external_io(&jack)
+        .with_linux_backend_session_snapshot(&jack);
+    following_observation.transport_session_summary = sample_public_transport_session_summary(
+        TransportSessionState::AttachActive,
+        true,
+        TransportHeartbeatFreshness::Fresh,
+        TransportDispatchState::Completed,
+        1,
+        0,
+        0,
+    );
+    following_observation = following_observation.with_jack_coordination_snapshot(&jack);
+    assert_eq!(
+        following_observation
+            .jack_coordination_snapshot
+            .transport_posture,
+        RuntimeJackTransportPosture::FollowingExternal
+    );
+    assert_eq!(
+        following_observation.jack_coordination_snapshot.graph_state,
+        RuntimeJackGraphCoordinationState::AttachedGuarded
+    );
+    assert_eq!(
+        following_observation.jack_coordination_snapshot.client_role,
+        RuntimeJackClientRole::FallbackContinuation
+    );
+    assert_eq!(
+        following_observation
+            .jack_coordination_snapshot
+            .guarded_state,
+        RuntimeJackGuardedCoordinationState::TransportGuarded
+    );
+
+    let mut recovering_observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_host_external_io(&recovering_jack)
+        .with_linux_backend_session_snapshot(&recovering_jack);
+    recovering_observation.transport_session_summary = sample_public_transport_session_summary(
+        TransportSessionState::DetachFaulted,
+        true,
+        TransportHeartbeatFreshness::Missed,
+        TransportDispatchState::TimedOut,
+        2,
+        1,
+        1,
+    );
+    recovering_observation =
+        recovering_observation.with_jack_coordination_snapshot(&recovering_jack);
+    assert_eq!(
+        recovering_observation
+            .jack_coordination_snapshot
+            .transport_posture,
+        RuntimeJackTransportPosture::Guarded
+    );
+    assert_eq!(
+        recovering_observation
+            .jack_coordination_snapshot
+            .graph_state,
+        RuntimeJackGraphCoordinationState::Recovering
+    );
+    assert_eq!(
+        recovering_observation
+            .jack_coordination_snapshot
+            .client_role,
+        RuntimeJackClientRole::FallbackContinuation
+    );
+    assert_eq!(
+        recovering_observation
+            .jack_coordination_snapshot
+            .guarded_state,
+        RuntimeJackGuardedCoordinationState::Recovering
+    );
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = following_observation;
+    let rendered = supervisor.render_json();
+    assert!(rendered.contains("\"jack_coordination_snapshot\":{"));
+    assert!(rendered.contains("\"transport_posture\":\"FollowingExternal\""));
+    assert!(rendered.contains("\"graph_state\":\"AttachedGuarded\""));
+    assert!(rendered.contains("\"client_role\":\"FallbackContinuation\""));
+    assert!(rendered.contains("\"guarded_state\":\"TransportGuarded\""));
+}
+
+#[test]
+fn public_runtime_linux_backend_clock_topology_boundary_reports_runtime_owned_linux_parity_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+
+    let baseline = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        baseline.external_io_snapshot.linux_clocking_parity,
+        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+    );
+    assert_eq!(
+        baseline.external_io_snapshot.linux_duplex_parity,
+        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+    );
+    assert_eq!(
+        baseline.external_io_snapshot.linux_endpoint_topology_parity,
+        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+    );
+
+    let alsa = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        "alsa",
+        "alsa:default-output",
+        "ALSA Default Output",
+        false,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    let jack = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        "jack",
+        "jack:graph-main",
+        "JACK Graph Main",
+        true,
+        BackendHealth::Recovering,
+        1,
+        1,
+        0,
+    );
+    let pipewire = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        "pipewire",
+        "pipewire:default-graph",
+        "PipeWire Default Graph",
+        false,
+        BackendHealth::Degraded,
+        0,
+        1,
+        1,
+    );
+
+    let alsa_observation = baseline.clone().with_host_external_io(&alsa);
+    let jack_observation = baseline.clone().with_host_external_io(&jack);
+    let pipewire_observation = baseline.with_host_external_io(&pipewire);
+
+    assert_eq!(
+        alsa_observation.external_io_snapshot.linux_clocking_parity,
+        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Portable
+    );
+    assert_eq!(
+        alsa_observation.external_io_snapshot.linux_duplex_parity,
+        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Aligned
+    );
+    assert_eq!(
+        alsa_observation
+            .external_io_snapshot
+            .linux_endpoint_topology_parity,
+        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Portable
+    );
+
+    assert_eq!(
+        jack_observation.external_io_snapshot.linux_clocking_parity,
+        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Guarded
+    );
+    assert_eq!(
+        jack_observation.external_io_snapshot.linux_duplex_parity,
+        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Guarded
+    );
+    assert_eq!(
+        jack_observation
+            .external_io_snapshot
+            .linux_endpoint_topology_parity,
+        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Guarded
+    );
+
+    assert_eq!(
+        pipewire_observation
+            .external_io_snapshot
+            .linux_clocking_parity,
+        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Guarded
+    );
+    assert_eq!(
+        pipewire_observation
+            .external_io_snapshot
+            .linux_duplex_parity,
+        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Guarded
+    );
+    assert_eq!(
+        pipewire_observation
+            .external_io_snapshot
+            .linux_endpoint_topology_parity,
+        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Guarded
+    );
+
+    let observation_json = pipewire_observation.render_json();
+    assert!(observation_json.contains("\"linux_clocking_parity\":\"Guarded\""));
+    assert!(observation_json.contains("\"linux_duplex_parity\":\"Guarded\""));
+    assert!(observation_json.contains("\"linux_endpoint_topology_parity\":\"Guarded\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor.observation.clone().with_host_external_io(&alsa);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"linux_clocking_parity\":\"Portable\""));
+    assert!(supervisor_json.contains("\"linux_duplex_parity\":\"Aligned\""));
+    assert!(supervisor_json.contains("\"linux_endpoint_topology_parity\":\"Portable\""));
+}
+
+#[test]
+fn public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+
+    let unavailable = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        unavailable.external_midi_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Unavailable
+    );
+    assert_eq!(
+        unavailable.external_midi_snapshot.graph_state,
+        RuntimeExternalMidiGraphState::Unavailable
+    );
+    assert_eq!(
+        unavailable.external_midi_snapshot.provider_name,
+        "runtime-unavailable"
+    );
+    assert_eq!(unavailable.external_midi_snapshot.device_count, 0);
+    assert_eq!(unavailable.external_midi_snapshot.endpoint_count, 0);
+    assert!(unavailable.external_midi_snapshot.devices.is_empty());
+    assert!(unavailable.external_midi_snapshot.endpoints.is_empty());
+
+    let empty = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty("public-runtime");
+    let empty_observation = unavailable
+        .clone()
+        .with_external_midi_snapshot(empty.clone());
+    assert_eq!(
+        empty_observation.external_midi_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Idle
+    );
+    assert_eq!(
+        empty_observation.external_midi_snapshot.graph_state,
+        RuntimeExternalMidiGraphState::Empty
+    );
+    assert_eq!(
+        empty_observation.external_midi_snapshot.provider_name,
+        "public-runtime"
+    );
+    assert_eq!(empty_observation.external_midi_snapshot.device_count, 0);
+    assert_eq!(empty_observation.external_midi_snapshot.endpoint_count, 0);
+    assert_eq!(
+        empty_observation.external_midi_snapshot.active_route_count,
+        0
+    );
+    assert_eq!(
+        empty_observation.external_midi_snapshot.guarded_route_count,
+        0
+    );
+
+    let observation_json = empty_observation.render_json();
+    assert!(observation_json.contains("\"external_midi_snapshot\":{"));
+    assert!(observation_json.contains("\"discovery_state\":\"Idle\""));
+    assert!(observation_json.contains("\"graph_state\":\"Empty\""));
+    assert!(observation_json.contains("\"provider_name\":\"public-runtime\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_external_midi_snapshot(empty);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"external_midi_snapshot\":{"));
+    assert!(supervisor_json.contains("\"discovery_state\":\"Idle\""));
+    assert!(supervisor_json.contains("\"provider_name\":\"public-runtime\""));
+}
+
+#[test]
 fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capability_truth() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let recorder = RuntimeEventRecorder::default();
@@ -1171,6 +3282,9 @@ fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capabil
             parameter_gesture_events: 1,
             note_events: 1,
             note_expression_events: 2,
+            note_expression_pressure_events: 1,
+            note_expression_timbre_events: 0,
+            note_expression_tuning_events: 1,
             midi_events: 1,
         },
     );
@@ -1184,7 +3298,18 @@ fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capabil
     assert_eq!(snapshot.last_generated_event_bytes, 144);
     assert_eq!(snapshot.total_events, 7);
     assert_eq!(snapshot.note_expression_events, 2);
+    assert_eq!(snapshot.note_expression_pressure_events, 1);
+    assert_eq!(snapshot.note_expression_timbre_events, 0);
+    assert_eq!(snapshot.note_expression_tuning_events, 1);
     assert_eq!(snapshot.midi_events, 1);
+    assert_eq!(
+        snapshot.mpe_posture,
+        signal_runtime::RuntimeControllerExpressionMpePosture::Guarded
+    );
+    assert_eq!(
+        snapshot.midi2_posture,
+        signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded
+    );
     assert_eq!(snapshot.segment_count, 1);
     assert_eq!(snapshot.segment_epochs, vec![7]);
     assert_eq!(
@@ -1204,6 +3329,424 @@ fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capabil
     assert!(supervisor_json.contains("\"plugin_events\":{"));
     assert!(supervisor_json.contains("\"last_generated_event_bytes\":144"));
     assert!(supervisor_json.contains("\"supports_note_expression_count\":2"));
+}
+
+#[test]
+fn public_runtime_controller_expression_boundary_reports_runtime_owned_expression_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+
+    runtime.record_plugin_event_summary(
+        13,
+        "lease-public-controller-expression",
+        21,
+        288,
+        EventPacketSummary {
+            total_events: 10,
+            parameter_value_events: 1,
+            parameter_modulation_events: 1,
+            parameter_gesture_events: 1,
+            note_events: 2,
+            note_expression_events: 4,
+            note_expression_pressure_events: 1,
+            note_expression_timbre_events: 1,
+            note_expression_tuning_events: 2,
+            midi_events: 1,
+        },
+    );
+
+    let capability = signal_runtime::RuntimeExternalMidiEndpointCapabilitySummary {
+        supports_bounded_midi_input: true,
+        supports_bounded_midi_output: true,
+        supports_transport_clock: true,
+        supports_note_events: true,
+        supports_controller_events: true,
+        supports_note_pressure_expression: true,
+        supports_note_timbre_expression: true,
+        supports_note_tuning_expression: true,
+        supports_mpe: true,
+        midi2_posture: signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded,
+        control_surface_guarded: true,
+        summary: "midi-input=true midi-output=true transport-clock=true note-events=true controller-events=true pressure=true timbre=true tuning=true mpe=true midi2=Guarded control-surface=guarded".into(),
+    };
+    let controller_graph = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+        discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
+        graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+        provider_name: "controller-expression-runtime".into(),
+        device_count: 1,
+        endpoint_count: 1,
+        input_endpoint_count: 1,
+        output_endpoint_count: 0,
+        duplex_endpoint_count: 0,
+        active_route_count: 1,
+        guarded_route_count: 1,
+        devices: vec![signal_runtime::RuntimeExternalMidiDeviceDescriptor {
+            device_id: "device:surface:1".into(),
+            device_name: "Surface One".into(),
+            lifecycle_state: signal_runtime::RuntimeExternalMidiDeviceLifecycleState::Discovered,
+            endpoint_count: 1,
+            summary: "device=Surface One endpoints=1".into(),
+        }],
+        endpoints: vec![signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+            endpoint_id: "endpoint:surface:1".into(),
+            endpoint_name: "Surface One Input".into(),
+            device_id: "device:surface:1".into(),
+            direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Input,
+            lifecycle_state: signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+            route_state: signal_runtime::RuntimeExternalMidiRouteState::InputObserved,
+            capability: capability.clone(),
+            summary: "direction=Input route=InputObserved pressure=true timbre=true tuning=true mpe=true midi2=Guarded".into(),
+        }],
+        summary: "discovery=Enumerated graph=Stable provider=controller-expression-runtime devices=1 endpoints=1 routes=1".into(),
+    };
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_external_midi_snapshot(controller_graph.clone());
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_external_midi_snapshot(controller_graph);
+
+    let snapshot = &observation.plugin_event_snapshot;
+    assert_eq!(snapshot.note_expression_events, 4);
+    assert_eq!(snapshot.note_expression_pressure_events, 1);
+    assert_eq!(snapshot.note_expression_timbre_events, 1);
+    assert_eq!(snapshot.note_expression_tuning_events, 2);
+    assert_eq!(
+        snapshot.mpe_posture,
+        signal_runtime::RuntimeControllerExpressionMpePosture::Guarded
+    );
+    assert_eq!(
+        snapshot.midi2_posture,
+        signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded
+    );
+
+    let endpoint = &observation.external_midi_snapshot.endpoints[0];
+    assert!(endpoint.capability.supports_note_pressure_expression);
+    assert!(endpoint.capability.supports_note_timbre_expression);
+    assert!(endpoint.capability.supports_note_tuning_expression);
+    assert!(endpoint.capability.supports_mpe);
+    assert_eq!(
+        endpoint.capability.midi2_posture,
+        signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"note_expression_pressure_events\":1"));
+    assert!(observation_json.contains("\"note_expression_timbre_events\":1"));
+    assert!(observation_json.contains("\"note_expression_tuning_events\":2"));
+    assert!(observation_json.contains("\"mpe_posture\":\"Guarded\""));
+    assert!(observation_json.contains("\"midi2_posture\":\"Guarded\""));
+    assert!(observation_json.contains("\"supports_note_pressure_expression\":true"));
+    assert!(observation_json.contains("\"supports_note_timbre_expression\":true"));
+    assert!(observation_json.contains("\"supports_note_tuning_expression\":true"));
+    assert!(observation_json.contains("\"supports_mpe\":true"));
+
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"plugin_events\":{"));
+    assert!(supervisor_json.contains("\"external_midi_snapshot\":{"));
+    assert!(supervisor_json.contains("\"midi2_posture\":\"Guarded\""));
+}
+
+#[test]
+fn public_runtime_control_surface_boundary_reports_runtime_owned_transport_and_feedback_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+
+    let unavailable = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        unavailable.control_surface_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Unavailable
+    );
+    assert_eq!(
+        unavailable.control_surface_snapshot.graph_state,
+        signal_runtime::RuntimeControlSurfaceGraphState::Unavailable
+    );
+    assert_eq!(
+        unavailable.control_surface_snapshot.provider_name,
+        "runtime-unavailable"
+    );
+    assert_eq!(unavailable.control_surface_snapshot.device_count, 0);
+    assert!(unavailable.control_surface_snapshot.devices.is_empty());
+
+    let capability = signal_runtime::RuntimeExternalMidiEndpointCapabilitySummary {
+        supports_bounded_midi_input: true,
+        supports_bounded_midi_output: true,
+        supports_transport_clock: true,
+        supports_note_events: true,
+        supports_controller_events: true,
+        supports_note_pressure_expression: true,
+        supports_note_timbre_expression: false,
+        supports_note_tuning_expression: false,
+        supports_mpe: false,
+        midi2_posture: signal_runtime::RuntimeControllerExpressionMidi2Posture::Unsupported,
+        control_surface_guarded: true,
+        summary: "midi-input=true midi-output=true transport-clock=true note-events=true controller-events=true pressure=true timbre=false tuning=false mpe=false midi2=Unsupported control-surface=guarded".into(),
+    };
+    let control_surface_graph = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+        discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
+        graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+        provider_name: "public-control-surface".into(),
+        device_count: 1,
+        endpoint_count: 2,
+        input_endpoint_count: 1,
+        output_endpoint_count: 1,
+        duplex_endpoint_count: 1,
+        active_route_count: 1,
+        guarded_route_count: 1,
+        devices: vec![signal_runtime::RuntimeExternalMidiDeviceDescriptor {
+            device_id: "device:control-surface:1".into(),
+            device_name: "Control Surface".into(),
+            lifecycle_state: signal_runtime::RuntimeExternalMidiDeviceLifecycleState::Discovered,
+            endpoint_count: 2,
+            summary: "device=Control Surface endpoints=2".into(),
+        }],
+        endpoints: vec![
+            signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                endpoint_id: "endpoint:control-surface:input".into(),
+                endpoint_name: "Control Surface Input".into(),
+                device_id: "device:control-surface:1".into(),
+                direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Input,
+                lifecycle_state: signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                route_state: signal_runtime::RuntimeExternalMidiRouteState::InputObserved,
+                capability: capability.clone(),
+                summary: "input".into(),
+            },
+            signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                endpoint_id: "endpoint:control-surface:output".into(),
+                endpoint_name: "Control Surface Output".into(),
+                device_id: "device:control-surface:1".into(),
+                direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Output,
+                lifecycle_state: signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                route_state: signal_runtime::RuntimeExternalMidiRouteState::OutputObserved,
+                capability,
+                summary: "output".into(),
+            },
+        ],
+        summary: "provider=public-control-surface state=Stable devices=1 endpoints=2 routes=1 guarded-routes=1".into(),
+    };
+
+    let observation = unavailable
+        .clone()
+        .with_external_midi_snapshot(control_surface_graph.clone());
+    assert_eq!(
+        observation.control_surface_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Enumerated
+    );
+    assert_eq!(
+        observation.control_surface_snapshot.graph_state,
+        signal_runtime::RuntimeControlSurfaceGraphState::Guarded
+    );
+    assert_eq!(
+        observation.control_surface_snapshot.provider_name,
+        "public-control-surface"
+    );
+    assert_eq!(observation.control_surface_snapshot.device_count, 1);
+    assert_eq!(observation.control_surface_snapshot.mapped_device_count, 1);
+    assert_eq!(
+        observation
+            .control_surface_snapshot
+            .feedback_ready_device_count,
+        0
+    );
+    assert_eq!(observation.control_surface_snapshot.guarded_device_count, 1);
+    assert_eq!(
+        observation.control_surface_snapshot.devices[0].transport_posture,
+        signal_runtime::RuntimeControlSurfaceTransportPosture::Guarded
+    );
+    assert_eq!(
+        observation.control_surface_snapshot.devices[0].mapping_posture,
+        signal_runtime::RuntimeControlSurfaceMappingPosture::Guarded
+    );
+    assert_eq!(
+        observation.control_surface_snapshot.devices[0].feedback_readiness,
+        signal_runtime::RuntimeControlSurfaceFeedbackReadiness::Guarded
+    );
+    assert!(
+        observation.control_surface_snapshot.devices[0]
+            .capability
+            .supports_feedback_output
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"control_surface_snapshot\":{"));
+    assert!(observation_json.contains("\"graph_state\":\"Guarded\""));
+    assert!(observation_json.contains("\"provider_name\":\"public-control-surface\""));
+    assert!(observation_json.contains("\"feedback_ready_device_count\":0"));
+    assert!(observation_json.contains("\"mapping_posture\":\"Guarded\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_external_midi_snapshot(control_surface_graph);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"control_surface_snapshot\":{"));
+    assert!(supervisor_json.contains("\"transport_posture\":\"Guarded\""));
+    assert!(supervisor_json.contains("\"feedback_readiness\":\"Guarded\""));
+}
+
+#[test]
+fn public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_feedback_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+
+    let unavailable = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(
+        unavailable.advanced_hardware_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Unavailable
+    );
+    assert_eq!(
+        unavailable.advanced_hardware_snapshot.graph_state,
+        signal_runtime::RuntimeAdvancedHardwareGraphState::Unavailable
+    );
+    assert_eq!(
+        unavailable.advanced_hardware_snapshot.provider_name,
+        "runtime-unavailable"
+    );
+    assert_eq!(unavailable.advanced_hardware_snapshot.device_count, 0);
+    assert!(unavailable.advanced_hardware_snapshot.devices.is_empty());
+
+    let capability = signal_runtime::RuntimeExternalMidiEndpointCapabilitySummary {
+        supports_bounded_midi_input: true,
+        supports_bounded_midi_output: true,
+        supports_transport_clock: true,
+        supports_note_events: true,
+        supports_controller_events: true,
+        supports_note_pressure_expression: true,
+        supports_note_timbre_expression: false,
+        supports_note_tuning_expression: false,
+        supports_mpe: false,
+        midi2_posture: signal_runtime::RuntimeControllerExpressionMidi2Posture::Unsupported,
+        control_surface_guarded: true,
+        summary: "midi-input=true midi-output=true transport-clock=true note-events=true controller-events=true pressure=true timbre=false tuning=false mpe=false midi2=Unsupported control-surface=guarded".into(),
+    };
+    let advanced_hardware_graph = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+        discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
+        graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+        provider_name: "public-advanced-hardware".into(),
+        device_count: 1,
+        endpoint_count: 2,
+        input_endpoint_count: 1,
+        output_endpoint_count: 1,
+        duplex_endpoint_count: 1,
+        active_route_count: 1,
+        guarded_route_count: 1,
+        devices: vec![signal_runtime::RuntimeExternalMidiDeviceDescriptor {
+            device_id: "device:advanced-hardware:1".into(),
+            device_name: "Advanced Surface".into(),
+            lifecycle_state: signal_runtime::RuntimeExternalMidiDeviceLifecycleState::Discovered,
+            endpoint_count: 2,
+            summary: "device=Advanced Surface endpoints=2".into(),
+        }],
+        endpoints: vec![
+            signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                endpoint_id: "endpoint:advanced-hardware:input".into(),
+                endpoint_name: "Advanced Surface Input".into(),
+                device_id: "device:advanced-hardware:1".into(),
+                direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Input,
+                lifecycle_state: signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                route_state: signal_runtime::RuntimeExternalMidiRouteState::InputObserved,
+                capability: capability.clone(),
+                summary: "input".into(),
+            },
+            signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                endpoint_id: "endpoint:advanced-hardware:output".into(),
+                endpoint_name: "Advanced Surface Output".into(),
+                device_id: "device:advanced-hardware:1".into(),
+                direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Output,
+                lifecycle_state: signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                route_state: signal_runtime::RuntimeExternalMidiRouteState::OutputObserved,
+                capability,
+                summary: "output".into(),
+            },
+        ],
+        summary: "provider=public-advanced-hardware state=Stable devices=1 endpoints=2 routes=1 guarded-routes=1".into(),
+    };
+
+    let observation = unavailable
+        .clone()
+        .with_external_midi_snapshot(advanced_hardware_graph.clone());
+    assert_eq!(
+        observation.advanced_hardware_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Enumerated
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.graph_state,
+        signal_runtime::RuntimeAdvancedHardwareGraphState::Guarded
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.provider_name,
+        "public-advanced-hardware"
+    );
+    assert_eq!(observation.advanced_hardware_snapshot.device_count, 1);
+    assert_eq!(
+        observation.advanced_hardware_snapshot.portable_device_count,
+        0
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.guarded_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .feedback_channel_device_count,
+        1
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].scripting_safe_posture,
+        signal_runtime::RuntimeScriptingSafeDevicePolicyPosture::Guarded
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_channel_posture,
+        signal_runtime::RuntimeGuardedFeedbackChannelPosture::Guarded
+    );
+    assert!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .supports_display_feedback
+    );
+    assert!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .supports_bank_navigation
+    );
+    assert!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .supports_macro_triggers
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .action_classes,
+        vec![
+            signal_runtime::RuntimeAdvancedHardwareActionClass::DisplayFeedback,
+            signal_runtime::RuntimeAdvancedHardwareActionClass::BankNavigation,
+            signal_runtime::RuntimeAdvancedHardwareActionClass::MacroTrigger,
+            signal_runtime::RuntimeAdvancedHardwareActionClass::DeviceStateObservation,
+        ]
+    );
+
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"advanced_hardware_snapshot\":{"));
+    assert!(observation_json.contains("\"graph_state\":\"Guarded\""));
+    assert!(observation_json.contains("\"provider_name\":\"public-advanced-hardware\""));
+    assert!(observation_json.contains("\"feedback_channel_device_count\":1"));
+    assert!(observation_json.contains("\"scripting_safe_posture\":\"Guarded\""));
+    assert!(observation_json.contains("\"feedback_channel_posture\":\"Guarded\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_external_midi_snapshot(advanced_hardware_graph);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"advanced_hardware_snapshot\":{"));
+    assert!(supervisor_json.contains("\"supports_display_feedback\":true"));
+    assert!(supervisor_json.contains("\"supports_macro_triggers\":true"));
 }
 
 #[test]
@@ -1718,6 +4261,1205 @@ fn public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopbac
     assert!(rendered.contains("\"monitoring_state\":\"Guarded\""));
     assert!(rendered.contains("\"monitoring_tap_point\":\"PostHardwareOutput\""));
     assert!(rendered.contains("\"loopback_state\":\"Guarded\""));
+}
+
+#[test]
+fn public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-multichannel-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime multichannel handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime multichannel configure should succeed");
+    apply_public_multichannel_graph(&mut runtime, "graph:public:multichannel");
+    let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+        roots: vec!["~/Library/Audio/Plug-Ins".into()],
+        formats: vec![PluginFormat::Clap],
+    });
+    runtime.record_plugin_scan_results(scan_handle, vec![sample_discovered_type_record()]);
+    let recorder = RuntimeEventRecorder::default();
+
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let topology = &observation.execution_topology_summary;
+    let track_node = topology
+        .nodes
+        .iter()
+        .find(|node| node.node_id == "surround-track")
+        .expect("surround-track node should be present");
+    assert_eq!(
+        track_node.input_layout.canonical_layout,
+        Some(RuntimeCanonicalChannelLayout::Stereo)
+    );
+    assert_eq!(
+        track_node.output_layout.canonical_layout,
+        Some(RuntimeCanonicalChannelLayout::Surround5_1)
+    );
+    assert_eq!(track_node.input_bus_intent, RuntimeBusIntent::MainProgram);
+    assert_eq!(track_node.output_bus_intent, RuntimeBusIntent::MainProgram);
+
+    let send_node = topology
+        .nodes
+        .iter()
+        .find(|node| node.node_id == "analysis-send")
+        .expect("analysis-send node should be present");
+    assert_eq!(
+        send_node.input_layout.canonical_layout,
+        Some(RuntimeCanonicalChannelLayout::Surround5_1)
+    );
+    assert_eq!(
+        send_node.output_layout.canonical_layout,
+        Some(RuntimeCanonicalChannelLayout::Quad)
+    );
+    assert_eq!(send_node.output_bus_intent, RuntimeBusIntent::AuxSend);
+
+    let discovery = &observation.plugin_discovery_snapshot;
+    assert_eq!(
+        discovery.discovered_types[0]
+            .default_multichannel_io
+            .input_layout
+            .canonical_layout,
+        Some(RuntimeCanonicalChannelLayout::Stereo)
+    );
+    assert_eq!(
+        discovery.discovered_types[0]
+            .default_multichannel_io
+            .output_layout
+            .canonical_layout,
+        Some(RuntimeCanonicalChannelLayout::Stereo)
+    );
+
+    let rendered = observation.render_json();
+    assert!(rendered.contains("\"execution_topology_summary\":{"));
+    assert!(rendered.contains("\"canonical_layout\":\"Surround5_1\""));
+    assert!(rendered.contains("\"output_bus_intent\":\"AuxSend\""));
+    assert!(rendered.contains("\"default_multichannel_io\":{"));
+}
+
+#[test]
+fn public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-sidechain-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime sidechain handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime sidechain configure should succeed");
+    apply_public_sidechain_graph(&mut runtime, "graph:public:sidechain");
+    runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+        sandbox_id: "sandbox:public:sidechain".into(),
+        plugin_format: PluginFormat::Clap,
+        plugin_type_id: Some("plugin:clap:public-boundary".into()),
+    });
+    runtime.record_plugin_sandbox_lifecycle(
+        "sandbox:public:sidechain",
+        PluginSandboxLifecycleStage::InstancePrepared,
+        Some(1),
+    );
+    runtime.record_plugin_sandbox_transport(
+        "sandbox:public:sidechain",
+        "lease-public-sidechain",
+        "region-public-sidechain",
+        PluginSandboxTransportStage::Attached,
+        Some(1),
+        Some("public sidechain transport attached".into()),
+    );
+    runtime
+        .process_engine_block(
+            2,
+            3,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 2),
+        )
+        .expect("public runtime sidechain block should succeed");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let topology = &observation.execution_topology_summary;
+    assert_eq!(topology.secondary_input_count, 1);
+    assert_eq!(topology.required_secondary_input_count, 1);
+    let route = &topology.secondary_inputs[0];
+    assert_eq!(route.source_id, "kick-sidechain");
+    assert_eq!(route.target_id, "compressor");
+    assert_eq!(
+        route.target_kind,
+        RuntimeSecondaryInputTargetKind::NodeInput
+    );
+    assert_eq!(route.target_bus_id, "plugin:compressor:sidechain");
+    assert_eq!(
+        route.attachment_policy,
+        RuntimeSecondaryInputAttachmentPolicy::Required
+    );
+    assert_eq!(
+        route.fallback_outcome,
+        RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation
+    );
+
+    let compressor = topology
+        .nodes
+        .iter()
+        .find(|node| node.node_id == "compressor")
+        .expect("compressor node should be present");
+    let node_secondary_input = compressor
+        .secondary_input
+        .as_ref()
+        .expect("compressor should carry sidechain receipt");
+    assert_eq!(node_secondary_input.source_id, "kick-sidechain");
+    assert_eq!(
+        node_secondary_input.target_kind,
+        RuntimeSecondaryInputTargetKind::NodeInput
+    );
+
+    let stage = observation
+        .plugin_chain_snapshot
+        .chains
+        .iter()
+        .find(|chain| chain.stage_count == 1)
+        .and_then(|chain| chain.stages.first())
+        .expect("plugin chain stage should be present");
+    let stage_secondary_input = stage
+        .secondary_input
+        .as_ref()
+        .expect("plugin chain stage should carry sidechain receipt");
+    assert_eq!(
+        stage_secondary_input.target_kind,
+        RuntimeSecondaryInputTargetKind::PluginInput
+    );
+    assert_eq!(stage_secondary_input.target_id, "compressor");
+
+    let rendered = observation.render_json();
+    assert!(rendered.contains("\"secondary_input_count\":1"));
+    assert!(rendered.contains("\"target_kind\":\"NodeInput\""));
+    assert!(rendered.contains("\"target_kind\":\"PluginInput\""));
+    assert!(rendered.contains("\"fallback_outcome\":\"SafeModeDegradation\""));
+}
+
+#[test]
+fn public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-multi-bus-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime multi-bus handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime multi-bus configure should succeed");
+    apply_public_multi_bus_graph(&mut runtime, "graph:public:multi-bus");
+    runtime
+        .process_engine_block(
+            3,
+            5,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 2),
+        )
+        .expect("public runtime multi-bus block should succeed");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let topology = &observation.execution_topology_summary;
+    assert_eq!(topology.bus_connection_count, 5);
+    assert_eq!(topology.auxiliary_path_count, 3);
+    assert!(topology.bus_connections.iter().any(|connection| {
+        connection.connection_id == "send-fx:bus:fx:plate->return-fx:bus:fx:plate"
+            && connection.source_bus_role == RuntimeBusRole::AuxSend
+            && connection.target_bus_role == RuntimeBusRole::AuxReturn
+            && connection.auxiliary_path_kind == Some(RuntimeAuxiliaryPathKind::SendReturn)
+            && connection.auxiliary_path_id.as_deref() == Some("send_return:fx:plate")
+    }));
+    assert!(topology.auxiliary_paths.iter().any(|path| {
+        path.auxiliary_path_id == "bus_group:mix:master"
+            && path.path_kind == RuntimeAuxiliaryPathKind::Submix
+            && path.bus_role == RuntimeBusRole::Submix
+    }));
+    assert_eq!(observation.metering_snapshot.bus_connection_count, 5);
+    assert_eq!(observation.metering_snapshot.auxiliary_path_count, 3);
+    assert!(observation
+        .metering_snapshot
+        .bus_connections
+        .iter()
+        .any(|connection| {
+            connection.connection_id == "return-fx:bus:mix:master->output-main:bus:mix:master"
+        }));
+
+    let rendered = observation.render_json();
+    assert!(rendered.contains("\"bus_connection_count\":5"));
+    assert!(rendered.contains("\"auxiliary_path_count\":3"));
+    assert!(rendered.contains("\"connection_id\":\"send-fx:bus:fx:plate->return-fx:bus:fx:plate\""));
+    assert!(rendered.contains("\"auxiliary_path_id\":\"send_return:fx:plate\""));
+}
+
+#[test]
+fn public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-complex-io-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime complex io handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime complex io configure should succeed");
+    apply_public_complex_io_graph(&mut runtime, "graph:public:complex-io");
+    let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+        roots: vec!["~/Library/Audio/Plug-Ins/VST3".into()],
+        formats: vec![PluginFormat::Vst3],
+    });
+    runtime.record_plugin_scan_results(
+        scan_handle,
+        vec![
+            sample_complex_multi_output_record(),
+            sample_complex_bus_fx_record(),
+        ],
+    );
+    runtime
+        .apply_plugin_node_render_batch(signal_runtime::PluginNodeRenderBatch {
+            graph_id: "graph:public:complex-io".into(),
+            processing_epoch: 1,
+            block_sequence: 1,
+            renders: vec![
+                signal_runtime::PluginNodeRender {
+                    node_id: "plugin-multiout".into(),
+                    sandbox_id: "sandbox:public:multiout".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(8),
+                    ),
+                    latency_samples: 32,
+                    tail_samples: 48,
+                    bypassed: false,
+                },
+                signal_runtime::PluginNodeRender {
+                    node_id: "plugin-bus-fx".into(),
+                    sandbox_id: "sandbox:public:bus-fx".into(),
+                    output: AudioBuffer::new(
+                        SampleRate(48_000),
+                        ChannelLayout::Stereo,
+                        FrameCount(8),
+                    ),
+                    latency_samples: 16,
+                    tail_samples: 24,
+                    bypassed: false,
+                },
+            ],
+        })
+        .expect("public complex io render batch should apply");
+    runtime
+        .process_engine_block(
+            4,
+            6,
+            synthetic_stereo_block(SampleRate(48_000), FrameCount(256), 3),
+        )
+        .expect("public runtime complex io block should succeed");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let discovery = &observation.plugin_discovery_snapshot;
+    assert_eq!(discovery.discovered_type_count, 2);
+    assert_eq!(discovery.capability_coverage.complex_io_type_count, 2);
+    assert_eq!(
+        discovery.capability_coverage.multi_output_instrument_count,
+        1
+    );
+    assert_eq!(discovery.capability_coverage.bus_capable_fx_count, 1);
+    assert_eq!(
+        discovery
+            .capability_coverage
+            .max_complex_io_port_group_count,
+        4
+    );
+    assert!(discovery.discovered_types.iter().any(|record| {
+        record.plugin_type_id == "plugin:vst3:public-multiout"
+            && record.complex_io_summary.multi_output_instrument
+            && record.complex_io_summary.instrument_output_group_count == 2
+    }));
+    assert!(discovery.discovered_types.iter().any(|record| {
+        record.plugin_type_id == "plugin:vst3:public-bus-fx"
+            && record.complex_io_summary.bus_capable_fx_class
+                == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+            && record.complex_io_summary.secondary_input_group_count == 1
+    }));
+
+    let plugin_chain = &observation.plugin_chain_snapshot;
+    assert_eq!(plugin_chain.chain_count, 1);
+    assert_eq!(plugin_chain.stage_count, 2);
+    let multiout_stage = plugin_chain
+        .chains
+        .iter()
+        .flat_map(|chain| chain.stages.iter())
+        .find(|stage| stage.node_id == "plugin-multiout")
+        .expect("multi-output stage should be present");
+    assert!(multiout_stage.complex_io_summary.has_complex_topology);
+    assert!(multiout_stage.complex_io_summary.multi_output_instrument);
+    assert_eq!(
+        multiout_stage
+            .complex_io_summary
+            .instrument_output_group_count,
+        2
+    );
+    let bus_fx_stage = plugin_chain
+        .chains
+        .iter()
+        .flat_map(|chain| chain.stages.iter())
+        .find(|stage| stage.node_id == "plugin-bus-fx")
+        .expect("bus fx stage should be present");
+    assert_eq!(
+        bus_fx_stage.complex_io_summary.bus_capable_fx_class,
+        Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+    );
+    assert_eq!(
+        bus_fx_stage.complex_io_summary.secondary_input_group_count,
+        1
+    );
+
+    let handoff = runtime.get_plugin_recall_handoff_snapshot();
+    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+        &RuntimeOfflineRenderRequest {
+            request_id: "render:public:complex-io".into(),
+            timeline_start_samples: 0,
+            duration_samples: 24_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        },
+        &runtime.get_execution_topology_summary(),
+        &runtime.get_clip_processing_pipeline_snapshot(),
+        &runtime.get_media_pipeline_snapshot(),
+        &runtime.get_tempo_map_snapshot(),
+        &runtime.get_marker_analysis_snapshot(),
+        &handoff,
+    )
+    .expect("public complex io offline preview should build");
+    assert_eq!(preview.chain_contract.complex_io_stage_count, 2);
+    assert_eq!(
+        preview.chain_contract.multi_output_instrument_stage_count,
+        1
+    );
+    assert_eq!(preview.chain_contract.bus_capable_fx_stage_count, 1);
+    assert_eq!(preview.chain_contract.sidechain_capable_fx_stage_count, 1);
+    assert!(preview
+        .chain_contract
+        .complex_io_stages
+        .iter()
+        .any(|stage| {
+            stage.plugin_type_id.as_deref() == Some("plugin:vst3:public-multiout")
+                && stage.topology.multi_output_instrument
+        }));
+    assert!(preview
+        .chain_contract
+        .complex_io_stages
+        .iter()
+        .any(|stage| {
+            stage.plugin_type_id.as_deref() == Some("plugin:vst3:public-bus-fx")
+                && stage.topology.bus_capable_fx_class
+                    == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+        }));
+
+    let supervisor = signal_runtime::RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let rendered = supervisor.render_json();
+    assert!(rendered.contains("\"plugin_discovery_snapshot\":{"));
+    assert!(rendered.contains("\"complex_io_summary\":{"));
+    assert!(rendered.contains("\"multi_output_instrument\":true"));
+    assert!(rendered.contains("\"bus_capable_fx_class\":\"SendReturnCapableFx\""));
+}
+
+#[test]
+fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-spatial-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime spatial handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime spatial configure should succeed");
+    apply_public_spatial_graph(&mut runtime, "graph:public:spatial");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    let topology = &observation.execution_topology_summary;
+    assert_eq!(topology.spatial_node_count, 2);
+    assert_eq!(topology.active_spatial_node_count, 1);
+    assert_eq!(topology.bypassed_spatial_node_count, 1);
+    assert_eq!(topology.fallback_spatial_node_count, 1);
+    assert_eq!(topology.surround_bed_spatial_node_count, 1);
+    assert_eq!(topology.object_aware_spatial_node_count, 0);
+    assert_eq!(topology.expanded_fallback_spatial_node_count, 1);
+
+    let stereo = topology
+        .nodes
+        .iter()
+        .find(|node| node.node_id == "spatial-stereo")
+        .and_then(|node| node.spatial_execution.as_ref())
+        .expect("public stereo node should carry spatial execution");
+    assert_eq!(stereo.adapter_class, RuntimeSpatialAdapterClass::Balance);
+    assert_eq!(
+        stereo.execution_mode,
+        RuntimeSpatialExecutionMode::BalanceGroups
+    );
+    assert_eq!(
+        stereo.target_environment,
+        RuntimeSpatialTargetEnvironment::SourceLayout
+    );
+    assert_eq!(stereo.fallback_outcome, None);
+    assert_eq!(stereo.bed_class, RuntimeSpatialBedClass::StereoBed);
+    assert_eq!(stereo.object_role, None);
+    assert_eq!(stereo.object_count, 0);
+    assert_eq!(stereo.mix_policy, RuntimeSpatialMixPolicy::BedOnly);
+    assert_eq!(stereo.render_scope, RuntimeSpatialRenderScope::BedRender);
+    assert_eq!(stereo.expanded_fallback_outcome, None);
+    assert_eq!(stereo.balance.as_deref(), Some("-0.200"));
+
+    let surround = topology
+        .nodes
+        .iter()
+        .find(|node| node.node_id == "spatial-surround")
+        .and_then(|node| node.spatial_execution.as_ref())
+        .expect("public surround node should carry spatial execution");
+    assert_eq!(surround.adapter_class, RuntimeSpatialAdapterClass::Balance);
+    assert_eq!(
+        surround.execution_mode,
+        RuntimeSpatialExecutionMode::Bypassed
+    );
+    assert_eq!(
+        surround.fallback_outcome,
+        Some(RuntimeSpatialFallbackOutcome::BypassSpatialProcessing)
+    );
+    assert_eq!(
+        surround.bed_class,
+        RuntimeSpatialBedClass::CanonicalSurroundBed
+    );
+    assert_eq!(surround.object_role, None);
+    assert_eq!(surround.object_count, 0);
+    assert_eq!(
+        surround.mix_policy,
+        RuntimeSpatialMixPolicy::CollapseToBaselineSpatial
+    );
+    assert_eq!(surround.render_scope, RuntimeSpatialRenderScope::BedRender);
+    assert_eq!(
+        surround.expanded_fallback_outcome,
+        Some(RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial)
+    );
+    assert_eq!(surround.balance.as_deref(), Some("0.350"));
+
+    let plugin_chain = &observation.plugin_chain_snapshot;
+    assert_eq!(plugin_chain.stage_count, 2);
+    assert!(plugin_chain
+        .chains
+        .iter()
+        .flat_map(|chain| chain.stages.iter())
+        .any(|stage| {
+            stage.node_id == "spatial-stereo"
+                && stage.spatial_execution.as_ref().is_some_and(|spatial| {
+                    spatial.execution_mode == RuntimeSpatialExecutionMode::BalanceGroups
+                        && spatial.bed_class == RuntimeSpatialBedClass::StereoBed
+                        && spatial.mix_policy == RuntimeSpatialMixPolicy::BedOnly
+                })
+        }));
+    assert!(plugin_chain
+        .chains
+        .iter()
+        .flat_map(|chain| chain.stages.iter())
+        .any(|stage| {
+            stage.node_id == "spatial-surround"
+                && stage.spatial_execution.as_ref().is_some_and(|spatial| {
+                    spatial.fallback_outcome
+                        == Some(RuntimeSpatialFallbackOutcome::BypassSpatialProcessing)
+                        && spatial.bed_class == RuntimeSpatialBedClass::CanonicalSurroundBed
+                        && spatial.expanded_fallback_outcome
+                            == Some(
+                                RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial,
+                            )
+                })
+        }));
+
+    let handoff = runtime.get_plugin_recall_handoff_snapshot();
+    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+        &RuntimeOfflineRenderRequest {
+            request_id: "render:public:spatial".into(),
+            timeline_start_samples: 0,
+            duration_samples: 24_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        },
+        &runtime.get_execution_topology_summary(),
+        &runtime.get_clip_processing_pipeline_snapshot(),
+        &runtime.get_media_pipeline_snapshot(),
+        &runtime.get_tempo_map_snapshot(),
+        &runtime.get_marker_analysis_snapshot(),
+        &handoff,
+    )
+    .expect("public spatial render preview should build");
+    assert_eq!(preview.chain_contract.spatial_stage_count, 2);
+    assert_eq!(preview.chain_contract.active_spatial_stage_count, 1);
+    assert_eq!(preview.chain_contract.bypassed_spatial_stage_count, 1);
+    assert_eq!(preview.chain_contract.fallback_spatial_stage_count, 1);
+    assert_eq!(preview.chain_contract.surround_bed_spatial_stage_count, 1);
+    assert_eq!(preview.chain_contract.object_aware_spatial_stage_count, 0);
+    assert_eq!(
+        preview.chain_contract.expanded_fallback_spatial_stage_count,
+        1
+    );
+    assert!(preview.chain_contract.spatial_stages.iter().any(|stage| {
+        stage.node_id == "spatial-stereo"
+            && stage.spatial.execution_mode == RuntimeSpatialExecutionMode::BalanceGroups
+            && stage.spatial.bed_class == RuntimeSpatialBedClass::StereoBed
+            && stage.spatial.mix_policy == RuntimeSpatialMixPolicy::BedOnly
+    }));
+    assert!(preview.chain_contract.spatial_stages.iter().any(|stage| {
+        stage.node_id == "spatial-surround"
+            && stage.spatial.fallback_outcome
+                == Some(RuntimeSpatialFallbackOutcome::BypassSpatialProcessing)
+            && stage.spatial.expanded_fallback_outcome
+                == Some(RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial)
+            && stage.spatial.render_scope == RuntimeSpatialRenderScope::BedRender
+    }));
+
+    let rendered = observation.render_json();
+    assert!(rendered.contains("\"spatial_node_count\":2"));
+    assert!(rendered.contains("\"active_spatial_node_count\":1"));
+    assert!(rendered.contains("\"surround_bed_spatial_node_count\":1"));
+    assert!(rendered.contains("\"expanded_fallback_spatial_node_count\":1"));
+    assert!(rendered.contains("\"bed_class\":\"CanonicalSurroundBed\""));
+    assert!(rendered.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
+    assert!(rendered.contains("\"render_scope\":\"BedRender\""));
+    assert!(rendered.contains("\"execution_mode\":\"BalanceGroups\""));
+    assert!(rendered.contains("\"fallback_outcome\":\"BypassSpatialProcessing\""));
+    assert!(rendered.contains("\"expanded_fallback_outcome\":\"CollapseToBaselineSpatial\""));
+
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"spatial_node_count\":2"));
+    assert!(supervisor_json.contains("\"fallback_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"surround_bed_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"expanded_fallback_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"adapter_class\":\"Balance\""));
+    assert!(supervisor_json.contains("\"bed_class\":\"CanonicalSurroundBed\""));
+    assert!(supervisor_json.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
+}
+
+#[test]
+fn public_runtime_stretch_boundary_reports_runtime_owned_engine_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-stretch-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime stretch handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime stretch configure should succeed");
+
+    let ready_path = public_media_fixture_path("stretch-ready");
+    write_public_test_wav(&ready_path);
+    runtime
+        .reconcile_media_assets(vec![signal_runtime::RuntimeMediaAssetRegistration {
+            asset_id: "asset:sha256:public-stretch-ready".into(),
+            content_hash: "public-stretch-ready".into(),
+            source_path: ready_path.display().to_string(),
+            file_name: "public-stretch-ready.wav".into(),
+            byte_size: fs::metadata(&ready_path).unwrap().len(),
+            sample_rate_hz: 48_000,
+            channel_count: 1,
+            duration_samples: 128,
+            waveform_bin_count: 8,
+        }])
+        .expect("public stretch media asset should reconcile");
+    runtime
+        .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+            clip_id: "clip:public-stretch".into(),
+            media_asset_id: Some("asset:sha256:public-stretch-ready".into()),
+            mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            source_tempo_bpm: Some(120.0),
+            anchor_timeline_samples: 0,
+            start_samples: 0,
+            duration_samples: 48_000,
+        }])
+        .expect("public stretch warp clip should reconcile");
+    runtime
+        .reconcile_clip_processing_clips(vec![signal_runtime::RuntimeClipProcessingRegistration {
+            clip_id: "clip:public-stretch".into(),
+            media_asset_id: Some("asset:sha256:public-stretch-ready".into()),
+            warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            start_samples: 0,
+            duration_samples: 48_000,
+            fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+        }])
+        .expect("public stretch clip-processing clip should reconcile");
+    runtime
+        .apply_transport_projection(signal_runtime::TransportProjection {
+            playing: false,
+            timeline_position_samples: 0,
+            tempo_bpm: 180.0,
+            loop_state: None,
+        })
+        .expect("public stretch transport projection should apply");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(observation.stretch_engine_snapshot.clip_count, 1);
+    assert_eq!(observation.stretch_engine_snapshot.ready_clip_count, 1);
+    assert_eq!(
+        observation.stretch_engine_snapshot.sample_domain_clip_count,
+        1
+    );
+    assert_eq!(observation.stretch_engine_snapshot.fallback_clip_count, 0);
+    assert_eq!(
+        observation.stretch_engine_snapshot.clips[0].engine_class,
+        signal_runtime::RuntimeStretchEngineClass::SampleDomain
+    );
+    assert_eq!(
+        observation.stretch_engine_snapshot.clips[0].readiness,
+        signal_runtime::RuntimeStretchReadiness::Ready
+    );
+    assert_eq!(
+        observation.stretch_engine_snapshot.clips[0].fallback_kind,
+        signal_runtime::RuntimeStretchFallbackKind::None
+    );
+    assert!(observation
+        .render_json()
+        .contains("\"stretch_engine_snapshot\":{\"clip_count\":1"));
+    assert!(observation
+        .render_compact()
+        .contains("stretch_clips=1/1/1/0/0/0/0/0"));
+
+    let rendered = runtime
+        .render_clip_processing_buffer(signal_runtime::RuntimeClipRenderRequest {
+            clip_id: "clip:public-stretch".into(),
+            timeline_start_samples: 0,
+            input_stage: signal_runtime::RuntimeClipRenderInputStage::PostWarp,
+            buffer: AudioBuffer::from_interleaved(
+                SampleRate(48_000),
+                ChannelLayout::Mono,
+                vec![0.25; 8],
+            ),
+        })
+        .expect("public stretch clip render should succeed");
+    assert_eq!(
+        rendered.stretch_engine_snapshot.engine_class,
+        signal_runtime::RuntimeStretchEngineClass::SampleDomain
+    );
+    assert_eq!(
+        rendered.stretch_engine_snapshot.readiness,
+        signal_runtime::RuntimeStretchReadiness::Ready
+    );
+    assert_eq!(
+        rendered.stretch_engine_snapshot.fallback_kind,
+        signal_runtime::RuntimeStretchFallbackKind::None
+    );
+    assert!(rendered.summary.contains("stretch=SampleDomain/Ready/None"));
+
+    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+        &RuntimeOfflineRenderRequest {
+            request_id: "render:public-stretch-preview".into(),
+            timeline_start_samples: 0,
+            duration_samples: 24_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        },
+        &runtime.get_execution_topology_summary(),
+        &runtime.get_clip_processing_pipeline_snapshot(),
+        &runtime.get_media_pipeline_snapshot(),
+        &runtime.get_tempo_map_snapshot(),
+        &runtime.get_marker_analysis_snapshot(),
+        &runtime.get_plugin_recall_handoff_snapshot(),
+    )
+    .expect("public stretch preview should build");
+    assert_eq!(preview.stretch_engine_snapshot.clip_count, 1);
+    assert_eq!(preview.stretch_engine_snapshot.ready_clip_count, 1);
+    assert_eq!(preview.stretch_engine_snapshot.sample_domain_clip_count, 1);
+    assert_eq!(preview.stretch_engine_snapshot.fallback_clip_count, 0);
+    assert_eq!(
+        preview.stretch_engine_snapshot.clips[0].engine_class,
+        signal_runtime::RuntimeStretchEngineClass::SampleDomain
+    );
+    assert_eq!(
+        preview.stretch_engine_snapshot.clips[0].readiness,
+        signal_runtime::RuntimeStretchReadiness::Ready
+    );
+    assert!(preview.summary.contains("stretch=1/fallback=0"));
+
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"stretch_engine_snapshot\":{"));
+    assert!(supervisor_json.contains("\"sample_domain_clip_count\":1"));
+    assert!(supervisor_json.contains("\"engine_class\":\"SampleDomain\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = runtime
+        .get_media_pipeline_snapshot()
+        .assets
+        .first()
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
+fn public_runtime_marker_analysis_boundary_reports_runtime_owned_analysis_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-marker-analysis-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime marker-analysis handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime marker-analysis configure should succeed");
+
+    let ready_path = public_media_fixture_path("marker-analysis-ready");
+    write_public_transient_test_wav(&ready_path);
+    runtime
+        .reconcile_media_assets(vec![signal_runtime::RuntimeMediaAssetRegistration {
+            asset_id: "asset:sha256:public-marker-analysis-ready".into(),
+            content_hash: "public-marker-analysis-ready".into(),
+            source_path: ready_path.display().to_string(),
+            file_name: "public-marker-analysis-ready.wav".into(),
+            byte_size: fs::metadata(&ready_path).unwrap().len(),
+            sample_rate_hz: 48_000,
+            channel_count: 1,
+            duration_samples: 48_000,
+            waveform_bin_count: 8,
+        }])
+        .expect("public marker-analysis media asset should reconcile");
+    runtime
+        .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+            clip_id: "clip:public-marker-analysis".into(),
+            media_asset_id: Some("asset:sha256:public-marker-analysis-ready".into()),
+            mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            source_tempo_bpm: Some(120.0),
+            anchor_timeline_samples: 0,
+            start_samples: 0,
+            duration_samples: 48_000,
+        }])
+        .expect("public marker-analysis warp clip should reconcile");
+    runtime
+        .reconcile_clip_processing_clips(vec![signal_runtime::RuntimeClipProcessingRegistration {
+            clip_id: "clip:public-marker-analysis".into(),
+            media_asset_id: Some("asset:sha256:public-marker-analysis-ready".into()),
+            warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            start_samples: 0,
+            duration_samples: 48_000,
+            fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+        }])
+        .expect("public marker-analysis clip-processing clip should reconcile");
+    runtime
+        .apply_transport_projection(signal_runtime::TransportProjection {
+            playing: false,
+            timeline_position_samples: 0,
+            tempo_bpm: 180.0,
+            loop_state: None,
+        })
+        .expect("public marker-analysis transport projection should apply");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(observation.marker_analysis_snapshot.clip_count, 1);
+    assert_eq!(observation.marker_analysis_snapshot.ready_clip_count, 1);
+    assert_eq!(
+        observation
+            .marker_analysis_snapshot
+            .tempo_assist_ready_clip_count,
+        1
+    );
+    assert!(observation.marker_analysis_snapshot.warp_marker_count > 0);
+    assert!(observation.marker_analysis_snapshot.transient_anchor_count > 0);
+    assert_eq!(
+        observation.marker_analysis_snapshot.clips[0].tempo_assist_posture,
+        signal_runtime::RuntimeTempoAssistPosture::Ready
+    );
+    assert_eq!(
+        observation.marker_analysis_snapshot.clips[0].tempo_assist_hint_source,
+        signal_runtime::RuntimeTempoAssistHintSource::SourceTempo
+    );
+    assert_eq!(
+        observation.marker_analysis_snapshot.clips[0].tempo_assist_hint_bpm,
+        Some(120.0)
+    );
+    assert!(observation
+        .render_json()
+        .contains("\"marker_analysis_snapshot\":{\"clip_count\":1"));
+    assert!(observation
+        .render_compact()
+        .contains("marker_analysis_clips=1/1/0/0/0"));
+
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"marker_analysis_snapshot\":{\"clip_count\":1"));
+    assert!(supervisor_json.contains("\"tempo_assist_ready_clip_count\":1"));
+    assert!(supervisor_json.contains("\"tempo_assist_posture\":\"Ready\""));
+    assert!(supervisor_json.contains("\"tempo_assist_hint_source\":\"SourceTempo\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = runtime
+        .get_media_pipeline_snapshot()
+        .assets
+        .first()
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
+fn public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-transform-artifact-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime transform-artifact handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime transform-artifact configure should succeed");
+
+    let ready_path = public_media_fixture_path("transform-artifact-ready");
+    write_public_transient_test_wav(&ready_path);
+    runtime
+        .reconcile_media_assets(vec![signal_runtime::RuntimeMediaAssetRegistration {
+            asset_id: "asset:sha256:public-transform-artifact-ready".into(),
+            content_hash: "public-transform-artifact-ready".into(),
+            source_path: ready_path.display().to_string(),
+            file_name: "public-transform-artifact-ready.wav".into(),
+            byte_size: fs::metadata(&ready_path).unwrap().len(),
+            sample_rate_hz: 48_000,
+            channel_count: 1,
+            duration_samples: 48_000,
+            waveform_bin_count: 8,
+        }])
+        .expect("public transform-artifact media asset should reconcile");
+    runtime
+        .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+            clip_id: "clip:public-transform-artifact".into(),
+            media_asset_id: Some("asset:sha256:public-transform-artifact-ready".into()),
+            mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            source_tempo_bpm: Some(120.0),
+            anchor_timeline_samples: 0,
+            start_samples: 0,
+            duration_samples: 48_000,
+        }])
+        .expect("public transform-artifact warp clip should reconcile");
+    runtime
+        .reconcile_clip_processing_clips(vec![signal_runtime::RuntimeClipProcessingRegistration {
+            clip_id: "clip:public-transform-artifact".into(),
+            media_asset_id: Some("asset:sha256:public-transform-artifact-ready".into()),
+            warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            start_samples: 0,
+            duration_samples: 48_000,
+            fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+        }])
+        .expect("public transform-artifact clip-processing clip should reconcile");
+    runtime
+        .apply_transport_projection(signal_runtime::TransportProjection {
+            playing: false,
+            timeline_position_samples: 0,
+            tempo_bpm: 180.0,
+            loop_state: None,
+        })
+        .expect("public transform-artifact transport projection should apply");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(observation.transform_artifact_snapshot.clip_count, 1);
+    assert_eq!(observation.transform_artifact_snapshot.ready_clip_count, 1);
+    assert_eq!(
+        observation.transform_artifact_snapshot.reusable_clip_count,
+        1
+    );
+    assert_eq!(
+        observation.transform_artifact_snapshot.clips[0].readiness,
+        signal_runtime::RuntimeTransformArtifactReadiness::Ready
+    );
+    assert_eq!(
+        observation.transform_artifact_snapshot.clips[0].reuse_state,
+        signal_runtime::RuntimeTransformArtifactReuseState::Reusable
+    );
+    assert!(observation.transform_artifact_snapshot.clips[0].cached_media_ready);
+    assert!(observation
+        .render_json()
+        .contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
+    assert!(observation
+        .render_compact()
+        .contains("transform_artifacts=1/1/0/0/0"));
+
+    let rendered = runtime
+        .render_clip_processing_buffer(signal_runtime::RuntimeClipRenderRequest {
+            clip_id: "clip:public-transform-artifact".into(),
+            timeline_start_samples: 0,
+            input_stage: signal_runtime::RuntimeClipRenderInputStage::PostWarp,
+            buffer: AudioBuffer::from_interleaved(
+                SampleRate(48_000),
+                ChannelLayout::Mono,
+                vec![0.25; 8],
+            ),
+        })
+        .expect("public transform-artifact clip render should succeed");
+    assert_eq!(
+        rendered.transform_artifact_snapshot.readiness,
+        signal_runtime::RuntimeTransformArtifactReadiness::Ready
+    );
+    assert_eq!(
+        rendered.transform_artifact_snapshot.reuse_state,
+        signal_runtime::RuntimeTransformArtifactReuseState::Reusable
+    );
+    assert!(rendered.transform_artifact_snapshot.cached_media_ready);
+    assert!(rendered
+        .summary
+        .contains("transform=Ready/Reusable/cached_media=true"));
+
+    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+        &RuntimeOfflineRenderRequest {
+            request_id: "render:public-transform-artifact-preview".into(),
+            timeline_start_samples: 0,
+            duration_samples: 24_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        },
+        &runtime.get_execution_topology_summary(),
+        &runtime.get_clip_processing_pipeline_snapshot(),
+        &runtime.get_media_pipeline_snapshot(),
+        &runtime.get_tempo_map_snapshot(),
+        &runtime.get_marker_analysis_snapshot(),
+        &runtime.get_plugin_recall_handoff_snapshot(),
+    )
+    .expect("public transform-artifact preview should build");
+    assert_eq!(preview.transform_artifact_snapshot.clip_count, 1);
+    assert_eq!(preview.transform_artifact_snapshot.ready_clip_count, 1);
+    assert_eq!(preview.transform_artifact_snapshot.reusable_clip_count, 1);
+    assert_eq!(
+        preview.transform_artifact_snapshot.clips[0].reuse_state,
+        signal_runtime::RuntimeTransformArtifactReuseState::Reusable
+    );
+    assert!(preview.summary.contains("transform_artifacts=1/reusable=1"));
+
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
+    assert!(supervisor_json.contains("\"reusable_clip_count\":1"));
+    assert!(supervisor_json.contains("\"reuse_state\":\"Reusable\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = runtime
+        .get_media_pipeline_snapshot()
+        .assets
+        .first()
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
+}
+
+#[test]
+fn public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-runtime-preview-transform-boundary".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public runtime preview-transform handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 256))
+        .expect("public runtime preview-transform configure should succeed");
+
+    let ready_path = public_media_fixture_path("preview-transform-ready");
+    write_public_transient_test_wav(&ready_path);
+    runtime
+        .reconcile_media_assets(vec![signal_runtime::RuntimeMediaAssetRegistration {
+            asset_id: "asset:sha256:public-preview-transform-ready".into(),
+            content_hash: "public-preview-transform-ready".into(),
+            source_path: ready_path.display().to_string(),
+            file_name: "public-preview-transform-ready.wav".into(),
+            byte_size: fs::metadata(&ready_path).unwrap().len(),
+            sample_rate_hz: 48_000,
+            channel_count: 1,
+            duration_samples: 48_000,
+            waveform_bin_count: 8,
+        }])
+        .expect("public preview-transform media asset should reconcile");
+    runtime
+        .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+            clip_id: "clip:public-preview-transform".into(),
+            media_asset_id: Some("asset:sha256:public-preview-transform-ready".into()),
+            mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            source_tempo_bpm: Some(120.0),
+            anchor_timeline_samples: 0,
+            start_samples: 0,
+            duration_samples: 48_000,
+        }])
+        .expect("public preview-transform warp clip should reconcile");
+    runtime
+        .reconcile_clip_processing_clips(vec![signal_runtime::RuntimeClipProcessingRegistration {
+            clip_id: "clip:public-preview-transform".into(),
+            media_asset_id: Some("asset:sha256:public-preview-transform-ready".into()),
+            warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+            start_samples: 0,
+            duration_samples: 48_000,
+            fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+            clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+        }])
+        .expect("public preview-transform clip-processing clip should reconcile");
+    runtime
+        .apply_transport_projection(signal_runtime::TransportProjection {
+            playing: false,
+            timeline_position_samples: 0,
+            tempo_bpm: 180.0,
+            loop_state: None,
+        })
+        .expect("public preview-transform transport projection should apply");
+    runtime
+        .start_media_preview("asset:sha256:public-preview-transform-ready")
+        .expect("public preview-transform media preview should start");
+
+    let recorder = RuntimeEventRecorder::default();
+    let observation = RuntimeObservationReport::capture(&runtime, &recorder);
+    assert_eq!(observation.preview_transform_snapshot.clip_count, 1);
+    assert_eq!(observation.preview_transform_snapshot.ready_clip_count, 1);
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .active_audition_clip_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .artifact_backed_clip_count,
+        1
+    );
+    assert_eq!(
+        observation.preview_transform_snapshot.clips[0].service_class,
+        signal_runtime::RuntimePreviewTransformServiceClass::ArtifactBacked
+    );
+    assert_eq!(
+        observation.preview_transform_snapshot.clips[0].readiness,
+        signal_runtime::RuntimePreviewTransformReadiness::Ready
+    );
+    assert!(observation.preview_transform_snapshot.clips[0].audition_active);
+    assert!(observation
+        .render_json()
+        .contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
+    assert!(observation
+        .render_json()
+        .contains("\"active_audition_clip_count\":1"));
+
+    let rendered = runtime
+        .render_clip_processing_buffer(signal_runtime::RuntimeClipRenderRequest {
+            clip_id: "clip:public-preview-transform".into(),
+            timeline_start_samples: 0,
+            input_stage: signal_runtime::RuntimeClipRenderInputStage::PostWarp,
+            buffer: AudioBuffer::from_interleaved(
+                SampleRate(48_000),
+                ChannelLayout::Mono,
+                vec![0.25; 8],
+            ),
+        })
+        .expect("public preview-transform clip render should succeed");
+    assert_eq!(
+        rendered.preview_transform_snapshot.service_class,
+        signal_runtime::RuntimePreviewTransformServiceClass::ArtifactBacked
+    );
+    assert_eq!(
+        rendered.preview_transform_snapshot.readiness,
+        signal_runtime::RuntimePreviewTransformReadiness::Ready
+    );
+    assert!(rendered.preview_transform_snapshot.audition_active);
+    assert!(rendered
+        .summary
+        .contains("preview=ArtifactBacked/Ready/None/None"));
+
+    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+        &RuntimeOfflineRenderRequest {
+            request_id: "render:public-preview-transform-preview".into(),
+            timeline_start_samples: 0,
+            duration_samples: 24_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        },
+        &runtime.get_execution_topology_summary(),
+        &runtime.get_clip_processing_pipeline_snapshot(),
+        &runtime.get_media_pipeline_snapshot(),
+        &runtime.get_tempo_map_snapshot(),
+        &runtime.get_marker_analysis_snapshot(),
+        &runtime.get_plugin_recall_handoff_snapshot(),
+    )
+    .expect("public preview-transform preview should build");
+    assert_eq!(preview.preview_transform_snapshot.clip_count, 1);
+    assert_eq!(preview.preview_transform_snapshot.ready_clip_count, 1);
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .artifact_backed_clip_count,
+        1
+    );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .active_audition_clip_count,
+        0
+    );
+    assert!(preview
+        .summary
+        .contains("preview_transform=1/artifact_backed=1/fallback=0"));
+
+    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
+    assert!(supervisor_json.contains("\"active_audition_clip_count\":1"));
+    assert!(supervisor_json.contains("\"service_class\":\"ArtifactBacked\""));
+
+    let _ = fs::remove_file(&ready_path);
+    if let Some(path) = runtime
+        .get_media_pipeline_snapshot()
+        .assets
+        .first()
+        .and_then(|asset| asset.cache_path.as_deref())
+    {
+        let _ = fs::remove_file(path);
+    }
 }
 
 #[test]

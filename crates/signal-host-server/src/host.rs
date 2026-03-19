@@ -1,5 +1,9 @@
 use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
-use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
+use signal_hardware::{
+    BackendPolicyTier, HardwareBackend, HardwareClockSource, HardwareConfigRequest,
+    HardwareLifecycleOwnership, HardwareRestartPolicy, HardwareStreamRequest,
+    SimulatedHardwareBackend,
+};
 use signal_ipc::{
     PluginInstanceStatePayload, PluginMessageEnvelope, PluginMessagePayload, SharedMemoryBroker,
     SharedMemoryTransportPayload,
@@ -14,6 +18,7 @@ use signal_plugin_clap::{
     ClapDiscoveredPluginType, ClapPluginHostAdapter, ClapSandboxFailureStage,
     ClapSandboxLifecycleHarness,
 };
+use signal_plugin_lv2::{Lv2DiscoveredPluginType, Lv2HostAdapter, Lv2HostPlatform};
 use signal_plugin_vst3::{Vst3DiscoveredPluginType, Vst3HostAdapter, Vst3HostPlatform};
 use signal_primitives::FrameCount;
 use signal_runtime::{
@@ -24,14 +29,21 @@ use signal_runtime::{
     PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
     PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
     RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder,
-    RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeObservationApi,
+    RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
+    RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
+    RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
+    RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
+    RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
+    RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy, RuntimeLifecycleApi,
+    RuntimeMediaAssetRegistration, RuntimeMultichannelIoSummary, RuntimeObservationApi,
     RuntimeObservationDiagnostics, RuntimeObservationReport,
     RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
     RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
     RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
-    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord,
+    RuntimeOfflineRenderResult, RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
     RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
-    RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
+    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePreworkServicePressure,
+    RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
     RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
     SignalRuntime, StopReason, TransportAttachIntent, WatchdogRestartRecord,
@@ -42,36 +54,52 @@ const STEADY_STATE_BLOCKS: u64 = 8;
 const SOAK_RESTART_EPISODES: u32 = 3;
 const INTER_EPISODE_CONTINUITY_BLOCKS: u64 = 2;
 
+fn runtime_host_clock_source(clock_source: HardwareClockSource) -> RuntimeHostClockSource {
+    match clock_source {
+        HardwareClockSource::Internal => RuntimeHostClockSource::Internal,
+        HardwareClockSource::ExternalWordClock => RuntimeHostClockSource::ExternalWordClock,
+        HardwareClockSource::DigitalInput => RuntimeHostClockSource::DigitalInput,
+        HardwareClockSource::Virtual => RuntimeHostClockSource::Virtual,
+    }
+}
+
+fn runtime_host_lifecycle_ownership(
+    ownership: HardwareLifecycleOwnership,
+) -> RuntimeHostLifecycleOwnership {
+    match ownership {
+        HardwareLifecycleOwnership::HostDrivenCallback => {
+            RuntimeHostLifecycleOwnership::HostDrivenCallback
+        }
+        HardwareLifecycleOwnership::BackendManagedCallback => {
+            RuntimeHostLifecycleOwnership::BackendManagedCallback
+        }
+    }
+}
+
+fn runtime_host_restart_policy(restart_policy: HardwareRestartPolicy) -> RuntimeHostRestartPolicy {
+    match restart_policy {
+        HardwareRestartPolicy::HostMustRestart => RuntimeHostRestartPolicy::HostMustRestart,
+        HardwareRestartPolicy::BackendMayRestart => RuntimeHostRestartPolicy::BackendMayRestart,
+    }
+}
+
+fn samples_to_ms(samples: u32, sample_rate_hz: u32) -> f32 {
+    if sample_rate_hz == 0 {
+        0.0
+    } else {
+        samples as f32 * 1_000.0 / sample_rate_hz as f32
+    }
+}
+
 fn runtime_plugin_discovered_type_record(
     discovered: ClapDiscoveredPluginType,
 ) -> RuntimePluginDiscoveredTypeRecord {
-    let plugin_type_id = discovered.plugin_type_id.0;
     let descriptor = discovered.descriptor;
-    let summary = format!(
-        "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
-        plugin_type_id,
-        descriptor.plugin_id,
-        descriptor.format,
-        descriptor.features.len(),
+    runtime_plugin_discovered_type_record_from_descriptor(
+        discovered.plugin_type_id.0,
         discovered.default_io_layout,
-        descriptor.parameters.len(),
-    );
-    RuntimePluginDiscoveredTypeRecord {
-        plugin_type_id,
-        plugin_id: descriptor.plugin_id.clone(),
-        vendor: descriptor.vendor.clone(),
-        name: descriptor.name.clone(),
-        format: descriptor.format,
-        version: descriptor.version.clone(),
-        features: descriptor.features.clone(),
-        default_io_layout: discovered.default_io_layout,
-        audio_bus_count: descriptor.audio_buses.len(),
-        parameter_count: descriptor.parameters.len(),
-        state_contract: descriptor.state_contract,
-        processing_contract: descriptor.processing_contract,
-        lifecycle_contract: descriptor.lifecycle_contract,
-        summary,
-    }
+        descriptor,
+    )
 }
 
 fn runtime_plugin_discovered_type_record_from_descriptor(
@@ -97,6 +125,11 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
         version: descriptor.version.clone(),
         features: descriptor.features.clone(),
         default_io_layout,
+        default_multichannel_io: RuntimeMultichannelIoSummary::for_plugin_io(default_io_layout),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &descriptor.features,
+            default_io_layout,
+        ),
         audio_bus_count: descriptor.audio_buses.len(),
         parameter_count: descriptor.parameters.len(),
         state_contract: descriptor.state_contract,
@@ -128,6 +161,17 @@ fn runtime_au_discovered_type_record(
     )
 }
 
+fn runtime_lv2_discovered_type_record(
+    discovered: Lv2DiscoveredPluginType,
+) -> RuntimePluginDiscoveredTypeRecord {
+    let descriptor = discovered.descriptor;
+    runtime_plugin_discovered_type_record_from_descriptor(
+        discovered.plugin_type_id.0,
+        discovered.default_io_layout,
+        descriptor,
+    )
+}
+
 fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformCoverageRecord> {
     vec![
         RuntimePluginFormatPlatformCoverageRecord {
@@ -138,7 +182,12 @@ fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformC
                 RuntimePluginHostPlatform::Windows,
             ],
             unsupported_platforms: Vec::new(),
-            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -148,7 +197,12 @@ fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformC
                 RuntimePluginHostPlatform::Windows,
             ],
             unsupported_platforms: Vec::new(),
-            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Au,
@@ -157,7 +211,24 @@ fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformC
                 RuntimePluginHostPlatform::Linux,
                 RuntimePluginHostPlatform::Windows,
             ],
-            summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+            linux_parity_band: RuntimePluginParityBand::Unsupported,
+            linux_preferred_sandbox_outcome: None,
+            linux_strict_sandbox_default: false,
+            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
+        },
+        RuntimePluginFormatPlatformCoverageRecord {
+            format: PluginFormat::Lv2,
+            supported_platforms: vec![RuntimePluginHostPlatform::Linux],
+            unsupported_platforms: vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Windows,
+            ],
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
+                    .into(),
         },
     ]
 }
@@ -265,6 +336,7 @@ pub struct ServerRuntimeHost {
     runtime: SignalRuntime,
     broker: SharedMemoryBroker,
     au: AuHostAdapter,
+    lv2: Lv2HostAdapter,
     vst3: Vst3HostAdapter,
     supervisor: ServerSupervisorState,
     events: RuntimeEventRecorder,
@@ -281,6 +353,7 @@ impl ServerRuntimeHost {
             runtime,
             broker: SharedMemoryBroker::default(),
             au: AuHostAdapter::default(),
+            lv2: Lv2HostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
             supervisor: ServerSupervisorState::default(),
             events,
@@ -315,6 +388,17 @@ impl ServerRuntimeHost {
             );
         }
 
+        let include_lv2 =
+            request.formats.is_empty() || request.formats.contains(&PluginFormat::Lv2);
+        if include_lv2 {
+            discovered.extend(
+                self.lv2
+                    .discover_plugins_for_roots(Lv2HostPlatform::Linux, &request.roots)
+                    .into_iter()
+                    .map(runtime_lv2_discovered_type_record),
+            );
+        }
+
         let include_au = request.formats.is_empty() || request.formats.contains(&PluginFormat::Au);
         if include_au {
             discovered.extend(
@@ -340,6 +424,76 @@ impl ServerRuntimeHost {
             &format!("instance:server:au:{}", request.sandbox_id),
         );
         let session = self.au.prepare_session(
+            &instance,
+            self.runtime.config().sample_rate.0,
+            self.runtime.config().graph.block_size as u32,
+        );
+
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::SandboxHandshaken,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::PluginTypeLoaded,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::InstanceCreated,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::InstancePrepared,
+            None,
+        );
+        self.runtime
+            .record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
+                sandbox_id: request.sandbox_id.clone(),
+                plugin_type_id: instance.plugin_type_id.0.clone(),
+                instance_id: instance.instance_id.0.clone(),
+                lifecycle_state: "Prepared".into(),
+                readiness_state: "Ready".into(),
+                degraded_reasons: Vec::new(),
+                active: true,
+                processing_epoch: None,
+                processing_sample_rate_hz: Some(session.sample_rate_hz),
+                processing_max_block_frames: Some(session.max_block_frames),
+                audio_inputs: Some(session.io_layout.audio_inputs),
+                audio_outputs: Some(session.io_layout.audio_outputs),
+                midi_inputs: Some(session.io_layout.midi_inputs),
+                midi_outputs: Some(session.io_layout.midi_outputs),
+                last_fault: None,
+            });
+        self.runtime.record_plugin_sandbox_lifecycle(
+            request.sandbox_id.as_str(),
+            PluginSandboxLifecycleStage::TransportAttached,
+            None,
+        );
+        self.runtime.record_plugin_sandbox_transport(
+            request.sandbox_id.as_str(),
+            format!("lease:{}", request.sandbox_id),
+            format!("region:{}", request.sandbox_id),
+            PluginSandboxTransportStage::Attached,
+            None,
+            Some(session.summary),
+        );
+    }
+
+    fn ensure_lv2_sandbox_session(&mut self, request: &PluginSandboxSpec) {
+        let Some(plugin_type_id) = request.plugin_type_id.as_deref() else {
+            return;
+        };
+        let Some(discovered) = self.lv2.discover_plugin_type(plugin_type_id) else {
+            return;
+        };
+        let instance = self.lv2.instantiate_plugin(
+            &discovered,
+            &format!("instance:server:lv2:{}", request.sandbox_id),
+        );
+        let session = self.lv2.prepare_session(
             &instance,
             self.runtime.config().sample_rate.0,
             self.runtime.config().graph.block_size as u32,
@@ -2790,11 +2944,206 @@ impl ServerRuntimeHost {
 
     #[allow(dead_code)]
     pub fn observation_report(&self) -> RuntimeObservationReport {
-        RuntimeObservationReport::capture(&self.runtime, &self.events)
+        let observation = RuntimeObservationReport::capture(&self.runtime, &self.events);
+        let host_io = self.host_io_summary(&observation);
+        let jack_host_io = self.jack_host_io_summary(&observation);
+        observation
+            .with_linux_backend_session_snapshot(&host_io)
+            .with_jack_coordination_snapshot(&jack_host_io)
+            .with_external_midi_snapshot(
+                signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty(
+                    "signal-host-server",
+                ),
+            )
     }
 
     pub fn supervisor_report(&self) -> RuntimeSupervisorReport {
-        RuntimeSupervisorReport::capture(&self.runtime, &self.events)
+        let mut report = RuntimeSupervisorReport::capture(&self.runtime, &self.events);
+        let host_io = self.host_io_summary(&report.observation);
+        let jack_host_io = self.jack_host_io_summary(&report.observation);
+        report.observation = report
+            .observation
+            .with_linux_backend_session_snapshot(&host_io)
+            .with_jack_coordination_snapshot(&jack_host_io)
+            .with_external_midi_snapshot(
+                signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty(
+                    "signal-host-server",
+                ),
+            );
+        report
+    }
+
+    fn host_io_summary(&self, observation: &RuntimeObservationReport) -> RuntimeHostIoSummary {
+        self.simulated_linux_host_io_summary(
+            observation,
+            SimulatedHardwareBackend::linux_pipewire_duplex(),
+            HardwareStreamRequest::new_output("pipewire:default-graph", 48_000, 256)
+                .with_input_channels(2)
+                .with_output_channels(2),
+        )
+    }
+
+    fn jack_host_io_summary(&self, observation: &RuntimeObservationReport) -> RuntimeHostIoSummary {
+        self.simulated_linux_host_io_summary(
+            observation,
+            SimulatedHardwareBackend::linux_jack_duplex(),
+            HardwareStreamRequest::new_output("jack:graph-main", 48_000, 256)
+                .with_input_channels(2)
+                .with_output_channels(2),
+        )
+    }
+
+    fn simulated_linux_host_io_summary(
+        &self,
+        observation: &RuntimeObservationReport,
+        backend: SimulatedHardwareBackend,
+        request: HardwareStreamRequest,
+    ) -> RuntimeHostIoSummary {
+        let diagnostics = backend.diagnostics();
+        let stream = backend
+            .negotiate_stream(&request)
+            .expect("server host linux baseline should negotiate");
+        let graph_latency_samples = observation.engine_block_snapshot.total_latency_samples;
+        let output_latency_samples = stream.latency.output_latency_samples;
+        let input_latency_samples = stream.latency.input_latency_samples;
+        let round_trip_latency_samples = stream.latency.round_trip_latency_samples;
+        let estimated_output_latency_samples =
+            output_latency_samples.saturating_add(graph_latency_samples);
+        let estimated_round_trip_latency_samples =
+            match (input_latency_samples, round_trip_latency_samples) {
+                (_, Some(round_trip)) => Some(round_trip.saturating_add(graph_latency_samples)),
+                (Some(input_latency), None) => Some(
+                    input_latency
+                        .saturating_add(output_latency_samples)
+                        .saturating_add(graph_latency_samples),
+                ),
+                (None, None) => None,
+            };
+        let endpoint_topology = RuntimeHostEndpointTopology::Duplex;
+        RuntimeHostIoSummary {
+            hardware: RuntimeHostHardwareSummary {
+                backend_identity: stream.device.backend_identity,
+                backend_name: stream.device.backend_name.into(),
+                linux_backend_identity: RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                    stream.device.backend_identity,
+                ),
+                linux_backend_portability:
+                    RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                        stream.device.backend_identity,
+                        stream.simulated,
+                        diagnostics.health,
+                        diagnostics.device_loss_count,
+                        diagnostics.restart_attempt_count,
+                        diagnostics.restart_failure_count,
+                    ),
+                device_id: stream.device.device_id.clone(),
+                device_name: stream.device.name.clone(),
+                sample_rate: stream.sample_rate.0,
+                buffer_size: stream.buffer_size,
+                input_channels: stream.input_channels,
+                output_channels: stream.output_channels,
+                sample_format: stream.sample_format,
+                simulated: stream.simulated,
+                backend_health: diagnostics.health,
+                xrun_count: diagnostics.xrun_count,
+                callback_overrun_count: diagnostics.callback_overrun_count,
+                device_loss_count: diagnostics.device_loss_count,
+                restart_attempt_count: diagnostics.restart_attempt_count,
+                restart_failure_count: diagnostics.restart_failure_count,
+            },
+            audio_pump: RuntimeHostAudioPumpSummary {
+                stream_state: RuntimeHostAudioStreamState::Running,
+                transfer_policy: RuntimeHostAudioTransferPolicy {
+                    max_callback_frames: stream.buffer_size,
+                    max_transfer_channels: stream.input_channels.max(stream.output_channels),
+                    zero_fill_unwritten_output: true,
+                },
+                callback_count: 0,
+                total_callback_frames: 0,
+                total_runtime_output_frames: 0,
+                copied_output_samples: 0,
+                zero_filled_output_samples: 0,
+                dropped_output_samples: 0,
+                last_callback_output_peak: None,
+                last_runtime_graph_id: None,
+            },
+            clocking: RuntimeHostClockingSummary {
+                clock_source: runtime_host_clock_source(stream.clock_source),
+                ownership: runtime_host_lifecycle_ownership(stream.lifecycle.ownership),
+                restart_policy: runtime_host_restart_policy(stream.lifecycle.restart_policy),
+                processing_sample_rate_hz: observation.effective_config.sample_rate.0,
+                hardware_sample_rate_hz: stream.sample_rate.0,
+                clock_domain: RuntimeHostClockDomain::Aggregate,
+                fallback_state: RuntimeHostClockFallbackState::Direct,
+                transition_state: RuntimeHostClockTransitionState::Stable,
+                drift_state: RuntimeHostClockDriftState::AggregateManaged,
+                discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+                duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
+                endpoint_topology,
+                linux_clocking_parity:
+                    signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
+                        RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                            stream.device.backend_identity,
+                        ),
+                        diagnostics.health,
+                        RuntimeHostAudioStreamState::Running,
+                        RuntimeHostClockDomain::Aggregate,
+                        RuntimeHostClockFallbackState::Direct,
+                        RuntimeHostClockTransitionState::Stable,
+                        RuntimeHostClockDriftState::AggregateManaged,
+                        RuntimeHostClockDiscontinuityState::Continuous,
+                    ),
+                linux_duplex_parity:
+                    signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
+                        RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                            stream.device.backend_identity,
+                        ),
+                        diagnostics.health,
+                        RuntimeHostAudioStreamState::Running,
+                        RuntimeHostClockDomain::Aggregate,
+                        RuntimeHostClockFallbackState::Direct,
+                        RuntimeHostClockTransitionState::Stable,
+                        RuntimeHostDuplexMismatchState::Aligned,
+                        endpoint_topology,
+                        false,
+                    ),
+                linux_endpoint_topology_parity:
+                    signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                        RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                            stream.device.backend_identity,
+                        ),
+                        diagnostics.health,
+                        RuntimeHostClockTransitionState::Stable,
+                        RuntimeHostClockDiscontinuityState::Continuous,
+                        RuntimeHostDuplexMismatchState::Aligned,
+                        endpoint_topology,
+                        false,
+                    ),
+                partial_availability: false,
+                crossing_required: false,
+                callback_interval_ms: samples_to_ms(
+                    stream.buffer_size as u32,
+                    stream.sample_rate.0,
+                ),
+            },
+            latency: RuntimeHostLatencySummary {
+                input_latency_samples,
+                output_latency_samples,
+                round_trip_latency_samples,
+                graph_latency_samples,
+                estimated_output_latency_samples,
+                estimated_round_trip_latency_samples,
+                output_latency_ms: samples_to_ms(output_latency_samples, stream.sample_rate.0),
+                graph_latency_ms: samples_to_ms(graph_latency_samples, stream.sample_rate.0),
+                estimated_output_latency_ms: samples_to_ms(
+                    estimated_output_latency_samples,
+                    stream.sample_rate.0,
+                ),
+                estimated_round_trip_latency_ms: estimated_round_trip_latency_samples
+                    .map(|value| samples_to_ms(value, stream.sample_rate.0)),
+            },
+            runtime_graph_id_matches_pump: false,
+        }
     }
 }
 
@@ -3296,6 +3645,9 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         if request.plugin_format == PluginFormat::Au {
             self.ensure_au_sandbox_session(&request);
         }
+        if request.plugin_format == PluginFormat::Lv2 {
+            self.ensure_lv2_sandbox_session(&request);
+        }
         if request.plugin_format == PluginFormat::Vst3 {
             self.ensure_vst3_sandbox_session(&request);
         }
@@ -3452,20 +3804,25 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
 #[cfg(test)]
 mod tests {
     use super::{server_demo_runtime_assembly, LifecycleRunSummary, ServerRuntimeHost};
+    use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
     use signal_plugin::{CompletionState, PluginFormat, WatchdogTriggerReason};
     use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
+    use signal_primitives::{ChannelCount, ChannelLayout};
     use signal_runtime::{
         BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
-        CompletionSlotStage, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
+        CompletionSlotStage, GraphContractProjection, GraphNodeBufferContractProjection,
+        GraphNodeBusEndpointProjection, GraphNodeContractProjection, GraphNodeProjection,
+        GraphNodeTopologyProjection, GraphProjection, HandshakeRequest, HeartbeatCycleStage,
+        LingeringCleanupMode, PluginBackedNodeBinding, PluginBackedNodeBindingProjection,
         PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
         PluginScanRequest, RecoveryRestartIntent, RuntimeConfig, RuntimeConfigRequest,
         RuntimeErrorKind, RuntimeExternalIoDeviceChangeState, RuntimeExternalIoHealthState,
         RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
         RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeLifecycleApi,
         RuntimeMediaAssetRegistration, RuntimeMediaPreviewState, RuntimeObservationApi,
-        RuntimePluginHostPlatform, RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi,
-        RuntimeSupervisorReport, SandboxOperationFailureStage, SignalRuntime, StopReason,
-        TransportAttachIntent,
+        RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginParityBand,
+        RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi, RuntimeSupervisorReport,
+        SandboxOperationFailureStage, SignalRuntime, StopReason, TransportAttachIntent,
     };
     use std::{
         fs,
@@ -5174,6 +5531,24 @@ mod tests {
             RuntimeExternalIoLoopbackState::Unavailable
         );
         assert_eq!(
+            report
+                .observation
+                .external_io_snapshot
+                .linux_clocking_parity,
+            signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            report.observation.external_io_snapshot.linux_duplex_parity,
+            signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            report
+                .observation
+                .external_io_snapshot
+                .linux_endpoint_topology_parity,
+            signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
+        assert_eq!(
             report.observation.external_io_snapshot.endpoint_topology,
             signal_runtime::RuntimeHostEndpointTopology::Unconfigured
         );
@@ -5187,6 +5562,306 @@ mod tests {
         assert!(rendered.contains("\"health_state\":\"Unavailable\""));
         assert!(rendered.contains("\"monitoring_state\":\"Unavailable\""));
         assert!(rendered.contains("\"loopback_state\":\"Unavailable\""));
+        assert!(rendered.contains("\"linux_clocking_parity\":\"Unsupported\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_external_midi_endpoint_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(
+            report.observation.external_midi_snapshot.discovery_state,
+            signal_runtime::RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report.observation.external_midi_snapshot.graph_state,
+            signal_runtime::RuntimeExternalMidiGraphState::Empty
+        );
+        assert_eq!(
+            report.observation.external_midi_snapshot.provider_name,
+            "signal-host-server"
+        );
+        assert_eq!(report.observation.external_midi_snapshot.device_count, 0);
+        assert_eq!(report.observation.external_midi_snapshot.endpoint_count, 0);
+        assert!(report.observation.external_midi_snapshot.devices.is_empty());
+        assert!(report
+            .observation
+            .external_midi_snapshot
+            .endpoints
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"external_midi_snapshot\":{"));
+        assert!(rendered.contains("\"discovery_state\":\"Idle\""));
+        assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"provider_name\":\"signal-host-server\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_linux_backend_session_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        let snapshot = &report.observation.linux_backend_session_snapshot;
+        assert_eq!(
+            snapshot.backend_identity,
+            signal_runtime::RuntimeLinuxAudioBackendIdentity::PipeWire
+        );
+        assert_eq!(
+            snapshot.ownership,
+            signal_runtime::RuntimeLinuxBackendSessionOwnership::BackendManagedGraph
+        );
+        assert_eq!(
+            snapshot.lifecycle_state,
+            signal_runtime::RuntimeLinuxBackendSessionLifecycleState::Running
+        );
+        assert_eq!(
+            snapshot.device_claim_posture,
+            signal_runtime::RuntimeLinuxBackendDeviceClaimPosture::SharedGraph
+        );
+        assert_eq!(
+            snapshot.session_role,
+            signal_runtime::RuntimeLinuxBackendSessionRole::PrimaryAudioIo
+        );
+        assert_eq!(
+            snapshot.ownership_fallback,
+            signal_runtime::RuntimeLinuxBackendOwnershipFallbackState::BackendManagedGuarded
+        );
+        assert_eq!(snapshot.backend_name, "pipewire");
+        assert_eq!(snapshot.device_id, "pipewire:default-graph");
+        assert!(snapshot.simulated);
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"linux_backend_session_snapshot\":{"));
+        assert!(rendered.contains("\"backend_identity\":\"PipeWire\""));
+        assert!(rendered.contains("\"ownership\":\"BackendManagedGraph\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_jack_coordination_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        let snapshot = &report.observation.jack_coordination_snapshot;
+        assert_eq!(
+            snapshot.backend_identity,
+            signal_runtime::RuntimeLinuxAudioBackendIdentity::Jack
+        );
+        assert_eq!(snapshot.backend_name, "jack");
+        assert_eq!(
+            snapshot.transport_posture,
+            signal_runtime::RuntimeJackTransportPosture::Detached
+        );
+        assert_eq!(
+            snapshot.graph_state,
+            signal_runtime::RuntimeJackGraphCoordinationState::AttachedGuarded
+        );
+        assert_eq!(
+            snapshot.client_role,
+            signal_runtime::RuntimeJackClientRole::PrimaryAudioIo
+        );
+        assert_eq!(
+            snapshot.guarded_state,
+            signal_runtime::RuntimeJackGuardedCoordinationState::GraphGuarded
+        );
+        assert_eq!(snapshot.device_id, "jack:graph-main");
+        assert!(snapshot.simulated);
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"jack_coordination_snapshot\":{"));
+        assert!(rendered.contains("\"backend_identity\":\"Jack\""));
+        assert!(rendered.contains("\"transport_posture\":\"Detached\""));
+        assert!(rendered.contains("\"graph_state\":\"AttachedGuarded\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_control_surface_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(
+            report.observation.control_surface_snapshot.discovery_state,
+            signal_runtime::RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report.observation.control_surface_snapshot.graph_state,
+            signal_runtime::RuntimeControlSurfaceGraphState::Empty
+        );
+        assert_eq!(
+            report.observation.control_surface_snapshot.provider_name,
+            "signal-host-server"
+        );
+        assert_eq!(report.observation.control_surface_snapshot.device_count, 0);
+        assert!(report
+            .observation
+            .control_surface_snapshot
+            .devices
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"control_surface_snapshot\":{"));
+        assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"provider_name\":\"signal-host-server\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_advanced_hardware_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(
+            report
+                .observation
+                .advanced_hardware_snapshot
+                .discovery_state,
+            signal_runtime::RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report.observation.advanced_hardware_snapshot.graph_state,
+            signal_runtime::RuntimeAdvancedHardwareGraphState::Empty
+        );
+        assert_eq!(
+            report.observation.advanced_hardware_snapshot.provider_name,
+            "signal-host-server"
+        );
+        assert_eq!(
+            report.observation.advanced_hardware_snapshot.device_count,
+            0
+        );
+        assert!(report
+            .observation
+            .advanced_hardware_snapshot
+            .devices
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"provider_name\":\"signal-host-server\""));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_stretch_engine_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(report.observation.stretch_engine_snapshot.clip_count, 0);
+        assert_eq!(
+            report.observation.stretch_engine_snapshot.ready_clip_count,
+            0
+        );
+        assert!(report.observation.stretch_engine_snapshot.clips.is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"stretch_engine_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":0"));
+        assert!(rendered.contains("\"sample_domain_clip_count\":0"));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_marker_analysis_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(report.observation.marker_analysis_snapshot.clip_count, 0);
+        assert_eq!(
+            report.observation.marker_analysis_snapshot.ready_clip_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .marker_analysis_snapshot
+                .tempo_assist_ready_clip_count,
+            0
+        );
+        assert!(report.observation.marker_analysis_snapshot.clips.is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"marker_analysis_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":0"));
+        assert!(rendered.contains("\"tempo_assist_ready_clip_count\":0"));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_transform_artifact_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(report.observation.transform_artifact_snapshot.clip_count, 0);
+        assert_eq!(
+            report
+                .observation
+                .transform_artifact_snapshot
+                .ready_clip_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .transform_artifact_snapshot
+                .reusable_clip_count,
+            0
+        );
+        assert!(report
+            .observation
+            .transform_artifact_snapshot
+            .clips
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"transform_artifact_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":0"));
+        assert!(rendered.contains("\"reusable_clip_count\":0"));
+    }
+
+    #[test]
+    fn server_host_shared_report_surfaces_runtime_preview_transform_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let host = ServerRuntimeHost::new(runtime);
+        let report = host.supervisor_report();
+
+        assert_eq!(report.observation.preview_transform_snapshot.clip_count, 0);
+        assert_eq!(
+            report
+                .observation
+                .preview_transform_snapshot
+                .active_audition_clip_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .preview_transform_snapshot
+                .ready_clip_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .preview_transform_snapshot
+                .artifact_backed_clip_count,
+            0
+        );
+        assert!(report
+            .observation
+            .preview_transform_snapshot
+            .clips
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"preview_transform_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":0"));
+        assert!(rendered.contains("\"artifact_backed_clip_count\":0"));
     }
 
     #[test]
@@ -5306,6 +5981,177 @@ mod tests {
     }
 
     #[test]
+    fn server_host_shared_report_surfaces_runtime_spatial_execution_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let mut host = ServerRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-server".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("configure");
+        host.runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:host-server:spatial".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "spatial-stereo".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: -0.2 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "spatial-surround".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 20,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: 0.35 }],
+                    },
+                ],
+            })
+            .expect("apply spatial graph");
+        host.runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:host-server:spatial".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "spatial-stereo".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:stereo".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:stereo".into()),
+                            bus_group_id: Some("bus:spatial:stereo".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "spatial-surround".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:surround-in".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:surround".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:surround".into()),
+                            bus_group_id: Some("bus:spatial:surround".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply spatial contract");
+        host.runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:host-server:spatial".into(),
+                bindings: vec![
+                    PluginBackedNodeBinding {
+                        node_id: "spatial-stereo".into(),
+                        sandbox_id: "sandbox:spatial-stereo".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "spatial-surround".into(),
+                        sandbox_id: "sandbox:spatial-surround".into(),
+                    },
+                ],
+            })
+            .expect("bind spatial nodes");
+
+        let report = host.supervisor_report();
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .spatial_node_count,
+            2
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .active_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .fallback_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .surround_bed_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .expanded_fallback_spatial_node_count,
+            1
+        );
+        assert!(report
+            .observation
+            .plugin_chain_snapshot
+            .chains
+            .iter()
+            .flat_map(|chain| chain.stages.iter())
+            .any(|stage| stage.node_id == "spatial-surround"
+                && stage
+                    .spatial_execution
+                    .as_ref()
+                    .is_some_and(|spatial| {
+                        spatial.fallback_outcome
+                            == Some(
+                                signal_runtime::RuntimeSpatialFallbackOutcome::BypassSpatialProcessing
+                            )
+                            && spatial.bed_class
+                                == signal_runtime::RuntimeSpatialBedClass::CanonicalSurroundBed
+                            && spatial.expanded_fallback_outcome
+                                == Some(
+                                    signal_runtime::RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial
+                                )
+                    })));
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"spatial_node_count\":2"));
+        assert!(rendered.contains("\"active_spatial_node_count\":1"));
+        assert!(rendered.contains("\"fallback_spatial_node_count\":1"));
+        assert!(rendered.contains("\"surround_bed_spatial_node_count\":1"));
+        assert!(rendered.contains("\"expanded_fallback_spatial_node_count\":1"));
+        assert!(rendered.contains("\"adapter_class\":\"Balance\""));
+        assert!(rendered.contains("\"bed_class\":\"CanonicalSurroundBed\""));
+        assert!(rendered.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
+        assert!(rendered.contains("\"execution_mode\":\"Bypassed\""));
+    }
+
+    #[test]
     fn server_host_vst3_scan_and_sandbox_surface_linux_runtime_owned_receipts() {
         let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
         let mut host = ServerRuntimeHost::new(runtime);
@@ -5328,7 +6174,7 @@ mod tests {
                 .observation
                 .plugin_discovery_snapshot
                 .discovered_type_count,
-            2
+            4
         );
         assert_eq!(
             report
@@ -5347,6 +6193,23 @@ mod tests {
             .any(|plugin| plugin.plugin_type_id == "plugin:vst3:linux-synth"
                 && plugin.format == PluginFormat::Vst3
                 && plugin.default_io_layout.midi_inputs == 1));
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(
+                |plugin| plugin.plugin_type_id == "plugin:vst3:multiout-instrument"
+                    && plugin.complex_io_summary.multi_output_instrument
+                    && plugin.complex_io_summary.instrument_output_group_count >= 2
+            ));
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:vst3:bus-fx"
+                && plugin.complex_io_summary.bus_capable_fx_class.is_some()));
         let sandbox = report
             .observation
             .plugin_lifecycle_snapshot
@@ -5369,11 +6232,32 @@ mod tests {
         );
         assert!(sandbox.active);
         assert!(sandbox.active_transport);
+        let vst3_parity = report
+            .observation
+            .plugin_discovery_snapshot
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Vst3)
+            .expect("server vst3 parity should be present");
+        assert_eq!(
+            vst3_parity.linux_parity_band,
+            RuntimePluginParityBand::Portable
+        );
+        assert!(vst3_parity.linux_supported);
+        assert_eq!(
+            vst3_parity.linux_preferred_sandbox_outcome,
+            Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
+        );
+        assert!(vst3_parity.linux_strict_sandbox_default);
+        assert!(vst3_parity.prepare_capable_type_count >= 1);
+        assert!(vst3_parity.activate_capable_type_count >= 1);
 
         let rendered = report.render_json();
         assert!(rendered.contains("\"plugin_format\":\"Vst3\""));
         assert!(rendered.contains("\"formats\":[\"Vst3\"]"));
         assert!(rendered.contains("\"transport_stage\":\"Attached\""));
+        assert!(rendered.contains("\"linux_parity_band\":\"Portable\""));
+        assert!(rendered.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
     }
 
     #[test]
@@ -5399,7 +6283,7 @@ mod tests {
                 .observation
                 .plugin_discovery_snapshot
                 .discovered_type_count,
-            2
+            4
         );
         assert_eq!(
             report
@@ -5418,6 +6302,23 @@ mod tests {
             .any(|plugin| plugin.plugin_type_id == "plugin:au:instrument"
                 && plugin.format == PluginFormat::Au
                 && plugin.default_io_layout.midi_inputs == 1));
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(
+                |plugin| plugin.plugin_type_id == "plugin:au:multiout-instrument"
+                    && plugin.complex_io_summary.multi_output_instrument
+                    && plugin.complex_io_summary.instrument_output_group_count >= 2
+            ));
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:au:bus-fx"
+                && plugin.complex_io_summary.bus_capable_fx_class.is_some()));
         let sandbox = report
             .observation
             .plugin_lifecycle_snapshot
@@ -5458,7 +6359,7 @@ mod tests {
                 RuntimePluginHostPlatform::Windows,
             ]
         );
-        assert_eq!(au_parity.discovered_type_count, 2);
+        assert_eq!(au_parity.discovered_type_count, 4);
         assert_eq!(au_parity.sandbox_count, 1);
 
         let rendered = report.render_json();
@@ -5469,6 +6370,128 @@ mod tests {
         assert!(rendered.contains("\"parity_band\":\"Guarded\""));
         assert!(rendered.contains("\"supported_platforms\":[\"MacOs\"]"));
         assert!(rendered.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
+    }
+
+    #[test]
+    fn server_host_lv2_scan_and_sandbox_surface_linux_runtime_owned_receipts() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+        let mut host = ServerRuntimeHost::new(runtime);
+
+        host.start_plugin_scan(PluginScanRequest {
+            roots: vec!["~/.lv2".into(), "/usr/lib/lv2".into()],
+            formats: vec![PluginFormat::Lv2],
+        })
+        .expect("server lv2 plugin scan");
+        host.ensure_plugin_sandbox(PluginSandboxSpec {
+            sandbox_id: "server-lv2-sandbox".into(),
+            plugin_format: PluginFormat::Lv2,
+            plugin_type_id: Some("plugin:lv2:linux-synth".into()),
+        })
+        .expect("server lv2 sandbox ensure");
+
+        let report = host.supervisor_report();
+        assert_eq!(
+            report
+                .observation
+                .plugin_discovery_snapshot
+                .discovered_type_count,
+            4
+        );
+        assert_eq!(
+            report
+                .observation
+                .plugin_discovery_snapshot
+                .last_scan
+                .as_ref()
+                .map(|scan| scan.formats.clone()),
+            Some(vec![PluginFormat::Lv2])
+        );
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:lv2:linux-synth"
+                && plugin.format == PluginFormat::Lv2
+                && plugin.default_io_layout.midi_inputs == 1));
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(
+                |plugin| plugin.plugin_type_id == "plugin:lv2:multiout-instrument"
+                    && plugin.complex_io_summary.multi_output_instrument
+                    && plugin.complex_io_summary.instrument_output_group_count >= 2
+            ));
+        assert!(report
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:lv2:bus-fx"
+                && plugin.complex_io_summary.bus_capable_fx_class.is_some()));
+        let sandbox = report
+            .observation
+            .plugin_lifecycle_snapshot
+            .sandboxes
+            .iter()
+            .find(|sandbox| sandbox.sandbox_id == "server-lv2-sandbox")
+            .expect("server lv2 sandbox should be exported");
+        assert_eq!(sandbox.plugin_format, Some(PluginFormat::Lv2));
+        assert_eq!(
+            sandbox.plugin_type_id.as_deref(),
+            Some("plugin:lv2:linux-synth")
+        );
+        assert_eq!(
+            sandbox.lifecycle_stage,
+            Some(PluginSandboxLifecycleStage::TransportAttached)
+        );
+        assert_eq!(
+            sandbox.transport_stage,
+            Some(PluginSandboxTransportStage::Attached)
+        );
+        assert!(sandbox.active);
+        assert!(sandbox.active_transport);
+        let lv2_parity = report
+            .observation
+            .plugin_discovery_snapshot
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Lv2)
+            .expect("server lv2 parity should be present");
+        assert_eq!(
+            lv2_parity.supported_platforms,
+            vec![RuntimePluginHostPlatform::Linux]
+        );
+        assert_eq!(
+            lv2_parity.unsupported_platforms,
+            vec![
+                RuntimePluginHostPlatform::MacOs,
+                RuntimePluginHostPlatform::Windows,
+            ]
+        );
+        assert_eq!(lv2_parity.discovered_type_count, 4);
+        assert_eq!(lv2_parity.sandbox_count, 1);
+        assert_eq!(
+            lv2_parity.linux_parity_band,
+            RuntimePluginParityBand::Portable
+        );
+        assert!(lv2_parity.linux_supported);
+        assert_eq!(
+            lv2_parity.linux_preferred_sandbox_outcome,
+            Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
+        );
+        assert!(lv2_parity.linux_strict_sandbox_default);
+        assert!(lv2_parity.prepare_capable_type_count >= 1);
+        assert!(lv2_parity.activate_capable_type_count >= 1);
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"plugin_format\":\"Lv2\""));
+        assert!(rendered.contains("\"formats\":[\"Lv2\"]"));
+        assert!(rendered.contains("\"transport_stage\":\"Attached\""));
+        assert!(rendered.contains("\"linux_parity_band\":\"Portable\""));
+        assert!(rendered.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
     }
 
     #[test]

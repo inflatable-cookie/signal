@@ -50,13 +50,15 @@ use crate::interfaces::{
     RuntimeClipProcessingPipelineSnapshot, RuntimeClipProcessingReadiness,
     RuntimeClipProcessingRegistration, RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage,
     RuntimeClipRenderInputStage, RuntimeClipRenderRequest, RuntimeClipRenderResult,
-    RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeDeferredServiceBackpressureSource,
+    RuntimeConfigRequest, RuntimeControlSnapshot, RuntimeControllerExpressionMidi2Posture,
+    RuntimeControllerExpressionMpePosture, RuntimeDeferredServiceBackpressureSource,
     RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceClass,
     RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
     RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt, RuntimeDiagnosticsSnapshot,
     RuntimeEngineBlockResult, RuntimeEngineBlockSnapshot, RuntimeError, RuntimeErrorKind,
     RuntimeEvent, RuntimeEventSink, RuntimeExecutionPhase, RuntimeExecutionTopologySummary,
-    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeMediaAnalysisDescriptorState,
+    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeMarkerAnalysisReadiness,
+    RuntimeMarkerAnalysisSnapshot, RuntimeMediaAnalysisDescriptorState,
     RuntimeMediaAnalysisFamilyState, RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot,
     RuntimeMediaAssetState, RuntimeMediaCharacterDescriptor, RuntimeMediaIndexingState,
     RuntimeMediaLibraryAssetDescriptor, RuntimeMediaLibraryServiceSnapshot,
@@ -76,8 +78,9 @@ use crate::interfaces::{
     RuntimeOfflineRenderQueueProgressReceipt, RuntimeOfflineRenderQueueResult,
     RuntimeOfflineRenderReportReceipt, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
     RuntimeOfflineRenderStemPreview, RuntimeOfflineRenderStemResult,
-    RuntimePluginAraContextSnapshot, RuntimePluginCapabilityCoverageSummary,
-    RuntimePluginChainSnapshot, RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
+    RuntimePluginAraContextSnapshot, RuntimePluginBusCapableFxClass,
+    RuntimePluginCapabilityCoverageSummary, RuntimePluginChainSnapshot,
+    RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginDiscoverySnapshot, RuntimePluginDispatchState,
     RuntimePluginEventSnapshot, RuntimePluginExecutionChainSummary,
     RuntimePluginFormatCoverageRecord, RuntimePluginFormatParityRecord,
@@ -87,27 +90,34 @@ use crate::interfaces::{
     RuntimePluginPlacementPolicy, RuntimePluginPlacementRuleMatcher, RuntimePluginPresetDescriptor,
     RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallPayload,
     RuntimePluginRecallPortabilityClass, RuntimePluginRecallSnapshot, RuntimePluginRecallState,
-    RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt, RuntimePreworkBacklogClass,
-    RuntimePreworkCacheState, RuntimePreworkForecastMode, RuntimePreworkForecastPolicy,
-    RuntimePreworkForecastProfile, RuntimePreworkForecastProfileSelection,
-    RuntimePreworkForecastProfileSource, RuntimePreworkFreshnessState,
-    RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
+    RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt, RuntimePreviewTransformClipSnapshot,
+    RuntimePreviewTransformDegradedState, RuntimePreviewTransformFallbackKind,
+    RuntimePreviewTransformReadiness, RuntimePreviewTransformServiceClass,
+    RuntimePreviewTransformServiceSnapshot, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
+    RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+    RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
+    RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
     RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
     RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureCheckpointSnapshot,
     RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureKind,
     RuntimeRecordingCaptureSnapshot, RuntimeRecordingCaptureStartRequest,
     RuntimeRecordingCaptureState, RuntimeSchedulerSnapshot, RuntimeSchedulerState,
-    RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary, RuntimeSupervisionSnapshot,
+    RuntimeSchedulerTopologyIssue, RuntimeSchedulerTopologySummary,
+    RuntimeSecondaryInputContractProjection, RuntimeSecondaryInputRouteSummary,
+    RuntimeSecondaryInputTargetKind, RuntimeStretchClipSnapshot, RuntimeStretchEngineClass,
+    RuntimeStretchEngineSnapshot, RuntimeStretchReadiness, RuntimeSupervisionSnapshot,
     RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoMapSegmentProjection,
     RuntimeTempoMapSegmentSnapshot, RuntimeTempoMapSnapshot, RuntimeTempoSource,
-    RuntimeTimelineSnapshot, RuntimeTransportConcurrencySnapshot,
-    RuntimeTransportObservationSnapshot, RuntimeTransportTransitionKind,
-    RuntimeWarpClipRegistration, RuntimeWarpClipSnapshot, RuntimeWarpMode,
-    RuntimeWarpPipelineSnapshot, RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
-    SandboxOperationFailureStage, ScanHandle, ScheduleProjection, StopReason, SubscriptionHandle,
-    TransportAttachIntent, TransportProjection, TransportSessionProvenance, TransportSessionState,
-    WatchdogRestartRecord,
+    RuntimeTimelineSnapshot, RuntimeTransformArtifactClipSnapshot,
+    RuntimeTransformArtifactInvalidationState, RuntimeTransformArtifactReadiness,
+    RuntimeTransformArtifactReuseState, RuntimeTransformArtifactSnapshot,
+    RuntimeTransportConcurrencySnapshot, RuntimeTransportObservationSnapshot,
+    RuntimeTransportTransitionKind, RuntimeWarpClipRegistration, RuntimeWarpClipSnapshot,
+    RuntimeWarpMode, RuntimeWarpPipelineSnapshot, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
+    SafeModeRequest, SandboxOperationFailureStage, ScanHandle, ScheduleProjection, StopReason,
+    SubscriptionHandle, TransportAttachIntent, TransportProjection, TransportSessionProvenance,
+    TransportSessionState, WatchdogRestartRecord,
 };
 
 const PREWORK_LATENCY_FOCUSED_THRESHOLD_SAMPLES: u32 = 64;
@@ -457,7 +467,8 @@ fn plugin_format_sort_key(format: PluginFormat) -> u8 {
         PluginFormat::Clap => 0,
         PluginFormat::Vst3 => 1,
         PluginFormat::Au => 2,
-        PluginFormat::Native => 3,
+        PluginFormat::Lv2 => 3,
+        PluginFormat::Native => 4,
     }
 }
 
@@ -510,6 +521,11 @@ fn runtime_plugin_format_coverage(
                 .map(|record| record.audio_bus_count)
                 .max()
                 .unwrap_or(0);
+            let max_complex_io_port_group_count = records
+                .iter()
+                .map(|record| record.complex_io_summary.port_group_count)
+                .max()
+                .unwrap_or(0);
             let max_parameter_count = records
                 .iter()
                 .map(|record| record.parameter_count)
@@ -518,6 +534,27 @@ fn runtime_plugin_format_coverage(
             RuntimePluginFormatCoverageRecord {
                 format,
                 discovered_type_count: records.len(),
+                complex_io_type_count: records
+                    .iter()
+                    .filter(|record| record.complex_io_summary.has_complex_topology)
+                    .count(),
+                multi_output_instrument_count: records
+                    .iter()
+                    .filter(|record| record.complex_io_summary.multi_output_instrument)
+                    .count(),
+                bus_capable_fx_count: records
+                    .iter()
+                    .filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some())
+                    .count(),
+                sidechain_capable_fx_count: records
+                    .iter()
+                    .filter(|record| {
+                        record.complex_io_summary.bus_capable_fx_class
+                            == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
+                            || record.complex_io_summary.bus_capable_fx_class
+                                == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+                    })
+                    .count(),
                 instrument_count: feature_count(PluginFeature::Instrument),
                 audio_effect_count: feature_count(PluginFeature::AudioEffect),
                 analyzer_count: feature_count(PluginFeature::Analyzer),
@@ -529,11 +566,33 @@ fn runtime_plugin_format_coverage(
                 accepts_midi_count,
                 supports_note_expression_count,
                 produces_midi_count,
+                max_complex_io_port_group_count,
                 max_audio_bus_count,
                 max_parameter_count,
                 summary: format!(
-                    "format={format:?} types={} features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} note_expression={} midi_out={} max_audio_buses={} max_parameters={}",
+                    "format={format:?} types={} complex_io={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} note_expression={} midi_out={} max_complex_io_groups={} max_audio_buses={} max_parameters={}",
                     records.len(),
+                    records
+                        .iter()
+                        .filter(|record| record.complex_io_summary.has_complex_topology)
+                        .count(),
+                    records
+                        .iter()
+                        .filter(|record| record.complex_io_summary.multi_output_instrument)
+                        .count(),
+                    records
+                        .iter()
+                        .filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some())
+                        .count(),
+                    records
+                        .iter()
+                        .filter(|record| {
+                            record.complex_io_summary.bus_capable_fx_class
+                                == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
+                                || record.complex_io_summary.bus_capable_fx_class
+                                    == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+                        })
+                        .count(),
                     feature_count(PluginFeature::AudioEffect),
                     feature_count(PluginFeature::Instrument),
                     feature_count(PluginFeature::Analyzer),
@@ -545,6 +604,7 @@ fn runtime_plugin_format_coverage(
                     accepts_midi_count,
                     supports_note_expression_count,
                     produces_midi_count,
+                    max_complex_io_port_group_count,
                     max_audio_bus_count,
                     max_parameter_count,
                 ),
@@ -572,6 +632,27 @@ fn runtime_plugin_capability_coverage(
     RuntimePluginCapabilityCoverageSummary {
         discovered_format_count,
         multi_format_catalog: discovered_format_count > 1,
+        complex_io_type_count: discovered_types
+            .iter()
+            .filter(|record| record.complex_io_summary.has_complex_topology)
+            .count(),
+        multi_output_instrument_count: discovered_types
+            .iter()
+            .filter(|record| record.complex_io_summary.multi_output_instrument)
+            .count(),
+        bus_capable_fx_count: discovered_types
+            .iter()
+            .filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some())
+            .count(),
+        sidechain_capable_fx_count: discovered_types
+            .iter()
+            .filter(|record| {
+                record.complex_io_summary.bus_capable_fx_class
+                    == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
+                    || record.complex_io_summary.bus_capable_fx_class
+                        == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+            })
+            .count(),
         instrument_count: feature_count(PluginFeature::Instrument),
         audio_effect_count: feature_count(PluginFeature::AudioEffect),
         analyzer_count: feature_count(PluginFeature::Analyzer),
@@ -637,6 +718,11 @@ fn runtime_plugin_capability_coverage(
             .iter()
             .filter(|record| record.lifecycle_contract.supports_reset_while_active)
             .count(),
+        max_complex_io_port_group_count: discovered_types
+            .iter()
+            .map(|record| record.complex_io_summary.port_group_count)
+            .max()
+            .unwrap_or(0),
         max_audio_bus_count: discovered_types
             .iter()
             .map(|record| record.audio_bus_count)
@@ -648,10 +734,31 @@ fn runtime_plugin_capability_coverage(
             .max()
             .unwrap_or(0),
         summary: format!(
-            "formats={} multi_format={} types={} features={}/{}/{}/{}/{} snapshot={} reset={} bypass={} latency={} tail={} sample_accurate={} midi_in={} note_in={} note_expression={} midi_out={} silence_aware={} main_thread_state={} prepare={} activate={} reset_while_active={} max_audio_buses={} max_parameters={}",
+            "formats={} multi_format={} types={} complex_io={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} features={}/{}/{}/{}/{} snapshot={} reset={} bypass={} latency={} tail={} sample_accurate={} midi_in={} note_in={} note_expression={} midi_out={} silence_aware={} main_thread_state={} prepare={} activate={} reset_while_active={} max_complex_io_groups={} max_audio_buses={} max_parameters={}",
             discovered_format_count,
             discovered_format_count > 1,
             discovered_types.len(),
+            discovered_types
+                .iter()
+                .filter(|record| record.complex_io_summary.has_complex_topology)
+                .count(),
+            discovered_types
+                .iter()
+                .filter(|record| record.complex_io_summary.multi_output_instrument)
+                .count(),
+            discovered_types
+                .iter()
+                .filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some())
+                .count(),
+            discovered_types
+                .iter()
+                .filter(|record| {
+                    record.complex_io_summary.bus_capable_fx_class
+                        == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
+                        || record.complex_io_summary.bus_capable_fx_class
+                            == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+                })
+                .count(),
             feature_count(PluginFeature::AudioEffect),
             feature_count(PluginFeature::Instrument),
             feature_count(PluginFeature::Analyzer),
@@ -672,6 +779,11 @@ fn runtime_plugin_capability_coverage(
             discovered_types.iter().filter(|record| record.lifecycle_contract.supports_prepare).count(),
             discovered_types.iter().filter(|record| record.lifecycle_contract.supports_activate).count(),
             discovered_types.iter().filter(|record| record.lifecycle_contract.supports_reset_while_active).count(),
+            discovered_types
+                .iter()
+                .map(|record| record.complex_io_summary.port_group_count)
+                .max()
+                .unwrap_or(0),
             discovered_types.iter().map(|record| record.audio_bus_count).max().unwrap_or(0),
             discovered_types.iter().map(|record| record.parameter_count).max().unwrap_or(0),
         ),
@@ -729,9 +841,28 @@ fn runtime_plugin_parity_coverage(
                 .iter()
                 .filter(|record| record.format == format)
                 .count();
+            let prepare_capable_type_count = discovered_types
+                .iter()
+                .filter(|record| {
+                    record.format == format && record.lifecycle_contract.supports_prepare
+                })
+                .count();
+            let activate_capable_type_count = discovered_types
+                .iter()
+                .filter(|record| {
+                    record.format == format && record.lifecycle_contract.supports_activate
+                })
+                .count();
             let sandbox_count = sandboxes
                 .iter()
                 .filter(|sandbox| sandbox.plugin_format == Some(format))
+                .count();
+            let in_process_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.placement_outcome == RuntimePluginIsolationOutcome::InProcess
+                })
                 .count();
             let shared_sandbox_count = sandboxes
                 .iter()
@@ -754,6 +885,17 @@ fn runtime_plugin_parity_coverage(
                     sandbox.plugin_format == Some(format)
                         && sandbox.state == RuntimePluginLifecycleState::Ready
                 })
+                .count();
+            let restarting_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Restarting
+                })
+                .count();
+            let rebindable_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.rebindable)
                 .count();
             let degraded_sandbox_count = sandboxes
                 .iter()
@@ -791,17 +933,41 @@ fn runtime_plugin_parity_coverage(
                 .count();
             let explicit_placement_rule_count = runtime_plugin_format_rule_count(policy, format);
             let parity_band = runtime_plugin_parity_band(coverage);
+            let linux_parity_band = coverage
+                .map(|coverage| coverage.linux_parity_band)
+                .unwrap_or(RuntimePluginParityBand::Guarded);
+            let linux_supported = coverage
+                .map(|coverage| {
+                    coverage
+                        .supported_platforms
+                        .contains(&RuntimePluginHostPlatform::Linux)
+                })
+                .unwrap_or(false);
+            let linux_preferred_sandbox_outcome =
+                coverage.and_then(|coverage| coverage.linux_preferred_sandbox_outcome);
+            let linux_strict_sandbox_default = coverage
+                .map(|coverage| coverage.linux_strict_sandbox_default)
+                .unwrap_or(false);
 
             RuntimePluginFormatParityRecord {
                 format,
                 parity_band,
+                linux_parity_band,
                 supported_platforms,
                 unsupported_platforms,
+                linux_supported,
+                linux_preferred_sandbox_outcome,
+                linux_strict_sandbox_default,
                 discovered_type_count,
+                prepare_capable_type_count,
+                activate_capable_type_count,
                 sandbox_count,
+                in_process_sandbox_count,
                 shared_sandbox_count,
                 isolated_sandbox_count,
                 ready_sandbox_count,
+                restarting_sandbox_count,
+                rebindable_sandbox_count,
                 degraded_sandbox_count,
                 faulted_sandbox_count,
                 quarantined_sandbox_count,
@@ -809,13 +975,18 @@ fn runtime_plugin_parity_coverage(
                 active_transport_count,
                 explicit_placement_rule_count,
                 summary: format!(
-                    "format={format:?} parity={parity_band:?} {} discovered_types={} sandboxes={} shared={} isolated={} ready={} degraded={} faulted={} quarantined={} terminal={} active_transport={} placement_rules={}",
+                    "format={format:?} parity={parity_band:?} linux={linux_parity_band:?} linux_supported={linux_supported} linux_policy={linux_preferred_sandbox_outcome:?} linux_strict_default={linux_strict_sandbox_default} {} discovered_types={} prepare_capable={} activate_capable={} sandboxes={} in_process={} shared={} isolated={} ready={} restarting={} rebindable={} degraded={} faulted={} quarantined={} terminal={} active_transport={} placement_rules={}",
                     runtime_plugin_platform_scope_summary(coverage),
                     discovered_type_count,
+                    prepare_capable_type_count,
+                    activate_capable_type_count,
                     sandbox_count,
+                    in_process_sandbox_count,
                     shared_sandbox_count,
                     isolated_sandbox_count,
                     ready_sandbox_count,
+                    restarting_sandbox_count,
+                    rebindable_sandbox_count,
                     degraded_sandbox_count,
                     faulted_sandbox_count,
                     quarantined_sandbox_count,
@@ -2689,6 +2860,8 @@ impl RuntimeClipProcessingPipelineStateModel {
         media_pipeline: &RuntimeMediaPipelineStateModel,
         warp_pipeline: &RuntimeWarpPipelineStateModel,
         resolved_tempo: &RuntimeResolvedTempo,
+        transform_artifact_snapshot: RuntimeTransformArtifactClipSnapshot,
+        preview_transform_snapshot: RuntimePreviewTransformClipSnapshot,
     ) -> Result<RuntimeClipRenderResult, RuntimeError> {
         let registration = self.clips.get(&request.clip_id).ok_or_else(|| {
             RuntimeError::new(
@@ -2702,6 +2875,8 @@ impl RuntimeClipProcessingPipelineStateModel {
         let warp_snapshot = warp_pipeline.snapshot(resolved_tempo, media_pipeline);
         let clip_processing_snapshot =
             self.snapshot_clip(registration, media_pipeline, &warp_snapshot.clips);
+        let stretch_engine_snapshot =
+            RuntimeStretchClipSnapshot::from_clip_processing_snapshot(&clip_processing_snapshot);
         if clip_processing_snapshot.readiness != RuntimeClipProcessingReadiness::Ready {
             return Err(RuntimeError::new(
                 RuntimeErrorKind::InvalidState,
@@ -2755,16 +2930,29 @@ impl RuntimeClipProcessingPipelineStateModel {
             timeline_end_samples,
             input_stage: request.input_stage,
             clip_processing_snapshot: clip_processing_snapshot.clone(),
+            stretch_engine_snapshot: stretch_engine_snapshot.clone(),
+            transform_artifact_snapshot: transform_artifact_snapshot.clone(),
+            preview_transform_snapshot: preview_transform_snapshot.clone(),
             first_frame_gain,
             last_frame_gain,
             peak_applied_gain,
             output,
             summary: format!(
-                "clip_render clip={} input_stage={:?} timeline={}..{} first_gain={:?} last_gain={:?} peak_gain={:?} stages={:?}",
+                "clip_render clip={} input_stage={:?} timeline={}..{} stretch={:?}/{:?}/{:?} transform={:?}/{:?}/cached_media={} preview={:?}/{:?}/{:?}/{:?} first_gain={:?} last_gain={:?} peak_gain={:?} stages={:?}",
                 clip_processing_snapshot.clip_id,
                 request.input_stage,
                 request.timeline_start_samples,
                 timeline_end_samples,
+                stretch_engine_snapshot.engine_class,
+                stretch_engine_snapshot.readiness,
+                stretch_engine_snapshot.fallback_kind,
+                transform_artifact_snapshot.readiness,
+                transform_artifact_snapshot.reuse_state,
+                transform_artifact_snapshot.cached_media_ready,
+                preview_transform_snapshot.service_class,
+                preview_transform_snapshot.readiness,
+                preview_transform_snapshot.degraded_state,
+                preview_transform_snapshot.fallback_kind,
                 first_frame_gain,
                 last_frame_gain,
                 peak_applied_gain,
@@ -3410,6 +3598,10 @@ impl RuntimeMeteringStateModel {
             bus_groups: Vec::new(),
             console_groups: Vec::new(),
             send_returns: Vec::new(),
+            bus_connection_count: 0,
+            auxiliary_path_count: 0,
+            bus_connections: Vec::new(),
+            auxiliary_paths: Vec::new(),
             summary: format!(
                 "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={}",
                 meters.len(),
@@ -3558,6 +3750,10 @@ impl Default for RuntimeMeteringStateModel {
                 bus_groups: Vec::new(),
                 console_groups: Vec::new(),
                 send_returns: Vec::new(),
+                bus_connection_count: 0,
+                auxiliary_path_count: 0,
+                bus_connections: Vec::new(),
+                auxiliary_paths: Vec::new(),
                 summary: "runtime metering unavailable".to_string(),
             },
             momentary_blocks: VecDeque::new(),
@@ -6320,6 +6516,15 @@ impl RuntimePluginEventState {
             last_batch_parameter_gesture_events: self.last_batch_summary.parameter_gesture_events,
             last_batch_note_events: self.last_batch_summary.note_events,
             last_batch_note_expression_events: self.last_batch_summary.note_expression_events,
+            last_batch_note_expression_pressure_events: self
+                .last_batch_summary
+                .note_expression_pressure_events,
+            last_batch_note_expression_timbre_events: self
+                .last_batch_summary
+                .note_expression_timbre_events,
+            last_batch_note_expression_tuning_events: self
+                .last_batch_summary
+                .note_expression_tuning_events,
             last_batch_midi_events: self.last_batch_summary.midi_events,
             total_events: aggregate.total_events,
             parameter_value_events: aggregate.parameter_value_events,
@@ -6327,7 +6532,20 @@ impl RuntimePluginEventState {
             parameter_gesture_events: aggregate.parameter_gesture_events,
             note_events: aggregate.note_events,
             note_expression_events: aggregate.note_expression_events,
+            note_expression_pressure_events: aggregate.note_expression_pressure_events,
+            note_expression_timbre_events: aggregate.note_expression_timbre_events,
+            note_expression_tuning_events: aggregate.note_expression_tuning_events,
             midi_events: aggregate.midi_events,
+            mpe_posture: if aggregate.note_expression_events > 0 {
+                RuntimeControllerExpressionMpePosture::Guarded
+            } else {
+                RuntimeControllerExpressionMpePosture::Unsupported
+            },
+            midi2_posture: if aggregate.note_expression_tuning_events > 0 {
+                RuntimeControllerExpressionMidi2Posture::Guarded
+            } else {
+                RuntimeControllerExpressionMidi2Posture::Unsupported
+            },
             first_epoch: self.continuity.first_epoch(),
             last_epoch: self.continuity.last_epoch(),
             segment_count: self.continuity.segment_count(),
@@ -6570,6 +6788,7 @@ struct RuntimeEngineState {
     graph: Option<ExecutableGraph>,
     snapshot: RuntimeEngineBlockSnapshot,
     plugin_node_bindings: HashMap<String, String>,
+    secondary_input_contracts: HashMap<String, RuntimeSecondaryInputContractProjection>,
     pending_plugin_node_renders: BTreeMap<(u64, u64), PluginNodeRenderBatch>,
     latest_plugin_node_renders: BTreeMap<String, RuntimePluginRenderedNodeState>,
     prework_queue: VecDeque<RuntimeEnginePreworkCache>,
@@ -7204,6 +7423,7 @@ impl RuntimeEngineState {
                 .collect(),
         ));
         self.plugin_node_bindings.clear();
+        self.secondary_input_contracts.clear();
         self.pending_plugin_node_renders.clear();
         self.latest_plugin_node_renders.clear();
         self.invalidate_prework_cache(RuntimePreworkInvalidationReason::GraphProjectionChanged);
@@ -7308,6 +7528,16 @@ impl RuntimeEngineState {
                 })
                 .collect(),
         ));
+        self.secondary_input_contracts = projection
+            .nodes
+            .iter()
+            .filter_map(|node| {
+                node.buffer_contract
+                    .secondary_input
+                    .as_ref()
+                    .map(|secondary_input| (node.node_id.clone(), secondary_input.clone()))
+            })
+            .collect();
         self.pending_plugin_node_renders.clear();
         self.latest_plugin_node_renders.clear();
         self.invalidate_prework_cache(RuntimePreworkInvalidationReason::GraphProjectionChanged);
@@ -7458,6 +7688,12 @@ impl RuntimeEngineState {
         if let Some(graph) = self.graph.as_ref() {
             let planning = graph.planning_summary(anticipative_enabled);
             let contract = graph.contract_summary();
+            let stages_by_node = graph
+                .plan()
+                .nodes
+                .iter()
+                .map(|node| (node.node_id.as_str(), node.stages.clone()))
+                .collect::<BTreeMap<_, _>>();
             let contract_by_node = contract
                 .node_contracts
                 .iter()
@@ -7554,36 +7790,74 @@ impl RuntimeEngineState {
             self.snapshot.planned_nodes = planning
                 .planned_nodes
                 .into_iter()
-                .map(|node| crate::interfaces::RuntimePlannedGraphNode {
-                    topology_role: contract_by_node
-                        .get(node.node_id.as_str())
+                .map(|node| {
+                    let contract = contract_by_node.get(node.node_id.as_str());
+                    let topology_role = contract
                         .map(|contract| contract.topology_role)
-                        .unwrap_or(GraphNodeTopologyRole::Utility),
-                    track_lane_id: contract_by_node
-                        .get(node.node_id.as_str())
-                        .and_then(|contract| contract.track_lane_id.clone()),
-                    bus_group_id: contract_by_node
-                        .get(node.node_id.as_str())
-                        .and_then(|contract| contract.bus_group_id.clone()),
-                    console_group_id: contract_by_node
-                        .get(node.node_id.as_str())
-                        .and_then(|contract| contract.console_group_id.clone()),
-                    send_return_id: contract_by_node
-                        .get(node.node_id.as_str())
-                        .and_then(|contract| contract.send_return_id.clone()),
-                    input_bus_id: contract_by_node
-                        .get(node.node_id.as_str())
-                        .map(|contract| contract.input_bus_id.clone())
-                        .unwrap_or_else(|| "main:in".into()),
-                    output_bus_id: contract_by_node
-                        .get(node.node_id.as_str())
-                        .map(|contract| contract.output_bus_id.clone())
-                        .unwrap_or_else(|| "main:out".into()),
-                    plugin_sandbox_id: self.plugin_node_bindings.get(&node.node_id).cloned(),
-                    node_id: node.node_id,
-                    execution_class: node.execution_class,
-                    group: node.group,
-                    latency_samples: node.latency_samples,
+                        .unwrap_or(GraphNodeTopologyRole::Utility);
+                    let input_channels = contract
+                        .map(|contract| contract.input_channels)
+                        .unwrap_or(signal_primitives::ChannelLayout::Stereo);
+                    let output_channels = contract
+                        .map(|contract| contract.output_channels)
+                        .unwrap_or(signal_primitives::ChannelLayout::Stereo);
+                    let (input_bus_intent, output_bus_intent) =
+                        crate::interfaces::runtime_bus_intents_for_topology_role(topology_role);
+                    let secondary_input =
+                        self.secondary_input_contracts
+                            .get(&node.node_id)
+                            .map(|contract| {
+                                RuntimeSecondaryInputRouteSummary::from_contract_for_target(
+                                    contract,
+                                    RuntimeSecondaryInputTargetKind::NodeInput,
+                                    node.node_id.as_str(),
+                                )
+                            });
+                    let input_layout = crate::RuntimeMultichannelLayoutSummary::from_channel_layout(
+                        input_channels,
+                    );
+                    let output_layout =
+                        crate::RuntimeMultichannelLayoutSummary::from_channel_layout(
+                            output_channels,
+                        );
+                    let spatial_execution =
+                        crate::interfaces::runtime_spatial_execution_summary_for_stages(
+                            node.node_id.as_str(),
+                            stages_by_node
+                                .get(node.node_id.as_str())
+                                .map(|stages| stages.as_slice())
+                                .unwrap_or(&[]),
+                            &input_layout,
+                            &output_layout,
+                        );
+                    crate::interfaces::RuntimePlannedGraphNode {
+                        topology_role,
+                        track_lane_id: contract.and_then(|contract| contract.track_lane_id.clone()),
+                        bus_group_id: contract.and_then(|contract| contract.bus_group_id.clone()),
+                        console_group_id: contract
+                            .and_then(|contract| contract.console_group_id.clone()),
+                        send_return_id: contract
+                            .and_then(|contract| contract.send_return_id.clone()),
+                        input_bus_id: contract
+                            .map(|contract| contract.input_bus_id.clone())
+                            .unwrap_or_else(|| "main:in".into()),
+                        output_bus_id: contract
+                            .map(|contract| contract.output_bus_id.clone())
+                            .unwrap_or_else(|| "main:out".into()),
+                        input_channels,
+                        output_channels,
+                        input_layout,
+                        output_layout,
+                        input_bus_intent,
+                        output_bus_intent,
+                        secondary_input,
+                        spatial_execution,
+                        plugin_sandbox_id: self.plugin_node_bindings.get(&node.node_id).cloned(),
+                        node_id: node.node_id,
+                        execution_class: node.execution_class,
+                        group: node.group,
+                        latency_samples: node.latency_samples,
+                    }
                 })
                 .collect();
             self.snapshot.stage_count = graph.stage_count();
@@ -7646,6 +7920,7 @@ impl RuntimeEngineState {
             self.snapshot.last_prework_retirement_block_sequence = None;
             self.snapshot.planned_nodes.clear();
             self.plugin_node_bindings.clear();
+            self.secondary_input_contracts.clear();
             self.latest_plugin_node_renders.clear();
             self.prework_queue.clear();
             self.pending_prework_targets.clear();
@@ -9933,7 +10208,9 @@ impl SignalRuntime {
             &request,
             &self.execution_topology_summary(),
             &self.clip_processing_pipeline_snapshot(),
+            &self.media_pipeline_snapshot(),
             &self.tempo_map_snapshot(),
+            &self.marker_analysis_snapshot(),
             &self.plugin_recall_handoff_snapshot(),
         )?;
         let plugin_execution_boundary =
@@ -10357,7 +10634,9 @@ impl SignalRuntime {
             &request,
             &self.execution_topology_summary(),
             &self.clip_processing_pipeline_snapshot(),
+            &self.media_pipeline_snapshot(),
             &self.tempo_map_snapshot(),
+            &self.marker_analysis_snapshot(),
             &self.plugin_recall_handoff_snapshot(),
         )?;
         let plugin_execution_boundary =
@@ -11460,7 +11739,9 @@ impl SignalRuntime {
             request,
             &self.execution_topology_summary(),
             &self.clip_processing_pipeline_snapshot(),
+            &self.media_pipeline_snapshot(),
             &self.tempo_map_snapshot(),
+            &self.marker_analysis_snapshot(),
             &self.plugin_recall_handoff_snapshot(),
         )?;
         Ok(self.offline_plugin_execution_boundary_from_preview(request, &preview))
@@ -11512,11 +11793,56 @@ impl SignalRuntime {
         request: RuntimeClipRenderRequest,
         resolved_tempo: &RuntimeResolvedTempo,
     ) -> Result<RuntimeClipRenderResult, RuntimeError> {
+        let preview_transform_snapshot = self.preview_transform_snapshot();
+        let transform_artifact_snapshot = self.transform_artifact_snapshot();
+        let transform_artifact_clip = transform_artifact_snapshot
+            .clips
+            .iter()
+            .find(|clip| clip.clip_id == request.clip_id)
+            .cloned()
+            .unwrap_or_else(|| RuntimeTransformArtifactClipSnapshot {
+                clip_id: request.clip_id.clone(),
+                media_asset_id: None,
+                artifact_identity: format!("artifact:missing:{}", request.clip_id),
+                readiness: RuntimeTransformArtifactReadiness::Unsupported,
+                invalidation_state: RuntimeTransformArtifactInvalidationState::None,
+                reuse_state: RuntimeTransformArtifactReuseState::Unavailable,
+                cached_media_ready: false,
+                stretch_engine_class: RuntimeStretchEngineClass::Disabled,
+                stretch_readiness: RuntimeStretchReadiness::Disabled,
+                marker_analysis_readiness: RuntimeMarkerAnalysisReadiness::Unsupported,
+                summary: format!(
+                    "clip={} readiness=Unsupported invalidation=None reuse=Unavailable cached_media_ready=false stretch=Disabled/Disabled analysis=Unsupported",
+                    request.clip_id
+                ),
+            });
+        let preview_transform_clip = preview_transform_snapshot
+            .clips
+            .iter()
+            .find(|clip| clip.clip_id == request.clip_id)
+            .cloned()
+            .unwrap_or_else(|| RuntimePreviewTransformClipSnapshot {
+                clip_id: request.clip_id.clone(),
+                media_asset_id: None,
+                service_class: RuntimePreviewTransformServiceClass::Unavailable,
+                readiness: RuntimePreviewTransformReadiness::Unsupported,
+                degraded_state: RuntimePreviewTransformDegradedState::UnsupportedScope,
+                fallback_kind: RuntimePreviewTransformFallbackKind::OfflineOnly,
+                artifact_reuse_state: RuntimeTransformArtifactReuseState::Unavailable,
+                audition_active: false,
+                scrub_supported: false,
+                summary: format!(
+                    "clip={} class=Unavailable readiness=Unsupported degraded=UnsupportedScope fallback=OfflineOnly artifact_reuse=Unavailable audition_active=false scrub_supported=false",
+                    request.clip_id
+                ),
+            });
         self.clip_processing_pipeline.render_clip(
             request,
             &self.media_pipeline,
             &self.warp_pipeline,
             resolved_tempo,
+            transform_artifact_clip,
+            preview_transform_clip,
         )
     }
 
@@ -13152,6 +13478,54 @@ impl SignalRuntime {
                 shared_boundary_member_count,
                 continuity_class,
                 rebindable,
+                io_layout: recall
+                    .payload
+                    .plugin_type_id
+                    .as_deref()
+                    .and_then(|plugin_type_id| {
+                        self.plugin_discovery
+                            .discovered_types
+                            .iter()
+                            .find(|record| record.plugin_type_id == plugin_type_id)
+                            .map(|record| record.default_multichannel_io.clone())
+                    })
+                    .unwrap_or_default(),
+                complex_io_summary: recall
+                    .payload
+                    .plugin_type_id
+                    .as_deref()
+                    .and_then(|plugin_type_id| {
+                        self.plugin_discovery
+                            .discovered_types
+                            .iter()
+                            .find(|record| record.plugin_type_id == plugin_type_id)
+                            .map(|record| record.complex_io_summary.clone())
+                    })
+                    .unwrap_or_default(),
+                secondary_input: node.secondary_input.as_ref().map(|route| {
+                    RuntimeSecondaryInputRouteSummary {
+                        source_kind: route.source_kind,
+                        source_id: route.source_id.clone(),
+                        source_bus_id: route.source_bus_id.clone(),
+                        target_kind: RuntimeSecondaryInputTargetKind::PluginInput,
+                        target_id: node.node_id.clone(),
+                        target_bus_id: route.target_bus_id.clone(),
+                        attachment_policy: route.attachment_policy,
+                        fallback_outcome: route.fallback_outcome,
+                        summary: format!(
+                            "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
+                            route.source_kind,
+                            route.source_id,
+                            route.source_bus_id.as_deref().unwrap_or("none"),
+                            RuntimeSecondaryInputTargetKind::PluginInput,
+                            node.node_id,
+                            route.target_bus_id,
+                            route.attachment_policy,
+                            route.fallback_outcome,
+                        ),
+                    }
+                }),
+                spatial_execution: node.spatial_execution.clone(),
                 lifecycle_state,
                 lifecycle_stage,
                 transport_stage,
@@ -13467,6 +13841,41 @@ impl SignalRuntime {
             &self.media_pipeline,
             &self.warp_pipeline,
             &resolved_tempo,
+        )
+    }
+
+    fn stretch_engine_snapshot(&self) -> RuntimeStretchEngineSnapshot {
+        RuntimeStretchEngineSnapshot::from_clip_processing_pipeline(
+            &self.clip_processing_pipeline_snapshot(),
+        )
+    }
+
+    fn marker_analysis_snapshot(&self) -> RuntimeMarkerAnalysisSnapshot {
+        RuntimeMarkerAnalysisSnapshot::from_clip_processing_and_media_library(
+            &self.clip_processing_pipeline_snapshot(),
+            &self.stretch_engine_snapshot(),
+            &self.warp_pipeline_snapshot(),
+            &self.media_library_service_snapshot(),
+            self.config.sample_rate.0,
+        )
+    }
+
+    fn transform_artifact_snapshot(&self) -> RuntimeTransformArtifactSnapshot {
+        RuntimeTransformArtifactSnapshot::from_runtime_transform_state(
+            &self.clip_processing_pipeline_snapshot(),
+            &self.stretch_engine_snapshot(),
+            &self.marker_analysis_snapshot(),
+            &self.media_pipeline_snapshot(),
+        )
+    }
+
+    fn preview_transform_snapshot(&self) -> RuntimePreviewTransformServiceSnapshot {
+        RuntimePreviewTransformServiceSnapshot::from_runtime_preview_state(
+            &self.clip_processing_pipeline_snapshot(),
+            &self.media_service_snapshot(),
+            &self.stretch_engine_snapshot(),
+            &self.marker_analysis_snapshot(),
+            &self.transform_artifact_snapshot(),
         )
     }
 
@@ -14438,6 +14847,22 @@ impl RuntimeObservationApi for SignalRuntime {
         self.clip_processing_pipeline_snapshot()
     }
 
+    fn get_stretch_engine_snapshot(&self) -> RuntimeStretchEngineSnapshot {
+        self.stretch_engine_snapshot()
+    }
+
+    fn get_marker_analysis_snapshot(&self) -> RuntimeMarkerAnalysisSnapshot {
+        self.marker_analysis_snapshot()
+    }
+
+    fn get_transform_artifact_snapshot(&self) -> RuntimeTransformArtifactSnapshot {
+        self.transform_artifact_snapshot()
+    }
+
+    fn get_preview_transform_snapshot(&self) -> RuntimePreviewTransformServiceSnapshot {
+        self.preview_transform_snapshot()
+    }
+
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot {
         self.automation.snapshot()
     }
@@ -14517,15 +14942,16 @@ mod tests {
         RuntimeClipFadeShape, RuntimeClipGainEnvelope, RuntimeClipGainShape,
         RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
         RuntimeClipProcessingStage, RuntimeClipRenderInputStage, RuntimeClipRenderRequest,
-        RuntimeConfigRequest, RuntimeDeferredServiceBackpressureSource,
+        RuntimeConfigRequest, RuntimeControllerExpressionMidi2Posture,
+        RuntimeControllerExpressionMpePosture, RuntimeDeferredServiceBackpressureSource,
         RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceClass,
         RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
         RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
         RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
         RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
-        RuntimeMediaAssetRegistration, RuntimeMediaAssetState, RuntimeMediaPreviewState,
-        RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeObservationApi,
-        RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
+        RuntimeMarkerAnalysisReadiness, RuntimeMediaAssetRegistration, RuntimeMediaAssetState,
+        RuntimeMediaPreviewState, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
+        RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
         RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
         RuntimeOfflinePluginDelegatedExecutionReceipt,
         RuntimeOfflinePluginDelegatedExecutionStageReceipt,
@@ -14537,13 +14963,15 @@ mod tests {
         RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderExecutionState,
         RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest,
         RuntimeOfflineRenderStemTarget, RuntimeOfflineRenderTargetKind,
-        RuntimePluginCompensationState, RuntimePluginFormatPlatformCoverageRecord,
-        RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginLifecycleState,
-        RuntimePluginParityBand, RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
+        RuntimePluginBusCapableFxClass, RuntimePluginCompensationState,
+        RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+        RuntimePluginIsolationOutcome, RuntimePluginLifecycleState, RuntimePluginParityBand,
+        RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
         RuntimePluginPlacementRuleMatcher, RuntimePluginRecallHandoffSelection,
         RuntimePluginRecallHandoffStageId, RuntimePluginRecallPayload, RuntimePluginRecallState,
-        RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
-        RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+        RuntimePreviewTransformFallbackKind, RuntimePreviewTransformReadiness,
+        RuntimePreviewTransformServiceClass, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
+        RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
         RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
         RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason,
         RuntimePreworkRetirementReason, RuntimePreworkServicePressure,
@@ -14551,8 +14979,12 @@ mod tests {
         RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
         RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
         RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeRecoveryState,
-        RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSupervisorReport,
+        RuntimeSchedulerState, RuntimeSchedulerTopologyIssue,
+        RuntimeSecondaryInputContractProjection, RuntimeSecondaryInputTargetKind,
+        RuntimeStretchEngineClass, RuntimeStretchFallbackKind, RuntimeStretchReadiness,
+        RuntimeSupervisorReport, RuntimeTempoAssistHintSource, RuntimeTempoAssistPosture,
         RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoSource,
+        RuntimeTransformArtifactReadiness, RuntimeTransformArtifactReuseState,
         RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
         SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection, StopReason,
         TransportAttachIntent, TransportProjection, TransportSessionProvenance,
@@ -14566,7 +14998,9 @@ mod tests {
     };
     use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
     use signal_plugin::{
-        CompletionState, EventPacketSummary, ParameterAutomationSummary, PluginFormat,
+        CompletionState, EventPacketSummary, ParameterAutomationSummary, PluginFeature,
+        PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,
+        PluginStateContract,
     };
     use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 
@@ -14718,6 +15152,23 @@ mod tests {
         let mut writer = WavWriter::create(path, spec).expect("test wav should be created");
         for frame in 0..128 {
             let sample = ((frame as f32 / 128.0) * 2.0) - 1.0;
+            writer
+                .write_sample(sample)
+                .expect("test wav sample should be written");
+        }
+        writer.finalize().expect("test wav should finalize");
+    }
+
+    fn write_transient_test_wav(path: &Path) {
+        let spec = WavSpec {
+            channels: 1,
+            sample_rate: 48_000,
+            bits_per_sample: 32,
+            sample_format: HoundSampleFormat::Float,
+        };
+        let mut writer = WavWriter::create(path, spec).expect("test wav should be created");
+        for frame in 0..48_000 {
+            let sample = if frame % 6_000 == 0 { 1.0 } else { 0.0 };
             writer
                 .write_sample(sample)
                 .expect("test wav sample should be written");
@@ -14980,6 +15431,261 @@ mod tests {
             .unwrap();
 
         (runtime, imported_path)
+    }
+
+    fn prepare_sidechain_runtime() -> SignalRuntime {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 128));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:sidechain-routing".into(),
+                node_count: 4,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "track-input".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.9 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "sidechain-feed".into(),
+                        execution_class: GraphNodeExecutionClass::Stateful,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::Gain { linear: 0.7 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "plugin-compressor".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 24,
+                        stages: vec![GraphStageSpec::HardClip { threshold: 0.84 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "output-main".into(),
+                        execution_class: GraphNodeExecutionClass::PureTransform,
+                        latency_samples: 0,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: 0.0 }],
+                    },
+                ],
+            })
+            .expect("apply sidechain graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:sidechain-routing".into(),
+                contract_count: 4,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "track-input".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "sidechain-feed".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:sidechain:kick".into(),
+                                channels: ChannelLayout::Mono,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::Utility),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "plugin-compressor".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:track:lead".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:mix:tracks".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            secondary_input: Some(RuntimeSecondaryInputContractProjection {
+                                source_kind: crate::RuntimeSecondaryInputSourceKind::NodeOutput,
+                                source_id: "sidechain-feed".into(),
+                                source_bus_id: Some("bus:sidechain:kick".into()),
+                                target_bus_id: "plugin:compressor:sidechain".into(),
+                                attachment_policy:
+                                    crate::RuntimeSecondaryInputAttachmentPolicy::Required,
+                                fallback_outcome:
+                                    crate::RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation,
+                            }),
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:lead".into()),
+                            bus_group_id: Some("mix:tracks".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "output-main".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:mix:tracks".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "main:out".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::ConsoleNode),
+                            track_lane_id: None,
+                            bus_group_id: None,
+                            console_group_id: Some("console:main".into()),
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply sidechain graph contract");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:sidechain-routing".into(),
+                bindings: vec![crate::PluginBackedNodeBinding {
+                    node_id: "plugin-compressor".into(),
+                    sandbox_id: "sandbox:compressor".into(),
+                }],
+            })
+            .expect("bind sidechain plugin node");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:compressor",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime
+    }
+
+    fn prepare_spatial_runtime() -> SignalRuntime {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 128));
+        handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:runtime:spatial-baseline".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "spatial-stereo".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: -0.2 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "spatial-surround".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 20,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: 0.35 }],
+                    },
+                ],
+            })
+            .expect("apply spatial graph");
+        runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:runtime:spatial-baseline".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "spatial-stereo".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:stereo".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:stereo".into()),
+                            bus_group_id: Some("bus:spatial:stereo".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "spatial-surround".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:surround-in".into(),
+                                channels: ChannelLayout::Count(signal_primitives::ChannelCount(6)),
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:surround".into(),
+                                channels: ChannelLayout::Count(signal_primitives::ChannelCount(6)),
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:surround".into()),
+                            bus_group_id: Some("bus:spatial:surround".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply spatial graph contract");
+        runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:runtime:spatial-baseline".into(),
+                bindings: vec![
+                    crate::PluginBackedNodeBinding {
+                        node_id: "spatial-stereo".into(),
+                        sandbox_id: "sandbox:spatial-stereo".into(),
+                    },
+                    crate::PluginBackedNodeBinding {
+                        node_id: "spatial-surround".into(),
+                        sandbox_id: "sandbox:spatial-surround".into(),
+                    },
+                ],
+            })
+            .expect("bind spatial plugin nodes");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:spatial-stereo",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:spatial-surround",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime
     }
 
     fn prepare_offline_render_engine_runtime_without_cached_plugin_render(
@@ -15446,6 +16152,9 @@ mod tests {
                 parameter_gesture_events: 1,
                 note_events: 1,
                 note_expression_events: 1,
+                note_expression_pressure_events: 1,
+                note_expression_timbre_events: 0,
+                note_expression_tuning_events: 0,
                 midi_events: 1,
             },
         );
@@ -15461,6 +16170,9 @@ mod tests {
                 parameter_gesture_events: 1,
                 note_events: 1,
                 note_expression_events: 1,
+                note_expression_pressure_events: 0,
+                note_expression_timbre_events: 0,
+                note_expression_tuning_events: 1,
                 midi_events: 1,
             },
         );
@@ -15471,13 +16183,27 @@ mod tests {
         assert_eq!(snapshot.last_generated_event_bytes, 64);
         assert_eq!(snapshot.last_batch_total_events, 5);
         assert_eq!(snapshot.last_batch_note_expression_events, 1);
+        assert_eq!(snapshot.last_batch_note_expression_pressure_events, 0);
+        assert_eq!(snapshot.last_batch_note_expression_timbre_events, 0);
+        assert_eq!(snapshot.last_batch_note_expression_tuning_events, 1);
         assert_eq!(snapshot.total_events, 11);
         assert_eq!(snapshot.parameter_value_events, 2);
         assert_eq!(snapshot.parameter_modulation_events, 1);
         assert_eq!(snapshot.parameter_gesture_events, 2);
         assert_eq!(snapshot.note_events, 2);
         assert_eq!(snapshot.note_expression_events, 2);
+        assert_eq!(snapshot.note_expression_pressure_events, 1);
+        assert_eq!(snapshot.note_expression_timbre_events, 0);
+        assert_eq!(snapshot.note_expression_tuning_events, 1);
         assert_eq!(snapshot.midi_events, 2);
+        assert_eq!(
+            snapshot.mpe_posture,
+            RuntimeControllerExpressionMpePosture::Guarded
+        );
+        assert_eq!(
+            snapshot.midi2_posture,
+            RuntimeControllerExpressionMidi2Posture::Guarded
+        );
         assert_eq!(snapshot.first_epoch, Some(1));
         assert_eq!(snapshot.last_epoch, Some(2));
         assert_eq!(snapshot.segment_count, 2);
@@ -15492,6 +16218,15 @@ mod tests {
         assert!(observation
             .render_compact()
             .contains("plugin_events_total=11/2/1/2/2/2/2"));
+        assert!(observation
+            .render_json()
+            .contains("\"note_expression_tuning_events\":1"));
+        assert!(observation
+            .render_json()
+            .contains("\"mpe_posture\":\"Guarded\""));
+        assert!(observation
+            .render_json()
+            .contains("\"midi2_posture\":\"Guarded\""));
     }
 
     #[test]
@@ -15516,6 +16251,9 @@ mod tests {
                 parameter_gesture_events: 0,
                 note_events: 1,
                 note_expression_events: 1,
+                note_expression_pressure_events: 1,
+                note_expression_timbre_events: 0,
+                note_expression_tuning_events: 0,
                 midi_events: 0,
             },
         );
@@ -16655,6 +17393,279 @@ mod tests {
     }
 
     #[test]
+    fn runtime_execution_topology_summary_carries_sidechain_routing_and_fallback_receipts() {
+        let mut runtime = prepare_sidechain_runtime();
+        let block = synthetic_stereo_block(SampleRate(48_000), FrameCount(128), 2);
+        runtime
+            .process_engine_block(5, 8, block)
+            .expect("process sidechain routing block");
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            observation.execution_topology_summary.secondary_input_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .required_secondary_input_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .terminal_fallback_secondary_input_count,
+            0
+        );
+        let route = &observation.execution_topology_summary.secondary_inputs[0];
+        assert_eq!(route.source_id, "sidechain-feed");
+        assert_eq!(route.source_bus_id.as_deref(), Some("bus:sidechain:kick"));
+        assert_eq!(
+            route.target_kind,
+            RuntimeSecondaryInputTargetKind::NodeInput
+        );
+        assert_eq!(route.target_id, "plugin-compressor");
+        assert_eq!(route.target_bus_id, "plugin:compressor:sidechain");
+        assert_eq!(
+            route.attachment_policy,
+            crate::RuntimeSecondaryInputAttachmentPolicy::Required
+        );
+        assert_eq!(
+            route.fallback_outcome,
+            crate::RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation
+        );
+        assert!(observation
+            .execution_topology_summary
+            .nodes
+            .iter()
+            .any(|node| {
+                node.node_id == "plugin-compressor"
+                    && node
+                        .secondary_input
+                        .as_ref()
+                        .is_some_and(|secondary_input| {
+                            secondary_input.target_kind
+                                == RuntimeSecondaryInputTargetKind::NodeInput
+                                && secondary_input.source_id == "sidechain-feed"
+                        })
+            }));
+        let stage = &observation.plugin_chain_snapshot.chains[0].stages[0];
+        let stage_secondary_input = stage
+            .secondary_input
+            .as_ref()
+            .expect("plugin stage should carry sidechain route");
+        assert_eq!(
+            stage_secondary_input.target_kind,
+            RuntimeSecondaryInputTargetKind::PluginInput
+        );
+        assert_eq!(stage_secondary_input.target_id, "plugin-compressor");
+        assert_eq!(
+            stage_secondary_input.fallback_outcome,
+            crate::RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation
+        );
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let json = supervisor.render_json();
+        assert!(json.contains("\"secondary_input_count\":1"));
+        assert!(json.contains("\"target_kind\":\"PluginInput\""));
+        assert!(json.contains("\"fallback_outcome\":\"SafeModeDegradation\""));
+    }
+
+    #[test]
+    fn runtime_observation_and_render_preview_surface_spatial_execution_receipts() {
+        let runtime = prepare_spatial_runtime();
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.execution_topology_summary.spatial_node_count, 2);
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .active_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .bypassed_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .fallback_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .surround_bed_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .object_aware_spatial_node_count,
+            0
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .expanded_fallback_spatial_node_count,
+            1
+        );
+
+        let stereo = observation
+            .execution_topology_summary
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "spatial-stereo")
+            .and_then(|node| node.spatial_execution.as_ref())
+            .expect("stereo node should carry spatial execution summary");
+        assert_eq!(
+            stereo.adapter_class,
+            crate::RuntimeSpatialAdapterClass::Balance
+        );
+        assert_eq!(
+            stereo.execution_mode,
+            crate::RuntimeSpatialExecutionMode::BalanceGroups
+        );
+        assert_eq!(stereo.fallback_outcome, None);
+        assert_eq!(
+            stereo.target_environment,
+            crate::RuntimeSpatialTargetEnvironment::SourceLayout
+        );
+        assert_eq!(stereo.bed_class, crate::RuntimeSpatialBedClass::StereoBed);
+        assert_eq!(stereo.object_role, None);
+        assert_eq!(stereo.object_count, 0);
+        assert_eq!(stereo.mix_policy, crate::RuntimeSpatialMixPolicy::BedOnly);
+        assert_eq!(
+            stereo.render_scope,
+            crate::RuntimeSpatialRenderScope::BedRender
+        );
+        assert_eq!(stereo.expanded_fallback_outcome, None);
+        assert_eq!(stereo.balance.as_deref(), Some("-0.200"));
+
+        let surround = observation
+            .execution_topology_summary
+            .nodes
+            .iter()
+            .find(|node| node.node_id == "spatial-surround")
+            .and_then(|node| node.spatial_execution.as_ref())
+            .expect("surround node should carry spatial execution summary");
+        assert_eq!(
+            surround.execution_mode,
+            crate::RuntimeSpatialExecutionMode::Bypassed
+        );
+        assert_eq!(
+            surround.fallback_outcome,
+            Some(crate::RuntimeSpatialFallbackOutcome::BypassSpatialProcessing)
+        );
+        assert_eq!(
+            surround.bed_class,
+            crate::RuntimeSpatialBedClass::CanonicalSurroundBed
+        );
+        assert_eq!(surround.object_role, None);
+        assert_eq!(surround.object_count, 0);
+        assert_eq!(
+            surround.mix_policy,
+            crate::RuntimeSpatialMixPolicy::CollapseToBaselineSpatial
+        );
+        assert_eq!(
+            surround.render_scope,
+            crate::RuntimeSpatialRenderScope::BedRender
+        );
+        assert_eq!(
+            surround.expanded_fallback_outcome,
+            Some(crate::RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial)
+        );
+        assert_eq!(surround.balance.as_deref(), Some("0.350"));
+        assert_eq!(
+            surround.output_layout.canonical_layout,
+            Some(crate::RuntimeCanonicalChannelLayout::Surround5_1)
+        );
+
+        let plugin_stage_count = observation
+            .plugin_chain_snapshot
+            .chains
+            .iter()
+            .flat_map(|chain| chain.stages.iter())
+            .filter(|stage| stage.spatial_execution.is_some())
+            .count();
+        assert_eq!(plugin_stage_count, 2);
+
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &RuntimeOfflineRenderRequest {
+                request_id: "render:spatial-preview".into(),
+                timeline_start_samples: 0,
+                duration_samples: 24_000,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            },
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
+            &handoff,
+        )
+        .expect("build offline render spatial preview");
+        assert_eq!(preview.chain_contract.spatial_stage_count, 2);
+        assert_eq!(preview.chain_contract.active_spatial_stage_count, 1);
+        assert_eq!(preview.chain_contract.bypassed_spatial_stage_count, 1);
+        assert_eq!(preview.chain_contract.fallback_spatial_stage_count, 1);
+        assert_eq!(preview.chain_contract.surround_bed_spatial_stage_count, 1);
+        assert_eq!(preview.chain_contract.object_aware_spatial_stage_count, 0);
+        assert_eq!(
+            preview.chain_contract.expanded_fallback_spatial_stage_count,
+            1
+        );
+        assert!(preview
+            .chain_contract
+            .spatial_stages
+            .iter()
+            .any(|stage| stage.node_id == "spatial-stereo"
+                && stage.spatial.execution_mode
+                    == crate::RuntimeSpatialExecutionMode::BalanceGroups
+                && stage.spatial.bed_class == crate::RuntimeSpatialBedClass::StereoBed
+                && stage.spatial.mix_policy == crate::RuntimeSpatialMixPolicy::BedOnly));
+        assert!(preview
+            .chain_contract
+            .spatial_stages
+            .iter()
+            .any(|stage| stage.node_id == "spatial-surround"
+                && stage.spatial.fallback_outcome
+                    == Some(crate::RuntimeSpatialFallbackOutcome::BypassSpatialProcessing)
+                && stage.spatial.expanded_fallback_outcome
+                    == Some(
+                        crate::RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial
+                    )
+                && stage.spatial.bed_class == crate::RuntimeSpatialBedClass::CanonicalSurroundBed));
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let json = supervisor.render_json();
+        assert!(json.contains("\"spatial_node_count\":2"));
+        assert!(json.contains("\"active_spatial_node_count\":1"));
+        assert!(json.contains("\"bypassed_spatial_node_count\":1"));
+        assert!(json.contains("\"surround_bed_spatial_node_count\":1"));
+        assert!(json.contains("\"expanded_fallback_spatial_node_count\":1"));
+        assert!(json.contains("\"adapter_class\":\"Balance\""));
+        assert!(json.contains("\"bed_class\":\"CanonicalSurroundBed\""));
+        assert!(json.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
+        assert!(json.contains("\"render_scope\":\"BedRender\""));
+        assert!(json.contains("\"execution_mode\":\"Bypassed\""));
+        assert!(json.contains("\"fallback_outcome\":\"BypassSpatialProcessing\""));
+        assert!(json.contains("\"expanded_fallback_outcome\":\"CollapseToBaselineSpatial\""));
+    }
+
+    #[test]
     fn runtime_execution_topology_summarizes_send_return_routes_explicitly() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_disabled_forecast(&mut runtime, true);
@@ -16817,6 +17828,8 @@ mod tests {
 
         let metering = runtime.get_metering_snapshot();
         assert_eq!(metering.send_returns.len(), 1);
+        assert_eq!(metering.bus_connection_count, 5);
+        assert_eq!(metering.auxiliary_path_count, 3);
         assert!(metering.send_returns.iter().any(|send_return| {
             send_return.send_return_id == "fx:plate"
                 && send_return.aggregate.meter_count == 2
@@ -16828,6 +17841,29 @@ mod tests {
                     .aggregate
                     .metered_bus_ids
                     .contains(&"bus:mix:master".to_string())
+        }));
+        assert!(metering.bus_connections.iter().any(|connection| {
+            connection.connection_id == "send-fx:bus:fx:plate->return-fx:bus:fx:plate"
+                && connection.source_bus_role == crate::RuntimeBusRole::AuxSend
+                && connection.target_bus_role == crate::RuntimeBusRole::AuxReturn
+                && connection.auxiliary_path_kind
+                    == Some(crate::RuntimeAuxiliaryPathKind::SendReturn)
+                && connection.auxiliary_path_id.as_deref() == Some("send_return:fx:plate")
+        }));
+        assert!(metering.auxiliary_paths.iter().any(|path| {
+            path.auxiliary_path_id == "send_return:fx:plate"
+                && path.path_kind == crate::RuntimeAuxiliaryPathKind::SendReturn
+                && path.bus_role == crate::RuntimeBusRole::AuxSend
+                && path
+                    .connection_ids
+                    .contains(&"send-fx:bus:fx:plate->return-fx:bus:fx:plate".to_string())
+        }));
+        assert!(metering.auxiliary_paths.iter().any(|path| {
+            path.auxiliary_path_id == "bus_group:mix:master"
+                && path.path_kind == crate::RuntimeAuxiliaryPathKind::Submix
+                && path.bus_role == crate::RuntimeBusRole::Submix
+                && path.source_node_ids.contains(&"bus-dry".to_string())
+                && path.target_node_ids.contains(&"output-main".to_string())
         }));
 
         let observation =
@@ -16844,8 +17880,18 @@ mod tests {
                 .send_return_group_count,
             1
         );
+        assert_eq!(
+            observation.execution_topology_summary.bus_connection_count,
+            5
+        );
+        assert_eq!(
+            observation.execution_topology_summary.auxiliary_path_count,
+            3
+        );
         assert_eq!(observation.execution_topology_summary.send_returns.len(), 1);
         assert_eq!(observation.metering_snapshot.send_returns.len(), 1);
+        assert_eq!(observation.metering_snapshot.bus_connection_count, 5);
+        assert_eq!(observation.metering_snapshot.auxiliary_path_count, 3);
         assert!(observation
             .execution_topology_summary
             .send_returns
@@ -16867,16 +17913,48 @@ mod tests {
                         .output_bus_ids
                         .contains(&"bus:mix:master".to_string())
             }));
+        assert!(observation
+            .execution_topology_summary
+            .bus_connections
+            .iter()
+            .any(|connection| {
+                connection.connection_id == "send-fx:bus:fx:plate->return-fx:bus:fx:plate"
+                    && connection.source_bus_role == crate::RuntimeBusRole::AuxSend
+                    && connection.target_bus_role == crate::RuntimeBusRole::AuxReturn
+            }));
+        assert!(observation
+            .execution_topology_summary
+            .auxiliary_paths
+            .iter()
+            .any(|path| {
+                path.auxiliary_path_id == "send_return:fx:plate"
+                    && path
+                        .connection_ids
+                        .contains(&"send-fx:bus:fx:plate->return-fx:bus:fx:plate".to_string())
+                    && path.connection_ids.contains(
+                        &"return-fx:bus:mix:master->output-main:bus:mix:master".to_string(),
+                    )
+            }));
         let supervisor =
             RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
         assert!(supervisor
             .render_multiline()
             .contains("metering_snapshot_send_return_0=fx:plate"));
+        assert!(supervisor
+            .render_multiline()
+            .contains("execution_topology_summary_bus_connection_count=5"));
+        assert!(supervisor
+            .render_multiline()
+            .contains("execution_topology_summary_auxiliary_path_0="));
         let json = supervisor.render_json();
         assert!(json.contains("\"metering_snapshot\":{\"meter_count\":"));
         assert!(json.contains("\"send_return_group_count\":1"));
         assert!(json.contains("\"send_returns\":["));
         assert!(json.contains("\"send_return_id\":\"fx:plate\""));
+        assert!(json.contains("\"bus_connection_count\":5"));
+        assert!(json.contains("\"auxiliary_path_count\":3"));
+        assert!(json.contains("\"connection_id\":\"send-fx:bus:fx:plate->return-fx:bus:fx:plate\""));
+        assert!(json.contains("\"auxiliary_path_id\":\"send_return:fx:plate\""));
     }
 
     #[test]
@@ -19239,6 +20317,143 @@ mod tests {
     fn runtime_plugin_chain_snapshot_reports_compensation_and_recall() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/Library/Audio/Plug-Ins/VST3".into()],
+            formats: vec![PluginFormat::Vst3],
+        });
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                crate::RuntimePluginDiscoveredTypeRecord {
+                    plugin_type_id: "plugin:vst3:multiout-instrument".into(),
+                    plugin_id: "com.signal.multiout".into(),
+                    vendor: "Signal".into(),
+                    name: "Signal Multi Output Instrument".into(),
+                    format: PluginFormat::Vst3,
+                    version: Some("1.0.0".into()),
+                    features: vec![
+                        signal_plugin::PluginFeature::Instrument,
+                        signal_plugin::PluginFeature::Analyzer,
+                    ],
+                    default_io_layout: signal_plugin::PluginIoLayout {
+                        audio_inputs: 0,
+                        audio_outputs: 6,
+                        midi_inputs: 1,
+                        midi_outputs: 0,
+                    },
+                    default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(
+                        signal_plugin::PluginIoLayout {
+                            audio_inputs: 0,
+                            audio_outputs: 6,
+                            midi_inputs: 1,
+                            midi_outputs: 0,
+                        },
+                    ),
+                    complex_io_summary:
+                        crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                            &[
+                                signal_plugin::PluginFeature::Instrument,
+                                signal_plugin::PluginFeature::Analyzer,
+                            ],
+                            signal_plugin::PluginIoLayout {
+                                audio_inputs: 0,
+                                audio_outputs: 6,
+                                midi_inputs: 1,
+                                midi_outputs: 0,
+                            },
+                        ),
+                    audio_bus_count: 1,
+                    parameter_count: 24,
+                    state_contract: signal_plugin::PluginStateContract {
+                        supports_snapshot: false,
+                        supports_reset: true,
+                        supports_bypass: false,
+                        exposes_latency: false,
+                        exposes_tail: true,
+                    },
+                    processing_contract: signal_plugin::PluginProcessingContract {
+                        max_block_frames: 2048,
+                        sample_accurate_automation: false,
+                        accepts_midi: true,
+                        accepts_note_events: true,
+                        supports_note_expression: true,
+                        produces_midi: false,
+                        silence_aware: false,
+                    },
+                    lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                        requires_main_thread_for_state: true,
+                        supports_prepare: true,
+                        supports_activate: true,
+                        supports_reset_while_active: false,
+                    },
+                    summary: "plugin_type=plugin:vst3:multiout-instrument".into(),
+                },
+                crate::RuntimePluginDiscoveredTypeRecord {
+                    plugin_type_id: "plugin:vst3:bus-fx".into(),
+                    plugin_id: "com.signal.bus-fx".into(),
+                    vendor: "Signal".into(),
+                    name: "Signal Bus FX".into(),
+                    format: PluginFormat::Vst3,
+                    version: Some("1.0.0".into()),
+                    features: vec![
+                        signal_plugin::PluginFeature::AudioEffect,
+                        signal_plugin::PluginFeature::Utility,
+                    ],
+                    default_io_layout: signal_plugin::PluginIoLayout {
+                        audio_inputs: 4,
+                        audio_outputs: 4,
+                        midi_inputs: 0,
+                        midi_outputs: 0,
+                    },
+                    default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(
+                        signal_plugin::PluginIoLayout {
+                            audio_inputs: 4,
+                            audio_outputs: 4,
+                            midi_inputs: 0,
+                            midi_outputs: 0,
+                        },
+                    ),
+                    complex_io_summary:
+                        crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                            &[
+                                signal_plugin::PluginFeature::AudioEffect,
+                                signal_plugin::PluginFeature::Utility,
+                            ],
+                            signal_plugin::PluginIoLayout {
+                                audio_inputs: 4,
+                                audio_outputs: 4,
+                                midi_inputs: 0,
+                                midi_outputs: 0,
+                            },
+                        ),
+                    audio_bus_count: 2,
+                    parameter_count: 18,
+                    state_contract: signal_plugin::PluginStateContract {
+                        supports_snapshot: true,
+                        supports_reset: true,
+                        supports_bypass: true,
+                        exposes_latency: true,
+                        exposes_tail: true,
+                    },
+                    processing_contract: signal_plugin::PluginProcessingContract {
+                        max_block_frames: 4096,
+                        sample_accurate_automation: true,
+                        accepts_midi: false,
+                        accepts_note_events: false,
+                        supports_note_expression: false,
+                        produces_midi: false,
+                        silence_aware: true,
+                    },
+                    lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                        requires_main_thread_for_state: false,
+                        supports_prepare: true,
+                        supports_activate: true,
+                        supports_reset_while_active: true,
+                    },
+                    summary: "plugin_type=plugin:vst3:bus-fx".into(),
+                },
+            ],
+        );
         runtime
             .apply_graph_projection(GraphProjection {
                 graph_id: "graph:runtime:plugin-chain".into(),
@@ -19304,6 +20519,16 @@ mod tests {
                 ],
             })
             .expect("apply bindings");
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "sandbox-a".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:multiout-instrument".into()),
+        });
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "sandbox-b".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:bus-fx".into()),
+        });
 
         runtime.record_plugin_sandbox_lifecycle(
             "sandbox-a",
@@ -19400,6 +20625,34 @@ mod tests {
         assert_eq!(snapshot.chains[0].chain_id, "track:lead");
         assert_eq!(snapshot.chains[0].stages[0].node_id, "plugin-a");
         assert_eq!(snapshot.chains[0].stages[1].node_id, "plugin-b");
+        assert!(
+            snapshot.chains[0].stages[0]
+                .complex_io_summary
+                .has_complex_topology
+        );
+        assert!(
+            snapshot.chains[0].stages[0]
+                .complex_io_summary
+                .multi_output_instrument
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[0]
+                .complex_io_summary
+                .instrument_output_group_count,
+            2
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1]
+                .complex_io_summary
+                .bus_capable_fx_class,
+            Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+        );
+        assert_eq!(
+            snapshot.chains[0].stages[1]
+                .complex_io_summary
+                .secondary_input_group_count,
+            1
+        );
         assert_eq!(
             snapshot.chains[0].stages[0].compensation_state,
             RuntimePluginCompensationState::Compensated
@@ -19475,9 +20728,10 @@ mod tests {
 
         let recorder = RuntimeEventRecorder::default();
         let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-        assert!(observation
-            .render_compact()
-            .contains("plugin_chains=1/2 plugin_chain_pending=0 plugin_chain_settling=0 plugin_chain_compensated=1 plugin_chain_degraded=0 plugin_chain_bypassed=1 plugin_chain_missing=0"));
+        let compact = observation.render_compact();
+        assert!(compact.contains("plugin_chains=1/2"));
+        assert!(compact.contains("plugin_chain_compensated=1"));
+        assert!(compact.contains("plugin_chain_bypassed=1"));
 
         let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
         let multiline = supervisor.render_multiline();
@@ -20478,7 +21732,12 @@ mod tests {
                     RuntimePluginHostPlatform::Windows,
                 ],
                 unsupported_platforms: Vec::new(),
-                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
             },
             RuntimePluginFormatPlatformCoverageRecord {
                 format: PluginFormat::Vst3,
@@ -20488,7 +21747,12 @@ mod tests {
                     RuntimePluginHostPlatform::Windows,
                 ],
                 unsupported_platforms: Vec::new(),
-                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
             },
             RuntimePluginFormatPlatformCoverageRecord {
                 format: PluginFormat::Au,
@@ -20497,7 +21761,10 @@ mod tests {
                     RuntimePluginHostPlatform::Linux,
                     RuntimePluginHostPlatform::Windows,
                 ],
-                summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+                linux_parity_band: RuntimePluginParityBand::Unsupported,
+                linux_preferred_sandbox_outcome: None,
+                linux_strict_sandbox_default: false,
+                summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
             },
         ]);
 
@@ -20532,6 +21799,27 @@ mod tests {
                         midi_inputs: 1,
                         midi_outputs: 1,
                     },
+                    default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(
+                        signal_plugin::PluginIoLayout {
+                            audio_inputs: 2,
+                            audio_outputs: 2,
+                            midi_inputs: 1,
+                            midi_outputs: 1,
+                        },
+                    ),
+                    complex_io_summary:
+                        crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                            &[
+                                signal_plugin::PluginFeature::AudioEffect,
+                                signal_plugin::PluginFeature::Utility,
+                            ],
+                            signal_plugin::PluginIoLayout {
+                                audio_inputs: 2,
+                                audio_outputs: 2,
+                                midi_inputs: 1,
+                                midi_outputs: 1,
+                            },
+                        ),
                     audio_bus_count: 2,
                     parameter_count: 16,
                     state_contract: signal_plugin::PluginStateContract {
@@ -20575,6 +21863,27 @@ mod tests {
                         midi_inputs: 1,
                         midi_outputs: 0,
                     },
+                    default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(
+                        signal_plugin::PluginIoLayout {
+                            audio_inputs: 0,
+                            audio_outputs: 2,
+                            midi_inputs: 1,
+                            midi_outputs: 0,
+                        },
+                    ),
+                    complex_io_summary:
+                        crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                            &[
+                                signal_plugin::PluginFeature::Instrument,
+                                signal_plugin::PluginFeature::Analyzer,
+                            ],
+                            signal_plugin::PluginIoLayout {
+                                audio_inputs: 0,
+                                audio_outputs: 2,
+                                midi_inputs: 1,
+                                midi_outputs: 0,
+                            },
+                        ),
                     audio_bus_count: 1,
                     parameter_count: 24,
                     state_contract: signal_plugin::PluginStateContract {
@@ -20660,6 +21969,20 @@ mod tests {
         );
         assert_eq!(discovered_type.audio_bus_count, 2);
         assert_eq!(discovered_type.parameter_count, 16);
+        assert_eq!(
+            discovered_type
+                .default_multichannel_io
+                .input_layout
+                .canonical_layout,
+            Some(crate::RuntimeCanonicalChannelLayout::Stereo)
+        );
+        assert_eq!(
+            discovered_type
+                .default_multichannel_io
+                .output_layout
+                .canonical_layout,
+            Some(crate::RuntimeCanonicalChannelLayout::Stereo)
+        );
         assert!(discovered_type.state_contract.supports_snapshot);
         assert!(discovered_type.processing_contract.produces_midi);
         assert!(discovered_type.lifecycle_contract.supports_activate);
@@ -20670,6 +21993,10 @@ mod tests {
             .expect("clap parity should be present");
         assert_eq!(clap_parity.parity_band, RuntimePluginParityBand::Portable);
         assert_eq!(
+            clap_parity.linux_parity_band,
+            RuntimePluginParityBand::Portable
+        );
+        assert_eq!(
             clap_parity.supported_platforms,
             vec![
                 RuntimePluginHostPlatform::MacOs,
@@ -20677,8 +22004,17 @@ mod tests {
                 RuntimePluginHostPlatform::Windows,
             ]
         );
+        assert!(clap_parity.linux_supported);
+        assert_eq!(
+            clap_parity.linux_preferred_sandbox_outcome,
+            Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
+        );
+        assert!(clap_parity.linux_strict_sandbox_default);
         assert_eq!(clap_parity.discovered_type_count, 1);
+        assert_eq!(clap_parity.prepare_capable_type_count, 1);
+        assert_eq!(clap_parity.activate_capable_type_count, 1);
         assert_eq!(clap_parity.sandbox_count, 1);
+        assert_eq!(clap_parity.in_process_sandbox_count, 0);
         assert_eq!(clap_parity.explicit_placement_rule_count, 0);
         let au_parity = discovery
             .parity_coverage
@@ -20686,6 +22022,13 @@ mod tests {
             .find(|record| record.format == PluginFormat::Au)
             .expect("au parity should be present even before discovery");
         assert_eq!(au_parity.parity_band, RuntimePluginParityBand::Guarded);
+        assert_eq!(
+            au_parity.linux_parity_band,
+            RuntimePluginParityBand::Unsupported
+        );
+        assert!(!au_parity.linux_supported);
+        assert_eq!(au_parity.linux_preferred_sandbox_outcome, None);
+        assert!(!au_parity.linux_strict_sandbox_default);
         assert_eq!(
             au_parity.unsupported_platforms,
             vec![
@@ -20730,6 +22073,9 @@ mod tests {
             .contains("\"plugin_type_id\":\"plugin:clap:default\""));
         assert!(report
             .render_json()
+            .contains("\"default_multichannel_io\":{"));
+        assert!(report
+            .render_json()
             .contains("\"plugin_type_id\":\"plugin:vst3:instrument\""));
         assert!(report
             .render_json()
@@ -20744,8 +22090,291 @@ mod tests {
             .contains("\"parity_band\":\"Portable\""));
         assert!(report
             .render_json()
+            .contains("\"linux_parity_band\":\"Portable\""));
+        assert!(report
+            .render_json()
+            .contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
+        assert!(report
+            .render_json()
             .contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
         assert!(report.render_json().contains("\"supports_snapshot\":true"));
+    }
+
+    #[test]
+    fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart_receipts() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 256));
+        handshake_and_configure(&mut runtime);
+        runtime.record_plugin_format_platform_coverage(vec![
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Clap,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(
+                    RuntimePluginIsolationOutcome::IsolatedSandbox,
+                ),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Vst3,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(
+                    RuntimePluginIsolationOutcome::IsolatedSandbox,
+                ),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Lv2,
+                supported_platforms: vec![RuntimePluginHostPlatform::Linux],
+                unsupported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(
+                    RuntimePluginIsolationOutcome::IsolatedSandbox,
+                ),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
+                        .into(),
+            },
+        ]);
+        runtime
+            .apply_plugin_placement_policy(RuntimePluginPlacementPolicy {
+                default_outcome: RuntimePluginIsolationOutcome::IsolatedSandbox,
+                rules: vec![
+                    RuntimePluginPlacementRule {
+                        rule_id: "share-clap-linux".into(),
+                        matcher: RuntimePluginPlacementRuleMatcher::PluginFormat(
+                            PluginFormat::Clap,
+                        ),
+                        outcome: RuntimePluginIsolationOutcome::SharedSandbox,
+                        sandbox_group_key: Some("linux:clap".into()),
+                    },
+                    RuntimePluginPlacementRule {
+                        rule_id: "inline-vst3-linux".into(),
+                        matcher: RuntimePluginPlacementRuleMatcher::PluginFormat(
+                            PluginFormat::Vst3,
+                        ),
+                        outcome: RuntimePluginIsolationOutcome::InProcess,
+                        sandbox_group_key: None,
+                    },
+                ],
+            })
+            .expect("apply linux placement policy");
+
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/.clap".into(), "~/.vst3".into(), "~/.lv2".into()],
+            formats: vec![PluginFormat::Clap, PluginFormat::Vst3, PluginFormat::Lv2],
+        });
+        let sample_record =
+            |plugin_type_id: &str,
+             format: PluginFormat,
+             features: Vec<PluginFeature>,
+             io: PluginIoLayout,
+             supports_prepare: bool,
+             supports_activate: bool| crate::RuntimePluginDiscoveredTypeRecord {
+                plugin_type_id: plugin_type_id.into(),
+                plugin_id: format!("com.signal.{}", plugin_type_id.replace(':', ".")),
+                vendor: "Signal".into(),
+                name: plugin_type_id.into(),
+                format,
+                version: Some("1.0.0".into()),
+                features: features.clone(),
+                default_io_layout: io,
+                default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(io),
+                complex_io_summary:
+                    crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                        &features, io,
+                    ),
+                audio_bus_count: 1,
+                parameter_count: 8,
+                state_contract: PluginStateContract {
+                    supports_snapshot: true,
+                    supports_reset: true,
+                    supports_bypass: true,
+                    exposes_latency: false,
+                    exposes_tail: false,
+                },
+                processing_contract: PluginProcessingContract {
+                    max_block_frames: 2048,
+                    sample_accurate_automation: true,
+                    accepts_midi: io.midi_inputs > 0,
+                    accepts_note_events: io.midi_inputs > 0,
+                    supports_note_expression: io.midi_inputs > 0,
+                    produces_midi: io.midi_outputs > 0,
+                    silence_aware: true,
+                },
+                lifecycle_contract: PluginLifecycleContract {
+                    requires_main_thread_for_state: false,
+                    supports_prepare,
+                    supports_activate,
+                    supports_reset_while_active: supports_activate,
+                },
+                summary: format!("plugin_type={plugin_type_id} format={format:?}"),
+            };
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                sample_record(
+                    "plugin:clap:linux-parity",
+                    PluginFormat::Clap,
+                    vec![PluginFeature::AudioEffect],
+                    PluginIoLayout {
+                        audio_inputs: 2,
+                        audio_outputs: 2,
+                        midi_inputs: 0,
+                        midi_outputs: 0,
+                    },
+                    true,
+                    true,
+                ),
+                sample_record(
+                    "plugin:vst3:linux-parity",
+                    PluginFormat::Vst3,
+                    vec![PluginFeature::Instrument],
+                    PluginIoLayout {
+                        audio_inputs: 0,
+                        audio_outputs: 2,
+                        midi_inputs: 1,
+                        midi_outputs: 0,
+                    },
+                    true,
+                    true,
+                ),
+                sample_record(
+                    "plugin:lv2:linux-parity",
+                    PluginFormat::Lv2,
+                    vec![PluginFeature::Utility],
+                    PluginIoLayout {
+                        audio_inputs: 2,
+                        audio_outputs: 2,
+                        midi_inputs: 0,
+                        midi_outputs: 0,
+                    },
+                    true,
+                    true,
+                ),
+            ],
+        );
+
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "linux-clap-sandbox".into(),
+            plugin_format: PluginFormat::Clap,
+            plugin_type_id: Some("plugin:clap:linux-parity".into()),
+        });
+        runtime.record_plugin_sandbox_lifecycle(
+            "linux-clap-sandbox",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_transport(
+            "linux-clap-sandbox",
+            "lease-clap",
+            "region-clap",
+            PluginSandboxTransportStage::Attached,
+            Some(1),
+            None,
+        );
+
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "linux-vst3-sandbox".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:linux-parity".into()),
+        });
+        runtime.record_recovery_cycle(
+            "linux-vst3-sandbox",
+            RecoveryRestartIntent::CrashRecovery,
+            StopReason::DegradedModeRecovery,
+            Some(2),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "linux-vst3-sandbox",
+            PluginSandboxLifecycleStage::SandboxRestarted,
+            Some(2),
+        );
+
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "linux-lv2-sandbox".into(),
+            plugin_format: PluginFormat::Lv2,
+            plugin_type_id: Some("plugin:lv2:linux-parity".into()),
+        });
+        runtime.record_plugin_sandbox_fault(
+            "linux-lv2-sandbox",
+            PluginFaultKind::Crash,
+            "linux lv2 sandbox fault",
+            Some(3),
+        );
+
+        let lifecycle = runtime.get_plugin_lifecycle_snapshot();
+        let clap = lifecycle
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Clap)
+            .expect("clap linux parity should be present");
+        assert_eq!(clap.linux_parity_band, RuntimePluginParityBand::Portable);
+        assert!(clap.linux_supported);
+        assert_eq!(
+            clap.linux_preferred_sandbox_outcome,
+            Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
+        );
+        assert!(clap.linux_strict_sandbox_default);
+        assert_eq!(clap.prepare_capable_type_count, 1);
+        assert_eq!(clap.activate_capable_type_count, 1);
+        assert_eq!(clap.shared_sandbox_count, 1);
+        assert_eq!(clap.active_transport_count, 1);
+
+        let vst3 = lifecycle
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Vst3)
+            .expect("vst3 linux parity should be present");
+        assert_eq!(vst3.linux_parity_band, RuntimePluginParityBand::Portable);
+        assert!(vst3.linux_supported);
+        assert_eq!(vst3.in_process_sandbox_count, 1);
+        assert_eq!(vst3.restarting_sandbox_count, 1);
+        assert_eq!(vst3.rebindable_sandbox_count, 1);
+        assert_eq!(vst3.prepare_capable_type_count, 1);
+
+        let lv2 = lifecycle
+            .parity_coverage
+            .iter()
+            .find(|record| record.format == PluginFormat::Lv2)
+            .expect("lv2 linux parity should be present");
+        assert_eq!(lv2.parity_band, RuntimePluginParityBand::Guarded);
+        assert_eq!(lv2.linux_parity_band, RuntimePluginParityBand::Portable);
+        assert!(lv2.linux_supported);
+        assert_eq!(lv2.faulted_sandbox_count, 1);
+        assert_eq!(
+            lv2.linux_preferred_sandbox_outcome,
+            Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
+        );
+
+        let rendered =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default())
+                .render_json();
+        assert!(rendered.contains("\"linux_parity_band\":\"Portable\""));
+        assert!(rendered.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
+        assert!(rendered.contains("\"linux_strict_sandbox_default\":true"));
+        assert!(rendered.contains("\"restarting_sandbox_count\":1"));
+        assert!(rendered.contains("\"faulted_sandbox_count\":1"));
     }
 
     #[test]
@@ -20753,6 +22382,143 @@ mod tests {
     ) {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_disabled_forecast(&mut runtime, true);
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/Library/Audio/Plug-Ins/VST3".into()],
+            formats: vec![PluginFormat::Vst3],
+        });
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                crate::RuntimePluginDiscoveredTypeRecord {
+                    plugin_type_id: "plugin:vst3:multiout-instrument".into(),
+                    plugin_id: "com.signal.multiout".into(),
+                    vendor: "Signal".into(),
+                    name: "Signal Multi Output Instrument".into(),
+                    format: PluginFormat::Vst3,
+                    version: Some("1.0.0".into()),
+                    features: vec![
+                        signal_plugin::PluginFeature::Instrument,
+                        signal_plugin::PluginFeature::Analyzer,
+                    ],
+                    default_io_layout: signal_plugin::PluginIoLayout {
+                        audio_inputs: 0,
+                        audio_outputs: 6,
+                        midi_inputs: 1,
+                        midi_outputs: 0,
+                    },
+                    default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(
+                        signal_plugin::PluginIoLayout {
+                            audio_inputs: 0,
+                            audio_outputs: 6,
+                            midi_inputs: 1,
+                            midi_outputs: 0,
+                        },
+                    ),
+                    complex_io_summary:
+                        crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                            &[
+                                signal_plugin::PluginFeature::Instrument,
+                                signal_plugin::PluginFeature::Analyzer,
+                            ],
+                            signal_plugin::PluginIoLayout {
+                                audio_inputs: 0,
+                                audio_outputs: 6,
+                                midi_inputs: 1,
+                                midi_outputs: 0,
+                            },
+                        ),
+                    audio_bus_count: 1,
+                    parameter_count: 24,
+                    state_contract: signal_plugin::PluginStateContract {
+                        supports_snapshot: false,
+                        supports_reset: true,
+                        supports_bypass: false,
+                        exposes_latency: false,
+                        exposes_tail: true,
+                    },
+                    processing_contract: signal_plugin::PluginProcessingContract {
+                        max_block_frames: 2048,
+                        sample_accurate_automation: false,
+                        accepts_midi: true,
+                        accepts_note_events: true,
+                        supports_note_expression: true,
+                        produces_midi: false,
+                        silence_aware: false,
+                    },
+                    lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                        requires_main_thread_for_state: true,
+                        supports_prepare: true,
+                        supports_activate: true,
+                        supports_reset_while_active: false,
+                    },
+                    summary: "plugin_type=plugin:vst3:multiout-instrument".into(),
+                },
+                crate::RuntimePluginDiscoveredTypeRecord {
+                    plugin_type_id: "plugin:vst3:bus-fx".into(),
+                    plugin_id: "com.signal.bus-fx".into(),
+                    vendor: "Signal".into(),
+                    name: "Signal Bus FX".into(),
+                    format: PluginFormat::Vst3,
+                    version: Some("1.0.0".into()),
+                    features: vec![
+                        signal_plugin::PluginFeature::AudioEffect,
+                        signal_plugin::PluginFeature::Utility,
+                    ],
+                    default_io_layout: signal_plugin::PluginIoLayout {
+                        audio_inputs: 4,
+                        audio_outputs: 4,
+                        midi_inputs: 0,
+                        midi_outputs: 0,
+                    },
+                    default_multichannel_io: crate::RuntimeMultichannelIoSummary::for_plugin_io(
+                        signal_plugin::PluginIoLayout {
+                            audio_inputs: 4,
+                            audio_outputs: 4,
+                            midi_inputs: 0,
+                            midi_outputs: 0,
+                        },
+                    ),
+                    complex_io_summary:
+                        crate::RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                            &[
+                                signal_plugin::PluginFeature::AudioEffect,
+                                signal_plugin::PluginFeature::Utility,
+                            ],
+                            signal_plugin::PluginIoLayout {
+                                audio_inputs: 4,
+                                audio_outputs: 4,
+                                midi_inputs: 0,
+                                midi_outputs: 0,
+                            },
+                        ),
+                    audio_bus_count: 2,
+                    parameter_count: 18,
+                    state_contract: signal_plugin::PluginStateContract {
+                        supports_snapshot: true,
+                        supports_reset: true,
+                        supports_bypass: true,
+                        exposes_latency: true,
+                        exposes_tail: true,
+                    },
+                    processing_contract: signal_plugin::PluginProcessingContract {
+                        max_block_frames: 4096,
+                        sample_accurate_automation: true,
+                        accepts_midi: false,
+                        accepts_note_events: false,
+                        supports_note_expression: false,
+                        produces_midi: false,
+                        silence_aware: true,
+                    },
+                    lifecycle_contract: signal_plugin::PluginLifecycleContract {
+                        requires_main_thread_for_state: false,
+                        supports_prepare: true,
+                        supports_activate: true,
+                        supports_reset_while_active: true,
+                    },
+                    summary: "plugin_type=plugin:vst3:bus-fx".into(),
+                },
+            ],
+        );
         runtime
             .apply_graph_projection(GraphProjection {
                 graph_id: "graph:runtime:offline-render-preview".into(),
@@ -20818,6 +22584,16 @@ mod tests {
                 ],
             })
             .expect("apply bindings");
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "sandbox-a".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:multiout-instrument".into()),
+        });
+        runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
+            sandbox_id: "sandbox-b".into(),
+            plugin_format: PluginFormat::Vst3,
+            plugin_type_id: Some("plugin:vst3:bus-fx".into()),
+        });
         runtime.record_plugin_sandbox_lifecycle(
             "sandbox-a",
             PluginSandboxLifecycleStage::InstancePrepared,
@@ -20905,7 +22681,9 @@ mod tests {
             &request,
             &runtime.get_execution_topology_summary(),
             &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
             &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
             &handoff,
         )
         .expect("build offline render contract preview");
@@ -20956,12 +22734,45 @@ mod tests {
         assert_eq!(preview.chain_contract.total_planned_latency_samples, 36);
         assert_eq!(preview.chain_contract.total_realized_latency_samples, 0);
         assert_eq!(preview.chain_contract.total_tail_samples, 0);
+        assert_eq!(preview.chain_contract.complex_io_stage_count, 2);
+        assert_eq!(
+            preview.chain_contract.multi_output_instrument_stage_count,
+            1
+        );
+        assert_eq!(preview.chain_contract.bus_capable_fx_stage_count, 1);
+        assert_eq!(preview.chain_contract.sidechain_capable_fx_stage_count, 1);
         assert_eq!(preview.chain_contract.recall_stage_count, 2);
         assert_eq!(preview.chain_contract.warm_recall_stage_count, 1);
         assert_eq!(preview.chain_contract.recovered_recall_stage_count, 1);
         assert_eq!(preview.chain_contract.cold_recall_stage_count, 0);
         assert_eq!(preview.chain_contract.unavailable_recall_stage_count, 0);
+        assert_eq!(preview.chain_contract.complex_io_stages.len(), 2);
+        assert_eq!(
+            preview.chain_contract.complex_io_stages[0].plugin_type_id,
+            Some("plugin:vst3:multiout-instrument".to_string())
+        );
+        assert!(
+            preview.chain_contract.complex_io_stages[0]
+                .topology
+                .multi_output_instrument
+        );
+        assert_eq!(
+            preview.chain_contract.complex_io_stages[0]
+                .topology
+                .instrument_output_group_count,
+            2
+        );
+        assert_eq!(
+            preview.chain_contract.complex_io_stages[1]
+                .topology
+                .bus_capable_fx_class,
+            Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+        );
         assert!(preview.chain_contract.summary.contains("pending=2"));
+        assert!(preview
+            .chain_contract
+            .summary
+            .contains("complex_io_stages=2"));
         assert!(preview.chain_contract.summary.contains("recall=2/"));
         assert!(preview.summary.contains("stems=1"));
         assert!(preview.summary.contains("freeze_artifacts=1"));
@@ -21035,7 +22846,9 @@ mod tests {
             &request,
             &runtime.get_execution_topology_summary(),
             &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
             &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
             &handoff,
         )
         .expect_err("misaligned chain and recall contracts should fail");
@@ -21043,6 +22856,81 @@ mod tests {
         assert!(error
             .message
             .contains("aligned plugin chain and recall handoff"));
+    }
+
+    #[test]
+    fn runtime_offline_render_contract_preview_carries_sidechain_dependency_receipts() {
+        let runtime = prepare_sidechain_runtime();
+        let handoff = runtime.get_plugin_recall_handoff_snapshot();
+        let request = RuntimeOfflineRenderRequest {
+            request_id: "render:sidechain-preview".into(),
+            timeline_start_samples: 0,
+            duration_samples: 24_000,
+            export_sample_rate_hz: 48_000,
+            include_main_mix: true,
+            artifact_root_path: None,
+            stem_targets: Vec::new(),
+            freeze_artifacts: Vec::new(),
+        };
+
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &request,
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
+            &handoff,
+        )
+        .expect("build offline render sidechain preview");
+
+        assert_eq!(preview.chain_contract.secondary_input_count, 1);
+        assert_eq!(preview.chain_contract.required_secondary_input_count, 1);
+        assert_eq!(preview.chain_contract.optional_secondary_input_count, 0);
+        assert_eq!(preview.chain_contract.disabled_secondary_input_count, 0);
+        assert_eq!(
+            preview
+                .chain_contract
+                .terminal_fallback_secondary_input_count,
+            0
+        );
+        assert_eq!(preview.chain_contract.bus_connection_count, 2);
+        assert_eq!(preview.chain_contract.auxiliary_path_count, 1);
+        let route = &preview.chain_contract.secondary_inputs[0];
+        assert_eq!(route.source_id, "sidechain-feed");
+        assert_eq!(
+            route.target_kind,
+            RuntimeSecondaryInputTargetKind::RenderInput
+        );
+        assert_eq!(route.target_id, "offline-render");
+        assert_eq!(route.target_bus_id, "plugin:compressor:sidechain");
+        assert_eq!(
+            route.fallback_outcome,
+            crate::RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation
+        );
+        assert!(preview
+            .chain_contract
+            .bus_connections
+            .iter()
+            .any(|connection| {
+                connection.connection_id
+                    == "track-input:bus:track:lead->plugin-compressor:bus:track:lead"
+                    && connection.source_bus_role == crate::RuntimeBusRole::ProgramMain
+                    && connection.target_bus_role == crate::RuntimeBusRole::ProgramMain
+            }));
+        assert!(preview.chain_contract.auxiliary_paths.iter().any(|path| {
+            path.auxiliary_path_id == "bus_group:mix:tracks"
+                && path.path_kind == crate::RuntimeAuxiliaryPathKind::Submix
+        }));
+        assert!(preview
+            .chain_contract
+            .summary
+            .contains("secondary_inputs=1"));
+        assert!(preview
+            .chain_contract
+            .summary
+            .contains("bus_connections=2 auxiliary_paths=1"));
+        assert!(preview.summary.contains("chain_contract=chains=1"));
     }
 
     #[test]
@@ -27573,6 +29461,37 @@ mod tests {
     }
 
     #[test]
+    fn runtime_observation_and_supervisor_reports_surface_external_midi_endpoint_baseline() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(
+            observation.external_midi_snapshot.discovery_state,
+            crate::RuntimeExternalMidiDiscoveryState::Unavailable
+        );
+        assert_eq!(
+            observation.external_midi_snapshot.graph_state,
+            crate::RuntimeExternalMidiGraphState::Unavailable
+        );
+        assert_eq!(observation.external_midi_snapshot.device_count, 0);
+        assert_eq!(observation.external_midi_snapshot.endpoint_count, 0);
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let multiline = supervisor.render_multiline();
+        assert!(multiline.contains("external_midi_discovery_state=Unavailable"));
+        assert!(multiline.contains("external_midi_graph_state=Unavailable"));
+
+        let json = supervisor.render_json();
+        assert!(json.contains("\"external_midi_snapshot\":{"));
+        assert!(json.contains("\"discovery_state\":\"Unavailable\""));
+        assert!(json.contains("\"graph_state\":\"Unavailable\""));
+        assert!(json.contains("\"provider_name\":\"runtime-unavailable\""));
+    }
+
+    #[test]
     fn runtime_acceptance_receipt_scopes_integrated_runtime_lanes_and_targets() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         handshake_and_configure_with_anticipative(&mut runtime, true);
@@ -27866,6 +29785,587 @@ mod tests {
             .as_deref()
             .unwrap_or_default()
             .contains("hold clip gain shape requires identical start and end gain"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_observation_clip_render_and_offline_render_preview_surface_stretch_engine_receipts()
+    {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("stretch-engine-ready");
+        write_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:stretch-engine-ready".to_string(),
+                content_hash: "stretch-engine-ready".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "stretch-engine-ready.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 8,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:stretch-engine-ready".to_string(),
+                media_asset_id: Some("asset:sha256:stretch-engine-ready".to_string()),
+                mode: RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:stretch-engine-ready".to_string(),
+                media_asset_id: Some("asset:sha256:stretch-engine-ready".to_string()),
+                warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.stretch_engine_snapshot.clip_count, 1);
+        assert_eq!(observation.stretch_engine_snapshot.ready_clip_count, 1);
+        assert_eq!(
+            observation.stretch_engine_snapshot.sample_domain_clip_count,
+            1
+        );
+        assert_eq!(observation.stretch_engine_snapshot.fallback_clip_count, 0);
+        assert_eq!(
+            observation.stretch_engine_snapshot.clips[0].engine_class,
+            RuntimeStretchEngineClass::SampleDomain
+        );
+        assert_eq!(
+            observation.stretch_engine_snapshot.clips[0].readiness,
+            RuntimeStretchReadiness::Ready
+        );
+        assert_eq!(
+            observation.stretch_engine_snapshot.clips[0].fallback_kind,
+            RuntimeStretchFallbackKind::None
+        );
+        assert!(observation
+            .render_compact()
+            .contains("stretch_clips=1/1/1/0/0/0/0/0"));
+        assert!(observation
+            .render_json()
+            .contains("\"stretch_engine_snapshot\":{\"clip_count\":1"));
+
+        let rendered = runtime
+            .render_clip_processing_buffer(RuntimeClipRenderRequest {
+                clip_id: "clip:stretch-engine-ready".to_string(),
+                timeline_start_samples: 0,
+                input_stage: RuntimeClipRenderInputStage::PostWarp,
+                buffer: AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![0.5; 8],
+                ),
+            })
+            .unwrap();
+        assert_eq!(
+            rendered.stretch_engine_snapshot.engine_class,
+            RuntimeStretchEngineClass::SampleDomain
+        );
+        assert_eq!(
+            rendered.stretch_engine_snapshot.readiness,
+            RuntimeStretchReadiness::Ready
+        );
+        assert_eq!(
+            rendered.stretch_engine_snapshot.fallback_kind,
+            RuntimeStretchFallbackKind::None
+        );
+        assert!(rendered.summary.contains("stretch=SampleDomain/Ready/None"));
+
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &RuntimeOfflineRenderRequest {
+                request_id: "render:stretch-engine-preview".into(),
+                timeline_start_samples: 0,
+                duration_samples: 24_000,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            },
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
+            &runtime.get_plugin_recall_handoff_snapshot(),
+        )
+        .expect("build stretch engine offline render preview");
+        assert_eq!(preview.stretch_engine_snapshot.clip_count, 1);
+        assert_eq!(preview.stretch_engine_snapshot.ready_clip_count, 1);
+        assert_eq!(preview.stretch_engine_snapshot.sample_domain_clip_count, 1);
+        assert_eq!(preview.stretch_engine_snapshot.fallback_clip_count, 0);
+        assert_eq!(
+            preview.stretch_engine_snapshot.clips[0].engine_class,
+            RuntimeStretchEngineClass::SampleDomain
+        );
+        assert_eq!(
+            preview.stretch_engine_snapshot.clips[0].readiness,
+            RuntimeStretchReadiness::Ready
+        );
+        assert!(preview.summary.contains("stretch=1/fallback=0"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_marker_analysis_snapshot_derives_from_stretch_and_media_baselines() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("marker-analysis-ready");
+        write_transient_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:marker-analysis-ready".to_string(),
+                content_hash: "marker-analysis-ready".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "marker-analysis-ready.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 48_000,
+                waveform_bin_count: 32,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:marker-analysis-ready".to_string(),
+                media_asset_id: Some("asset:sha256:marker-analysis-ready".to_string()),
+                mode: RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:marker-analysis-ready".to_string(),
+                media_asset_id: Some("asset:sha256:marker-analysis-ready".to_string()),
+                warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let marker_analysis = runtime.get_marker_analysis_snapshot();
+        assert_eq!(marker_analysis.clip_count, 1);
+        assert_eq!(marker_analysis.ready_clip_count, 1);
+        assert_eq!(marker_analysis.pending_media_clip_count, 0);
+        assert_eq!(marker_analysis.degraded_clip_count, 0);
+        assert_eq!(marker_analysis.invalidated_clip_count, 0);
+        assert_eq!(marker_analysis.unsupported_clip_count, 0);
+        assert_eq!(marker_analysis.tempo_assist_ready_clip_count, 1);
+        assert!(marker_analysis.warp_marker_count > 0);
+        assert!(marker_analysis.transient_anchor_count > 0);
+        assert_eq!(
+            marker_analysis.clips[0].readiness,
+            RuntimeMarkerAnalysisReadiness::Ready
+        );
+        assert_eq!(
+            marker_analysis.clips[0].tempo_assist_posture,
+            RuntimeTempoAssistPosture::Ready
+        );
+        assert_eq!(
+            marker_analysis.clips[0].tempo_assist_hint_source,
+            RuntimeTempoAssistHintSource::SourceTempo
+        );
+        assert_eq!(marker_analysis.clips[0].tempo_assist_hint_bpm, Some(120.0));
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.marker_analysis_snapshot.clip_count, 1);
+        assert_eq!(observation.marker_analysis_snapshot.ready_clip_count, 1);
+        assert_eq!(
+            observation
+                .marker_analysis_snapshot
+                .tempo_assist_ready_clip_count,
+            1
+        );
+        assert!(observation
+            .render_compact()
+            .contains("marker_analysis_clips=1/1/0/0/0"));
+        assert!(observation
+            .render_json()
+            .contains("\"marker_analysis_snapshot\":{\"clip_count\":1"));
+
+        let supervisor =
+            RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
+        let multiline = supervisor.render_multiline();
+        assert!(multiline.contains("marker_analysis_clip_count=1"));
+        assert!(multiline.contains("marker_analysis_tempo_assist_ready_clip_count=1"));
+        assert!(supervisor
+            .render_json()
+            .contains("\"marker_analysis_snapshot\":{\"clip_count\":1"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_transform_artifact_snapshot_derives_from_stretch_and_marker_analysis_baselines() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("transform-artifact-ready");
+        write_transient_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:transform-artifact-ready".to_string(),
+                content_hash: "transform-artifact-ready".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "transform-artifact-ready.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 48_000,
+                waveform_bin_count: 32,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:transform-artifact-ready".to_string(),
+                media_asset_id: Some("asset:sha256:transform-artifact-ready".to_string()),
+                mode: RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:transform-artifact-ready".to_string(),
+                media_asset_id: Some("asset:sha256:transform-artifact-ready".to_string()),
+                warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .unwrap();
+
+        let transform_artifact = runtime.get_transform_artifact_snapshot();
+        assert_eq!(transform_artifact.clip_count, 1);
+        assert_eq!(transform_artifact.ready_clip_count, 1);
+        assert_eq!(transform_artifact.pending_media_clip_count, 0);
+        assert_eq!(transform_artifact.degraded_clip_count, 0);
+        assert_eq!(transform_artifact.invalidated_clip_count, 0);
+        assert_eq!(transform_artifact.unsupported_clip_count, 0);
+        assert_eq!(transform_artifact.cached_media_ready_clip_count, 1);
+        assert_eq!(transform_artifact.reusable_clip_count, 1);
+        assert_eq!(transform_artifact.requires_render_clip_count, 0);
+        assert_eq!(transform_artifact.guarded_reuse_clip_count, 0);
+        assert_eq!(
+            transform_artifact.clips[0].readiness,
+            RuntimeTransformArtifactReadiness::Ready
+        );
+        assert_eq!(
+            transform_artifact.clips[0].reuse_state,
+            RuntimeTransformArtifactReuseState::Reusable
+        );
+        assert!(transform_artifact.clips[0].cached_media_ready);
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.transform_artifact_snapshot.clip_count, 1);
+        assert_eq!(observation.transform_artifact_snapshot.ready_clip_count, 1);
+        assert_eq!(
+            observation.transform_artifact_snapshot.reusable_clip_count,
+            1
+        );
+        assert!(observation
+            .render_compact()
+            .contains("transform_artifacts=1/1/0/0/0"));
+        assert!(observation
+            .render_json()
+            .contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
+
+        let rendered = runtime
+            .render_clip_processing_buffer(RuntimeClipRenderRequest {
+                clip_id: "clip:transform-artifact-ready".to_string(),
+                timeline_start_samples: 0,
+                input_stage: RuntimeClipRenderInputStage::PostWarp,
+                buffer: AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![0.5; 8],
+                ),
+            })
+            .unwrap();
+        assert_eq!(
+            rendered.transform_artifact_snapshot.readiness,
+            RuntimeTransformArtifactReadiness::Ready
+        );
+        assert_eq!(
+            rendered.transform_artifact_snapshot.reuse_state,
+            RuntimeTransformArtifactReuseState::Reusable
+        );
+        assert!(rendered.transform_artifact_snapshot.cached_media_ready);
+        assert!(rendered
+            .summary
+            .contains("transform=Ready/Reusable/cached_media=true"));
+
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &RuntimeOfflineRenderRequest {
+                request_id: "render:transform-artifact-preview".into(),
+                timeline_start_samples: 0,
+                duration_samples: 24_000,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            },
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
+            &runtime.get_plugin_recall_handoff_snapshot(),
+        )
+        .expect("build transform artifact offline render preview");
+        assert_eq!(preview.transform_artifact_snapshot.clip_count, 1);
+        assert_eq!(preview.transform_artifact_snapshot.ready_clip_count, 1);
+        assert_eq!(preview.transform_artifact_snapshot.reusable_clip_count, 1);
+        assert!(preview.summary.contains("transform_artifacts=1/reusable=1"));
+
+        let _ = fs::remove_file(imported_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn runtime_preview_transform_snapshot_derives_from_stretch_and_artifact_baselines() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        handshake_and_configure_with_anticipative(&mut runtime, true);
+
+        let imported_path = temp_capture_path("preview-transform-ready");
+        write_transient_test_wav(&imported_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:preview-transform-ready".to_string(),
+                content_hash: "preview-transform-ready".to_string(),
+                source_path: imported_path.display().to_string(),
+                file_name: "preview-transform-ready.wav".to_string(),
+                byte_size: fs::metadata(&imported_path).unwrap().len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 48_000,
+                waveform_bin_count: 32,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_warp_clips(vec![RuntimeWarpClipRegistration {
+                clip_id: "clip:preview-transform-ready".to_string(),
+                media_asset_id: Some("asset:sha256:preview-transform-ready".to_string()),
+                mode: RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .unwrap();
+        runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:preview-transform-ready".to_string(),
+                media_asset_id: Some("asset:sha256:preview-transform-ready".to_string()),
+                warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: RuntimeClipFadeEnvelope::default(),
+                fade_out: RuntimeClipFadeEnvelope::default(),
+                clip_gain: RuntimeClipGainEnvelope::default(),
+            }])
+            .unwrap();
+        runtime
+            .apply_transport_projection(TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .unwrap();
+        runtime
+            .start_media_preview("asset:sha256:preview-transform-ready")
+            .expect("preview transform media preview should start");
+
+        let preview_transform = runtime.get_preview_transform_snapshot();
+        assert_eq!(preview_transform.clip_count, 1);
+        assert_eq!(preview_transform.active_audition_clip_count, 1);
+        assert_eq!(preview_transform.scrub_supported_clip_count, 1);
+        assert_eq!(preview_transform.ready_clip_count, 1);
+        assert_eq!(preview_transform.pending_clip_count, 0);
+        assert_eq!(preview_transform.degraded_clip_count, 0);
+        assert_eq!(preview_transform.invalidated_clip_count, 0);
+        assert_eq!(preview_transform.unsupported_clip_count, 0);
+        assert_eq!(preview_transform.stretch_aligned_clip_count, 0);
+        assert_eq!(preview_transform.artifact_backed_clip_count, 1);
+        assert_eq!(preview_transform.fallback_clip_count, 0);
+        assert_eq!(
+            preview_transform.clips[0].service_class,
+            RuntimePreviewTransformServiceClass::ArtifactBacked
+        );
+        assert_eq!(
+            preview_transform.clips[0].readiness,
+            RuntimePreviewTransformReadiness::Ready
+        );
+        assert_eq!(
+            preview_transform.clips[0].fallback_kind,
+            RuntimePreviewTransformFallbackKind::None
+        );
+        assert!(preview_transform.clips[0].audition_active);
+        assert!(preview_transform.clips[0].scrub_supported);
+
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.preview_transform_snapshot.clip_count, 1);
+        assert_eq!(observation.preview_transform_snapshot.ready_clip_count, 1);
+        assert_eq!(
+            observation
+                .preview_transform_snapshot
+                .active_audition_clip_count,
+            1
+        );
+        assert!(observation
+            .render_json()
+            .contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
+
+        let rendered = runtime
+            .render_clip_processing_buffer(RuntimeClipRenderRequest {
+                clip_id: "clip:preview-transform-ready".to_string(),
+                timeline_start_samples: 0,
+                input_stage: RuntimeClipRenderInputStage::PostWarp,
+                buffer: AudioBuffer::from_interleaved(
+                    SampleRate(48_000),
+                    ChannelLayout::Mono,
+                    vec![0.5; 8],
+                ),
+            })
+            .unwrap();
+        assert_eq!(
+            rendered.preview_transform_snapshot.service_class,
+            RuntimePreviewTransformServiceClass::ArtifactBacked
+        );
+        assert_eq!(
+            rendered.preview_transform_snapshot.readiness,
+            RuntimePreviewTransformReadiness::Ready
+        );
+        assert!(rendered.preview_transform_snapshot.audition_active);
+        assert!(rendered
+            .summary
+            .contains("preview=ArtifactBacked/Ready/None/None"));
+
+        let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
+            &RuntimeOfflineRenderRequest {
+                request_id: "render:preview-transform-preview".into(),
+                timeline_start_samples: 0,
+                duration_samples: 24_000,
+                export_sample_rate_hz: 48_000,
+                include_main_mix: true,
+                artifact_root_path: None,
+                stem_targets: Vec::new(),
+                freeze_artifacts: Vec::new(),
+            },
+            &runtime.get_execution_topology_summary(),
+            &runtime.get_clip_processing_pipeline_snapshot(),
+            &runtime.get_media_pipeline_snapshot(),
+            &runtime.get_tempo_map_snapshot(),
+            &runtime.get_marker_analysis_snapshot(),
+            &runtime.get_plugin_recall_handoff_snapshot(),
+        )
+        .expect("build preview transform offline render preview");
+        assert_eq!(preview.preview_transform_snapshot.clip_count, 1);
+        assert_eq!(preview.preview_transform_snapshot.ready_clip_count, 1);
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .artifact_backed_clip_count,
+            1
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .active_audition_clip_count,
+            0
+        );
+        assert!(preview
+            .summary
+            .contains("preview_transform=1/artifact_backed=1/fallback=0"));
 
         let _ = fs::remove_file(imported_path);
         if let Some(path) = runtime

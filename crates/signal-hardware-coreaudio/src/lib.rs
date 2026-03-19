@@ -2,11 +2,11 @@
 
 use signal_hardware::{
     AudioDeviceDescriptor, BackendHealth, BackendPolicyRecord, BackendPolicyTier, HardwareBackend,
-    HardwareClockSource, HardwareClockTopology, HardwareConfigRequest, HardwareDiagnosticEvent,
-    HardwareDiagnosticKind, HardwareDiagnosticSeverity, HardwareDiagnosticsSnapshot,
-    HardwareLatencyProfile, HardwareLifecycleContract, HardwareLifecycleOwnership,
-    HardwareNegotiationError, HardwareRestartPolicy, HardwareStreamConfig, HardwareStreamRequest,
-    SampleRate,
+    HardwareBackendIdentity, HardwareClockSource, HardwareClockTopology, HardwareConfigRequest,
+    HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
+    HardwareDiagnosticsSnapshot, HardwareLatencyProfile, HardwareLifecycleContract,
+    HardwareLifecycleOwnership, HardwareNegotiationError, HardwareRestartPolicy,
+    HardwareStreamConfig, HardwareStreamRequest, SampleRate,
 };
 
 const DEFAULT_OUTPUT_DEVICE_ID: &str = "coreaudio:default-output";
@@ -34,6 +34,7 @@ impl CoreAudioBackend {
 
     fn default_output_descriptor(&self) -> AudioDeviceDescriptor {
         AudioDeviceDescriptor {
+            backend_identity: self.backend_identity(),
             backend_name: self.backend_name(),
             device_id: DEFAULT_OUTPUT_DEVICE_ID.into(),
             name: DEFAULT_OUTPUT_DEVICE_NAME.into(),
@@ -115,12 +116,17 @@ impl CoreAudioBackend {
 }
 
 impl HardwareBackend for CoreAudioBackend {
+    fn backend_identity(&self) -> HardwareBackendIdentity {
+        HardwareBackendIdentity::CoreAudio
+    }
+
     fn backend_name(&self) -> &'static str {
         "coreaudio"
     }
 
     fn policy_record(&self) -> BackendPolicyRecord {
         BackendPolicyRecord {
+            backend_identity: self.backend_identity(),
             tier: self.policy_tier,
             in_host_default: true,
         }

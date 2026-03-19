@@ -213,6 +213,8 @@ The main naming rule is:
   - VST3 adapter
 - `signal-plugin-au`
   - AU adapter
+- `signal-plugin-lv2`
+  - LV2 adapter
 - `signal-hardware`
   - common audio/MIDI device abstractions
   - device model and diagnostics contracts
@@ -280,6 +282,7 @@ Then add these only when implementation pressure justifies them:
 - `signal-analysis-embed`
 - `signal-plugin-vst3`
 - `signal-plugin-au`
+- `signal-plugin-lv2`
 - `signal-hardware-coreaudio`
 - `signal-hardware-wasapi`
 

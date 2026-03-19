@@ -1,6 +1,6 @@
 # 032 Canonical Multichannel Layout And Channel-Role Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-03-16
 Related contracts: `docs/contracts/001-shared-dsp-and-host-boundary.md`, `docs/contracts/008-backend-neutral-plugin-capability-and-adapter-breadth-contract.md`, `docs/contracts/022-backend-capability-parity-linux-plugin-support-and-cross-adapter-conformance-contract.md`, `docs/contracts/026-clock-domain-drift-duplex-mismatch-and-endpoint-topology-contract.md`
@@ -81,6 +81,7 @@ speaker artwork, or environment certification.
 A `channel role` is the semantic meaning of one channel position inside a
 canonical layout. Batch 1.1 freezes this first shared role vocabulary:
 
+- `Mono`
 - `FrontLeft`
 - `FrontRight`
 - `FrontCenter`
@@ -183,8 +184,40 @@ Batch 1.1 freezes the first reusable multichannel authority line for Signal:
 - later `g07` batches can widen runtime, sidechain, spatial, Linux, and
   complex plugin-I/O depth without reopening the base vocabulary question
 
+## Batch 1.2 outcome
+
+Batch 1.2 applies that frozen vocabulary to the first real runtime-owned
+receipt family:
+
+- runtime execution topology now carries raw `ChannelLayout` plus canonical
+  layout, channel-role, and bus-intent meaning per planned and summarized node
+- host hardware and external-I/O receipts now carry explicit input and output
+  channel counts and canonical multichannel summaries instead of only output
+  count
+- plugin discovery and plugin-chain stage receipts now surface default
+  multichannel input and output meaning without adapter-local reconstruction
+- `Mono` is now an explicit shared channel role so the canonical `Mono` layout
+  no longer has to fall back to discrete custom-role treatment
+
+## Batch 1.3 outcome
+
+Batch 1.3 proves the canonical multichannel substrate is consumable as a shared
+boundary instead of only a widened internal receipt family:
+
+- public runtime proof now verifies canonical layout, channel-role, bus-intent,
+  and plugin default multichannel-I/O truth through runtime-owned reexports
+- stable local and server host-edge proofs now verify the same multichannel
+  receipts survive `supervisor_report()` without host-local reinterpretation
+- `signal-supervisor-tools --describe-multichannel-boundary` now documents the
+  shared multichannel seam in machine-readable form
+- `effigy acceptance:multichannel-boundary` now provides the repo-owned proof
+  task for the canonical multichannel boundary
+
+This contract is now closed as the reusable base for later sidechain,
+multi-bus, spatial, Linux, and complex plugin-I/O work.
+
 ## Next Task
 
-Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
-layout and channel-role meaning through runtime-owned topology, hardware, and
-plugin-facing receipts before the public proof batch closes the milestone.
+Continue `g07.002` with Batch 2.2 by materializing runtime-owned sidechain
+source, target, attachment-policy, and fallback receipts across live and
+offline routing surfaces without reopening host-local routing ownership.

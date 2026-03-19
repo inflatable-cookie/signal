@@ -96,16 +96,21 @@ effigy validate
 effigy qa:docs
 ```
 
-Equivalent raw CMake flow:
+Reference-only legacy CMake flow:
 
 ```bash
+effigy reference:legacy:build
+effigy reference:legacy:dev
+effigy reference:legacy:test
 cmake -S legacy/cpp -B legacy/cpp/build
 cmake --build legacy/cpp/build --config Debug
 ctest --test-dir legacy/cpp/build --output-on-failure
 ```
 
-The root CMake entrypoint now wraps `legacy/cpp/`. New Rust work should prefer
-the Cargo workspace and repo-owned Effigy tasks.
+The root CMake entrypoint still wraps `legacy/cpp/`, but that tree is now a
+reference surface only. Repo-owned Effigy `health`, `build`, `dev`, and
+`validate` target the active Rust workspace instead of treating legacy CMake as
+the default validation gate.
 
 Rust workspace bootstrap:
 

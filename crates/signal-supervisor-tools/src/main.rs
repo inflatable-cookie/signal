@@ -52,15 +52,35 @@ enum CliMode {
     DescribePluginContinuityBoundary,
     DescribeVst3Boundary,
     DescribeAuBoundary,
+    DescribeLv2Boundary,
     DescribeCrossAdapterParityBoundary,
+    DescribeLinuxPluginParityBoundary,
+    DescribeLinuxAudioBackendBoundary,
+    DescribeLinuxLiveOwnershipBoundary,
+    DescribeJackCoordinationBoundary,
+    DescribeLinuxBackendClockTopologyBoundary,
+    DescribeExternalMidiBoundary,
     DescribeGenericEventBoundary,
+    DescribeControllerExpressionBoundary,
+    DescribeControlSurfaceBoundary,
+    DescribeAdvancedHardwareBoundary,
     DescribeRecallPortabilityBoundary,
     DescribeDeviceSupervisionBoundary,
     DescribeClockTopologyBoundary,
     DescribeExternalIoBoundary,
     DescribeMediaServiceBoundary,
     DescribeAnalysisMetadataBoundary,
+    DescribeMultichannelBoundary,
+    DescribeMultiBusBoundary,
+    DescribeSidechainBoundary,
+    DescribeComplexIoBoundary,
+    DescribeSpatialBoundary,
+    DescribeStretchBoundary,
+    DescribeMarkerAnalysisBoundary,
+    DescribeTransformArtifactBoundary,
+    DescribePreviewTransformBoundary,
     DescribeIntegratedAcceptanceLane,
+    DescribeG07AcceptanceLane,
     DescribeG06SoakLane,
     DescribeHostEdgeBoundary,
     DescribeReleaseBoundary,
@@ -117,15 +137,59 @@ const AU_BOUNDARY: &str = "signal.runtime.au-boundary";
 const AU_CONTRACT_PATH: &str =
     "docs/contracts/021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md";
 const AU_ACCEPTANCE_TASK: &str = "effigy acceptance:au-boundary";
+const LV2_BOUNDARY: &str = "signal.runtime.lv2-boundary";
+const LV2_CONTRACT_PATH: &str =
+    "docs/contracts/038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md";
+const LV2_ACCEPTANCE_TASK: &str = "effigy acceptance:lv2-boundary";
 const CROSS_ADAPTER_PARITY_BOUNDARY: &str = "signal.runtime.cross-adapter-parity-boundary";
 const CROSS_ADAPTER_PARITY_CONTRACT_PATH: &str =
     "docs/contracts/022-backend-capability-parity-linux-plugin-support-and-cross-adapter-conformance-contract.md";
 const CROSS_ADAPTER_PARITY_ACCEPTANCE_TASK: &str =
     "effigy acceptance:cross-adapter-parity-boundary";
+const LINUX_PLUGIN_PARITY_BOUNDARY: &str = "signal.runtime.linux-plugin-parity-boundary";
+const LINUX_PLUGIN_PARITY_CONTRACT_PATH: &str =
+    "docs/contracts/039-linux-cross-adapter-plugin-parity-and-sandbox-policy-contract.md";
+const LINUX_PLUGIN_PARITY_ACCEPTANCE_TASK: &str = "effigy acceptance:linux-plugin-parity-boundary";
+const LINUX_AUDIO_BACKEND_BOUNDARY: &str = "signal.runtime.linux-audio-backend-boundary";
+const LINUX_AUDIO_BACKEND_CONTRACT_PATH: &str =
+    "docs/contracts/040-linux-audio-backend-portability-across-alsa-jack-and-pipewire-contract.md";
+const LINUX_AUDIO_BACKEND_ACCEPTANCE_TASK: &str = "effigy acceptance:linux-audio-backend-boundary";
+const LINUX_LIVE_OWNERSHIP_BOUNDARY: &str = "signal.runtime.linux-live-ownership-boundary";
+const LINUX_LIVE_OWNERSHIP_CONTRACT_PATH: &str =
+    "docs/contracts/052-live-linux-audio-backend-ownership-and-session-lifecycle-contract.md";
+const LINUX_LIVE_OWNERSHIP_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:linux-live-ownership-boundary";
+const JACK_COORDINATION_BOUNDARY: &str = "signal.runtime.jack-coordination-boundary";
+const JACK_COORDINATION_CONTRACT_PATH: &str =
+    "docs/contracts/053-jack-transport-graph-and-backend-native-coordination-contract.md";
+const JACK_COORDINATION_ACCEPTANCE_TASK: &str = "effigy acceptance:jack-coordination-boundary";
+const LINUX_BACKEND_CLOCK_TOPOLOGY_BOUNDARY: &str =
+    "signal.runtime.linux-backend-clock-topology-boundary";
+const LINUX_BACKEND_CLOCK_TOPOLOGY_CONTRACT_PATH: &str =
+    "docs/contracts/041-linux-backend-clocking-duplex-and-endpoint-topology-parity-contract.md";
+const LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:linux-backend-clock-topology-boundary";
+const EXTERNAL_MIDI_BOUNDARY: &str = "signal.runtime.external-midi-boundary";
+const EXTERNAL_MIDI_CONTRACT_PATH: &str =
+    "docs/contracts/042-external-midi-endpoint-graph-and-device-identity-contract.md";
+const EXTERNAL_MIDI_ACCEPTANCE_TASK: &str = "effigy acceptance:external-midi-boundary";
 const GENERIC_EVENT_BOUNDARY: &str = "signal.runtime.generic-event-boundary";
 const GENERIC_EVENT_CONTRACT_PATH: &str =
     "docs/contracts/023-generic-midi-note-expression-and-plugin-event-model-contract.md";
 const GENERIC_EVENT_ACCEPTANCE_TASK: &str = "effigy acceptance:generic-event-boundary";
+const CONTROLLER_EXPRESSION_BOUNDARY: &str = "signal.runtime.controller-expression-boundary";
+const CONTROLLER_EXPRESSION_CONTRACT_PATH: &str =
+    "docs/contracts/043-midi-2-0-mpe-and-richer-controller-expression-contract.md";
+const CONTROLLER_EXPRESSION_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:controller-expression-boundary";
+const CONTROL_SURFACE_BOUNDARY: &str = "signal.runtime.control-surface-boundary";
+const CONTROL_SURFACE_CONTRACT_PATH: &str =
+    "docs/contracts/044-control-surface-transport-mapping-and-feedback-contract.md";
+const CONTROL_SURFACE_ACCEPTANCE_TASK: &str = "effigy acceptance:control-surface-boundary";
+const ADVANCED_HARDWARE_BOUNDARY: &str = "signal.runtime.advanced-hardware-boundary";
+const ADVANCED_HARDWARE_CONTRACT_PATH: &str =
+    "docs/contracts/045-advanced-hardware-extensibility-and-scripting-safe-device-policy-contract.md";
+const ADVANCED_HARDWARE_ACCEPTANCE_TASK: &str = "effigy acceptance:advanced-hardware-boundary";
 const RECALL_PORTABILITY_BOUNDARY: &str = "signal.runtime.recall-portability-boundary";
 const RECALL_PORTABILITY_CONTRACT_PATH: &str =
     "docs/contracts/024-plugin-preset-state-interchange-portable-recall-and-ara-context-contract.md";
@@ -150,10 +214,50 @@ const ANALYSIS_METADATA_BOUNDARY: &str = "signal.runtime.analysis-metadata-bound
 const ANALYSIS_METADATA_CONTRACT_PATH: &str =
     "docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md";
 const ANALYSIS_METADATA_ACCEPTANCE_TASK: &str = "effigy acceptance:analysis-metadata-boundary";
+const MULTICHANNEL_BOUNDARY: &str = "signal.runtime.multichannel-boundary";
+const MULTICHANNEL_CONTRACT_PATH: &str =
+    "docs/contracts/032-canonical-multichannel-layout-and-channel-role-contract.md";
+const MULTICHANNEL_ACCEPTANCE_TASK: &str = "effigy acceptance:multichannel-boundary";
+const MULTI_BUS_BOUNDARY: &str = "signal.runtime.multi-bus-boundary";
+const MULTI_BUS_CONTRACT_PATH: &str =
+    "docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md";
+const MULTI_BUS_ACCEPTANCE_TASK: &str = "effigy acceptance:multi-bus-boundary";
+const SIDECHAIN_BOUNDARY: &str = "signal.runtime.sidechain-boundary";
+const SIDECHAIN_CONTRACT_PATH: &str =
+    "docs/contracts/033-sidechain-routing-and-secondary-input-execution-contract.md";
+const SIDECHAIN_ACCEPTANCE_TASK: &str = "effigy acceptance:sidechain-boundary";
+const COMPLEX_IO_BOUNDARY: &str = "signal.runtime.complex-io-boundary";
+const COMPLEX_IO_CONTRACT_PATH: &str =
+    "docs/contracts/035-plugin-complex-io-topology-and-multi-output-instrument-contract.md";
+const COMPLEX_IO_ACCEPTANCE_TASK: &str = "effigy acceptance:complex-io-boundary";
+const SPATIAL_BOUNDARY: &str = "signal.runtime.spatial-boundary";
+const SPATIAL_CONTRACT_PATH: &str =
+    "docs/contracts/037-surround-bed-object-and-mix-policy-expansion-contract.md";
+const SPATIAL_ACCEPTANCE_TASK: &str = "effigy acceptance:spatial-boundary";
+const STRETCH_BOUNDARY: &str = "signal.runtime.stretch-boundary";
+const STRETCH_CONTRACT_PATH: &str =
+    "docs/contracts/046-sample-domain-time-stretch-engine-contract.md";
+const STRETCH_ACCEPTANCE_TASK: &str = "effigy acceptance:stretch-boundary";
+const MARKER_ANALYSIS_BOUNDARY: &str = "signal.runtime.marker-analysis-boundary";
+const MARKER_ANALYSIS_CONTRACT_PATH: &str =
+    "docs/contracts/047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md";
+const MARKER_ANALYSIS_ACCEPTANCE_TASK: &str = "effigy acceptance:marker-analysis-boundary";
+const TRANSFORM_ARTIFACT_BOUNDARY: &str = "signal.runtime.transform-artifact-boundary";
+const TRANSFORM_ARTIFACT_CONTRACT_PATH: &str =
+    "docs/contracts/048-post-warp-render-cache-and-transform-artifact-contract.md";
+const TRANSFORM_ARTIFACT_ACCEPTANCE_TASK: &str = "effigy acceptance:transform-artifact-boundary";
+const PREVIEW_TRANSFORM_BOUNDARY: &str = "signal.runtime.preview-transform-boundary";
+const PREVIEW_TRANSFORM_CONTRACT_PATH: &str =
+    "docs/contracts/049-low-latency-audition-scrub-and-preview-transform-service-contract.md";
+const PREVIEW_TRANSFORM_ACCEPTANCE_TASK: &str = "effigy acceptance:preview-transform-boundary";
 const INTEGRATED_ACCEPTANCE_LANE: &str = "signal.runtime.integrated-acceptance-lane";
 const INTEGRATED_ACCEPTANCE_CONTRACT_PATH: &str =
     "docs/contracts/030-fault-injection-harness-and-multi-backend-acceptance-contract.md";
 const INTEGRATED_ACCEPTANCE_TASK: &str = "effigy acceptance:integrated-acceptance-lane";
+const G07_ACCEPTANCE_LANE: &str = "signal.runtime.g07-integrated-acceptance-lane";
+const G07_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/050-multichannel-linux-time-stretch-and-control-surface-acceptance-contract.md";
+const G07_ACCEPTANCE_TASK: &str = "effigy acceptance:g07-integrated-acceptance-lane";
 const G06_SOAK_LANE: &str = "signal.g06.long-session-soak-lane";
 const G06_SOAK_CONTRACT_PATH: &str =
     "docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md";
@@ -214,6 +318,51 @@ const MEDIA_AND_LIBRARY_REQUIRED_TASKS: &[&str] = &[
     ANALYSIS_METADATA_ACCEPTANCE_TASK,
 ];
 const MEDIA_AND_LIBRARY_ADVISORY_TASKS: &[&str] = &[];
+const G07_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[
+    MULTICHANNEL_ACCEPTANCE_TASK,
+    SIDECHAIN_ACCEPTANCE_TASK,
+    MULTI_BUS_ACCEPTANCE_TASK,
+    SPATIAL_ACCEPTANCE_TASK,
+    LINUX_PLUGIN_PARITY_ACCEPTANCE_TASK,
+    LINUX_AUDIO_BACKEND_ACCEPTANCE_TASK,
+    LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK,
+    EXTERNAL_MIDI_ACCEPTANCE_TASK,
+    CONTROLLER_EXPRESSION_ACCEPTANCE_TASK,
+    CONTROL_SURFACE_ACCEPTANCE_TASK,
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+    STRETCH_ACCEPTANCE_TASK,
+    MARKER_ANALYSIS_ACCEPTANCE_TASK,
+    TRANSFORM_ARTIFACT_ACCEPTANCE_TASK,
+    PREVIEW_TRANSFORM_ACCEPTANCE_TASK,
+];
+const G07_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[COMPLEX_IO_ACCEPTANCE_TASK, LV2_ACCEPTANCE_TASK];
+const G07_ROUTING_REQUIRED_TASKS: &[&str] = &[
+    MULTICHANNEL_ACCEPTANCE_TASK,
+    SIDECHAIN_ACCEPTANCE_TASK,
+    MULTI_BUS_ACCEPTANCE_TASK,
+    SPATIAL_ACCEPTANCE_TASK,
+];
+const G07_ROUTING_ADVISORY_TASKS: &[&str] = &[COMPLEX_IO_ACCEPTANCE_TASK];
+const G07_LINUX_REQUIRED_TASKS: &[&str] = &[
+    LINUX_PLUGIN_PARITY_ACCEPTANCE_TASK,
+    LINUX_AUDIO_BACKEND_ACCEPTANCE_TASK,
+    LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK,
+];
+const G07_LINUX_ADVISORY_TASKS: &[&str] = &[LV2_ACCEPTANCE_TASK];
+const G07_CONTROL_REQUIRED_TASKS: &[&str] = &[
+    EXTERNAL_MIDI_ACCEPTANCE_TASK,
+    CONTROLLER_EXPRESSION_ACCEPTANCE_TASK,
+    CONTROL_SURFACE_ACCEPTANCE_TASK,
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+];
+const G07_CONTROL_ADVISORY_TASKS: &[&str] = &[];
+const G07_STRETCH_REQUIRED_TASKS: &[&str] = &[
+    STRETCH_ACCEPTANCE_TASK,
+    MARKER_ANALYSIS_ACCEPTANCE_TASK,
+    TRANSFORM_ARTIFACT_ACCEPTANCE_TASK,
+    PREVIEW_TRANSFORM_ACCEPTANCE_TASK,
+];
+const G07_STRETCH_ADVISORY_TASKS: &[&str] = &[];
 const HOST_EDGE_BOUNDARY: &str = "signal.host.edge.boundary";
 const HOST_EDGE_CONTRACT_PATH: &str =
     "docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md";
@@ -235,14 +384,16 @@ const DOWNSTREAM_AUTOMATION_COMBINED_TASK: &str = "effigy acceptance:downstream-
 const DOWNSTREAM_FAIL_GATES: &str = "signal.downstream.fail-gates";
 const DOWNSTREAM_FAIL_GATE_TASK: &str = "effigy acceptance:downstream-gate";
 const GENERATION_CLOSEOUT: &str = "signal.generation.closeout";
-const GENERATION_CLOSEOUT_GENERATION: &str = "g06";
-const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g06-closeout";
+const GENERATION_CLOSEOUT_GENERATION: &str = "g07";
+const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g07-closeout";
 const GENERATION_CLOSEOUT_CONTRACT_PATH: &str =
-    "docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md";
-const G07_README_PATH: &str = "docs/roadmaps/g07/README.md";
-const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "promoted-g07-active";
-const GENERATION_CLOSEOUT_PROMOTION_DECISION: &str = "promote-g07";
-const GENERATION_CLOSEOUT_NEXT_GENERATION_STATUS: &str = "active";
+    "docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md";
+const GENERATION_CLOSEOUT_ROADMAP_PATH: &str =
+    "docs/roadmaps/g07/020-generation-closeout-and-loophole-feature-readiness-gate.md";
+const G08_README_PATH: &str = "docs/roadmaps/g08/README.md";
+const GENERATION_CLOSEOUT_GATE_STATUS: &str = "closed-promoted-g08";
+const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "promoted-g08-active";
+const GENERATION_CLOSEOUT_PROMOTION_DECISION: &str = "promote-g08";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ConformanceMatrixEntryKind {
@@ -527,6 +678,30 @@ struct AuBoundaryValidationStep {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Lv2BoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Lv2BoundarySurface {
+    id: &'static str,
+    kind: Lv2BoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Lv2BoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum CrossAdapterParityBoundarySurfaceKind {
     RuntimeReport,
     RuntimeSnapshot,
@@ -551,6 +726,145 @@ struct CrossAdapterParityBoundaryValidationStep {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LinuxPluginParityBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxPluginParityBoundarySurface {
+    id: &'static str,
+    kind: LinuxPluginParityBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxPluginParityBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LinuxAudioBackendBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxAudioBackendBoundarySurface {
+    id: &'static str,
+    kind: LinuxAudioBackendBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxAudioBackendBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LinuxLiveOwnershipBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxLiveOwnershipBoundarySurface {
+    id: &'static str,
+    kind: LinuxLiveOwnershipBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxLiveOwnershipBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum JackCoordinationBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct JackCoordinationBoundarySurface {
+    id: &'static str,
+    kind: JackCoordinationBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct JackCoordinationBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LinuxBackendClockTopologyBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxBackendClockTopologyBoundarySurface {
+    id: &'static str,
+    kind: LinuxBackendClockTopologyBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LinuxBackendClockTopologyBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ExternalMidiBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ExternalMidiBoundarySurface {
+    id: &'static str,
+    kind: ExternalMidiBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ExternalMidiBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum GenericEventBoundarySurfaceKind {
     RuntimeReport,
     RuntimeSnapshot,
@@ -569,6 +883,74 @@ struct GenericEventBoundarySurface {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct GenericEventBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ControllerExpressionBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ControllerExpressionBoundarySurface {
+    id: &'static str,
+    kind: ControllerExpressionBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ControllerExpressionBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ControlSurfaceBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+struct ControlSurfaceBoundarySurface {
+    id: &'static str,
+    kind: ControlSurfaceBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+struct ControlSurfaceBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AdvancedHardwareBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+struct AdvancedHardwareBoundarySurface {
+    id: &'static str,
+    kind: AdvancedHardwareBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+struct AdvancedHardwareBoundaryValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -713,6 +1095,221 @@ struct AnalysisMetadataBoundarySurface {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct AnalysisMetadataBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MultichannelBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MultichannelBoundarySurface {
+    id: &'static str,
+    kind: MultichannelBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MultichannelBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MultiBusBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MultiBusBoundarySurface {
+    id: &'static str,
+    kind: MultiBusBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MultiBusBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SidechainBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SidechainBoundarySurface {
+    id: &'static str,
+    kind: SidechainBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SidechainBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ComplexIoBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ComplexIoBoundarySurface {
+    id: &'static str,
+    kind: ComplexIoBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ComplexIoBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SpatialBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SpatialBoundarySurface {
+    id: &'static str,
+    kind: SpatialBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SpatialBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum StretchBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct StretchBoundarySurface {
+    id: &'static str,
+    kind: StretchBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct StretchBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MarkerAnalysisBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MarkerAnalysisBoundarySurface {
+    id: &'static str,
+    kind: MarkerAnalysisBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MarkerAnalysisBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TransformArtifactBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct TransformArtifactBoundarySurface {
+    id: &'static str,
+    kind: TransformArtifactBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct TransformArtifactBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PreviewTransformBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PreviewTransformBoundarySurface {
+    id: &'static str,
+    kind: PreviewTransformBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PreviewTransformBoundaryValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -905,7 +1502,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-cross-adapter-parity-boundary|--describe-generic-event-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-integrated-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-lv2-boundary|--describe-cross-adapter-parity-boundary|--describe-linux-plugin-parity-boundary|--describe-linux-audio-backend-boundary|--describe-linux-live-ownership-boundary|--describe-jack-coordination-boundary|--describe-linux-backend-clock-topology-boundary|--describe-external-midi-boundary|--describe-generic-event-boundary|--describe-controller-expression-boundary|--describe-control-surface-boundary|--describe-advanced-hardware-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-multichannel-boundary|--describe-multi-bus-boundary|--describe-sidechain-boundary|--describe-complex-io-boundary|--describe-spatial-boundary|--describe-stretch-boundary|--describe-marker-analysis-boundary|--describe-transform-artifact-boundary|--describe-preview-transform-boundary|--describe-integrated-acceptance-lane|--describe-g07-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -1026,6 +1623,16 @@ impl AuBoundarySurfaceKind {
     }
 }
 
+impl Lv2BoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
 impl CrossAdapterParityBoundarySurfaceKind {
     fn label(self) -> &'static str {
         match self {
@@ -1036,7 +1643,92 @@ impl CrossAdapterParityBoundarySurfaceKind {
     }
 }
 
+impl LinuxPluginParityBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl LinuxAudioBackendBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl LinuxLiveOwnershipBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl JackCoordinationBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl LinuxBackendClockTopologyBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl ExternalMidiBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
 impl GenericEventBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl ControllerExpressionBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl ControlSurfaceBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl AdvancedHardwareBoundarySurfaceKind {
     fn label(self) -> &'static str {
         match self {
             Self::RuntimeReport => "runtime-report",
@@ -1097,6 +1789,95 @@ impl MediaServiceBoundarySurfaceKind {
 }
 
 impl AnalysisMetadataBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl MultichannelBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl MultiBusBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl SidechainBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl ComplexIoBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl SpatialBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl StretchBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl MarkerAnalysisBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl TransformArtifactBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl PreviewTransformBoundarySurfaceKind {
     fn label(self) -> &'static str {
         match self {
             Self::RuntimeReport => "runtime-report",
@@ -2024,6 +2805,65 @@ fn au_boundary_validation_steps() -> &'static [AuBoundaryValidationStep] {
     ]
 }
 
+fn lv2_boundary_surfaces() -> &'static [Lv2BoundarySurface] {
+    &[
+        Lv2BoundarySurface {
+            id: "runtime-lv2-discovery-report",
+            kind: Lv2BoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot",
+            runtime_anchor: "RuntimePluginDiscoverySnapshot",
+            rationale:
+                "Keeps discovered Linux-native LV2 types, format-filtered scan intent, and platform scope consumable through shared runtime reports rather than Linux-host-private catalogs.",
+        },
+        Lv2BoundarySurface {
+            id: "runtime-lv2-lifecycle-snapshot",
+            kind: Lv2BoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationApi::get_plugin_lifecycle_snapshot()",
+            runtime_anchor: "RuntimePluginLifecycleSnapshot",
+            rationale:
+                "Keeps LV2 sandbox lifecycle, readiness, and transport attachment truth on the existing runtime-owned lifecycle seam instead of a Linux-only wrapper shell.",
+        },
+        Lv2BoundarySurface {
+            id: "server-host-lv2-supervisor-report",
+            kind: Lv2BoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures the stable Linux-facing server host edge forwards LV2 discovery and lifecycle truth without adapter-local reconstruction or host-private LV2 ledgers.",
+        },
+    ]
+}
+
+fn lv2_boundary_validation_steps() -> &'static [Lv2BoundaryValidationStep] {
+    &[
+        Lv2BoundaryValidationStep {
+            id: "runtime-lv2-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect Linux-native LV2 discovery and lifecycle truth through public runtime reexports alone.",
+        },
+        Lv2BoundaryValidationStep {
+            id: "server-host-lv2-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_baseline_truth",
+            rationale:
+                "Proves the stable server host edge forwards runtime-owned Linux-native LV2 discovery and lifecycle state on supervisor export.",
+        },
+        Lv2BoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-lv2-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared LV2 proof boundary without reading host or adapter implementation detail.",
+        },
+    ]
+}
+
 fn cross_adapter_parity_boundary_surfaces() -> &'static [CrossAdapterParityBoundarySurface] {
     &[
         CrossAdapterParityBoundarySurface {
@@ -2087,6 +2927,392 @@ fn cross_adapter_parity_boundary_validation_steps(
                 "cargo run -p signal-supervisor-tools -- --describe-cross-adapter-parity-boundary --format=json",
             rationale:
                 "Lets consumers inspect the shared cross-adapter parity proof boundary without reading private host code or adapter internals.",
+        },
+    ]
+}
+
+fn linux_plugin_parity_boundary_surfaces() -> &'static [LinuxPluginParityBoundarySurface] {
+    &[
+        LinuxPluginParityBoundarySurface {
+            id: "runtime-linux-parity-discovery-report",
+            kind: LinuxPluginParityBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot",
+            runtime_anchor: "RuntimePluginDiscoverySnapshot",
+            rationale:
+                "Keeps CLAP, VST3, and LV2 Linux parity bands, Linux support, and Linux sandbox defaults consumable through the shared discovery report seam instead of a Linux-only host matrix.",
+        },
+        LinuxPluginParityBoundarySurface {
+            id: "runtime-linux-parity-lifecycle-snapshot",
+            kind: LinuxPluginParityBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationApi::get_plugin_lifecycle_snapshot()",
+            runtime_anchor: "RuntimePluginLifecycleSnapshot",
+            rationale:
+                "Keeps Linux placement, restart, rebindability, and failure counts on the existing runtime-owned lifecycle seam.",
+        },
+        LinuxPluginParityBoundarySurface {
+            id: "server-host-linux-parity-supervisor-report",
+            kind: LinuxPluginParityBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures the stable Linux-facing server host edge forwards one runtime-owned Linux plugin vocabulary without host-local portability matrices.",
+        },
+    ]
+}
+
+fn linux_plugin_parity_boundary_validation_steps(
+) -> &'static [LinuxPluginParityBoundaryValidationStep] {
+    &[
+        LinuxPluginParityBoundaryValidationStep {
+            id: "runtime-linux-parity-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_policy_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect Linux-specific parity and sandbox-policy truth through public runtime reexports alone.",
+        },
+        LinuxPluginParityBoundaryValidationStep {
+            id: "server-host-linux-parity-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_plugin_parity_truth",
+            rationale:
+                "Proves the stable server host edge forwards runtime-owned Linux parity, restart, and failure posture on supervisor export.",
+        },
+        LinuxPluginParityBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-linux-plugin-parity-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared Linux plugin parity proof boundary without reading host-private Linux policy code or adapter internals.",
+        },
+    ]
+}
+
+fn linux_audio_backend_boundary_surfaces() -> &'static [LinuxAudioBackendBoundarySurface] {
+    &[
+        LinuxAudioBackendBoundarySurface {
+            id: "runtime-linux-audio-observation-report",
+            kind: LinuxAudioBackendBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot",
+            runtime_anchor: "RuntimeExternalIoSnapshot",
+            rationale:
+                "Keeps ALSA, JACK, PipeWire, unavailable, and non-Linux backend classification on one runtime-owned external-I/O seam instead of backend-private capability tables.",
+        },
+        LinuxAudioBackendBoundarySurface {
+            id: "server-host-linux-audio-supervisor-report",
+            kind: LinuxAudioBackendBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures the stable Linux-facing server host edge forwards explicit runtime-owned unavailable and fallback Linux backend truth instead of host-local Linux hardware heuristics.",
+        },
+    ]
+}
+
+fn linux_audio_backend_boundary_validation_steps(
+) -> &'static [LinuxAudioBackendBoundaryValidationStep] {
+    &[
+        LinuxAudioBackendBoundaryValidationStep {
+            id: "runtime-linux-audio-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_linux_audio_backend_boundary_reports_runtime_owned_backend_identity_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect ALSA, JACK, PipeWire, and unavailable Linux backend identity and portability-band truth through public runtime surfaces alone.",
+        },
+        LinuxAudioBackendBoundaryValidationStep {
+            id: "server-host-linux-audio-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_audio_backend_truth",
+            rationale:
+                "Proves the stable server host edge forwards the runtime-owned unavailable Linux backend fallback state instead of inventing host-local Linux capability matrices.",
+        },
+        LinuxAudioBackendBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-linux-audio-backend-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared Linux audio backend proof boundary without reading backend-private Linux host code.",
+        },
+    ]
+}
+
+fn linux_live_ownership_boundary_surfaces() -> &'static [LinuxLiveOwnershipBoundarySurface] {
+    &[
+        LinuxLiveOwnershipBoundarySurface {
+            id: "runtime-linux-live-session-report",
+            kind: LinuxLiveOwnershipBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::linux_backend_session_snapshot and RuntimeSupervisorReport::observation.linux_backend_session_snapshot",
+            runtime_anchor: "RuntimeLinuxBackendSessionSnapshot",
+            rationale:
+                "Keeps live ALSA, JACK, and PipeWire session ownership, lifecycle, device-claim, role, and guarded fallback truth on one runtime-owned seam instead of host-private Linux session state machines.",
+        },
+        LinuxLiveOwnershipBoundarySurface {
+            id: "local-host-linux-live-session-report",
+            kind: LinuxLiveOwnershipBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local",
+            surface: "LocalRuntimeHost::host_supervisor_report() -> RuntimeHostSupervisorReport",
+            runtime_anchor: "RuntimeHostSupervisorReport",
+            rationale:
+                "Proves the stable local host edge forwards an explicit non-Linux answer instead of omitting the live-session seam on unsupported hosts.",
+        },
+        LinuxLiveOwnershipBoundarySurface {
+            id: "server-host-linux-live-session-report",
+            kind: LinuxLiveOwnershipBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Proves the stable server host edge forwards runtime-owned PipeWire-style live-session truth instead of inventing backend-private Linux ownership policy.",
+        },
+    ]
+}
+
+fn linux_live_ownership_boundary_validation_steps(
+) -> &'static [LinuxLiveOwnershipBoundaryValidationStep] {
+    &[
+        LinuxLiveOwnershipBoundaryValidationStep {
+            id: "runtime-linux-live-session-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_linux_live_ownership_boundary_reports_runtime_owned_session_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect ALSA, JACK, and PipeWire live-session ownership and lifecycle truth through public runtime surfaces alone.",
+        },
+        LinuxLiveOwnershipBoundaryValidationStep {
+            id: "local-host-linux-live-session-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_linux_live_ownership_truth",
+            rationale:
+                "Proves the stable local host edge forwards an explicit runtime-owned non-Linux live-session answer instead of leaving the seam absent.",
+        },
+        LinuxLiveOwnershipBoundaryValidationStep {
+            id: "server-host-linux-live-session-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_live_ownership_truth",
+            rationale:
+                "Proves the stable server host edge forwards runtime-owned live-session ownership and device-claim truth instead of host-local Linux session matrices.",
+        },
+        LinuxLiveOwnershipBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-linux-live-ownership-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared live Linux ownership proof boundary without reading backend-private Linux host code.",
+        },
+    ]
+}
+
+fn jack_coordination_boundary_surfaces() -> &'static [JackCoordinationBoundarySurface] {
+    &[
+        JackCoordinationBoundarySurface {
+            id: "runtime-jack-coordination-report",
+            kind: JackCoordinationBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::jack_coordination_snapshot and RuntimeSupervisorReport::observation.jack_coordination_snapshot",
+            runtime_anchor: "RuntimeJackCoordinationSnapshot",
+            rationale:
+                "Keeps JACK transport posture, graph coordination, client role, and guarded state on one runtime-owned seam instead of host-private callback or daemon policy.",
+        },
+        JackCoordinationBoundarySurface {
+            id: "runtime-transport-session-report",
+            kind: JackCoordinationBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::transport_session_summary and RuntimeSupervisorReport::observation.transport_session_summary",
+            runtime_anchor: "TransportSessionSummary",
+            rationale:
+                "Keeps the transport-session evidence feeding JACK coordination inspectable on the same public runtime boundary instead of forcing consumers into private transport internals.",
+        },
+        JackCoordinationBoundarySurface {
+            id: "shared-host-jack-supervisor-report",
+            kind: JackCoordinationBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward explicit JACK coordination answers without host-local transport or graph reclassification.",
+        },
+    ]
+}
+
+fn jack_coordination_boundary_validation_steps() -> &'static [JackCoordinationBoundaryValidationStep]
+{
+    &[
+        JackCoordinationBoundaryValidationStep {
+            id: "runtime-jack-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_jack_coordination_boundary_reports_runtime_owned_transport_graph_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect JACK transport, graph, client-role, and guarded coordination truth through public runtime surfaces alone.",
+        },
+        JackCoordinationBoundaryValidationStep {
+            id: "local-host-jack-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_jack_coordination_truth",
+            rationale:
+                "Proves the stable local host edge exports an explicit `NotJack` answer instead of omitting JACK coordination on unsupported hosts.",
+        },
+        JackCoordinationBoundaryValidationStep {
+            id: "server-host-jack-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_jack_coordination_truth",
+            rationale:
+                "Proves the stable server host edge forwards the bounded JACK graph and guarded transport baseline without server-local graph policy.",
+        },
+        JackCoordinationBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-jack-coordination-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared JACK coordination proof boundary without reading backend-private host code.",
+        },
+    ]
+}
+
+fn linux_backend_clock_topology_boundary_surfaces(
+) -> &'static [LinuxBackendClockTopologyBoundarySurface] {
+    &[
+        LinuxBackendClockTopologyBoundarySurface {
+            id: "runtime-linux-backend-clock-topology-report",
+            kind: LinuxBackendClockTopologyBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot",
+            runtime_anchor:
+                "RuntimeExternalIoSnapshot + RuntimeHostClockingSummary",
+            rationale:
+                "Keeps Linux-specific clocking, duplex, and endpoint-topology parity on one runtime-owned external-I/O seam instead of backend-private Linux capability matrices.",
+        },
+        LinuxBackendClockTopologyBoundarySurface {
+            id: "local-host-linux-backend-clock-topology-report",
+            kind: LinuxBackendClockTopologyBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local",
+            surface: "LocalRuntimeHost::host_supervisor_report() -> RuntimeHostSupervisorReport",
+            runtime_anchor: "RuntimeHostSupervisorReport",
+            rationale:
+                "Proves the stable local host edge forwards explicit unsupported Linux parity on non-Linux hardware instead of leaving the gap implicit.",
+        },
+        LinuxBackendClockTopologyBoundarySurface {
+            id: "server-host-linux-backend-clock-topology-report",
+            kind: LinuxBackendClockTopologyBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Proves the stable server host edge forwards explicit unavailable Linux backend clocking and topology parity instead of host-local Linux heuristics.",
+        },
+    ]
+}
+
+fn linux_backend_clock_topology_boundary_validation_steps(
+) -> &'static [LinuxBackendClockTopologyBoundaryValidationStep] {
+    &[
+        LinuxBackendClockTopologyBoundaryValidationStep {
+            id: "runtime-linux-backend-clock-topology-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_linux_backend_clock_topology_boundary_reports_runtime_owned_linux_parity_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect Linux-specific clocking, duplex, and endpoint-topology parity truth through public runtime surfaces alone.",
+        },
+        LinuxBackendClockTopologyBoundaryValidationStep {
+            id: "local-host-linux-backend-clock-topology-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth",
+            rationale:
+                "Proves the stable local host edge forwards explicit unsupported Linux parity on non-Linux hardware instead of a missing-field gap.",
+        },
+        LinuxBackendClockTopologyBoundaryValidationStep {
+            id: "server-host-linux-backend-clock-topology-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth",
+            rationale:
+                "Proves the stable server host edge forwards explicit unavailable Linux backend clocking and topology parity on supervisor export.",
+        },
+        LinuxBackendClockTopologyBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools linux_backend_clock_topology_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable Linux backend clock-topology boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
+        },
+        LinuxBackendClockTopologyBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-linux-backend-clock-topology-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the widened Linux backend clocking and topology proof seam without reading backend-private Linux host code.",
+        },
+    ]
+}
+
+fn external_midi_boundary_surfaces() -> &'static [ExternalMidiBoundarySurface] {
+    &[
+        ExternalMidiBoundarySurface {
+            id: "runtime-external-midi-report",
+            kind: ExternalMidiBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot",
+            runtime_anchor: "RuntimeExternalMidiEndpointGraphSnapshot",
+            rationale:
+                "Keeps external MIDI discovery, graph, endpoint, capability, and route truth on one runtime-owned report seam instead of host-local MIDI device reconstruction.",
+        },
+        ExternalMidiBoundarySurface {
+            id: "shared-host-external-midi-report",
+            kind: ExternalMidiBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward the same runtime-owned external MIDI graph baseline instead of inventing host-private device tables or route heuristics.",
+        },
+    ]
+}
+
+fn external_midi_boundary_validation_steps() -> &'static [ExternalMidiBoundaryValidationStep] {
+    &[
+        ExternalMidiBoundaryValidationStep {
+            id: "runtime-external-midi-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect unavailable and empty external MIDI endpoint graph truth through public runtime surfaces alone.",
+        },
+        ExternalMidiBoundaryValidationStep {
+            id: "local-host-external-midi-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_external_midi_truth",
+            rationale:
+                "Proves the stable local host edge forwards the runtime-owned empty external MIDI graph baseline instead of rebuilding local MIDI device truth.",
+        },
+        ExternalMidiBoundaryValidationStep {
+            id: "server-host-external-midi-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_external_midi_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned external MIDI graph baseline instead of inventing server-local device reconstruction.",
+        },
+        ExternalMidiBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools external_midi_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable external MIDI boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        ExternalMidiBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-external-midi-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared external MIDI endpoint graph and device-identity proof seam without reading host-private MIDI integration code.",
         },
     ]
 }
@@ -2161,6 +3387,230 @@ fn generic_event_boundary_validation_steps() -> &'static [GenericEventBoundaryVa
                 "cargo run -p signal-supervisor-tools -- --describe-generic-event-boundary --format=json",
             rationale:
                 "Lets consumers inspect the widened generic event proof boundary without reading private host code or adapter packet translation logic.",
+        },
+    ]
+}
+
+fn controller_expression_boundary_surfaces() -> &'static [ControllerExpressionBoundarySurface] {
+    &[
+        ControllerExpressionBoundarySurface {
+            id: "runtime-controller-expression-report",
+            kind: ControllerExpressionBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_event_snapshot and RuntimeSupervisorReport::observation.plugin_event_snapshot",
+            runtime_anchor: "RuntimePluginEventSnapshot",
+            rationale:
+                "Keeps widened note-expression family totals plus runtime-owned MPE and MIDI 2.0 posture on one shared report seam instead of adapter-private packet counters.",
+        },
+        ControllerExpressionBoundarySurface {
+            id: "runtime-controller-expression-device-capability",
+            kind: ControllerExpressionBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_midi_snapshot.endpoints[*].capability and RuntimeSupervisorReport::observation.external_midi_snapshot.endpoints[*].capability",
+            runtime_anchor: "RuntimeExternalMidiEndpointCapabilitySummary",
+            rationale:
+                "Keeps widened external-device controller-expression capability posture runtime-owned instead of host-local or backend-private capability matrices.",
+        },
+        ControllerExpressionBoundarySurface {
+            id: "shared-host-controller-expression-report",
+            kind: ControllerExpressionBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward widened controller-expression posture through shared runtime reports without packet reconstruction.",
+        },
+    ]
+}
+
+fn controller_expression_boundary_validation_steps(
+) -> &'static [ControllerExpressionBoundaryValidationStep] {
+    &[
+        ControllerExpressionBoundaryValidationStep {
+            id: "runtime-controller-expression-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_controller_expression_boundary_reports_runtime_owned_expression_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect widened note-expression family totals plus device capability posture through public runtime surfaces.",
+        },
+        ControllerExpressionBoundaryValidationStep {
+            id: "local-host-controller-expression-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_controller_expression_truth",
+            rationale:
+                "Proves the stable local host edge forwards widened controller-expression posture from runtime-owned reports instead of host-private packet decoding.",
+        },
+        ControllerExpressionBoundaryValidationStep {
+            id: "server-host-controller-expression-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_controller_expression_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same widened controller-expression posture instead of server-local capability heuristics.",
+        },
+        ControllerExpressionBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools controller_expression_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable controller-expression boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
+        },
+        ControllerExpressionBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-controller-expression-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the widened controller-expression proof seam without reading adapter-private packet or capability code.",
+        },
+    ]
+}
+
+fn control_surface_boundary_surfaces() -> &'static [ControlSurfaceBoundarySurface] {
+    &[
+        ControlSurfaceBoundarySurface {
+            id: "runtime-control-surface-report",
+            kind: ControlSurfaceBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot",
+            runtime_anchor: "RuntimeControlSurfaceSnapshot",
+            rationale:
+                "Keeps control-surface graph state, transport posture, mapping posture, feedback readiness, and bounded capability on one runtime-owned report seam instead of host-local controller policy.",
+        },
+        ControlSurfaceBoundarySurface {
+            id: "runtime-control-surface-external-midi-anchor",
+            kind: ControlSurfaceBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot",
+            runtime_anchor: "RuntimeExternalMidiEndpointGraphSnapshot",
+            rationale:
+                "Keeps the control-surface baseline explicitly derived from the closed external MIDI endpoint graph instead of creating a second controller-device shell.",
+        },
+        ControlSurfaceBoundarySurface {
+            id: "shared-host-control-surface-report",
+            kind: ControlSurfaceBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward the same runtime-owned control-surface baseline without host-local controller-policy reconstruction.",
+        },
+    ]
+}
+
+fn control_surface_boundary_validation_steps() -> &'static [ControlSurfaceBoundaryValidationStep] {
+    &[
+        ControlSurfaceBoundaryValidationStep {
+            id: "runtime-control-surface-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_control_surface_boundary_reports_runtime_owned_transport_and_feedback_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect control-surface graph state, transport posture, mapping posture, and feedback readiness through public runtime surfaces.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "local-host-control-surface-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_control_surface_truth",
+            rationale:
+                "Proves the stable local host edge forwards the runtime-owned control-surface baseline instead of rebuilding local controller policy.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "server-host-control-surface-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_control_surface_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned control-surface baseline instead of inventing server-local controller heuristics.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools control_surface_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable control-surface boundary aligned with the focused runtime and host-edge proof spine instead of drifting into prose-only documentation.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-control-surface-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared control-surface proof seam without reading host-local controller policy or implementation detail.",
+        },
+    ]
+}
+
+fn advanced_hardware_boundary_surfaces() -> &'static [AdvancedHardwareBoundarySurface] {
+    &[
+        AdvancedHardwareBoundarySurface {
+            id: "runtime-advanced-hardware-report",
+            kind: AdvancedHardwareBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::advanced_hardware_snapshot and RuntimeSupervisorReport::observation.advanced_hardware_snapshot",
+            runtime_anchor: "RuntimeAdvancedHardwareSnapshot",
+            rationale:
+                "Keeps advanced-hardware graph state, scripting-safe device policy posture, guarded feedback-channel posture, and typed action classes on one runtime-owned report seam instead of host-local hardware policy.",
+        },
+        AdvancedHardwareBoundarySurface {
+            id: "runtime-advanced-hardware-control-surface-anchor",
+            kind: AdvancedHardwareBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot",
+            runtime_anchor: "RuntimeControlSurfaceSnapshot",
+            rationale:
+                "Keeps the advanced-hardware baseline explicitly derived from the closed control-surface substrate instead of creating a second hardware shell.",
+        },
+        AdvancedHardwareBoundarySurface {
+            id: "shared-host-advanced-hardware-report",
+            kind: AdvancedHardwareBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward the same runtime-owned advanced-hardware baseline without host-local hardware or controller-policy reconstruction.",
+        },
+    ]
+}
+
+fn advanced_hardware_boundary_validation_steps() -> &'static [AdvancedHardwareBoundaryValidationStep]
+{
+    &[
+        AdvancedHardwareBoundaryValidationStep {
+            id: "runtime-advanced-hardware-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_feedback_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect advanced-hardware graph state, scripting-safe policy posture, guarded feedback channels, and typed action classes through public runtime surfaces.",
+        },
+        AdvancedHardwareBoundaryValidationStep {
+            id: "local-host-advanced-hardware-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_advanced_hardware_truth",
+            rationale:
+                "Proves the stable local host edge forwards the runtime-owned advanced-hardware baseline instead of rebuilding local hardware or controller policy.",
+        },
+        AdvancedHardwareBoundaryValidationStep {
+            id: "server-host-advanced-hardware-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_advanced_hardware_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned advanced-hardware baseline instead of inventing server-local hardware policy.",
+        },
+        AdvancedHardwareBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools advanced_hardware_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable advanced-hardware boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
+        },
+        AdvancedHardwareBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-advanced-hardware-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared advanced-hardware proof seam without reading host-local hardware policy or guarded feedback implementation detail.",
         },
     ]
 }
@@ -2619,6 +4069,688 @@ fn analysis_metadata_boundary_validation_steps() -> &'static [AnalysisMetadataBo
     ]
 }
 
+fn multichannel_boundary_surfaces() -> &'static [MultichannelBoundarySurface] {
+    &[
+        MultichannelBoundarySurface {
+            id: "runtime-multichannel-topology-report",
+            kind: MultichannelBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::execution_topology_summary, RuntimeObservationReport::external_io_snapshot, and RuntimeSupervisorReport::observation.{execution_topology_summary,external_io_snapshot}",
+            runtime_anchor:
+                "RuntimeExecutionTopologySummary + RuntimeExternalIoSnapshot multichannel receipts",
+            rationale:
+                "Keeps canonical layout, channel-role, and bus-intent meaning on one runtime-owned report seam instead of host-local topology reinterpretation.",
+        },
+        MultichannelBoundarySurface {
+            id: "runtime-multichannel-plugin-discovery-snapshot",
+            kind: MultichannelBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeObservationApi::get_plugin_discovery_snapshot()",
+            runtime_anchor: "RuntimePluginDiscoveredTypeRecord::default_multichannel_io",
+            rationale:
+                "Lets downstream consumers inspect canonical default plugin multichannel layout and channel-role coverage directly from runtime-owned discovery snapshots.",
+        },
+        MultichannelBoundarySurface {
+            id: "shared-host-multichannel-report",
+            kind: MultichannelBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned canonical layout, channel-role, and bus-intent receipts without host-local reinterpretation.",
+        },
+    ]
+}
+
+fn multichannel_boundary_validation_steps() -> &'static [MultichannelBoundaryValidationStep] {
+    &[
+        MultichannelBoundaryValidationStep {
+            id: "runtime-multichannel-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect canonical layouts, channel roles, and bus intents through public runtime reexports alone.",
+        },
+        MultichannelBoundaryValidationStep {
+            id: "local-host-multichannel-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_multichannel_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned multichannel topology and plugin discovery receipts on supervisor export.",
+        },
+        MultichannelBoundaryValidationStep {
+            id: "server-host-multichannel-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_multichannel_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned canonical layout and bus-intent receipts without private host reinterpretation.",
+        },
+        MultichannelBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools multichannel_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable multichannel boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        MultichannelBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-multichannel-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared canonical multichannel layout and channel-role seam without reading host-local topology glue.",
+        },
+    ]
+}
+
+fn multi_bus_boundary_surfaces() -> &'static [MultiBusBoundarySurface] {
+    &[
+        MultiBusBoundarySurface {
+            id: "runtime-multi-bus-topology-report",
+            kind: MultiBusBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::execution_topology_summary, RuntimeObservationReport::metering_snapshot, and RuntimeSupervisorReport::observation.{execution_topology_summary,metering_snapshot}",
+            runtime_anchor:
+                "RuntimeExecutionTopologySummary + RuntimeMeteringSnapshot multi-bus connection and auxiliary-path receipts",
+            rationale:
+                "Keeps bus-role, connection-identity, auxiliary-path, and fallback meaning on one runtime-owned report seam across live execution and diagnostics.",
+        },
+        MultiBusBoundarySurface {
+            id: "runtime-multi-bus-render-contract-preview",
+            kind: MultiBusBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeOfflineRenderContractPreview::chain_contract",
+            runtime_anchor: "RuntimeOfflineRenderChainDependencyPreview",
+            rationale:
+                "Lets downstream consumers inspect the same runtime-owned multi-bus connection and auxiliary-path receipts on offline dependency preview without host-local route reconstruction.",
+        },
+        MultiBusBoundarySurface {
+            id: "shared-host-multi-bus-report",
+            kind: MultiBusBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned multi-bus connection and auxiliary-path receipts without private routing reinterpretation.",
+        },
+    ]
+}
+
+fn multi_bus_boundary_validation_steps() -> &'static [MultiBusBoundaryValidationStep] {
+    &[
+        MultiBusBoundaryValidationStep {
+            id: "runtime-multi-bus-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect bus-role, connection-identity, and auxiliary-path receipts through public runtime reports alone.",
+        },
+        MultiBusBoundaryValidationStep {
+            id: "local-host-multi-bus-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_multi_bus_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned multi-bus topology and metering receipts on supervisor export.",
+        },
+        MultiBusBoundaryValidationStep {
+            id: "server-host-multi-bus-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_multi_bus_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned multi-bus routing receipts without host-local reinterpretation.",
+        },
+        MultiBusBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools multi_bus_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable multi-bus boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        MultiBusBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-multi-bus-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared multi-bus connection and auxiliary-path seam without reading host-local routing glue.",
+        },
+    ]
+}
+
+fn sidechain_boundary_surfaces() -> &'static [SidechainBoundarySurface] {
+    &[
+        SidechainBoundarySurface {
+            id: "runtime-sidechain-topology-report",
+            kind: SidechainBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::execution_topology_summary, RuntimeSupervisorReport::observation.{execution_topology_summary,plugin_chain_snapshot}, and RuntimeOfflineRenderContractPreview::chain_contract",
+            runtime_anchor:
+                "RuntimeExecutionTopologySummary + RuntimePluginChainSnapshot + RuntimeOfflineRenderChainDependencyPreview",
+            rationale:
+                "Keeps sidechain source, target, attachment policy, and fallback meaning on one runtime-owned routing seam across live and offline surfaces.",
+        },
+        SidechainBoundarySurface {
+            id: "runtime-sidechain-contract-projection",
+            kind: SidechainBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "GraphNodeBufferContractProjection::secondary_input",
+            runtime_anchor: "RuntimeSecondaryInputContractProjection",
+            rationale:
+                "Lets downstream consumers inspect the declared sidechain contract before host-local patching or adapter-private routing can reinterpret it.",
+        },
+        SidechainBoundarySurface {
+            id: "shared-host-sidechain-report",
+            kind: SidechainBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned sidechain and secondary-input receipts without product-local routing reconstruction.",
+        },
+    ]
+}
+
+fn sidechain_boundary_validation_steps() -> &'static [SidechainBoundaryValidationStep] {
+    &[
+        SidechainBoundaryValidationStep {
+            id: "runtime-sidechain-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect sidechain source, target, and fallback meaning through public runtime reports alone.",
+        },
+        SidechainBoundaryValidationStep {
+            id: "local-host-sidechain-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_sidechain_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned sidechain topology and plugin-stage receipts on supervisor export.",
+        },
+        SidechainBoundaryValidationStep {
+            id: "server-host-sidechain-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_sidechain_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned sidechain receipts without host-local routing reinterpretation.",
+        },
+        SidechainBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools sidechain_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable sidechain boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        SidechainBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-sidechain-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared secondary-input routing seam without reading host-local patch or adapter glue.",
+        },
+    ]
+}
+
+fn complex_io_boundary_surfaces() -> &'static [ComplexIoBoundarySurface] {
+    &[
+        ComplexIoBoundarySurface {
+            id: "runtime-complex-io-discovery-report",
+            kind: ComplexIoBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot",
+            runtime_anchor:
+                "RuntimePluginDiscoveredTypeRecord::complex_io_summary + plugin discovery coverage receipts",
+            rationale:
+                "Keeps complex plugin-I/O, multi-output instrument, and bus-capable FX meaning on one runtime-owned discovery and capability surface instead of adapter-local pin reconstruction.",
+        },
+        ComplexIoBoundarySurface {
+            id: "runtime-complex-io-plugin-chain-snapshot",
+            kind: ComplexIoBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_chain_snapshot and RuntimeSupervisorReport::observation.plugin_chain_snapshot",
+            runtime_anchor: "RuntimePluginChainStageSnapshot::complex_io_summary",
+            rationale:
+                "Lets downstream consumers inspect complex plugin-I/O topology on live stage receipts rather than inferring multi-output or bus-capable behavior from adapter-private bus names.",
+        },
+        ComplexIoBoundarySurface {
+            id: "runtime-complex-io-render-contract-preview",
+            kind: ComplexIoBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeOfflineRenderContractPreview::chain_contract",
+            runtime_anchor:
+                "RuntimeOfflineRenderChainDependencyPreview::{complex_io_stage_count,complex_io_stages}",
+            rationale:
+                "Carries the same runtime-owned complex plugin-I/O topology into deferred render dependency preview instead of rebuilding topology per export path.",
+        },
+        ComplexIoBoundarySurface {
+            id: "shared-host-complex-io-report",
+            kind: ComplexIoBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned complex plugin-I/O topology receipts without adapter-local pin reconstruction.",
+        },
+    ]
+}
+
+fn complex_io_boundary_validation_steps() -> &'static [ComplexIoBoundaryValidationStep] {
+    &[
+        ComplexIoBoundaryValidationStep {
+            id: "runtime-complex-io-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect complex plugin-I/O discovery, stage, and offline preview receipts through public runtime surfaces alone.",
+        },
+        ComplexIoBoundaryValidationStep {
+            id: "local-host-complex-io-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_complex_io_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned complex plugin-I/O, multi-output instrument, and bus-capable FX receipts on supervisor export.",
+        },
+        ComplexIoBoundaryValidationStep {
+            id: "server-host-complex-io-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_complex_io_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned complex plugin-I/O receipts without adapter-local pin reconstruction.",
+        },
+        ComplexIoBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools complex_io_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable complex plugin-I/O boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        ComplexIoBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-complex-io-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared complex plugin-I/O seam without reading adapter-private pin or bus glue.",
+        },
+    ]
+}
+
+fn spatial_boundary_surfaces() -> &'static [SpatialBoundarySurface] {
+    &[
+        SpatialBoundarySurface {
+            id: "runtime-spatial-topology-report",
+            kind: SpatialBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::execution_topology_summary and RuntimeSupervisorReport::observation.execution_topology_summary",
+            runtime_anchor:
+                "RuntimeExecutionTopologySummary::{spatial_node_count,active_spatial_node_count,bypassed_spatial_node_count,fallback_spatial_node_count,surround_bed_spatial_node_count,object_aware_spatial_node_count,expanded_fallback_spatial_node_count} + RuntimeExecutionNodeSummary::spatial_execution",
+            rationale:
+                "Keeps surround-bed, mix-policy, render-scope, and expanded-fallback meaning on one runtime-owned topology surface instead of host-local or renderer-local reinterpretation.",
+        },
+        SpatialBoundarySurface {
+            id: "runtime-spatial-plugin-chain-snapshot",
+            kind: SpatialBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_chain_snapshot and RuntimeSupervisorReport::observation.plugin_chain_snapshot",
+            runtime_anchor: "RuntimePluginChainStageSnapshot::spatial_execution",
+            rationale:
+                "Lets downstream consumers inspect richer spatial stage meaning, including bed class and expanded fallback, on live plugin-chain receipts instead of inferring renderer behavior from adapter-private control names.",
+        },
+        SpatialBoundarySurface {
+            id: "runtime-spatial-render-contract-preview",
+            kind: SpatialBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface: "RuntimeOfflineRenderContractPreview::chain_contract",
+            runtime_anchor:
+                "RuntimeOfflineRenderChainDependencyPreview::{spatial_stage_count,active_spatial_stage_count,bypassed_spatial_stage_count,fallback_spatial_stage_count,surround_bed_spatial_stage_count,object_aware_spatial_stage_count,expanded_fallback_spatial_stage_count,spatial_stages}",
+            rationale:
+                "Carries the same richer spatial execution, mix-policy, and expanded-fallback truth into deferred render preview instead of rebuilding spatial policy per export path.",
+        },
+        SpatialBoundarySurface {
+            id: "shared-host-spatial-report",
+            kind: SpatialBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned richer spatial receipts without host-local speaker heuristics or renderer-local reinterpretation.",
+        },
+    ]
+}
+
+fn spatial_boundary_validation_steps() -> &'static [SpatialBoundaryValidationStep] {
+    &[
+        SpatialBoundaryValidationStep {
+            id: "runtime-spatial-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_spatial_boundary_reports_runtime_owned_execution_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect surround-bed, mix-policy, render-scope, expanded-fallback, and render-preview receipts through public runtime surfaces alone.",
+        },
+        SpatialBoundaryValidationStep {
+            id: "local-host-spatial-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_spatial_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned richer spatial and expanded-fallback receipts on supervisor export.",
+        },
+        SpatialBoundaryValidationStep {
+            id: "server-host-spatial-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_spatial_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned richer spatial receipts without host-local or renderer-local reinterpretation.",
+        },
+        SpatialBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools spatial_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable spatial boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        SpatialBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-spatial-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared spatial execution seam without reading adapter-private renderer glue or host-local pan policy.",
+        },
+    ]
+}
+
+fn stretch_boundary_surfaces() -> &'static [StretchBoundarySurface] {
+    &[
+        StretchBoundarySurface {
+            id: "runtime-stretch-observation-report",
+            kind: StretchBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::stretch_engine_snapshot and RuntimeSupervisorReport::observation.stretch_engine_snapshot",
+            runtime_anchor: "RuntimeStretchEngineSnapshot",
+            rationale:
+                "Keeps sample-domain stretch engine class, readiness, degraded-state, and fallback truth on one runtime-owned report seam instead of host-local transform reconstruction.",
+        },
+        StretchBoundarySurface {
+            id: "runtime-stretch-render-preview-snapshot",
+            kind: StretchBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeClipRenderResult::stretch_engine_snapshot and RuntimeOfflineRenderContractPreview::stretch_engine_snapshot",
+            runtime_anchor: "RuntimeStretchClipSnapshot + RuntimeStretchEngineSnapshot",
+            rationale:
+                "Lets downstream consumers inspect the same runtime-owned stretch truth on clip render and offline preview surfaces instead of rebuilding transform posture per export path.",
+        },
+        StretchBoundarySurface {
+            id: "shared-host-stretch-report",
+            kind: StretchBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned stretch receipts without host-local transform or preview-policy reconstruction.",
+        },
+    ]
+}
+
+fn stretch_boundary_validation_steps() -> &'static [StretchBoundaryValidationStep] {
+    &[
+        StretchBoundaryValidationStep {
+            id: "runtime-stretch-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_stretch_boundary_reports_runtime_owned_engine_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect stretch engine class, readiness, degraded-state, fallback, clip render, and offline preview truth through public runtime surfaces alone.",
+        },
+        StretchBoundaryValidationStep {
+            id: "local-host-stretch-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_stretch_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned stretch receipts on supervisor export instead of rebuilding local transform posture.",
+        },
+        StretchBoundaryValidationStep {
+            id: "server-host-stretch-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_stretch_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned stretch receipts without server-local transform reconstruction.",
+        },
+        StretchBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools stretch_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable stretch boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+        },
+        StretchBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-stretch-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared stretch proof seam without reading host-local preview or render transform glue.",
+        },
+    ]
+}
+
+fn marker_analysis_boundary_surfaces() -> &'static [MarkerAnalysisBoundarySurface] {
+    &[
+        MarkerAnalysisBoundarySurface {
+            id: "runtime-marker-analysis-observation-report",
+            kind: MarkerAnalysisBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::marker_analysis_snapshot and RuntimeSupervisorReport::observation.marker_analysis_snapshot",
+            runtime_anchor: "RuntimeMarkerAnalysisSnapshot",
+            rationale:
+                "Keeps warp-marker, transient-anchor, tempo-assist, readiness, and invalidation truth on one runtime-owned report seam instead of host-local stretch-analysis reconstruction.",
+        },
+        MarkerAnalysisBoundarySurface {
+            id: "shared-host-marker-analysis-report",
+            kind: MarkerAnalysisBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned marker-analysis receipts without host-local marker heuristics or transform-analysis policy.",
+        },
+    ]
+}
+
+fn marker_analysis_boundary_validation_steps() -> &'static [MarkerAnalysisBoundaryValidationStep] {
+    &[
+        MarkerAnalysisBoundaryValidationStep {
+            id: "runtime-marker-analysis-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_marker_analysis_boundary_reports_runtime_owned_analysis_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect runtime-owned warp-marker, transient-anchor, tempo-assist, readiness, and invalidation truth through public runtime surfaces alone.",
+        },
+        MarkerAnalysisBoundaryValidationStep {
+            id: "local-host-marker-analysis-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_marker_analysis_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned marker-analysis receipts instead of rebuilding local stretch-analysis posture.",
+        },
+        MarkerAnalysisBoundaryValidationStep {
+            id: "server-host-marker-analysis-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_marker_analysis_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned marker-analysis receipts without server-local transform-analysis reconstruction.",
+        },
+        MarkerAnalysisBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools marker_analysis_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable marker-analysis boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
+        },
+        MarkerAnalysisBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-marker-analysis-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared marker-analysis proof seam without reading host-local stretch-analysis glue.",
+        },
+    ]
+}
+
+fn transform_artifact_boundary_surfaces() -> &'static [TransformArtifactBoundarySurface] {
+    &[
+        TransformArtifactBoundarySurface {
+            id: "runtime-transform-artifact-observation-report",
+            kind: TransformArtifactBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::transform_artifact_snapshot and RuntimeSupervisorReport::observation.transform_artifact_snapshot",
+            runtime_anchor: "RuntimeTransformArtifactSnapshot",
+            rationale:
+                "Keeps post-warp render, cache readiness, invalidation, and reuse truth on one runtime-owned report seam instead of host-local preview-cache policy.",
+        },
+        TransformArtifactBoundarySurface {
+            id: "runtime-transform-artifact-render-preview-snapshot",
+            kind: TransformArtifactBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeClipRenderResult::transform_artifact_snapshot and RuntimeOfflineRenderContractPreview::transform_artifact_snapshot",
+            runtime_anchor:
+                "RuntimeClipRenderResult + RuntimeOfflineRenderContractPreview",
+            rationale:
+                "Proves clip render and offline preview carry the same runtime-owned transform-artifact posture instead of splitting render and cache truth across private paths.",
+        },
+        TransformArtifactBoundarySurface {
+            id: "shared-host-transform-artifact-report",
+            kind: TransformArtifactBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned transform-artifact receipts without host-local preview-cache reconstruction.",
+        },
+    ]
+}
+
+fn transform_artifact_boundary_validation_steps(
+) -> &'static [TransformArtifactBoundaryValidationStep] {
+    &[
+        TransformArtifactBoundaryValidationStep {
+            id: "runtime-transform-artifact-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect runtime-owned transform-artifact readiness, invalidation, and reuse through public runtime surfaces alone.",
+        },
+        TransformArtifactBoundaryValidationStep {
+            id: "local-host-transform-artifact-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_transform_artifact_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned transform-artifact receipts instead of rebuilding local preview-cache posture.",
+        },
+        TransformArtifactBoundaryValidationStep {
+            id: "server-host-transform-artifact-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_transform_artifact_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned transform-artifact receipts without server-local cache heuristics.",
+        },
+        TransformArtifactBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools transform_artifact_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable transform-artifact boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
+        },
+        TransformArtifactBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-transform-artifact-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared transform-artifact proof seam without reading host-local preview-cache glue.",
+        },
+    ]
+}
+
+fn preview_transform_boundary_surfaces() -> &'static [PreviewTransformBoundarySurface] {
+    &[
+        PreviewTransformBoundarySurface {
+            id: "runtime-preview-transform-observation-report",
+            kind: PreviewTransformBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::preview_transform_snapshot and RuntimeSupervisorReport::observation.preview_transform_snapshot",
+            runtime_anchor: "RuntimePreviewTransformServiceSnapshot",
+            rationale:
+                "Keeps low-latency audition, scrub support, readiness, degraded-state, and fallback truth on one runtime-owned report seam instead of host-local preview playback policy.",
+        },
+        PreviewTransformBoundarySurface {
+            id: "runtime-preview-transform-render-preview-snapshot",
+            kind: PreviewTransformBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeClipRenderResult::preview_transform_snapshot and RuntimeOfflineRenderContractPreview::preview_transform_snapshot",
+            runtime_anchor:
+                "RuntimeClipRenderResult + RuntimeOfflineRenderContractPreview",
+            rationale:
+                "Proves clip render and offline preview carry the same runtime-owned preview-transform posture instead of splitting preview truth across private render helpers.",
+        },
+        PreviewTransformBoundarySurface {
+            id: "shared-host-preview-transform-report",
+            kind: PreviewTransformBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned preview-transform receipts without host-local preview playback reconstruction.",
+        },
+    ]
+}
+
+fn preview_transform_boundary_validation_steps() -> &'static [PreviewTransformBoundaryValidationStep]
+{
+    &[
+        PreviewTransformBoundaryValidationStep {
+            id: "runtime-preview-transform-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect runtime-owned preview service class, readiness, degraded-state, fallback, and audition posture through public runtime surfaces alone.",
+        },
+        PreviewTransformBoundaryValidationStep {
+            id: "local-host-preview-transform-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_preview_transform_truth",
+            rationale:
+                "Proves the stable local host edge forwards runtime-owned preview-transform receipts instead of rebuilding local preview playback posture.",
+        },
+        PreviewTransformBoundaryValidationStep {
+            id: "server-host-preview-transform-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_preview_transform_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned preview-transform receipts without server-local preview heuristics.",
+        },
+        PreviewTransformBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools preview_transform_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable preview-transform boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
+        },
+        PreviewTransformBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-preview-transform-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared preview-transform proof seam without reading host-local preview playback glue.",
+        },
+    ]
+}
+
 fn integrated_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
     &[
         IntegratedAcceptanceFamily {
@@ -2692,6 +4824,75 @@ fn integrated_acceptance_validation_steps() -> &'static [IntegratedAcceptanceVal
             command: INTEGRATED_ACCEPTANCE_TASK,
             rationale:
                 "Proves the bounded required acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist.",
+        },
+    ]
+}
+
+fn g07_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "routing-and-multichannel-coherence",
+            title: "Routing And Multichannel Coherence",
+            required_tasks: G07_ROUTING_REQUIRED_TASKS,
+            advisory_tasks: G07_ROUTING_ADVISORY_TASKS,
+            rationale:
+                "Keeps the bounded lane anchored on shared multichannel, sidechain, multi-bus, and spatial routing truth while leaving richer complex plugin-I/O breadth visible as advisory depth.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "linux-plugin-and-backend-continuity",
+            title: "Linux Plugin And Backend Continuity",
+            required_tasks: G07_LINUX_REQUIRED_TASKS,
+            advisory_tasks: G07_LINUX_ADVISORY_TASKS,
+            rationale:
+                "Pins Linux-native plugin parity and backend portability to one required lane while keeping narrower LV2-specific breadth explicit as advisory depth.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "external-control-and-advanced-hardware",
+            title: "External Control And Advanced Hardware",
+            required_tasks: G07_CONTROL_REQUIRED_TASKS,
+            advisory_tasks: G07_CONTROL_ADVISORY_TASKS,
+            rationale:
+                "Requires endpoint, controller-expression, control-surface, and advanced hardware policy truth together instead of treating the control stack as separate optional seams.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "stretch-analysis-artifact-and-preview",
+            title: "Stretch Analysis Artifact And Preview",
+            required_tasks: G07_STRETCH_REQUIRED_TASKS,
+            advisory_tasks: G07_STRETCH_ADVISORY_TASKS,
+            rationale:
+                "Makes stretch, marker-analysis, transform-artifact, and preview-transform continuity part of one bounded media lane instead of isolated post-warp checks.",
+        },
+    ]
+}
+
+fn g07_acceptance_validation_steps() -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_g07_acceptance_evidence",
+            rationale:
+                "Proves one repo-owned supervisor export carries routing, Linux, controller, and stretch receipts together instead of reducing the lane to a checklist of isolated boundary tasks.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools g07_acceptance_lane_json_reports_required_and_advisory_policy",
+            rationale:
+                "Keeps the machine-readable g07 integrated acceptance descriptor aligned with the frozen required, advisory, and deferred policy.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the grouped g07 acceptance lane without reading contract prose or Effigy internals.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: G07_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded g07 required acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist of milestone-local proofs.",
         },
     ]
 }
@@ -3103,22 +5304,23 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
     &[
         GenerationCloseoutValidationStep {
             id: "integrated-acceptance-base",
-            command: INTEGRATED_ACCEPTANCE_TASK,
+            command: G07_ACCEPTANCE_TASK,
             rationale:
-                "The final g06 closeout gate must build on the already-closed integrated acceptance lane instead of replacing it with a prose-only summary.",
+                "The final g07 closeout gate must build on the already-closed grouped acceptance lane instead of replacing routed, Linux, controller, and stretch evidence with prose-only summary.",
         },
         GenerationCloseoutValidationStep {
-            id: "bounded-soak-lane",
-            command: G06_SOAK_ACCEPTANCE_TASK,
+            id: "closeout-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue",
             rationale:
-                "The final gate must include one bounded long-session soak lane that stays repo-owned and typed rather than relying on manual endurance folklore.",
+                "The closeout descriptor itself must remain covered as a machine-readable repo-owned surface so the recorded promotion verdict cannot drift away from the runnable gate.",
         },
         GenerationCloseoutValidationStep {
             id: "generation-closeout-description",
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json",
             rationale:
-                "Consumers and maintainers need one machine-readable g06 closeout record tying together integrated acceptance, soak, and provisional readiness status.",
+                "Consumers and maintainers need one machine-readable g07 closeout record tying together grouped acceptance, required validation, and the final Loophole-facing readiness posture.",
         },
         GenerationCloseoutValidationStep {
             id: "repo-validation",
@@ -3131,41 +5333,41 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
 
 fn generation_closeout_residual_risks() -> &'static [&'static str] {
     &[
-        "the broader server-host soak path remains deferred because the recovery-overlap attach limit still trips that fixture",
-        "wider rerun counts and advisory continuity lanes still remain outside the bounded required closeout gate",
-        "the g06 closeout verdict is sufficient to promote g07, but it is still a reusable substrate verdict rather than a Loophole product-launch verdict",
+        "full live Linux backend ownership, richer immersive routing, and deeper vendor-protocol or preview-browser workflow depth remain deferred into g08 instead of blocking g07 closeout",
+        "advisory complex-io and lv2 breadth remain visible next-queue depth rather than required g07 blockers",
+        "the g07 closeout verdict is sufficient to promote g08, but it remains a reusable Signal substrate verdict rather than a Loophole product-launch verdict",
     ]
 }
 
 fn generation_closeout_next_queue_summary() -> &'static str {
-    "g06 now closes cleanly enough to promote g07. Residual unstable soak and broader advisory confidence depth stay explicitly deferred instead of blocking the next generation."
+    "g07 now closes cleanly enough to promote g08. The next queue stays focused on live Linux ownership, richer immersive routing, device protocol depth, and preview workflow substrate instead of reopening bounded g07 seams."
 }
 
 fn generation_closeout_readiness_areas() -> &'static [GenerationReadinessArea] {
     &[
         GenerationReadinessArea {
-            id: "runtime-hardening-and-recovery",
+            id: "routing-and-multichannel-feature-surface",
             status: "sufficient-for-promotion",
             rationale:
-                "Integrated acceptance plus the bounded soak lane now give Signal enough reusable runtime-hardening and recovery evidence to stop treating Loophole's hardening concerns as a blocker for the next generation.",
+                "Closed multichannel, sidechain, multi-bus, complex-I/O, and bounded spatial seams now give Loophole one reusable routing substrate strong enough to stop treating routing depth as a blocker for the next generation.",
         },
         GenerationReadinessArea {
-            id: "adapter-and-portability-breadth",
+            id: "linux-native-runtime-breadth",
             status: "sufficient-for-promotion",
             rationale:
-                "CLAP, VST3, AU, parity, generic-event, and recall boundaries now give Loophole a materially broader shared plugin substrate, even though richer per-format depth is still later work.",
+                "Closed LV2 baseline, Linux plugin parity, backend portability, and Linux clock-topology seams now give Signal bounded Linux-native evidence strong enough to move the next queue into live-ownership depth.",
         },
         GenerationReadinessArea {
-            id: "hardware-and-external-io-substrate",
+            id: "controller-and-hardware-substrate",
             status: "sufficient-for-promotion",
             rationale:
-                "Device supervision, clock-topology, and external-I/O boundaries now form a reusable hardware substrate strong enough to move feature expansion forward without reopening host-local recovery ownership.",
+                "Closed external MIDI, controller-expression, control-surface, and advanced-hardware seams now give Signal bounded reusable controller evidence without escalating g07 itself into vendor-protocol depth.",
         },
         GenerationReadinessArea {
-            id: "media-and-analysis-service-substrate",
+            id: "sample-domain-stretch-and-preview-services",
             status: "sufficient-for-promotion",
             rationale:
-                "Media-service and analysis-metadata boundaries now provide a bounded shared service baseline, which is enough for g07 feature work even though richer metadata and library workflows remain deferred.",
+                "Closed stretch, marker-analysis, transform-artifact, and preview-transform seams now give Signal bounded sample-domain evidence strong enough to move later interactive workflow depth into a new generation.",
         },
     ]
 }
@@ -4867,6 +7069,120 @@ fn print_au_boundary(format: OutputFormat) {
     }
 }
 
+fn render_lv2_boundary_text() -> String {
+    let mut rendered = format!(
+        "lv2_boundary: {LV2_BOUNDARY}\ncontract_path: {LV2_CONTRACT_PATH}\nacceptance_task: {LV2_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in lv2_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in lv2_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "shared Linux-native LV2 discovery and lifecycle truth is now public, but worker, UI, patch, URID, and richer extension depth still remain later Linux and cross-adapter work",
+        "the current boundary proves bounded LV2 realization through runtime and the stable server host edge, not broader Linux cross-adapter parity or product-local Linux workflow behavior",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_lv2_boundary_json() -> String {
+    let surfaces = lv2_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = lv2_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "shared Linux-native LV2 discovery and lifecycle truth is now public, but worker, UI, patch, URID, and richer extension depth still remain later Linux and cross-adapter work",
+        "the current boundary proves bounded LV2 realization through runtime and the stable server host edge, not broader Linux cross-adapter parity or product-local Linux workflow behavior",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(LV2_BOUNDARY),
+        json_string(LV2_CONTRACT_PATH),
+        json_string(LV2_ACCEPTANCE_TASK),
+        lv2_boundary_surfaces().len(),
+        surfaces,
+        lv2_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_lv2_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_lv2_boundary_text()),
+        OutputFormat::Json => println!("{}", render_lv2_boundary_json()),
+    }
+}
+
 fn render_cross_adapter_parity_boundary_text() -> String {
     let mut rendered = format!(
         "cross_adapter_parity_boundary: {CROSS_ADAPTER_PARITY_BOUNDARY}\ncontract_path: {CROSS_ADAPTER_PARITY_CONTRACT_PATH}\nacceptance_task: {CROSS_ADAPTER_PARITY_ACCEPTANCE_TASK}\nsurfaces:\n"
@@ -4981,6 +7297,643 @@ fn print_cross_adapter_parity_boundary(format: OutputFormat) {
     }
 }
 
+fn render_linux_plugin_parity_boundary_text() -> String {
+    let mut rendered = format!(
+        "linux_plugin_parity_boundary: {LINUX_PLUGIN_PARITY_BOUNDARY}\ncontract_path: {LINUX_PLUGIN_PARITY_CONTRACT_PATH}\nacceptance_task: {LINUX_PLUGIN_PARITY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in linux_plugin_parity_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in linux_plugin_parity_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "shared Linux CLAP, VST3, and LV2 parity truth is now public, but richer extension-depth parity such as CLAP extensions, VST3 units, and LV2 worker or UI behavior still remains later work",
+        "the current boundary proves one bounded Linux plugin vocabulary for discovery, lifecycle, placement, restart, and failure policy, not broader ALSA, JACK, or PipeWire backend parity",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_linux_plugin_parity_boundary_json() -> String {
+    let surfaces = linux_plugin_parity_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = linux_plugin_parity_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "shared Linux CLAP, VST3, and LV2 parity truth is now public, but richer extension-depth parity such as CLAP extensions, VST3 units, and LV2 worker or UI behavior still remains later work",
+        "the current boundary proves one bounded Linux plugin vocabulary for discovery, lifecycle, placement, restart, and failure policy, not broader ALSA, JACK, or PipeWire backend parity",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(LINUX_PLUGIN_PARITY_BOUNDARY),
+        json_string(LINUX_PLUGIN_PARITY_CONTRACT_PATH),
+        json_string(LINUX_PLUGIN_PARITY_ACCEPTANCE_TASK),
+        linux_plugin_parity_boundary_surfaces().len(),
+        surfaces,
+        linux_plugin_parity_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_linux_plugin_parity_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_linux_plugin_parity_boundary_text()),
+        OutputFormat::Json => println!("{}", render_linux_plugin_parity_boundary_json()),
+    }
+}
+
+fn render_linux_audio_backend_boundary_text() -> String {
+    let mut output = format!(
+        "linux_audio_backend_boundary: {LINUX_AUDIO_BACKEND_BOUNDARY}\ncontract_path: {LINUX_AUDIO_BACKEND_CONTRACT_PATH}\nacceptance_task: {LINUX_AUDIO_BACKEND_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in linux_audio_backend_boundary_surfaces() {
+        output.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    output.push_str("validation_steps:\n");
+    for step in linux_audio_backend_boundary_validation_steps() {
+        output.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    output.push_str(
+        "residual_risk: the current boundary proves typed Linux backend identity, portability-band, and unavailable fallback export, not live ALSA/JACK/PipeWire host ownership or deeper backend-native graph behavior\n",
+    );
+    output
+}
+
+fn render_linux_audio_backend_boundary_json() -> String {
+    let surfaces = linux_audio_backend_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = linux_audio_backend_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"validation_step_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"residual_risk\":{}",
+            "}}"
+        ),
+        json_string(LINUX_AUDIO_BACKEND_BOUNDARY),
+        json_string(LINUX_AUDIO_BACKEND_CONTRACT_PATH),
+        json_string(LINUX_AUDIO_BACKEND_ACCEPTANCE_TASK),
+        linux_audio_backend_boundary_surfaces().len(),
+        linux_audio_backend_boundary_validation_steps().len(),
+        surfaces,
+        validation_steps,
+        json_string(
+            "the current boundary proves typed Linux backend identity, portability-band, and unavailable fallback export, not live ALSA/JACK/PipeWire host ownership or deeper backend-native graph behavior",
+        ),
+    )
+}
+
+fn render_linux_live_ownership_boundary_text() -> String {
+    let mut rendered = format!(
+        "linux_live_ownership_boundary: {LINUX_LIVE_OWNERSHIP_BOUNDARY}\ncontract_path: {LINUX_LIVE_OWNERSHIP_CONTRACT_PATH}\nacceptance_task: {LINUX_LIVE_OWNERSHIP_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in linux_live_ownership_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in linux_live_ownership_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str(
+        "residual_risk: the current boundary proves bounded live-session ownership, lifecycle, and device-claim truth, not real ALSA/JACK/PipeWire daemon coordination, transport, or recovery depth\n",
+    );
+    rendered
+}
+
+fn render_linux_live_ownership_boundary_json() -> String {
+    let surfaces = linux_live_ownership_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = linux_live_ownership_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"validation_step_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"residual_risk\":{}",
+            "}}"
+        ),
+        json_string(LINUX_LIVE_OWNERSHIP_BOUNDARY),
+        json_string(LINUX_LIVE_OWNERSHIP_CONTRACT_PATH),
+        json_string(LINUX_LIVE_OWNERSHIP_ACCEPTANCE_TASK),
+        linux_live_ownership_boundary_surfaces().len(),
+        linux_live_ownership_boundary_validation_steps().len(),
+        surfaces,
+        validation_steps,
+        json_string(
+            "the current boundary proves bounded live-session ownership, lifecycle, and device-claim truth, not real ALSA/JACK/PipeWire daemon coordination, transport, or recovery depth",
+        ),
+    )
+}
+
+fn render_jack_coordination_boundary_text() -> String {
+    let mut rendered = format!(
+        "jack_coordination_boundary: {JACK_COORDINATION_BOUNDARY}\ncontract_path: {JACK_COORDINATION_CONTRACT_PATH}\nacceptance_task: {JACK_COORDINATION_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in jack_coordination_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in jack_coordination_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str(
+        "residual_risk: the current boundary proves bounded JACK transport, graph, and guarded coordination truth, not real JACK daemon integration, session-manager depth, or callback-thread ownership\n",
+    );
+    rendered
+}
+
+fn render_jack_coordination_boundary_json() -> String {
+    let surfaces = jack_coordination_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = jack_coordination_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"validation_step_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"residual_risk\":{}",
+            "}}"
+        ),
+        json_string(JACK_COORDINATION_BOUNDARY),
+        json_string(JACK_COORDINATION_CONTRACT_PATH),
+        json_string(JACK_COORDINATION_ACCEPTANCE_TASK),
+        jack_coordination_boundary_surfaces().len(),
+        jack_coordination_boundary_validation_steps().len(),
+        surfaces,
+        validation_steps,
+        json_string(
+            "the current boundary proves bounded JACK transport, graph, and guarded coordination truth, not real JACK daemon integration, session-manager depth, or callback-thread ownership",
+        ),
+    )
+}
+
+fn render_linux_backend_clock_topology_boundary_text() -> String {
+    let mut rendered = format!(
+        "linux_backend_clock_topology_boundary: {LINUX_BACKEND_CLOCK_TOPOLOGY_BOUNDARY}\ncontract_path: {LINUX_BACKEND_CLOCK_TOPOLOGY_CONTRACT_PATH}\nacceptance_task: {LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in linux_backend_clock_topology_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in linux_backend_clock_topology_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered
+}
+
+fn render_linux_backend_clock_topology_boundary_json() -> String {
+    let surfaces = linux_backend_clock_topology_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = linux_backend_clock_topology_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"validation_step_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}]",
+            "}}"
+        ),
+        json_string(LINUX_BACKEND_CLOCK_TOPOLOGY_BOUNDARY),
+        json_string(LINUX_BACKEND_CLOCK_TOPOLOGY_CONTRACT_PATH),
+        json_string(LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK),
+        linux_backend_clock_topology_boundary_surfaces().len(),
+        linux_backend_clock_topology_boundary_validation_steps().len(),
+        surfaces,
+        validation_steps,
+    )
+}
+
+fn print_linux_backend_clock_topology_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_linux_backend_clock_topology_boundary_text()),
+        OutputFormat::Json => println!("{}", render_linux_backend_clock_topology_boundary_json()),
+    }
+}
+
+fn render_external_midi_boundary_text() -> String {
+    let mut rendered = format!(
+        "external_midi_boundary: {EXTERNAL_MIDI_BOUNDARY}\ncontract_path: {EXTERNAL_MIDI_CONTRACT_PATH}\nacceptance_task: {EXTERNAL_MIDI_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in external_midi_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in external_midi_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "shared external MIDI endpoint graph truth is now consumable, but live cross-backend device ownership and richer endpoint breadth remain later work",
+        "the current boundary proves unavailable and empty graph baselines through runtime and stable host edges, not fuller MIDI 2.0, MPE, or control-surface transport depth",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_external_midi_boundary_json() -> String {
+    let surfaces = external_midi_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = external_midi_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "shared external MIDI endpoint graph truth is now consumable, but live cross-backend device ownership and richer endpoint breadth remain later work",
+        "the current boundary proves unavailable and empty graph baselines through runtime and stable host edges, not fuller MIDI 2.0, MPE, or control-surface transport depth",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"validation_step_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(EXTERNAL_MIDI_BOUNDARY),
+        json_string(EXTERNAL_MIDI_CONTRACT_PATH),
+        json_string(EXTERNAL_MIDI_ACCEPTANCE_TASK),
+        external_midi_boundary_surfaces().len(),
+        external_midi_boundary_validation_steps().len(),
+        surfaces,
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_external_midi_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_external_midi_boundary_text()),
+        OutputFormat::Json => println!("{}", render_external_midi_boundary_json()),
+    }
+}
+
+fn print_linux_audio_backend_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_linux_audio_backend_boundary_text()),
+        OutputFormat::Json => println!("{}", render_linux_audio_backend_boundary_json()),
+    }
+}
+
+fn print_linux_live_ownership_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_linux_live_ownership_boundary_text()),
+        OutputFormat::Json => println!("{}", render_linux_live_ownership_boundary_json()),
+    }
+}
+
+fn print_jack_coordination_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_jack_coordination_boundary_text()),
+        OutputFormat::Json => println!("{}", render_jack_coordination_boundary_json()),
+    }
+}
+
 fn render_generic_event_boundary_text() -> String {
     let mut rendered = format!(
         "generic_event_boundary: {GENERIC_EVENT_BOUNDARY}\ncontract_path: {GENERIC_EVENT_CONTRACT_PATH}\nacceptance_task: {GENERIC_EVENT_ACCEPTANCE_TASK}\nsurfaces:\n"
@@ -5092,6 +8045,348 @@ fn print_generic_event_boundary(format: OutputFormat) {
     match format {
         OutputFormat::Text => println!("{}", render_generic_event_boundary_text()),
         OutputFormat::Json => println!("{}", render_generic_event_boundary_json()),
+    }
+}
+
+fn render_controller_expression_boundary_text() -> String {
+    let mut rendered = format!(
+        "controller_expression_boundary: {CONTROLLER_EXPRESSION_BOUNDARY}\ncontract_path: {CONTROLLER_EXPRESSION_CONTRACT_PATH}\nacceptance_task: {CONTROLLER_EXPRESSION_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in controller_expression_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in controller_expression_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves bounded richer controller-expression posture, not full MIDI 2.0 UMP transport, negotiation, or profile exchange depth",
+        "the current seam keeps runtime-owned MPE and MIDI 2.0 posture consumable through runtime and stable host edges, but control-surface mapping and feedback semantics remain later work",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_controller_expression_boundary_json() -> String {
+    let surfaces = controller_expression_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = controller_expression_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves bounded richer controller-expression posture, not full MIDI 2.0 UMP transport, negotiation, or profile exchange depth",
+        "the current seam keeps runtime-owned MPE and MIDI 2.0 posture consumable through runtime and stable host edges, but control-surface mapping and feedback semantics remain later work",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(CONTROLLER_EXPRESSION_BOUNDARY),
+        json_string(CONTROLLER_EXPRESSION_CONTRACT_PATH),
+        json_string(CONTROLLER_EXPRESSION_ACCEPTANCE_TASK),
+        controller_expression_boundary_surfaces().len(),
+        surfaces,
+        controller_expression_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_controller_expression_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_controller_expression_boundary_text()),
+        OutputFormat::Json => println!("{}", render_controller_expression_boundary_json()),
+    }
+}
+
+fn render_control_surface_boundary_text() -> String {
+    let mut rendered = format!(
+        "control_surface_boundary: {CONTROL_SURFACE_BOUNDARY}\ncontract_path: {CONTROL_SURFACE_CONTRACT_PATH}\nacceptance_task: {CONTROL_SURFACE_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in control_surface_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in control_surface_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves a bounded control-surface baseline, not fuller vendor protocol, display, motor, haptic, or scripting-safe extensibility depth",
+        "the current seam keeps runtime-owned control-surface transport, mapping posture, feedback readiness, and guarded capability consumable through runtime and stable host edges, but richer feedback transport and product mapping workflows remain later work",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_control_surface_boundary_json() -> String {
+    let surfaces = control_surface_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = control_surface_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves a bounded control-surface baseline, not fuller vendor protocol, display, motor, haptic, or scripting-safe extensibility depth",
+        "the current seam keeps runtime-owned control-surface transport, mapping posture, feedback readiness, and guarded capability consumable through runtime and stable host edges, but richer feedback transport and product mapping workflows remain later work",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(CONTROL_SURFACE_BOUNDARY),
+        json_string(CONTROL_SURFACE_CONTRACT_PATH),
+        json_string(CONTROL_SURFACE_ACCEPTANCE_TASK),
+        control_surface_boundary_surfaces().len(),
+        surfaces,
+        control_surface_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_control_surface_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_control_surface_boundary_text()),
+        OutputFormat::Json => println!("{}", render_control_surface_boundary_json()),
+    }
+}
+
+fn render_advanced_hardware_boundary_text() -> String {
+    let mut rendered = format!(
+        "advanced_hardware_boundary: {ADVANCED_HARDWARE_BOUNDARY}\ncontract_path: {ADVANCED_HARDWARE_CONTRACT_PATH}\nacceptance_task: {ADVANCED_HARDWARE_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in advanced_hardware_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in advanced_hardware_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves a bounded advanced-hardware baseline, not richer vendor protocol, motor, haptic, display-layout, or executable scripting depth",
+        "the current seam keeps runtime-owned scripting-safe policy, guarded feedback posture, and typed action classes consumable through runtime and stable host edges, but fuller device execution workflows remain later work",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_advanced_hardware_boundary_json() -> String {
+    let surfaces = advanced_hardware_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = advanced_hardware_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves a bounded advanced-hardware baseline, not richer vendor protocol, motor, haptic, display-layout, or executable scripting depth",
+        "the current seam keeps runtime-owned scripting-safe policy, guarded feedback posture, and typed action classes consumable through runtime and stable host edges, but fuller device execution workflows remain later work",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(ADVANCED_HARDWARE_BOUNDARY),
+        json_string(ADVANCED_HARDWARE_CONTRACT_PATH),
+        json_string(ADVANCED_HARDWARE_ACCEPTANCE_TASK),
+        advanced_hardware_boundary_surfaces().len(),
+        surfaces,
+        advanced_hardware_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_advanced_hardware_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_advanced_hardware_boundary_text()),
+        OutputFormat::Json => println!("{}", render_advanced_hardware_boundary_json()),
     }
 }
 
@@ -5779,6 +9074,1032 @@ fn print_analysis_metadata_boundary(format: OutputFormat) {
     }
 }
 
+fn render_multichannel_boundary_text() -> String {
+    let mut rendered = format!(
+        "multichannel_boundary: {MULTICHANNEL_BOUNDARY}\ncontract_path: {MULTICHANNEL_CONTRACT_PATH}\nacceptance_task: {MULTICHANNEL_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in multichannel_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in multichannel_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves canonical layout, channel-role, and bus-intent receipts through runtime, supervisor, and stable host-edge surfaces, but richer sidechain, spatial, and custom-layout execution depth still belongs to later work",
+        "this closes the bounded multichannel consumer seam, not broader Linux device-matrix, time-stretch, or surround render-engine parity work",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_multichannel_boundary_json() -> String {
+    let surfaces = multichannel_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = multichannel_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves canonical layout, channel-role, and bus-intent receipts through runtime, supervisor, and stable host-edge surfaces, but richer sidechain, spatial, and custom-layout execution depth still belongs to later work",
+        "this closes the bounded multichannel consumer seam, not broader Linux device-matrix, time-stretch, or surround render-engine parity work",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(MULTICHANNEL_BOUNDARY),
+        json_string(MULTICHANNEL_CONTRACT_PATH),
+        json_string(MULTICHANNEL_ACCEPTANCE_TASK),
+        multichannel_boundary_surfaces().len(),
+        surfaces,
+        multichannel_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_multichannel_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_multichannel_boundary_text()),
+        OutputFormat::Json => println!("{}", render_multichannel_boundary_json()),
+    }
+}
+
+fn render_multi_bus_boundary_text() -> String {
+    let mut rendered = format!(
+        "multi_bus_boundary: {MULTI_BUS_BOUNDARY}\ncontract_path: {MULTI_BUS_CONTRACT_PATH}\nacceptance_task: {MULTI_BUS_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in multi_bus_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in multi_bus_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned multi-bus connection, auxiliary-path, and fallback receipts through runtime, supervisor, and stable host-edge surfaces, but broader complex plugin-I/O, spatial routing, and immersive bus breadth still belongs to later work",
+        "this closes the bounded multi-bus consumer seam, not final plugin-format-specific bus negotiation, product-local routing UX, or spatial renderer policy",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_multi_bus_boundary_json() -> String {
+    let surfaces = multi_bus_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = multi_bus_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned multi-bus connection, auxiliary-path, and fallback receipts through runtime, supervisor, and stable host-edge surfaces, but broader complex plugin-I/O, spatial routing, and immersive bus breadth still belongs to later work",
+        "this closes the bounded multi-bus consumer seam, not final plugin-format-specific bus negotiation, product-local routing UX, or spatial renderer policy",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(MULTI_BUS_BOUNDARY),
+        json_string(MULTI_BUS_CONTRACT_PATH),
+        json_string(MULTI_BUS_ACCEPTANCE_TASK),
+        multi_bus_boundary_surfaces().len(),
+        surfaces,
+        multi_bus_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_multi_bus_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_multi_bus_boundary_text()),
+        OutputFormat::Json => println!("{}", render_multi_bus_boundary_json()),
+    }
+}
+
+fn render_sidechain_boundary_text() -> String {
+    let mut rendered = format!(
+        "sidechain_boundary: {SIDECHAIN_BOUNDARY}\ncontract_path: {SIDECHAIN_CONTRACT_PATH}\nacceptance_task: {SIDECHAIN_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in sidechain_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in sidechain_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned sidechain source, target, attachment policy, and fallback receipts through runtime, supervisor, and stable host-edge surfaces, but broader multi-bus, complex plugin-I/O, and spatial routing breadth still belongs to later work",
+        "this closes the bounded sidechain consumer seam, not richer auxiliary topology, plugin-format-specific bus attachment breadth, or product-local routing UX",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_sidechain_boundary_json() -> String {
+    let surfaces = sidechain_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = sidechain_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned sidechain source, target, attachment policy, and fallback receipts through runtime, supervisor, and stable host-edge surfaces, but broader multi-bus, complex plugin-I/O, and spatial routing breadth still belongs to later work",
+        "this closes the bounded sidechain consumer seam, not richer auxiliary topology, plugin-format-specific bus attachment breadth, or product-local routing UX",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(SIDECHAIN_BOUNDARY),
+        json_string(SIDECHAIN_CONTRACT_PATH),
+        json_string(SIDECHAIN_ACCEPTANCE_TASK),
+        sidechain_boundary_surfaces().len(),
+        surfaces,
+        sidechain_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_sidechain_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_sidechain_boundary_text()),
+        OutputFormat::Json => println!("{}", render_sidechain_boundary_json()),
+    }
+}
+
+fn render_complex_io_boundary_text() -> String {
+    let mut rendered = format!(
+        "complex_io_boundary: {COMPLEX_IO_BOUNDARY}\ncontract_path: {COMPLEX_IO_CONTRACT_PATH}\nacceptance_task: {COMPLEX_IO_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in complex_io_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in complex_io_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned complex plugin-I/O, multi-output instrument, and bus-capable FX receipts through runtime, supervisor, and stable host-edge surfaces, but broader spatial routing, immersive buses, and product pin-matrix policy still belongs to later work",
+        "this closes the bounded complex plugin-I/O consumer seam, not deeper adapter-private negotiation breadth or richer product-local mixer assignment workflows",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_complex_io_boundary_json() -> String {
+    let surfaces = complex_io_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = complex_io_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned complex plugin-I/O, multi-output instrument, and bus-capable FX receipts through runtime, supervisor, and stable host-edge surfaces, but broader spatial routing, immersive buses, and product pin-matrix policy still belongs to later work",
+        "this closes the bounded complex plugin-I/O consumer seam, not deeper adapter-private negotiation breadth or richer product-local mixer assignment workflows",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(COMPLEX_IO_BOUNDARY),
+        json_string(COMPLEX_IO_CONTRACT_PATH),
+        json_string(COMPLEX_IO_ACCEPTANCE_TASK),
+        complex_io_boundary_surfaces().len(),
+        surfaces,
+        complex_io_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_complex_io_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_complex_io_boundary_text()),
+        OutputFormat::Json => println!("{}", render_complex_io_boundary_json()),
+    }
+}
+
+fn render_spatial_boundary_text() -> String {
+    let mut rendered = format!(
+        "spatial_boundary: {SPATIAL_BOUNDARY}\ncontract_path: {SPATIAL_CONTRACT_PATH}\nacceptance_task: {SPATIAL_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in spatial_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in spatial_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned richer spatial receipts through runtime, supervisor, and stable host-edge surfaces, but true object rendering and immersive renderer breadth still belong to later g07 work",
+        "this closes the bounded surround-bed and mix-policy consumer seam, not room-design policy, immersive renderer deployment, or product-local panner workflows",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_spatial_boundary_json() -> String {
+    let surfaces = spatial_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = spatial_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned richer spatial receipts through runtime, supervisor, and stable host-edge surfaces, but true object rendering and immersive renderer breadth still belong to later g07 work",
+        "this closes the bounded surround-bed and mix-policy consumer seam, not room-design policy, immersive renderer deployment, or product-local panner workflows",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(SPATIAL_BOUNDARY),
+        json_string(SPATIAL_CONTRACT_PATH),
+        json_string(SPATIAL_ACCEPTANCE_TASK),
+        spatial_boundary_surfaces().len(),
+        surfaces,
+        spatial_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_spatial_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_spatial_boundary_text()),
+        OutputFormat::Json => println!("{}", render_spatial_boundary_json()),
+    }
+}
+
+fn render_stretch_boundary_text() -> String {
+    let mut rendered = format!(
+        "stretch_boundary: {STRETCH_BOUNDARY}\ncontract_path: {STRETCH_CONTRACT_PATH}\nacceptance_task: {STRETCH_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in stretch_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in stretch_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned sample-domain stretch receipts through runtime, supervisor, render preview, and stable host-edge surfaces, but marker-analysis, artifact-cache, and low-latency audition depth still belongs to later g07 work",
+        "this closes the bounded stretch-engine consumer seam, not broader algorithm-support breadth, warp-marker editing workflows, or product-local preview transforms",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_stretch_boundary_json() -> String {
+    let surfaces = stretch_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = stretch_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned sample-domain stretch receipts through runtime, supervisor, render preview, and stable host-edge surfaces, but marker-analysis, artifact-cache, and low-latency audition depth still belongs to later g07 work",
+        "this closes the bounded stretch-engine consumer seam, not broader algorithm-support breadth, warp-marker editing workflows, or product-local preview transforms",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(STRETCH_BOUNDARY),
+        json_string(STRETCH_CONTRACT_PATH),
+        json_string(STRETCH_ACCEPTANCE_TASK),
+        stretch_boundary_surfaces().len(),
+        surfaces,
+        stretch_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_stretch_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_stretch_boundary_text()),
+        OutputFormat::Json => println!("{}", render_stretch_boundary_json()),
+    }
+}
+
+fn render_marker_analysis_boundary_text() -> String {
+    let mut rendered = format!(
+        "marker_analysis_boundary: {MARKER_ANALYSIS_BOUNDARY}\ncontract_path: {MARKER_ANALYSIS_CONTRACT_PATH}\nacceptance_task: {MARKER_ANALYSIS_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in marker_analysis_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in marker_analysis_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned warp-marker, transient-anchor, tempo-assist, readiness, and invalidation receipts through runtime, supervisor, and stable host-edge surfaces, but fuller editor-grade marker tooling, beat-grid authoring, artifact-cache depth, and low-latency audition still belongs to later g07 work",
+        "this closes the bounded marker-analysis consumer seam, not a richer transform-analysis engine, arrangement intelligence layer, or product-local editing workflow",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_marker_analysis_boundary_json() -> String {
+    let surfaces = marker_analysis_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = marker_analysis_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned warp-marker, transient-anchor, tempo-assist, readiness, and invalidation receipts through runtime, supervisor, and stable host-edge surfaces, but fuller editor-grade marker tooling, beat-grid authoring, artifact-cache depth, and low-latency audition still belongs to later g07 work",
+        "this closes the bounded marker-analysis consumer seam, not a richer transform-analysis engine, arrangement intelligence layer, or product-local editing workflow",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(MARKER_ANALYSIS_BOUNDARY),
+        json_string(MARKER_ANALYSIS_CONTRACT_PATH),
+        json_string(MARKER_ANALYSIS_ACCEPTANCE_TASK),
+        marker_analysis_boundary_surfaces().len(),
+        surfaces,
+        marker_analysis_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_marker_analysis_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_marker_analysis_boundary_text()),
+        OutputFormat::Json => println!("{}", render_marker_analysis_boundary_json()),
+    }
+}
+
+fn render_transform_artifact_boundary_text() -> String {
+    let mut rendered = format!(
+        "transform_artifact_boundary: {TRANSFORM_ARTIFACT_BOUNDARY}\ncontract_path: {TRANSFORM_ARTIFACT_CONTRACT_PATH}\nacceptance_task: {TRANSFORM_ARTIFACT_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in transform_artifact_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in transform_artifact_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned post-warp render, cache readiness, invalidation, and reuse receipts through runtime, supervisor, clip-render, offline preview, and stable host-edge surfaces, but fuller cache-retention, low-latency audition, and richer storage-policy depth still belongs to later g07 work",
+        "this closes the bounded transform-artifact consumer seam, not a full cache engine, preview browser, or product-local transform management workflow",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_transform_artifact_boundary_json() -> String {
+    let surfaces = transform_artifact_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = transform_artifact_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned post-warp render, cache readiness, invalidation, and reuse receipts through runtime, supervisor, clip-render, offline preview, and stable host-edge surfaces, but fuller cache-retention, low-latency audition, and richer storage-policy depth still belongs to later g07 work",
+        "this closes the bounded transform-artifact consumer seam, not a full cache engine, preview browser, or product-local transform management workflow",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(TRANSFORM_ARTIFACT_BOUNDARY),
+        json_string(TRANSFORM_ARTIFACT_CONTRACT_PATH),
+        json_string(TRANSFORM_ARTIFACT_ACCEPTANCE_TASK),
+        transform_artifact_boundary_surfaces().len(),
+        surfaces,
+        transform_artifact_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_transform_artifact_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_transform_artifact_boundary_text()),
+        OutputFormat::Json => println!("{}", render_transform_artifact_boundary_json()),
+    }
+}
+
+fn render_preview_transform_boundary_text() -> String {
+    let mut rendered = format!(
+        "preview_transform_boundary: {PREVIEW_TRANSFORM_BOUNDARY}\ncontract_path: {PREVIEW_TRANSFORM_CONTRACT_PATH}\nacceptance_task: {PREVIEW_TRANSFORM_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in preview_transform_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in preview_transform_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the shared boundary now proves runtime-owned low-latency audition, scrub support, preview-transform readiness, degraded-state, and fallback receipts through runtime, supervisor, render-preview, offline preview, and stable host-edge surfaces, but fuller low-latency execution, preview-device routing, and browser workflow depth still belongs to later g07 work",
+        "this closes the bounded preview-transform consumer seam, not a full preview playback engine, browser shell, or product-local audition workflow",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_preview_transform_boundary_json() -> String {
+    let surfaces = preview_transform_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = preview_transform_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the shared boundary now proves runtime-owned low-latency audition, scrub support, preview-transform readiness, degraded-state, and fallback receipts through runtime, supervisor, render-preview, offline preview, and stable host-edge surfaces, but fuller low-latency execution, preview-device routing, and browser workflow depth still belongs to later g07 work",
+        "this closes the bounded preview-transform consumer seam, not a full preview playback engine, browser shell, or product-local audition workflow",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(PREVIEW_TRANSFORM_BOUNDARY),
+        json_string(PREVIEW_TRANSFORM_CONTRACT_PATH),
+        json_string(PREVIEW_TRANSFORM_ACCEPTANCE_TASK),
+        preview_transform_boundary_surfaces().len(),
+        surfaces,
+        preview_transform_boundary_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_preview_transform_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_preview_transform_boundary_text()),
+        OutputFormat::Json => println!("{}", render_preview_transform_boundary_json()),
+    }
+}
+
 fn render_integrated_acceptance_lane_text() -> String {
     let mut rendered = format!(
         "integrated_acceptance_lane: {INTEGRATED_ACCEPTANCE_LANE}\ncontract_path: {INTEGRATED_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {INTEGRATED_ACCEPTANCE_TASK}\nrequired_tasks:\n"
@@ -5930,6 +10251,160 @@ fn print_integrated_acceptance_lane(format: OutputFormat) {
     match format {
         OutputFormat::Text => println!("{}", render_integrated_acceptance_lane_text()),
         OutputFormat::Json => println!("{}", render_integrated_acceptance_lane_json()),
+    }
+}
+
+fn render_g07_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "g07_acceptance_lane: {G07_ACCEPTANCE_LANE}\ncontract_path: {G07_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {G07_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in G07_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in G07_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in g07_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in g07_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane now groups required routing, Linux, controller, and stretch acceptance tasks and includes one repo-owned cross-family supervisor export proof",
+        "broader repeated-run confidence passes, richer local or server permutations, and exhaustive environment matrices remain advisory or deferred instead of silently entering the required lane",
+        "the Loophole-facing closeout and promotion verdict remains outside this lane and still belongs to g07.020",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_g07_acceptance_lane_json() -> String {
+    let required_tasks = G07_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = G07_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = g07_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = g07_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane now groups required routing, Linux, controller, and stretch acceptance tasks and includes one repo-owned cross-family supervisor export proof",
+        "broader repeated-run confidence passes, richer local or server permutations, and exhaustive environment matrices remain advisory or deferred instead of silently entering the required lane",
+        "the Loophole-facing closeout and promotion verdict remains outside this lane and still belongs to g07.020",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(G07_ACCEPTANCE_LANE),
+        json_string(G07_ACCEPTANCE_CONTRACT_PATH),
+        json_string(G07_ACCEPTANCE_TASK),
+        G07_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        G07_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        g07_acceptance_families().len(),
+        families,
+        g07_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_g07_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_g07_acceptance_lane_text()),
+        OutputFormat::Json => println!("{}", render_g07_acceptance_lane_json()),
     }
 }
 
@@ -6612,7 +11087,7 @@ fn print_downstream_fail_gates(format: OutputFormat) {
 
 fn render_generation_closeout_text() -> String {
     let mut rendered = format!(
-        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncontract_path: {GENERATION_CLOSEOUT_CONTRACT_PATH}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\npromotion_decision: {GENERATION_CLOSEOUT_PROMOTION_DECISION}\nintegrated_acceptance_command: cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json\ng06_soak_lane_command: cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json\nnext_generation_path: {G07_README_PATH}\nnext_generation_status: {GENERATION_CLOSEOUT_NEXT_GENERATION_STATUS}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
+        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncontract_path: {GENERATION_CLOSEOUT_CONTRACT_PATH}\nroadmap_path: {GENERATION_CLOSEOUT_ROADMAP_PATH}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\npromotion_decision: {GENERATION_CLOSEOUT_PROMOTION_DECISION}\ncloseout_gate_status: {GENERATION_CLOSEOUT_GATE_STATUS}\ng07_acceptance_lane_command: cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json\nnext_queue_path: {G08_README_PATH}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
     );
     for step in generation_closeout_validation_steps() {
         rendered.push_str(&format!(
@@ -6686,12 +11161,12 @@ fn render_generation_closeout_json() -> String {
             "\"closeout\":{},",
             "\"generation\":{},",
             "\"contract_path\":{},",
+            "\"roadmap_path\":{},",
             "\"closeout_task\":{},",
             "\"promotion_decision\":{},",
-            "\"integrated_acceptance_command\":{},",
-            "\"g06_soak_lane_command\":{},",
-            "\"next_generation_path\":{},",
-            "\"next_generation_status\":{},",
+            "\"closeout_gate_status\":{},",
+            "\"g07_acceptance_lane_command\":{},",
+            "\"next_queue_path\":{},",
             "\"next_queue_status\":{},",
             "\"validation_steps\":[{}],",
             "\"loophole_readiness_areas\":[{}],",
@@ -6702,16 +11177,14 @@ fn render_generation_closeout_json() -> String {
         json_string(GENERATION_CLOSEOUT),
         json_string(GENERATION_CLOSEOUT_GENERATION),
         json_string(GENERATION_CLOSEOUT_CONTRACT_PATH),
+        json_string(GENERATION_CLOSEOUT_ROADMAP_PATH),
         json_string(GENERATION_CLOSEOUT_TASK),
         json_string(GENERATION_CLOSEOUT_PROMOTION_DECISION),
+        json_string(GENERATION_CLOSEOUT_GATE_STATUS,),
         json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json",
+            "cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json",
         ),
-        json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json",
-        ),
-        json_string(G07_README_PATH),
-        json_string(GENERATION_CLOSEOUT_NEXT_GENERATION_STATUS),
+        json_string(G08_README_PATH),
         json_string(GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS),
         validation_steps,
         readiness_areas,
@@ -6849,15 +11322,35 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_plugin_continuity_boundary = false;
     let mut describe_vst3_boundary = false;
     let mut describe_au_boundary = false;
+    let mut describe_lv2_boundary = false;
     let mut describe_cross_adapter_parity_boundary = false;
+    let mut describe_linux_plugin_parity_boundary = false;
+    let mut describe_linux_audio_backend_boundary = false;
+    let mut describe_linux_live_ownership_boundary = false;
+    let mut describe_jack_coordination_boundary = false;
+    let mut describe_linux_backend_clock_topology_boundary = false;
+    let mut describe_external_midi_boundary = false;
     let mut describe_generic_event_boundary = false;
+    let mut describe_controller_expression_boundary = false;
+    let mut describe_control_surface_boundary = false;
+    let mut describe_advanced_hardware_boundary = false;
     let mut describe_recall_portability_boundary = false;
     let mut describe_device_supervision_boundary = false;
     let mut describe_clock_topology_boundary = false;
     let mut describe_external_io_boundary = false;
     let mut describe_media_service_boundary = false;
     let mut describe_analysis_metadata_boundary = false;
+    let mut describe_multichannel_boundary = false;
+    let mut describe_multi_bus_boundary = false;
+    let mut describe_sidechain_boundary = false;
+    let mut describe_complex_io_boundary = false;
+    let mut describe_spatial_boundary = false;
+    let mut describe_stretch_boundary = false;
+    let mut describe_marker_analysis_boundary = false;
+    let mut describe_transform_artifact_boundary = false;
+    let mut describe_preview_transform_boundary = false;
     let mut describe_integrated_acceptance_lane = false;
+    let mut describe_g07_acceptance_lane = false;
     let mut describe_g06_soak_lane = false;
     let mut describe_host_edge_boundary = false;
     let mut describe_release_boundary = false;
@@ -6928,12 +11421,52 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             describe_au_boundary = true;
             continue;
         }
+        if arg == "--describe-lv2-boundary" {
+            describe_lv2_boundary = true;
+            continue;
+        }
         if arg == "--describe-cross-adapter-parity-boundary" {
             describe_cross_adapter_parity_boundary = true;
             continue;
         }
+        if arg == "--describe-linux-plugin-parity-boundary" {
+            describe_linux_plugin_parity_boundary = true;
+            continue;
+        }
+        if arg == "--describe-linux-audio-backend-boundary" {
+            describe_linux_audio_backend_boundary = true;
+            continue;
+        }
+        if arg == "--describe-linux-live-ownership-boundary" {
+            describe_linux_live_ownership_boundary = true;
+            continue;
+        }
+        if arg == "--describe-jack-coordination-boundary" {
+            describe_jack_coordination_boundary = true;
+            continue;
+        }
+        if arg == "--describe-linux-backend-clock-topology-boundary" {
+            describe_linux_backend_clock_topology_boundary = true;
+            continue;
+        }
+        if arg == "--describe-external-midi-boundary" {
+            describe_external_midi_boundary = true;
+            continue;
+        }
         if arg == "--describe-generic-event-boundary" {
             describe_generic_event_boundary = true;
+            continue;
+        }
+        if arg == "--describe-controller-expression-boundary" {
+            describe_controller_expression_boundary = true;
+            continue;
+        }
+        if arg == "--describe-control-surface-boundary" {
+            describe_control_surface_boundary = true;
+            continue;
+        }
+        if arg == "--describe-advanced-hardware-boundary" {
+            describe_advanced_hardware_boundary = true;
             continue;
         }
         if arg == "--describe-recall-portability-boundary" {
@@ -6960,8 +11493,48 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             describe_analysis_metadata_boundary = true;
             continue;
         }
+        if arg == "--describe-multichannel-boundary" {
+            describe_multichannel_boundary = true;
+            continue;
+        }
+        if arg == "--describe-multi-bus-boundary" {
+            describe_multi_bus_boundary = true;
+            continue;
+        }
+        if arg == "--describe-sidechain-boundary" {
+            describe_sidechain_boundary = true;
+            continue;
+        }
+        if arg == "--describe-complex-io-boundary" {
+            describe_complex_io_boundary = true;
+            continue;
+        }
+        if arg == "--describe-spatial-boundary" {
+            describe_spatial_boundary = true;
+            continue;
+        }
+        if arg == "--describe-stretch-boundary" {
+            describe_stretch_boundary = true;
+            continue;
+        }
+        if arg == "--describe-marker-analysis-boundary" {
+            describe_marker_analysis_boundary = true;
+            continue;
+        }
+        if arg == "--describe-transform-artifact-boundary" {
+            describe_transform_artifact_boundary = true;
+            continue;
+        }
+        if arg == "--describe-preview-transform-boundary" {
+            describe_preview_transform_boundary = true;
+            continue;
+        }
         if arg == "--describe-integrated-acceptance-lane" {
             describe_integrated_acceptance_lane = true;
+            continue;
+        }
+        if arg == "--describe-g07-acceptance-lane" {
+            describe_g07_acceptance_lane = true;
             continue;
         }
         if arg == "--describe-g06-soak-lane" {
@@ -7012,15 +11585,34 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_plugin_continuity_boundary,
         describe_vst3_boundary,
         describe_au_boundary,
+        describe_lv2_boundary,
         describe_cross_adapter_parity_boundary,
+        describe_linux_plugin_parity_boundary,
+        describe_linux_audio_backend_boundary,
+        describe_linux_live_ownership_boundary,
+        describe_linux_backend_clock_topology_boundary,
+        describe_external_midi_boundary,
         describe_generic_event_boundary,
+        describe_controller_expression_boundary,
+        describe_control_surface_boundary,
+        describe_advanced_hardware_boundary,
         describe_recall_portability_boundary,
         describe_device_supervision_boundary,
         describe_clock_topology_boundary,
         describe_external_io_boundary,
         describe_media_service_boundary,
         describe_analysis_metadata_boundary,
+        describe_multichannel_boundary,
+        describe_multi_bus_boundary,
+        describe_sidechain_boundary,
+        describe_complex_io_boundary,
+        describe_spatial_boundary,
+        describe_stretch_boundary,
+        describe_marker_analysis_boundary,
+        describe_transform_artifact_boundary,
+        describe_preview_transform_boundary,
         describe_integrated_acceptance_lane,
+        describe_g07_acceptance_lane,
         describe_g06_soak_lane,
         describe_host_edge_boundary,
         describe_release_boundary,
@@ -7202,6 +11794,19 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_lv2_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-lv2-boundary` does not accept <profile> <scenario> positionals".into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeLv2Boundary,
+        });
+    }
+
     if describe_cross_adapter_parity_boundary {
         if !positional.is_empty() {
             return Err(
@@ -7216,6 +11821,90 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_linux_plugin_parity_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-linux-plugin-parity-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeLinuxPluginParityBoundary,
+        });
+    }
+
+    if describe_linux_audio_backend_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-linux-audio-backend-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeLinuxAudioBackendBoundary,
+        });
+    }
+
+    if describe_linux_live_ownership_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-linux-live-ownership-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeLinuxLiveOwnershipBoundary,
+        });
+    }
+
+    if describe_jack_coordination_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-jack-coordination-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeJackCoordinationBoundary,
+        });
+    }
+
+    if describe_linux_backend_clock_topology_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-linux-backend-clock-topology-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeLinuxBackendClockTopologyBoundary,
+        });
+    }
+
+    if describe_external_midi_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-external-midi-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeExternalMidiBoundary,
+        });
+    }
+
     if describe_generic_event_boundary {
         if !positional.is_empty() {
             return Err(
@@ -7227,6 +11916,48 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeGenericEventBoundary,
+        });
+    }
+
+    if describe_controller_expression_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-controller-expression-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeControllerExpressionBoundary,
+        });
+    }
+
+    if describe_control_surface_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-control-surface-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeControlSurfaceBoundary,
+        });
+    }
+
+    if describe_advanced_hardware_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-advanced-hardware-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeAdvancedHardwareBoundary,
         });
     }
 
@@ -7314,6 +12045,132 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_multichannel_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-multichannel-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeMultichannelBoundary,
+        });
+    }
+
+    if describe_multi_bus_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-multi-bus-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeMultiBusBoundary,
+        });
+    }
+
+    if describe_sidechain_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-sidechain-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeSidechainBoundary,
+        });
+    }
+
+    if describe_complex_io_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-complex-io-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeComplexIoBoundary,
+        });
+    }
+
+    if describe_spatial_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-spatial-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeSpatialBoundary,
+        });
+    }
+
+    if describe_stretch_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-stretch-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeStretchBoundary,
+        });
+    }
+
+    if describe_marker_analysis_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-marker-analysis-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeMarkerAnalysisBoundary,
+        });
+    }
+
+    if describe_transform_artifact_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-transform-artifact-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeTransformArtifactBoundary,
+        });
+    }
+
+    if describe_preview_transform_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-preview-transform-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribePreviewTransformBoundary,
+        });
+    }
+
     if describe_integrated_acceptance_lane {
         if !positional.is_empty() {
             return Err(
@@ -7325,6 +12182,20 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeIntegratedAcceptanceLane,
+        });
+    }
+
+    if describe_g07_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-g07-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeG07AcceptanceLane,
         });
     }
 
@@ -7503,12 +12374,52 @@ fn main() {
             print_au_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribeLv2Boundary => {
+            print_lv2_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeCrossAdapterParityBoundary => {
             print_cross_adapter_parity_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribeLinuxPluginParityBoundary => {
+            print_linux_plugin_parity_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeLinuxAudioBackendBoundary => {
+            print_linux_audio_backend_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeLinuxLiveOwnershipBoundary => {
+            print_linux_live_ownership_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeJackCoordinationBoundary => {
+            print_jack_coordination_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeLinuxBackendClockTopologyBoundary => {
+            print_linux_backend_clock_topology_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeExternalMidiBoundary => {
+            print_external_midi_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeGenericEventBoundary => {
             print_generic_event_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeControllerExpressionBoundary => {
+            print_controller_expression_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeControlSurfaceBoundary => {
+            print_control_surface_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeAdvancedHardwareBoundary => {
+            print_advanced_hardware_boundary(args.format);
             Ok(())
         }
         CliMode::DescribeRecallPortabilityBoundary => {
@@ -7535,8 +12446,48 @@ fn main() {
             print_analysis_metadata_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribeMultichannelBoundary => {
+            print_multichannel_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeMultiBusBoundary => {
+            print_multi_bus_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeSidechainBoundary => {
+            print_sidechain_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeComplexIoBoundary => {
+            print_complex_io_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeSpatialBoundary => {
+            print_spatial_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeStretchBoundary => {
+            print_stretch_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeMarkerAnalysisBoundary => {
+            print_marker_analysis_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribeTransformArtifactBoundary => {
+            print_transform_artifact_boundary(args.format);
+            Ok(())
+        }
+        CliMode::DescribePreviewTransformBoundary => {
+            print_preview_transform_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeIntegratedAcceptanceLane => {
             print_integrated_acceptance_lane(args.format);
+            Ok(())
+        }
+        CliMode::DescribeG07AcceptanceLane => {
+            print_g07_acceptance_lane(args.format);
             Ok(())
         }
         CliMode::DescribeG06SoakLane => {
@@ -7582,11 +12533,15 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::{
-        parse_args, render_analysis_metadata_boundary_json, render_analysis_metadata_boundary_text,
+        parse_args, render_advanced_hardware_boundary_json, render_advanced_hardware_boundary_text,
+        render_analysis_metadata_boundary_json, render_analysis_metadata_boundary_text,
         render_au_boundary_json, render_au_boundary_text, render_block_timing_boundary_json,
         render_block_timing_boundary_text, render_clock_topology_boundary_json,
-        render_clock_topology_boundary_text, render_conformance_matrix_json,
-        render_conformance_matrix_text, render_critical_path_boundary_json,
+        render_clock_topology_boundary_text, render_complex_io_boundary_json,
+        render_complex_io_boundary_text, render_conformance_matrix_json,
+        render_conformance_matrix_text, render_control_surface_boundary_json,
+        render_control_surface_boundary_text, render_controller_expression_boundary_json,
+        render_controller_expression_boundary_text, render_critical_path_boundary_json,
         render_critical_path_boundary_text, render_cross_adapter_parity_boundary_json,
         render_cross_adapter_parity_boundary_text, render_deferred_work_policy_boundary_json,
         render_deferred_work_policy_boundary_text, render_device_supervision_boundary_json,
@@ -7594,27 +12549,44 @@ mod tests {
         render_downstream_automation_text, render_downstream_fail_gates_json,
         render_downstream_fail_gates_text, render_export_description_json,
         render_export_description_text, render_external_io_boundary_json,
-        render_external_io_boundary_text, render_fault_diagnostic_boundary_json,
+        render_external_io_boundary_text, render_external_midi_boundary_json,
+        render_external_midi_boundary_text, render_fault_diagnostic_boundary_json,
         render_fault_diagnostic_boundary_text, render_g06_soak_lane_json,
-        render_g06_soak_lane_text, render_generation_closeout_json,
+        render_g06_soak_lane_text, render_g07_acceptance_lane_json,
+        render_g07_acceptance_lane_text, render_generation_closeout_json,
         render_generation_closeout_text, render_generic_event_boundary_json,
         render_generic_event_boundary_text, render_host_edge_boundary_json,
         render_host_edge_boundary_text, render_integrated_acceptance_lane_json,
         render_integrated_acceptance_lane_text, render_interruption_boundary_json,
-        render_interruption_boundary_text, render_media_service_boundary_json,
-        render_media_service_boundary_text, render_offline_render_continuity_boundary_json,
+        render_interruption_boundary_text, render_jack_coordination_boundary_json,
+        render_jack_coordination_boundary_text, render_linux_audio_backend_boundary_json,
+        render_linux_audio_backend_boundary_text,
+        render_linux_backend_clock_topology_boundary_json,
+        render_linux_backend_clock_topology_boundary_text,
+        render_linux_live_ownership_boundary_json, render_linux_live_ownership_boundary_text,
+        render_linux_plugin_parity_boundary_json, render_linux_plugin_parity_boundary_text,
+        render_lv2_boundary_json, render_lv2_boundary_text, render_marker_analysis_boundary_json,
+        render_marker_analysis_boundary_text, render_media_service_boundary_json,
+        render_media_service_boundary_text, render_multi_bus_boundary_json,
+        render_multi_bus_boundary_text, render_multichannel_boundary_json,
+        render_multichannel_boundary_text, render_offline_render_continuity_boundary_json,
         render_offline_render_continuity_boundary_text, render_packaging_manifest_json,
         render_packaging_manifest_text, render_plugin_continuity_boundary_json,
-        render_plugin_continuity_boundary_text, render_recall_portability_boundary_json,
+        render_plugin_continuity_boundary_text, render_preview_transform_boundary_json,
+        render_preview_transform_boundary_text, render_recall_portability_boundary_json,
         render_recall_portability_boundary_text, render_recording_continuity_boundary_json,
         render_recording_continuity_boundary_text, render_release_boundary_json,
-        render_release_boundary_text, render_supervisor_export_json, render_vst3_boundary_json,
-        render_vst3_boundary_text, CliArgs, CliMode, ExportDebugOptions, HostProfile,
-        HostSummaryDebugSection, OutputFormat, Scenario,
+        render_release_boundary_text, render_sidechain_boundary_json,
+        render_sidechain_boundary_text, render_spatial_boundary_json, render_spatial_boundary_text,
+        render_stretch_boundary_json, render_stretch_boundary_text, render_supervisor_export_json,
+        render_transform_artifact_boundary_json, render_transform_artifact_boundary_text,
+        render_vst3_boundary_json, render_vst3_boundary_text, CliArgs, CliMode, ExportDebugOptions,
+        HostProfile, HostSummaryDebugSection, OutputFormat, Scenario,
     };
     use signal_hardware::{
-        AudioSampleFormat, BackendHealth, HardwareDiagnosticsSnapshot, HardwareLifecycleContract,
-        HardwareLifecycleOwnership, HardwareRestartPolicy,
+        AudioSampleFormat, BackendHealth, HardwareBackendIdentity, HardwareDiagnosticsSnapshot,
+        HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareRestartPolicy,
+        LinuxAudioBackendKind,
     };
     use signal_host_local::host::{
         LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy,
@@ -7637,9 +12609,12 @@ mod tests {
         RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
         RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
         RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy, RuntimeLifecycleApi,
-        RuntimeMediaAssetRegistration, RuntimeObservationApi, RuntimeOfflineRenderPurgeRequest,
-        RuntimeOfflineRenderRequest, RuntimePluginDiscoveredTypeRecord,
+        RuntimeLinuxAudioBackendClockingParityBand, RuntimeLinuxAudioBackendDuplexParityState,
+        RuntimeLinuxAudioBackendEndpointTopologyParityState, RuntimeMediaAssetRegistration,
+        RuntimeObservationApi, RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest,
+        RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
         RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+        RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimeProjectionApi,
         RuntimeSupervisorReport, RuntimeWatchdogTrigger, SafeModeRequest,
         SandboxOperationFailureStage, SignalRuntime, StopReason, TransportDispatchState,
         TransportHeartbeatFreshness, TransportSessionState, WatchdogRestartRecord,
@@ -7660,6 +12635,23 @@ mod tests {
                 midi_inputs: 1,
                 midi_outputs: 1,
             },
+            default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+                PluginIoLayout {
+                    audio_inputs: 2,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 1,
+                },
+            ),
+            complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                &[PluginFeature::AudioEffect, PluginFeature::Utility],
+                PluginIoLayout {
+                    audio_inputs: 2,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 1,
+                },
+            ),
             audio_bus_count: 2,
             parameter_count: 12,
             state_contract: PluginStateContract {
@@ -7703,6 +12695,23 @@ mod tests {
                 midi_inputs: 1,
                 midi_outputs: 0,
             },
+            default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+                PluginIoLayout {
+                    audio_inputs: 0,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 0,
+                },
+            ),
+            complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                &[PluginFeature::Instrument, PluginFeature::Analyzer],
+                PluginIoLayout {
+                    audio_inputs: 0,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 0,
+                },
+            ),
             audio_bus_count: 1,
             parameter_count: 24,
             state_contract: PluginStateContract {
@@ -7746,6 +12755,23 @@ mod tests {
                 midi_inputs: 1,
                 midi_outputs: 0,
             },
+            default_multichannel_io: signal_runtime::RuntimeMultichannelIoSummary::for_plugin_io(
+                PluginIoLayout {
+                    audio_inputs: 0,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 0,
+                },
+            ),
+            complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+                &[PluginFeature::Instrument, PluginFeature::Analyzer],
+                PluginIoLayout {
+                    audio_inputs: 0,
+                    audio_outputs: 2,
+                    midi_inputs: 1,
+                    midi_outputs: 0,
+                },
+            ),
             audio_bus_count: 1,
             parameter_count: 10,
             state_contract: PluginStateContract {
@@ -7777,11 +12803,25 @@ mod tests {
     fn sample_integrated_acceptance_host_io() -> RuntimeHostIoSummary {
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio".into(),
+                linux_backend_identity: RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                    HardwareBackendIdentity::CoreAudio,
+                ),
+                linux_backend_portability:
+                    RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                        HardwareBackendIdentity::CoreAudio,
+                        false,
+                        BackendHealth::Healthy,
+                        0,
+                        0,
+                        0,
+                    ),
                 device_id: "device:integrated-acceptance".into(),
                 device_name: "Integrated Acceptance Device".into(),
                 sample_rate: 48_000,
                 buffer_size: 256,
+                input_channels: 0,
                 output_channels: 2,
                 sample_format: AudioSampleFormat::F32,
                 simulated: false,
@@ -7821,6 +12861,10 @@ mod tests {
                 discontinuity_state: RuntimeHostClockDiscontinuityState::Reconfigured,
                 duplex_mismatch_state: RuntimeHostDuplexMismatchState::CrossClockDiverged,
                 endpoint_topology: RuntimeHostEndpointTopology::Duplex,
+                linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand::Unsupported,
+                linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState::Unsupported,
+                linux_endpoint_topology_parity:
+                    RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported,
                 partial_availability: false,
                 crossing_required: true,
                 callback_interval_ms: 5.333,
@@ -7883,6 +12927,197 @@ mod tests {
         fs::write(path, bytes).expect("integrated acceptance media fixture should be written");
     }
 
+    fn write_g07_acceptance_transient_wav(path: &Path) {
+        let channels = 1u16;
+        let sample_rate = 48_000u32;
+        let bits_per_sample = 16u16;
+        let frame_count = 48_000u32;
+        let block_align = channels * (bits_per_sample / 8);
+        let byte_rate = sample_rate * block_align as u32;
+        let data_size = frame_count * block_align as u32;
+        let riff_size = 36 + data_size;
+        let mut bytes = Vec::with_capacity((44 + data_size) as usize);
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&riff_size.to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16u32.to_le_bytes());
+        bytes.extend_from_slice(&1u16.to_le_bytes());
+        bytes.extend_from_slice(&channels.to_le_bytes());
+        bytes.extend_from_slice(&sample_rate.to_le_bytes());
+        bytes.extend_from_slice(&byte_rate.to_le_bytes());
+        bytes.extend_from_slice(&block_align.to_le_bytes());
+        bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_size.to_le_bytes());
+        for frame in 0..frame_count {
+            let sample = if frame % 6_000 == 0 { i16::MAX } else { 0 };
+            bytes.extend_from_slice(&sample.to_le_bytes());
+        }
+        fs::write(path, bytes).expect("g07 acceptance transient wav should be written");
+    }
+
+    fn sample_g07_acceptance_host_io() -> RuntimeHostIoSummary {
+        let linux_backend_identity = RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        );
+        RuntimeHostIoSummary {
+            hardware: RuntimeHostHardwareSummary {
+                backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+                backend_name: "alsa".into(),
+                linux_backend_identity,
+                linux_backend_portability:
+                    RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+                        false,
+                        BackendHealth::Healthy,
+                        0,
+                        0,
+                        0,
+                    ),
+                device_id: "alsa:g07-integrated".into(),
+                device_name: "ALSA Integrated Acceptance Device".into(),
+                sample_rate: 48_000,
+                buffer_size: 256,
+                input_channels: 2,
+                output_channels: 2,
+                sample_format: AudioSampleFormat::F32,
+                simulated: false,
+                backend_health: BackendHealth::Healthy,
+                xrun_count: 0,
+                callback_overrun_count: 0,
+                device_loss_count: 0,
+                restart_attempt_count: 0,
+                restart_failure_count: 0,
+            },
+            audio_pump: RuntimeHostAudioPumpSummary {
+                stream_state: RuntimeHostAudioStreamState::Running,
+                transfer_policy: RuntimeHostAudioTransferPolicy {
+                    max_callback_frames: 256,
+                    max_transfer_channels: 2,
+                    zero_fill_unwritten_output: true,
+                },
+                callback_count: 16,
+                total_callback_frames: 4_096,
+                total_runtime_output_frames: 4_096,
+                copied_output_samples: 8_192,
+                zero_filled_output_samples: 0,
+                dropped_output_samples: 0,
+                last_callback_output_peak: Some(0.42),
+                last_runtime_graph_id: Some("graph:g07-integrated-acceptance".into()),
+            },
+            clocking: RuntimeHostClockingSummary {
+                clock_source: RuntimeHostClockSource::Internal,
+                ownership: RuntimeHostLifecycleOwnership::HostDrivenCallback,
+                restart_policy: RuntimeHostRestartPolicy::HostMustRestart,
+                processing_sample_rate_hz: 48_000,
+                hardware_sample_rate_hz: 48_000,
+                clock_domain: RuntimeHostClockDomain::SameClock,
+                fallback_state: RuntimeHostClockFallbackState::Direct,
+                transition_state: RuntimeHostClockTransitionState::Stable,
+                drift_state: RuntimeHostClockDriftState::Stable,
+                discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+                duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
+                endpoint_topology: RuntimeHostEndpointTopology::Duplex,
+                linux_clocking_parity: RuntimeHostIoSummary::classify_linux_clocking_parity(
+                    linux_backend_identity,
+                    BackendHealth::Healthy,
+                    RuntimeHostAudioStreamState::Running,
+                    RuntimeHostClockDomain::SameClock,
+                    RuntimeHostClockFallbackState::Direct,
+                    RuntimeHostClockTransitionState::Stable,
+                    RuntimeHostClockDriftState::Stable,
+                    RuntimeHostClockDiscontinuityState::Continuous,
+                ),
+                linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(
+                    linux_backend_identity,
+                    BackendHealth::Healthy,
+                    RuntimeHostAudioStreamState::Running,
+                    RuntimeHostClockDomain::SameClock,
+                    RuntimeHostClockFallbackState::Direct,
+                    RuntimeHostClockTransitionState::Stable,
+                    RuntimeHostDuplexMismatchState::Aligned,
+                    RuntimeHostEndpointTopology::Duplex,
+                    false,
+                ),
+                linux_endpoint_topology_parity:
+                    RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                        linux_backend_identity,
+                        BackendHealth::Healthy,
+                        RuntimeHostClockTransitionState::Stable,
+                        RuntimeHostClockDiscontinuityState::Continuous,
+                        RuntimeHostDuplexMismatchState::Aligned,
+                        RuntimeHostEndpointTopology::Duplex,
+                        false,
+                    ),
+                partial_availability: false,
+                crossing_required: false,
+                callback_interval_ms: 5.333,
+            },
+            latency: RuntimeHostLatencySummary {
+                input_latency_samples: Some(128),
+                output_latency_samples: 128,
+                round_trip_latency_samples: Some(256),
+                graph_latency_samples: 24,
+                estimated_output_latency_samples: 152,
+                estimated_round_trip_latency_samples: Some(280),
+                output_latency_ms: 2.667,
+                graph_latency_ms: 0.5,
+                estimated_output_latency_ms: 3.167,
+                estimated_round_trip_latency_ms: Some(5.833),
+            },
+            runtime_graph_id_matches_pump: true,
+        }
+    }
+
+    fn sample_g07_external_midi_snapshot(
+    ) -> signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+        signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+            discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
+            graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+            provider_name: "signal-host-local".into(),
+            device_count: 1,
+            endpoint_count: 1,
+            input_endpoint_count: 1,
+            output_endpoint_count: 1,
+            duplex_endpoint_count: 1,
+            active_route_count: 1,
+            guarded_route_count: 0,
+            devices: vec![signal_runtime::RuntimeExternalMidiDeviceDescriptor {
+                device_id: "device:controller:main".into(),
+                device_name: "Signal Controller".into(),
+                lifecycle_state: signal_runtime::RuntimeExternalMidiDeviceLifecycleState::Discovered,
+                endpoint_count: 1,
+                summary: "device Signal Controller lifecycle=Discovered endpoints=1".into(),
+            }],
+            endpoints: vec![signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                endpoint_id: "endpoint:controller:duplex".into(),
+                endpoint_name: "Signal Controller Duplex".into(),
+                device_id: "device:controller:main".into(),
+                direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Duplex,
+                lifecycle_state: signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                route_state: signal_runtime::RuntimeExternalMidiRouteState::DuplexObserved,
+                capability: signal_runtime::RuntimeExternalMidiEndpointCapabilitySummary {
+                    supports_bounded_midi_input: true,
+                    supports_bounded_midi_output: true,
+                    supports_transport_clock: true,
+                    supports_note_events: true,
+                    supports_controller_events: true,
+                    supports_note_pressure_expression: true,
+                    supports_note_timbre_expression: true,
+                    supports_note_tuning_expression: false,
+                    supports_mpe: true,
+                    midi2_posture:
+                        signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded,
+                    control_surface_guarded: false,
+                    summary: "midi-input=true midi-output=true transport-clock=true note-events=true controller-events=true pressure=true timbre=true tuning=false mpe=true midi2=Guarded control-surface=portable".into(),
+                },
+                summary: "endpoint Signal Controller Duplex direction=Duplex route=DuplexObserved lifecycle=Active".into(),
+            }],
+            summary: "discovery=Ready graph=Ready provider=signal-host-local devices=1 endpoints=1 routes=1".into(),
+        }
+    }
+
     fn sample_local_summary() -> LocalRuntimeHostSummary {
         LocalRuntimeHostSummary {
             backend_name: "coreaudio",
@@ -7891,6 +13126,7 @@ mod tests {
                 device_name: "CoreAudio Default Output".into(),
                 sample_rate: 48_000,
                 buffer_size: 512,
+                input_channels: 0,
                 output_channels: 2,
                 sample_format: AudioSampleFormat::F32,
                 lifecycle: HardwareLifecycleContract {
@@ -8302,6 +13538,18 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_lv2_boundary_mode() {
+        assert_eq!(
+            parse_args(["--format=json".into(), "--describe-lv2-boundary".into()]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeLv2Boundary,
+            })
+        );
+    }
+
+    #[test]
     fn parse_args_supports_describe_cross_adapter_parity_boundary_mode() {
         assert_eq!(
             parse_args([
@@ -8317,6 +13565,96 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_linux_plugin_parity_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-linux-plugin-parity-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeLinuxPluginParityBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_linux_audio_backend_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-linux-audio-backend-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeLinuxAudioBackendBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_linux_live_ownership_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-linux-live-ownership-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeLinuxLiveOwnershipBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_jack_coordination_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-jack-coordination-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeJackCoordinationBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_linux_backend_clock_topology_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-linux-backend-clock-topology-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeLinuxBackendClockTopologyBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_external_midi_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-external-midi-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeExternalMidiBoundary,
+            })
+        );
+    }
+
+    #[test]
     fn parse_args_supports_describe_generic_event_boundary_mode() {
         assert_eq!(
             parse_args([
@@ -8327,6 +13665,51 @@ mod tests {
                 format: OutputFormat::Json,
                 debug: ExportDebugOptions { payload: false },
                 mode: CliMode::DescribeGenericEventBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_controller_expression_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-controller-expression-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeControllerExpressionBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_control_surface_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-control-surface-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeControlSurfaceBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_advanced_hardware_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-advanced-hardware-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeAdvancedHardwareBoundary,
             })
         );
     }
@@ -8422,6 +13805,135 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_multichannel_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-multichannel-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeMultichannelBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_multi_bus_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-multi-bus-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeMultiBusBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_sidechain_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-sidechain-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeSidechainBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_complex_io_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-complex-io-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeComplexIoBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_spatial_boundary_mode() {
+        assert_eq!(
+            parse_args(["--format=json".into(), "--describe-spatial-boundary".into()]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeSpatialBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_stretch_boundary_mode() {
+        assert_eq!(
+            parse_args(["--format=json".into(), "--describe-stretch-boundary".into()]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeStretchBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_marker_analysis_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-marker-analysis-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeMarkerAnalysisBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_transform_artifact_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-transform-artifact-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeTransformArtifactBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_preview_transform_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-preview-transform-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribePreviewTransformBoundary,
+            })
+        );
+    }
+
+    #[test]
     fn parse_args_supports_describe_integrated_acceptance_lane_mode() {
         assert_eq!(
             parse_args([
@@ -8432,6 +13944,21 @@ mod tests {
                 format: OutputFormat::Json,
                 debug: ExportDebugOptions { payload: false },
                 mode: CliMode::DescribeIntegratedAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_g07_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-g07-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeG07AcceptanceLane,
             })
         );
     }
@@ -8482,6 +14009,39 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_rejects_positionals_with_describe_controller_expression_boundary() {
+        let error = parse_args([
+            "--describe-controller-expression-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_control_surface_boundary() {
+        let error = parse_args([
+            "--describe-control-surface-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_advanced_hardware_boundary() {
+        let error = parse_args([
+            "--describe-advanced-hardware-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_rejects_positionals_with_describe_media_service_boundary() {
         let error = parse_args([
             "--describe-media-service-boundary".into(),
@@ -8504,9 +14064,119 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_rejects_positionals_with_describe_multichannel_boundary() {
+        let error = parse_args([
+            "--describe-multichannel-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_multi_bus_boundary() {
+        let error = parse_args([
+            "--describe-multi-bus-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_sidechain_boundary() {
+        let error = parse_args([
+            "--describe-sidechain-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_complex_io_boundary() {
+        let error = parse_args([
+            "--describe-complex-io-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_spatial_boundary() {
+        let error = parse_args([
+            "--describe-spatial-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_stretch_boundary() {
+        let error = parse_args([
+            "--describe-stretch-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_marker_analysis_boundary() {
+        let error = parse_args([
+            "--describe-marker-analysis-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_transform_artifact_boundary() {
+        let error = parse_args([
+            "--describe-transform-artifact-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_preview_transform_boundary() {
+        let error = parse_args([
+            "--describe-preview-transform-boundary".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
     fn parse_args_rejects_positionals_with_describe_integrated_acceptance_lane() {
         let error = parse_args([
             "--describe-integrated-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_g07_acceptance_lane() {
+        let error = parse_args([
+            "--describe-g07-acceptance-lane".into(),
             "local".into(),
             "default".into(),
         ])
@@ -9099,6 +14769,39 @@ mod tests {
     }
 
     #[test]
+    fn lv2_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_lv2_boundary_text();
+        assert!(rendered.contains("lv2_boundary: signal.runtime.lv2-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:lv2-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot"
+        ));
+        assert!(
+            rendered.contains("surface: RuntimeObservationApi::get_plugin_lifecycle_snapshot()")
+        );
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-lv2-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn lv2_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_lv2_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.lv2-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:lv2-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-lv2-discovery-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-lv2-lifecycle-snapshot\""));
+        assert!(rendered.contains("\"id\":\"server-host-lv2-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"server-host-lv2-proof\""));
+    }
+
+    #[test]
     fn cross_adapter_parity_boundary_text_reports_runtime_and_host_edge_proofs() {
         let rendered = render_cross_adapter_parity_boundary_text();
         assert!(rendered.contains(
@@ -9137,6 +14840,207 @@ mod tests {
     }
 
     #[test]
+    fn linux_plugin_parity_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_plugin_parity_boundary_text();
+        assert!(rendered
+            .contains("linux_plugin_parity_boundary: signal.runtime.linux-plugin-parity-boundary"));
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:linux-plugin-parity-boundary")
+        );
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot"
+        ));
+        assert!(
+            rendered.contains("surface: RuntimeObservationApi::get_plugin_lifecycle_snapshot()")
+        );
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_policy_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-linux-plugin-parity-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn linux_plugin_parity_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_plugin_parity_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.linux-plugin-parity-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/039-linux-cross-adapter-plugin-parity-and-sandbox-policy-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:linux-plugin-parity-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-linux-parity-discovery-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-linux-parity-lifecycle-snapshot\""));
+        assert!(rendered.contains("\"id\":\"server-host-linux-parity-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"server-host-linux-parity-proof\""));
+    }
+
+    #[test]
+    fn linux_audio_backend_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_audio_backend_boundary_text();
+        assert!(rendered
+            .contains("linux_audio_backend_boundary: signal.runtime.linux-audio-backend-boundary"));
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:linux-audio-backend-boundary")
+        );
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_linux_audio_backend_boundary_reports_runtime_owned_backend_identity_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-linux-audio-backend-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn linux_audio_backend_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_audio_backend_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.linux-audio-backend-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/040-linux-audio-backend-portability-across-alsa-jack-and-pipewire-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:linux-audio-backend-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-linux-audio-observation-report\""));
+        assert!(rendered.contains("\"id\":\"server-host-linux-audio-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"server-host-linux-audio-proof\""));
+    }
+
+    #[test]
+    fn linux_live_ownership_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_live_ownership_boundary_text();
+        assert!(rendered.contains(
+            "linux_live_ownership_boundary: signal.runtime.linux-live-ownership-boundary"
+        ));
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:linux-live-ownership-boundary")
+        );
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::linux_backend_session_snapshot and RuntimeSupervisorReport::observation.linux_backend_session_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_linux_live_ownership_boundary_reports_runtime_owned_session_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-linux-live-ownership-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn linux_live_ownership_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_live_ownership_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.linux-live-ownership-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/052-live-linux-audio-backend-ownership-and-session-lifecycle-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:linux-live-ownership-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-linux-live-session-report\""));
+        assert!(rendered.contains("\"id\":\"local-host-linux-live-session-report\""));
+        assert!(rendered.contains("\"id\":\"server-host-linux-live-session-report\""));
+    }
+
+    #[test]
+    fn jack_coordination_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_jack_coordination_boundary_text();
+        assert!(rendered
+            .contains("jack_coordination_boundary: signal.runtime.jack-coordination-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:jack-coordination-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::jack_coordination_snapshot and RuntimeSupervisorReport::observation.jack_coordination_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_jack_coordination_boundary_reports_runtime_owned_transport_graph_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-jack-coordination-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn jack_coordination_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_jack_coordination_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.jack-coordination-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/053-jack-transport-graph-and-backend-native-coordination-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:jack-coordination-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-jack-coordination-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-transport-session-report\""));
+        assert!(rendered.contains("\"id\":\"shared-host-jack-supervisor-report\""));
+    }
+
+    #[test]
+    fn linux_backend_clock_topology_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_backend_clock_topology_boundary_text();
+        assert!(rendered.contains(
+            "linux_backend_clock_topology_boundary: signal.runtime.linux-backend-clock-topology-boundary"
+        ));
+        assert!(rendered
+            .contains("acceptance_task: effigy acceptance:linux-backend-clock-topology-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_linux_backend_clock_topology_boundary_reports_runtime_owned_linux_parity_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-linux-backend-clock-topology-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn linux_backend_clock_topology_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_linux_backend_clock_topology_boundary_json();
+        assert!(rendered
+            .contains("\"boundary\":\"signal.runtime.linux-backend-clock-topology-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/041-linux-backend-clocking-duplex-and-endpoint-topology-parity-contract.md\""
+        ));
+        assert!(rendered.contains(
+            "\"acceptance_task\":\"effigy acceptance:linux-backend-clock-topology-boundary\""
+        ));
+        assert!(rendered.contains("\"id\":\"runtime-linux-backend-clock-topology-report\""));
+        assert!(rendered.contains("\"id\":\"local-host-linux-backend-clock-topology-report\""));
+        assert!(rendered.contains("\"id\":\"server-host-linux-backend-clock-topology-report\""));
+    }
+
+    #[test]
+    fn external_midi_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_external_midi_boundary_text();
+        assert!(rendered.contains("external_midi_boundary: signal.runtime.external-midi-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:external-midi-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-external-midi-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn external_midi_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_external_midi_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.external-midi-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/042-external-midi-endpoint-graph-and-device-identity-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:external-midi-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-external-midi-report\""));
+        assert!(rendered.contains("\"id\":\"shared-host-external-midi-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-external-midi-public-proof\""));
+    }
+
+    #[test]
     fn generic_event_boundary_text_reports_runtime_and_host_edge_proofs() {
         let rendered = render_generic_event_boundary_text();
         assert!(rendered.contains("generic_event_boundary: signal.runtime.generic-event-boundary"));
@@ -9168,6 +15072,113 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-generic-event-report\""));
         assert!(rendered.contains("\"id\":\"runtime-generic-event-capability-coverage\""));
         assert!(rendered.contains("\"id\":\"shared-host-generic-event-supervisor-report\""));
+    }
+
+    #[test]
+    fn controller_expression_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_controller_expression_boundary_text();
+        assert!(rendered.contains(
+            "controller_expression_boundary: signal.runtime.controller-expression-boundary"
+        ));
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:controller-expression-boundary")
+        );
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_event_snapshot and RuntimeSupervisorReport::observation.plugin_event_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::external_midi_snapshot.endpoints[*].capability and RuntimeSupervisorReport::observation.external_midi_snapshot.endpoints[*].capability"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_controller_expression_boundary_reports_runtime_owned_expression_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-controller-expression-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn controller_expression_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_controller_expression_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.controller-expression-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/043-midi-2-0-mpe-and-richer-controller-expression-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:controller-expression-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-controller-expression-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-controller-expression-device-capability\""));
+        assert!(rendered.contains("\"id\":\"shared-host-controller-expression-report\""));
+    }
+
+    #[test]
+    fn control_surface_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_control_surface_boundary_text();
+        assert!(
+            rendered.contains("control_surface_boundary: signal.runtime.control-surface-boundary")
+        );
+        assert!(rendered.contains("acceptance_task: effigy acceptance:control-surface-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_control_surface_boundary_reports_runtime_owned_transport_and_feedback_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-control-surface-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn control_surface_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_control_surface_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.control-surface-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/044-control-surface-transport-mapping-and-feedback-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:control-surface-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-control-surface-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-control-surface-external-midi-anchor\""));
+        assert!(rendered.contains("\"id\":\"shared-host-control-surface-report\""));
+    }
+
+    #[test]
+    fn advanced_hardware_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_advanced_hardware_boundary_text();
+        assert!(rendered
+            .contains("advanced_hardware_boundary: signal.runtime.advanced-hardware-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:advanced-hardware-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::advanced_hardware_snapshot and RuntimeSupervisorReport::observation.advanced_hardware_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_feedback_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-advanced-hardware-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn advanced_hardware_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_advanced_hardware_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.advanced-hardware-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/045-advanced-hardware-extensibility-and-scripting-safe-device-policy-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:advanced-hardware-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-advanced-hardware-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-advanced-hardware-control-surface-anchor\""));
+        assert!(rendered.contains("\"id\":\"shared-host-advanced-hardware-report\""));
     }
 
     #[test]
@@ -9378,6 +15389,307 @@ mod tests {
     }
 
     #[test]
+    fn multichannel_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_multichannel_boundary_text();
+        assert!(rendered.contains("multichannel_boundary: signal.runtime.multichannel-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:multichannel-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::execution_topology_summary, RuntimeObservationReport::external_io_snapshot, and RuntimeSupervisorReport::observation.{execution_topology_summary,external_io_snapshot}"
+        ));
+        assert!(
+            rendered.contains("surface: RuntimeObservationApi::get_plugin_discovery_snapshot()")
+        );
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-multichannel-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn multichannel_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_multichannel_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.multichannel-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/032-canonical-multichannel-layout-and-channel-role-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:multichannel-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-multichannel-topology-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-multichannel-plugin-discovery-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-multichannel-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-multichannel-public-proof\""));
+    }
+
+    #[test]
+    fn multi_bus_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_multi_bus_boundary_text();
+        assert!(rendered.contains("multi_bus_boundary: signal.runtime.multi-bus-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:multi-bus-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::execution_topology_summary, RuntimeObservationReport::metering_snapshot, and RuntimeSupervisorReport::observation.{execution_topology_summary,metering_snapshot}"
+        ));
+        assert!(rendered.contains("surface: RuntimeOfflineRenderContractPreview::chain_contract"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-multi-bus-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn multi_bus_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_multi_bus_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.multi-bus-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:multi-bus-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-multi-bus-topology-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-multi-bus-render-contract-preview\""));
+        assert!(rendered.contains("\"id\":\"shared-host-multi-bus-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-multi-bus-public-proof\""));
+    }
+
+    #[test]
+    fn sidechain_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_sidechain_boundary_text();
+        assert!(rendered.contains("sidechain_boundary: signal.runtime.sidechain-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:sidechain-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::execution_topology_summary, RuntimeSupervisorReport::observation.{execution_topology_summary,plugin_chain_snapshot}, and RuntimeOfflineRenderContractPreview::chain_contract"
+        ));
+        assert!(rendered.contains("surface: GraphNodeBufferContractProjection::secondary_input"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-sidechain-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn sidechain_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_sidechain_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.sidechain-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/033-sidechain-routing-and-secondary-input-execution-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:sidechain-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-sidechain-topology-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-sidechain-contract-projection\""));
+        assert!(rendered.contains("\"id\":\"shared-host-sidechain-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-sidechain-public-proof\""));
+    }
+
+    #[test]
+    fn complex_io_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_complex_io_boundary_text();
+        assert!(rendered.contains("complex_io_boundary: signal.runtime.complex-io-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:complex-io-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot"
+        ));
+        assert!(rendered.contains("surface: RuntimeOfflineRenderContractPreview::chain_contract"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-complex-io-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn complex_io_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_complex_io_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.complex-io-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/035-plugin-complex-io-topology-and-multi-output-instrument-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:complex-io-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-complex-io-discovery-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-complex-io-plugin-chain-snapshot\""));
+        assert!(rendered.contains("\"id\":\"runtime-complex-io-render-contract-preview\""));
+        assert!(rendered.contains("\"id\":\"shared-host-complex-io-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-complex-io-public-proof\""));
+    }
+
+    #[test]
+    fn spatial_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_spatial_boundary_text();
+        assert!(rendered.contains("spatial_boundary: signal.runtime.spatial-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:spatial-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::execution_topology_summary and RuntimeSupervisorReport::observation.execution_topology_summary"
+        ));
+        assert!(rendered.contains("surround_bed_spatial_node_count"));
+        assert!(rendered.contains("expanded_fallback_spatial_stage_count"));
+        assert!(rendered.contains("surface: RuntimeOfflineRenderContractPreview::chain_contract"));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_spatial_boundary_reports_runtime_owned_execution_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-spatial-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn spatial_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_spatial_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.spatial-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/037-surround-bed-object-and-mix-policy-expansion-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:spatial-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-spatial-topology-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-spatial-plugin-chain-snapshot\""));
+        assert!(rendered.contains("\"id\":\"runtime-spatial-render-contract-preview\""));
+        assert!(rendered.contains("\"id\":\"shared-host-spatial-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-spatial-public-proof\""));
+        assert!(rendered.contains("surround_bed_spatial_stage_count"));
+        assert!(rendered.contains("expanded_fallback_spatial_node_count"));
+    }
+
+    #[test]
+    fn stretch_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_stretch_boundary_text();
+        assert!(rendered.contains("stretch_boundary: signal.runtime.stretch-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:stretch-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::stretch_engine_snapshot and RuntimeSupervisorReport::observation.stretch_engine_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeClipRenderResult::stretch_engine_snapshot and RuntimeOfflineRenderContractPreview::stretch_engine_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_stretch_boundary_reports_runtime_owned_engine_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-stretch-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn stretch_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_stretch_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.stretch-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/046-sample-domain-time-stretch-engine-contract.md\""
+        ));
+        assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:stretch-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-stretch-observation-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-stretch-render-preview-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-stretch-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-stretch-public-proof\""));
+    }
+
+    #[test]
+    fn marker_analysis_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_marker_analysis_boundary_text();
+        assert!(
+            rendered.contains("marker_analysis_boundary: signal.runtime.marker-analysis-boundary")
+        );
+        assert!(rendered.contains("acceptance_task: effigy acceptance:marker-analysis-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::marker_analysis_snapshot and RuntimeSupervisorReport::observation.marker_analysis_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_marker_analysis_boundary_reports_runtime_owned_analysis_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-marker-analysis-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn marker_analysis_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_marker_analysis_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.marker-analysis-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md\""
+        ));
+        assert!(
+            rendered.contains("\"acceptance_task\":\"effigy acceptance:marker-analysis-boundary\"")
+        );
+        assert!(rendered.contains("\"id\":\"runtime-marker-analysis-observation-report\""));
+        assert!(rendered.contains("\"id\":\"shared-host-marker-analysis-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-marker-analysis-public-proof\""));
+    }
+
+    #[test]
+    fn transform_artifact_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_transform_artifact_boundary_text();
+        assert!(rendered
+            .contains("transform_artifact_boundary: signal.runtime.transform-artifact-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:transform-artifact-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::transform_artifact_snapshot and RuntimeSupervisorReport::observation.transform_artifact_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeClipRenderResult::transform_artifact_snapshot and RuntimeOfflineRenderContractPreview::transform_artifact_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-transform-artifact-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn transform_artifact_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_transform_artifact_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.transform-artifact-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/048-post-warp-render-cache-and-transform-artifact-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:transform-artifact-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-transform-artifact-observation-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-transform-artifact-render-preview-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-transform-artifact-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-transform-artifact-public-proof\""));
+    }
+
+    #[test]
+    fn preview_transform_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_preview_transform_boundary_text();
+        assert!(rendered
+            .contains("preview_transform_boundary: signal.runtime.preview-transform-boundary"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:preview-transform-boundary"));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::preview_transform_snapshot and RuntimeSupervisorReport::observation.preview_transform_snapshot"
+        ));
+        assert!(rendered.contains(
+            "surface: RuntimeClipRenderResult::preview_transform_snapshot and RuntimeOfflineRenderContractPreview::preview_transform_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-preview-transform-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn preview_transform_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_preview_transform_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.preview-transform-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/049-low-latency-audition-scrub-and-preview-transform-service-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:preview-transform-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-preview-transform-observation-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-preview-transform-render-preview-snapshot\""));
+        assert!(rendered.contains("\"id\":\"shared-host-preview-transform-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-preview-transform-public-proof\""));
+    }
+
+    #[test]
     fn integrated_acceptance_lane_text_reports_required_and_advisory_policy() {
         let rendered = render_integrated_acceptance_lane_text();
         assert!(rendered
@@ -9412,6 +15724,262 @@ mod tests {
             "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_acceptance_evidence\""
         ));
         assert!(rendered.contains("\"command\":\"effigy acceptance:integrated-acceptance-lane\""));
+    }
+
+    #[test]
+    fn g07_acceptance_lane_text_reports_required_and_advisory_policy() {
+        let rendered = render_g07_acceptance_lane_text();
+        assert!(
+            rendered.contains("g07_acceptance_lane: signal.runtime.g07-integrated-acceptance-lane")
+        );
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:g07-integrated-acceptance-lane")
+        );
+        assert!(rendered.contains("- effigy acceptance:multichannel-boundary"));
+        assert!(rendered.contains("- effigy acceptance:preview-transform-boundary"));
+        assert!(rendered.contains("- effigy acceptance:complex-io-boundary"));
+        assert!(rendered.contains("- effigy acceptance:lv2-boundary"));
+        assert!(rendered.contains("title: Linux Plugin And Backend Continuity"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains("id: required-lane-task"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn g07_acceptance_lane_json_reports_required_and_advisory_policy() {
+        let rendered = render_g07_acceptance_lane_json();
+        assert!(rendered.contains("\"lane\":\"signal.runtime.g07-integrated-acceptance-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/050-multichannel-linux-time-stretch-and-control-surface-acceptance-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:g07-integrated-acceptance-lane\""));
+        assert!(rendered.contains("\"required_task_count\":15"));
+        assert!(rendered.contains("\"advisory_task_count\":2"));
+        assert!(rendered.contains("\"id\":\"routing-and-multichannel-coherence\""));
+        assert!(rendered.contains("\"id\":\"linux-plugin-and-backend-continuity\""));
+        assert!(rendered.contains("\"id\":\"external-control-and-advanced-hardware\""));
+        assert!(rendered.contains("\"id\":\"stretch-analysis-artifact-and-preview\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_g07_acceptance_evidence\""
+        ));
+        assert!(
+            rendered.contains("\"command\":\"effigy acceptance:g07-integrated-acceptance-lane\"")
+        );
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_g07_acceptance_evidence() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "g07-integrated-acceptance-export".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("g07 integrated acceptance export handshake should succeed");
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 256))
+            .expect("g07 integrated acceptance export configure should succeed");
+        runtime
+            .start()
+            .expect("g07 integrated acceptance export start should succeed");
+
+        runtime.record_plugin_format_platform_coverage(vec![
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Clap,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(
+                    RuntimePluginIsolationOutcome::IsolatedSandbox,
+                ),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
+            },
+            RuntimePluginFormatPlatformCoverageRecord {
+                format: PluginFormat::Vst3,
+                supported_platforms: vec![
+                    RuntimePluginHostPlatform::MacOs,
+                    RuntimePluginHostPlatform::Linux,
+                    RuntimePluginHostPlatform::Windows,
+                ],
+                unsupported_platforms: Vec::new(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(
+                    RuntimePluginIsolationOutcome::IsolatedSandbox,
+                ),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
+            },
+        ]);
+        let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
+            roots: vec!["~/.clap".into(), "~/.vst3".into()],
+            formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
+        });
+        runtime.record_plugin_scan_results(
+            scan_handle,
+            vec![
+                sample_discovered_type_record(),
+                sample_backend_breadth_record(),
+            ],
+        );
+
+        let preview_path = integrated_acceptance_media_fixture_path("g07-preview-ready");
+        write_g07_acceptance_transient_wav(&preview_path);
+        runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:g07-preview-ready".into(),
+                content_hash: "g07-preview-ready".into(),
+                source_path: preview_path.display().to_string(),
+                file_name: "g07-preview-ready.wav".into(),
+                byte_size: fs::metadata(&preview_path)
+                    .expect("g07 acceptance media fixture should exist")
+                    .len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 48_000,
+                waveform_bin_count: 32,
+            }])
+            .expect("g07 integrated acceptance media asset should reconcile");
+        runtime
+            .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+                clip_id: "clip:g07-preview-ready".into(),
+                media_asset_id: Some("asset:sha256:g07-preview-ready".into()),
+                mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .expect("g07 integrated acceptance warp clip should reconcile");
+        runtime
+            .reconcile_clip_processing_clips(vec![
+                signal_runtime::RuntimeClipProcessingRegistration {
+                    clip_id: "clip:g07-preview-ready".into(),
+                    media_asset_id: Some("asset:sha256:g07-preview-ready".into()),
+                    warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                    start_samples: 0,
+                    duration_samples: 48_000,
+                    fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                    fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                    clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+                },
+            ])
+            .expect("g07 integrated acceptance clip processing clip should reconcile");
+        runtime
+            .apply_transport_projection(signal_runtime::TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .expect("g07 integrated acceptance transport projection should apply");
+        runtime
+            .start_media_preview("asset:sha256:g07-preview-ready")
+            .expect("g07 integrated acceptance media preview should start");
+
+        let recorder = RuntimeEventRecorder::default();
+        let mut report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        report
+            .observation
+            .execution_topology_summary
+            .secondary_input_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .required_secondary_input_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .bus_connection_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .auxiliary_path_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .spatial_node_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .active_spatial_node_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .surround_bed_spatial_node_count = 1;
+        report
+            .observation
+            .execution_topology_summary
+            .expanded_fallback_spatial_node_count = 1;
+        report.observation = report
+            .observation
+            .clone()
+            .with_host_external_io(&sample_g07_acceptance_host_io())
+            .with_external_midi_snapshot(sample_g07_external_midi_snapshot());
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"plugin_discovery_snapshot\":{"));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:clap:export-consumer\""));
+        assert!(export.contains("\"plugin_type_id\":\"plugin:vst3:export-instrument\""));
+        assert!(export.contains("\"default_multichannel_io\":{"));
+        assert!(export.contains("\"execution_topology_summary\":{"));
+        assert!(export.contains("\"secondary_input_count\":1"));
+        assert!(export.contains("\"bus_connection_count\":1"));
+        assert!(export.contains("\"spatial_node_count\":1"));
+        assert!(export.contains("\"surround_bed_spatial_node_count\":1"));
+        assert!(export.contains("\"external_io_snapshot\":{"));
+        assert!(export.contains("\"linux_backend_identity\":\"Alsa\""));
+        assert!(export.contains("\"linux_backend_portability\":\"Portable\""));
+        assert!(export.contains("\"linux_clocking_parity\":\"Portable\""));
+        assert!(export.contains("\"linux_duplex_parity\":\"Aligned\""));
+        assert!(export.contains("\"linux_endpoint_topology_parity\":\"Portable\""));
+        assert!(export.contains("\"external_midi_snapshot\":{"));
+        assert!(export.contains("\"provider_name\":\"signal-host-local\""));
+        assert!(export.contains("\"control_surface_snapshot\":{"));
+        assert!(export.contains("\"graph_state\":\"Guarded\""));
+        assert!(export.contains("\"supports_widened_expression\":true"));
+        assert!(export.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(export.contains("\"scripting_safe_posture\":\"Guarded\""));
+        assert!(export.contains("\"feedback_channel_posture\":\"Guarded\""));
+        assert!(export.contains("\"stretch_engine_snapshot\":{"));
+        assert!(export.contains("\"marker_analysis_snapshot\":{"));
+        assert!(export.contains("\"transform_artifact_snapshot\":{"));
+        assert!(export.contains("\"preview_transform_snapshot\":{"));
+        assert!(export.contains("\"tempo_assist_ready_clip_count\":1"));
+        assert!(export.contains("\"reusable_clip_count\":1"));
+        assert!(export.contains("\"active_audition_clip_count\":1"));
+
+        let _ = fs::remove_file(&preview_path);
+        if let Some(path) = runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .iter()
+            .find(|asset| asset.asset_id == "asset:sha256:g07-preview-ready")
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
     }
 
     #[test]
@@ -9586,51 +16154,53 @@ mod tests {
     fn generation_closeout_text_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_text();
         assert!(rendered.contains("generation_closeout: signal.generation.closeout"));
-        assert!(rendered.contains("generation: g06"));
+        assert!(rendered.contains("generation: g07"));
         assert!(rendered.contains(
-            "contract_path: docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md"
-        ));
-        assert!(rendered.contains("closeout_task: effigy acceptance:g06-closeout"));
-        assert!(rendered.contains("promotion_decision: promote-g07"));
-        assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json"
+            "contract_path: docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md"
         ));
         assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json"
+            "roadmap_path: docs/roadmaps/g07/020-generation-closeout-and-loophole-feature-readiness-gate.md"
         ));
-        assert!(rendered.contains("next_generation_path: docs/roadmaps/g07/README.md"));
-        assert!(rendered.contains("next_generation_status: active"));
-        assert!(rendered.contains("next_queue_status: promoted-g07-active"));
-        assert!(rendered.contains("id: runtime-hardening-and-recovery"));
+        assert!(rendered.contains("closeout_task: effigy acceptance:g07-closeout"));
+        assert!(rendered.contains("promotion_decision: promote-g08"));
+        assert!(rendered.contains("closeout_gate_status: closed-promoted-g08"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json"
+        ));
+        assert!(rendered.contains("next_queue_path: docs/roadmaps/g08/README.md"));
+        assert!(rendered.contains("next_queue_status: promoted-g08-active"));
+        assert!(rendered.contains("id: routing-and-multichannel-feature-surface"));
         assert!(rendered.contains("status: sufficient-for-promotion"));
-        assert!(rendered.contains("g06 now closes cleanly enough to promote g07"));
+        assert!(rendered.contains("g07 now closes cleanly enough to promote g08"));
     }
 
     #[test]
     fn generation_closeout_json_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_json();
         assert!(rendered.contains("\"closeout\":\"signal.generation.closeout\""));
-        assert!(rendered.contains("\"generation\":\"g06\""));
+        assert!(rendered.contains("\"generation\":\"g07\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md\""
-        ));
-        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g06-closeout\""));
-        assert!(rendered.contains("\"promotion_decision\":\"promote-g07\""));
-        assert!(rendered.contains(
-            "\"integrated_acceptance_command\":\"cargo run -p signal-supervisor-tools -- --describe-integrated-acceptance-lane --format=json\""
+            "\"contract_path\":\"docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md\""
         ));
         assert!(rendered.contains(
-            "\"g06_soak_lane_command\":\"cargo run -p signal-supervisor-tools -- --describe-g06-soak-lane --format=json\""
+            "\"roadmap_path\":\"docs/roadmaps/g07/020-generation-closeout-and-loophole-feature-readiness-gate.md\""
         ));
-        assert!(rendered.contains("\"next_generation_path\":\"docs/roadmaps/g07/README.md\""));
-        assert!(rendered.contains("\"next_generation_status\":\"active\""));
-        assert!(rendered.contains("\"next_queue_status\":\"promoted-g07-active\""));
+        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g07-closeout\""));
+        assert!(rendered.contains("\"promotion_decision\":\"promote-g08\""));
+        assert!(rendered.contains("\"closeout_gate_status\":\"closed-promoted-g08\""));
+        assert!(rendered.contains(
+            "\"g07_acceptance_lane_command\":\"cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json\""
+        ));
+        assert!(rendered.contains("\"next_queue_path\":\"docs/roadmaps/g08/README.md\""));
+        assert!(rendered.contains("\"next_queue_status\":\"promoted-g08-active\""));
         assert!(rendered.contains("\"id\":\"integrated-acceptance-base\""));
-        assert!(rendered.contains("\"id\":\"bounded-soak-lane\""));
+        assert!(rendered.contains("\"id\":\"closeout-descriptor-proof\""));
         assert!(rendered.contains("\"id\":\"generation-closeout-description\""));
-        assert!(rendered.contains("\"id\":\"runtime-hardening-and-recovery\""));
+        assert!(rendered.contains("\"id\":\"routing-and-multichannel-feature-surface\""));
         assert!(rendered.contains("\"status\":\"sufficient-for-promotion\""));
-        assert!(rendered.contains("\"the g06 closeout verdict is sufficient to promote g07"));
+        assert!(rendered.contains(
+            "\"the g07 closeout verdict is sufficient to promote g08, but it remains a reusable Signal substrate verdict rather than a Loophole product-launch verdict\""
+        ));
     }
 
     #[test]
@@ -10063,7 +16633,12 @@ mod tests {
                     RuntimePluginHostPlatform::Windows,
                 ],
                 unsupported_platforms: Vec::new(),
-                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
             },
             RuntimePluginFormatPlatformCoverageRecord {
                 format: PluginFormat::Vst3,
@@ -10073,7 +16648,12 @@ mod tests {
                     RuntimePluginHostPlatform::Windows,
                 ],
                 unsupported_platforms: Vec::new(),
-                summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+                linux_parity_band: RuntimePluginParityBand::Portable,
+                linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+                linux_strict_sandbox_default: true,
+                summary:
+                    "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                        .into(),
             },
             RuntimePluginFormatPlatformCoverageRecord {
                 format: PluginFormat::Au,
@@ -10082,7 +16662,10 @@ mod tests {
                     RuntimePluginHostPlatform::Linux,
                     RuntimePluginHostPlatform::Windows,
                 ],
-                summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+                linux_parity_band: RuntimePluginParityBand::Unsupported,
+                linux_preferred_sandbox_outcome: None,
+                linux_strict_sandbox_default: false,
+                summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
             },
         ]);
         let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {

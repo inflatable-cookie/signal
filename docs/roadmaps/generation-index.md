@@ -1,16 +1,16 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-16
+Updated: 2026-03-19
 
 ## Active generation
 
-- `g07`
-- promoted into the active queue on 2026-03-16 after `g06` closeout to deepen
-  routing and multichannel execution, Linux-native runtime breadth, external
-  MIDI/control-surface substrate, and sample-domain time-stretch depth
-- `g06` is now complete and remains the immediate hardening and baseline-format
-  predecessor to the active feature-expansion queue
+- `g08`
+- promoted into the active queue on 2026-03-19 after `g07` closeout to deepen
+  live Linux audio backend ownership, richer plugin or device protocol depth,
+  immersive routing breadth, and runtime-owned preview or workflow services
+- `g07` is now complete and remains the immediate bounded feature-expansion
+  predecessor to the active live-ownership queue
 
 ## Generation log
 
@@ -22,7 +22,8 @@ Updated: 2026-03-16
 | `g04` | 2026-03-12 | Continue beyond engine depth with reusable-runtime productization, multicore execution, and consumer-facing contract work | Closed on 2026-03-12 after contract freezing, scheduler depth, deferred work policy, portability, plugin breadth, and generation-closeout conformance/release proof landed |
 | `g05` | 2026-03-12 | Continue beyond the first stable Signal boundary with broader backend breadth, host-edge stability, publication-grade packaging, and downstream release confidence | Closed on 2026-03-13 after backend-neutral plugin breadth, shared host-edge contracts, publication-grade packaging manifests, downstream automation, and the combined generation-closeout proof landed |
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
-| `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Active; promoted on 2026-03-16 with a 20-milestone runway covering multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, and integrated acceptance depth |
+| `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
+| `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Active; promoted on 2026-03-19 with a 20-milestone runway covering Linux live ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, and integrated acceptance |
 
 ## Rollover policy
 
@@ -32,6 +33,6 @@ Create a new generation when:
 
 ## Next task
 
-Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
-layout and channel-role meaning through runtime-owned topology, hardware, and
-plugin-facing receipts before the public proof batch closes the milestone.
+Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
+session-role, device-claim, and stream-policy parity meaning on top of the
+closed live Linux ownership and JACK coordination seams.

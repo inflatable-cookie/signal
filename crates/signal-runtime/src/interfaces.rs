@@ -11,9 +11,9 @@ use signal_graph::{
     GraphNodeSilencePolicy, GraphNodeTopologyRole, GraphStageSpec,
 };
 use signal_hardware::{
-    AudioSampleFormat, BackendHealth, BackendPolicyTier, HardwareClockSource,
-    HardwareClockTopology, HardwareConfigRequest, HardwareLifecycleOwnership,
-    HardwareRestartPolicy,
+    AudioSampleFormat, BackendHealth, BackendPolicyTier, HardwareBackendIdentity,
+    HardwareClockSource, HardwareClockTopology, HardwareConfigRequest, HardwareLifecycleOwnership,
+    HardwareRestartPolicy, LinuxAudioBackendKind,
 };
 use signal_plugin::{
     BlockSequenceContinuityReport, CompletionState, PluginFeature, PluginFormat, PluginIoLayout,
@@ -145,6 +145,7 @@ impl Default for GraphNodeBusEndpointProjection {
 pub struct GraphNodeBufferContractProjection {
     pub input: GraphNodeBusEndpointProjection,
     pub output: GraphNodeBusEndpointProjection,
+    pub secondary_input: Option<RuntimeSecondaryInputContractProjection>,
     pub scratch_buffers: usize,
     pub silence_policy: GraphNodeSilencePolicy,
     pub channel_adaptation: GraphChannelAdaptationMode,
@@ -159,6 +160,7 @@ impl Default for GraphNodeBufferContractProjection {
                 bus_id: "main:out".into(),
                 channels: ChannelLayout::Stereo,
             },
+            secondary_input: None,
             scratch_buffers: 0,
             silence_policy: GraphNodeSilencePolicy::Process,
             channel_adaptation: GraphChannelAdaptationMode::AdaptiveMonoStereo,
@@ -663,6 +665,917 @@ pub struct RuntimePreworkForecastProfileSelection {
     pub target_window_blocks_override: Option<usize>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeCanonicalChannelLayout {
+    Mono,
+    Stereo,
+    Lcr,
+    Quad,
+    Surround5_0,
+    Surround5_1,
+    Surround7_1,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeChannelRole {
+    Mono,
+    FrontLeft,
+    FrontRight,
+    FrontCenter,
+    LowFrequencyEffects,
+    SideLeft,
+    SideRight,
+    RearLeft,
+    RearRight,
+    Discrete(u16),
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeBusIntent {
+    #[default]
+    MainProgram,
+    AuxSend,
+    AuxReturn,
+    Sidechain,
+    HardwareInput,
+    HardwareOutput,
+    AnalysisTap,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSecondaryInputSourceKind {
+    #[default]
+    NodeOutput,
+    BusGroup,
+    HardwareInput,
+    AnalysisTap,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSecondaryInputTargetKind {
+    #[default]
+    NodeInput,
+    PluginInput,
+    RenderInput,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSecondaryInputAttachmentPolicy {
+    #[default]
+    Required,
+    Optional,
+    Disabled,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSecondaryInputFallbackOutcome {
+    #[default]
+    BypassSecondaryInput,
+    MuteDependentPath,
+    SafeModeDegradation,
+    TerminalRoutingFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeSecondaryInputContractProjection {
+    pub source_kind: RuntimeSecondaryInputSourceKind,
+    pub source_id: String,
+    pub source_bus_id: Option<String>,
+    pub target_bus_id: String,
+    pub attachment_policy: RuntimeSecondaryInputAttachmentPolicy,
+    pub fallback_outcome: RuntimeSecondaryInputFallbackOutcome,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeSecondaryInputRouteSummary {
+    pub source_kind: RuntimeSecondaryInputSourceKind,
+    pub source_id: String,
+    pub source_bus_id: Option<String>,
+    pub target_kind: RuntimeSecondaryInputTargetKind,
+    pub target_id: String,
+    pub target_bus_id: String,
+    pub attachment_policy: RuntimeSecondaryInputAttachmentPolicy,
+    pub fallback_outcome: RuntimeSecondaryInputFallbackOutcome,
+    pub summary: String,
+}
+
+impl RuntimeSecondaryInputRouteSummary {
+    pub fn from_contract_for_target(
+        contract: &RuntimeSecondaryInputContractProjection,
+        target_kind: RuntimeSecondaryInputTargetKind,
+        target_id: impl Into<String>,
+    ) -> Self {
+        let target_id = target_id.into();
+        let summary = format!(
+            "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
+            contract.source_kind,
+            contract.source_id,
+            contract.source_bus_id.as_deref().unwrap_or("none"),
+            target_kind,
+            target_id,
+            contract.target_bus_id,
+            contract.attachment_policy,
+            contract.fallback_outcome,
+        );
+        Self {
+            source_kind: contract.source_kind,
+            source_id: contract.source_id.clone(),
+            source_bus_id: contract.source_bus_id.clone(),
+            target_kind,
+            target_id,
+            target_bus_id: contract.target_bus_id.clone(),
+            attachment_policy: contract.attachment_policy,
+            fallback_outcome: contract.fallback_outcome,
+            summary,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeBusRole {
+    #[default]
+    ProgramMain,
+    Submix,
+    AuxSend,
+    AuxReturn,
+    AnalysisTap,
+    HardwareIngress,
+    HardwareEgress,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeAuxiliaryPathKind {
+    #[default]
+    SendReturn,
+    Submix,
+    Analysis,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeBusConnectionAttachmentClass {
+    #[default]
+    Required,
+    Optional,
+    Disabled,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeBusConnectionFallbackOutcome {
+    #[default]
+    NoFallback,
+    BypassAuxiliaryPath,
+    MuteDependentPath,
+    SafeModeDegradation,
+    TerminalTopologyFailure,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeBusConnectionSummary {
+    pub connection_id: String,
+    pub source_node_id: String,
+    pub source_bus_id: String,
+    pub source_bus_role: RuntimeBusRole,
+    pub target_node_id: String,
+    pub target_bus_id: String,
+    pub target_bus_role: RuntimeBusRole,
+    pub auxiliary_path_kind: Option<RuntimeAuxiliaryPathKind>,
+    pub auxiliary_path_id: Option<String>,
+    pub attachment_class: RuntimeBusConnectionAttachmentClass,
+    pub fallback_outcome: RuntimeBusConnectionFallbackOutcome,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeAuxiliaryPathSummary {
+    pub auxiliary_path_id: String,
+    pub path_kind: RuntimeAuxiliaryPathKind,
+    pub bus_role: RuntimeBusRole,
+    pub material_bus_intent: RuntimeBusIntent,
+    pub source_node_ids: Vec<String>,
+    pub target_node_ids: Vec<String>,
+    pub bus_ids: Vec<String>,
+    pub connection_ids: Vec<String>,
+    pub attachment_class: RuntimeBusConnectionAttachmentClass,
+    pub fallback_outcome: RuntimeBusConnectionFallbackOutcome,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMultichannelLayoutSummary {
+    pub channel_count: u16,
+    pub canonical_layout: Option<RuntimeCanonicalChannelLayout>,
+    pub channel_roles: Vec<RuntimeChannelRole>,
+    pub uses_custom_fallback: bool,
+    pub summary: String,
+}
+
+impl Default for RuntimeMultichannelLayoutSummary {
+    fn default() -> Self {
+        Self::from_channel_count(0)
+    }
+}
+
+impl RuntimeMultichannelLayoutSummary {
+    pub fn from_channel_layout(layout: ChannelLayout) -> Self {
+        Self::from_channel_count(layout.channels().0 as u16)
+    }
+
+    pub fn from_channel_count(channel_count: u16) -> Self {
+        let (canonical_layout, channel_roles, uses_custom_fallback) = match channel_count {
+            0 => (None, Vec::new(), false),
+            1 => (
+                Some(RuntimeCanonicalChannelLayout::Mono),
+                vec![RuntimeChannelRole::Mono],
+                false,
+            ),
+            2 => (
+                Some(RuntimeCanonicalChannelLayout::Stereo),
+                vec![
+                    RuntimeChannelRole::FrontLeft,
+                    RuntimeChannelRole::FrontRight,
+                ],
+                false,
+            ),
+            3 => (
+                Some(RuntimeCanonicalChannelLayout::Lcr),
+                vec![
+                    RuntimeChannelRole::FrontLeft,
+                    RuntimeChannelRole::FrontCenter,
+                    RuntimeChannelRole::FrontRight,
+                ],
+                false,
+            ),
+            4 => (
+                Some(RuntimeCanonicalChannelLayout::Quad),
+                vec![
+                    RuntimeChannelRole::FrontLeft,
+                    RuntimeChannelRole::FrontRight,
+                    RuntimeChannelRole::RearLeft,
+                    RuntimeChannelRole::RearRight,
+                ],
+                false,
+            ),
+            5 => (
+                Some(RuntimeCanonicalChannelLayout::Surround5_0),
+                vec![
+                    RuntimeChannelRole::FrontLeft,
+                    RuntimeChannelRole::FrontRight,
+                    RuntimeChannelRole::FrontCenter,
+                    RuntimeChannelRole::SideLeft,
+                    RuntimeChannelRole::SideRight,
+                ],
+                false,
+            ),
+            6 => (
+                Some(RuntimeCanonicalChannelLayout::Surround5_1),
+                vec![
+                    RuntimeChannelRole::FrontLeft,
+                    RuntimeChannelRole::FrontRight,
+                    RuntimeChannelRole::FrontCenter,
+                    RuntimeChannelRole::LowFrequencyEffects,
+                    RuntimeChannelRole::SideLeft,
+                    RuntimeChannelRole::SideRight,
+                ],
+                false,
+            ),
+            8 => (
+                Some(RuntimeCanonicalChannelLayout::Surround7_1),
+                vec![
+                    RuntimeChannelRole::FrontLeft,
+                    RuntimeChannelRole::FrontRight,
+                    RuntimeChannelRole::FrontCenter,
+                    RuntimeChannelRole::LowFrequencyEffects,
+                    RuntimeChannelRole::SideLeft,
+                    RuntimeChannelRole::SideRight,
+                    RuntimeChannelRole::RearLeft,
+                    RuntimeChannelRole::RearRight,
+                ],
+                false,
+            ),
+            _ => (
+                None,
+                (0..channel_count)
+                    .map(RuntimeChannelRole::Discrete)
+                    .collect(),
+                true,
+            ),
+        };
+        let summary = match canonical_layout {
+            Some(layout) => format!(
+                "channels={} canonical={layout:?} roles={:?}",
+                channel_count, channel_roles
+            ),
+            None if channel_count == 0 => "channels=0 canonical=None roles=[]".into(),
+            None => format!(
+                "channels={} canonical=None roles={:?} fallback=Discrete",
+                channel_count, channel_roles
+            ),
+        };
+        Self {
+            channel_count,
+            canonical_layout,
+            channel_roles,
+            uses_custom_fallback,
+            summary,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeMultichannelIoSummary {
+    pub input_layout: RuntimeMultichannelLayoutSummary,
+    pub output_layout: RuntimeMultichannelLayoutSummary,
+    pub input_bus_intent: RuntimeBusIntent,
+    pub output_bus_intent: RuntimeBusIntent,
+    pub summary: String,
+}
+
+impl Default for RuntimeMultichannelIoSummary {
+    fn default() -> Self {
+        Self::new(
+            RuntimeMultichannelLayoutSummary::default(),
+            RuntimeMultichannelLayoutSummary::default(),
+            RuntimeBusIntent::MainProgram,
+            RuntimeBusIntent::MainProgram,
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialAdapterClass {
+    #[default]
+    Balance,
+    PerChannelGain,
+    LayoutTransform,
+    Renderer,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialExecutionMode {
+    #[default]
+    Bypassed,
+    BalanceGroups,
+    PerChannelAttenuation,
+    TransformToTargetLayout,
+    RenderToEnvironment,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialTargetEnvironment {
+    #[default]
+    SourceLayout,
+    CanonicalLayout,
+    DeviceLayout,
+    CustomEnvironment,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialControlFamily {
+    #[default]
+    BalanceScalar,
+    PerChannelVector,
+    AdapterParameterSet,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialActivationPolicy {
+    Disabled,
+    #[default]
+    EnabledIfSupported,
+    Required,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeSpatialFallbackOutcome {
+    BypassSpatialProcessing,
+    CollapseToBalance,
+    CollapseToPerChannelGain,
+    SafeModeDegradation,
+    TerminalSpatialFailure,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialBedClass {
+    #[default]
+    StereoBed,
+    CanonicalSurroundBed,
+    CustomDiscreteBed,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeSpatialObjectRole {
+    PrimaryObject,
+    AuxiliaryObject,
+    EffectObject,
+    AnalysisObject,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialMixPolicy {
+    #[default]
+    BedOnly,
+    BedWithObjects,
+    ObjectPreferredWithBedFallback,
+    DownmixToCanonicalBed,
+    CollapseToBaselineSpatial,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeSpatialRenderScope {
+    #[default]
+    BedRender,
+    BedAndObjectRender,
+    BedFoldDownRender,
+    ObjectMetadataOnly,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeSpatialExpandedFallbackOutcome {
+    CollapseObjectsIntoBed,
+    CollapseToCanonicalBed,
+    CollapseToBaselineSpatial,
+    BypassExpandedSpatial,
+    TerminalExpandedSpatialFailure,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeSpatialExecutionSummary {
+    pub node_id: String,
+    pub adapter_class: RuntimeSpatialAdapterClass,
+    pub execution_mode: RuntimeSpatialExecutionMode,
+    pub target_environment: RuntimeSpatialTargetEnvironment,
+    pub control_family: RuntimeSpatialControlFamily,
+    pub activation_policy: RuntimeSpatialActivationPolicy,
+    pub fallback_outcome: Option<RuntimeSpatialFallbackOutcome>,
+    pub bed_class: RuntimeSpatialBedClass,
+    pub object_role: Option<RuntimeSpatialObjectRole>,
+    pub object_count: usize,
+    pub mix_policy: RuntimeSpatialMixPolicy,
+    pub render_scope: RuntimeSpatialRenderScope,
+    pub expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+    pub balance: Option<String>,
+    pub input_layout: RuntimeMultichannelLayoutSummary,
+    pub output_layout: RuntimeMultichannelLayoutSummary,
+    pub summary: String,
+}
+
+fn runtime_spatial_target_environment_for_layout(
+    layout: &RuntimeMultichannelLayoutSummary,
+) -> RuntimeSpatialTargetEnvironment {
+    if layout.uses_custom_fallback {
+        RuntimeSpatialTargetEnvironment::CustomEnvironment
+    } else {
+        RuntimeSpatialTargetEnvironment::SourceLayout
+    }
+}
+
+fn runtime_spatial_bed_class_for_layout(
+    layout: &RuntimeMultichannelLayoutSummary,
+) -> RuntimeSpatialBedClass {
+    match layout.canonical_layout {
+        Some(RuntimeCanonicalChannelLayout::Stereo) if layout.channel_count == 2 => {
+            RuntimeSpatialBedClass::StereoBed
+        }
+        Some(
+            RuntimeCanonicalChannelLayout::Lcr
+            | RuntimeCanonicalChannelLayout::Quad
+            | RuntimeCanonicalChannelLayout::Surround5_0
+            | RuntimeCanonicalChannelLayout::Surround5_1
+            | RuntimeCanonicalChannelLayout::Surround7_1,
+        ) => RuntimeSpatialBedClass::CanonicalSurroundBed,
+        _ => RuntimeSpatialBedClass::CustomDiscreteBed,
+    }
+}
+
+fn runtime_spatial_mix_policy_for_layout(
+    layout: &RuntimeMultichannelLayoutSummary,
+) -> RuntimeSpatialMixPolicy {
+    if layout.channel_count == 2 && !layout.uses_custom_fallback {
+        RuntimeSpatialMixPolicy::BedOnly
+    } else {
+        RuntimeSpatialMixPolicy::CollapseToBaselineSpatial
+    }
+}
+
+fn runtime_spatial_render_scope_for_summary(
+    object_count: usize,
+    expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+) -> RuntimeSpatialRenderScope {
+    if object_count > 0 {
+        if matches!(
+            expanded_fallback_outcome,
+            Some(RuntimeSpatialExpandedFallbackOutcome::CollapseObjectsIntoBed)
+        ) {
+            RuntimeSpatialRenderScope::BedFoldDownRender
+        } else {
+            RuntimeSpatialRenderScope::BedAndObjectRender
+        }
+    } else {
+        RuntimeSpatialRenderScope::BedRender
+    }
+}
+
+pub(crate) fn runtime_spatial_execution_summary_for_stages(
+    node_id: &str,
+    stages: &[GraphStageSpec],
+    input_layout: &RuntimeMultichannelLayoutSummary,
+    output_layout: &RuntimeMultichannelLayoutSummary,
+) -> Option<RuntimeSpatialExecutionSummary> {
+    stages.iter().find_map(|stage| match stage {
+        GraphStageSpec::StereoBalance { balance } => {
+            let supports_direct_balance = output_layout.channel_count == 2;
+            let execution_mode = if supports_direct_balance {
+                RuntimeSpatialExecutionMode::BalanceGroups
+            } else {
+                RuntimeSpatialExecutionMode::Bypassed
+            };
+            let fallback_outcome = (!supports_direct_balance)
+                .then_some(RuntimeSpatialFallbackOutcome::BypassSpatialProcessing);
+            let bed_class = runtime_spatial_bed_class_for_layout(output_layout);
+            let object_count = 0usize;
+            let mix_policy = runtime_spatial_mix_policy_for_layout(output_layout);
+            let expanded_fallback_outcome = (!supports_direct_balance)
+                .then_some(RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial);
+            let render_scope =
+                runtime_spatial_render_scope_for_summary(object_count, expanded_fallback_outcome);
+            let balance = format!("{balance:.3}");
+            Some(RuntimeSpatialExecutionSummary {
+                node_id: node_id.into(),
+                adapter_class: RuntimeSpatialAdapterClass::Balance,
+                execution_mode,
+                target_environment: runtime_spatial_target_environment_for_layout(output_layout),
+                control_family: RuntimeSpatialControlFamily::BalanceScalar,
+                activation_policy: RuntimeSpatialActivationPolicy::EnabledIfSupported,
+                fallback_outcome,
+                bed_class,
+                object_role: None,
+                object_count,
+                mix_policy,
+                render_scope,
+                expanded_fallback_outcome,
+                balance: Some(balance.clone()),
+                input_layout: input_layout.clone(),
+                output_layout: output_layout.clone(),
+                summary: format!(
+                    "node={} adapter={:?} mode={:?} target={:?} controls={:?} policy={:?} fallback={:?}/{:?} bed={:?} objects={:?}/{} mix={:?} render={:?} balance={} input={} output={}",
+                    node_id,
+                    RuntimeSpatialAdapterClass::Balance,
+                    execution_mode,
+                    runtime_spatial_target_environment_for_layout(output_layout),
+                    RuntimeSpatialControlFamily::BalanceScalar,
+                    RuntimeSpatialActivationPolicy::EnabledIfSupported,
+                    fallback_outcome,
+                    expanded_fallback_outcome,
+                    bed_class,
+                    None::<RuntimeSpatialObjectRole>,
+                    object_count,
+                    mix_policy,
+                    render_scope,
+                    balance,
+                    input_layout.summary,
+                    output_layout.summary,
+                ),
+            })
+        }
+        _ => None,
+    })
+}
+
+impl RuntimeMultichannelIoSummary {
+    pub fn new(
+        input_layout: RuntimeMultichannelLayoutSummary,
+        output_layout: RuntimeMultichannelLayoutSummary,
+        input_bus_intent: RuntimeBusIntent,
+        output_bus_intent: RuntimeBusIntent,
+    ) -> Self {
+        let summary = format!(
+            "input={:?}/{:?} output={:?}/{:?}",
+            input_bus_intent,
+            input_layout.canonical_layout,
+            output_bus_intent,
+            output_layout.canonical_layout
+        );
+        Self {
+            input_layout,
+            output_layout,
+            input_bus_intent,
+            output_bus_intent,
+            summary,
+        }
+    }
+
+    pub fn for_channel_layouts(
+        input_layout: ChannelLayout,
+        output_layout: ChannelLayout,
+        input_bus_intent: RuntimeBusIntent,
+        output_bus_intent: RuntimeBusIntent,
+    ) -> Self {
+        Self::new(
+            RuntimeMultichannelLayoutSummary::from_channel_layout(input_layout),
+            RuntimeMultichannelLayoutSummary::from_channel_layout(output_layout),
+            input_bus_intent,
+            output_bus_intent,
+        )
+    }
+
+    pub fn for_plugin_io(layout: PluginIoLayout) -> Self {
+        Self::new(
+            RuntimeMultichannelLayoutSummary::from_channel_count(layout.audio_inputs),
+            RuntimeMultichannelLayoutSummary::from_channel_count(layout.audio_outputs),
+            RuntimeBusIntent::MainProgram,
+            RuntimeBusIntent::MainProgram,
+        )
+    }
+
+    pub fn for_hardware(input_channels: u16, output_channels: u16) -> Self {
+        Self::new(
+            RuntimeMultichannelLayoutSummary::from_channel_count(input_channels),
+            RuntimeMultichannelLayoutSummary::from_channel_count(output_channels),
+            RuntimeBusIntent::HardwareInput,
+            RuntimeBusIntent::HardwareOutput,
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginPortClass {
+    #[default]
+    MainInput,
+    MainOutput,
+    SecondaryInput,
+    AuxInput,
+    AuxOutput,
+    InstrumentOutput,
+    AnalysisOutput,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginBusCapableFxClass {
+    #[default]
+    SinglePathFx,
+    SidechainCapableFx,
+    SendReturnCapableFx,
+    ParallelCapableFx,
+    MultiStemFx,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginTopologyAttachmentPolicy {
+    #[default]
+    Required,
+    Optional,
+    Disabled,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginTopologyFallbackOutcome {
+    #[default]
+    CollapseToPrimaryPath,
+    BypassUnavailablePortGroup,
+    MuteDependentOutput,
+    SafeModeDegradation,
+    TerminalPluginTopologyFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginComplexIoSummary {
+    pub has_complex_topology: bool,
+    pub declared_port_classes: Vec<RuntimePluginPortClass>,
+    pub port_group_count: usize,
+    pub main_input_group_count: usize,
+    pub main_output_group_count: usize,
+    pub secondary_input_group_count: usize,
+    pub aux_input_group_count: usize,
+    pub aux_output_group_count: usize,
+    pub instrument_output_group_count: usize,
+    pub analysis_output_group_count: usize,
+    pub multi_output_instrument: bool,
+    pub bus_capable_fx_class: Option<RuntimePluginBusCapableFxClass>,
+    pub attachment_policy: RuntimePluginTopologyAttachmentPolicy,
+    pub fallback_outcome: RuntimePluginTopologyFallbackOutcome,
+    pub summary: String,
+}
+
+fn div_ceil_u16(value: u16, divisor: u16) -> u16 {
+    if value == 0 {
+        0
+    } else {
+        1 + ((value - 1) / divisor)
+    }
+}
+
+impl RuntimePluginComplexIoSummary {
+    pub fn from_plugin_features_and_layout(
+        features: &[PluginFeature],
+        layout: PluginIoLayout,
+    ) -> Self {
+        let is_instrument = features.contains(&PluginFeature::Instrument);
+        let is_analyzer = features.contains(&PluginFeature::Analyzer);
+        let is_fx = features.iter().any(|feature| {
+            matches!(
+                feature,
+                PluginFeature::AudioEffect
+                    | PluginFeature::Utility
+                    | PluginFeature::Analyzer
+                    | PluginFeature::NoteEffect
+            )
+        }) && !is_instrument;
+
+        let main_input_group_count = usize::from(layout.audio_inputs > 0);
+        let main_output_group_count = usize::from(layout.audio_outputs > 0);
+        let main_input_channels = if layout.audio_inputs > 0 {
+            layout.audio_inputs.min(2)
+        } else {
+            0
+        };
+        let main_output_channels = if layout.audio_outputs > 0 {
+            layout.audio_outputs.min(2)
+        } else {
+            0
+        };
+        let extra_input_groups = usize::from(div_ceil_u16(
+            layout.audio_inputs.saturating_sub(main_input_channels),
+            2,
+        ));
+        let extra_output_groups = usize::from(div_ceil_u16(
+            layout.audio_outputs.saturating_sub(main_output_channels),
+            2,
+        ));
+
+        let secondary_input_group_count = if is_fx && extra_input_groups > 0 {
+            1
+        } else {
+            0
+        };
+        let aux_input_group_count = if is_fx {
+            extra_input_groups.saturating_sub(secondary_input_group_count)
+        } else {
+            0
+        };
+        let instrument_output_group_count = if is_instrument {
+            extra_output_groups
+        } else {
+            0
+        };
+        let analysis_output_group_count =
+            if is_analyzer && !is_instrument && layout.audio_outputs == 0 {
+                1
+            } else {
+                0
+            };
+        let aux_output_group_count = if is_instrument {
+            0
+        } else {
+            extra_output_groups
+        };
+        let multi_output_instrument = is_instrument && instrument_output_group_count > 0;
+
+        let bus_capable_fx_class = if !is_fx {
+            None
+        } else if secondary_input_group_count > 0 && aux_output_group_count > 0 {
+            Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+        } else if secondary_input_group_count > 0 {
+            Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
+        } else if aux_output_group_count > 1 {
+            Some(RuntimePluginBusCapableFxClass::MultiStemFx)
+        } else if aux_input_group_count > 0 || aux_output_group_count > 0 {
+            Some(RuntimePluginBusCapableFxClass::ParallelCapableFx)
+        } else {
+            Some(RuntimePluginBusCapableFxClass::SinglePathFx)
+        };
+
+        let has_complex_topology = multi_output_instrument
+            || secondary_input_group_count > 0
+            || aux_input_group_count > 0
+            || aux_output_group_count > 0
+            || analysis_output_group_count > 0;
+
+        let attachment_policy = if has_complex_topology {
+            RuntimePluginTopologyAttachmentPolicy::Optional
+        } else {
+            RuntimePluginTopologyAttachmentPolicy::Required
+        };
+        let fallback_outcome = if multi_output_instrument {
+            RuntimePluginTopologyFallbackOutcome::CollapseToPrimaryPath
+        } else if secondary_input_group_count > 0 {
+            RuntimePluginTopologyFallbackOutcome::SafeModeDegradation
+        } else if has_complex_topology {
+            RuntimePluginTopologyFallbackOutcome::BypassUnavailablePortGroup
+        } else {
+            RuntimePluginTopologyFallbackOutcome::TerminalPluginTopologyFailure
+        };
+
+        let mut declared_port_classes = Vec::new();
+        if main_input_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::MainInput);
+        }
+        if main_output_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::MainOutput);
+        }
+        if secondary_input_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::SecondaryInput);
+        }
+        if aux_input_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::AuxInput);
+        }
+        if aux_output_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::AuxOutput);
+        }
+        if instrument_output_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::InstrumentOutput);
+        }
+        if analysis_output_group_count > 0 {
+            declared_port_classes.push(RuntimePluginPortClass::AnalysisOutput);
+        }
+
+        let port_group_count = main_input_group_count
+            + main_output_group_count
+            + secondary_input_group_count
+            + aux_input_group_count
+            + aux_output_group_count
+            + instrument_output_group_count
+            + analysis_output_group_count;
+
+        let summary = format!(
+            "complex={} classes={:?} groups={} main_in={} main_out={} secondary_in={} aux_in={} aux_out={} instrument_out={} analysis_out={} multi_output_instrument={} fx_class={:?} attachment={:?} fallback={:?}",
+            has_complex_topology,
+            declared_port_classes,
+            port_group_count,
+            main_input_group_count,
+            main_output_group_count,
+            secondary_input_group_count,
+            aux_input_group_count,
+            aux_output_group_count,
+            instrument_output_group_count,
+            analysis_output_group_count,
+            multi_output_instrument,
+            bus_capable_fx_class,
+            attachment_policy,
+            fallback_outcome,
+        );
+
+        Self {
+            has_complex_topology,
+            declared_port_classes,
+            port_group_count,
+            main_input_group_count,
+            main_output_group_count,
+            secondary_input_group_count,
+            aux_input_group_count,
+            aux_output_group_count,
+            instrument_output_group_count,
+            analysis_output_group_count,
+            multi_output_instrument,
+            bus_capable_fx_class,
+            attachment_policy,
+            fallback_outcome,
+            summary,
+        }
+    }
+}
+
+pub(crate) fn runtime_bus_intents_for_topology_role(
+    topology_role: GraphNodeTopologyRole,
+) -> (RuntimeBusIntent, RuntimeBusIntent) {
+    match topology_role {
+        GraphNodeTopologyRole::Utility => {
+            (RuntimeBusIntent::AnalysisTap, RuntimeBusIntent::AnalysisTap)
+        }
+        GraphNodeTopologyRole::TrackLane
+        | GraphNodeTopologyRole::Bus
+        | GraphNodeTopologyRole::ConsoleNode => {
+            (RuntimeBusIntent::MainProgram, RuntimeBusIntent::MainProgram)
+        }
+        GraphNodeTopologyRole::Send => (RuntimeBusIntent::MainProgram, RuntimeBusIntent::AuxSend),
+        GraphNodeTopologyRole::Return => {
+            (RuntimeBusIntent::AuxReturn, RuntimeBusIntent::MainProgram)
+        }
+    }
+}
+
+pub(crate) fn runtime_bus_role_for_endpoint(
+    topology_role: GraphNodeTopologyRole,
+    bus_intent: RuntimeBusIntent,
+) -> RuntimeBusRole {
+    match bus_intent {
+        RuntimeBusIntent::AuxSend => RuntimeBusRole::AuxSend,
+        RuntimeBusIntent::AuxReturn => RuntimeBusRole::AuxReturn,
+        RuntimeBusIntent::Sidechain => RuntimeBusRole::AuxSend,
+        RuntimeBusIntent::AnalysisTap => RuntimeBusRole::AnalysisTap,
+        RuntimeBusIntent::HardwareInput => RuntimeBusRole::HardwareIngress,
+        RuntimeBusIntent::HardwareOutput => RuntimeBusRole::HardwareEgress,
+        RuntimeBusIntent::MainProgram => match topology_role {
+            GraphNodeTopologyRole::Bus => RuntimeBusRole::Submix,
+            GraphNodeTopologyRole::Utility => RuntimeBusRole::AnalysisTap,
+            GraphNodeTopologyRole::Send => RuntimeBusRole::AuxSend,
+            GraphNodeTopologyRole::Return => RuntimeBusRole::AuxReturn,
+            GraphNodeTopologyRole::TrackLane | GraphNodeTopologyRole::ConsoleNode => {
+                RuntimeBusRole::ProgramMain
+            }
+        },
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimePlannedGraphNode {
     pub node_id: String,
@@ -676,6 +1589,14 @@ pub struct RuntimePlannedGraphNode {
     pub send_return_id: Option<String>,
     pub input_bus_id: String,
     pub output_bus_id: String,
+    pub input_channels: ChannelLayout,
+    pub output_channels: ChannelLayout,
+    pub input_layout: RuntimeMultichannelLayoutSummary,
+    pub output_layout: RuntimeMultichannelLayoutSummary,
+    pub input_bus_intent: RuntimeBusIntent,
+    pub output_bus_intent: RuntimeBusIntent,
+    pub secondary_input: Option<RuntimeSecondaryInputRouteSummary>,
+    pub spatial_execution: Option<RuntimeSpatialExecutionSummary>,
     pub plugin_sandbox_id: Option<String>,
 }
 
@@ -1328,6 +2249,1156 @@ pub struct RuntimeClipProcessingPipelineSnapshot {
     pub summary: String,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeStretchEngineClass {
+    Disabled,
+    RatioOnly,
+    SampleDomain,
+    Fallback,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeStretchReadiness {
+    Disabled,
+    Ready,
+    PendingMedia,
+    PendingWarp,
+    Degraded,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeStretchFallbackKind {
+    None,
+    Bypass,
+    RatioOnly,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeStretchClipSnapshot {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub engine_class: RuntimeStretchEngineClass,
+    pub readiness: RuntimeStretchReadiness,
+    pub fallback_kind: RuntimeStretchFallbackKind,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeStretchEngineSnapshot {
+    pub clip_count: usize,
+    pub disabled_clip_count: usize,
+    pub ready_clip_count: usize,
+    pub pending_media_clip_count: usize,
+    pub pending_warp_clip_count: usize,
+    pub degraded_clip_count: usize,
+    pub sample_domain_clip_count: usize,
+    pub ratio_only_clip_count: usize,
+    pub fallback_clip_count: usize,
+    pub clips: Vec<RuntimeStretchClipSnapshot>,
+    pub summary: String,
+}
+
+impl RuntimeStretchClipSnapshot {
+    pub fn from_clip_processing_snapshot(
+        clip: &RuntimeClipProcessingSnapshot,
+    ) -> RuntimeStretchClipSnapshot {
+        let (engine_class, readiness, fallback_kind) = match clip.warp_mode {
+            RuntimeWarpMode::Off => (
+                RuntimeStretchEngineClass::Disabled,
+                RuntimeStretchReadiness::Disabled,
+                RuntimeStretchFallbackKind::None,
+            ),
+            RuntimeWarpMode::Repitch => (
+                RuntimeStretchEngineClass::RatioOnly,
+                match clip.readiness {
+                    RuntimeClipProcessingReadiness::Ready => RuntimeStretchReadiness::Ready,
+                    RuntimeClipProcessingReadiness::PendingMedia => {
+                        RuntimeStretchReadiness::PendingMedia
+                    }
+                    RuntimeClipProcessingReadiness::PendingWarp => {
+                        RuntimeStretchReadiness::PendingWarp
+                    }
+                    RuntimeClipProcessingReadiness::Invalid => RuntimeStretchReadiness::Degraded,
+                },
+                RuntimeStretchFallbackKind::None,
+            ),
+            RuntimeWarpMode::ElastiqueDraft => match clip.readiness {
+                RuntimeClipProcessingReadiness::Ready => (
+                    RuntimeStretchEngineClass::SampleDomain,
+                    RuntimeStretchReadiness::Ready,
+                    RuntimeStretchFallbackKind::None,
+                ),
+                RuntimeClipProcessingReadiness::PendingMedia => (
+                    RuntimeStretchEngineClass::SampleDomain,
+                    RuntimeStretchReadiness::PendingMedia,
+                    RuntimeStretchFallbackKind::None,
+                ),
+                RuntimeClipProcessingReadiness::PendingWarp => (
+                    RuntimeStretchEngineClass::SampleDomain,
+                    RuntimeStretchReadiness::PendingWarp,
+                    RuntimeStretchFallbackKind::None,
+                ),
+                RuntimeClipProcessingReadiness::Invalid => (
+                    RuntimeStretchEngineClass::Fallback,
+                    RuntimeStretchReadiness::Degraded,
+                    if clip.realized_warp_ratio.is_some() {
+                        RuntimeStretchFallbackKind::RatioOnly
+                    } else {
+                        RuntimeStretchFallbackKind::Bypass
+                    },
+                ),
+            },
+        };
+
+        RuntimeStretchClipSnapshot {
+            clip_id: clip.clip_id.clone(),
+            media_asset_id: clip.media_asset_id.clone(),
+            engine_class,
+            readiness,
+            fallback_kind,
+            summary: format!(
+                "clip={} engine={:?} readiness={:?} fallback={:?}",
+                clip.clip_id, engine_class, readiness, fallback_kind
+            ),
+        }
+    }
+}
+
+impl RuntimeStretchEngineSnapshot {
+    pub fn from_clip_processing_pipeline(
+        clip_processing: &RuntimeClipProcessingPipelineSnapshot,
+    ) -> RuntimeStretchEngineSnapshot {
+        let clips = clip_processing
+            .clips
+            .iter()
+            .map(RuntimeStretchClipSnapshot::from_clip_processing_snapshot)
+            .collect::<Vec<_>>();
+        let disabled_clip_count = clips
+            .iter()
+            .filter(|clip| clip.engine_class == RuntimeStretchEngineClass::Disabled)
+            .count();
+        let ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeStretchReadiness::Ready)
+            .count();
+        let pending_media_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeStretchReadiness::PendingMedia)
+            .count();
+        let pending_warp_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeStretchReadiness::PendingWarp)
+            .count();
+        let degraded_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeStretchReadiness::Degraded)
+            .count();
+        let sample_domain_clip_count = clips
+            .iter()
+            .filter(|clip| clip.engine_class == RuntimeStretchEngineClass::SampleDomain)
+            .count();
+        let ratio_only_clip_count = clips
+            .iter()
+            .filter(|clip| clip.engine_class == RuntimeStretchEngineClass::RatioOnly)
+            .count();
+        let fallback_clip_count = clips
+            .iter()
+            .filter(|clip| clip.engine_class == RuntimeStretchEngineClass::Fallback)
+            .count();
+
+        RuntimeStretchEngineSnapshot {
+            clip_count: clips.len(),
+            disabled_clip_count,
+            ready_clip_count,
+            pending_media_clip_count,
+            pending_warp_clip_count,
+            degraded_clip_count,
+            sample_domain_clip_count,
+            ratio_only_clip_count,
+            fallback_clip_count,
+            clips,
+            summary: format!(
+                "stretch clips={} disabled={} ready={} pending_media={} pending_warp={} degraded={} sample_domain={} ratio_only={} fallback={}",
+                clip_processing.clip_count,
+                disabled_clip_count,
+                ready_clip_count,
+                pending_media_clip_count,
+                pending_warp_clip_count,
+                degraded_clip_count,
+                sample_domain_clip_count,
+                ratio_only_clip_count,
+                fallback_clip_count
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMarkerAnalysisReadiness {
+    #[default]
+    Empty,
+    PendingMedia,
+    Ready,
+    Degraded,
+    Invalidated,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMarkerAnalysisInvalidationState {
+    #[default]
+    None,
+    MediaInvalidated,
+    StretchInvalidated,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTempoAssistPosture {
+    #[default]
+    Unavailable,
+    Guarded,
+    Ready,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTempoAssistHintSource {
+    #[default]
+    None,
+    SourceTempo,
+    ProjectTempo,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeMarkerAnalysisClipSnapshot {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub readiness: RuntimeMarkerAnalysisReadiness,
+    pub invalidation_state: RuntimeMarkerAnalysisInvalidationState,
+    pub warp_marker_count: usize,
+    pub transient_anchor_count: usize,
+    pub tempo_assist_posture: RuntimeTempoAssistPosture,
+    pub tempo_assist_hint_bpm: Option<f64>,
+    pub tempo_assist_hint_source: RuntimeTempoAssistHintSource,
+    pub last_error: Option<String>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RuntimeMarkerAnalysisSnapshot {
+    pub clip_count: usize,
+    pub ready_clip_count: usize,
+    pub pending_media_clip_count: usize,
+    pub degraded_clip_count: usize,
+    pub invalidated_clip_count: usize,
+    pub unsupported_clip_count: usize,
+    pub tempo_assist_ready_clip_count: usize,
+    pub warp_marker_count: usize,
+    pub transient_anchor_count: usize,
+    pub clips: Vec<RuntimeMarkerAnalysisClipSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformArtifactReadiness {
+    #[default]
+    Empty,
+    PendingMedia,
+    Ready,
+    Degraded,
+    Invalidated,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformArtifactInvalidationState {
+    #[default]
+    None,
+    MediaInvalidated,
+    StretchInvalidated,
+    AnalysisInvalidated,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformArtifactReuseState {
+    #[default]
+    Unavailable,
+    RequiresRender,
+    Reusable,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformServiceClass {
+    #[default]
+    Unavailable,
+    StretchAligned,
+    ArtifactBacked,
+    Fallback,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformReadiness {
+    #[default]
+    Empty,
+    Pending,
+    Ready,
+    Degraded,
+    Invalidated,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformDegradedState {
+    #[default]
+    None,
+    PendingInputs,
+    InvalidatedInputs,
+    FallbackOnly,
+    UnsupportedScope,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformFallbackKind {
+    #[default]
+    None,
+    MediaOnly,
+    OfflineOnly,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePreviewTransformClipSnapshot {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub service_class: RuntimePreviewTransformServiceClass,
+    pub readiness: RuntimePreviewTransformReadiness,
+    pub degraded_state: RuntimePreviewTransformDegradedState,
+    pub fallback_kind: RuntimePreviewTransformFallbackKind,
+    pub artifact_reuse_state: RuntimeTransformArtifactReuseState,
+    pub audition_active: bool,
+    pub scrub_supported: bool,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePreviewTransformServiceSnapshot {
+    pub clip_count: usize,
+    pub active_audition_clip_count: usize,
+    pub scrub_supported_clip_count: usize,
+    pub ready_clip_count: usize,
+    pub pending_clip_count: usize,
+    pub degraded_clip_count: usize,
+    pub invalidated_clip_count: usize,
+    pub unsupported_clip_count: usize,
+    pub stretch_aligned_clip_count: usize,
+    pub artifact_backed_clip_count: usize,
+    pub fallback_clip_count: usize,
+    pub clips: Vec<RuntimePreviewTransformClipSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeTransformArtifactClipSnapshot {
+    pub clip_id: String,
+    pub media_asset_id: Option<String>,
+    pub artifact_identity: String,
+    pub readiness: RuntimeTransformArtifactReadiness,
+    pub invalidation_state: RuntimeTransformArtifactInvalidationState,
+    pub reuse_state: RuntimeTransformArtifactReuseState,
+    pub cached_media_ready: bool,
+    pub stretch_engine_class: RuntimeStretchEngineClass,
+    pub stretch_readiness: RuntimeStretchReadiness,
+    pub marker_analysis_readiness: RuntimeMarkerAnalysisReadiness,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeTransformArtifactSnapshot {
+    pub clip_count: usize,
+    pub ready_clip_count: usize,
+    pub pending_media_clip_count: usize,
+    pub degraded_clip_count: usize,
+    pub invalidated_clip_count: usize,
+    pub unsupported_clip_count: usize,
+    pub cached_media_ready_clip_count: usize,
+    pub reusable_clip_count: usize,
+    pub requires_render_clip_count: usize,
+    pub guarded_reuse_clip_count: usize,
+    pub clips: Vec<RuntimeTransformArtifactClipSnapshot>,
+    pub summary: String,
+}
+
+fn runtime_estimated_analysis_event_count(
+    density: f32,
+    duration_samples: u32,
+    sample_rate_hz: u32,
+) -> usize {
+    if !density.is_finite() || density <= 0.0 || duration_samples == 0 || sample_rate_hz == 0 {
+        return 0;
+    }
+    let duration_seconds = duration_samples as f64 / sample_rate_hz as f64;
+    (f64::from(density) * duration_seconds).round().max(1.0) as usize
+}
+
+impl RuntimeMarkerAnalysisSnapshot {
+    pub fn from_clip_processing_and_media_library(
+        clip_processing: &RuntimeClipProcessingPipelineSnapshot,
+        stretch_engine: &RuntimeStretchEngineSnapshot,
+        warp_pipeline: &RuntimeWarpPipelineSnapshot,
+        media_library: &RuntimeMediaLibraryServiceSnapshot,
+        sample_rate_hz: u32,
+    ) -> RuntimeMarkerAnalysisSnapshot {
+        let media_descriptors = media_library
+            .descriptors
+            .iter()
+            .map(|descriptor| (descriptor.asset_id.as_str(), descriptor))
+            .collect::<BTreeMap<_, _>>();
+        let stretch_clips = stretch_engine
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+        let warp_clips = warp_pipeline
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+        let clips = clip_processing
+            .clips
+            .iter()
+            .map(|clip| {
+                let descriptor = clip
+                    .media_asset_id
+                    .as_deref()
+                    .and_then(|asset_id| media_descriptors.get(asset_id).copied());
+                let stretch = stretch_clips.get(clip.clip_id.as_str()).copied();
+                let warp = warp_clips.get(clip.clip_id.as_str()).copied();
+
+                let (readiness, invalidation_state, warp_marker_count, transient_anchor_count, last_error) =
+                    match (clip.media_asset_id.as_deref(), descriptor) {
+                        (None, _) => (
+                            RuntimeMarkerAnalysisReadiness::Unsupported,
+                            RuntimeMarkerAnalysisInvalidationState::None,
+                            0,
+                            0,
+                            Some("marker analysis requires media-backed clip".to_string()),
+                        ),
+                        (_, None) => (
+                            RuntimeMarkerAnalysisReadiness::PendingMedia,
+                            RuntimeMarkerAnalysisInvalidationState::None,
+                            0,
+                            0,
+                            Some("marker analysis is waiting for media descriptors".to_string()),
+                        ),
+                        (_, Some(descriptor)) => match descriptor.metadata_state {
+                            RuntimeMediaAnalysisDescriptorState::Missing
+                            | RuntimeMediaAnalysisDescriptorState::Pending => (
+                                RuntimeMarkerAnalysisReadiness::PendingMedia,
+                                RuntimeMarkerAnalysisInvalidationState::None,
+                                0,
+                                0,
+                                descriptor.last_error.clone(),
+                            ),
+                            RuntimeMediaAnalysisDescriptorState::Invalidated => (
+                                RuntimeMarkerAnalysisReadiness::Invalidated,
+                                RuntimeMarkerAnalysisInvalidationState::MediaInvalidated,
+                                0,
+                                0,
+                                descriptor
+                                    .last_error
+                                    .clone()
+                                    .or_else(|| Some("marker analysis invalidated with media".into())),
+                            ),
+                            RuntimeMediaAnalysisDescriptorState::Unavailable => (
+                                RuntimeMarkerAnalysisReadiness::Unsupported,
+                                RuntimeMarkerAnalysisInvalidationState::None,
+                                0,
+                                0,
+                                descriptor
+                                    .last_error
+                                    .clone()
+                                    .or_else(|| Some("marker analysis unavailable for this asset".into())),
+                            ),
+                            RuntimeMediaAnalysisDescriptorState::Ready => {
+                                let degraded_by_stretch = matches!(
+                                    clip.readiness,
+                                    RuntimeClipProcessingReadiness::Invalid
+                                ) || stretch.is_some_and(|stretch| {
+                                    matches!(
+                                        stretch.readiness,
+                                        RuntimeStretchReadiness::Degraded
+                                    )
+                                });
+                                if degraded_by_stretch {
+                                    (
+                                        RuntimeMarkerAnalysisReadiness::Degraded,
+                                        RuntimeMarkerAnalysisInvalidationState::StretchInvalidated,
+                                        0,
+                                        0,
+                                        clip.last_error
+                                            .clone()
+                                            .or_else(|| Some("marker analysis is stale against stretch state".into())),
+                                    )
+                                } else if let Some(character) = descriptor.character.as_ref() {
+                                    (
+                                        RuntimeMarkerAnalysisReadiness::Ready,
+                                        RuntimeMarkerAnalysisInvalidationState::None,
+                                        runtime_estimated_analysis_event_count(
+                                            character.onset_density,
+                                            clip.duration_samples,
+                                            sample_rate_hz,
+                                        ),
+                                        runtime_estimated_analysis_event_count(
+                                            character.transient_density,
+                                            clip.duration_samples,
+                                            sample_rate_hz,
+                                        ),
+                                        clip.last_error.clone(),
+                                    )
+                                } else {
+                                    (
+                                        RuntimeMarkerAnalysisReadiness::Degraded,
+                                        RuntimeMarkerAnalysisInvalidationState::None,
+                                        0,
+                                        0,
+                                        descriptor
+                                            .last_error
+                                            .clone()
+                                            .or_else(|| Some("marker analysis missing character descriptors".into())),
+                                    )
+                                }
+                            }
+                        },
+                    };
+
+                let (tempo_assist_posture, tempo_assist_hint_bpm, tempo_assist_hint_source) =
+                    if readiness == RuntimeMarkerAnalysisReadiness::Ready {
+                        if let Some(source_tempo_bpm) =
+                            warp.and_then(|warp| warp.source_tempo_bpm)
+                        {
+                            (
+                                RuntimeTempoAssistPosture::Ready,
+                                Some(source_tempo_bpm),
+                                RuntimeTempoAssistHintSource::SourceTempo,
+                            )
+                        } else if let Some(warp) = warp {
+                            (
+                                RuntimeTempoAssistPosture::Ready,
+                                Some(warp.project_tempo_bpm),
+                                RuntimeTempoAssistHintSource::ProjectTempo,
+                            )
+                        } else {
+                            (
+                                RuntimeTempoAssistPosture::Guarded,
+                                None,
+                                RuntimeTempoAssistHintSource::None,
+                            )
+                        }
+                    } else {
+                        (
+                            RuntimeTempoAssistPosture::Unavailable,
+                            None,
+                            RuntimeTempoAssistHintSource::None,
+                        )
+                    };
+
+                RuntimeMarkerAnalysisClipSnapshot {
+                    clip_id: clip.clip_id.clone(),
+                    media_asset_id: clip.media_asset_id.clone(),
+                    readiness,
+                    invalidation_state,
+                    warp_marker_count,
+                    transient_anchor_count,
+                    tempo_assist_posture,
+                    tempo_assist_hint_bpm,
+                    tempo_assist_hint_source,
+                    last_error,
+                    summary: format!(
+                        "clip={} readiness={:?} invalidation={:?} markers={} anchors={} tempo_assist={:?}/{:?}/{:?}",
+                        clip.clip_id,
+                        readiness,
+                        invalidation_state,
+                        warp_marker_count,
+                        transient_anchor_count,
+                        tempo_assist_posture,
+                        tempo_assist_hint_source,
+                        tempo_assist_hint_bpm,
+                    ),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeMarkerAnalysisReadiness::Ready)
+            .count();
+        let pending_media_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeMarkerAnalysisReadiness::PendingMedia)
+            .count();
+        let degraded_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeMarkerAnalysisReadiness::Degraded)
+            .count();
+        let invalidated_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeMarkerAnalysisReadiness::Invalidated)
+            .count();
+        let unsupported_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeMarkerAnalysisReadiness::Unsupported)
+            .count();
+        let tempo_assist_ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.tempo_assist_posture == RuntimeTempoAssistPosture::Ready)
+            .count();
+        let warp_marker_count = clips.iter().map(|clip| clip.warp_marker_count).sum();
+        let transient_anchor_count = clips.iter().map(|clip| clip.transient_anchor_count).sum();
+
+        RuntimeMarkerAnalysisSnapshot {
+            clip_count: clips.len(),
+            ready_clip_count,
+            pending_media_clip_count,
+            degraded_clip_count,
+            invalidated_clip_count,
+            unsupported_clip_count,
+            tempo_assist_ready_clip_count,
+            warp_marker_count,
+            transient_anchor_count,
+            clips,
+            summary: format!(
+                "marker_analysis clips={} ready={} pending_media={} degraded={} invalidated={} unsupported={} tempo_assist_ready={} markers={} anchors={}",
+                clip_processing.clip_count,
+                ready_clip_count,
+                pending_media_clip_count,
+                degraded_clip_count,
+                invalidated_clip_count,
+                unsupported_clip_count,
+                tempo_assist_ready_clip_count,
+                warp_marker_count,
+                transient_anchor_count,
+            ),
+        }
+    }
+}
+
+impl RuntimeTransformArtifactSnapshot {
+    pub fn from_runtime_transform_state(
+        clip_processing: &RuntimeClipProcessingPipelineSnapshot,
+        stretch_engine: &RuntimeStretchEngineSnapshot,
+        marker_analysis: &RuntimeMarkerAnalysisSnapshot,
+        media_pipeline: &RuntimeMediaPipelineSnapshot,
+    ) -> RuntimeTransformArtifactSnapshot {
+        let media_assets = media_pipeline
+            .assets
+            .iter()
+            .map(|asset| (asset.asset_id.as_str(), asset))
+            .collect::<BTreeMap<_, _>>();
+        let stretch_clips = stretch_engine
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+        let marker_clips = marker_analysis
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+
+        let clips = clip_processing
+            .clips
+            .iter()
+            .map(|clip| {
+                let media_asset = clip
+                    .media_asset_id
+                    .as_deref()
+                    .and_then(|asset_id| media_assets.get(asset_id).copied());
+                let stretch = stretch_clips.get(clip.clip_id.as_str()).copied();
+                let marker = marker_clips.get(clip.clip_id.as_str()).copied();
+                let cached_media_ready = media_asset.is_some_and(|asset| {
+                    asset.state == Some(RuntimeMediaAssetState::Ready)
+                        && asset.cache_path.as_deref().is_some()
+                });
+                let stretch_engine_class = stretch
+                    .map(|snapshot| snapshot.engine_class)
+                    .unwrap_or(RuntimeStretchEngineClass::Disabled);
+                let stretch_readiness = stretch
+                    .map(|snapshot| snapshot.readiness)
+                    .unwrap_or(RuntimeStretchReadiness::Disabled);
+                let marker_analysis_readiness = marker
+                    .map(|snapshot| snapshot.readiness)
+                    .unwrap_or(RuntimeMarkerAnalysisReadiness::Empty);
+                let artifact_identity = clip
+                    .media_asset_id
+                    .as_ref()
+                    .map(|asset_id| {
+                        format!(
+                            "artifact:{}:{}:{:?}:{:?}",
+                            asset_id, clip.clip_id, stretch_engine_class, clip.warp_mode
+                        )
+                    })
+                    .unwrap_or_else(|| format!("artifact:unsupported:{}", clip.clip_id));
+
+                let (readiness, invalidation_state) = match (clip.media_asset_id.as_deref(), media_asset) {
+                    (None, _) => (
+                        RuntimeTransformArtifactReadiness::Unsupported,
+                        RuntimeTransformArtifactInvalidationState::None,
+                    ),
+                    (_, None) => (
+                        RuntimeTransformArtifactReadiness::PendingMedia,
+                        RuntimeTransformArtifactInvalidationState::None,
+                    ),
+                    (_, Some(asset)) => match asset.state {
+                        Some(RuntimeMediaAssetState::Ingesting)
+                        | Some(RuntimeMediaAssetState::Conforming)
+                        | Some(RuntimeMediaAssetState::Rebuilding) => (
+                            RuntimeTransformArtifactReadiness::PendingMedia,
+                            RuntimeTransformArtifactInvalidationState::None,
+                        ),
+                        Some(RuntimeMediaAssetState::Invalid) => (
+                            RuntimeTransformArtifactReadiness::Invalidated,
+                            RuntimeTransformArtifactInvalidationState::MediaInvalidated,
+                        ),
+                        Some(RuntimeMediaAssetState::Ready) => {
+                            if marker.is_some_and(|snapshot| {
+                                snapshot.readiness
+                                    == RuntimeMarkerAnalysisReadiness::Invalidated
+                            }) {
+                                (
+                                    RuntimeTransformArtifactReadiness::Invalidated,
+                                    RuntimeTransformArtifactInvalidationState::AnalysisInvalidated,
+                                )
+                            } else if matches!(stretch_readiness, RuntimeStretchReadiness::Degraded)
+                            {
+                                (
+                                    RuntimeTransformArtifactReadiness::Degraded,
+                                    RuntimeTransformArtifactInvalidationState::StretchInvalidated,
+                                )
+                            } else if matches!(
+                                stretch_readiness,
+                                RuntimeStretchReadiness::PendingMedia
+                                    | RuntimeStretchReadiness::PendingWarp
+                            ) || matches!(
+                                marker_analysis_readiness,
+                                RuntimeMarkerAnalysisReadiness::PendingMedia
+                            ) {
+                                (
+                                    RuntimeTransformArtifactReadiness::PendingMedia,
+                                    RuntimeTransformArtifactInvalidationState::None,
+                                )
+                            } else if matches!(
+                                marker_analysis_readiness,
+                                RuntimeMarkerAnalysisReadiness::Degraded
+                            ) {
+                                (
+                                    RuntimeTransformArtifactReadiness::Degraded,
+                                    RuntimeTransformArtifactInvalidationState::AnalysisInvalidated,
+                                )
+                            } else if matches!(
+                                marker_analysis_readiness,
+                                RuntimeMarkerAnalysisReadiness::Unsupported
+                            ) {
+                                (
+                                    RuntimeTransformArtifactReadiness::Unsupported,
+                                    RuntimeTransformArtifactInvalidationState::None,
+                                )
+                            } else {
+                                (
+                                    RuntimeTransformArtifactReadiness::Ready,
+                                    RuntimeTransformArtifactInvalidationState::None,
+                                )
+                            }
+                        }
+                        None => (
+                            RuntimeTransformArtifactReadiness::PendingMedia,
+                            RuntimeTransformArtifactInvalidationState::None,
+                        ),
+                    },
+                };
+
+                let reuse_state = match readiness {
+                    RuntimeTransformArtifactReadiness::Ready if cached_media_ready => {
+                        RuntimeTransformArtifactReuseState::Reusable
+                    }
+                    RuntimeTransformArtifactReadiness::Ready => {
+                        RuntimeTransformArtifactReuseState::RequiresRender
+                    }
+                    RuntimeTransformArtifactReadiness::Degraded
+                    | RuntimeTransformArtifactReadiness::Invalidated => {
+                        RuntimeTransformArtifactReuseState::Guarded
+                    }
+                    RuntimeTransformArtifactReadiness::Empty
+                    | RuntimeTransformArtifactReadiness::PendingMedia
+                    | RuntimeTransformArtifactReadiness::Unsupported => {
+                        RuntimeTransformArtifactReuseState::Unavailable
+                    }
+                };
+
+                RuntimeTransformArtifactClipSnapshot {
+                    clip_id: clip.clip_id.clone(),
+                    media_asset_id: clip.media_asset_id.clone(),
+                    artifact_identity,
+                    readiness,
+                    invalidation_state,
+                    reuse_state,
+                    cached_media_ready,
+                    stretch_engine_class,
+                    stretch_readiness,
+                    marker_analysis_readiness,
+                    summary: format!(
+                        "clip={} artifact={} readiness={:?} invalidation={:?} reuse={:?} cached_media={} stretch={:?}/{:?} marker={:?}",
+                        clip.clip_id,
+                        clip.media_asset_id.as_deref().unwrap_or("unsupported"),
+                        readiness,
+                        invalidation_state,
+                        reuse_state,
+                        cached_media_ready,
+                        stretch_engine_class,
+                        stretch_readiness,
+                        marker_analysis_readiness,
+                    ),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeTransformArtifactReadiness::Ready)
+            .count();
+        let pending_media_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeTransformArtifactReadiness::PendingMedia)
+            .count();
+        let degraded_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeTransformArtifactReadiness::Degraded)
+            .count();
+        let invalidated_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeTransformArtifactReadiness::Invalidated)
+            .count();
+        let unsupported_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimeTransformArtifactReadiness::Unsupported)
+            .count();
+        let cached_media_ready_clip_count =
+            clips.iter().filter(|clip| clip.cached_media_ready).count();
+        let reusable_clip_count = clips
+            .iter()
+            .filter(|clip| clip.reuse_state == RuntimeTransformArtifactReuseState::Reusable)
+            .count();
+        let requires_render_clip_count = clips
+            .iter()
+            .filter(|clip| clip.reuse_state == RuntimeTransformArtifactReuseState::RequiresRender)
+            .count();
+        let guarded_reuse_clip_count = clips
+            .iter()
+            .filter(|clip| clip.reuse_state == RuntimeTransformArtifactReuseState::Guarded)
+            .count();
+
+        RuntimeTransformArtifactSnapshot {
+            clip_count: clips.len(),
+            ready_clip_count,
+            pending_media_clip_count,
+            degraded_clip_count,
+            invalidated_clip_count,
+            unsupported_clip_count,
+            cached_media_ready_clip_count,
+            reusable_clip_count,
+            requires_render_clip_count,
+            guarded_reuse_clip_count,
+            clips,
+            summary: format!(
+                "transform_artifacts clips={} ready={} pending_media={} degraded={} invalidated={} unsupported={} cached_media_ready={} reusable={} requires_render={} guarded_reuse={}",
+                clip_processing.clip_count,
+                ready_clip_count,
+                pending_media_clip_count,
+                degraded_clip_count,
+                invalidated_clip_count,
+                unsupported_clip_count,
+                cached_media_ready_clip_count,
+                reusable_clip_count,
+                requires_render_clip_count,
+                guarded_reuse_clip_count,
+            ),
+        }
+    }
+}
+
+impl RuntimePreviewTransformServiceSnapshot {
+    pub fn from_runtime_preview_state(
+        clip_processing: &RuntimeClipProcessingPipelineSnapshot,
+        media_service: &RuntimeMediaServiceSnapshot,
+        stretch_engine: &RuntimeStretchEngineSnapshot,
+        marker_analysis: &RuntimeMarkerAnalysisSnapshot,
+        transform_artifact: &RuntimeTransformArtifactSnapshot,
+    ) -> RuntimePreviewTransformServiceSnapshot {
+        let stretch_clips = stretch_engine
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+        let marker_clips = marker_analysis
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+        let artifact_clips = transform_artifact
+            .clips
+            .iter()
+            .map(|clip| (clip.clip_id.as_str(), clip))
+            .collect::<BTreeMap<_, _>>();
+
+        let clips = clip_processing
+            .clips
+            .iter()
+            .map(|clip| {
+                let stretch = stretch_clips.get(clip.clip_id.as_str()).copied();
+                let marker = marker_clips.get(clip.clip_id.as_str()).copied();
+                let artifact = artifact_clips.get(clip.clip_id.as_str()).copied();
+                let audition_active = clip.media_asset_id.as_deref()
+                    == media_service.previewing_asset_id.as_deref();
+
+                let media_preview_possible = matches!(
+                    media_service.preview_state,
+                    RuntimeMediaPreviewState::Ready | RuntimeMediaPreviewState::Previewing
+                ) || media_service.previewable_asset_count > 0;
+
+                let (service_class, readiness, degraded_state, fallback_kind) =
+                    match (clip.media_asset_id.as_deref(), stretch, marker, artifact) {
+                        (None, _, _, _) => (
+                            RuntimePreviewTransformServiceClass::Unavailable,
+                            RuntimePreviewTransformReadiness::Unsupported,
+                            RuntimePreviewTransformDegradedState::UnsupportedScope,
+                            RuntimePreviewTransformFallbackKind::OfflineOnly,
+                        ),
+                        (_, _, _, Some(artifact))
+                            if artifact.readiness
+                                == RuntimeTransformArtifactReadiness::Invalidated =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::Fallback,
+                                RuntimePreviewTransformReadiness::Invalidated,
+                                RuntimePreviewTransformDegradedState::InvalidatedInputs,
+                                if media_preview_possible {
+                                    RuntimePreviewTransformFallbackKind::MediaOnly
+                                } else {
+                                    RuntimePreviewTransformFallbackKind::OfflineOnly
+                                },
+                            )
+                        }
+                        (_, _, Some(marker), _)
+                            if marker.readiness
+                                == RuntimeMarkerAnalysisReadiness::Invalidated =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::Fallback,
+                                RuntimePreviewTransformReadiness::Invalidated,
+                                RuntimePreviewTransformDegradedState::InvalidatedInputs,
+                                if media_preview_possible {
+                                    RuntimePreviewTransformFallbackKind::MediaOnly
+                                } else {
+                                    RuntimePreviewTransformFallbackKind::OfflineOnly
+                                },
+                            )
+                        }
+                        (_, Some(stretch), Some(marker), Some(artifact))
+                            if artifact.reuse_state
+                                == RuntimeTransformArtifactReuseState::Reusable
+                                && stretch.readiness == RuntimeStretchReadiness::Ready
+                                && marker.readiness == RuntimeMarkerAnalysisReadiness::Ready =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::ArtifactBacked,
+                                RuntimePreviewTransformReadiness::Ready,
+                                RuntimePreviewTransformDegradedState::None,
+                                RuntimePreviewTransformFallbackKind::None,
+                            )
+                        }
+                        (_, Some(stretch), _, _)
+                            if stretch.readiness == RuntimeStretchReadiness::Ready =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::StretchAligned,
+                                RuntimePreviewTransformReadiness::Ready,
+                                RuntimePreviewTransformDegradedState::None,
+                                RuntimePreviewTransformFallbackKind::None,
+                            )
+                        }
+                        (_, Some(stretch), Some(marker), Some(artifact))
+                            if matches!(
+                                stretch.readiness,
+                                RuntimeStretchReadiness::PendingMedia
+                                    | RuntimeStretchReadiness::PendingWarp
+                            ) || marker.readiness
+                                == RuntimeMarkerAnalysisReadiness::PendingMedia
+                                || artifact.readiness
+                                    == RuntimeTransformArtifactReadiness::PendingMedia =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::StretchAligned,
+                                RuntimePreviewTransformReadiness::Pending,
+                                RuntimePreviewTransformDegradedState::PendingInputs,
+                                if media_preview_possible {
+                                    RuntimePreviewTransformFallbackKind::MediaOnly
+                                } else {
+                                    RuntimePreviewTransformFallbackKind::OfflineOnly
+                                },
+                            )
+                        }
+                        (_, Some(stretch), Some(marker), Some(artifact))
+                            if stretch.readiness == RuntimeStretchReadiness::Degraded
+                                || marker.readiness
+                                    == RuntimeMarkerAnalysisReadiness::Degraded
+                                || artifact.readiness
+                                    == RuntimeTransformArtifactReadiness::Degraded =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::Fallback,
+                                RuntimePreviewTransformReadiness::Degraded,
+                                RuntimePreviewTransformDegradedState::FallbackOnly,
+                                if media_preview_possible {
+                                    RuntimePreviewTransformFallbackKind::MediaOnly
+                                } else {
+                                    RuntimePreviewTransformFallbackKind::OfflineOnly
+                                },
+                            )
+                        }
+                        (_, _, _, Some(artifact))
+                            if artifact.readiness
+                                == RuntimeTransformArtifactReadiness::Unsupported =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::Unavailable,
+                                RuntimePreviewTransformReadiness::Unsupported,
+                                RuntimePreviewTransformDegradedState::UnsupportedScope,
+                                RuntimePreviewTransformFallbackKind::OfflineOnly,
+                            )
+                        }
+                        (_, _, _, _)
+                            if media_preview_possible
+                                || media_service.preview_state
+                                    == RuntimeMediaPreviewState::Invalidated =>
+                        {
+                            (
+                                RuntimePreviewTransformServiceClass::Fallback,
+                                RuntimePreviewTransformReadiness::Pending,
+                                RuntimePreviewTransformDegradedState::PendingInputs,
+                                RuntimePreviewTransformFallbackKind::MediaOnly,
+                            )
+                        }
+                        _ => (
+                            RuntimePreviewTransformServiceClass::Unavailable,
+                            RuntimePreviewTransformReadiness::Empty,
+                            RuntimePreviewTransformDegradedState::PendingInputs,
+                            RuntimePreviewTransformFallbackKind::OfflineOnly,
+                        ),
+                    };
+
+                let scrub_supported = matches!(
+                    readiness,
+                    RuntimePreviewTransformReadiness::Ready
+                        | RuntimePreviewTransformReadiness::Degraded
+                        | RuntimePreviewTransformReadiness::Invalidated
+                );
+                let artifact_reuse_state = artifact
+                    .map(|artifact| artifact.reuse_state)
+                    .unwrap_or(RuntimeTransformArtifactReuseState::Unavailable);
+
+                RuntimePreviewTransformClipSnapshot {
+                    clip_id: clip.clip_id.clone(),
+                    media_asset_id: clip.media_asset_id.clone(),
+                    service_class,
+                    readiness,
+                    degraded_state,
+                    fallback_kind,
+                    artifact_reuse_state,
+                    audition_active,
+                    scrub_supported,
+                    summary: format!(
+                        "clip={} class={:?} readiness={:?} degraded={:?} fallback={:?} artifact_reuse={:?} audition_active={} scrub_supported={}",
+                        clip.clip_id,
+                        service_class,
+                        readiness,
+                        degraded_state,
+                        fallback_kind,
+                        artifact_reuse_state,
+                        audition_active,
+                        scrub_supported,
+                    ),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let active_audition_clip_count = clips.iter().filter(|clip| clip.audition_active).count();
+        let scrub_supported_clip_count = clips.iter().filter(|clip| clip.scrub_supported).count();
+        let ready_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimePreviewTransformReadiness::Ready)
+            .count();
+        let pending_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimePreviewTransformReadiness::Pending)
+            .count();
+        let degraded_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimePreviewTransformReadiness::Degraded)
+            .count();
+        let invalidated_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimePreviewTransformReadiness::Invalidated)
+            .count();
+        let unsupported_clip_count = clips
+            .iter()
+            .filter(|clip| clip.readiness == RuntimePreviewTransformReadiness::Unsupported)
+            .count();
+        let stretch_aligned_clip_count = clips
+            .iter()
+            .filter(|clip| {
+                clip.service_class == RuntimePreviewTransformServiceClass::StretchAligned
+            })
+            .count();
+        let artifact_backed_clip_count = clips
+            .iter()
+            .filter(|clip| {
+                clip.service_class == RuntimePreviewTransformServiceClass::ArtifactBacked
+            })
+            .count();
+        let fallback_clip_count = clips
+            .iter()
+            .filter(|clip| clip.service_class == RuntimePreviewTransformServiceClass::Fallback)
+            .count();
+
+        RuntimePreviewTransformServiceSnapshot {
+            clip_count: clips.len(),
+            active_audition_clip_count,
+            scrub_supported_clip_count,
+            ready_clip_count,
+            pending_clip_count,
+            degraded_clip_count,
+            invalidated_clip_count,
+            unsupported_clip_count,
+            stretch_aligned_clip_count,
+            artifact_backed_clip_count,
+            fallback_clip_count,
+            clips,
+            summary: format!(
+                "preview_transform clips={} active_audition={} scrub_supported={} ready={} pending={} degraded={} invalidated={} unsupported={} stretch_aligned={} artifact_backed={} fallback={}",
+                clip_processing.clip_count,
+                active_audition_clip_count,
+                scrub_supported_clip_count,
+                ready_clip_count,
+                pending_clip_count,
+                degraded_clip_count,
+                invalidated_clip_count,
+                unsupported_clip_count,
+                stretch_aligned_clip_count,
+                artifact_backed_clip_count,
+                fallback_clip_count,
+            ),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimeClipRenderInputStage {
     RawClip,
@@ -1350,6 +3421,9 @@ pub struct RuntimeClipRenderResult {
     pub timeline_end_samples: i64,
     pub input_stage: RuntimeClipRenderInputStage,
     pub clip_processing_snapshot: RuntimeClipProcessingSnapshot,
+    pub stretch_engine_snapshot: RuntimeStretchClipSnapshot,
+    pub transform_artifact_snapshot: RuntimeTransformArtifactClipSnapshot,
+    pub preview_transform_snapshot: RuntimePreviewTransformClipSnapshot,
     pub first_frame_gain: Option<f32>,
     pub last_frame_gain: Option<f32>,
     pub peak_applied_gain: Option<f32>,
@@ -1431,6 +3505,49 @@ pub struct RuntimeOfflineRenderChainDependencyPreview {
     pub warm_recall_stage_count: usize,
     pub recovered_recall_stage_count: usize,
     pub unavailable_recall_stage_count: usize,
+    pub secondary_input_count: usize,
+    pub required_secondary_input_count: usize,
+    pub optional_secondary_input_count: usize,
+    pub disabled_secondary_input_count: usize,
+    pub terminal_fallback_secondary_input_count: usize,
+    pub bus_connection_count: usize,
+    pub auxiliary_path_count: usize,
+    pub complex_io_stage_count: usize,
+    pub multi_output_instrument_stage_count: usize,
+    pub bus_capable_fx_stage_count: usize,
+    pub sidechain_capable_fx_stage_count: usize,
+    pub spatial_stage_count: usize,
+    pub active_spatial_stage_count: usize,
+    pub bypassed_spatial_stage_count: usize,
+    pub fallback_spatial_stage_count: usize,
+    pub surround_bed_spatial_stage_count: usize,
+    pub object_aware_spatial_stage_count: usize,
+    pub expanded_fallback_spatial_stage_count: usize,
+    pub secondary_inputs: Vec<RuntimeSecondaryInputRouteSummary>,
+    pub bus_connections: Vec<RuntimeBusConnectionSummary>,
+    pub auxiliary_paths: Vec<RuntimeAuxiliaryPathSummary>,
+    pub complex_io_stages: Vec<RuntimeOfflineRenderComplexIoStageSummary>,
+    pub spatial_stages: Vec<RuntimeOfflineRenderSpatialStageSummary>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderComplexIoStageSummary {
+    pub chain_id: String,
+    pub node_id: String,
+    pub stage_index: usize,
+    pub plugin_type_id: Option<String>,
+    pub topology: RuntimePluginComplexIoSummary,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeOfflineRenderSpatialStageSummary {
+    pub chain_id: String,
+    pub node_id: String,
+    pub stage_index: usize,
+    pub plugin_type_id: Option<String>,
+    pub spatial: RuntimeSpatialExecutionSummary,
     pub summary: String,
 }
 
@@ -1444,6 +3561,9 @@ pub struct RuntimeOfflineRenderContractPreview {
     pub include_main_mix: bool,
     pub clip_count: usize,
     pub ready_clip_count: usize,
+    pub stretch_engine_snapshot: RuntimeStretchEngineSnapshot,
+    pub preview_transform_snapshot: RuntimePreviewTransformServiceSnapshot,
+    pub transform_artifact_snapshot: RuntimeTransformArtifactSnapshot,
     pub stem_count: usize,
     pub freeze_artifact_count: usize,
     pub resolved_tempo_bpm: f64,
@@ -2427,6 +4547,9 @@ pub struct RuntimePluginEventSnapshot {
     pub last_batch_parameter_gesture_events: usize,
     pub last_batch_note_events: usize,
     pub last_batch_note_expression_events: usize,
+    pub last_batch_note_expression_pressure_events: usize,
+    pub last_batch_note_expression_timbre_events: usize,
+    pub last_batch_note_expression_tuning_events: usize,
     pub last_batch_midi_events: usize,
     pub total_events: usize,
     pub parameter_value_events: usize,
@@ -2434,12 +4557,31 @@ pub struct RuntimePluginEventSnapshot {
     pub parameter_gesture_events: usize,
     pub note_events: usize,
     pub note_expression_events: usize,
+    pub note_expression_pressure_events: usize,
+    pub note_expression_timbre_events: usize,
+    pub note_expression_tuning_events: usize,
     pub midi_events: usize,
+    pub mpe_posture: RuntimeControllerExpressionMpePosture,
+    pub midi2_posture: RuntimeControllerExpressionMidi2Posture,
     pub first_epoch: Option<u64>,
     pub last_epoch: Option<u64>,
     pub segment_count: usize,
     pub segment_epochs: Vec<u64>,
     pub lease_rollovers: usize,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeControllerExpressionMpePosture {
+    #[default]
+    Unsupported,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeControllerExpressionMidi2Posture {
+    #[default]
+    Unsupported,
+    Guarded,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -2749,6 +4891,10 @@ pub struct RuntimePluginChainStageSnapshot {
     pub shared_boundary_member_count: usize,
     pub continuity_class: RuntimeInterruptionClass,
     pub rebindable: bool,
+    pub io_layout: RuntimeMultichannelIoSummary,
+    pub complex_io_summary: RuntimePluginComplexIoSummary,
+    pub secondary_input: Option<RuntimeSecondaryInputRouteSummary>,
+    pub spatial_execution: Option<RuntimeSpatialExecutionSummary>,
     pub lifecycle_state: Option<RuntimePluginLifecycleState>,
     pub lifecycle_stage: Option<PluginSandboxLifecycleStage>,
     pub transport_stage: Option<PluginSandboxTransportStage>,
@@ -3748,6 +5894,10 @@ pub struct RuntimeMeteringSnapshot {
     pub bus_groups: Vec<RuntimeBusGroupMeterSummary>,
     pub console_groups: Vec<RuntimeConsoleGroupMeterSummary>,
     pub send_returns: Vec<RuntimeSendReturnMeterSummary>,
+    pub bus_connection_count: usize,
+    pub auxiliary_path_count: usize,
+    pub bus_connections: Vec<RuntimeBusConnectionSummary>,
+    pub auxiliary_paths: Vec<RuntimeAuxiliaryPathSummary>,
     pub summary: String,
 }
 
@@ -3870,8 +6020,12 @@ impl RuntimeMeteringSnapshot {
                 ),
             })
             .collect();
+        self.bus_connection_count = topology.bus_connection_count;
+        self.auxiliary_path_count = topology.auxiliary_path_count;
+        self.bus_connections = topology.bus_connections.clone();
+        self.auxiliary_paths = topology.auxiliary_paths.clone();
         self.summary = format!(
-            "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={} routes={}/{}/{}/{}",
+            "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={} routes={}/{}/{}/{} bus_connections={} auxiliary_paths={}",
             self.meter_count,
             self.main_output_peak_level,
             self.main_output_rms_level,
@@ -3883,6 +6037,8 @@ impl RuntimeMeteringSnapshot {
             self.bus_groups.len(),
             self.send_returns.len(),
             self.console_groups.len(),
+            self.bus_connection_count,
+            self.auxiliary_path_count,
         );
         self
     }
@@ -5490,6 +7646,9 @@ pub struct RuntimeHostClockingSummary {
     pub discontinuity_state: RuntimeHostClockDiscontinuityState,
     pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
     pub endpoint_topology: RuntimeHostEndpointTopology,
+    pub linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand,
+    pub linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState,
+    pub linux_endpoint_topology_parity: RuntimeLinuxAudioBackendEndpointTopologyParityState,
     pub partial_availability: bool,
     pub crossing_required: bool,
     pub callback_interval_ms: f32,
@@ -5511,11 +7670,15 @@ pub struct RuntimeHostLatencySummary {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeHostHardwareSummary {
+    pub backend_identity: HardwareBackendIdentity,
     pub backend_name: String,
+    pub linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub linux_backend_portability: RuntimeLinuxAudioBackendPortabilityBand,
     pub device_id: String,
     pub device_name: String,
     pub sample_rate: u32,
     pub buffer_size: usize,
+    pub input_channels: u16,
     pub output_channels: u16,
     pub sample_format: AudioSampleFormat,
     pub simulated: bool,
@@ -5525,6 +7688,57 @@ pub struct RuntimeHostHardwareSummary {
     pub device_loss_count: u64,
     pub restart_attempt_count: u64,
     pub restart_failure_count: u64,
+}
+
+impl RuntimeHostHardwareSummary {
+    pub fn classify_linux_backend_identity(
+        backend_identity: HardwareBackendIdentity,
+    ) -> RuntimeLinuxAudioBackendIdentity {
+        match backend_identity {
+            HardwareBackendIdentity::CoreAudio => RuntimeLinuxAudioBackendIdentity::NotLinux,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+                RuntimeLinuxAudioBackendIdentity::Alsa
+            }
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack) => {
+                RuntimeLinuxAudioBackendIdentity::Jack
+            }
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+                RuntimeLinuxAudioBackendIdentity::PipeWire
+            }
+            HardwareBackendIdentity::Unsupported => RuntimeLinuxAudioBackendIdentity::Unsupported,
+        }
+    }
+
+    pub fn classify_linux_backend_portability(
+        backend_identity: HardwareBackendIdentity,
+        simulated: bool,
+        backend_health: BackendHealth,
+        device_loss_count: u64,
+        restart_attempt_count: u64,
+        restart_failure_count: u64,
+    ) -> RuntimeLinuxAudioBackendPortabilityBand {
+        match Self::classify_linux_backend_identity(backend_identity) {
+            RuntimeLinuxAudioBackendIdentity::Alsa
+            | RuntimeLinuxAudioBackendIdentity::Jack
+            | RuntimeLinuxAudioBackendIdentity::PipeWire => {
+                if simulated
+                    || !matches!(backend_health, BackendHealth::Healthy)
+                    || device_loss_count > 0
+                    || restart_attempt_count > 0
+                    || restart_failure_count > 0
+                {
+                    RuntimeLinuxAudioBackendPortabilityBand::Guarded
+                } else {
+                    RuntimeLinuxAudioBackendPortabilityBand::Portable
+                }
+            }
+            RuntimeLinuxAudioBackendIdentity::NotLinux
+            | RuntimeLinuxAudioBackendIdentity::Unavailable
+            | RuntimeLinuxAudioBackendIdentity::Unsupported => {
+                RuntimeLinuxAudioBackendPortabilityBand::Unsupported
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -5604,6 +7818,1288 @@ pub enum RuntimeExternalIoLoopbackState {
     Faulted,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiDiscoveryState {
+    Unavailable,
+    Idle,
+    Enumerated,
+    Changed,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiGraphState {
+    Unavailable,
+    Empty,
+    Stable,
+    Guarded,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiDeviceLifecycleState {
+    Unavailable,
+    Discovered,
+    Guarded,
+    Detached,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiEndpointLifecycleState {
+    Unavailable,
+    Idle,
+    Active,
+    Guarded,
+    Detached,
+    Faulted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiEndpointDirection {
+    Input,
+    Output,
+    Duplex,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiRouteState {
+    Unavailable,
+    Detached,
+    InputObserved,
+    OutputObserved,
+    DuplexObserved,
+    Guarded,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeExternalMidiEndpointCapabilitySummary {
+    pub supports_bounded_midi_input: bool,
+    pub supports_bounded_midi_output: bool,
+    pub supports_transport_clock: bool,
+    pub supports_note_events: bool,
+    pub supports_controller_events: bool,
+    pub supports_note_pressure_expression: bool,
+    pub supports_note_timbre_expression: bool,
+    pub supports_note_tuning_expression: bool,
+    pub supports_mpe: bool,
+    pub midi2_posture: RuntimeControllerExpressionMidi2Posture,
+    pub control_surface_guarded: bool,
+    pub summary: String,
+}
+
+impl RuntimeExternalMidiEndpointCapabilitySummary {
+    pub fn unavailable() -> Self {
+        Self {
+            supports_bounded_midi_input: false,
+            supports_bounded_midi_output: false,
+            supports_transport_clock: false,
+            supports_note_events: false,
+            supports_controller_events: false,
+            supports_note_pressure_expression: false,
+            supports_note_timbre_expression: false,
+            supports_note_tuning_expression: false,
+            supports_mpe: false,
+            midi2_posture: RuntimeControllerExpressionMidi2Posture::Unsupported,
+            control_surface_guarded: true,
+            summary: "midi-input=false midi-output=false transport-clock=false note-events=false controller-events=false pressure=false timbre=false tuning=false mpe=false midi2=Unsupported control-surface=guarded".into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeExternalMidiDeviceDescriptor {
+    pub device_id: String,
+    pub device_name: String,
+    pub lifecycle_state: RuntimeExternalMidiDeviceLifecycleState,
+    pub endpoint_count: usize,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeExternalMidiEndpointDescriptor {
+    pub endpoint_id: String,
+    pub endpoint_name: String,
+    pub device_id: String,
+    pub direction: RuntimeExternalMidiEndpointDirection,
+    pub lifecycle_state: RuntimeExternalMidiEndpointLifecycleState,
+    pub route_state: RuntimeExternalMidiRouteState,
+    pub capability: RuntimeExternalMidiEndpointCapabilitySummary,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeExternalMidiEndpointGraphSnapshot {
+    pub discovery_state: RuntimeExternalMidiDiscoveryState,
+    pub graph_state: RuntimeExternalMidiGraphState,
+    pub provider_name: String,
+    pub device_count: usize,
+    pub endpoint_count: usize,
+    pub input_endpoint_count: usize,
+    pub output_endpoint_count: usize,
+    pub duplex_endpoint_count: usize,
+    pub active_route_count: usize,
+    pub guarded_route_count: usize,
+    pub devices: Vec<RuntimeExternalMidiDeviceDescriptor>,
+    pub endpoints: Vec<RuntimeExternalMidiEndpointDescriptor>,
+    pub summary: String,
+}
+
+impl RuntimeExternalMidiEndpointGraphSnapshot {
+    pub fn unavailable() -> Self {
+        Self {
+            discovery_state: RuntimeExternalMidiDiscoveryState::Unavailable,
+            graph_state: RuntimeExternalMidiGraphState::Unavailable,
+            provider_name: "runtime-unavailable".into(),
+            device_count: 0,
+            endpoint_count: 0,
+            input_endpoint_count: 0,
+            output_endpoint_count: 0,
+            duplex_endpoint_count: 0,
+            active_route_count: 0,
+            guarded_route_count: 0,
+            devices: Vec::new(),
+            endpoints: Vec::new(),
+            summary: "discovery=Unavailable graph=Unavailable provider=runtime-unavailable devices=0 endpoints=0 routes=0".into(),
+        }
+    }
+
+    pub fn empty(provider_name: impl Into<String>) -> Self {
+        let provider_name = provider_name.into();
+        Self {
+            discovery_state: RuntimeExternalMidiDiscoveryState::Idle,
+            graph_state: RuntimeExternalMidiGraphState::Empty,
+            provider_name: provider_name.clone(),
+            device_count: 0,
+            endpoint_count: 0,
+            input_endpoint_count: 0,
+            output_endpoint_count: 0,
+            duplex_endpoint_count: 0,
+            active_route_count: 0,
+            guarded_route_count: 0,
+            devices: Vec::new(),
+            endpoints: Vec::new(),
+            summary: format!(
+                "discovery=Idle graph=Empty provider={} devices=0 endpoints=0 routes=0",
+                provider_name
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeControlSurfaceGraphState {
+    Unavailable,
+    Empty,
+    Ready,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeControlSurfaceTransportPosture {
+    Unavailable,
+    InputOnly,
+    FeedbackOnly,
+    Duplex,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeControlSurfaceMappingPosture {
+    Unsupported,
+    ObserveOnly,
+    Guarded,
+    Portable,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeControlSurfaceFeedbackReadiness {
+    Unavailable,
+    Guarded,
+    Ready,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeAdvancedHardwareGraphState {
+    Unavailable,
+    Empty,
+    Ready,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeScriptingSafeDevicePolicyPosture {
+    Unsupported,
+    ContextOnly,
+    Denied,
+    Guarded,
+    Portable,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeGuardedFeedbackChannelPosture {
+    Unavailable,
+    Guarded,
+    Portable,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeAdvancedHardwareActionClass {
+    DisplayFeedback,
+    MotorFeedback,
+    HapticFeedback,
+    BankNavigation,
+    MacroTrigger,
+    DeviceStateObservation,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeControlSurfaceCapabilitySummary {
+    pub supports_transport_control: bool,
+    pub supports_mapping_input: bool,
+    pub supports_feedback_output: bool,
+    pub supports_widened_expression: bool,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeControlSurfaceDeviceDescriptor {
+    pub device_id: String,
+    pub device_name: String,
+    pub transport_posture: RuntimeControlSurfaceTransportPosture,
+    pub mapping_posture: RuntimeControlSurfaceMappingPosture,
+    pub feedback_readiness: RuntimeControlSurfaceFeedbackReadiness,
+    pub capability: RuntimeControlSurfaceCapabilitySummary,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeControlSurfaceSnapshot {
+    pub discovery_state: RuntimeExternalMidiDiscoveryState,
+    pub graph_state: RuntimeControlSurfaceGraphState,
+    pub provider_name: String,
+    pub device_count: usize,
+    pub mapped_device_count: usize,
+    pub feedback_ready_device_count: usize,
+    pub guarded_device_count: usize,
+    pub devices: Vec<RuntimeControlSurfaceDeviceDescriptor>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeAdvancedHardwareCapabilitySummary {
+    pub supports_display_feedback: bool,
+    pub supports_motor_feedback: bool,
+    pub supports_haptic_feedback: bool,
+    pub supports_bank_navigation: bool,
+    pub supports_macro_triggers: bool,
+    pub supports_device_state_observation: bool,
+    pub action_classes: Vec<RuntimeAdvancedHardwareActionClass>,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeAdvancedHardwareDeviceDescriptor {
+    pub device_id: String,
+    pub device_name: String,
+    pub scripting_safe_posture: RuntimeScriptingSafeDevicePolicyPosture,
+    pub feedback_channel_posture: RuntimeGuardedFeedbackChannelPosture,
+    pub capability: RuntimeAdvancedHardwareCapabilitySummary,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeAdvancedHardwareSnapshot {
+    pub discovery_state: RuntimeExternalMidiDiscoveryState,
+    pub graph_state: RuntimeAdvancedHardwareGraphState,
+    pub provider_name: String,
+    pub device_count: usize,
+    pub portable_device_count: usize,
+    pub guarded_device_count: usize,
+    pub context_only_device_count: usize,
+    pub denied_device_count: usize,
+    pub feedback_channel_device_count: usize,
+    pub devices: Vec<RuntimeAdvancedHardwareDeviceDescriptor>,
+    pub summary: String,
+}
+
+impl RuntimeControlSurfaceSnapshot {
+    pub fn unavailable() -> Self {
+        Self {
+            discovery_state: RuntimeExternalMidiDiscoveryState::Unavailable,
+            graph_state: RuntimeControlSurfaceGraphState::Unavailable,
+            provider_name: "runtime-unavailable".into(),
+            device_count: 0,
+            mapped_device_count: 0,
+            feedback_ready_device_count: 0,
+            guarded_device_count: 0,
+            devices: Vec::new(),
+            summary: "discovery=Unavailable graph=Unavailable provider=runtime-unavailable devices=0 mapped=0 feedback-ready=0 guarded=0".into(),
+        }
+    }
+
+    pub fn empty(provider_name: impl Into<String>) -> Self {
+        let provider_name = provider_name.into();
+        Self {
+            discovery_state: RuntimeExternalMidiDiscoveryState::Idle,
+            graph_state: RuntimeControlSurfaceGraphState::Empty,
+            provider_name: provider_name.clone(),
+            device_count: 0,
+            mapped_device_count: 0,
+            feedback_ready_device_count: 0,
+            guarded_device_count: 0,
+            devices: Vec::new(),
+            summary: format!(
+                "discovery=Idle graph=Empty provider={} devices=0 mapped=0 feedback-ready=0 guarded=0",
+                provider_name
+            ),
+        }
+    }
+
+    pub fn from_external_midi_snapshot(
+        snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
+    ) -> Self {
+        if matches!(
+            snapshot.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Unavailable
+        ) || matches!(
+            snapshot.graph_state,
+            RuntimeExternalMidiGraphState::Unavailable
+        ) {
+            return Self::unavailable();
+        }
+        if snapshot.device_count == 0 {
+            return Self::empty(snapshot.provider_name.clone());
+        }
+
+        let mut devices = Vec::with_capacity(snapshot.devices.len());
+        let mut mapped_device_count = 0;
+        let mut feedback_ready_device_count = 0;
+        let mut guarded_device_count = 0;
+
+        for device in &snapshot.devices {
+            let endpoints = snapshot
+                .endpoints
+                .iter()
+                .filter(|endpoint| endpoint.device_id == device.device_id)
+                .collect::<Vec<_>>();
+            let has_input = endpoints.iter().any(|endpoint| {
+                matches!(
+                    endpoint.direction,
+                    RuntimeExternalMidiEndpointDirection::Input
+                        | RuntimeExternalMidiEndpointDirection::Duplex
+                )
+            });
+            let has_output = endpoints.iter().any(|endpoint| {
+                matches!(
+                    endpoint.direction,
+                    RuntimeExternalMidiEndpointDirection::Output
+                        | RuntimeExternalMidiEndpointDirection::Duplex
+                )
+            });
+            let supports_transport_control = endpoints.iter().any(|endpoint| {
+                endpoint.capability.supports_transport_clock
+                    || endpoint.capability.supports_controller_events
+            });
+            let supports_mapping_input = endpoints.iter().any(|endpoint| {
+                endpoint.capability.supports_controller_events
+                    || endpoint.capability.supports_note_events
+            });
+            let supports_feedback_output = has_output;
+            let supports_widened_expression = endpoints.iter().any(|endpoint| {
+                endpoint.capability.supports_note_pressure_expression
+                    || endpoint.capability.supports_note_timbre_expression
+                    || endpoint.capability.supports_note_tuning_expression
+                    || endpoint.capability.supports_mpe
+                    || !matches!(
+                        endpoint.capability.midi2_posture,
+                        RuntimeControllerExpressionMidi2Posture::Unsupported
+                    )
+            });
+            let guarded = endpoints
+                .iter()
+                .any(|endpoint| endpoint.capability.control_surface_guarded)
+                || matches!(snapshot.graph_state, RuntimeExternalMidiGraphState::Guarded)
+                || (!has_input && !has_output);
+
+            let transport_posture = if endpoints.is_empty() {
+                RuntimeControlSurfaceTransportPosture::Unavailable
+            } else if guarded {
+                RuntimeControlSurfaceTransportPosture::Guarded
+            } else if has_input && has_output {
+                RuntimeControlSurfaceTransportPosture::Duplex
+            } else if has_input {
+                RuntimeControlSurfaceTransportPosture::InputOnly
+            } else if has_output {
+                RuntimeControlSurfaceTransportPosture::FeedbackOnly
+            } else {
+                RuntimeControlSurfaceTransportPosture::Unavailable
+            };
+            let mapping_posture = if !supports_mapping_input {
+                RuntimeControlSurfaceMappingPosture::Unsupported
+            } else if guarded || supports_widened_expression {
+                RuntimeControlSurfaceMappingPosture::Guarded
+            } else if !supports_transport_control && !supports_feedback_output {
+                RuntimeControlSurfaceMappingPosture::ObserveOnly
+            } else {
+                RuntimeControlSurfaceMappingPosture::Portable
+            };
+            let feedback_readiness = if !supports_feedback_output {
+                RuntimeControlSurfaceFeedbackReadiness::Unavailable
+            } else if guarded {
+                RuntimeControlSurfaceFeedbackReadiness::Guarded
+            } else {
+                RuntimeControlSurfaceFeedbackReadiness::Ready
+            };
+
+            if !matches!(
+                mapping_posture,
+                RuntimeControlSurfaceMappingPosture::Unsupported
+            ) {
+                mapped_device_count += 1;
+            }
+            if matches!(
+                feedback_readiness,
+                RuntimeControlSurfaceFeedbackReadiness::Ready
+            ) {
+                feedback_ready_device_count += 1;
+            }
+            if guarded {
+                guarded_device_count += 1;
+            }
+
+            let capability = RuntimeControlSurfaceCapabilitySummary {
+                supports_transport_control,
+                supports_mapping_input,
+                supports_feedback_output,
+                supports_widened_expression,
+                summary: format!(
+                    "transport-control={} mapping-input={} feedback-output={} widened-expression={}",
+                    supports_transport_control,
+                    supports_mapping_input,
+                    supports_feedback_output,
+                    supports_widened_expression
+                ),
+            };
+            devices.push(RuntimeControlSurfaceDeviceDescriptor {
+                device_id: device.device_id.clone(),
+                device_name: device.device_name.clone(),
+                transport_posture,
+                mapping_posture,
+                feedback_readiness,
+                capability: capability.clone(),
+                summary: format!(
+                    "transport={:?} mapping={:?} feedback={:?} capability={}",
+                    transport_posture, mapping_posture, feedback_readiness, capability.summary
+                ),
+            });
+        }
+
+        let graph_state = if guarded_device_count > 0 {
+            RuntimeControlSurfaceGraphState::Guarded
+        } else {
+            RuntimeControlSurfaceGraphState::Ready
+        };
+
+        Self {
+            discovery_state: snapshot.discovery_state,
+            graph_state,
+            provider_name: snapshot.provider_name.clone(),
+            device_count: devices.len(),
+            mapped_device_count,
+            feedback_ready_device_count,
+            guarded_device_count,
+            devices,
+            summary: format!(
+                "discovery={:?} graph={:?} provider={} devices={} mapped={} feedback-ready={} guarded={}",
+                snapshot.discovery_state,
+                graph_state,
+                snapshot.provider_name,
+                snapshot.devices.len(),
+                mapped_device_count,
+                feedback_ready_device_count,
+                guarded_device_count
+            ),
+        }
+    }
+}
+
+impl RuntimeAdvancedHardwareSnapshot {
+    pub fn unavailable() -> Self {
+        Self {
+            discovery_state: RuntimeExternalMidiDiscoveryState::Unavailable,
+            graph_state: RuntimeAdvancedHardwareGraphState::Unavailable,
+            provider_name: "runtime-unavailable".into(),
+            device_count: 0,
+            portable_device_count: 0,
+            guarded_device_count: 0,
+            context_only_device_count: 0,
+            denied_device_count: 0,
+            feedback_channel_device_count: 0,
+            devices: Vec::new(),
+            summary: "discovery=Unavailable graph=Unavailable provider=runtime-unavailable devices=0 portable=0 guarded=0 context-only=0 denied=0 feedback-channels=0".into(),
+        }
+    }
+
+    pub fn empty(provider_name: impl Into<String>) -> Self {
+        let provider_name = provider_name.into();
+        Self {
+            discovery_state: RuntimeExternalMidiDiscoveryState::Idle,
+            graph_state: RuntimeAdvancedHardwareGraphState::Empty,
+            provider_name: provider_name.clone(),
+            device_count: 0,
+            portable_device_count: 0,
+            guarded_device_count: 0,
+            context_only_device_count: 0,
+            denied_device_count: 0,
+            feedback_channel_device_count: 0,
+            devices: Vec::new(),
+            summary: format!(
+                "discovery=Idle graph=Empty provider={} devices=0 portable=0 guarded=0 context-only=0 denied=0 feedback-channels=0",
+                provider_name
+            ),
+        }
+    }
+
+    pub fn from_control_surface_snapshot(snapshot: &RuntimeControlSurfaceSnapshot) -> Self {
+        if matches!(
+            snapshot.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Unavailable
+        ) || matches!(
+            snapshot.graph_state,
+            RuntimeControlSurfaceGraphState::Unavailable
+        ) {
+            return Self::unavailable();
+        }
+        if snapshot.device_count == 0 {
+            return Self::empty(snapshot.provider_name.clone());
+        }
+
+        let mut devices = Vec::with_capacity(snapshot.devices.len());
+        let mut portable_device_count = 0;
+        let mut guarded_device_count = 0;
+        let mut context_only_device_count = 0;
+        let mut denied_device_count = 0;
+        let mut feedback_channel_device_count = 0;
+
+        for device in &snapshot.devices {
+            let scripting_safe_posture = match device.mapping_posture {
+                RuntimeControlSurfaceMappingPosture::ObserveOnly => {
+                    RuntimeScriptingSafeDevicePolicyPosture::ContextOnly
+                }
+                RuntimeControlSurfaceMappingPosture::Unsupported => {
+                    RuntimeScriptingSafeDevicePolicyPosture::Denied
+                }
+                RuntimeControlSurfaceMappingPosture::Guarded => {
+                    RuntimeScriptingSafeDevicePolicyPosture::Guarded
+                }
+                RuntimeControlSurfaceMappingPosture::Portable => {
+                    if matches!(
+                        device.feedback_readiness,
+                        RuntimeControlSurfaceFeedbackReadiness::Ready
+                    ) {
+                        RuntimeScriptingSafeDevicePolicyPosture::Portable
+                    } else {
+                        RuntimeScriptingSafeDevicePolicyPosture::Guarded
+                    }
+                }
+            };
+            let feedback_channel_posture = if !device.capability.supports_feedback_output {
+                RuntimeGuardedFeedbackChannelPosture::Unavailable
+            } else if matches!(
+                device.feedback_readiness,
+                RuntimeControlSurfaceFeedbackReadiness::Ready
+            ) && matches!(
+                scripting_safe_posture,
+                RuntimeScriptingSafeDevicePolicyPosture::Portable
+            ) {
+                RuntimeGuardedFeedbackChannelPosture::Portable
+            } else {
+                RuntimeGuardedFeedbackChannelPosture::Guarded
+            };
+
+            let supports_display_feedback = !matches!(
+                feedback_channel_posture,
+                RuntimeGuardedFeedbackChannelPosture::Unavailable
+            );
+            let supports_motor_feedback = false;
+            let supports_haptic_feedback = false;
+            let supports_bank_navigation = !matches!(
+                device.mapping_posture,
+                RuntimeControlSurfaceMappingPosture::Unsupported
+            );
+            let supports_macro_triggers = device.capability.supports_transport_control;
+            let supports_device_state_observation = true;
+
+            let mut action_classes = Vec::new();
+            if supports_display_feedback {
+                action_classes.push(RuntimeAdvancedHardwareActionClass::DisplayFeedback);
+            }
+            if supports_bank_navigation {
+                action_classes.push(RuntimeAdvancedHardwareActionClass::BankNavigation);
+            }
+            if supports_macro_triggers {
+                action_classes.push(RuntimeAdvancedHardwareActionClass::MacroTrigger);
+            }
+            if supports_device_state_observation {
+                action_classes.push(RuntimeAdvancedHardwareActionClass::DeviceStateObservation);
+            }
+
+            match scripting_safe_posture {
+                RuntimeScriptingSafeDevicePolicyPosture::Portable => portable_device_count += 1,
+                RuntimeScriptingSafeDevicePolicyPosture::Guarded => guarded_device_count += 1,
+                RuntimeScriptingSafeDevicePolicyPosture::ContextOnly => {
+                    context_only_device_count += 1
+                }
+                RuntimeScriptingSafeDevicePolicyPosture::Denied => denied_device_count += 1,
+                RuntimeScriptingSafeDevicePolicyPosture::Unsupported => {}
+            }
+            if !matches!(
+                feedback_channel_posture,
+                RuntimeGuardedFeedbackChannelPosture::Unavailable
+            ) {
+                feedback_channel_device_count += 1;
+            }
+
+            let capability = RuntimeAdvancedHardwareCapabilitySummary {
+                supports_display_feedback,
+                supports_motor_feedback,
+                supports_haptic_feedback,
+                supports_bank_navigation,
+                supports_macro_triggers,
+                supports_device_state_observation,
+                action_classes: action_classes.clone(),
+                summary: format!(
+                    "display-feedback={} motor-feedback={} haptic-feedback={} bank-navigation={} macro-triggers={} device-state-observation={} action-classes={}",
+                    supports_display_feedback,
+                    supports_motor_feedback,
+                    supports_haptic_feedback,
+                    supports_bank_navigation,
+                    supports_macro_triggers,
+                    supports_device_state_observation,
+                    action_classes.len()
+                ),
+            };
+            devices.push(RuntimeAdvancedHardwareDeviceDescriptor {
+                device_id: device.device_id.clone(),
+                device_name: device.device_name.clone(),
+                scripting_safe_posture,
+                feedback_channel_posture,
+                capability: capability.clone(),
+                summary: format!(
+                    "policy={:?} feedback={:?} capability={}",
+                    scripting_safe_posture, feedback_channel_posture, capability.summary
+                ),
+            });
+        }
+
+        let graph_state =
+            if guarded_device_count > 0 || context_only_device_count > 0 || denied_device_count > 0
+            {
+                RuntimeAdvancedHardwareGraphState::Guarded
+            } else {
+                RuntimeAdvancedHardwareGraphState::Ready
+            };
+
+        let device_count = devices.len();
+        let summary = format!(
+            "discovery={:?} graph={:?} provider={} devices={} portable={} guarded={} context-only={} denied={} feedback-channels={}",
+            snapshot.discovery_state,
+            graph_state,
+            snapshot.provider_name,
+            device_count,
+            portable_device_count,
+            guarded_device_count,
+            context_only_device_count,
+            denied_device_count,
+            feedback_channel_device_count
+        );
+
+        Self {
+            discovery_state: snapshot.discovery_state,
+            graph_state,
+            provider_name: snapshot.provider_name.clone(),
+            device_count,
+            portable_device_count,
+            guarded_device_count,
+            context_only_device_count,
+            denied_device_count,
+            feedback_channel_device_count,
+            devices,
+            summary,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxAudioBackendIdentity {
+    NotLinux,
+    Unavailable,
+    Alsa,
+    Jack,
+    PipeWire,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxAudioBackendPortabilityBand {
+    Portable,
+    Guarded,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxAudioBackendClockingParityBand {
+    Portable,
+    Guarded,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxAudioBackendDuplexParityState {
+    Aligned,
+    Guarded,
+    Partial,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxAudioBackendEndpointTopologyParityState {
+    Portable,
+    Guarded,
+    Partial,
+    Unsupported,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxBackendSessionOwnership {
+    NotLinux,
+    Unavailable,
+    RuntimeOwnedDirect,
+    HostBrokeredCallback,
+    BackendManagedGraph,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxBackendSessionLifecycleState {
+    NotLinux,
+    Unavailable,
+    Claimable,
+    Attached,
+    Running,
+    Interrupted,
+    Recovering,
+    Released,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxBackendDeviceClaimPosture {
+    NotLinux,
+    Unavailable,
+    Unclaimed,
+    DirectClaim,
+    SharedGraph,
+    Lost,
+    Released,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxBackendSessionRole {
+    NotLinux,
+    Unavailable,
+    PrimaryAudioIo,
+    MonitoringCapable,
+    OfflineUnavailable,
+    FallbackContinuation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeLinuxBackendOwnershipFallbackState {
+    NotLinux,
+    Unavailable,
+    Direct,
+    BackendManagedGuarded,
+    Reacquiring,
+    RecoveryConstrained,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeLinuxBackendSessionSnapshot {
+    pub backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub backend_name: String,
+    pub portability_band: RuntimeLinuxAudioBackendPortabilityBand,
+    pub ownership: RuntimeLinuxBackendSessionOwnership,
+    pub lifecycle_state: RuntimeLinuxBackendSessionLifecycleState,
+    pub device_claim_posture: RuntimeLinuxBackendDeviceClaimPosture,
+    pub session_role: RuntimeLinuxBackendSessionRole,
+    pub ownership_fallback: RuntimeLinuxBackendOwnershipFallbackState,
+    pub device_id: String,
+    pub device_name: String,
+    pub stream_state: RuntimeHostAudioStreamState,
+    pub backend_health: BackendHealth,
+    pub simulated: bool,
+    pub device_loss_count: u64,
+    pub restart_attempt_count: u64,
+    pub restart_failure_count: u64,
+    pub summary: String,
+}
+
+impl RuntimeLinuxBackendSessionSnapshot {
+    pub fn unavailable() -> Self {
+        Self {
+            backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
+            backend_name: "runtime-unavailable".into(),
+            portability_band: RuntimeLinuxAudioBackendPortabilityBand::Unsupported,
+            ownership: RuntimeLinuxBackendSessionOwnership::Unavailable,
+            lifecycle_state: RuntimeLinuxBackendSessionLifecycleState::Unavailable,
+            device_claim_posture: RuntimeLinuxBackendDeviceClaimPosture::Unavailable,
+            session_role: RuntimeLinuxBackendSessionRole::Unavailable,
+            ownership_fallback: RuntimeLinuxBackendOwnershipFallbackState::Unavailable,
+            device_id: "runtime:unavailable".into(),
+            device_name: "Unavailable Linux Backend Session".into(),
+            stream_state: RuntimeHostAudioStreamState::Stopped,
+            backend_health: BackendHealth::Healthy,
+            simulated: false,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+            summary:
+                "backend=Unavailable ownership=Unavailable lifecycle=Unavailable claim=Unavailable role=Unavailable fallback=Unavailable"
+                    .into(),
+        }
+    }
+
+    pub fn from_host_io(host_io: &RuntimeHostIoSummary) -> Self {
+        let backend_identity = host_io.hardware.linux_backend_identity;
+        if backend_identity == RuntimeLinuxAudioBackendIdentity::NotLinux {
+            return Self {
+                backend_identity,
+                backend_name: host_io.hardware.backend_name.clone(),
+                portability_band: host_io.hardware.linux_backend_portability,
+                ownership: RuntimeLinuxBackendSessionOwnership::NotLinux,
+                lifecycle_state: RuntimeLinuxBackendSessionLifecycleState::NotLinux,
+                device_claim_posture: RuntimeLinuxBackendDeviceClaimPosture::NotLinux,
+                session_role: RuntimeLinuxBackendSessionRole::NotLinux,
+                ownership_fallback: RuntimeLinuxBackendOwnershipFallbackState::NotLinux,
+                device_id: host_io.hardware.device_id.clone(),
+                device_name: host_io.hardware.device_name.clone(),
+                stream_state: host_io.audio_pump.stream_state,
+                backend_health: host_io.hardware.backend_health,
+                simulated: host_io.hardware.simulated,
+                device_loss_count: host_io.hardware.device_loss_count,
+                restart_attempt_count: host_io.hardware.restart_attempt_count,
+                restart_failure_count: host_io.hardware.restart_failure_count,
+                summary: format!(
+                    "backend={:?} ownership=NotLinux lifecycle=NotLinux claim=NotLinux role=NotLinux fallback=NotLinux",
+                    backend_identity
+                ),
+            };
+        }
+
+        if matches!(
+            backend_identity,
+            RuntimeLinuxAudioBackendIdentity::Unavailable
+                | RuntimeLinuxAudioBackendIdentity::Unsupported
+        ) {
+            return Self {
+                backend_identity,
+                backend_name: host_io.hardware.backend_name.clone(),
+                portability_band: host_io.hardware.linux_backend_portability,
+                ownership: RuntimeLinuxBackendSessionOwnership::Unavailable,
+                lifecycle_state: RuntimeLinuxBackendSessionLifecycleState::Unavailable,
+                device_claim_posture: RuntimeLinuxBackendDeviceClaimPosture::Unavailable,
+                session_role: RuntimeLinuxBackendSessionRole::Unavailable,
+                ownership_fallback: RuntimeLinuxBackendOwnershipFallbackState::Unavailable,
+                device_id: host_io.hardware.device_id.clone(),
+                device_name: host_io.hardware.device_name.clone(),
+                stream_state: host_io.audio_pump.stream_state,
+                backend_health: host_io.hardware.backend_health,
+                simulated: host_io.hardware.simulated,
+                device_loss_count: host_io.hardware.device_loss_count,
+                restart_attempt_count: host_io.hardware.restart_attempt_count,
+                restart_failure_count: host_io.hardware.restart_failure_count,
+                summary: format!(
+                    "backend={:?} ownership=Unavailable lifecycle=Unavailable claim=Unavailable role=Unavailable fallback=Unavailable",
+                    backend_identity
+                ),
+            };
+        }
+
+        let recovering = host_io.hardware.device_loss_count > 0
+            || host_io.hardware.restart_attempt_count > 0
+            || matches!(
+                host_io.hardware.backend_health,
+                BackendHealth::Degraded | BackendHealth::Recovering
+            )
+            || host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted;
+        let release_like = host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Stopped
+            && matches!(
+                host_io.clocking.endpoint_topology,
+                RuntimeHostEndpointTopology::Unconfigured
+            );
+        let ownership = if release_like {
+            RuntimeLinuxBackendSessionOwnership::Unavailable
+        } else {
+            match host_io.clocking.ownership {
+                RuntimeHostLifecycleOwnership::HostDrivenCallback => {
+                    RuntimeLinuxBackendSessionOwnership::HostBrokeredCallback
+                }
+                RuntimeHostLifecycleOwnership::BackendManagedCallback => {
+                    RuntimeLinuxBackendSessionOwnership::BackendManagedGraph
+                }
+            }
+        };
+        let lifecycle_state = if release_like {
+            RuntimeLinuxBackendSessionLifecycleState::Released
+        } else if recovering {
+            RuntimeLinuxBackendSessionLifecycleState::Recovering
+        } else {
+            match host_io.audio_pump.stream_state {
+                RuntimeHostAudioStreamState::Running => {
+                    RuntimeLinuxBackendSessionLifecycleState::Running
+                }
+                RuntimeHostAudioStreamState::Stopped => {
+                    RuntimeLinuxBackendSessionLifecycleState::Claimable
+                }
+                RuntimeHostAudioStreamState::Faulted => {
+                    RuntimeLinuxBackendSessionLifecycleState::Interrupted
+                }
+            }
+        };
+        let device_claim_posture = if release_like {
+            RuntimeLinuxBackendDeviceClaimPosture::Released
+        } else if host_io.hardware.device_loss_count > 0 {
+            RuntimeLinuxBackendDeviceClaimPosture::Lost
+        } else if host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Stopped {
+            RuntimeLinuxBackendDeviceClaimPosture::Unclaimed
+        } else {
+            match host_io.clocking.ownership {
+                RuntimeHostLifecycleOwnership::HostDrivenCallback => {
+                    RuntimeLinuxBackendDeviceClaimPosture::DirectClaim
+                }
+                RuntimeHostLifecycleOwnership::BackendManagedCallback => {
+                    RuntimeLinuxBackendDeviceClaimPosture::SharedGraph
+                }
+            }
+        };
+        let fallback_active =
+            host_io.clocking.fallback_state != RuntimeHostClockFallbackState::Direct;
+        let session_role = if release_like {
+            RuntimeLinuxBackendSessionRole::OfflineUnavailable
+        } else if recovering || fallback_active {
+            RuntimeLinuxBackendSessionRole::FallbackContinuation
+        } else if matches!(
+            host_io.clocking.endpoint_topology,
+            RuntimeHostEndpointTopology::OutputOnly
+        ) {
+            RuntimeLinuxBackendSessionRole::MonitoringCapable
+        } else {
+            RuntimeLinuxBackendSessionRole::PrimaryAudioIo
+        };
+        let ownership_fallback = if release_like {
+            RuntimeLinuxBackendOwnershipFallbackState::Unavailable
+        } else if host_io.hardware.restart_failure_count > 0
+            || host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted
+        {
+            RuntimeLinuxBackendOwnershipFallbackState::RecoveryConstrained
+        } else if recovering {
+            RuntimeLinuxBackendOwnershipFallbackState::Reacquiring
+        } else if host_io.clocking.ownership
+            == RuntimeHostLifecycleOwnership::BackendManagedCallback
+        {
+            RuntimeLinuxBackendOwnershipFallbackState::BackendManagedGuarded
+        } else {
+            RuntimeLinuxBackendOwnershipFallbackState::Direct
+        };
+
+        Self {
+            backend_identity,
+            backend_name: host_io.hardware.backend_name.clone(),
+            portability_band: host_io.hardware.linux_backend_portability,
+            ownership,
+            lifecycle_state,
+            device_claim_posture,
+            session_role,
+            ownership_fallback,
+            device_id: host_io.hardware.device_id.clone(),
+            device_name: host_io.hardware.device_name.clone(),
+            stream_state: host_io.audio_pump.stream_state,
+            backend_health: host_io.hardware.backend_health,
+            simulated: host_io.hardware.simulated,
+            device_loss_count: host_io.hardware.device_loss_count,
+            restart_attempt_count: host_io.hardware.restart_attempt_count,
+            restart_failure_count: host_io.hardware.restart_failure_count,
+            summary: format!(
+                "backend={:?} ownership={:?} lifecycle={:?} claim={:?} role={:?} fallback={:?}",
+                backend_identity,
+                ownership,
+                lifecycle_state,
+                device_claim_posture,
+                session_role,
+                ownership_fallback
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeJackTransportPosture {
+    NotJack,
+    Unavailable,
+    Detached,
+    FollowingExternal,
+    RuntimeLed,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeJackGraphCoordinationState {
+    NotJack,
+    Unavailable,
+    NotAttached,
+    AttachedStable,
+    AttachedGuarded,
+    Recovering,
+    Released,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeJackClientRole {
+    NotJack,
+    Unavailable,
+    PrimaryAudioIo,
+    MonitoringCapable,
+    TransportFollower,
+    FallbackContinuation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeJackGuardedCoordinationState {
+    NotJack,
+    Unavailable,
+    Direct,
+    TransportGuarded,
+    GraphGuarded,
+    Recovering,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeJackCoordinationSnapshot {
+    pub backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub backend_name: String,
+    pub portability_band: RuntimeLinuxAudioBackendPortabilityBand,
+    pub transport_posture: RuntimeJackTransportPosture,
+    pub graph_state: RuntimeJackGraphCoordinationState,
+    pub client_role: RuntimeJackClientRole,
+    pub guarded_state: RuntimeJackGuardedCoordinationState,
+    pub device_id: String,
+    pub device_name: String,
+    pub session_state: TransportSessionState,
+    pub currently_attached: bool,
+    pub heartbeat_freshness: TransportHeartbeatFreshness,
+    pub dispatch_state: TransportDispatchState,
+    pub attach_events: usize,
+    pub detach_requested_events: usize,
+    pub detached_events: usize,
+    pub backend_health: BackendHealth,
+    pub simulated: bool,
+    pub summary: String,
+}
+
+impl RuntimeJackCoordinationSnapshot {
+    pub fn unavailable() -> Self {
+        Self {
+            backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
+            backend_name: "runtime-unavailable".into(),
+            portability_band: RuntimeLinuxAudioBackendPortabilityBand::Unsupported,
+            transport_posture: RuntimeJackTransportPosture::Unavailable,
+            graph_state: RuntimeJackGraphCoordinationState::Unavailable,
+            client_role: RuntimeJackClientRole::Unavailable,
+            guarded_state: RuntimeJackGuardedCoordinationState::Unavailable,
+            device_id: "runtime:unavailable".into(),
+            device_name: "Unavailable JACK Coordination".into(),
+            session_state: TransportSessionState::Detached,
+            currently_attached: false,
+            heartbeat_freshness: TransportHeartbeatFreshness::Unknown,
+            dispatch_state: TransportDispatchState::Idle,
+            attach_events: 0,
+            detach_requested_events: 0,
+            detached_events: 0,
+            backend_health: BackendHealth::Healthy,
+            simulated: false,
+            summary:
+                "backend=Unavailable transport=Unavailable graph=Unavailable role=Unavailable guard=Unavailable"
+                    .into(),
+        }
+    }
+
+    pub fn from_host_io_and_transport_session(
+        host_io: &RuntimeHostIoSummary,
+        transport_session: &TransportSessionSummary,
+    ) -> Self {
+        let linux_session = RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
+        let backend_identity = host_io.hardware.linux_backend_identity;
+
+        if backend_identity != RuntimeLinuxAudioBackendIdentity::Jack {
+            let unavailable = matches!(
+                backend_identity,
+                RuntimeLinuxAudioBackendIdentity::Unavailable
+                    | RuntimeLinuxAudioBackendIdentity::Unsupported
+            );
+            let transport_posture = if unavailable {
+                RuntimeJackTransportPosture::Unavailable
+            } else {
+                RuntimeJackTransportPosture::NotJack
+            };
+            let graph_state = if unavailable {
+                RuntimeJackGraphCoordinationState::Unavailable
+            } else {
+                RuntimeJackGraphCoordinationState::NotJack
+            };
+            let client_role = if unavailable {
+                RuntimeJackClientRole::Unavailable
+            } else {
+                RuntimeJackClientRole::NotJack
+            };
+            let guarded_state = if unavailable {
+                RuntimeJackGuardedCoordinationState::Unavailable
+            } else {
+                RuntimeJackGuardedCoordinationState::NotJack
+            };
+            return Self {
+                backend_identity,
+                backend_name: host_io.hardware.backend_name.clone(),
+                portability_band: host_io.hardware.linux_backend_portability,
+                transport_posture,
+                graph_state,
+                client_role,
+                guarded_state,
+                device_id: host_io.hardware.device_id.clone(),
+                device_name: host_io.hardware.device_name.clone(),
+                session_state: TransportSessionState::Detached,
+                currently_attached: false,
+                heartbeat_freshness: TransportHeartbeatFreshness::Unknown,
+                dispatch_state: TransportDispatchState::Idle,
+                attach_events: 0,
+                detach_requested_events: 0,
+                detached_events: 0,
+                backend_health: host_io.hardware.backend_health,
+                simulated: host_io.hardware.simulated,
+                summary: format!(
+                    "backend={:?} transport={:?} graph={:?} role={:?} guard={:?}",
+                    backend_identity, transport_posture, graph_state, client_role, guarded_state
+                ),
+            };
+        }
+
+        let recovering = host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted
+            || matches!(
+                host_io.hardware.backend_health,
+                BackendHealth::Degraded | BackendHealth::Recovering
+            )
+            || host_io.hardware.device_loss_count > 0
+            || host_io.hardware.restart_attempt_count > 0
+            || host_io.hardware.restart_failure_count > 0;
+        let graph_attached = matches!(
+            host_io.audio_pump.stream_state,
+            RuntimeHostAudioStreamState::Running | RuntimeHostAudioStreamState::Stopped
+        );
+        let released = !graph_attached
+            && !transport_session.currently_attached
+            && transport_session.attach_events > 0
+            && transport_session.detached_events > 0;
+
+        let transport_posture = if recovering {
+            RuntimeJackTransportPosture::Guarded
+        } else if !transport_session.currently_attached {
+            RuntimeJackTransportPosture::Detached
+        } else if matches!(
+            transport_session.dispatch_state,
+            TransportDispatchState::Requested | TransportDispatchState::Completed
+        ) || matches!(
+            transport_session.heartbeat_freshness,
+            TransportHeartbeatFreshness::Requested | TransportHeartbeatFreshness::Fresh
+        ) {
+            RuntimeJackTransportPosture::FollowingExternal
+        } else {
+            RuntimeJackTransportPosture::Guarded
+        };
+
+        let graph_state = if recovering {
+            RuntimeJackGraphCoordinationState::Recovering
+        } else if released {
+            RuntimeJackGraphCoordinationState::Released
+        } else if !graph_attached {
+            RuntimeJackGraphCoordinationState::NotAttached
+        } else if linux_session.ownership
+            == RuntimeLinuxBackendSessionOwnership::BackendManagedGraph
+            || linux_session.ownership_fallback
+                == RuntimeLinuxBackendOwnershipFallbackState::BackendManagedGuarded
+            || host_io.hardware.linux_backend_portability
+                == RuntimeLinuxAudioBackendPortabilityBand::Guarded
+        {
+            RuntimeJackGraphCoordinationState::AttachedGuarded
+        } else {
+            RuntimeJackGraphCoordinationState::AttachedStable
+        };
+
+        let client_role = if linux_session.session_role
+            == RuntimeLinuxBackendSessionRole::FallbackContinuation
+        {
+            RuntimeJackClientRole::FallbackContinuation
+        } else if transport_session.currently_attached {
+            RuntimeJackClientRole::TransportFollower
+        } else if linux_session.session_role == RuntimeLinuxBackendSessionRole::MonitoringCapable {
+            RuntimeJackClientRole::MonitoringCapable
+        } else {
+            RuntimeJackClientRole::PrimaryAudioIo
+        };
+
+        let guarded_state = if recovering {
+            RuntimeJackGuardedCoordinationState::Recovering
+        } else if transport_session.currently_attached {
+            RuntimeJackGuardedCoordinationState::TransportGuarded
+        } else if graph_state == RuntimeJackGraphCoordinationState::AttachedGuarded {
+            RuntimeJackGuardedCoordinationState::GraphGuarded
+        } else {
+            RuntimeJackGuardedCoordinationState::Direct
+        };
+
+        Self {
+            backend_identity,
+            backend_name: host_io.hardware.backend_name.clone(),
+            portability_band: host_io.hardware.linux_backend_portability,
+            transport_posture,
+            graph_state,
+            client_role,
+            guarded_state,
+            device_id: host_io.hardware.device_id.clone(),
+            device_name: host_io.hardware.device_name.clone(),
+            session_state: transport_session.current_state,
+            currently_attached: transport_session.currently_attached,
+            heartbeat_freshness: transport_session.heartbeat_freshness,
+            dispatch_state: transport_session.dispatch_state,
+            attach_events: transport_session.attach_events,
+            detach_requested_events: transport_session.detach_requested_events,
+            detached_events: transport_session.detached_events,
+            backend_health: host_io.hardware.backend_health,
+            simulated: host_io.hardware.simulated,
+            summary: format!(
+                "backend={:?} transport={:?} graph={:?} role={:?} guard={:?} session={:?}/{} heartbeat={:?} dispatch={:?}",
+                backend_identity,
+                transport_posture,
+                graph_state,
+                client_role,
+                guarded_state,
+                transport_session.current_state,
+                transport_session.currently_attached,
+                transport_session.heartbeat_freshness,
+                transport_session.dispatch_state,
+            ),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeExternalIoSnapshot {
     pub health_state: RuntimeExternalIoHealthState,
@@ -5612,6 +9108,9 @@ pub struct RuntimeExternalIoSnapshot {
     pub monitoring_state: RuntimeExternalIoMonitoringState,
     pub monitoring_tap_point: RuntimeExternalIoMonitoringTapPoint,
     pub loopback_state: RuntimeExternalIoLoopbackState,
+    pub io_layout: RuntimeMultichannelIoSummary,
+    pub linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub linux_backend_portability: RuntimeLinuxAudioBackendPortabilityBand,
     pub backend_name: String,
     pub active_output_device_id: String,
     pub active_output_device_name: String,
@@ -5624,6 +9123,9 @@ pub struct RuntimeExternalIoSnapshot {
     pub discontinuity_state: RuntimeHostClockDiscontinuityState,
     pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
     pub endpoint_topology: RuntimeHostEndpointTopology,
+    pub linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand,
+    pub linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState,
+    pub linux_endpoint_topology_parity: RuntimeLinuxAudioBackendEndpointTopologyParityState,
     pub partial_availability: bool,
     pub fallback_active: bool,
     pub runtime_graph_id_matches_pump: bool,
@@ -5638,6 +9140,127 @@ pub struct RuntimeExternalIoSnapshot {
 }
 
 impl RuntimeHostIoSummary {
+    pub fn classify_linux_clocking_parity(
+        linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
+        backend_health: BackendHealth,
+        stream_state: RuntimeHostAudioStreamState,
+        clock_domain: RuntimeHostClockDomain,
+        fallback_state: RuntimeHostClockFallbackState,
+        transition_state: RuntimeHostClockTransitionState,
+        drift_state: RuntimeHostClockDriftState,
+        discontinuity_state: RuntimeHostClockDiscontinuityState,
+    ) -> RuntimeLinuxAudioBackendClockingParityBand {
+        match linux_backend_identity {
+            RuntimeLinuxAudioBackendIdentity::Alsa
+            | RuntimeLinuxAudioBackendIdentity::Jack
+            | RuntimeLinuxAudioBackendIdentity::PipeWire => {
+                if !matches!(backend_health, BackendHealth::Healthy)
+                    || stream_state == RuntimeHostAudioStreamState::Faulted
+                    || clock_domain != RuntimeHostClockDomain::SameClock
+                    || fallback_state != RuntimeHostClockFallbackState::Direct
+                    || transition_state != RuntimeHostClockTransitionState::Stable
+                    || drift_state != RuntimeHostClockDriftState::Stable
+                    || discontinuity_state != RuntimeHostClockDiscontinuityState::Continuous
+                {
+                    RuntimeLinuxAudioBackendClockingParityBand::Guarded
+                } else {
+                    RuntimeLinuxAudioBackendClockingParityBand::Portable
+                }
+            }
+            RuntimeLinuxAudioBackendIdentity::NotLinux
+            | RuntimeLinuxAudioBackendIdentity::Unavailable
+            | RuntimeLinuxAudioBackendIdentity::Unsupported => {
+                RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+            }
+        }
+    }
+
+    pub fn classify_linux_duplex_parity(
+        linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
+        backend_health: BackendHealth,
+        stream_state: RuntimeHostAudioStreamState,
+        clock_domain: RuntimeHostClockDomain,
+        fallback_state: RuntimeHostClockFallbackState,
+        transition_state: RuntimeHostClockTransitionState,
+        duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+        endpoint_topology: RuntimeHostEndpointTopology,
+        partial_availability: bool,
+    ) -> RuntimeLinuxAudioBackendDuplexParityState {
+        match linux_backend_identity {
+            RuntimeLinuxAudioBackendIdentity::Alsa
+            | RuntimeLinuxAudioBackendIdentity::Jack
+            | RuntimeLinuxAudioBackendIdentity::PipeWire => {
+                if matches!(endpoint_topology, RuntimeHostEndpointTopology::Unconfigured) {
+                    RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+                } else if partial_availability
+                    || matches!(
+                        endpoint_topology,
+                        RuntimeHostEndpointTopology::OutputOnly
+                            | RuntimeHostEndpointTopology::InputOnly
+                    )
+                {
+                    RuntimeLinuxAudioBackendDuplexParityState::Partial
+                } else if !matches!(backend_health, BackendHealth::Healthy)
+                    || stream_state == RuntimeHostAudioStreamState::Faulted
+                    || clock_domain != RuntimeHostClockDomain::SameClock
+                    || fallback_state != RuntimeHostClockFallbackState::Direct
+                    || transition_state != RuntimeHostClockTransitionState::Stable
+                    || !matches!(
+                        duplex_mismatch_state,
+                        RuntimeHostDuplexMismatchState::NotApplicable
+                            | RuntimeHostDuplexMismatchState::Aligned
+                    )
+                    || endpoint_topology == RuntimeHostEndpointTopology::Aggregate
+                {
+                    RuntimeLinuxAudioBackendDuplexParityState::Guarded
+                } else {
+                    RuntimeLinuxAudioBackendDuplexParityState::Aligned
+                }
+            }
+            RuntimeLinuxAudioBackendIdentity::NotLinux
+            | RuntimeLinuxAudioBackendIdentity::Unavailable
+            | RuntimeLinuxAudioBackendIdentity::Unsupported => {
+                RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+            }
+        }
+    }
+
+    pub fn classify_linux_endpoint_topology_parity(
+        linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
+        backend_health: BackendHealth,
+        transition_state: RuntimeHostClockTransitionState,
+        discontinuity_state: RuntimeHostClockDiscontinuityState,
+        duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+        endpoint_topology: RuntimeHostEndpointTopology,
+        partial_availability: bool,
+    ) -> RuntimeLinuxAudioBackendEndpointTopologyParityState {
+        match linux_backend_identity {
+            RuntimeLinuxAudioBackendIdentity::Alsa
+            | RuntimeLinuxAudioBackendIdentity::Jack
+            | RuntimeLinuxAudioBackendIdentity::PipeWire => {
+                if endpoint_topology == RuntimeHostEndpointTopology::Unconfigured {
+                    RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+                } else if partial_availability {
+                    RuntimeLinuxAudioBackendEndpointTopologyParityState::Partial
+                } else if !matches!(backend_health, BackendHealth::Healthy)
+                    || transition_state != RuntimeHostClockTransitionState::Stable
+                    || discontinuity_state != RuntimeHostClockDiscontinuityState::Continuous
+                    || endpoint_topology == RuntimeHostEndpointTopology::Aggregate
+                    || duplex_mismatch_state == RuntimeHostDuplexMismatchState::CrossClockDiverged
+                {
+                    RuntimeLinuxAudioBackendEndpointTopologyParityState::Guarded
+                } else {
+                    RuntimeLinuxAudioBackendEndpointTopologyParityState::Portable
+                }
+            }
+            RuntimeLinuxAudioBackendIdentity::NotLinux
+            | RuntimeLinuxAudioBackendIdentity::Unavailable
+            | RuntimeLinuxAudioBackendIdentity::Unsupported => {
+                RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+            }
+        }
+    }
+
     pub fn unavailable_external_io_snapshot(
         effective_config: &EffectiveRuntimeConfig,
         device_supervision_snapshot: &RuntimeDeviceSupervisionSnapshot,
@@ -5665,6 +9288,9 @@ impl RuntimeHostIoSummary {
             } else {
                 RuntimeExternalIoLoopbackState::Unavailable
             },
+            io_layout: RuntimeMultichannelIoSummary::for_hardware(0, 0),
+            linux_backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
+            linux_backend_portability: RuntimeLinuxAudioBackendPortabilityBand::Unsupported,
             backend_name: "runtime-unavailable".into(),
             active_output_device_id: effective_config
                 .active_output_device
@@ -5687,6 +9313,10 @@ impl RuntimeHostIoSummary {
             discontinuity_state: RuntimeHostClockDiscontinuityState::LostConfiguration,
             duplex_mismatch_state: RuntimeHostDuplexMismatchState::NotApplicable,
             endpoint_topology: RuntimeHostEndpointTopology::Unconfigured,
+            linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand::Unsupported,
+            linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState::Unsupported,
+            linux_endpoint_topology_parity:
+                RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported,
             partial_availability: false,
             fallback_active: false,
             runtime_graph_id_matches_pump: false,
@@ -5842,6 +9472,12 @@ impl RuntimeHostIoSummary {
             monitoring_state,
             monitoring_tap_point,
             loopback_state,
+            io_layout: RuntimeMultichannelIoSummary::for_hardware(
+                self.hardware.input_channels,
+                self.hardware.output_channels,
+            ),
+            linux_backend_identity: self.hardware.linux_backend_identity,
+            linux_backend_portability: self.hardware.linux_backend_portability,
             backend_name: self.hardware.backend_name.clone(),
             active_output_device_id: self.hardware.device_id.clone(),
             active_output_device_name: self.hardware.device_name.clone(),
@@ -5854,6 +9490,9 @@ impl RuntimeHostIoSummary {
             discontinuity_state: self.clocking.discontinuity_state,
             duplex_mismatch_state: self.clocking.duplex_mismatch_state,
             endpoint_topology: self.clocking.endpoint_topology,
+            linux_clocking_parity: self.clocking.linux_clocking_parity,
+            linux_duplex_parity: self.clocking.linux_duplex_parity,
+            linux_endpoint_topology_parity: self.clocking.linux_endpoint_topology_parity,
             partial_availability: self.clocking.partial_availability,
             fallback_active,
             runtime_graph_id_matches_pump: self.runtime_graph_id_matches_pump,
@@ -5865,7 +9504,12 @@ impl RuntimeHostIoSummary {
             restart_attempt_count: self.hardware.restart_attempt_count,
             restart_failure_count: self.hardware.restart_failure_count,
             summary: format!(
-                "health={health_state:?} device_change={device_change_state:?} role={primary_role:?} monitor={monitoring_state:?}/{monitoring_tap_point:?} loopback={loopback_state:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
+                "health={health_state:?} device_change={device_change_state:?} role={primary_role:?} monitor={monitoring_state:?}/{monitoring_tap_point:?} loopback={loopback_state:?} linux_backend={:?}/{:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
+                self.hardware.linux_backend_identity,
+                self.hardware.linux_backend_portability,
+                self.clocking.linux_clocking_parity,
+                self.clocking.linux_duplex_parity,
+                self.clocking.linux_endpoint_topology_parity,
                 self.hardware.backend_name,
                 self.hardware.device_id,
                 self.audio_pump.stream_state,
@@ -5911,9 +9555,14 @@ impl RuntimeHostObservationReport {
 
     pub fn render_compact(&self) -> String {
         format!(
-            "{} host_backend={} host_device={} host_stream_state={:?} host_clock_source={:?} host_clock_domain={:?} host_clock_fallback_state={:?} host_clock_transition_state={:?} host_clock_drift_state={:?} host_clock_discontinuity_state={:?} host_duplex_mismatch_state={:?} host_endpoint_topology={:?} host_partial_availability={} host_clock_crossing_required={} host_clock_processing_sample_rate={} host_clock_hardware_sample_rate={} host_clock_ownership={:?} host_clock_restart_policy={:?} host_callback_interval_ms={:.3} host_output_latency_samples={} host_graph_latency_samples={} host_estimated_output_latency_samples={} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
+            "{} host_backend={} host_linux_backend={:?}/{:?}/{:?}/{:?}/{:?} host_device={} host_stream_state={:?} host_clock_source={:?} host_clock_domain={:?} host_clock_fallback_state={:?} host_clock_transition_state={:?} host_clock_drift_state={:?} host_clock_discontinuity_state={:?} host_duplex_mismatch_state={:?} host_endpoint_topology={:?} host_partial_availability={} host_clock_crossing_required={} host_clock_processing_sample_rate={} host_clock_hardware_sample_rate={} host_clock_ownership={:?} host_clock_restart_policy={:?} host_callback_interval_ms={:.3} host_output_latency_samples={} host_graph_latency_samples={} host_estimated_output_latency_samples={} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
             self.observation.render_compact(),
             self.host_io.hardware.backend_name,
+            self.host_io.hardware.linux_backend_identity,
+            self.host_io.hardware.linux_backend_portability,
+            self.host_io.clocking.linux_clocking_parity,
+            self.host_io.clocking.linux_duplex_parity,
+            self.host_io.clocking.linux_endpoint_topology_parity,
             self.host_io.hardware.device_id,
             self.host_io.audio_pump.stream_state,
             self.host_io.clocking.clock_source,
@@ -5955,6 +9604,11 @@ impl RuntimeHostObservationReport {
             concat!(
                 "observation={}",
                 "\nhost_backend={}",
+                "\nhost_linux_backend_identity={:?}",
+                "\nhost_linux_backend_portability={:?}",
+                "\nhost_linux_clocking_parity={:?}",
+                "\nhost_linux_duplex_parity={:?}",
+                "\nhost_linux_endpoint_topology_parity={:?}",
                 "\nhost_device_id={}",
                 "\nhost_device_name={}",
                 "\nhost_sample_rate={}",
@@ -6006,6 +9660,11 @@ impl RuntimeHostObservationReport {
             ),
             self.observation.render_compact(),
             self.host_io.hardware.backend_name,
+            self.host_io.hardware.linux_backend_identity,
+            self.host_io.hardware.linux_backend_portability,
+            self.host_io.clocking.linux_clocking_parity,
+            self.host_io.clocking.linux_duplex_parity,
+            self.host_io.clocking.linux_endpoint_topology_parity,
             self.host_io.hardware.device_id,
             self.host_io.hardware.device_name,
             self.host_io.hardware.sample_rate,
@@ -6069,6 +9728,16 @@ impl RuntimeHostObservationReport {
                 "\"fault_diagnostic_receipt\":{},",
                 "\"interruption_summary\":{},",
                 "\"device_supervision_snapshot\":{},",
+                "\"external_io_snapshot\":{},",
+                "\"linux_backend_session_snapshot\":{},",
+                "\"jack_coordination_snapshot\":{},",
+                "\"external_midi_snapshot\":{},",
+                "\"control_surface_snapshot\":{},",
+                "\"advanced_hardware_snapshot\":{},",
+                "\"stretch_engine_snapshot\":{},",
+                "\"marker_analysis_snapshot\":{},",
+                "\"transform_artifact_snapshot\":{},",
+                "\"preview_transform_snapshot\":{},",
                 "\"degradation_summary\":{},",
                 "\"metering_snapshot\":{},",
                 "\"execution_topology_summary\":{},",
@@ -6079,6 +9748,11 @@ impl RuntimeHostObservationReport {
                 "\"host_io\":{{",
                 "\"hardware\":{{",
                 "\"backend_name\":{},",
+                "\"linux_backend_identity\":{},",
+                "\"linux_backend_portability\":{},",
+                "\"linux_clocking_parity\":{},",
+                "\"linux_duplex_parity\":{},",
+                "\"linux_endpoint_topology_parity\":{},",
                 "\"device_id\":{},",
                 "\"device_name\":{},",
                 "\"sample_rate\":{},",
@@ -6153,6 +9827,20 @@ impl RuntimeHostObservationReport {
             json_runtime_fault_diagnostic_receipt(&self.observation.fault_diagnostic_receipt),
             json_runtime_interruption_summary(&self.observation.interruption_summary),
             json_runtime_device_supervision_snapshot(&self.observation.device_supervision_snapshot,),
+            json_runtime_external_io_snapshot(&self.observation.external_io_snapshot),
+            json_runtime_linux_backend_session_snapshot(
+                &self.observation.linux_backend_session_snapshot,
+            ),
+            json_runtime_jack_coordination_snapshot(&self.observation.jack_coordination_snapshot),
+            json_runtime_external_midi_snapshot(&self.observation.external_midi_snapshot),
+            json_runtime_control_surface_snapshot(&self.observation.control_surface_snapshot),
+            json_runtime_advanced_hardware_snapshot(&self.observation.advanced_hardware_snapshot),
+            json_runtime_stretch_engine_snapshot(&self.observation.stretch_engine_snapshot),
+            json_runtime_marker_analysis_snapshot(&self.observation.marker_analysis_snapshot),
+            json_runtime_transform_artifact_snapshot(&self.observation.transform_artifact_snapshot,),
+            json_runtime_preview_transform_service_snapshot(
+                &self.observation.preview_transform_snapshot,
+            ),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary),
@@ -6160,6 +9848,23 @@ impl RuntimeHostObservationReport {
             json_runtime_media_service_snapshot(&self.observation.media_service_snapshot),
             json_runtime_media_library_service_snapshot(&self.observation.media_library_snapshot),
             json_option_string(Some(self.host_io.hardware.backend_name.as_str())),
+            json_string(&format!(
+                "{:?}",
+                self.host_io.hardware.linux_backend_identity
+            )),
+            json_string(&format!(
+                "{:?}",
+                self.host_io.hardware.linux_backend_portability
+            )),
+            json_string(&format!(
+                "{:?}",
+                self.host_io.clocking.linux_clocking_parity
+            )),
+            json_string(&format!("{:?}", self.host_io.clocking.linux_duplex_parity)),
+            json_string(&format!(
+                "{:?}",
+                self.host_io.clocking.linux_endpoint_topology_parity
+            )),
             json_option_string(Some(self.host_io.hardware.device_id.as_str())),
             json_option_string(Some(self.host_io.hardware.device_name.as_str())),
             self.host_io.hardware.sample_rate,
@@ -7081,6 +10786,7 @@ pub struct RuntimeRoutedPluginChainSummary {
     pub chain_ids: Vec<String>,
     pub node_ids: Vec<String>,
     pub sandbox_ids: Vec<String>,
+    pub chains: Vec<RuntimePluginExecutionChainSummary>,
 }
 
 impl Default for RuntimeRoutedPluginChainSummary {
@@ -7100,6 +10806,7 @@ impl Default for RuntimeRoutedPluginChainSummary {
             chain_ids: Vec::new(),
             node_ids: Vec::new(),
             sandbox_ids: Vec::new(),
+            chains: Vec::new(),
         }
     }
 }
@@ -7109,6 +10816,7 @@ impl RuntimeRoutedPluginChainSummary {
         if !self.chain_ids.contains(&chain.chain_id) {
             self.chain_count = self.chain_count.saturating_add(1);
             self.chain_ids.push(chain.chain_id.clone());
+            self.chains.push(chain.clone());
         }
         self.stage_count = self.stage_count.saturating_add(chain.stage_count);
         self.pending_render_stage_count = self
@@ -7203,6 +10911,14 @@ pub struct RuntimeExecutionNodeSummary {
     pub send_return_id: Option<String>,
     pub input_bus_id: String,
     pub output_bus_id: String,
+    pub input_channels: ChannelLayout,
+    pub output_channels: ChannelLayout,
+    pub input_layout: RuntimeMultichannelLayoutSummary,
+    pub output_layout: RuntimeMultichannelLayoutSummary,
+    pub input_bus_intent: RuntimeBusIntent,
+    pub output_bus_intent: RuntimeBusIntent,
+    pub secondary_input: Option<RuntimeSecondaryInputRouteSummary>,
+    pub spatial_execution: Option<RuntimeSpatialExecutionSummary>,
     pub plugin_sandbox_id: Option<String>,
     pub plugin_recall_state: Option<RuntimePluginRecallState>,
     pub plugin_recall: Option<RuntimePluginRecallSnapshot>,
@@ -7224,13 +10940,225 @@ pub struct RuntimeExecutionTopologySummary {
     pub bus_group_count: usize,
     pub send_return_group_count: usize,
     pub console_group_count: usize,
+    pub secondary_input_count: usize,
+    pub required_secondary_input_count: usize,
+    pub optional_secondary_input_count: usize,
+    pub disabled_secondary_input_count: usize,
+    pub terminal_fallback_secondary_input_count: usize,
+    pub bus_connection_count: usize,
+    pub auxiliary_path_count: usize,
+    pub spatial_node_count: usize,
+    pub active_spatial_node_count: usize,
+    pub bypassed_spatial_node_count: usize,
+    pub fallback_spatial_node_count: usize,
+    pub surround_bed_spatial_node_count: usize,
+    pub object_aware_spatial_node_count: usize,
+    pub expanded_fallback_spatial_node_count: usize,
     pub lanes: Vec<RuntimeExecutionLaneSummary>,
     pub track_lanes: Vec<RuntimeMixerTrackLaneSummary>,
     pub bus_groups: Vec<RuntimeMixerBusGroupSummary>,
     pub console_groups: Vec<RuntimeMixerConsoleGroupSummary>,
     pub send_returns: Vec<RuntimeMixerSendReturnSummary>,
+    pub secondary_inputs: Vec<RuntimeSecondaryInputRouteSummary>,
+    pub bus_connections: Vec<RuntimeBusConnectionSummary>,
+    pub auxiliary_paths: Vec<RuntimeAuxiliaryPathSummary>,
     pub nodes: Vec<RuntimeExecutionNodeSummary>,
     pub plugin_chain: RuntimeRoutedPluginChainSummary,
+}
+
+#[derive(Clone)]
+struct RuntimePlannedGraphNodeTopologyEndpoint<'a> {
+    node_id: &'a str,
+    topology_role: GraphNodeTopologyRole,
+    input_bus_id: &'a str,
+    output_bus_id: &'a str,
+    input_bus_intent: RuntimeBusIntent,
+    output_bus_intent: RuntimeBusIntent,
+    bus_group_id: Option<&'a str>,
+    send_return_id: Option<&'a str>,
+}
+
+fn runtime_auxiliary_path_for_connection(
+    source: &RuntimePlannedGraphNodeTopologyEndpoint<'_>,
+    target: &RuntimePlannedGraphNodeTopologyEndpoint<'_>,
+) -> Option<(
+    RuntimeAuxiliaryPathKind,
+    String,
+    RuntimeBusRole,
+    RuntimeBusIntent,
+)> {
+    if let Some(send_return_id) = source.send_return_id.or(target.send_return_id) {
+        return Some((
+            RuntimeAuxiliaryPathKind::SendReturn,
+            format!("send_return:{send_return_id}"),
+            RuntimeBusRole::AuxSend,
+            RuntimeBusIntent::AuxSend,
+        ));
+    }
+    if let Some(bus_group_id) = source.bus_group_id.or(target.bus_group_id) {
+        return Some((
+            RuntimeAuxiliaryPathKind::Submix,
+            format!("bus_group:{bus_group_id}"),
+            RuntimeBusRole::Submix,
+            RuntimeBusIntent::MainProgram,
+        ));
+    }
+    let source_role = runtime_bus_role_for_endpoint(source.topology_role, source.output_bus_intent);
+    let target_role = runtime_bus_role_for_endpoint(target.topology_role, target.input_bus_intent);
+    if source_role == RuntimeBusRole::AnalysisTap || target_role == RuntimeBusRole::AnalysisTap {
+        return Some((
+            RuntimeAuxiliaryPathKind::Analysis,
+            format!("analysis:{}", source.output_bus_id),
+            RuntimeBusRole::AnalysisTap,
+            RuntimeBusIntent::AnalysisTap,
+        ));
+    }
+    None
+}
+
+fn derive_runtime_bus_connections(
+    planned_nodes: &[RuntimePlannedGraphNode],
+) -> (
+    Vec<RuntimeBusConnectionSummary>,
+    Vec<RuntimeAuxiliaryPathSummary>,
+) {
+    let mut producers_by_bus =
+        std::collections::BTreeMap::<&str, Vec<RuntimePlannedGraphNodeTopologyEndpoint<'_>>>::new();
+    for node in planned_nodes {
+        producers_by_bus
+            .entry(node.output_bus_id.as_str())
+            .or_default()
+            .push(RuntimePlannedGraphNodeTopologyEndpoint {
+                node_id: node.node_id.as_str(),
+                topology_role: node.topology_role,
+                input_bus_id: node.input_bus_id.as_str(),
+                output_bus_id: node.output_bus_id.as_str(),
+                input_bus_intent: node.input_bus_intent,
+                output_bus_intent: node.output_bus_intent,
+                bus_group_id: node.bus_group_id.as_deref(),
+                send_return_id: node.send_return_id.as_deref(),
+            });
+    }
+
+    let mut connections = Vec::new();
+    let mut auxiliary_paths =
+        std::collections::BTreeMap::<String, RuntimeAuxiliaryPathSummary>::new();
+
+    for node in planned_nodes {
+        let Some(producers) = producers_by_bus.get(node.input_bus_id.as_str()) else {
+            continue;
+        };
+        let target = RuntimePlannedGraphNodeTopologyEndpoint {
+            node_id: node.node_id.as_str(),
+            topology_role: node.topology_role,
+            input_bus_id: node.input_bus_id.as_str(),
+            output_bus_id: node.output_bus_id.as_str(),
+            input_bus_intent: node.input_bus_intent,
+            output_bus_intent: node.output_bus_intent,
+            bus_group_id: node.bus_group_id.as_deref(),
+            send_return_id: node.send_return_id.as_deref(),
+        };
+        for source in producers {
+            let auxiliary_path = runtime_auxiliary_path_for_connection(source, &target).map(
+                |(path_kind, auxiliary_path_id, bus_role, material_bus_intent)| {
+                    (path_kind, auxiliary_path_id, bus_role, material_bus_intent)
+                },
+            );
+            let source_bus_role =
+                runtime_bus_role_for_endpoint(source.topology_role, source.output_bus_intent);
+            let target_bus_role =
+                runtime_bus_role_for_endpoint(target.topology_role, target.input_bus_intent);
+            let connection_id = format!(
+                "{}:{}->{}:{}",
+                source.node_id, source.output_bus_id, target.node_id, target.input_bus_id
+            );
+            let attachment_class = RuntimeBusConnectionAttachmentClass::Required;
+            let fallback_outcome = RuntimeBusConnectionFallbackOutcome::NoFallback;
+            let summary = format!(
+                "connection={} source={}:{}/{:?} target={}:{}/{:?} path={:?} attachment={:?} fallback={:?}",
+                connection_id,
+                source.node_id,
+                source.output_bus_id,
+                source_bus_role,
+                target.node_id,
+                target.input_bus_id,
+                target_bus_role,
+                auxiliary_path.as_ref().map(|(kind, path_id, _, _)| format!("{kind:?}:{path_id}")),
+                attachment_class,
+                fallback_outcome,
+            );
+            connections.push(RuntimeBusConnectionSummary {
+                connection_id: connection_id.clone(),
+                source_node_id: source.node_id.into(),
+                source_bus_id: source.output_bus_id.into(),
+                source_bus_role,
+                target_node_id: target.node_id.into(),
+                target_bus_id: target.input_bus_id.into(),
+                target_bus_role,
+                auxiliary_path_kind: auxiliary_path.as_ref().map(|(kind, _, _, _)| *kind),
+                auxiliary_path_id: auxiliary_path
+                    .as_ref()
+                    .map(|(_, path_id, _, _)| path_id.clone()),
+                attachment_class,
+                fallback_outcome,
+                summary,
+            });
+
+            if let Some((path_kind, auxiliary_path_id, bus_role, material_bus_intent)) =
+                auxiliary_path
+            {
+                let path = auxiliary_paths
+                    .entry(auxiliary_path_id.clone())
+                    .or_insert_with(|| RuntimeAuxiliaryPathSummary {
+                        auxiliary_path_id: auxiliary_path_id.clone(),
+                        path_kind,
+                        bus_role,
+                        material_bus_intent,
+                        source_node_ids: Vec::new(),
+                        target_node_ids: Vec::new(),
+                        bus_ids: Vec::new(),
+                        connection_ids: Vec::new(),
+                        attachment_class,
+                        fallback_outcome,
+                        summary: String::new(),
+                    });
+                if !path.source_node_ids.contains(&source.node_id.to_string()) {
+                    path.source_node_ids.push(source.node_id.to_string());
+                }
+                if !path.target_node_ids.contains(&target.node_id.to_string()) {
+                    path.target_node_ids.push(target.node_id.to_string());
+                }
+                if !path.bus_ids.contains(&source.output_bus_id.to_string()) {
+                    path.bus_ids.push(source.output_bus_id.to_string());
+                }
+                if !path.bus_ids.contains(&target.input_bus_id.to_string()) {
+                    path.bus_ids.push(target.input_bus_id.to_string());
+                }
+                if !path.connection_ids.contains(&connection_id) {
+                    path.connection_ids.push(connection_id.clone());
+                }
+            }
+        }
+    }
+
+    let mut auxiliary_paths = auxiliary_paths.into_values().collect::<Vec<_>>();
+    for path in &mut auxiliary_paths {
+        path.summary = format!(
+            "path={} kind={:?} role={:?} material={:?} sources={:?} targets={:?} buses={:?} connections={} attachment={:?} fallback={:?}",
+            path.auxiliary_path_id,
+            path.path_kind,
+            path.bus_role,
+            path.material_bus_intent,
+            path.source_node_ids,
+            path.target_node_ids,
+            path.bus_ids,
+            path.connection_ids.len(),
+            path.attachment_class,
+            path.fallback_outcome,
+        );
+    }
+
+    (connections, auxiliary_paths)
 }
 
 impl RuntimeExecutionTopologySummary {
@@ -7315,6 +11243,18 @@ impl RuntimeExecutionTopologySummary {
         let mut bus_node_count = 0usize;
         let mut send_return_node_count = 0usize;
         let mut console_node_count = 0usize;
+        let mut secondary_inputs = Vec::new();
+        let mut required_secondary_input_count = 0usize;
+        let mut optional_secondary_input_count = 0usize;
+        let mut disabled_secondary_input_count = 0usize;
+        let mut terminal_fallback_secondary_input_count = 0usize;
+        let mut spatial_node_count = 0usize;
+        let mut active_spatial_node_count = 0usize;
+        let mut bypassed_spatial_node_count = 0usize;
+        let mut fallback_spatial_node_count = 0usize;
+        let mut surround_bed_spatial_node_count = 0usize;
+        let mut object_aware_spatial_node_count = 0usize;
+        let mut expanded_fallback_spatial_node_count = 0usize;
 
         for node in &snapshot.planned_nodes {
             match node.topology_role {
@@ -7415,6 +11355,45 @@ impl RuntimeExecutionTopologySummary {
                     summary.output_bus_ids.push(node.output_bus_id.clone());
                 }
             }
+            if let Some(secondary_input) = &node.secondary_input {
+                secondary_inputs.push(secondary_input.clone());
+                match secondary_input.attachment_policy {
+                    RuntimeSecondaryInputAttachmentPolicy::Required => {
+                        required_secondary_input_count += 1;
+                    }
+                    RuntimeSecondaryInputAttachmentPolicy::Optional => {
+                        optional_secondary_input_count += 1;
+                    }
+                    RuntimeSecondaryInputAttachmentPolicy::Disabled => {
+                        disabled_secondary_input_count += 1;
+                    }
+                }
+                if secondary_input.fallback_outcome
+                    == RuntimeSecondaryInputFallbackOutcome::TerminalRoutingFailure
+                {
+                    terminal_fallback_secondary_input_count += 1;
+                }
+            }
+            if let Some(spatial_execution) = &node.spatial_execution {
+                spatial_node_count += 1;
+                if spatial_execution.execution_mode == RuntimeSpatialExecutionMode::Bypassed {
+                    bypassed_spatial_node_count += 1;
+                } else {
+                    active_spatial_node_count += 1;
+                }
+                if spatial_execution.fallback_outcome.is_some() {
+                    fallback_spatial_node_count += 1;
+                }
+                if spatial_execution.bed_class == RuntimeSpatialBedClass::CanonicalSurroundBed {
+                    surround_bed_spatial_node_count += 1;
+                }
+                if spatial_execution.object_count > 0 || spatial_execution.object_role.is_some() {
+                    object_aware_spatial_node_count += 1;
+                }
+                if spatial_execution.expanded_fallback_outcome.is_some() {
+                    expanded_fallback_spatial_node_count += 1;
+                }
+            }
             nodes.push(RuntimeExecutionNodeSummary {
                 node_id: node.node_id.clone(),
                 lane: runtime_lane_for_group(node.group),
@@ -7427,6 +11406,14 @@ impl RuntimeExecutionTopologySummary {
                 send_return_id: node.send_return_id.clone(),
                 input_bus_id: node.input_bus_id.clone(),
                 output_bus_id: node.output_bus_id.clone(),
+                input_channels: node.input_channels,
+                output_channels: node.output_channels,
+                input_layout: node.input_layout.clone(),
+                output_layout: node.output_layout.clone(),
+                input_bus_intent: node.input_bus_intent,
+                output_bus_intent: node.output_bus_intent,
+                secondary_input: node.secondary_input.clone(),
+                spatial_execution: node.spatial_execution.clone(),
                 plugin_sandbox_id: node.plugin_sandbox_id.clone(),
                 plugin_recall_state: None,
                 plugin_recall: None,
@@ -7435,6 +11422,8 @@ impl RuntimeExecutionTopologySummary {
                 plugin_tail_samples: None,
             });
         }
+        let (bus_connections, auxiliary_paths) =
+            derive_runtime_bus_connections(&snapshot.planned_nodes);
 
         Self {
             node_count: snapshot.planned_nodes.len(),
@@ -7448,11 +11437,28 @@ impl RuntimeExecutionTopologySummary {
             bus_group_count: bus_group_ids.len(),
             send_return_group_count: send_return_ids.len(),
             console_group_count: console_group_ids.len(),
+            secondary_input_count: secondary_inputs.len(),
+            required_secondary_input_count,
+            optional_secondary_input_count,
+            disabled_secondary_input_count,
+            terminal_fallback_secondary_input_count,
+            bus_connection_count: bus_connections.len(),
+            auxiliary_path_count: auxiliary_paths.len(),
+            spatial_node_count,
+            active_spatial_node_count,
+            bypassed_spatial_node_count,
+            fallback_spatial_node_count,
+            surround_bed_spatial_node_count,
+            object_aware_spatial_node_count,
+            expanded_fallback_spatial_node_count,
             lanes,
             track_lanes: track_lanes_by_id.into_values().collect(),
             bus_groups: bus_groups_by_id.into_values().collect(),
             console_groups: console_groups_by_id.into_values().collect(),
             send_returns: send_returns_by_id.into_values().collect(),
+            secondary_inputs,
+            bus_connections,
+            auxiliary_paths,
             nodes,
             plugin_chain: RuntimeRoutedPluginChainSummary::default(),
         }
@@ -7506,6 +11512,7 @@ impl RuntimeExecutionTopologySummary {
 
         for node in &mut self.nodes {
             if let Some(stage) = stage_by_node.get(node.node_id.as_str()) {
+                node.spatial_execution = stage.spatial_execution.clone();
                 node.plugin_recall_state = Some(stage.recall_state);
                 node.plugin_recall = Some(stage.recall.clone());
                 node.plugin_compensation_state = Some(stage.compensation_state);
@@ -7534,6 +11541,102 @@ impl RuntimeOfflineRenderContractPreview {
             ));
         }
 
+        let complex_io_stages = plugin_chain
+            .chains
+            .iter()
+            .flat_map(|chain| {
+                chain.stages.iter().filter_map(|stage| {
+                    if stage.complex_io_summary.has_complex_topology {
+                        Some(RuntimeOfflineRenderComplexIoStageSummary {
+                            chain_id: chain.chain_id.clone(),
+                            node_id: stage.node_id.clone(),
+                            stage_index: stage.stage_index,
+                            plugin_type_id: stage.recall.payload.plugin_type_id.clone(),
+                            topology: stage.complex_io_summary.clone(),
+                            summary: format!(
+                                "chain={} node={} stage={} plugin_type={:?} complex_io={}",
+                                chain.chain_id,
+                                stage.node_id,
+                                stage.stage_index,
+                                stage.recall.payload.plugin_type_id,
+                                stage.complex_io_summary.summary
+                            ),
+                        })
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        let multi_output_instrument_stage_count = complex_io_stages
+            .iter()
+            .filter(|stage| stage.topology.multi_output_instrument)
+            .count();
+        let complex_io_stage_count = complex_io_stages.len();
+        let bus_capable_fx_stage_count = complex_io_stages
+            .iter()
+            .filter(|stage| stage.topology.bus_capable_fx_class.is_some())
+            .count();
+        let sidechain_capable_fx_stage_count = complex_io_stages
+            .iter()
+            .filter(|stage| {
+                stage.topology.bus_capable_fx_class
+                    == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
+                    || stage.topology.bus_capable_fx_class
+                        == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
+            })
+            .count();
+        let spatial_stages = plugin_chain
+            .chains
+            .iter()
+            .flat_map(|chain| {
+                chain.stages.iter().filter_map(|stage| {
+                    stage.spatial_execution.as_ref().map(|spatial| {
+                        RuntimeOfflineRenderSpatialStageSummary {
+                            chain_id: chain.chain_id.clone(),
+                            node_id: stage.node_id.clone(),
+                            stage_index: stage.stage_index,
+                            plugin_type_id: stage.recall.payload.plugin_type_id.clone(),
+                            spatial: spatial.clone(),
+                            summary: format!(
+                                "chain={} node={} stage={} plugin_type={:?} spatial={}",
+                                chain.chain_id,
+                                stage.node_id,
+                                stage.stage_index,
+                                stage.recall.payload.plugin_type_id,
+                                spatial.summary
+                            ),
+                        }
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        let spatial_stage_count = spatial_stages.len();
+        let active_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.execution_mode != RuntimeSpatialExecutionMode::Bypassed)
+            .count();
+        let bypassed_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.execution_mode == RuntimeSpatialExecutionMode::Bypassed)
+            .count();
+        let fallback_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.fallback_outcome.is_some())
+            .count();
+        let surround_bed_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.bed_class == RuntimeSpatialBedClass::CanonicalSurroundBed)
+            .count();
+        let object_aware_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.object_count > 0 || stage.spatial.object_role.is_some())
+            .count();
+        let expanded_fallback_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.expanded_fallback_outcome.is_some())
+            .count();
+
         Ok(RuntimeOfflineRenderChainDependencyPreview {
             chain_count: plugin_chain.chain_count,
             stage_count: plugin_chain.stage_count,
@@ -7552,8 +11655,52 @@ impl RuntimeOfflineRenderContractPreview {
             warm_recall_stage_count: recall_handoff.warm_stage_count,
             recovered_recall_stage_count: recall_handoff.recovered_stage_count,
             unavailable_recall_stage_count: recall_handoff.unavailable_stage_count,
+            secondary_input_count: topology.secondary_input_count,
+            required_secondary_input_count: topology.required_secondary_input_count,
+            optional_secondary_input_count: topology.optional_secondary_input_count,
+            disabled_secondary_input_count: topology.disabled_secondary_input_count,
+            terminal_fallback_secondary_input_count: topology
+                .terminal_fallback_secondary_input_count,
+            bus_connection_count: topology.bus_connection_count,
+            auxiliary_path_count: topology.auxiliary_path_count,
+            complex_io_stage_count,
+            multi_output_instrument_stage_count,
+            bus_capable_fx_stage_count,
+            sidechain_capable_fx_stage_count,
+            spatial_stage_count,
+            active_spatial_stage_count,
+            bypassed_spatial_stage_count,
+            fallback_spatial_stage_count,
+            surround_bed_spatial_stage_count,
+            object_aware_spatial_stage_count,
+            expanded_fallback_spatial_stage_count,
+            secondary_inputs: topology
+                .secondary_inputs
+                .iter()
+                .cloned()
+                .map(|mut route| {
+                    route.target_kind = RuntimeSecondaryInputTargetKind::RenderInput;
+                    route.target_id = "offline-render".into();
+                    route.summary = format!(
+                        "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
+                        route.source_kind,
+                        route.source_id,
+                        route.source_bus_id.as_deref().unwrap_or("none"),
+                        route.target_kind,
+                        route.target_id,
+                        route.target_bus_id,
+                        route.attachment_policy,
+                        route.fallback_outcome,
+                    );
+                    route
+                })
+                .collect(),
+            bus_connections: topology.bus_connections.clone(),
+            auxiliary_paths: topology.auxiliary_paths.clone(),
+            complex_io_stages,
+            spatial_stages,
             summary: format!(
-                "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={} recall={}/unbound={} cold={} warm={} recovered={} unavailable={}",
+                "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={} recall={}/unbound={} cold={} warm={} recovered={} unavailable={} secondary_inputs={}/required={}/optional={}/disabled={}/terminal={} bus_connections={} auxiliary_paths={} complex_io_stages={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} spatial_stages={}/active={}/bypassed={}/fallback={} surround_beds={} object_aware={} expanded_fallbacks={}",
                 plugin_chain.chain_count,
                 plugin_chain.stage_count,
                 plugin_chain.pending_render_stage_count,
@@ -7571,6 +11718,24 @@ impl RuntimeOfflineRenderContractPreview {
                 recall_handoff.warm_stage_count,
                 recall_handoff.recovered_stage_count,
                 recall_handoff.unavailable_stage_count,
+                topology.secondary_input_count,
+                topology.required_secondary_input_count,
+                topology.optional_secondary_input_count,
+                topology.disabled_secondary_input_count,
+                topology.terminal_fallback_secondary_input_count,
+                topology.bus_connection_count,
+                topology.auxiliary_path_count,
+                complex_io_stage_count,
+                multi_output_instrument_stage_count,
+                bus_capable_fx_stage_count,
+                sidechain_capable_fx_stage_count,
+                spatial_stage_count,
+                active_spatial_stage_count,
+                bypassed_spatial_stage_count,
+                fallback_spatial_stage_count,
+                surround_bed_spatial_stage_count,
+                object_aware_spatial_stage_count,
+                expanded_fallback_spatial_stage_count,
             ),
         })
     }
@@ -7579,7 +11744,9 @@ impl RuntimeOfflineRenderContractPreview {
         request: &RuntimeOfflineRenderRequest,
         topology: &RuntimeExecutionTopologySummary,
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
+        media_pipeline: &RuntimeMediaPipelineSnapshot,
         tempo_map: &RuntimeTempoMapSnapshot,
+        marker_analysis: &RuntimeMarkerAnalysisSnapshot,
         recall_handoff: &RuntimePluginRecallHandoffSnapshot,
     ) -> Result<Self, RuntimeError> {
         if request.request_id.trim().is_empty() {
@@ -7680,6 +11847,50 @@ impl RuntimeOfflineRenderContractPreview {
             .timeline_start_samples
             .saturating_add(request.duration_samples as i64);
         let chain_contract = Self::chain_contract_from_runtime_state(topology, recall_handoff)?;
+        let stretch_engine_snapshot =
+            RuntimeStretchEngineSnapshot::from_clip_processing_pipeline(clip_processing);
+        let transform_artifact_snapshot =
+            RuntimeTransformArtifactSnapshot::from_runtime_transform_state(
+                clip_processing,
+                &stretch_engine_snapshot,
+                marker_analysis,
+                media_pipeline,
+            );
+        let preview_transform_snapshot =
+            RuntimePreviewTransformServiceSnapshot::from_runtime_preview_state(
+                clip_processing,
+                &RuntimeMediaServiceSnapshot {
+                    indexed_asset_count: media_pipeline.asset_count,
+                    analysis_ready_asset_count: 0,
+                    waveform_ready_asset_count: 0,
+                    waveform_pending_asset_count: 0,
+                    previewable_asset_count: media_pipeline.ready_asset_count,
+                    invalidated_asset_count: media_pipeline.invalid_asset_count,
+                    invalidation_active: media_pipeline.invalid_asset_count > 0,
+                    indexing_state: if media_pipeline.asset_count == 0 {
+                        RuntimeMediaIndexingState::Empty
+                    } else if media_pipeline.invalid_asset_count > 0 {
+                        RuntimeMediaIndexingState::Invalidated
+                    } else {
+                        RuntimeMediaIndexingState::Ready
+                    },
+                    preview_state: if media_pipeline.ready_asset_count > 0 {
+                        RuntimeMediaPreviewState::Ready
+                    } else if media_pipeline.invalid_asset_count > 0 {
+                        RuntimeMediaPreviewState::Invalidated
+                    } else {
+                        RuntimeMediaPreviewState::Unavailable
+                    },
+                    previewing_asset_id: None,
+                    last_invalidated_asset_id: None,
+                    last_invalidation_error: None,
+                    last_preview_error: None,
+                    summary: "offline preview derived from runtime media pipeline".into(),
+                },
+                &stretch_engine_snapshot,
+                marker_analysis,
+                &transform_artifact_snapshot,
+            );
         let mut preview = Self {
             request_id: request.request_id.clone(),
             timeline_start_samples: request.timeline_start_samples,
@@ -7689,6 +11900,9 @@ impl RuntimeOfflineRenderContractPreview {
             include_main_mix: request.include_main_mix,
             clip_count: clip_processing.clip_count,
             ready_clip_count: clip_processing.ready_clip_count,
+            stretch_engine_snapshot,
+            preview_transform_snapshot,
+            transform_artifact_snapshot,
             stem_count: stem_targets.len(),
             freeze_artifact_count: freeze_artifacts.len(),
             resolved_tempo_bpm: tempo_map.resolved_tempo_bpm,
@@ -7699,7 +11913,7 @@ impl RuntimeOfflineRenderContractPreview {
             summary: String::new(),
         };
         preview.summary = format!(
-            "request={} timeline={}..{} duration={} export_sample_rate={} clips={}/{} stems={} freeze_artifacts={} tempo={:.3}/{:?} chain_contract={}",
+            "request={} timeline={}..{} duration={} export_sample_rate={} clips={}/{} stretch={}/fallback={} preview_transform={}/artifact_backed={}/fallback={} transform_artifacts={}/reusable={} stems={} freeze_artifacts={} tempo={:.3}/{:?} chain_contract={}",
             preview.request_id,
             preview.timeline_start_samples,
             preview.timeline_end_samples,
@@ -7707,6 +11921,13 @@ impl RuntimeOfflineRenderContractPreview {
             preview.export_sample_rate_hz,
             preview.ready_clip_count,
             preview.clip_count,
+            preview.stretch_engine_snapshot.ready_clip_count,
+            preview.stretch_engine_snapshot.fallback_clip_count,
+            preview.preview_transform_snapshot.ready_clip_count,
+            preview.preview_transform_snapshot.artifact_backed_clip_count,
+            preview.preview_transform_snapshot.fallback_clip_count,
+            preview.transform_artifact_snapshot.ready_clip_count,
+            preview.transform_artifact_snapshot.reusable_clip_count,
             preview.stem_count,
             preview.freeze_artifact_count,
             preview.resolved_tempo_bpm,
@@ -8692,10 +12913,19 @@ pub struct RuntimeObservationReport {
     pub interruption_summary: RuntimeInterruptionSummary,
     pub device_supervision_snapshot: RuntimeDeviceSupervisionSnapshot,
     pub external_io_snapshot: RuntimeExternalIoSnapshot,
+    pub linux_backend_session_snapshot: RuntimeLinuxBackendSessionSnapshot,
+    pub jack_coordination_snapshot: RuntimeJackCoordinationSnapshot,
+    pub external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
+    pub control_surface_snapshot: RuntimeControlSurfaceSnapshot,
+    pub advanced_hardware_snapshot: RuntimeAdvancedHardwareSnapshot,
     pub timeline_snapshot: RuntimeTimelineSnapshot,
     pub tempo_map_snapshot: RuntimeTempoMapSnapshot,
     pub warp_pipeline_snapshot: RuntimeWarpPipelineSnapshot,
     pub clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
+    pub stretch_engine_snapshot: RuntimeStretchEngineSnapshot,
+    pub marker_analysis_snapshot: RuntimeMarkerAnalysisSnapshot,
+    pub transform_artifact_snapshot: RuntimeTransformArtifactSnapshot,
+    pub preview_transform_snapshot: RuntimePreviewTransformServiceSnapshot,
     pub recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
     pub media_pipeline_snapshot: RuntimeMediaPipelineSnapshot,
     pub media_service_snapshot: RuntimeMediaServiceSnapshot,
@@ -8732,6 +12962,10 @@ impl RuntimeObservationReport {
         let tempo_map_snapshot = runtime.get_tempo_map_snapshot();
         let warp_pipeline_snapshot = runtime.get_warp_pipeline_snapshot();
         let clip_processing_pipeline_snapshot = runtime.get_clip_processing_pipeline_snapshot();
+        let stretch_engine_snapshot = runtime.get_stretch_engine_snapshot();
+        let marker_analysis_snapshot = runtime.get_marker_analysis_snapshot();
+        let transform_artifact_snapshot = runtime.get_transform_artifact_snapshot();
+        let preview_transform_snapshot = runtime.get_preview_transform_snapshot();
         let recording_capture_snapshot = runtime.get_recording_capture_snapshot();
         let media_pipeline_snapshot = runtime.get_media_pipeline_snapshot();
         let media_service_snapshot = runtime.get_media_service_snapshot();
@@ -8791,6 +13025,15 @@ impl RuntimeObservationReport {
             &effective_config,
             &device_supervision_snapshot,
         );
+        let linux_backend_session_snapshot = RuntimeLinuxBackendSessionSnapshot::unavailable();
+        let jack_coordination_snapshot = RuntimeJackCoordinationSnapshot::unavailable();
+        let external_midi_snapshot = RuntimeExternalMidiEndpointGraphSnapshot::unavailable();
+        let control_surface_snapshot =
+            RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(&external_midi_snapshot);
+        let advanced_hardware_snapshot =
+            RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
+                &control_surface_snapshot,
+            );
         Self {
             readiness: readiness.clone(),
             effective_config,
@@ -8804,10 +13047,19 @@ impl RuntimeObservationReport {
             interruption_summary,
             device_supervision_snapshot,
             external_io_snapshot,
+            linux_backend_session_snapshot,
+            jack_coordination_snapshot,
+            external_midi_snapshot,
+            control_surface_snapshot,
+            advanced_hardware_snapshot,
             timeline_snapshot,
             tempo_map_snapshot,
             warp_pipeline_snapshot,
             clip_processing_pipeline_snapshot,
+            stretch_engine_snapshot,
+            marker_analysis_snapshot,
+            transform_artifact_snapshot,
+            preview_transform_snapshot,
             recording_capture_snapshot,
             media_pipeline_snapshot,
             media_service_snapshot,
@@ -8849,6 +13101,35 @@ impl RuntimeObservationReport {
         self
     }
 
+    pub fn with_linux_backend_session_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
+        self.linux_backend_session_snapshot =
+            RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
+        self
+    }
+
+    pub fn with_jack_coordination_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
+        self.jack_coordination_snapshot =
+            RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+                host_io,
+                &self.transport_session_summary,
+            );
+        self
+    }
+
+    pub fn with_external_midi_snapshot(
+        mut self,
+        external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
+    ) -> Self {
+        self.control_surface_snapshot =
+            RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(&external_midi_snapshot);
+        self.advanced_hardware_snapshot =
+            RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
+                &self.control_surface_snapshot,
+            );
+        self.external_midi_snapshot = external_midi_snapshot;
+        self
+    }
+
     pub fn render_compact(&self) -> String {
         let tempo_map = (self.tempo_map_snapshot.segment_count > 0)
             .then(|| format_runtime_tempo_map_snapshot_compact(&self.tempo_map_snapshot))
@@ -8860,6 +13141,21 @@ impl RuntimeObservationReport {
             .then(|| {
                 format_runtime_clip_processing_pipeline_snapshot_compact(
                     &self.clip_processing_pipeline_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let stretch_engine = (self.stretch_engine_snapshot.clip_count > 0)
+            .then(|| format_runtime_stretch_engine_snapshot_compact(&self.stretch_engine_snapshot))
+            .unwrap_or_default();
+        let marker_analysis = (self.marker_analysis_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_marker_analysis_snapshot_compact(&self.marker_analysis_snapshot)
+            })
+            .unwrap_or_default();
+        let transform_artifact = (self.transform_artifact_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_transform_artifact_snapshot_compact(
+                    &self.transform_artifact_snapshot,
                 )
             })
             .unwrap_or_default();
@@ -8919,7 +13215,7 @@ impl RuntimeObservationReport {
             .then(|| {
                 let snapshot = &self.plugin_event_snapshot;
                 format!(
-                    " plugin_events_last_batch={}/{}/{}/{}/{}/{}/{} plugin_events_total={}/{}/{}/{}/{}/{}/{} plugin_events_segments={} plugin_events_first_epoch={:?} plugin_events_last_epoch={:?} plugin_events_lease_rollovers={} plugin_events_last_block={:?} plugin_events_last_bytes={}",
+                    " plugin_events_last_batch={}/{}/{}/{}/{}/{}/{} plugin_events_total={}/{}/{}/{}/{}/{}/{} plugin_events_expression_last_batch={}/{}/{} plugin_events_expression_total={}/{}/{} plugin_events_posture={:?}/{:?} plugin_events_segments={} plugin_events_first_epoch={:?} plugin_events_last_epoch={:?} plugin_events_lease_rollovers={} plugin_events_last_block={:?} plugin_events_last_bytes={}",
                     snapshot.last_batch_total_events,
                     snapshot.last_batch_parameter_value_events,
                     snapshot.last_batch_parameter_modulation_events,
@@ -8934,6 +13230,14 @@ impl RuntimeObservationReport {
                     snapshot.note_events,
                     snapshot.note_expression_events,
                     snapshot.midi_events,
+                    snapshot.last_batch_note_expression_pressure_events,
+                    snapshot.last_batch_note_expression_timbre_events,
+                    snapshot.last_batch_note_expression_tuning_events,
+                    snapshot.note_expression_pressure_events,
+                    snapshot.note_expression_timbre_events,
+                    snapshot.note_expression_tuning_events,
+                    snapshot.mpe_posture,
+                    snapshot.midi2_posture,
                     snapshot.segment_count,
                     snapshot.first_epoch,
                     snapshot.last_epoch,
@@ -8983,6 +13287,41 @@ impl RuntimeObservationReport {
             format_runtime_device_supervision_snapshot_compact(&self.device_supervision_snapshot);
         let external_io_summary =
             format_runtime_external_io_snapshot_compact(&self.external_io_snapshot);
+        let linux_backend_session_summary = format_runtime_linux_backend_session_snapshot_compact(
+            &self.linux_backend_session_snapshot,
+        );
+        let jack_coordination_summary =
+            format_runtime_jack_coordination_snapshot_compact(&self.jack_coordination_snapshot);
+        let external_midi_summary =
+            format_runtime_external_midi_snapshot_compact(&self.external_midi_snapshot);
+        let runtime_surface_summaries = format!(
+            "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
+            tempo_map,
+            warp,
+            clip_processing,
+            stretch_engine,
+            media_pipeline,
+            media_service,
+            media_library,
+            plugin_discovery,
+            plugin_lifecycle,
+            plugin_chain,
+            automation,
+            plugin_events,
+            transport_timeline,
+            scheduler_snapshot,
+            scheduler_summary,
+            block_summary,
+            degradation_summary,
+            fault_status,
+            fault_diagnostic_receipt,
+            interruption_summary,
+            device_supervision_summary,
+            external_io_summary,
+            linux_backend_session_summary,
+            jack_coordination_summary,
+            external_midi_summary,
+        );
         let execution_topology_summary =
             format_runtime_execution_topology_summary_compact(&self.execution_topology_summary);
         let metering_summary = format_runtime_metering_snapshot_compact(&self.metering_snapshot);
@@ -9016,7 +13355,7 @@ impl RuntimeObservationReport {
             })
             .unwrap_or_default();
         let compact = format!(
-            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
+            "readiness={:?} sample_rate={} block_size={} handshaken={} configured={} running={} handshakes={} configures={} starts={} stops={} restarts={} xruns={} active_sandboxes={} safe_mode={} next_block_sequence={} sequence_segments={} sequence_first_block={:?} sequence_last_block={:?}{} engine_graph_id={:?} engine_node_count={} engine_stateful_nodes={} engine_latency_nodes={} engine_plugin_backed_nodes={} engine_planning_anticipative={} engine_inline_realtime_nodes={} engine_stateful_realtime_nodes={} engine_anticipative_eligible_nodes={} engine_phase_count={} engine_anticipative_phases={} engine_phase_order={:?} engine_lane_count={} engine_anticipative_lanes={} engine_lane_order={:?} engine_dispatch_count={} engine_dispatch_boundaries={} engine_dispatch_order={:?} engine_prepared_dispatches={} engine_realtime_dispatches={} engine_dispatch_handoffs={}{} engine_prework_cache_enabled={} engine_prework_cache_state={:?} engine_prework_service_state={:?} engine_prework_service_pressure={:?} engine_prework_service_semantic_policy={:?} engine_prework_service_active_plugin_sandboxes={} engine_prework_service_bound_plugin_sandboxes={} engine_prework_service_active_bound_plugin_sandboxes={} engine_prework_service_degraded_bound_plugin_sandboxes={} engine_prework_service_missing_bound_plugin_sandboxes={} engine_prework_service_plugin_gate_active={} engine_prework_pending_targets={} engine_prework_pending_immediate_targets={} engine_prework_pending_near_term_targets={} engine_prework_pending_deferred_targets={} engine_prework_next_pending_target_block={:?} engine_prework_service_cycles={} engine_prework_service_prepared_targets={} engine_prework_service_pauses={} engine_prework_service_resumes={} engine_prework_service_starvations={} engine_prework_service_throttles={} engine_prework_service_yields={} engine_last_prework_service_epoch={:?} engine_last_prework_serviced_target_block={:?} engine_last_prework_serviced_backlog_class={:?} engine_prework_requested_mode={:?} engine_prework_mode={:?} engine_prework_policy_configured={} engine_prework_profile={:?} engine_prework_profile_source={:?} engine_prework_profile_window_override={:?} engine_prework_policy_window_blocks={:?} engine_prework_queue_capacity={} engine_prework_queue_depth={} engine_prework_peak_queue_depth={} engine_prework_window_targets={} engine_prework_window_blocks={:?} engine_prework_freshness_state={:?} engine_prework_block_window={} engine_prework_remaining_valid_blocks={:?} engine_prework_cache_admissions={} engine_prework_cache_consumptions={} engine_prework_queued_admissions={} engine_prework_queued_consumptions={} engine_prework_cache_hits={} engine_prework_cache_misses={} engine_prework_cache_invalidations={} engine_prework_cache_retirements={} engine_prework_unconsumed_retirements={} engine_prework_consumed_retirements={} engine_last_prework_cache_hit={} engine_last_prework_invalidation={:?} engine_last_prework_retirement={:?} engine_last_prework_retired_unconsumed={:?} engine_prework_cache_valid_until={:?} engine_prework_cache_valid_until_block={:?} engine_last_prework_source_epoch={:?} engine_last_prework_source_block={:?} engine_last_prework_admission_epoch={:?} engine_last_prework_admission_block={:?} engine_last_prework_admitted_from_block={:?} engine_last_prework_consumption_epoch={:?} engine_last_prework_consumption_block={:?} engine_last_prework_consumed_from_block={:?} engine_last_prework_retirement_epoch={:?} engine_last_prework_retirement_block={:?} engine_stage_count={} engine_dynamic_kernel_stages={} engine_dynamic_stage_state_model={:?} engine_total_latency_samples={} engine_max_node_latency_samples={} engine_total_tail_samples={} engine_max_node_tail_samples={} engine_output_tail_samples={} engine_max_bus_tail_samples={} engine_processed_blocks={} engine_last_block={:?} engine_prework_output_peak={:?} engine_realtime_input_peak={:?} engine_output_peak={:?} engine_output_rms={:?} engine_projection_epoch={:?} engine_parameter_epoch={:?} engine_context_anticipative={:?} engine_transport_playing={:?} engine_transport_tempo={:?} engine_timeline_position={:?}{} transport_concurrency_limits={}/{} transport_concurrency_current={} transport_concurrency_peak={} transport_concurrency_recovery_current={} transport_concurrency_recovery_peak={} transport_concurrency_cleanup_pending={} transport_concurrency_deferred_retries={} transport_concurrency_next_cleanup_epoch={} transport_concurrency_oldest_ready_epoch={:?} transport_fault_boundary={:?} transport_fault_sources={}/{}/{} transport_fault_phases={}/{}/{}/{} transport_session_boundary={:?} transport_session_state={:?} transport_session_attached={} transport_session_heartbeat_state={:?} transport_session_dispatch_state={:?} transport_session_attached_sessions={} transport_session_max_attached_sessions={} transport_session_attach={} transport_session_detach={}/{}/{} transport_session_heartbeat={}/{}/{} transport_session_dispatch={}/{}/{} {}",
             self.readiness,
             self.effective_config.sample_rate.0,
             self.effective_config.block_size,
@@ -9039,27 +13378,7 @@ impl RuntimeObservationReport {
             self.timeline_snapshot
                 .block_sequence_continuity
                 .last_block_sequence(),
-            tempo_map,
-            warp,
-            clip_processing,
-            media_pipeline,
-            media_service,
-            media_library,
-            plugin_discovery,
-            plugin_lifecycle,
-            plugin_chain,
-            automation,
-            plugin_events,
-            transport_timeline,
-            scheduler_snapshot,
-            scheduler_summary,
-            block_summary,
-            degradation_summary,
-            fault_status,
-            fault_diagnostic_receipt,
-            interruption_summary,
-            device_supervision_summary,
-            external_io_summary,
+            runtime_surface_summaries,
             self.engine_block_snapshot.graph_id,
             self.engine_block_snapshot.node_count,
             self.engine_block_snapshot.stateful_node_count,
@@ -9255,7 +13574,7 @@ impl RuntimeObservationReport {
             )
         );
         format!(
-            "{compact}{recording_capture}{media_pipeline}{media_service}{offline_render_session}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{compact}{recording_capture}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{offline_render_session}{execution_topology_summary}{metering_summary}{linux_backend_session_summary}{jack_coordination_summary}{deferred_service}"
         )
     }
 }
@@ -9377,6 +13696,27 @@ impl RuntimeSupervisorReport {
             )
         })
         .unwrap_or_default();
+        let stretch_engine = (self.observation.stretch_engine_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_stretch_engine_snapshot_multiline(
+                    &self.observation.stretch_engine_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let marker_analysis = (self.observation.marker_analysis_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_marker_analysis_snapshot_multiline(
+                    &self.observation.marker_analysis_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let transform_artifact = (self.observation.transform_artifact_snapshot.clip_count > 0)
+            .then(|| {
+                format_runtime_transform_artifact_snapshot_multiline(
+                    &self.observation.transform_artifact_snapshot,
+                )
+            })
+            .unwrap_or_default();
         let media_pipeline = (self.observation.media_pipeline_snapshot.asset_count > 0)
             .then(|| {
                 format_runtime_media_pipeline_snapshot_multiline(
@@ -9518,6 +13858,21 @@ impl RuntimeSupervisorReport {
         );
         let external_io_summary =
             format_runtime_external_io_snapshot_multiline(&self.observation.external_io_snapshot);
+        let linux_backend_session_summary = format_runtime_linux_backend_session_snapshot_multiline(
+            &self.observation.linux_backend_session_snapshot,
+        );
+        let jack_coordination_summary = format_runtime_jack_coordination_snapshot_multiline(
+            &self.observation.jack_coordination_snapshot,
+        );
+        let external_midi_summary = format_runtime_external_midi_snapshot_multiline(
+            &self.observation.external_midi_snapshot,
+        );
+        let control_surface_summary = format_runtime_control_surface_snapshot_multiline(
+            &self.observation.control_surface_snapshot,
+        );
+        let advanced_hardware_summary = format_runtime_advanced_hardware_snapshot_multiline(
+            &self.observation.advanced_hardware_snapshot,
+        );
         let execution_topology_summary = format_runtime_execution_topology_summary_multiline(
             &self.observation.execution_topology_summary,
         );
@@ -9965,7 +14320,7 @@ impl RuntimeSupervisorReport {
         ); */
         let multiline = self.observation.render_compact().replace(' ', "\n");
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{device_supervision_summary}{external_io_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{device_supervision_summary}{external_io_summary}{linux_backend_session_summary}{jack_coordination_summary}{external_midi_summary}{control_surface_summary}{advanced_hardware_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 
@@ -10033,10 +14388,19 @@ impl RuntimeSupervisorReport {
                 "\"interruption_summary\":{},",
                 "\"device_supervision_snapshot\":{},",
                 "\"external_io_snapshot\":{},",
+                "\"linux_backend_session_snapshot\":{},",
+                "\"jack_coordination_snapshot\":{},",
+                "\"external_midi_snapshot\":{},",
+                "\"control_surface_snapshot\":{},",
+                "\"advanced_hardware_snapshot\":{},",
                 "\"degradation_summary\":{},",
                 "\"tempo_map_snapshot\":{},",
                 "\"warp_pipeline_snapshot\":{},",
                 "\"clip_processing_pipeline_snapshot\":{},",
+                "\"stretch_engine_snapshot\":{},",
+                "\"marker_analysis_snapshot\":{},",
+                "\"transform_artifact_snapshot\":{},",
+                "\"preview_transform_snapshot\":{},",
                 "\"recording_capture_snapshot\":{},",
                 "\"media_pipeline_snapshot\":{},",
                 "\"media_service_snapshot\":{},",
@@ -10170,11 +14534,24 @@ impl RuntimeSupervisorReport {
             json_runtime_interruption_summary(&self.observation.interruption_summary),
             json_runtime_device_supervision_snapshot(&self.observation.device_supervision_snapshot,),
             json_runtime_external_io_snapshot(&self.observation.external_io_snapshot),
+            json_runtime_linux_backend_session_snapshot(
+                &self.observation.linux_backend_session_snapshot,
+            ),
+            json_runtime_jack_coordination_snapshot(&self.observation.jack_coordination_snapshot),
+            json_runtime_external_midi_snapshot(&self.observation.external_midi_snapshot),
+            json_runtime_control_surface_snapshot(&self.observation.control_surface_snapshot),
+            json_runtime_advanced_hardware_snapshot(&self.observation.advanced_hardware_snapshot),
             json_runtime_degradation_summary(&self.observation.degradation_summary),
             json_runtime_tempo_map_snapshot(&self.observation.tempo_map_snapshot),
             json_runtime_warp_pipeline_snapshot(&self.observation.warp_pipeline_snapshot),
             json_runtime_clip_processing_pipeline_snapshot(
                 &self.observation.clip_processing_pipeline_snapshot,
+            ),
+            json_runtime_stretch_engine_snapshot(&self.observation.stretch_engine_snapshot),
+            json_runtime_marker_analysis_snapshot(&self.observation.marker_analysis_snapshot),
+            json_runtime_transform_artifact_snapshot(&self.observation.transform_artifact_snapshot,),
+            json_runtime_preview_transform_service_snapshot(
+                &self.observation.preview_transform_snapshot,
             ),
             json_runtime_recording_capture_snapshot(&self.observation.recording_capture_snapshot,),
             json_runtime_media_pipeline_snapshot(&self.observation.media_pipeline_snapshot),
@@ -11438,12 +15815,17 @@ fn format_runtime_device_supervision_snapshot_multiline(
 
 fn format_runtime_external_io_snapshot_compact(snapshot: &RuntimeExternalIoSnapshot) -> String {
     format!(
-        " external_io={:?}/{:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} endpoint={:?} fallback={} device_losses={} restart_attempts={} restart_failures={}",
+        " external_io={:?}/{:?}/{:?}/{:?}/{:?} linux_backend={:?}/{:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} endpoint={:?} fallback={} device_losses={} restart_attempts={} restart_failures={}",
         snapshot.health_state,
         snapshot.device_change_state,
         snapshot.primary_role,
         snapshot.monitoring_state,
         snapshot.loopback_state,
+        snapshot.linux_backend_identity,
+        snapshot.linux_backend_portability,
+        snapshot.linux_clocking_parity,
+        snapshot.linux_duplex_parity,
+        snapshot.linux_endpoint_topology_parity,
         snapshot.backend_name,
         snapshot.active_output_device_id,
         snapshot.stream_state,
@@ -11464,6 +15846,11 @@ fn format_runtime_external_io_snapshot_multiline(snapshot: &RuntimeExternalIoSna
             "\nexternal_io_monitoring_state={:?}",
             "\nexternal_io_monitoring_tap_point={:?}",
             "\nexternal_io_loopback_state={:?}",
+            "\nexternal_io_linux_backend_identity={:?}",
+            "\nexternal_io_linux_backend_portability={:?}",
+            "\nexternal_io_linux_clocking_parity={:?}",
+            "\nexternal_io_linux_duplex_parity={:?}",
+            "\nexternal_io_linux_endpoint_topology_parity={:?}",
             "\nexternal_io_backend_name={}",
             "\nexternal_io_active_output_device_id={}",
             "\nexternal_io_active_output_device_name={}",
@@ -11493,6 +15880,11 @@ fn format_runtime_external_io_snapshot_multiline(snapshot: &RuntimeExternalIoSna
         snapshot.monitoring_state,
         snapshot.monitoring_tap_point,
         snapshot.loopback_state,
+        snapshot.linux_backend_identity,
+        snapshot.linux_backend_portability,
+        snapshot.linux_clocking_parity,
+        snapshot.linux_duplex_parity,
+        snapshot.linux_endpoint_topology_parity,
         snapshot.backend_name,
         snapshot.active_output_device_id,
         snapshot.active_output_device_name,
@@ -11516,6 +15908,303 @@ fn format_runtime_external_io_snapshot_multiline(snapshot: &RuntimeExternalIoSna
         snapshot.restart_failure_count,
         snapshot.summary,
     )
+}
+
+fn format_runtime_linux_backend_session_snapshot_compact(
+    snapshot: &RuntimeLinuxBackendSessionSnapshot,
+) -> String {
+    format!(
+        " linux_session={:?}/{:?}/{:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} simulated={} device_losses={} restart_attempts={} restart_failures={}",
+        snapshot.backend_identity,
+        snapshot.ownership,
+        snapshot.lifecycle_state,
+        snapshot.device_claim_posture,
+        snapshot.session_role,
+        snapshot.ownership_fallback,
+        snapshot.backend_name,
+        snapshot.device_id,
+        snapshot.stream_state,
+        snapshot.simulated,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+    )
+}
+
+fn format_runtime_linux_backend_session_snapshot_multiline(
+    snapshot: &RuntimeLinuxBackendSessionSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "\nlinux_backend_session_identity={:?}",
+            "\nlinux_backend_session_backend_name={}",
+            "\nlinux_backend_session_portability={:?}",
+            "\nlinux_backend_session_ownership={:?}",
+            "\nlinux_backend_session_lifecycle_state={:?}",
+            "\nlinux_backend_session_device_claim_posture={:?}",
+            "\nlinux_backend_session_role={:?}",
+            "\nlinux_backend_session_ownership_fallback={:?}",
+            "\nlinux_backend_session_device_id={}",
+            "\nlinux_backend_session_device_name={}",
+            "\nlinux_backend_session_stream_state={:?}",
+            "\nlinux_backend_session_backend_health={:?}",
+            "\nlinux_backend_session_simulated={}",
+            "\nlinux_backend_session_device_loss_count={}",
+            "\nlinux_backend_session_restart_attempt_count={}",
+            "\nlinux_backend_session_restart_failure_count={}",
+            "\nlinux_backend_session_summary={}",
+        ),
+        snapshot.backend_identity,
+        snapshot.backend_name,
+        snapshot.portability_band,
+        snapshot.ownership,
+        snapshot.lifecycle_state,
+        snapshot.device_claim_posture,
+        snapshot.session_role,
+        snapshot.ownership_fallback,
+        snapshot.device_id,
+        snapshot.device_name,
+        snapshot.stream_state,
+        snapshot.backend_health,
+        snapshot.simulated,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        snapshot.summary,
+    )
+}
+
+fn format_runtime_jack_coordination_snapshot_compact(
+    snapshot: &RuntimeJackCoordinationSnapshot,
+) -> String {
+    format!(
+        " jack={:?}/{:?}/{:?}/{:?} backend={} device={} session={:?}/{} heartbeat={:?} dispatch={:?} simulated={}",
+        snapshot.transport_posture,
+        snapshot.graph_state,
+        snapshot.client_role,
+        snapshot.guarded_state,
+        snapshot.backend_name,
+        snapshot.device_id,
+        snapshot.session_state,
+        snapshot.currently_attached,
+        snapshot.heartbeat_freshness,
+        snapshot.dispatch_state,
+        snapshot.simulated,
+    )
+}
+
+fn format_runtime_jack_coordination_snapshot_multiline(
+    snapshot: &RuntimeJackCoordinationSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "\njack_coordination_backend_identity={:?}",
+            "\njack_coordination_backend_name={}",
+            "\njack_coordination_portability={:?}",
+            "\njack_coordination_transport_posture={:?}",
+            "\njack_coordination_graph_state={:?}",
+            "\njack_coordination_client_role={:?}",
+            "\njack_coordination_guarded_state={:?}",
+            "\njack_coordination_device_id={}",
+            "\njack_coordination_device_name={}",
+            "\njack_coordination_session_state={:?}",
+            "\njack_coordination_currently_attached={}",
+            "\njack_coordination_heartbeat_freshness={:?}",
+            "\njack_coordination_dispatch_state={:?}",
+            "\njack_coordination_attach_events={}",
+            "\njack_coordination_detach_requested_events={}",
+            "\njack_coordination_detached_events={}",
+            "\njack_coordination_backend_health={:?}",
+            "\njack_coordination_simulated={}",
+            "\njack_coordination_summary={}",
+        ),
+        snapshot.backend_identity,
+        snapshot.backend_name,
+        snapshot.portability_band,
+        snapshot.transport_posture,
+        snapshot.graph_state,
+        snapshot.client_role,
+        snapshot.guarded_state,
+        snapshot.device_id,
+        snapshot.device_name,
+        snapshot.session_state,
+        snapshot.currently_attached,
+        snapshot.heartbeat_freshness,
+        snapshot.dispatch_state,
+        snapshot.attach_events,
+        snapshot.detach_requested_events,
+        snapshot.detached_events,
+        snapshot.backend_health,
+        snapshot.simulated,
+        snapshot.summary,
+    )
+}
+
+fn format_runtime_external_midi_snapshot_compact(
+    snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
+) -> String {
+    format!(
+        " external_midi={:?}/{:?} provider={} devices={} endpoints={}/{}/{}/{} routes={}/{}",
+        snapshot.discovery_state,
+        snapshot.graph_state,
+        snapshot.provider_name,
+        snapshot.device_count,
+        snapshot.endpoint_count,
+        snapshot.input_endpoint_count,
+        snapshot.output_endpoint_count,
+        snapshot.duplex_endpoint_count,
+        snapshot.active_route_count,
+        snapshot.guarded_route_count,
+    )
+}
+
+fn format_runtime_external_midi_snapshot_multiline(
+    snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
+) -> String {
+    let device_lines = snapshot
+        .devices
+        .iter()
+        .enumerate()
+        .map(|(index, device)| {
+            format!(
+                "\nexternal_midi_device_{}={}/state={:?}/endpoints={}/summary={}",
+                index,
+                device.device_id,
+                device.lifecycle_state,
+                device.endpoint_count,
+                device.summary,
+            )
+        })
+        .collect::<String>();
+    let endpoint_lines = snapshot
+        .endpoints
+        .iter()
+        .enumerate()
+        .map(|(index, endpoint)| {
+            format!(
+                "\nexternal_midi_endpoint_{}={}/device={}/direction={:?}/state={:?}/route={:?}/capability={}",
+                index,
+                endpoint.endpoint_id,
+                endpoint.device_id,
+                endpoint.direction,
+                endpoint.lifecycle_state,
+                endpoint.route_state,
+                endpoint.capability.summary,
+            )
+        })
+        .collect::<String>();
+    format!(
+        concat!(
+            "\nexternal_midi_discovery_state={:?}",
+            "\nexternal_midi_graph_state={:?}",
+            "\nexternal_midi_provider_name={}",
+            "\nexternal_midi_device_count={}",
+            "\nexternal_midi_endpoint_count={}",
+            "\nexternal_midi_input_endpoint_count={}",
+            "\nexternal_midi_output_endpoint_count={}",
+            "\nexternal_midi_duplex_endpoint_count={}",
+            "\nexternal_midi_active_route_count={}",
+            "\nexternal_midi_guarded_route_count={}",
+            "\nexternal_midi_summary={}",
+        ),
+        snapshot.discovery_state,
+        snapshot.graph_state,
+        snapshot.provider_name,
+        snapshot.device_count,
+        snapshot.endpoint_count,
+        snapshot.input_endpoint_count,
+        snapshot.output_endpoint_count,
+        snapshot.duplex_endpoint_count,
+        snapshot.active_route_count,
+        snapshot.guarded_route_count,
+        snapshot.summary,
+    ) + &device_lines
+        + &endpoint_lines
+}
+
+fn format_runtime_control_surface_snapshot_multiline(
+    snapshot: &RuntimeControlSurfaceSnapshot,
+) -> String {
+    let device_lines = snapshot
+        .devices
+        .iter()
+        .enumerate()
+        .map(|(index, device)| {
+            format!(
+                "\ncontrol_surface_device_{}={}/transport={:?}/mapping={:?}/feedback={:?}/capability={}",
+                index,
+                device.device_id,
+                device.transport_posture,
+                device.mapping_posture,
+                device.feedback_readiness,
+                device.capability.summary,
+            )
+        })
+        .collect::<String>();
+    format!(
+        concat!(
+            "\ncontrol_surface_discovery_state={:?}",
+            "\ncontrol_surface_graph_state={:?}",
+            "\ncontrol_surface_provider_name={}",
+            "\ncontrol_surface_device_count={}",
+            "\ncontrol_surface_mapped_device_count={}",
+            "\ncontrol_surface_feedback_ready_device_count={}",
+            "\ncontrol_surface_guarded_device_count={}",
+            "\ncontrol_surface_summary={}",
+        ),
+        snapshot.discovery_state,
+        snapshot.graph_state,
+        snapshot.provider_name,
+        snapshot.device_count,
+        snapshot.mapped_device_count,
+        snapshot.feedback_ready_device_count,
+        snapshot.guarded_device_count,
+        snapshot.summary,
+    ) + &device_lines
+}
+
+fn format_runtime_advanced_hardware_snapshot_multiline(
+    snapshot: &RuntimeAdvancedHardwareSnapshot,
+) -> String {
+    let device_lines = snapshot
+        .devices
+        .iter()
+        .enumerate()
+        .map(|(index, device)| {
+            format!(
+                "\nadvanced_hardware_device_{}={}/policy={:?}/feedback={:?}/capability={}",
+                index,
+                device.device_id,
+                device.scripting_safe_posture,
+                device.feedback_channel_posture,
+                device.capability.summary,
+            )
+        })
+        .collect::<String>();
+    format!(
+        concat!(
+            "\nadvanced_hardware_discovery_state={:?}",
+            "\nadvanced_hardware_graph_state={:?}",
+            "\nadvanced_hardware_provider_name={}",
+            "\nadvanced_hardware_device_count={}",
+            "\nadvanced_hardware_portable_device_count={}",
+            "\nadvanced_hardware_guarded_device_count={}",
+            "\nadvanced_hardware_context_only_device_count={}",
+            "\nadvanced_hardware_denied_device_count={}",
+            "\nadvanced_hardware_feedback_channel_device_count={}",
+            "\nadvanced_hardware_summary={}",
+        ),
+        snapshot.discovery_state,
+        snapshot.graph_state,
+        snapshot.provider_name,
+        snapshot.device_count,
+        snapshot.portable_device_count,
+        snapshot.guarded_device_count,
+        snapshot.context_only_device_count,
+        snapshot.denied_device_count,
+        snapshot.feedback_channel_device_count,
+        snapshot.summary,
+    ) + &device_lines
 }
 
 fn format_runtime_tempo_map_snapshot_compact(snapshot: &RuntimeTempoMapSnapshot) -> String {
@@ -11818,6 +16507,161 @@ fn format_runtime_clip_processing_pipeline_snapshot_multiline(
     )
 }
 
+fn format_runtime_stretch_engine_snapshot_compact(
+    snapshot: &RuntimeStretchEngineSnapshot,
+) -> String {
+    format!(
+        " stretch_clips={}/{}/{}/{}/{}/{}/{}/{}",
+        snapshot.ready_clip_count,
+        snapshot.clip_count,
+        snapshot.sample_domain_clip_count,
+        snapshot.ratio_only_clip_count,
+        snapshot.fallback_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.pending_warp_clip_count,
+        snapshot.degraded_clip_count,
+    )
+}
+
+fn format_runtime_stretch_engine_snapshot_multiline(
+    snapshot: &RuntimeStretchEngineSnapshot,
+) -> String {
+    let clip_lines = snapshot
+        .clips
+        .iter()
+        .enumerate()
+        .map(|(index, clip)| {
+            format!(
+                "\nstretch_clip_{}={}/engine={:?}/readiness={:?}/fallback={:?}",
+                index, clip.clip_id, clip.engine_class, clip.readiness, clip.fallback_kind
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nstretch_clip_count={}\nstretch_disabled_clip_count={}\nstretch_ready_clip_count={}\nstretch_pending_media_clip_count={}\nstretch_pending_warp_clip_count={}\nstretch_degraded_clip_count={}\nstretch_sample_domain_clip_count={}\nstretch_ratio_only_clip_count={}\nstretch_fallback_clip_count={}{}",
+        snapshot.clip_count,
+        snapshot.disabled_clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.pending_warp_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.sample_domain_clip_count,
+        snapshot.ratio_only_clip_count,
+        snapshot.fallback_clip_count,
+        clip_lines,
+    )
+}
+
+fn format_runtime_marker_analysis_snapshot_compact(
+    snapshot: &RuntimeMarkerAnalysisSnapshot,
+) -> String {
+    format!(
+        " marker_analysis_clips={}/{}/{}/{}/{} marker_analysis_counts={}/{} marker_analysis_tempo_assist={}",
+        snapshot.ready_clip_count,
+        snapshot.clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count + snapshot.unsupported_clip_count,
+        snapshot.warp_marker_count,
+        snapshot.transient_anchor_count,
+        snapshot.tempo_assist_ready_clip_count,
+    )
+}
+
+fn format_runtime_marker_analysis_snapshot_multiline(
+    snapshot: &RuntimeMarkerAnalysisSnapshot,
+) -> String {
+    let clip_lines = snapshot
+        .clips
+        .iter()
+        .enumerate()
+        .map(|(index, clip)| {
+            format!(
+                "\nmarker_analysis_clip_{}={}/readiness={:?}/invalidation={:?}/markers={}/anchors={}/tempo_assist={:?}/{:?}/{:?}/error={:?}",
+                index,
+                clip.clip_id,
+                clip.readiness,
+                clip.invalidation_state,
+                clip.warp_marker_count,
+                clip.transient_anchor_count,
+                clip.tempo_assist_posture,
+                clip.tempo_assist_hint_source,
+                clip.tempo_assist_hint_bpm,
+                clip.last_error,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nmarker_analysis_clip_count={}\nmarker_analysis_ready_clip_count={}\nmarker_analysis_pending_media_clip_count={}\nmarker_analysis_degraded_clip_count={}\nmarker_analysis_invalidated_clip_count={}\nmarker_analysis_unsupported_clip_count={}\nmarker_analysis_tempo_assist_ready_clip_count={}\nmarker_analysis_warp_marker_count={}\nmarker_analysis_transient_anchor_count={}{}",
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count,
+        snapshot.unsupported_clip_count,
+        snapshot.tempo_assist_ready_clip_count,
+        snapshot.warp_marker_count,
+        snapshot.transient_anchor_count,
+        clip_lines,
+    )
+}
+
+fn format_runtime_transform_artifact_snapshot_compact(
+    snapshot: &RuntimeTransformArtifactSnapshot,
+) -> String {
+    format!(
+        " transform_artifacts={}/{}/{}/{}/{} transform_artifact_reuse={}/{}/{} transform_artifact_cached_media_ready={}",
+        snapshot.ready_clip_count,
+        snapshot.clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count + snapshot.unsupported_clip_count,
+        snapshot.reusable_clip_count,
+        snapshot.requires_render_clip_count,
+        snapshot.guarded_reuse_clip_count,
+        snapshot.cached_media_ready_clip_count,
+    )
+}
+
+fn format_runtime_transform_artifact_snapshot_multiline(
+    snapshot: &RuntimeTransformArtifactSnapshot,
+) -> String {
+    let clip_lines = snapshot
+        .clips
+        .iter()
+        .enumerate()
+        .map(|(index, clip)| {
+            format!(
+                "\ntransform_artifact_clip_{}={}/artifact={}/readiness={:?}/invalidation={:?}/reuse={:?}/cached_media_ready={}/stretch={:?}/{:?}/analysis={:?}",
+                index,
+                clip.clip_id,
+                clip.artifact_identity,
+                clip.readiness,
+                clip.invalidation_state,
+                clip.reuse_state,
+                clip.cached_media_ready,
+                clip.stretch_engine_class,
+                clip.stretch_readiness,
+                clip.marker_analysis_readiness,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\ntransform_artifact_clip_count={}\ntransform_artifact_ready_clip_count={}\ntransform_artifact_pending_media_clip_count={}\ntransform_artifact_degraded_clip_count={}\ntransform_artifact_invalidated_clip_count={}\ntransform_artifact_unsupported_clip_count={}\ntransform_artifact_cached_media_ready_clip_count={}\ntransform_artifact_reusable_clip_count={}\ntransform_artifact_requires_render_clip_count={}\ntransform_artifact_guarded_reuse_clip_count={}{}",
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count,
+        snapshot.unsupported_clip_count,
+        snapshot.cached_media_ready_clip_count,
+        snapshot.reusable_clip_count,
+        snapshot.requires_render_clip_count,
+        snapshot.guarded_reuse_clip_count,
+        clip_lines,
+    )
+}
+
 fn format_runtime_plugin_chain_snapshot_compact(snapshot: &RuntimePluginChainSnapshot) -> String {
     format!(
         " plugin_chains={}/{} plugin_chain_placement={}/{}/{} plugin_chain_pending={} plugin_chain_settling={} plugin_chain_compensated={} plugin_chain_degraded={} plugin_chain_bypassed={} plugin_chain_missing={} plugin_chain_rebindable={} plugin_chain_terminal={} plugin_chain_latency={}/{} plugin_chain_tail={}",
@@ -11952,17 +16796,26 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
         .enumerate()
         .map(|(index, parity)| {
             format!(
-                "\nplugin_parity_coverage_{}={:?}/{:?}/supported={:?}/unsupported={:?}/types={}/sandboxes={}/shared={}/isolated={}/ready={}/degraded={}/faulted={}/quarantined={}/terminal={}/transport_active={}/placement_rules={}",
+                "\nplugin_parity_coverage_{}={:?}/{:?}/linux={:?}/linux_supported={}/linux_policy={:?}/linux_strict_default={}/supported={:?}/unsupported={:?}/types={}/prepare_capable={}/activate_capable={}/sandboxes={}/in_process={}/shared={}/isolated={}/ready={}/restarting={}/rebindable={}/degraded={}/faulted={}/quarantined={}/terminal={}/transport_active={}/placement_rules={}",
                 index,
                 parity.format,
                 parity.parity_band,
+                parity.linux_parity_band,
+                parity.linux_supported,
+                parity.linux_preferred_sandbox_outcome,
+                parity.linux_strict_sandbox_default,
                 parity.supported_platforms,
                 parity.unsupported_platforms,
                 parity.discovered_type_count,
+                parity.prepare_capable_type_count,
+                parity.activate_capable_type_count,
                 parity.sandbox_count,
+                parity.in_process_sandbox_count,
                 parity.shared_sandbox_count,
                 parity.isolated_sandbox_count,
                 parity.ready_sandbox_count,
+                parity.restarting_sandbox_count,
+                parity.rebindable_sandbox_count,
                 parity.degraded_sandbox_count,
                 parity.faulted_sandbox_count,
                 parity.quarantined_sandbox_count,
@@ -12019,17 +16872,26 @@ fn format_runtime_plugin_lifecycle_snapshot_multiline(
         .enumerate()
         .map(|(index, parity)| {
             format!(
-                "\nplugin_lifecycle_parity_coverage_{}={:?}/{:?}/supported={:?}/unsupported={:?}/types={}/sandboxes={}/shared={}/isolated={}/ready={}/degraded={}/faulted={}/quarantined={}/terminal={}/transport_active={}/placement_rules={}",
+                "\nplugin_lifecycle_parity_coverage_{}={:?}/{:?}/linux={:?}/linux_supported={}/linux_policy={:?}/linux_strict_default={}/supported={:?}/unsupported={:?}/types={}/prepare_capable={}/activate_capable={}/sandboxes={}/in_process={}/shared={}/isolated={}/ready={}/restarting={}/rebindable={}/degraded={}/faulted={}/quarantined={}/terminal={}/transport_active={}/placement_rules={}",
                 index,
                 parity.format,
                 parity.parity_band,
+                parity.linux_parity_band,
+                parity.linux_supported,
+                parity.linux_preferred_sandbox_outcome,
+                parity.linux_strict_sandbox_default,
                 parity.supported_platforms,
                 parity.unsupported_platforms,
                 parity.discovered_type_count,
+                parity.prepare_capable_type_count,
+                parity.activate_capable_type_count,
                 parity.sandbox_count,
+                parity.in_process_sandbox_count,
                 parity.shared_sandbox_count,
                 parity.isolated_sandbox_count,
                 parity.ready_sandbox_count,
+                parity.restarting_sandbox_count,
+                parity.rebindable_sandbox_count,
                 parity.degraded_sandbox_count,
                 parity.faulted_sandbox_count,
                 parity.quarantined_sandbox_count,
@@ -12104,7 +16966,7 @@ fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainS
                 .enumerate()
                 .map(|(stage_index, stage)| {
                     format!(
-                        "\nplugin_chain_{}_stage_{}={}/sandbox={:?}/group={:?}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/lifecycle={:?}/{:?}/transport={:?}/recall={}/compensation={:?}/latency={}/{:?}/{:?}/bypassed={}/active_transport={}/degraded_reasons={:?}",
+                        "\nplugin_chain_{}_stage_{}={}/sandbox={:?}/group={:?}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/secondary_input={:?}/lifecycle={:?}/{:?}/transport={:?}/recall={}/compensation={:?}/latency={}/{:?}/{:?}/bypassed={}/active_transport={}/degraded_reasons={:?}",
                         chain_index,
                         stage_index,
                         stage.node_id,
@@ -12115,6 +16977,9 @@ fn format_runtime_plugin_chain_snapshot_multiline(snapshot: &RuntimePluginChainS
                         stage.shared_boundary_member_count,
                         stage.continuity_class,
                         stage.rebindable,
+                        stage.secondary_input
+                            .as_ref()
+                            .map(|secondary_input| secondary_input.summary.as_str()),
                         stage.lifecycle_state,
                         stage.lifecycle_stage,
                         stage.transport_stage,
@@ -12394,7 +17259,7 @@ fn format_runtime_execution_topology_summary_compact(
         .collect::<Vec<_>>()
         .join("|");
     format!(
-        " execution_topology_summary_nodes={} execution_topology_summary_roles={}/{}/{}/{}/{} execution_topology_summary_groups={}/{}/{} execution_topology_summary_plugin_chain={} execution_topology_summary_lanes={} execution_topology_summary_lane_shapes={}",
+        " execution_topology_summary_nodes={} execution_topology_summary_roles={}/{}/{}/{}/{} execution_topology_summary_groups={}/{}/{} execution_topology_summary_secondary_inputs={}/{}/{}/{}/{} execution_topology_summary_bus_connections={} execution_topology_summary_auxiliary_paths={} execution_topology_summary_plugin_chain={} execution_topology_summary_lanes={} execution_topology_summary_lane_shapes={}",
         summary.node_count,
         summary.utility_node_count,
         summary.track_lane_node_count,
@@ -12404,6 +17269,13 @@ fn format_runtime_execution_topology_summary_compact(
         summary.track_lane_group_count,
         summary.bus_group_count,
         summary.console_group_count,
+        summary.secondary_input_count,
+        summary.required_secondary_input_count,
+        summary.optional_secondary_input_count,
+        summary.disabled_secondary_input_count,
+        summary.terminal_fallback_secondary_input_count,
+        summary.bus_connection_count,
+        summary.auxiliary_path_count,
         format_runtime_routed_plugin_chain_summary_compact(&summary.plugin_chain),
         summary.lane_count,
         lane_shapes,
@@ -12505,7 +17377,7 @@ fn format_runtime_execution_topology_summary_multiline(
         .enumerate()
         .map(|(index, node)| {
             format!(
-                "\nexecution_topology_summary_node_{}={}/{:?}/{:?}/{:?}/track_lane_id={:?}/bus_group_id={:?}/console_group_id={:?}/send_return_id={:?}/input={}/output={}/plugin={:?}/plugin_recall={:?}/plugin_recall_payload={:?}/plugin_compensation={:?}/plugin_realized_latency={:?}/plugin_tail={:?}",
+                "\nexecution_topology_summary_node_{}={}/{:?}/{:?}/{:?}/track_lane_id={:?}/bus_group_id={:?}/console_group_id={:?}/send_return_id={:?}/input={}/output={}/secondary_input={:?}/plugin={:?}/plugin_recall={:?}/plugin_recall_payload={:?}/plugin_compensation={:?}/plugin_realized_latency={:?}/plugin_tail={:?}",
                 index,
                 node.node_id,
                 node.lane,
@@ -12517,6 +17389,9 @@ fn format_runtime_execution_topology_summary_multiline(
                 node.send_return_id,
                 node.input_bus_id,
                 node.output_bus_id,
+                node.secondary_input
+                    .as_ref()
+                    .map(|secondary_input| secondary_input.summary.as_str()),
                 node.plugin_sandbox_id,
                 node.plugin_recall_state,
                 node.plugin_recall
@@ -12528,8 +17403,30 @@ fn format_runtime_execution_topology_summary_multiline(
             )
         })
         .collect::<String>();
+    let bus_connection_lines = summary
+        .bus_connections
+        .iter()
+        .enumerate()
+        .map(|(index, connection)| {
+            format!(
+                "\nexecution_topology_summary_bus_connection_{}={}",
+                index, connection.summary
+            )
+        })
+        .collect::<String>();
+    let auxiliary_path_lines = summary
+        .auxiliary_paths
+        .iter()
+        .enumerate()
+        .map(|(index, path)| {
+            format!(
+                "\nexecution_topology_summary_auxiliary_path_{}={}",
+                index, path.summary
+            )
+        })
+        .collect::<String>();
     format!(
-        "\nexecution_topology_summary_node_count={}\nexecution_topology_summary_utility_nodes={}\nexecution_topology_summary_track_lane_nodes={}\nexecution_topology_summary_bus_nodes={}\nexecution_topology_summary_send_return_nodes={}\nexecution_topology_summary_console_nodes={}\nexecution_topology_summary_lane_count={}\nexecution_topology_summary_track_lane_groups={}\nexecution_topology_summary_bus_groups={}\nexecution_topology_summary_send_return_groups={}\nexecution_topology_summary_console_groups={}\nexecution_topology_summary_plugin_chain={}{}{}{}{}{}{}",
+        "\nexecution_topology_summary_node_count={}\nexecution_topology_summary_utility_nodes={}\nexecution_topology_summary_track_lane_nodes={}\nexecution_topology_summary_bus_nodes={}\nexecution_topology_summary_send_return_nodes={}\nexecution_topology_summary_console_nodes={}\nexecution_topology_summary_lane_count={}\nexecution_topology_summary_track_lane_groups={}\nexecution_topology_summary_bus_groups={}\nexecution_topology_summary_send_return_groups={}\nexecution_topology_summary_console_groups={}\nexecution_topology_summary_secondary_input_count={}\nexecution_topology_summary_required_secondary_input_count={}\nexecution_topology_summary_optional_secondary_input_count={}\nexecution_topology_summary_disabled_secondary_input_count={}\nexecution_topology_summary_terminal_fallback_secondary_input_count={}\nexecution_topology_summary_bus_connection_count={}\nexecution_topology_summary_auxiliary_path_count={}\nexecution_topology_summary_plugin_chain={}{}{}{}{}{}{}{}{}",
         summary.node_count,
         summary.utility_node_count,
         summary.track_lane_node_count,
@@ -12541,6 +17438,13 @@ fn format_runtime_execution_topology_summary_multiline(
         summary.bus_group_count,
         summary.send_return_group_count,
         summary.console_group_count,
+        summary.secondary_input_count,
+        summary.required_secondary_input_count,
+        summary.optional_secondary_input_count,
+        summary.disabled_secondary_input_count,
+        summary.terminal_fallback_secondary_input_count,
+        summary.bus_connection_count,
+        summary.auxiliary_path_count,
         format_runtime_routed_plugin_chain_summary_compact(&summary.plugin_chain),
         lane_lines,
         track_lane_lines,
@@ -12548,6 +17452,8 @@ fn format_runtime_execution_topology_summary_multiline(
         console_group_lines,
         send_return_lines,
         node_lines,
+        bus_connection_lines,
+        auxiliary_path_lines,
     )
 }
 
@@ -13386,6 +18292,566 @@ fn json_runtime_device_supervision_snapshot(snapshot: &RuntimeDeviceSupervisionS
     )
 }
 
+fn json_runtime_canonical_channel_layout(layout: Option<RuntimeCanonicalChannelLayout>) -> String {
+    json_option_string(layout.map(|value| format!("{value:?}")).as_deref())
+}
+
+fn json_runtime_channel_role_vec(roles: &[RuntimeChannelRole]) -> String {
+    format!(
+        "[{}]",
+        roles
+            .iter()
+            .map(|role| match role {
+                RuntimeChannelRole::Discrete(index) => {
+                    format!(
+                        "{{\"kind\":{},\"index\":{}}}",
+                        json_option_string(Some("Discrete")),
+                        index
+                    )
+                }
+                _ => format!(
+                    "{{\"kind\":{}}}",
+                    json_option_string(Some(&format!("{role:?}")))
+                ),
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_multichannel_layout_summary(summary: &RuntimeMultichannelLayoutSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"channel_count\":{},",
+            "\"canonical_layout\":{},",
+            "\"channel_roles\":{},",
+            "\"uses_custom_fallback\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.channel_count,
+        json_runtime_canonical_channel_layout(summary.canonical_layout),
+        json_runtime_channel_role_vec(&summary.channel_roles),
+        summary.uses_custom_fallback,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_bus_intent(intent: RuntimeBusIntent) -> String {
+    json_option_string(Some(&format!("{intent:?}")))
+}
+
+fn json_runtime_secondary_input_source_kind(kind: RuntimeSecondaryInputSourceKind) -> String {
+    json_option_string(Some(&format!("{kind:?}")))
+}
+
+fn json_runtime_secondary_input_target_kind(kind: RuntimeSecondaryInputTargetKind) -> String {
+    json_option_string(Some(&format!("{kind:?}")))
+}
+
+fn json_runtime_secondary_input_attachment_policy(
+    policy: RuntimeSecondaryInputAttachmentPolicy,
+) -> String {
+    json_option_string(Some(&format!("{policy:?}")))
+}
+
+fn json_runtime_secondary_input_fallback_outcome(
+    outcome: RuntimeSecondaryInputFallbackOutcome,
+) -> String {
+    json_option_string(Some(&format!("{outcome:?}")))
+}
+
+fn json_runtime_secondary_input_route_summary(
+    summary: &RuntimeSecondaryInputRouteSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"source_kind\":{},",
+            "\"source_id\":{},",
+            "\"source_bus_id\":{},",
+            "\"target_kind\":{},",
+            "\"target_id\":{},",
+            "\"target_bus_id\":{},",
+            "\"attachment_policy\":{},",
+            "\"fallback_outcome\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_runtime_secondary_input_source_kind(summary.source_kind),
+        json_option_string(Some(summary.source_id.as_str())),
+        json_option_string(summary.source_bus_id.as_deref()),
+        json_runtime_secondary_input_target_kind(summary.target_kind),
+        json_option_string(Some(summary.target_id.as_str())),
+        json_option_string(Some(summary.target_bus_id.as_str())),
+        json_runtime_secondary_input_attachment_policy(summary.attachment_policy),
+        json_runtime_secondary_input_fallback_outcome(summary.fallback_outcome),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_secondary_input_route_summary_vec(
+    summaries: &[RuntimeSecondaryInputRouteSummary],
+) -> String {
+    format!(
+        "[{}]",
+        summaries
+            .iter()
+            .map(json_runtime_secondary_input_route_summary)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_bus_role(role: RuntimeBusRole) -> String {
+    json_string(&format!("{role:?}"))
+}
+
+fn json_runtime_auxiliary_path_kind(kind: RuntimeAuxiliaryPathKind) -> String {
+    json_string(&format!("{kind:?}"))
+}
+
+fn json_runtime_bus_connection_attachment_class(
+    class: RuntimeBusConnectionAttachmentClass,
+) -> String {
+    json_string(&format!("{class:?}"))
+}
+
+fn json_runtime_bus_connection_fallback_outcome(
+    outcome: RuntimeBusConnectionFallbackOutcome,
+) -> String {
+    json_string(&format!("{outcome:?}"))
+}
+
+fn json_runtime_bus_connection_summary(summary: &RuntimeBusConnectionSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"connection_id\":{},",
+            "\"source_node_id\":{},",
+            "\"source_bus_id\":{},",
+            "\"source_bus_role\":{},",
+            "\"target_node_id\":{},",
+            "\"target_bus_id\":{},",
+            "\"target_bus_role\":{},",
+            "\"auxiliary_path_kind\":{},",
+            "\"auxiliary_path_id\":{},",
+            "\"attachment_class\":{},",
+            "\"fallback_outcome\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(summary.connection_id.as_str())),
+        json_option_string(Some(summary.source_node_id.as_str())),
+        json_option_string(Some(summary.source_bus_id.as_str())),
+        json_runtime_bus_role(summary.source_bus_role),
+        json_option_string(Some(summary.target_node_id.as_str())),
+        json_option_string(Some(summary.target_bus_id.as_str())),
+        json_runtime_bus_role(summary.target_bus_role),
+        summary
+            .auxiliary_path_kind
+            .map(json_runtime_auxiliary_path_kind)
+            .unwrap_or_else(|| "null".into()),
+        json_option_string(summary.auxiliary_path_id.as_deref()),
+        json_runtime_bus_connection_attachment_class(summary.attachment_class),
+        json_runtime_bus_connection_fallback_outcome(summary.fallback_outcome),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_bus_connection_summary_vec(summaries: &[RuntimeBusConnectionSummary]) -> String {
+    format!(
+        "[{}]",
+        summaries
+            .iter()
+            .map(json_runtime_bus_connection_summary)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_auxiliary_path_summary(summary: &RuntimeAuxiliaryPathSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"auxiliary_path_id\":{},",
+            "\"path_kind\":{},",
+            "\"bus_role\":{},",
+            "\"material_bus_intent\":{},",
+            "\"source_node_ids\":{},",
+            "\"target_node_ids\":{},",
+            "\"bus_ids\":{},",
+            "\"connection_ids\":{},",
+            "\"attachment_class\":{},",
+            "\"fallback_outcome\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(summary.auxiliary_path_id.as_str())),
+        json_runtime_auxiliary_path_kind(summary.path_kind),
+        json_runtime_bus_role(summary.bus_role),
+        json_runtime_bus_intent(summary.material_bus_intent),
+        json_string_vec(&summary.source_node_ids),
+        json_string_vec(&summary.target_node_ids),
+        json_string_vec(&summary.bus_ids),
+        json_string_vec(&summary.connection_ids),
+        json_runtime_bus_connection_attachment_class(summary.attachment_class),
+        json_runtime_bus_connection_fallback_outcome(summary.fallback_outcome),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_auxiliary_path_summary_vec(summaries: &[RuntimeAuxiliaryPathSummary]) -> String {
+    format!(
+        "[{}]",
+        summaries
+            .iter()
+            .map(json_runtime_auxiliary_path_summary)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_multichannel_io_summary(summary: &RuntimeMultichannelIoSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"input_layout\":{},",
+            "\"output_layout\":{},",
+            "\"input_bus_intent\":{},",
+            "\"output_bus_intent\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_runtime_multichannel_layout_summary(&summary.input_layout),
+        json_runtime_multichannel_layout_summary(&summary.output_layout),
+        json_runtime_bus_intent(summary.input_bus_intent),
+        json_runtime_bus_intent(summary.output_bus_intent),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_external_midi_endpoint_capability_summary(
+    summary: &RuntimeExternalMidiEndpointCapabilitySummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"supports_bounded_midi_input\":{},",
+            "\"supports_bounded_midi_output\":{},",
+            "\"supports_transport_clock\":{},",
+            "\"supports_note_events\":{},",
+            "\"supports_controller_events\":{},",
+            "\"supports_note_pressure_expression\":{},",
+            "\"supports_note_timbre_expression\":{},",
+            "\"supports_note_tuning_expression\":{},",
+            "\"supports_mpe\":{},",
+            "\"midi2_posture\":{},",
+            "\"control_surface_guarded\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.supports_bounded_midi_input,
+        summary.supports_bounded_midi_output,
+        summary.supports_transport_clock,
+        summary.supports_note_events,
+        summary.supports_controller_events,
+        summary.supports_note_pressure_expression,
+        summary.supports_note_timbre_expression,
+        summary.supports_note_tuning_expression,
+        summary.supports_mpe,
+        json_string(&format!("{:?}", summary.midi2_posture)),
+        summary.control_surface_guarded,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_external_midi_device_descriptor(
+    descriptor: &RuntimeExternalMidiDeviceDescriptor,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"lifecycle_state\":{},",
+            "\"endpoint_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(descriptor.device_id.as_str())),
+        json_option_string(Some(descriptor.device_name.as_str())),
+        json_string(&format!("{:?}", descriptor.lifecycle_state)),
+        descriptor.endpoint_count,
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_external_midi_endpoint_descriptor(
+    descriptor: &RuntimeExternalMidiEndpointDescriptor,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"endpoint_id\":{},",
+            "\"endpoint_name\":{},",
+            "\"device_id\":{},",
+            "\"direction\":{},",
+            "\"lifecycle_state\":{},",
+            "\"route_state\":{},",
+            "\"capability\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(descriptor.endpoint_id.as_str())),
+        json_option_string(Some(descriptor.endpoint_name.as_str())),
+        json_option_string(Some(descriptor.device_id.as_str())),
+        json_string(&format!("{:?}", descriptor.direction)),
+        json_string(&format!("{:?}", descriptor.lifecycle_state)),
+        json_string(&format!("{:?}", descriptor.route_state)),
+        json_runtime_external_midi_endpoint_capability_summary(&descriptor.capability),
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_external_midi_snapshot(
+    snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"discovery_state\":{},",
+            "\"graph_state\":{},",
+            "\"provider_name\":{},",
+            "\"device_count\":{},",
+            "\"endpoint_count\":{},",
+            "\"input_endpoint_count\":{},",
+            "\"output_endpoint_count\":{},",
+            "\"duplex_endpoint_count\":{},",
+            "\"active_route_count\":{},",
+            "\"guarded_route_count\":{},",
+            "\"devices\":{},",
+            "\"endpoints\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.discovery_state)),
+        json_string(&format!("{:?}", snapshot.graph_state)),
+        json_option_string(Some(snapshot.provider_name.as_str())),
+        snapshot.device_count,
+        snapshot.endpoint_count,
+        snapshot.input_endpoint_count,
+        snapshot.output_endpoint_count,
+        snapshot.duplex_endpoint_count,
+        snapshot.active_route_count,
+        snapshot.guarded_route_count,
+        format!(
+            "[{}]",
+            snapshot
+                .devices
+                .iter()
+                .map(json_runtime_external_midi_device_descriptor)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        format!(
+            "[{}]",
+            snapshot
+                .endpoints
+                .iter()
+                .map(json_runtime_external_midi_endpoint_descriptor)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_control_surface_capability_summary(
+    summary: &RuntimeControlSurfaceCapabilitySummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"supports_transport_control\":{},",
+            "\"supports_mapping_input\":{},",
+            "\"supports_feedback_output\":{},",
+            "\"supports_widened_expression\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.supports_transport_control,
+        summary.supports_mapping_input,
+        summary.supports_feedback_output,
+        summary.supports_widened_expression,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_control_surface_device_descriptor(
+    descriptor: &RuntimeControlSurfaceDeviceDescriptor,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"transport_posture\":{},",
+            "\"mapping_posture\":{},",
+            "\"feedback_readiness\":{},",
+            "\"capability\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(descriptor.device_id.as_str())),
+        json_option_string(Some(descriptor.device_name.as_str())),
+        json_string(&format!("{:?}", descriptor.transport_posture)),
+        json_string(&format!("{:?}", descriptor.mapping_posture)),
+        json_string(&format!("{:?}", descriptor.feedback_readiness)),
+        json_runtime_control_surface_capability_summary(&descriptor.capability),
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_control_surface_snapshot(snapshot: &RuntimeControlSurfaceSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"discovery_state\":{},",
+            "\"graph_state\":{},",
+            "\"provider_name\":{},",
+            "\"device_count\":{},",
+            "\"mapped_device_count\":{},",
+            "\"feedback_ready_device_count\":{},",
+            "\"guarded_device_count\":{},",
+            "\"devices\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.discovery_state)),
+        json_string(&format!("{:?}", snapshot.graph_state)),
+        json_option_string(Some(snapshot.provider_name.as_str())),
+        snapshot.device_count,
+        snapshot.mapped_device_count,
+        snapshot.feedback_ready_device_count,
+        snapshot.guarded_device_count,
+        format!(
+            "[{}]",
+            snapshot
+                .devices
+                .iter()
+                .map(json_runtime_control_surface_device_descriptor)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_advanced_hardware_action_class(
+    action_class: &RuntimeAdvancedHardwareActionClass,
+) -> String {
+    json_string(&format!("{:?}", action_class))
+}
+
+fn json_runtime_advanced_hardware_capability_summary(
+    summary: &RuntimeAdvancedHardwareCapabilitySummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"supports_display_feedback\":{},",
+            "\"supports_motor_feedback\":{},",
+            "\"supports_haptic_feedback\":{},",
+            "\"supports_bank_navigation\":{},",
+            "\"supports_macro_triggers\":{},",
+            "\"supports_device_state_observation\":{},",
+            "\"action_classes\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.supports_display_feedback,
+        summary.supports_motor_feedback,
+        summary.supports_haptic_feedback,
+        summary.supports_bank_navigation,
+        summary.supports_macro_triggers,
+        summary.supports_device_state_observation,
+        format!(
+            "[{}]",
+            summary
+                .action_classes
+                .iter()
+                .map(json_runtime_advanced_hardware_action_class)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_advanced_hardware_device_descriptor(
+    descriptor: &RuntimeAdvancedHardwareDeviceDescriptor,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"scripting_safe_posture\":{},",
+            "\"feedback_channel_posture\":{},",
+            "\"capability\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(descriptor.device_id.as_str())),
+        json_option_string(Some(descriptor.device_name.as_str())),
+        json_string(&format!("{:?}", descriptor.scripting_safe_posture)),
+        json_string(&format!("{:?}", descriptor.feedback_channel_posture)),
+        json_runtime_advanced_hardware_capability_summary(&descriptor.capability),
+        json_option_string(Some(descriptor.summary.as_str())),
+    )
+}
+
+fn json_runtime_advanced_hardware_snapshot(snapshot: &RuntimeAdvancedHardwareSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"discovery_state\":{},",
+            "\"graph_state\":{},",
+            "\"provider_name\":{},",
+            "\"device_count\":{},",
+            "\"portable_device_count\":{},",
+            "\"guarded_device_count\":{},",
+            "\"context_only_device_count\":{},",
+            "\"denied_device_count\":{},",
+            "\"feedback_channel_device_count\":{},",
+            "\"devices\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.discovery_state)),
+        json_string(&format!("{:?}", snapshot.graph_state)),
+        json_option_string(Some(snapshot.provider_name.as_str())),
+        snapshot.device_count,
+        snapshot.portable_device_count,
+        snapshot.guarded_device_count,
+        snapshot.context_only_device_count,
+        snapshot.denied_device_count,
+        snapshot.feedback_channel_device_count,
+        format!(
+            "[{}]",
+            snapshot
+                .devices
+                .iter()
+                .map(json_runtime_advanced_hardware_device_descriptor)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
 fn json_runtime_external_io_snapshot(snapshot: &RuntimeExternalIoSnapshot) -> String {
     format!(
         concat!(
@@ -13396,6 +18862,12 @@ fn json_runtime_external_io_snapshot(snapshot: &RuntimeExternalIoSnapshot) -> St
             "\"monitoring_state\":{},",
             "\"monitoring_tap_point\":{},",
             "\"loopback_state\":{},",
+            "\"io_layout\":{},",
+            "\"linux_backend_identity\":{},",
+            "\"linux_backend_portability\":{},",
+            "\"linux_clocking_parity\":{},",
+            "\"linux_duplex_parity\":{},",
+            "\"linux_endpoint_topology_parity\":{},",
             "\"backend_name\":{},",
             "\"active_output_device_id\":{},",
             "\"active_output_device_name\":{},",
@@ -13427,6 +18899,12 @@ fn json_runtime_external_io_snapshot(snapshot: &RuntimeExternalIoSnapshot) -> St
         json_string(&format!("{:?}", snapshot.monitoring_state)),
         json_string(&format!("{:?}", snapshot.monitoring_tap_point)),
         json_string(&format!("{:?}", snapshot.loopback_state)),
+        json_runtime_multichannel_io_summary(&snapshot.io_layout),
+        json_string(&format!("{:?}", snapshot.linux_backend_identity)),
+        json_string(&format!("{:?}", snapshot.linux_backend_portability)),
+        json_string(&format!("{:?}", snapshot.linux_clocking_parity)),
+        json_string(&format!("{:?}", snapshot.linux_duplex_parity)),
+        json_string(&format!("{:?}", snapshot.linux_endpoint_topology_parity)),
         json_option_string(Some(snapshot.backend_name.as_str())),
         json_option_string(Some(snapshot.active_output_device_id.as_str())),
         json_option_string(Some(snapshot.active_output_device_name.as_str())),
@@ -13449,6 +18927,98 @@ fn json_runtime_external_io_snapshot(snapshot: &RuntimeExternalIoSnapshot) -> St
         snapshot.device_loss_count,
         snapshot.restart_attempt_count,
         snapshot.restart_failure_count,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_linux_backend_session_snapshot(
+    snapshot: &RuntimeLinuxBackendSessionSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"backend_identity\":{},",
+            "\"backend_name\":{},",
+            "\"portability_band\":{},",
+            "\"ownership\":{},",
+            "\"lifecycle_state\":{},",
+            "\"device_claim_posture\":{},",
+            "\"session_role\":{},",
+            "\"ownership_fallback\":{},",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"stream_state\":{},",
+            "\"backend_health\":{},",
+            "\"simulated\":{},",
+            "\"device_loss_count\":{},",
+            "\"restart_attempt_count\":{},",
+            "\"restart_failure_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.backend_identity)),
+        json_option_string(Some(snapshot.backend_name.as_str())),
+        json_string(&format!("{:?}", snapshot.portability_band)),
+        json_string(&format!("{:?}", snapshot.ownership)),
+        json_string(&format!("{:?}", snapshot.lifecycle_state)),
+        json_string(&format!("{:?}", snapshot.device_claim_posture)),
+        json_string(&format!("{:?}", snapshot.session_role)),
+        json_string(&format!("{:?}", snapshot.ownership_fallback)),
+        json_option_string(Some(snapshot.device_id.as_str())),
+        json_option_string(Some(snapshot.device_name.as_str())),
+        json_string(&format!("{:?}", snapshot.stream_state)),
+        json_string(&format!("{:?}", snapshot.backend_health)),
+        snapshot.simulated,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_jack_coordination_snapshot(snapshot: &RuntimeJackCoordinationSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"backend_identity\":{},",
+            "\"backend_name\":{},",
+            "\"portability_band\":{},",
+            "\"transport_posture\":{},",
+            "\"graph_state\":{},",
+            "\"client_role\":{},",
+            "\"guarded_state\":{},",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"session_state\":{},",
+            "\"currently_attached\":{},",
+            "\"heartbeat_freshness\":{},",
+            "\"dispatch_state\":{},",
+            "\"attach_events\":{},",
+            "\"detach_requested_events\":{},",
+            "\"detached_events\":{},",
+            "\"backend_health\":{},",
+            "\"simulated\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.backend_identity)),
+        json_option_string(Some(snapshot.backend_name.as_str())),
+        json_string(&format!("{:?}", snapshot.portability_band)),
+        json_string(&format!("{:?}", snapshot.transport_posture)),
+        json_string(&format!("{:?}", snapshot.graph_state)),
+        json_string(&format!("{:?}", snapshot.client_role)),
+        json_string(&format!("{:?}", snapshot.guarded_state)),
+        json_option_string(Some(snapshot.device_id.as_str())),
+        json_option_string(Some(snapshot.device_name.as_str())),
+        json_string(&format!("{:?}", snapshot.session_state)),
+        snapshot.currently_attached,
+        json_string(&format!("{:?}", snapshot.heartbeat_freshness)),
+        json_string(&format!("{:?}", snapshot.dispatch_state)),
+        snapshot.attach_events,
+        snapshot.detach_requested_events,
+        snapshot.detached_events,
+        json_string(&format!("{:?}", snapshot.backend_health)),
+        snapshot.simulated,
         json_option_string(Some(snapshot.summary.as_str())),
     )
 }
@@ -14012,6 +19582,292 @@ fn json_runtime_clip_processing_pipeline_snapshot(
     )
 }
 
+fn json_runtime_stretch_clip_snapshot(snapshot: &RuntimeStretchClipSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_id\":{},",
+            "\"media_asset_id\":{},",
+            "\"engine_class\":\"{:?}\",",
+            "\"readiness\":\"{:?}\",",
+            "\"fallback_kind\":\"{:?}\",",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.clip_id.as_str())),
+        json_option_string(snapshot.media_asset_id.as_deref()),
+        snapshot.engine_class,
+        snapshot.readiness,
+        snapshot.fallback_kind,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_stretch_clip_snapshot_vec(snapshots: &[RuntimeStretchClipSnapshot]) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_stretch_clip_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_stretch_engine_snapshot(snapshot: &RuntimeStretchEngineSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_count\":{},",
+            "\"disabled_clip_count\":{},",
+            "\"ready_clip_count\":{},",
+            "\"pending_media_clip_count\":{},",
+            "\"pending_warp_clip_count\":{},",
+            "\"degraded_clip_count\":{},",
+            "\"sample_domain_clip_count\":{},",
+            "\"ratio_only_clip_count\":{},",
+            "\"fallback_clip_count\":{},",
+            "\"clips\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.clip_count,
+        snapshot.disabled_clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.pending_warp_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.sample_domain_clip_count,
+        snapshot.ratio_only_clip_count,
+        snapshot.fallback_clip_count,
+        json_runtime_stretch_clip_snapshot_vec(&snapshot.clips),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_marker_analysis_clip_snapshot(
+    snapshot: &RuntimeMarkerAnalysisClipSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_id\":{},",
+            "\"media_asset_id\":{},",
+            "\"readiness\":\"{:?}\",",
+            "\"invalidation_state\":\"{:?}\",",
+            "\"warp_marker_count\":{},",
+            "\"transient_anchor_count\":{},",
+            "\"tempo_assist_posture\":\"{:?}\",",
+            "\"tempo_assist_hint_bpm\":{},",
+            "\"tempo_assist_hint_source\":\"{:?}\",",
+            "\"last_error\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.clip_id.as_str())),
+        json_option_string(snapshot.media_asset_id.as_deref()),
+        snapshot.readiness,
+        snapshot.invalidation_state,
+        snapshot.warp_marker_count,
+        snapshot.transient_anchor_count,
+        snapshot.tempo_assist_posture,
+        json_option_f64(snapshot.tempo_assist_hint_bpm),
+        snapshot.tempo_assist_hint_source,
+        json_option_string(snapshot.last_error.as_deref()),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_marker_analysis_clip_snapshot_vec(
+    snapshots: &[RuntimeMarkerAnalysisClipSnapshot],
+) -> String {
+    let joined = snapshots
+        .iter()
+        .map(json_runtime_marker_analysis_clip_snapshot)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("[{joined}]")
+}
+
+fn json_runtime_marker_analysis_snapshot(snapshot: &RuntimeMarkerAnalysisSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_count\":{},",
+            "\"ready_clip_count\":{},",
+            "\"pending_media_clip_count\":{},",
+            "\"degraded_clip_count\":{},",
+            "\"invalidated_clip_count\":{},",
+            "\"unsupported_clip_count\":{},",
+            "\"tempo_assist_ready_clip_count\":{},",
+            "\"warp_marker_count\":{},",
+            "\"transient_anchor_count\":{},",
+            "\"clips\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count,
+        snapshot.unsupported_clip_count,
+        snapshot.tempo_assist_ready_clip_count,
+        snapshot.warp_marker_count,
+        snapshot.transient_anchor_count,
+        json_runtime_marker_analysis_clip_snapshot_vec(&snapshot.clips),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_transform_artifact_clip_snapshot(
+    snapshot: &RuntimeTransformArtifactClipSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_id\":{},",
+            "\"media_asset_id\":{},",
+            "\"artifact_identity\":{},",
+            "\"readiness\":{},",
+            "\"invalidation_state\":{},",
+            "\"reuse_state\":{},",
+            "\"cached_media_ready\":{},",
+            "\"stretch_engine_class\":{},",
+            "\"stretch_readiness\":{},",
+            "\"marker_analysis_readiness\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.clip_id.as_str())),
+        json_option_string(snapshot.media_asset_id.as_deref()),
+        json_option_string(Some(snapshot.artifact_identity.as_str())),
+        json_string(&format!("{:?}", snapshot.readiness)),
+        json_string(&format!("{:?}", snapshot.invalidation_state)),
+        json_string(&format!("{:?}", snapshot.reuse_state)),
+        snapshot.cached_media_ready,
+        json_string(&format!("{:?}", snapshot.stretch_engine_class)),
+        json_string(&format!("{:?}", snapshot.stretch_readiness)),
+        json_string(&format!("{:?}", snapshot.marker_analysis_readiness)),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_transform_artifact_snapshot(snapshot: &RuntimeTransformArtifactSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_count\":{},",
+            "\"ready_clip_count\":{},",
+            "\"pending_media_clip_count\":{},",
+            "\"degraded_clip_count\":{},",
+            "\"invalidated_clip_count\":{},",
+            "\"unsupported_clip_count\":{},",
+            "\"cached_media_ready_clip_count\":{},",
+            "\"reusable_clip_count\":{},",
+            "\"requires_render_clip_count\":{},",
+            "\"guarded_reuse_clip_count\":{},",
+            "\"clips\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_media_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count,
+        snapshot.unsupported_clip_count,
+        snapshot.cached_media_ready_clip_count,
+        snapshot.reusable_clip_count,
+        snapshot.requires_render_clip_count,
+        snapshot.guarded_reuse_clip_count,
+        format!(
+            "[{}]",
+            snapshot
+                .clips
+                .iter()
+                .map(json_runtime_transform_artifact_clip_snapshot)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_preview_transform_clip_snapshot(
+    snapshot: &RuntimePreviewTransformClipSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_id\":{},",
+            "\"media_asset_id\":{},",
+            "\"service_class\":{},",
+            "\"readiness\":{},",
+            "\"degraded_state\":{},",
+            "\"fallback_kind\":{},",
+            "\"artifact_reuse_state\":{},",
+            "\"audition_active\":{},",
+            "\"scrub_supported\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(snapshot.clip_id.as_str())),
+        json_option_string(snapshot.media_asset_id.as_deref()),
+        json_string(&format!("{:?}", snapshot.service_class)),
+        json_string(&format!("{:?}", snapshot.readiness)),
+        json_string(&format!("{:?}", snapshot.degraded_state)),
+        json_string(&format!("{:?}", snapshot.fallback_kind)),
+        json_string(&format!("{:?}", snapshot.artifact_reuse_state)),
+        snapshot.audition_active,
+        snapshot.scrub_supported,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_preview_transform_service_snapshot(
+    snapshot: &RuntimePreviewTransformServiceSnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"clip_count\":{},",
+            "\"active_audition_clip_count\":{},",
+            "\"scrub_supported_clip_count\":{},",
+            "\"ready_clip_count\":{},",
+            "\"pending_clip_count\":{},",
+            "\"degraded_clip_count\":{},",
+            "\"invalidated_clip_count\":{},",
+            "\"unsupported_clip_count\":{},",
+            "\"stretch_aligned_clip_count\":{},",
+            "\"artifact_backed_clip_count\":{},",
+            "\"fallback_clip_count\":{},",
+            "\"clips\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.clip_count,
+        snapshot.active_audition_clip_count,
+        snapshot.scrub_supported_clip_count,
+        snapshot.ready_clip_count,
+        snapshot.pending_clip_count,
+        snapshot.degraded_clip_count,
+        snapshot.invalidated_clip_count,
+        snapshot.unsupported_clip_count,
+        snapshot.stretch_aligned_clip_count,
+        snapshot.artifact_backed_clip_count,
+        snapshot.fallback_clip_count,
+        format!(
+            "[{}]",
+            snapshot
+                .clips
+                .iter()
+                .map(json_runtime_preview_transform_clip_snapshot)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
 fn json_runtime_plugin_recall_snapshot(snapshot: &RuntimePluginRecallSnapshot) -> String {
     let lifecycle_state = snapshot
         .payload
@@ -14293,6 +20149,10 @@ fn json_runtime_plugin_format_coverage_record(
             "{{",
             "\"format\":{},",
             "\"discovered_type_count\":{},",
+            "\"complex_io_type_count\":{},",
+            "\"multi_output_instrument_count\":{},",
+            "\"bus_capable_fx_count\":{},",
+            "\"sidechain_capable_fx_count\":{},",
             "\"instrument_count\":{},",
             "\"audio_effect_count\":{},",
             "\"analyzer_count\":{},",
@@ -14304,6 +20164,7 @@ fn json_runtime_plugin_format_coverage_record(
             "\"accepts_midi_count\":{},",
             "\"supports_note_expression_count\":{},",
             "\"produces_midi_count\":{},",
+            "\"max_complex_io_port_group_count\":{},",
             "\"max_audio_bus_count\":{},",
             "\"max_parameter_count\":{},",
             "\"summary\":{}",
@@ -14311,6 +20172,10 @@ fn json_runtime_plugin_format_coverage_record(
         ),
         json_escape_string(&format!("{:?}", record.format)),
         record.discovered_type_count,
+        record.complex_io_type_count,
+        record.multi_output_instrument_count,
+        record.bus_capable_fx_count,
+        record.sidechain_capable_fx_count,
         record.instrument_count,
         record.audio_effect_count,
         record.analyzer_count,
@@ -14322,6 +20187,7 @@ fn json_runtime_plugin_format_coverage_record(
         record.accepts_midi_count,
         record.supports_note_expression_count,
         record.produces_midi_count,
+        record.max_complex_io_port_group_count,
         record.max_audio_bus_count,
         record.max_parameter_count,
         json_option_string(Some(record.summary.as_str())),
@@ -14356,13 +20222,22 @@ fn json_runtime_plugin_parity_coverage_record(record: &RuntimePluginFormatParity
             "{{",
             "\"format\":{},",
             "\"parity_band\":{},",
+            "\"linux_parity_band\":{},",
             "\"supported_platforms\":{},",
             "\"unsupported_platforms\":{},",
+            "\"linux_supported\":{},",
+            "\"linux_preferred_sandbox_outcome\":{},",
+            "\"linux_strict_sandbox_default\":{},",
             "\"discovered_type_count\":{},",
+            "\"prepare_capable_type_count\":{},",
+            "\"activate_capable_type_count\":{},",
             "\"sandbox_count\":{},",
+            "\"in_process_sandbox_count\":{},",
             "\"shared_sandbox_count\":{},",
             "\"isolated_sandbox_count\":{},",
             "\"ready_sandbox_count\":{},",
+            "\"restarting_sandbox_count\":{},",
+            "\"rebindable_sandbox_count\":{},",
             "\"degraded_sandbox_count\":{},",
             "\"faulted_sandbox_count\":{},",
             "\"quarantined_sandbox_count\":{},",
@@ -14374,13 +20249,28 @@ fn json_runtime_plugin_parity_coverage_record(record: &RuntimePluginFormatParity
         ),
         json_escape_string(&format!("{:?}", record.format)),
         json_escape_string(&format!("{:?}", record.parity_band)),
+        json_escape_string(&format!("{:?}", record.linux_parity_band)),
         json_runtime_plugin_host_platform_vec(&record.supported_platforms),
         json_runtime_plugin_host_platform_vec(&record.unsupported_platforms),
+        record.linux_supported,
+        json_option_string(
+            record
+                .linux_preferred_sandbox_outcome
+                .as_ref()
+                .map(|value| format!("{value:?}"))
+                .as_deref(),
+        ),
+        record.linux_strict_sandbox_default,
         record.discovered_type_count,
+        record.prepare_capable_type_count,
+        record.activate_capable_type_count,
         record.sandbox_count,
+        record.in_process_sandbox_count,
         record.shared_sandbox_count,
         record.isolated_sandbox_count,
         record.ready_sandbox_count,
+        record.restarting_sandbox_count,
+        record.rebindable_sandbox_count,
         record.degraded_sandbox_count,
         record.faulted_sandbox_count,
         record.quarantined_sandbox_count,
@@ -14399,6 +20289,10 @@ fn json_runtime_plugin_capability_coverage_summary(
             "{{",
             "\"discovered_format_count\":{},",
             "\"multi_format_catalog\":{},",
+            "\"complex_io_type_count\":{},",
+            "\"multi_output_instrument_count\":{},",
+            "\"bus_capable_fx_count\":{},",
+            "\"sidechain_capable_fx_count\":{},",
             "\"instrument_count\":{},",
             "\"audio_effect_count\":{},",
             "\"analyzer_count\":{},",
@@ -14419,6 +20313,7 @@ fn json_runtime_plugin_capability_coverage_summary(
             "\"supports_prepare_count\":{},",
             "\"supports_activate_count\":{},",
             "\"supports_reset_while_active_count\":{},",
+            "\"max_complex_io_port_group_count\":{},",
             "\"max_audio_bus_count\":{},",
             "\"max_parameter_count\":{},",
             "\"summary\":{}",
@@ -14426,6 +20321,10 @@ fn json_runtime_plugin_capability_coverage_summary(
         ),
         summary.discovered_format_count,
         summary.multi_format_catalog,
+        summary.complex_io_type_count,
+        summary.multi_output_instrument_count,
+        summary.bus_capable_fx_count,
+        summary.sidechain_capable_fx_count,
         summary.instrument_count,
         summary.audio_effect_count,
         summary.analyzer_count,
@@ -14446,8 +20345,62 @@ fn json_runtime_plugin_capability_coverage_summary(
         summary.supports_prepare_count,
         summary.supports_activate_count,
         summary.supports_reset_while_active_count,
+        summary.max_complex_io_port_group_count,
         summary.max_audio_bus_count,
         summary.max_parameter_count,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_port_class_vec(values: &[RuntimePluginPortClass]) -> String {
+    format!(
+        "[{}]",
+        values
+            .iter()
+            .map(|value| json_escape_string(&format!("{value:?}")))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_plugin_complex_io_summary(summary: &RuntimePluginComplexIoSummary) -> String {
+    let bus_capable_fx_class = summary
+        .bus_capable_fx_class
+        .map(|value| format!("{value:?}"));
+    format!(
+        concat!(
+            "{{",
+            "\"has_complex_topology\":{},",
+            "\"declared_port_classes\":{},",
+            "\"port_group_count\":{},",
+            "\"main_input_group_count\":{},",
+            "\"main_output_group_count\":{},",
+            "\"secondary_input_group_count\":{},",
+            "\"aux_input_group_count\":{},",
+            "\"aux_output_group_count\":{},",
+            "\"instrument_output_group_count\":{},",
+            "\"analysis_output_group_count\":{},",
+            "\"multi_output_instrument\":{},",
+            "\"bus_capable_fx_class\":{},",
+            "\"attachment_policy\":{},",
+            "\"fallback_outcome\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.has_complex_topology,
+        json_runtime_plugin_port_class_vec(&summary.declared_port_classes),
+        summary.port_group_count,
+        summary.main_input_group_count,
+        summary.main_output_group_count,
+        summary.secondary_input_group_count,
+        summary.aux_input_group_count,
+        summary.aux_output_group_count,
+        summary.instrument_output_group_count,
+        summary.analysis_output_group_count,
+        summary.multi_output_instrument,
+        json_option_string(bus_capable_fx_class.as_deref()),
+        json_option_string(Some(&format!("{:?}", summary.attachment_policy))),
+        json_option_string(Some(&format!("{:?}", summary.fallback_outcome))),
         json_option_string(Some(summary.summary.as_str())),
     )
 }
@@ -14479,6 +20432,8 @@ fn json_runtime_plugin_discovered_type_record(
             "\"version\":{},",
             "\"features\":{},",
             "\"default_io_layout\":{},",
+            "\"default_multichannel_io\":{},",
+            "\"complex_io_summary\":{},",
             "\"audio_bus_count\":{},",
             "\"parameter_count\":{},",
             "\"state_contract\":{},",
@@ -14495,6 +20450,8 @@ fn json_runtime_plugin_discovered_type_record(
         json_option_string(record.version.as_deref()),
         json_plugin_feature_vec(&record.features),
         json_plugin_io_layout(record.default_io_layout),
+        json_runtime_multichannel_io_summary(&record.default_multichannel_io),
+        json_runtime_plugin_complex_io_summary(&record.complex_io_summary),
         record.audio_bus_count,
         record.parameter_count,
         json_plugin_state_contract(record.state_contract),
@@ -14524,6 +20481,10 @@ fn json_runtime_plugin_chain_stage_snapshot(snapshot: &RuntimePluginChainStageSn
             "\"shared_boundary_member_count\":{},",
             "\"continuity_class\":\"{:?}\",",
             "\"rebindable\":{},",
+            "\"io_layout\":{},",
+            "\"complex_io_summary\":{},",
+            "\"secondary_input\":{},",
+            "\"spatial_execution\":{},",
             "\"lifecycle_state\":{},",
             "\"lifecycle_stage\":{},",
             "\"transport_stage\":{},",
@@ -14552,6 +20513,16 @@ fn json_runtime_plugin_chain_stage_snapshot(snapshot: &RuntimePluginChainStageSn
         snapshot.shared_boundary_member_count,
         snapshot.continuity_class,
         snapshot.rebindable,
+        json_runtime_multichannel_io_summary(&snapshot.io_layout),
+        json_runtime_plugin_complex_io_summary(&snapshot.complex_io_summary),
+        snapshot
+            .secondary_input
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_secondary_input_route_summary,),
+        snapshot
+            .spatial_execution
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_spatial_execution_summary,),
         json_option_string(lifecycle_state.as_deref()),
         json_option_string(lifecycle_stage.as_deref()),
         json_option_string(transport_stage.as_deref()),
@@ -14565,6 +20536,64 @@ fn json_runtime_plugin_chain_stage_snapshot(snapshot: &RuntimePluginChainStageSn
         snapshot.active_transport,
         json_string_vec(&snapshot.degraded_reasons),
         json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_spatial_execution_summary(summary: &RuntimeSpatialExecutionSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"node_id\":{},",
+            "\"adapter_class\":\"{:?}\",",
+            "\"execution_mode\":\"{:?}\",",
+            "\"target_environment\":\"{:?}\",",
+            "\"control_family\":\"{:?}\",",
+            "\"activation_policy\":\"{:?}\",",
+            "\"fallback_outcome\":{},",
+            "\"bed_class\":\"{:?}\",",
+            "\"object_role\":{},",
+            "\"object_count\":{},",
+            "\"mix_policy\":\"{:?}\",",
+            "\"render_scope\":\"{:?}\",",
+            "\"expanded_fallback_outcome\":{},",
+            "\"balance\":{},",
+            "\"input_layout\":{},",
+            "\"output_layout\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(summary.node_id.as_str())),
+        summary.adapter_class,
+        summary.execution_mode,
+        summary.target_environment,
+        summary.control_family,
+        summary.activation_policy,
+        json_option_string(
+            summary
+                .fallback_outcome
+                .map(|outcome| format!("{outcome:?}"))
+                .as_deref()
+        ),
+        summary.bed_class,
+        json_option_string(
+            summary
+                .object_role
+                .map(|role| format!("{role:?}"))
+                .as_deref()
+        ),
+        summary.object_count,
+        summary.mix_policy,
+        summary.render_scope,
+        json_option_string(
+            summary
+                .expanded_fallback_outcome
+                .map(|outcome| format!("{outcome:?}"))
+                .as_deref()
+        ),
+        json_option_string(summary.balance.as_deref()),
+        json_runtime_multichannel_layout_summary(&summary.input_layout),
+        json_runtime_multichannel_layout_summary(&summary.output_layout),
+        json_option_string(Some(summary.summary.as_str())),
     )
 }
 
@@ -15019,6 +21048,10 @@ fn json_runtime_metering_snapshot(snapshot: &RuntimeMeteringSnapshot) -> String 
             "\"bus_groups\":{},",
             "\"console_groups\":{},",
             "\"send_returns\":{},",
+            "\"bus_connection_count\":{},",
+            "\"auxiliary_path_count\":{},",
+            "\"bus_connections\":{},",
+            "\"auxiliary_paths\":{},",
             "\"summary\":{}",
             "}}"
         ),
@@ -15034,6 +21067,10 @@ fn json_runtime_metering_snapshot(snapshot: &RuntimeMeteringSnapshot) -> String 
         json_runtime_bus_group_meter_summary_vec(&snapshot.bus_groups),
         json_runtime_console_group_meter_summary_vec(&snapshot.console_groups),
         json_runtime_send_return_meter_summary_vec(&snapshot.send_returns),
+        snapshot.bus_connection_count,
+        snapshot.auxiliary_path_count,
+        json_runtime_bus_connection_summary_vec(&snapshot.bus_connections),
+        json_runtime_auxiliary_path_summary_vec(&snapshot.auxiliary_paths),
         json_option_string(Some(snapshot.summary.as_str())),
     )
 }
@@ -15053,12 +21090,29 @@ fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySum
             "\"bus_group_count\":{},",
             "\"send_return_group_count\":{},",
             "\"console_group_count\":{},",
+            "\"secondary_input_count\":{},",
+            "\"required_secondary_input_count\":{},",
+            "\"optional_secondary_input_count\":{},",
+            "\"disabled_secondary_input_count\":{},",
+            "\"terminal_fallback_secondary_input_count\":{},",
+            "\"bus_connection_count\":{},",
+            "\"auxiliary_path_count\":{},",
+            "\"spatial_node_count\":{},",
+            "\"active_spatial_node_count\":{},",
+            "\"bypassed_spatial_node_count\":{},",
+            "\"fallback_spatial_node_count\":{},",
+            "\"surround_bed_spatial_node_count\":{},",
+            "\"object_aware_spatial_node_count\":{},",
+            "\"expanded_fallback_spatial_node_count\":{},",
             "\"plugin_chain\":{},",
             "\"lanes\":{},",
             "\"track_lanes\":{},",
             "\"bus_groups\":{},",
             "\"console_groups\":{},",
             "\"send_returns\":{},",
+            "\"secondary_inputs\":{},",
+            "\"bus_connections\":{},",
+            "\"auxiliary_paths\":{},",
             "\"nodes\":{}",
             "}}"
         ),
@@ -15073,12 +21127,29 @@ fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySum
         summary.bus_group_count,
         summary.send_return_group_count,
         summary.console_group_count,
+        summary.secondary_input_count,
+        summary.required_secondary_input_count,
+        summary.optional_secondary_input_count,
+        summary.disabled_secondary_input_count,
+        summary.terminal_fallback_secondary_input_count,
+        summary.bus_connection_count,
+        summary.auxiliary_path_count,
+        summary.spatial_node_count,
+        summary.active_spatial_node_count,
+        summary.bypassed_spatial_node_count,
+        summary.fallback_spatial_node_count,
+        summary.surround_bed_spatial_node_count,
+        summary.object_aware_spatial_node_count,
+        summary.expanded_fallback_spatial_node_count,
         json_runtime_routed_plugin_chain_summary(&summary.plugin_chain),
         json_runtime_execution_topology_lanes(&summary.lanes),
         json_runtime_mixer_track_lanes(&summary.track_lanes),
         json_runtime_mixer_bus_groups(&summary.bus_groups),
         json_runtime_mixer_console_groups(&summary.console_groups),
         json_runtime_mixer_send_returns(&summary.send_returns),
+        json_runtime_secondary_input_route_summary_vec(&summary.secondary_inputs),
+        json_runtime_bus_connection_summary_vec(&summary.bus_connections),
+        json_runtime_auxiliary_path_summary_vec(&summary.auxiliary_paths),
         json_runtime_execution_topology_nodes(&summary.nodes),
     )
 }
@@ -15252,6 +21323,9 @@ fn json_runtime_plugin_event_snapshot(snapshot: &RuntimePluginEventSnapshot) -> 
             "\"last_batch_parameter_gesture_events\":{},",
             "\"last_batch_note_events\":{},",
             "\"last_batch_note_expression_events\":{},",
+            "\"last_batch_note_expression_pressure_events\":{},",
+            "\"last_batch_note_expression_timbre_events\":{},",
+            "\"last_batch_note_expression_tuning_events\":{},",
             "\"last_batch_midi_events\":{},",
             "\"total_events\":{},",
             "\"parameter_value_events\":{},",
@@ -15259,7 +21333,12 @@ fn json_runtime_plugin_event_snapshot(snapshot: &RuntimePluginEventSnapshot) -> 
             "\"parameter_gesture_events\":{},",
             "\"note_events\":{},",
             "\"note_expression_events\":{},",
+            "\"note_expression_pressure_events\":{},",
+            "\"note_expression_timbre_events\":{},",
+            "\"note_expression_tuning_events\":{},",
             "\"midi_events\":{},",
+            "\"mpe_posture\":{},",
+            "\"midi2_posture\":{},",
             "\"first_epoch\":{},",
             "\"last_epoch\":{},",
             "\"segment_count\":{},",
@@ -15276,6 +21355,9 @@ fn json_runtime_plugin_event_snapshot(snapshot: &RuntimePluginEventSnapshot) -> 
         snapshot.last_batch_parameter_gesture_events,
         snapshot.last_batch_note_events,
         snapshot.last_batch_note_expression_events,
+        snapshot.last_batch_note_expression_pressure_events,
+        snapshot.last_batch_note_expression_timbre_events,
+        snapshot.last_batch_note_expression_tuning_events,
         snapshot.last_batch_midi_events,
         snapshot.total_events,
         snapshot.parameter_value_events,
@@ -15283,7 +21365,12 @@ fn json_runtime_plugin_event_snapshot(snapshot: &RuntimePluginEventSnapshot) -> 
         snapshot.parameter_gesture_events,
         snapshot.note_events,
         snapshot.note_expression_events,
+        snapshot.note_expression_pressure_events,
+        snapshot.note_expression_timbre_events,
+        snapshot.note_expression_tuning_events,
         snapshot.midi_events,
+        json_string(&format!("{:?}", snapshot.mpe_posture)),
+        json_string(&format!("{:?}", snapshot.midi2_posture)),
         json_option_u64(snapshot.first_epoch),
         json_option_u64(snapshot.last_epoch),
         snapshot.segment_count,
@@ -15628,7 +21715,15 @@ fn json_runtime_planned_graph_nodes(nodes: &[RuntimePlannedGraphNode]) -> String
                         "\"console_group_id\":{},",
                         "\"send_return_id\":{},",
                         "\"input_bus_id\":{},",
-                        "\"output_bus_id\":{}",
+                        "\"output_bus_id\":{},",
+                        "\"input_channels\":{},",
+                        "\"output_channels\":{},",
+                        "\"input_layout\":{},",
+                        "\"output_layout\":{},",
+                        "\"input_bus_intent\":{},",
+                        "\"output_bus_intent\":{},",
+                        "\"secondary_input\":{},",
+                        "\"spatial_execution\":{}",
                         "}}"
                     ),
                     json_option_string(Some(node.node_id.as_str())),
@@ -15659,6 +21754,18 @@ fn json_runtime_planned_graph_nodes(nodes: &[RuntimePlannedGraphNode]) -> String
                     json_option_string(node.send_return_id.as_deref()),
                     json_option_string(Some(node.input_bus_id.as_str())),
                     json_option_string(Some(node.output_bus_id.as_str())),
+                    json_option_string(Some(&format!("{:?}", node.input_channels))),
+                    json_option_string(Some(&format!("{:?}", node.output_channels))),
+                    json_runtime_multichannel_layout_summary(&node.input_layout),
+                    json_runtime_multichannel_layout_summary(&node.output_layout),
+                    json_runtime_bus_intent(node.input_bus_intent),
+                    json_runtime_bus_intent(node.output_bus_intent),
+                    node.secondary_input
+                        .as_ref()
+                        .map_or_else(|| "null".into(), json_runtime_secondary_input_route_summary,),
+                    node.spatial_execution
+                        .as_ref()
+                        .map_or_else(|| "null".into(), json_runtime_spatial_execution_summary,),
                 )
             })
             .collect::<Vec<_>>()
@@ -15841,6 +21948,14 @@ fn json_runtime_execution_topology_nodes(nodes: &[RuntimeExecutionNodeSummary]) 
                         "\"send_return_id\":{},",
                         "\"input_bus_id\":{},",
                         "\"output_bus_id\":{},",
+                        "\"input_channels\":{},",
+                        "\"output_channels\":{},",
+                        "\"input_layout\":{},",
+                        "\"output_layout\":{},",
+                        "\"input_bus_intent\":{},",
+                        "\"output_bus_intent\":{},",
+                        "\"secondary_input\":{},",
+                        "\"spatial_execution\":{},",
                         "\"plugin_sandbox_id\":{},",
                         "\"plugin_recall_state\":{},",
                         "\"plugin_recall\":{},",
@@ -15879,6 +21994,18 @@ fn json_runtime_execution_topology_nodes(nodes: &[RuntimeExecutionNodeSummary]) 
                     json_option_string(node.send_return_id.as_deref()),
                     json_option_string(Some(node.input_bus_id.as_str())),
                     json_option_string(Some(node.output_bus_id.as_str())),
+                    json_option_string(Some(&format!("{:?}", node.input_channels))),
+                    json_option_string(Some(&format!("{:?}", node.output_channels))),
+                    json_runtime_multichannel_layout_summary(&node.input_layout),
+                    json_runtime_multichannel_layout_summary(&node.output_layout),
+                    json_runtime_bus_intent(node.input_bus_intent),
+                    json_runtime_bus_intent(node.output_bus_intent),
+                    node.secondary_input
+                        .as_ref()
+                        .map_or_else(|| "null".into(), json_runtime_secondary_input_route_summary,),
+                    node.spatial_execution
+                        .as_ref()
+                        .map_or_else(|| "null".into(), json_runtime_spatial_execution_summary,),
                     json_option_string(node.plugin_sandbox_id.as_deref()),
                     json_option_string(
                         node.plugin_recall_state
@@ -17569,6 +23696,8 @@ pub struct RuntimePluginDiscoveredTypeRecord {
     pub version: Option<String>,
     pub features: Vec<PluginFeature>,
     pub default_io_layout: PluginIoLayout,
+    pub default_multichannel_io: RuntimeMultichannelIoSummary,
+    pub complex_io_summary: RuntimePluginComplexIoSummary,
     pub audio_bus_count: usize,
     pub parameter_count: usize,
     pub state_contract: PluginStateContract,
@@ -17581,6 +23710,10 @@ pub struct RuntimePluginDiscoveredTypeRecord {
 pub struct RuntimePluginFormatCoverageRecord {
     pub format: PluginFormat,
     pub discovered_type_count: usize,
+    pub complex_io_type_count: usize,
+    pub multi_output_instrument_count: usize,
+    pub bus_capable_fx_count: usize,
+    pub sidechain_capable_fx_count: usize,
     pub instrument_count: usize,
     pub audio_effect_count: usize,
     pub analyzer_count: usize,
@@ -17592,6 +23725,7 @@ pub struct RuntimePluginFormatCoverageRecord {
     pub accepts_midi_count: usize,
     pub supports_note_expression_count: usize,
     pub produces_midi_count: usize,
+    pub max_complex_io_port_group_count: usize,
     pub max_audio_bus_count: usize,
     pub max_parameter_count: usize,
     pub summary: String,
@@ -17616,6 +23750,9 @@ pub struct RuntimePluginFormatPlatformCoverageRecord {
     pub format: PluginFormat,
     pub supported_platforms: Vec<RuntimePluginHostPlatform>,
     pub unsupported_platforms: Vec<RuntimePluginHostPlatform>,
+    pub linux_parity_band: RuntimePluginParityBand,
+    pub linux_preferred_sandbox_outcome: Option<RuntimePluginIsolationOutcome>,
+    pub linux_strict_sandbox_default: bool,
     pub summary: String,
 }
 
@@ -17623,13 +23760,22 @@ pub struct RuntimePluginFormatPlatformCoverageRecord {
 pub struct RuntimePluginFormatParityRecord {
     pub format: PluginFormat,
     pub parity_band: RuntimePluginParityBand,
+    pub linux_parity_band: RuntimePluginParityBand,
     pub supported_platforms: Vec<RuntimePluginHostPlatform>,
     pub unsupported_platforms: Vec<RuntimePluginHostPlatform>,
+    pub linux_supported: bool,
+    pub linux_preferred_sandbox_outcome: Option<RuntimePluginIsolationOutcome>,
+    pub linux_strict_sandbox_default: bool,
     pub discovered_type_count: usize,
+    pub prepare_capable_type_count: usize,
+    pub activate_capable_type_count: usize,
     pub sandbox_count: usize,
+    pub in_process_sandbox_count: usize,
     pub shared_sandbox_count: usize,
     pub isolated_sandbox_count: usize,
     pub ready_sandbox_count: usize,
+    pub restarting_sandbox_count: usize,
+    pub rebindable_sandbox_count: usize,
     pub degraded_sandbox_count: usize,
     pub faulted_sandbox_count: usize,
     pub quarantined_sandbox_count: usize,
@@ -17643,6 +23789,10 @@ pub struct RuntimePluginFormatParityRecord {
 pub struct RuntimePluginCapabilityCoverageSummary {
     pub discovered_format_count: usize,
     pub multi_format_catalog: bool,
+    pub complex_io_type_count: usize,
+    pub multi_output_instrument_count: usize,
+    pub bus_capable_fx_count: usize,
+    pub sidechain_capable_fx_count: usize,
     pub instrument_count: usize,
     pub audio_effect_count: usize,
     pub analyzer_count: usize,
@@ -17663,6 +23813,7 @@ pub struct RuntimePluginCapabilityCoverageSummary {
     pub supports_prepare_count: usize,
     pub supports_activate_count: usize,
     pub supports_reset_while_active_count: usize,
+    pub max_complex_io_port_group_count: usize,
     pub max_audio_bus_count: usize,
     pub max_parameter_count: usize,
     pub summary: String,
@@ -17786,6 +23937,10 @@ pub trait RuntimeObservationApi {
     fn get_tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot;
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
     fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot;
+    fn get_stretch_engine_snapshot(&self) -> RuntimeStretchEngineSnapshot;
+    fn get_marker_analysis_snapshot(&self) -> RuntimeMarkerAnalysisSnapshot;
+    fn get_transform_artifact_snapshot(&self) -> RuntimeTransformArtifactSnapshot;
+    fn get_preview_transform_snapshot(&self) -> RuntimePreviewTransformServiceSnapshot;
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
     fn get_plugin_event_snapshot(&self) -> RuntimePluginEventSnapshot;
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
@@ -17876,7 +24031,10 @@ pub trait RuntimeSupervisorApi {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use signal_hardware::{AudioSampleFormat, BackendHealth};
+    use crate::{RuntimeConfig, SignalRuntime};
+    use signal_hardware::{
+        AudioSampleFormat, BackendHealth, HardwareBackendIdentity, LinuxAudioBackendKind,
+    };
 
     fn host_io_summary(
         fallback_state: RuntimeHostClockFallbackState,
@@ -17887,13 +24045,34 @@ mod tests {
         restart_failure_count: u64,
         device_loss_count: u64,
     ) -> RuntimeHostIoSummary {
+        let linux_backend_identity = RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            HardwareBackendIdentity::CoreAudio,
+        );
+        let clock_domain = RuntimeHostClockDomain::SameClock;
+        let drift_state = RuntimeHostClockDriftState::Stable;
+        let discontinuity_state = RuntimeHostClockDiscontinuityState::Continuous;
+        let duplex_mismatch_state = RuntimeHostDuplexMismatchState::NotApplicable;
+        let endpoint_topology = RuntimeHostEndpointTopology::OutputOnly;
+        let partial_availability = false;
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio".to_string(),
+                linux_backend_identity,
+                linux_backend_portability:
+                    RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                        HardwareBackendIdentity::CoreAudio,
+                        false,
+                        backend_health,
+                        device_loss_count,
+                        restart_attempt_count,
+                        restart_failure_count,
+                    ),
                 device_id: "device:main".to_string(),
                 device_name: "Main Output".to_string(),
                 sample_rate: 48_000,
                 buffer_size: 256,
+                input_channels: 0,
                 output_channels: 2,
                 sample_format: AudioSampleFormat::F32,
                 simulated: false,
@@ -17926,14 +24105,45 @@ mod tests {
                 restart_policy: RuntimeHostRestartPolicy::HostMustRestart,
                 processing_sample_rate_hz: 48_000,
                 hardware_sample_rate_hz: 48_000,
-                clock_domain: RuntimeHostClockDomain::SameClock,
+                clock_domain,
                 fallback_state,
                 transition_state,
-                drift_state: RuntimeHostClockDriftState::Stable,
-                discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
-                duplex_mismatch_state: RuntimeHostDuplexMismatchState::NotApplicable,
-                endpoint_topology: RuntimeHostEndpointTopology::OutputOnly,
-                partial_availability: false,
+                drift_state,
+                discontinuity_state,
+                duplex_mismatch_state,
+                endpoint_topology,
+                linux_clocking_parity: RuntimeHostIoSummary::classify_linux_clocking_parity(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                ),
+                linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                ),
+                linux_endpoint_topology_parity:
+                    RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                        linux_backend_identity,
+                        backend_health,
+                        transition_state,
+                        discontinuity_state,
+                        duplex_mismatch_state,
+                        endpoint_topology,
+                        partial_availability,
+                    ),
+                partial_availability,
                 crossing_required: false,
                 callback_interval_ms: 5.333,
             },
@@ -17951,6 +24161,297 @@ mod tests {
             },
             runtime_graph_id_matches_pump: true,
         }
+    }
+
+    fn linux_host_io_summary(
+        backend_identity: HardwareBackendIdentity,
+        ownership: RuntimeHostLifecycleOwnership,
+        stream_state: RuntimeHostAudioStreamState,
+        backend_health: BackendHealth,
+        device_loss_count: u64,
+        restart_attempt_count: u64,
+        restart_failure_count: u64,
+    ) -> RuntimeHostIoSummary {
+        let linux_backend_identity =
+            RuntimeHostHardwareSummary::classify_linux_backend_identity(backend_identity);
+        let endpoint_topology = RuntimeHostEndpointTopology::Duplex;
+        RuntimeHostIoSummary {
+            hardware: RuntimeHostHardwareSummary {
+                backend_identity,
+                backend_name: match backend_identity {
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => "alsa",
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack) => "jack",
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => "pipewire",
+                    HardwareBackendIdentity::CoreAudio => "coreaudio",
+                    HardwareBackendIdentity::Unsupported => "unsupported",
+                }
+                .into(),
+                linux_backend_identity,
+                linux_backend_portability:
+                    RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                        backend_identity,
+                        true,
+                        backend_health,
+                        device_loss_count,
+                        restart_attempt_count,
+                        restart_failure_count,
+                    ),
+                device_id: format!("{:?}:device", linux_backend_identity),
+                device_name: format!("{:?} Device", linux_backend_identity),
+                sample_rate: 48_000,
+                buffer_size: 256,
+                input_channels: 2,
+                output_channels: 2,
+                sample_format: AudioSampleFormat::F32,
+                simulated: true,
+                backend_health,
+                xrun_count: 0,
+                callback_overrun_count: 0,
+                device_loss_count,
+                restart_attempt_count,
+                restart_failure_count,
+            },
+            audio_pump: RuntimeHostAudioPumpSummary {
+                stream_state,
+                transfer_policy: RuntimeHostAudioTransferPolicy {
+                    max_callback_frames: 256,
+                    max_transfer_channels: 2,
+                    zero_fill_unwritten_output: true,
+                },
+                callback_count: 8,
+                total_callback_frames: 2_048,
+                total_runtime_output_frames: 2_048,
+                copied_output_samples: 4_096,
+                zero_filled_output_samples: 0,
+                dropped_output_samples: 0,
+                last_callback_output_peak: Some(0.5),
+                last_runtime_graph_id: Some("graph:linux".into()),
+            },
+            clocking: RuntimeHostClockingSummary {
+                clock_source: match backend_identity {
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
+                        RuntimeHostClockSource::Internal
+                    }
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack) => {
+                        RuntimeHostClockSource::ExternalWordClock
+                    }
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
+                        RuntimeHostClockSource::Virtual
+                    }
+                    _ => RuntimeHostClockSource::Internal,
+                },
+                ownership,
+                restart_policy: match ownership {
+                    RuntimeHostLifecycleOwnership::HostDrivenCallback => {
+                        RuntimeHostRestartPolicy::HostMustRestart
+                    }
+                    RuntimeHostLifecycleOwnership::BackendManagedCallback => {
+                        RuntimeHostRestartPolicy::BackendMayRestart
+                    }
+                },
+                processing_sample_rate_hz: 48_000,
+                hardware_sample_rate_hz: 48_000,
+                clock_domain: RuntimeHostClockDomain::SameClock,
+                fallback_state: RuntimeHostClockFallbackState::Direct,
+                transition_state: RuntimeHostClockTransitionState::Stable,
+                drift_state: RuntimeHostClockDriftState::Stable,
+                discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+                duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
+                endpoint_topology,
+                linux_clocking_parity: RuntimeHostIoSummary::classify_linux_clocking_parity(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    RuntimeHostClockDomain::SameClock,
+                    RuntimeHostClockFallbackState::Direct,
+                    RuntimeHostClockTransitionState::Stable,
+                    RuntimeHostClockDriftState::Stable,
+                    RuntimeHostClockDiscontinuityState::Continuous,
+                ),
+                linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    RuntimeHostClockDomain::SameClock,
+                    RuntimeHostClockFallbackState::Direct,
+                    RuntimeHostClockTransitionState::Stable,
+                    RuntimeHostDuplexMismatchState::Aligned,
+                    endpoint_topology,
+                    false,
+                ),
+                linux_endpoint_topology_parity:
+                    RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                        linux_backend_identity,
+                        backend_health,
+                        RuntimeHostClockTransitionState::Stable,
+                        RuntimeHostClockDiscontinuityState::Continuous,
+                        RuntimeHostDuplexMismatchState::Aligned,
+                        endpoint_topology,
+                        false,
+                    ),
+                partial_availability: false,
+                crossing_required: false,
+                callback_interval_ms: 5.333,
+            },
+            latency: RuntimeHostLatencySummary {
+                input_latency_samples: Some(128),
+                output_latency_samples: 256,
+                round_trip_latency_samples: Some(384),
+                graph_latency_samples: 128,
+                estimated_output_latency_samples: 384,
+                estimated_round_trip_latency_samples: Some(512),
+                output_latency_ms: 5.333,
+                graph_latency_ms: 2.667,
+                estimated_output_latency_ms: 8.0,
+                estimated_round_trip_latency_ms: Some(10.667),
+            },
+            runtime_graph_id_matches_pump: true,
+        }
+    }
+
+    fn transport_session_summary(
+        current_state: TransportSessionState,
+        currently_attached: bool,
+        heartbeat_freshness: TransportHeartbeatFreshness,
+        dispatch_state: TransportDispatchState,
+        attach_events: usize,
+        detach_requested_events: usize,
+        detached_events: usize,
+    ) -> TransportSessionSummary {
+        TransportSessionSummary {
+            boundary_mode: TransportSessionBoundaryMode::HealthyPathVisible,
+            current_state,
+            currently_attached,
+            heartbeat_freshness,
+            dispatch_state,
+            current_attached_session_count: usize::from(currently_attached),
+            max_concurrent_attached_sessions: usize::from(currently_attached),
+            attach_events,
+            detach_requested_events,
+            detached_events,
+            detach_fault_events: 0,
+            heartbeat_requested_events: usize::from(matches!(
+                heartbeat_freshness,
+                TransportHeartbeatFreshness::Requested
+                    | TransportHeartbeatFreshness::Fresh
+                    | TransportHeartbeatFreshness::Missed
+            )),
+            heartbeat_responded_events: usize::from(matches!(
+                heartbeat_freshness,
+                TransportHeartbeatFreshness::Fresh
+            )),
+            heartbeat_missed_events: usize::from(matches!(
+                heartbeat_freshness,
+                TransportHeartbeatFreshness::Missed
+            )),
+            dispatch_requested_events: usize::from(matches!(
+                dispatch_state,
+                TransportDispatchState::Requested
+                    | TransportDispatchState::Completed
+                    | TransportDispatchState::TimedOut
+            )),
+            dispatch_completed_events: usize::from(matches!(
+                dispatch_state,
+                TransportDispatchState::Completed
+            )),
+            dispatch_timed_out_events: usize::from(matches!(
+                dispatch_state,
+                TransportDispatchState::TimedOut
+            )),
+            first_processing_epoch: None,
+            last_processing_epoch: None,
+            first_block_sequence: None,
+            last_block_sequence: None,
+            active_sandbox_id: None,
+            active_lease_id: None,
+            active_region_id: None,
+            active_block_sequence: None,
+            active_sessions: Vec::new(),
+            last_sandbox_id: None,
+            last_lease_id: None,
+            last_region_id: None,
+        }
+    }
+
+    #[test]
+    fn runtime_multichannel_layout_summary_maps_canonical_and_custom_roles() {
+        let stereo = RuntimeMultichannelLayoutSummary::from_channel_layout(ChannelLayout::Stereo);
+        assert_eq!(
+            stereo.canonical_layout,
+            Some(RuntimeCanonicalChannelLayout::Stereo)
+        );
+        assert_eq!(
+            stereo.channel_roles,
+            vec![
+                RuntimeChannelRole::FrontLeft,
+                RuntimeChannelRole::FrontRight
+            ]
+        );
+        assert!(!stereo.uses_custom_fallback);
+
+        let custom = RuntimeMultichannelLayoutSummary::from_channel_layout(ChannelLayout::Count(
+            signal_primitives::ChannelCount(7),
+        ));
+        assert_eq!(custom.canonical_layout, None);
+        assert_eq!(custom.channel_roles.len(), 7);
+        assert!(matches!(
+            custom.channel_roles.last(),
+            Some(RuntimeChannelRole::Discrete(6))
+        ));
+        assert!(custom.uses_custom_fallback);
+    }
+
+    #[test]
+    fn runtime_execution_topology_summary_carries_multichannel_layout_and_bus_intents() {
+        let snapshot = RuntimeEngineBlockSnapshot {
+            planned_nodes: vec![RuntimePlannedGraphNode {
+                node_id: "track-main".into(),
+                execution_class: GraphNodeExecutionClass::PluginBacked,
+                group: GraphNodePlanningGroup::InlineRealtime,
+                latency_samples: 32,
+                topology_role: GraphNodeTopologyRole::TrackLane,
+                track_lane_id: Some("track:main".into()),
+                bus_group_id: Some("bus:main".into()),
+                console_group_id: None,
+                send_return_id: None,
+                input_bus_id: "track:main-in".into(),
+                output_bus_id: "track:main-out".into(),
+                input_channels: ChannelLayout::Stereo,
+                output_channels: ChannelLayout::Count(signal_primitives::ChannelCount(6)),
+                input_layout: RuntimeMultichannelLayoutSummary::from_channel_layout(
+                    ChannelLayout::Stereo,
+                ),
+                output_layout: RuntimeMultichannelLayoutSummary::from_channel_layout(
+                    ChannelLayout::Count(signal_primitives::ChannelCount(6)),
+                ),
+                input_bus_intent: RuntimeBusIntent::MainProgram,
+                output_bus_intent: RuntimeBusIntent::MainProgram,
+                secondary_input: None,
+                spatial_execution: None,
+                plugin_sandbox_id: Some("sandbox:track-main".into()),
+            }],
+            lane_order: vec![GraphExecutionLane::Realtime],
+            ..RuntimeEngineBlockSnapshot::default()
+        };
+
+        let topology = RuntimeExecutionTopologySummary::from_snapshot(&snapshot);
+        assert_eq!(topology.node_count, 1);
+        assert_eq!(
+            topology.nodes[0].input_layout.canonical_layout,
+            Some(RuntimeCanonicalChannelLayout::Stereo)
+        );
+        assert_eq!(
+            topology.nodes[0].output_layout.canonical_layout,
+            Some(RuntimeCanonicalChannelLayout::Surround5_1)
+        );
+        assert_eq!(
+            topology.nodes[0].input_bus_intent,
+            RuntimeBusIntent::MainProgram
+        );
+        assert_eq!(
+            topology.nodes[0].output_bus_intent,
+            RuntimeBusIntent::MainProgram
+        );
     }
 
     #[test]
@@ -18009,6 +24510,18 @@ mod tests {
             snapshot.endpoint_topology,
             RuntimeHostEndpointTopology::OutputOnly
         );
+        assert_eq!(
+            snapshot.linux_clocking_parity,
+            RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            snapshot.linux_duplex_parity,
+            RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            snapshot.linux_endpoint_topology_parity,
+            RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
         assert!(!snapshot.partial_availability);
         assert!(snapshot.summary.contains("fallback=true"));
     }
@@ -18041,6 +24554,11 @@ mod tests {
             recovering.loopback_state,
             RuntimeExternalIoLoopbackState::Recovering
         );
+        assert_eq!(recovering.io_layout.input_layout.channel_count, 0);
+        assert_eq!(
+            recovering.io_layout.output_layout.canonical_layout,
+            Some(RuntimeCanonicalChannelLayout::Stereo)
+        );
 
         let failed = host_io_summary(
             RuntimeHostClockFallbackState::RecoveryConstrained,
@@ -18070,6 +24588,10 @@ mod tests {
         assert_eq!(
             failed.endpoint_topology,
             RuntimeHostEndpointTopology::OutputOnly
+        );
+        assert_eq!(
+            failed.io_layout.output_bus_intent,
+            RuntimeBusIntent::HardwareOutput
         );
     }
 
@@ -18109,6 +24631,18 @@ mod tests {
             RuntimeHostEndpointTopology::Duplex
         );
         assert_eq!(
+            snapshot.linux_clocking_parity,
+            RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            snapshot.linux_duplex_parity,
+            RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            snapshot.linux_endpoint_topology_parity,
+            RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
+        assert_eq!(
             snapshot.primary_role,
             RuntimeExternalIoPrimaryRole::ProgramDuplex
         );
@@ -18119,6 +24653,11 @@ mod tests {
         assert_eq!(
             snapshot.loopback_state,
             RuntimeExternalIoLoopbackState::Ready
+        );
+        assert_eq!(snapshot.io_layout.input_layout.channel_count, 0);
+        assert_eq!(
+            snapshot.io_layout.output_layout.canonical_layout,
+            Some(RuntimeCanonicalChannelLayout::Stereo)
         );
         assert!(!snapshot.partial_availability);
         assert!(snapshot.summary.contains("CrossClockManaged"));
@@ -18189,7 +24728,858 @@ mod tests {
             snapshot.endpoint_topology,
             RuntimeHostEndpointTopology::Unconfigured
         );
+        assert_eq!(
+            snapshot.linux_clocking_parity,
+            RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            snapshot.linux_duplex_parity,
+            RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            snapshot.linux_endpoint_topology_parity,
+            RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
         assert!(snapshot.summary.contains("runtime-unavailable"));
+    }
+
+    #[test]
+    fn runtime_external_midi_endpoint_graph_snapshot_distinguishes_unavailable_from_empty() {
+        let unavailable = RuntimeExternalMidiEndpointGraphSnapshot::unavailable();
+        assert_eq!(
+            unavailable.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Unavailable
+        );
+        assert_eq!(
+            unavailable.graph_state,
+            RuntimeExternalMidiGraphState::Unavailable
+        );
+        assert_eq!(unavailable.provider_name, "runtime-unavailable");
+        assert_eq!(unavailable.device_count, 0);
+        assert_eq!(unavailable.endpoint_count, 0);
+        assert!(unavailable.devices.is_empty());
+        assert!(unavailable.endpoints.is_empty());
+        assert!(unavailable.summary.contains("graph=Unavailable"));
+
+        let empty = RuntimeExternalMidiEndpointGraphSnapshot::empty("signal-host-local");
+        assert_eq!(
+            empty.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(empty.graph_state, RuntimeExternalMidiGraphState::Empty);
+        assert_eq!(empty.provider_name, "signal-host-local");
+        assert_eq!(empty.device_count, 0);
+        assert_eq!(empty.endpoint_count, 0);
+        assert_eq!(empty.active_route_count, 0);
+        assert!(empty.summary.contains("graph=Empty"));
+    }
+
+    #[test]
+    fn runtime_control_surface_snapshot_derives_from_external_midi_baselines() {
+        let unavailable = RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(
+            &RuntimeExternalMidiEndpointGraphSnapshot::unavailable(),
+        );
+        assert_eq!(
+            unavailable.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Unavailable
+        );
+        assert_eq!(
+            unavailable.graph_state,
+            RuntimeControlSurfaceGraphState::Unavailable
+        );
+        assert_eq!(unavailable.device_count, 0);
+
+        let empty = RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(
+            &RuntimeExternalMidiEndpointGraphSnapshot::empty("signal-host-local"),
+        );
+        assert_eq!(
+            empty.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(empty.graph_state, RuntimeControlSurfaceGraphState::Empty);
+        assert_eq!(empty.provider_name, "signal-host-local");
+        assert_eq!(empty.device_count, 0);
+
+        let capability = RuntimeExternalMidiEndpointCapabilitySummary {
+            supports_bounded_midi_input: true,
+            supports_bounded_midi_output: true,
+            supports_transport_clock: true,
+            supports_note_events: true,
+            supports_controller_events: true,
+            supports_note_pressure_expression: true,
+            supports_note_timbre_expression: false,
+            supports_note_tuning_expression: false,
+            supports_mpe: false,
+            midi2_posture: RuntimeControllerExpressionMidi2Posture::Unsupported,
+            control_surface_guarded: true,
+            summary:
+                "transport-clock=true controller-events=true pressure=true control-surface=guarded"
+                    .into(),
+        };
+        let derived = RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(
+            &RuntimeExternalMidiEndpointGraphSnapshot {
+                discovery_state: RuntimeExternalMidiDiscoveryState::Enumerated,
+                graph_state: RuntimeExternalMidiGraphState::Stable,
+                provider_name: "control-surface-provider".into(),
+                device_count: 1,
+                endpoint_count: 1,
+                input_endpoint_count: 1,
+                output_endpoint_count: 1,
+                duplex_endpoint_count: 1,
+                active_route_count: 1,
+                guarded_route_count: 1,
+                devices: vec![RuntimeExternalMidiDeviceDescriptor {
+                    device_id: "device:surface".into(),
+                    device_name: "Surface".into(),
+                    lifecycle_state: RuntimeExternalMidiDeviceLifecycleState::Discovered,
+                    endpoint_count: 1,
+                    summary: "surface device".into(),
+                }],
+                endpoints: vec![RuntimeExternalMidiEndpointDescriptor {
+                    endpoint_id: "endpoint:surface".into(),
+                    endpoint_name: "Surface Duplex".into(),
+                    device_id: "device:surface".into(),
+                    direction: RuntimeExternalMidiEndpointDirection::Duplex,
+                    lifecycle_state: RuntimeExternalMidiEndpointLifecycleState::Active,
+                    route_state: RuntimeExternalMidiRouteState::DuplexObserved,
+                    capability,
+                    summary: "surface endpoint".into(),
+                }],
+                summary: "control surface external midi".into(),
+            },
+        );
+        assert_eq!(
+            derived.graph_state,
+            RuntimeControlSurfaceGraphState::Guarded
+        );
+        assert_eq!(derived.device_count, 1);
+        assert_eq!(derived.mapped_device_count, 1);
+        assert_eq!(derived.feedback_ready_device_count, 0);
+        assert_eq!(derived.guarded_device_count, 1);
+        assert_eq!(
+            derived.devices[0].transport_posture,
+            RuntimeControlSurfaceTransportPosture::Guarded
+        );
+        assert_eq!(
+            derived.devices[0].mapping_posture,
+            RuntimeControlSurfaceMappingPosture::Guarded
+        );
+        assert_eq!(
+            derived.devices[0].feedback_readiness,
+            RuntimeControlSurfaceFeedbackReadiness::Guarded
+        );
+        assert!(derived.devices[0].capability.supports_widened_expression);
+    }
+
+    #[test]
+    fn runtime_advanced_hardware_snapshot_derives_from_control_surface_baselines() {
+        let unavailable = RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
+            &RuntimeControlSurfaceSnapshot::unavailable(),
+        );
+        assert_eq!(
+            unavailable.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Unavailable
+        );
+        assert_eq!(
+            unavailable.graph_state,
+            RuntimeAdvancedHardwareGraphState::Unavailable
+        );
+        assert_eq!(unavailable.device_count, 0);
+
+        let empty = RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
+            &RuntimeControlSurfaceSnapshot::empty("signal-host-local"),
+        );
+        assert_eq!(
+            empty.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(empty.graph_state, RuntimeAdvancedHardwareGraphState::Empty);
+        assert_eq!(empty.provider_name, "signal-host-local");
+        assert_eq!(empty.device_count, 0);
+
+        let advanced = RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
+            &RuntimeControlSurfaceSnapshot {
+                discovery_state: RuntimeExternalMidiDiscoveryState::Enumerated,
+                graph_state: RuntimeControlSurfaceGraphState::Guarded,
+                provider_name: "advanced-hardware-provider".into(),
+                device_count: 1,
+                mapped_device_count: 1,
+                feedback_ready_device_count: 0,
+                guarded_device_count: 1,
+                devices: vec![RuntimeControlSurfaceDeviceDescriptor {
+                    device_id: "device:surface".into(),
+                    device_name: "Surface".into(),
+                    transport_posture: RuntimeControlSurfaceTransportPosture::Guarded,
+                    mapping_posture: RuntimeControlSurfaceMappingPosture::Guarded,
+                    feedback_readiness: RuntimeControlSurfaceFeedbackReadiness::Guarded,
+                    capability: RuntimeControlSurfaceCapabilitySummary {
+                        supports_transport_control: true,
+                        supports_mapping_input: true,
+                        supports_feedback_output: true,
+                        supports_widened_expression: true,
+                        summary: "guarded control surface".into(),
+                    },
+                    summary: "guarded surface".into(),
+                }],
+                summary: "advanced control surface".into(),
+            },
+        );
+        assert_eq!(
+            advanced.graph_state,
+            RuntimeAdvancedHardwareGraphState::Guarded
+        );
+        assert_eq!(advanced.device_count, 1);
+        assert_eq!(advanced.portable_device_count, 0);
+        assert_eq!(advanced.guarded_device_count, 1);
+        assert_eq!(advanced.context_only_device_count, 0);
+        assert_eq!(advanced.denied_device_count, 0);
+        assert_eq!(advanced.feedback_channel_device_count, 1);
+        assert_eq!(
+            advanced.devices[0].scripting_safe_posture,
+            RuntimeScriptingSafeDevicePolicyPosture::Guarded
+        );
+        assert_eq!(
+            advanced.devices[0].feedback_channel_posture,
+            RuntimeGuardedFeedbackChannelPosture::Guarded
+        );
+        assert!(advanced.devices[0].capability.supports_display_feedback);
+        assert!(advanced.devices[0].capability.supports_bank_navigation);
+        assert!(advanced.devices[0].capability.supports_macro_triggers);
+        assert!(
+            advanced.devices[0]
+                .capability
+                .supports_device_state_observation
+        );
+        assert!(advanced.devices[0]
+            .capability
+            .action_classes
+            .contains(&RuntimeAdvancedHardwareActionClass::DisplayFeedback));
+        assert!(advanced.devices[0]
+            .capability
+            .action_classes
+            .contains(&RuntimeAdvancedHardwareActionClass::MacroTrigger));
+    }
+
+    #[test]
+    fn runtime_stretch_engine_snapshot_derives_from_clip_processing_baselines() {
+        let pipeline = RuntimeClipProcessingPipelineSnapshot {
+            clip_count: 4,
+            ready_clip_count: 3,
+            pending_media_clip_count: 0,
+            pending_warp_clip_count: 0,
+            invalid_clip_count: 1,
+            faded_clip_count: 0,
+            gain_shaped_clip_count: 0,
+            warped_clip_count: 3,
+            treatment_stage_count: 3,
+            clips: vec![
+                RuntimeClipProcessingSnapshot {
+                    clip_id: "clip:stretch-disabled".into(),
+                    media_asset_id: None,
+                    warp_mode: RuntimeWarpMode::Off,
+                    start_samples: 0,
+                    duration_samples: 64,
+                    fade_in: RuntimeClipFadeEnvelope::default(),
+                    fade_out: RuntimeClipFadeEnvelope::default(),
+                    fade_in_end_samples: 0,
+                    fade_out_start_samples: 64,
+                    clip_gain: RuntimeClipGainEnvelope::default(),
+                    treatment_stages: Vec::new(),
+                    realized_warp_ratio: None,
+                    project_tempo_source: None,
+                    project_tempo_segment_id: None,
+                    readiness: RuntimeClipProcessingReadiness::Ready,
+                    last_error: None,
+                    summary: "disabled clip".into(),
+                },
+                RuntimeClipProcessingSnapshot {
+                    clip_id: "clip:stretch-ratio".into(),
+                    media_asset_id: Some("asset:ratio".into()),
+                    warp_mode: RuntimeWarpMode::Repitch,
+                    start_samples: 0,
+                    duration_samples: 64,
+                    fade_in: RuntimeClipFadeEnvelope::default(),
+                    fade_out: RuntimeClipFadeEnvelope::default(),
+                    fade_in_end_samples: 0,
+                    fade_out_start_samples: 64,
+                    clip_gain: RuntimeClipGainEnvelope::default(),
+                    treatment_stages: vec![RuntimeClipProcessingStage::Warp],
+                    realized_warp_ratio: Some(0.75),
+                    project_tempo_source: Some(RuntimeTempoSource::TransportProjection),
+                    project_tempo_segment_id: None,
+                    readiness: RuntimeClipProcessingReadiness::Ready,
+                    last_error: None,
+                    summary: "ratio clip".into(),
+                },
+                RuntimeClipProcessingSnapshot {
+                    clip_id: "clip:stretch-sample-domain".into(),
+                    media_asset_id: Some("asset:sample-domain".into()),
+                    warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                    start_samples: 0,
+                    duration_samples: 64,
+                    fade_in: RuntimeClipFadeEnvelope::default(),
+                    fade_out: RuntimeClipFadeEnvelope::default(),
+                    fade_in_end_samples: 0,
+                    fade_out_start_samples: 64,
+                    clip_gain: RuntimeClipGainEnvelope::default(),
+                    treatment_stages: vec![RuntimeClipProcessingStage::Warp],
+                    realized_warp_ratio: Some(1.5),
+                    project_tempo_source: Some(RuntimeTempoSource::TransportProjection),
+                    project_tempo_segment_id: None,
+                    readiness: RuntimeClipProcessingReadiness::Ready,
+                    last_error: None,
+                    summary: "sample-domain clip".into(),
+                },
+                RuntimeClipProcessingSnapshot {
+                    clip_id: "clip:stretch-fallback".into(),
+                    media_asset_id: Some("asset:fallback".into()),
+                    warp_mode: RuntimeWarpMode::ElastiqueDraft,
+                    start_samples: 0,
+                    duration_samples: 64,
+                    fade_in: RuntimeClipFadeEnvelope::default(),
+                    fade_out: RuntimeClipFadeEnvelope::default(),
+                    fade_in_end_samples: 0,
+                    fade_out_start_samples: 64,
+                    clip_gain: RuntimeClipGainEnvelope::default(),
+                    treatment_stages: vec![RuntimeClipProcessingStage::Warp],
+                    realized_warp_ratio: Some(0.6),
+                    project_tempo_source: Some(RuntimeTempoSource::TransportProjection),
+                    project_tempo_segment_id: None,
+                    readiness: RuntimeClipProcessingReadiness::Invalid,
+                    last_error: Some("outside baseline support".into()),
+                    summary: "fallback clip".into(),
+                },
+            ],
+            summary: "clip processing stretch baseline".into(),
+        };
+
+        let stretch = RuntimeStretchEngineSnapshot::from_clip_processing_pipeline(&pipeline);
+
+        assert_eq!(stretch.clip_count, 4);
+        assert_eq!(stretch.disabled_clip_count, 1);
+        assert_eq!(stretch.ready_clip_count, 2);
+        assert_eq!(stretch.pending_media_clip_count, 0);
+        assert_eq!(stretch.pending_warp_clip_count, 0);
+        assert_eq!(stretch.degraded_clip_count, 1);
+        assert_eq!(stretch.sample_domain_clip_count, 1);
+        assert_eq!(stretch.ratio_only_clip_count, 1);
+        assert_eq!(stretch.fallback_clip_count, 1);
+        assert_eq!(
+            stretch.clips[0].engine_class,
+            RuntimeStretchEngineClass::Disabled
+        );
+        assert_eq!(
+            stretch.clips[1].engine_class,
+            RuntimeStretchEngineClass::RatioOnly
+        );
+        assert_eq!(stretch.clips[1].readiness, RuntimeStretchReadiness::Ready);
+        assert_eq!(
+            stretch.clips[2].engine_class,
+            RuntimeStretchEngineClass::SampleDomain
+        );
+        assert_eq!(stretch.clips[2].readiness, RuntimeStretchReadiness::Ready);
+        assert_eq!(
+            stretch.clips[3].engine_class,
+            RuntimeStretchEngineClass::Fallback
+        );
+        assert_eq!(
+            stretch.clips[3].readiness,
+            RuntimeStretchReadiness::Degraded
+        );
+        assert_eq!(
+            stretch.clips[3].fallback_kind,
+            RuntimeStretchFallbackKind::RatioOnly
+        );
+        assert!(stretch.summary.contains("sample_domain=1"));
+        assert!(stretch.summary.contains("fallback=1"));
+    }
+
+    #[test]
+    fn runtime_observation_report_render_json_surfaces_external_midi_snapshot() {
+        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 256));
+        let recorder = RuntimeEventRecorder::default();
+        let report = RuntimeObservationReport::capture(&runtime, &recorder)
+            .with_external_midi_snapshot(RuntimeExternalMidiEndpointGraphSnapshot::empty(
+                "signal-host-server",
+            ));
+
+        assert_eq!(
+            report.external_midi_snapshot.discovery_state,
+            RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report.external_midi_snapshot.graph_state,
+            RuntimeExternalMidiGraphState::Empty
+        );
+
+        let compact = report.render_compact();
+        assert!(compact.contains("external_midi=Idle/Empty"));
+
+        let json = report.render_json();
+        assert!(json.contains("\"external_midi_snapshot\":{"));
+        assert!(json.contains("\"control_surface_snapshot\":{"));
+        assert!(json.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(json.contains("\"stretch_engine_snapshot\":{\"clip_count\":0"));
+        assert!(json.contains("\"discovery_state\":\"Idle\""));
+        assert!(json.contains("\"graph_state\":\"Empty\""));
+        assert!(json.contains("\"provider_name\":\"signal-host-server\""));
+    }
+
+    #[test]
+    fn runtime_host_hardware_summary_classifies_linux_backend_baselines() {
+        let alsa = RuntimeHostHardwareSummary {
+            backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+            backend_name: "alsa".into(),
+            linux_backend_identity: RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+            ),
+            linux_backend_portability:
+                RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+                    false,
+                    BackendHealth::Healthy,
+                    0,
+                    0,
+                    0,
+                ),
+            device_id: "alsa:default-output".into(),
+            device_name: "ALSA Default Output".into(),
+            sample_rate: 48_000,
+            buffer_size: 256,
+            input_channels: 0,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            simulated: false,
+            backend_health: BackendHealth::Healthy,
+            xrun_count: 0,
+            callback_overrun_count: 0,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+        };
+        assert_eq!(
+            alsa.linux_backend_identity,
+            RuntimeLinuxAudioBackendIdentity::Alsa
+        );
+        assert_eq!(
+            alsa.linux_backend_portability,
+            RuntimeLinuxAudioBackendPortabilityBand::Portable
+        );
+
+        let jack = RuntimeHostHardwareSummary {
+            backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            backend_name: "jack".into(),
+            linux_backend_identity: RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            ),
+            linux_backend_portability:
+                RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                    HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+                    true,
+                    BackendHealth::Recovering,
+                    1,
+                    1,
+                    0,
+                ),
+            device_id: "jack:graph-main".into(),
+            device_name: "JACK Graph Main".into(),
+            sample_rate: 48_000,
+            buffer_size: 128,
+            input_channels: 2,
+            output_channels: 2,
+            sample_format: AudioSampleFormat::F32,
+            simulated: true,
+            backend_health: BackendHealth::Recovering,
+            xrun_count: 2,
+            callback_overrun_count: 0,
+            device_loss_count: 1,
+            restart_attempt_count: 1,
+            restart_failure_count: 0,
+        };
+        assert_eq!(
+            jack.linux_backend_identity,
+            RuntimeLinuxAudioBackendIdentity::Jack
+        );
+        assert_eq!(
+            jack.linux_backend_portability,
+            RuntimeLinuxAudioBackendPortabilityBand::Guarded
+        );
+
+        let not_linux = RuntimeHostHardwareSummary::classify_linux_backend_portability(
+            HardwareBackendIdentity::CoreAudio,
+            false,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        assert_eq!(
+            not_linux,
+            RuntimeLinuxAudioBackendPortabilityBand::Unsupported
+        );
+    }
+
+    #[test]
+    fn runtime_host_io_classifies_linux_clocking_duplex_and_endpoint_parity() {
+        let alsa_identity = RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_clocking_parity(
+                alsa_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDriftState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+            ),
+            RuntimeLinuxAudioBackendClockingParityBand::Portable
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_duplex_parity(
+                alsa_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            ),
+            RuntimeLinuxAudioBackendDuplexParityState::Aligned
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                alsa_identity,
+                BackendHealth::Healthy,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            ),
+            RuntimeLinuxAudioBackendEndpointTopologyParityState::Portable
+        );
+
+        let jack_identity = RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_clocking_parity(
+                jack_identity,
+                BackendHealth::Recovering,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::Aggregate,
+                RuntimeHostClockFallbackState::RuntimeResampled,
+                RuntimeHostClockTransitionState::EnteredAggregateClock,
+                RuntimeHostClockDriftState::AggregateManaged,
+                RuntimeHostClockDiscontinuityState::Reconfigured,
+            ),
+            RuntimeLinuxAudioBackendClockingParityBand::Guarded
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_duplex_parity(
+                jack_identity,
+                BackendHealth::Recovering,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::Aggregate,
+                RuntimeHostClockFallbackState::RuntimeResampled,
+                RuntimeHostClockTransitionState::EnteredAggregateClock,
+                RuntimeHostDuplexMismatchState::CrossClockDiverged,
+                RuntimeHostEndpointTopology::Aggregate,
+                false,
+            ),
+            RuntimeLinuxAudioBackendDuplexParityState::Guarded
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                jack_identity,
+                BackendHealth::Recovering,
+                RuntimeHostClockTransitionState::EnteredAggregateClock,
+                RuntimeHostClockDiscontinuityState::Reconfigured,
+                RuntimeHostDuplexMismatchState::CrossClockDiverged,
+                RuntimeHostEndpointTopology::Aggregate,
+                false,
+            ),
+            RuntimeLinuxAudioBackendEndpointTopologyParityState::Guarded
+        );
+
+        let not_linux_identity = RuntimeHostHardwareSummary::classify_linux_backend_identity(
+            HardwareBackendIdentity::CoreAudio,
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_clocking_parity(
+                not_linux_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDriftState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+            ),
+            RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_duplex_parity(
+                not_linux_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            ),
+            RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                not_linux_identity,
+                BackendHealth::Healthy,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            ),
+            RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
+    }
+
+    #[test]
+    fn runtime_linux_backend_session_snapshot_classifies_live_ownership_baselines() {
+        let alsa = RuntimeLinuxBackendSessionSnapshot::from_host_io(&linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+            RuntimeHostLifecycleOwnership::HostDrivenCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        ));
+        assert_eq!(
+            alsa.backend_identity,
+            RuntimeLinuxAudioBackendIdentity::Alsa
+        );
+        assert_eq!(
+            alsa.ownership,
+            RuntimeLinuxBackendSessionOwnership::HostBrokeredCallback
+        );
+        assert_eq!(
+            alsa.lifecycle_state,
+            RuntimeLinuxBackendSessionLifecycleState::Running
+        );
+        assert_eq!(
+            alsa.device_claim_posture,
+            RuntimeLinuxBackendDeviceClaimPosture::DirectClaim
+        );
+        assert_eq!(
+            alsa.session_role,
+            RuntimeLinuxBackendSessionRole::PrimaryAudioIo
+        );
+        assert_eq!(
+            alsa.ownership_fallback,
+            RuntimeLinuxBackendOwnershipFallbackState::Direct
+        );
+
+        let jack = RuntimeLinuxBackendSessionSnapshot::from_host_io(&linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        ));
+        assert_eq!(
+            jack.backend_identity,
+            RuntimeLinuxAudioBackendIdentity::Jack
+        );
+        assert_eq!(
+            jack.ownership,
+            RuntimeLinuxBackendSessionOwnership::BackendManagedGraph
+        );
+        assert_eq!(
+            jack.device_claim_posture,
+            RuntimeLinuxBackendDeviceClaimPosture::SharedGraph
+        );
+        assert_eq!(
+            jack.ownership_fallback,
+            RuntimeLinuxBackendOwnershipFallbackState::BackendManagedGuarded
+        );
+
+        let pipewire_recovering =
+            RuntimeLinuxBackendSessionSnapshot::from_host_io(&linux_host_io_summary(
+                HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+                RuntimeHostLifecycleOwnership::BackendManagedCallback,
+                RuntimeHostAudioStreamState::Faulted,
+                BackendHealth::Recovering,
+                1,
+                1,
+                1,
+            ));
+        assert_eq!(
+            pipewire_recovering.backend_identity,
+            RuntimeLinuxAudioBackendIdentity::PipeWire
+        );
+        assert_eq!(
+            pipewire_recovering.lifecycle_state,
+            RuntimeLinuxBackendSessionLifecycleState::Recovering
+        );
+        assert_eq!(
+            pipewire_recovering.device_claim_posture,
+            RuntimeLinuxBackendDeviceClaimPosture::Lost
+        );
+        assert_eq!(
+            pipewire_recovering.session_role,
+            RuntimeLinuxBackendSessionRole::FallbackContinuation
+        );
+        assert_eq!(
+            pipewire_recovering.ownership_fallback,
+            RuntimeLinuxBackendOwnershipFallbackState::RecoveryConstrained
+        );
+    }
+
+    #[test]
+    fn runtime_jack_coordination_snapshot_derives_from_linux_session_and_transport_baselines() {
+        let not_jack = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+            &linux_host_io_summary(
+                HardwareBackendIdentity::CoreAudio,
+                RuntimeHostLifecycleOwnership::HostDrivenCallback,
+                RuntimeHostAudioStreamState::Running,
+                BackendHealth::Healthy,
+                0,
+                0,
+                0,
+            ),
+            &transport_session_summary(
+                TransportSessionState::Detached,
+                false,
+                TransportHeartbeatFreshness::Unknown,
+                TransportDispatchState::Idle,
+                0,
+                0,
+                0,
+            ),
+        );
+        assert_eq!(
+            not_jack.transport_posture,
+            RuntimeJackTransportPosture::NotJack
+        );
+        assert_eq!(
+            not_jack.graph_state,
+            RuntimeJackGraphCoordinationState::NotJack
+        );
+        assert_eq!(not_jack.client_role, RuntimeJackClientRole::NotJack);
+        assert_eq!(
+            not_jack.guarded_state,
+            RuntimeJackGuardedCoordinationState::NotJack
+        );
+
+        let detached = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+            &linux_host_io_summary(
+                HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+                RuntimeHostLifecycleOwnership::BackendManagedCallback,
+                RuntimeHostAudioStreamState::Running,
+                BackendHealth::Healthy,
+                0,
+                0,
+                0,
+            ),
+            &transport_session_summary(
+                TransportSessionState::Detached,
+                false,
+                TransportHeartbeatFreshness::Unknown,
+                TransportDispatchState::Idle,
+                0,
+                0,
+                0,
+            ),
+        );
+        assert_eq!(
+            detached.transport_posture,
+            RuntimeJackTransportPosture::Detached
+        );
+        assert_eq!(
+            detached.graph_state,
+            RuntimeJackGraphCoordinationState::AttachedGuarded
+        );
+        assert_eq!(detached.client_role, RuntimeJackClientRole::PrimaryAudioIo);
+        assert_eq!(
+            detached.guarded_state,
+            RuntimeJackGuardedCoordinationState::GraphGuarded
+        );
+
+        let following = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+            &linux_host_io_summary(
+                HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+                RuntimeHostLifecycleOwnership::BackendManagedCallback,
+                RuntimeHostAudioStreamState::Running,
+                BackendHealth::Healthy,
+                0,
+                0,
+                0,
+            ),
+            &transport_session_summary(
+                TransportSessionState::AttachActive,
+                true,
+                TransportHeartbeatFreshness::Fresh,
+                TransportDispatchState::Completed,
+                1,
+                0,
+                0,
+            ),
+        );
+        assert_eq!(
+            following.transport_posture,
+            RuntimeJackTransportPosture::FollowingExternal
+        );
+        assert_eq!(
+            following.client_role,
+            RuntimeJackClientRole::TransportFollower
+        );
+        assert_eq!(
+            following.guarded_state,
+            RuntimeJackGuardedCoordinationState::TransportGuarded
+        );
+
+        let recovering = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+            &linux_host_io_summary(
+                HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+                RuntimeHostLifecycleOwnership::BackendManagedCallback,
+                RuntimeHostAudioStreamState::Faulted,
+                BackendHealth::Recovering,
+                1,
+                1,
+                0,
+            ),
+            &transport_session_summary(
+                TransportSessionState::DetachFaulted,
+                true,
+                TransportHeartbeatFreshness::Missed,
+                TransportDispatchState::TimedOut,
+                2,
+                1,
+                1,
+            ),
+        );
+        assert_eq!(
+            recovering.transport_posture,
+            RuntimeJackTransportPosture::Guarded
+        );
+        assert_eq!(
+            recovering.graph_state,
+            RuntimeJackGraphCoordinationState::Recovering
+        );
+        assert_eq!(
+            recovering.guarded_state,
+            RuntimeJackGuardedCoordinationState::Recovering
+        );
     }
 
     #[test]

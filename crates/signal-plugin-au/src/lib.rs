@@ -146,18 +146,23 @@ impl AuHostAdapter {
             return Vec::new();
         }
 
-        ["plugin:au:instrument", "plugin:au:utility"]
-            .into_iter()
-            .filter_map(|plugin_type_id| {
-                let mut discovered = self.discover_plugin_type(plugin_type_id)?;
-                discovered.bundle_root = format!(
-                    "{}/{}",
-                    matched_roots[0],
-                    au_fixture_bundle_name(plugin_type_id)
-                );
-                Some(discovered)
-            })
-            .collect()
+        [
+            "plugin:au:instrument",
+            "plugin:au:multiout-instrument",
+            "plugin:au:utility",
+            "plugin:au:bus-fx",
+        ]
+        .into_iter()
+        .filter_map(|plugin_type_id| {
+            let mut discovered = self.discover_plugin_type(plugin_type_id)?;
+            discovered.bundle_root = format!(
+                "{}/{}",
+                matched_roots[0],
+                au_fixture_bundle_name(plugin_type_id)
+            );
+            Some(discovered)
+        })
+        .collect()
     }
 
     pub fn instantiate_plugin(
@@ -217,17 +222,31 @@ fn known_root_matches(known_roots: &[String], root: &str) -> bool {
 fn au_fixture_bundle_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:au:instrument" => "Signal Instrument.component",
+        "plugin:au:multiout-instrument" => "Signal Multi Output Instrument.component",
         "plugin:au:utility" => "Signal Utility.component",
+        "plugin:au:bus-fx" => "Signal Bus FX.component",
         _ => "Signal Unknown.component",
     }
 }
 
 fn au_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
     match plugin_type_id {
+        "plugin:au:multiout-instrument" => PluginIoLayout {
+            audio_inputs: 0,
+            audio_outputs: 6,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        },
         "plugin:au:instrument" => PluginIoLayout {
             audio_inputs: 0,
             audio_outputs: 2,
             midi_inputs: 1,
+            midi_outputs: 0,
+        },
+        "plugin:au:bus-fx" => PluginIoLayout {
+            audio_inputs: 4,
+            audio_outputs: 4,
+            midi_inputs: 0,
             midi_outputs: 0,
         },
         "plugin:au:utility" => PluginIoLayout {
@@ -248,14 +267,19 @@ fn au_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
 fn au_fixture_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:au:instrument" => "Signal Instrument AU Plugin",
+        "plugin:au:multiout-instrument" => "Signal Multi Output Instrument AU Plugin",
         "plugin:au:utility" => "Signal Utility AU Plugin",
+        "plugin:au:bus-fx" => "Signal Bus FX AU Plugin",
         _ => "Signal Generic AU Plugin",
     }
 }
 
 fn au_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     match plugin_type_id {
-        "plugin:au:instrument" => vec![PluginFeature::Instrument, PluginFeature::Analyzer],
+        "plugin:au:instrument" | "plugin:au:multiout-instrument" => {
+            vec![PluginFeature::Instrument, PluginFeature::Analyzer]
+        }
+        "plugin:au:bus-fx" => vec![PluginFeature::AudioEffect, PluginFeature::Utility],
         "plugin:au:utility" => vec![PluginFeature::AudioEffect, PluginFeature::Utility],
         _ => vec![PluginFeature::Utility],
     }
@@ -323,7 +347,9 @@ fn au_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> Plu
 fn au_discovered_plugin_type(plugin_type_id: &str) -> Option<AuDiscoveredPluginType> {
     let (component_type, component_subtype, manufacturer_code) = match plugin_type_id {
         "plugin:au:instrument" => ("aumu", "sigi", "sigl"),
+        "plugin:au:multiout-instrument" => ("aumu", "sigm", "sigl"),
         "plugin:au:utility" => ("aufx", "sigu", "sigl"),
+        "plugin:au:bus-fx" => ("aufx", "sigb", "sigl"),
         _ => return None,
     };
     let default_io_layout = au_default_io_layout(plugin_type_id);
@@ -374,11 +400,17 @@ mod tests {
                 String::from("/Library/Audio/Plug-Ins/Components"),
             ],
         );
-        assert_eq!(discovered.len(), 2);
+        assert_eq!(discovered.len(), 4);
         assert_eq!(discovered[0].descriptor.format, PluginFormat::Au);
         assert!(discovered
             .iter()
             .any(|plugin| plugin.plugin_type_id.0 == "plugin:au:instrument"));
+        assert!(discovered
+            .iter()
+            .any(|plugin| plugin.plugin_type_id.0 == "plugin:au:multiout-instrument"));
+        assert!(discovered
+            .iter()
+            .any(|plugin| plugin.plugin_type_id.0 == "plugin:au:bus-fx"));
         assert!(discovered.iter().all(|plugin| plugin
             .bundle_root
             .starts_with("~/Library/Audio/Plug-Ins/Components/")));

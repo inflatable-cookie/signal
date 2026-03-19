@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-16
+Updated: 2026-03-19
 
 ## Why this section matters now
 
@@ -24,7 +24,7 @@ Use this section for:
 
 ## Current posture
 
-`g06` is now complete and `g07` is now the active generation.
+`g06` and `g07` are now complete and `g08` is now the active generation.
 `g01` established the Rust workspace, engine, host/device
 path, and plugin/runtime baseline; `g02` completed the first reusable DSP and
 deep-analysis expansion on top of that foundation; `g03` completed the next
@@ -35,7 +35,9 @@ downstream-automation, and generation-closeout queue; `g06` then closed the
 next deeper Signal-owned runway around runtime recovery, instrumentation,
 plugin-format breadth, MIDI/event expansion, hardware and external-I/O depth,
 media-service depth, and shared acceptance evidence that tangibly moved
-Loophole forward; and `g07` is now the active feature-expansion queue.
+Loophole forward; `g07` then closed the bounded feature-expansion queue around
+routing, Linux breadth, control-surface substrate, and sample-domain transform
+services; and `g08` is now the active live-ownership and workflow-depth queue.
 
 The previously completed continuation runway was:
 
@@ -82,12 +84,20 @@ The latest completed continuation runway was:
 - media indexing, waveform analysis, preview, and metadata services
 - fault injection, long-session soak, and Loophole-facing runtime readiness
 
-The newly active continuation runway is:
+The newly completed continuation runway was:
 
 - spatial, multichannel, sidechain, and complex plugin-I/O depth
 - LV2 plus deeper Linux plugin and hardware backend breadth
 - external MIDI, control-surface, and advanced hardware device substrate
 - fuller sample-domain time-stretch and transform-service depth
+
+The newly active continuation runway is:
+
+- live Linux audio backend ownership and session lifecycle depth
+- deeper LV2, complex plugin-I/O, and backend-native protocol breadth
+- immersive routing, room-policy, and richer device-protocol substrate
+- preview-device, audition, and product-adjacent workflow services that remain
+  runtime-owned
 
 The deferred continuation scope after `g06` is:
 
@@ -102,6 +112,6 @@ The deferred continuation scope after `g06` is:
 
 ## Next Task
 
-Continue `g07.001` with Batch 1.2 by threading the canonical multichannel
-layout and channel-role meaning through runtime-owned topology, hardware, and
-plugin-facing receipts before the public proof batch closes the milestone.
+Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
+session-role, device-claim, and stream-policy parity meaning on top of the
+closed live Linux ownership and JACK coordination seams.

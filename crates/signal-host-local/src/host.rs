@@ -40,8 +40,8 @@ use signal_runtime::{
     RuntimeHostClockTransitionState, RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState,
     RuntimeHostEndpointTopology, RuntimeHostHardwareSummary, RuntimeHostIoSummary,
     RuntimeHostLatencySummary, RuntimeHostObservationReport, RuntimeHostSupervisorReport,
-    RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeObservationApi,
-    RuntimeObservationDiagnostics, RuntimeObservationReport,
+    RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeMultichannelIoSummary,
+    RuntimeObservationApi, RuntimeObservationDiagnostics, RuntimeObservationReport,
     RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
     RuntimeOfflinePluginDelegatedExecutionReceipt,
     RuntimeOfflinePluginDelegatedExecutionStageReceipt,
@@ -50,8 +50,9 @@ use signal_runtime::{
     RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
     RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
     RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
-    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord, RuntimePluginDispatchState,
-    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+    RuntimeOfflineRenderResult, RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginDispatchState, RuntimePluginFormatPlatformCoverageRecord,
+    RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginParityBand,
     RuntimePreworkServicePressure, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
     RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
@@ -244,6 +245,7 @@ pub struct LocalHardwareSummary {
     pub device_name: String,
     pub sample_rate: u32,
     pub buffer_size: usize,
+    pub input_channels: u16,
     pub output_channels: u16,
     pub sample_format: AudioSampleFormat,
     pub lifecycle: HardwareLifecycleContract,
@@ -466,6 +468,11 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
         version: descriptor.version.clone(),
         features: descriptor.features.clone(),
         default_io_layout,
+        default_multichannel_io: RuntimeMultichannelIoSummary::for_plugin_io(default_io_layout),
+        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
+            &descriptor.features,
+            default_io_layout,
+        ),
         audio_bus_count: descriptor.audio_buses.len(),
         parameter_count: descriptor.parameters.len(),
         state_contract: descriptor.state_contract,
@@ -507,7 +514,12 @@ fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformC
                 RuntimePluginHostPlatform::Windows,
             ],
             unsupported_platforms: Vec::new(),
-            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -517,7 +529,12 @@ fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformC
                 RuntimePluginHostPlatform::Windows,
             ],
             unsupported_platforms: Vec::new(),
-            summary: "platforms=MacOs/Linux/Windows unsupported=none".into(),
+            linux_parity_band: RuntimePluginParityBand::Portable,
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
+            linux_strict_sandbox_default: true,
+            summary:
+                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
+                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Au,
@@ -526,7 +543,10 @@ fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformC
                 RuntimePluginHostPlatform::Linux,
                 RuntimePluginHostPlatform::Windows,
             ],
-            summary: "platforms=MacOs unsupported=Linux/Windows".into(),
+            linux_parity_band: RuntimePluginParityBand::Unsupported,
+            linux_preferred_sandbox_outcome: None,
+            linux_strict_sandbox_default: false,
+            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
         },
     ]
 }
@@ -1632,6 +1652,7 @@ impl LocalRuntimeHost {
                 device_name: hardware_stream.device.name.clone(),
                 sample_rate: hardware_stream.sample_rate.0,
                 buffer_size: hardware_stream.buffer_size,
+                input_channels: hardware_stream.input_channels,
                 output_channels: hardware_stream.output_channels,
                 sample_format: hardware_stream.sample_format,
                 lifecycle: hardware_stream.lifecycle,
@@ -3480,20 +3501,30 @@ impl LocalRuntimeHost {
     fn observation_with_host_io(&self) -> (RuntimeObservationReport, RuntimeHostIoSummary) {
         let observation = RuntimeObservationReport::capture(&self.runtime, &self.events);
         let host_io = self.host_io_summary(&observation);
+        let external_midi_snapshot =
+            signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty("signal-host-local");
         let observation = observation
             .with_host_device_supervision(&host_io)
-            .with_host_external_io(&host_io);
+            .with_host_external_io(&host_io)
+            .with_linux_backend_session_snapshot(&host_io)
+            .with_jack_coordination_snapshot(&host_io)
+            .with_external_midi_snapshot(external_midi_snapshot);
         (observation, host_io)
     }
 
     fn supervisor_with_host_io(&self) -> (RuntimeSupervisorReport, RuntimeHostIoSummary) {
         let mut supervisor = RuntimeSupervisorReport::capture(&self.runtime, &self.events);
         let host_io = self.host_io_summary(&supervisor.observation);
+        let external_midi_snapshot =
+            signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty("signal-host-local");
         supervisor.observation = supervisor
             .observation
             .clone()
             .with_host_device_supervision(&host_io)
-            .with_host_external_io(&host_io);
+            .with_host_external_io(&host_io)
+            .with_linux_backend_session_snapshot(&host_io)
+            .with_jack_coordination_snapshot(&host_io)
+            .with_external_midi_snapshot(external_midi_snapshot);
         (supervisor, host_io)
     }
 
@@ -3554,6 +3585,10 @@ impl LocalRuntimeHost {
             backend_diagnostics.health,
             audio_pump.stream_state.into(),
         );
+        let linux_backend_identity =
+            signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                self.coreaudio.backend_identity(),
+            );
         let duplex_mismatch_state = host_duplex_mismatch_state(
             active_stream,
             clock_domain,
@@ -3561,10 +3596,57 @@ impl LocalRuntimeHost {
             audio_pump.stream_state.into(),
             partial_availability,
         );
+        let linux_clocking_parity =
+            signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
+                linux_backend_identity,
+                backend_diagnostics.health,
+                audio_pump.stream_state.into(),
+                clock_domain,
+                fallback_state,
+                transition_state,
+                drift_state,
+                discontinuity_state,
+            );
+        let linux_duplex_parity =
+            signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
+                linux_backend_identity,
+                backend_diagnostics.health,
+                audio_pump.stream_state.into(),
+                clock_domain,
+                fallback_state,
+                transition_state,
+                duplex_mismatch_state,
+                endpoint_topology,
+                partial_availability,
+            );
+        let linux_endpoint_topology_parity =
+            signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
+                linux_backend_identity,
+                backend_diagnostics.health,
+                transition_state,
+                discontinuity_state,
+                duplex_mismatch_state,
+                endpoint_topology,
+                partial_availability,
+            );
         let callback_interval_ms = samples_to_ms(buffer_size as u32, sample_rate);
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
+                backend_identity: self.coreaudio.backend_identity(),
                 backend_name: self.coreaudio.backend_name().into(),
+                linux_backend_identity,
+                linux_backend_portability:
+                    signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_portability(
+                        self.coreaudio.backend_identity(),
+                        active_stream
+                            .as_ref()
+                            .map(|stream| stream.simulated)
+                            .unwrap_or(false),
+                        backend_diagnostics.health,
+                        backend_diagnostics.device_loss_count,
+                        backend_diagnostics.restart_attempt_count,
+                        backend_diagnostics.restart_failure_count,
+                    ),
                 device_id: active_stream
                     .as_ref()
                     .map(|stream| stream.device.device_id.clone())
@@ -3575,6 +3657,10 @@ impl LocalRuntimeHost {
                     .unwrap_or_else(|| "Unconfigured Device".into()),
                 sample_rate,
                 buffer_size,
+                input_channels: active_stream
+                    .as_ref()
+                    .map(|stream| stream.input_channels)
+                    .unwrap_or_default(),
                 output_channels: active_stream
                     .as_ref()
                     .map(|stream| stream.output_channels)
@@ -3625,6 +3711,9 @@ impl LocalRuntimeHost {
                 discontinuity_state,
                 duplex_mismatch_state,
                 endpoint_topology,
+                linux_clocking_parity,
+                linux_duplex_parity,
+                linux_endpoint_topology_parity,
                 partial_availability,
                 crossing_required: matches!(
                     clock_domain,
@@ -4663,9 +4752,9 @@ mod tests {
     use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
     use signal_hardware::{
         AudioDeviceDescriptor, AudioSampleFormat, AudioStreamDirection, BackendHealth,
-        HardwareClockSource, HardwareClockTopology, HardwareLatencyProfile,
-        HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareRestartPolicy,
-        HardwareStreamConfig,
+        HardwareBackendIdentity, HardwareClockSource, HardwareClockTopology,
+        HardwareLatencyProfile, HardwareLifecycleContract, HardwareLifecycleOwnership,
+        HardwareRestartPolicy, HardwareStreamConfig,
     };
     use signal_plugin::{
         CompletionState, LoopRange, PluginEvent, PluginFormat, WatchdogTriggerReason,
@@ -7695,6 +7784,7 @@ mod tests {
         assert_eq!(summary.hardware.device_name, "CoreAudio Default Output");
         assert_eq!(summary.hardware.sample_rate, 48_000);
         assert_eq!(summary.hardware.buffer_size, 512);
+        assert_eq!(summary.hardware.input_channels, 0);
         assert_eq!(summary.hardware.output_channels, 2);
         assert_eq!(summary.hardware.sample_format, AudioSampleFormat::F32);
         assert_eq!(
@@ -7800,12 +7890,48 @@ mod tests {
             "coreaudio"
         );
         assert_eq!(
+            report.observation.host_io.hardware.backend_identity,
+            signal_hardware::HardwareBackendIdentity::CoreAudio
+        );
+        assert_eq!(
+            report.observation.host_io.hardware.linux_backend_identity,
+            signal_runtime::RuntimeLinuxAudioBackendIdentity::NotLinux
+        );
+        assert_eq!(
+            report
+                .observation
+                .host_io
+                .hardware
+                .linux_backend_portability,
+            signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
+        );
+        assert_eq!(
             report.observation.host_io.hardware.device_id,
             "coreaudio:default-output"
         );
         assert_eq!(report.observation.host_io.hardware.sample_rate, 48_000);
         assert_eq!(report.observation.host_io.hardware.buffer_size, 512);
+        assert_eq!(report.observation.host_io.hardware.input_channels, 0);
         assert_eq!(report.observation.host_io.hardware.output_channels, 2);
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .io_layout
+                .output_layout
+                .canonical_layout,
+            Some(signal_runtime::RuntimeCanonicalChannelLayout::Stereo)
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .io_layout
+                .output_bus_intent,
+            signal_runtime::RuntimeBusIntent::HardwareOutput
+        );
         assert_eq!(
             report.observation.host_io.clocking.clock_source,
             RuntimeHostClockSource::Internal
@@ -7838,7 +7964,63 @@ mod tests {
             report.observation.host_io.clocking.endpoint_topology,
             RuntimeHostEndpointTopology::OutputOnly
         );
+        assert_eq!(
+            report.observation.host_io.clocking.linux_clocking_parity,
+            signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            report.observation.host_io.clocking.linux_duplex_parity,
+            signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            report
+                .observation
+                .host_io
+                .clocking
+                .linux_endpoint_topology_parity,
+            signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
         assert!(!report.observation.host_io.clocking.partial_availability);
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .linux_backend_identity,
+            signal_runtime::RuntimeLinuxAudioBackendIdentity::NotLinux
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .linux_backend_portability,
+            signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .linux_clocking_parity,
+            signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .linux_duplex_parity,
+            signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_io_snapshot
+                .linux_endpoint_topology_parity,
+            signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
+        );
         assert_eq!(
             report
                 .observation
@@ -8058,6 +8240,581 @@ mod tests {
     }
 
     #[test]
+    fn local_host_shared_report_surfaces_runtime_external_midi_endpoint_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_default().expect("default local host boot");
+        let report = host.host_supervisor_report();
+
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .discovery_state,
+            signal_runtime::RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .graph_state,
+            signal_runtime::RuntimeExternalMidiGraphState::Empty
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .provider_name,
+            "signal-host-local"
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .device_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .endpoint_count,
+            0
+        );
+        assert!(report
+            .observation
+            .observation
+            .external_midi_snapshot
+            .devices
+            .is_empty());
+        assert!(report
+            .observation
+            .observation
+            .external_midi_snapshot
+            .endpoints
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"external_midi_snapshot\":{"));
+        assert!(rendered.contains("\"discovery_state\":\"Idle\""));
+        assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"provider_name\":\"signal-host-local\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_control_surface_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_default().expect("default local host boot");
+        let report = host.host_supervisor_report();
+
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .control_surface_snapshot
+                .discovery_state,
+            signal_runtime::RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .control_surface_snapshot
+                .graph_state,
+            signal_runtime::RuntimeControlSurfaceGraphState::Empty
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .control_surface_snapshot
+                .provider_name,
+            "signal-host-local"
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .control_surface_snapshot
+                .device_count,
+            0
+        );
+        assert!(report
+            .observation
+            .observation
+            .control_surface_snapshot
+            .devices
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"control_surface_snapshot\":{"));
+        assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"provider_name\":\"signal-host-local\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_linux_backend_session_as_not_linux() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_default().expect("default local host boot");
+        let report = host.host_supervisor_report();
+
+        let snapshot = &report
+            .observation
+            .observation
+            .linux_backend_session_snapshot;
+        assert_eq!(
+            snapshot.backend_identity,
+            signal_runtime::RuntimeLinuxAudioBackendIdentity::NotLinux
+        );
+        assert_eq!(
+            snapshot.ownership,
+            signal_runtime::RuntimeLinuxBackendSessionOwnership::NotLinux
+        );
+        assert_eq!(
+            snapshot.lifecycle_state,
+            signal_runtime::RuntimeLinuxBackendSessionLifecycleState::NotLinux
+        );
+        assert_eq!(
+            snapshot.device_claim_posture,
+            signal_runtime::RuntimeLinuxBackendDeviceClaimPosture::NotLinux
+        );
+        assert_eq!(
+            snapshot.session_role,
+            signal_runtime::RuntimeLinuxBackendSessionRole::NotLinux
+        );
+        assert_eq!(
+            snapshot.ownership_fallback,
+            signal_runtime::RuntimeLinuxBackendOwnershipFallbackState::NotLinux
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"linux_backend_session_snapshot\":{"));
+        assert!(rendered.contains("\"backend_identity\":\"NotLinux\""));
+        assert!(rendered.contains("\"ownership\":\"NotLinux\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_jack_coordination_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_default().expect("default local host boot");
+        let report = host.host_supervisor_report();
+
+        let snapshot = &report.observation.observation.jack_coordination_snapshot;
+        assert_eq!(
+            snapshot.transport_posture,
+            signal_runtime::RuntimeJackTransportPosture::NotJack
+        );
+        assert_eq!(
+            snapshot.graph_state,
+            signal_runtime::RuntimeJackGraphCoordinationState::NotJack
+        );
+        assert_eq!(
+            snapshot.client_role,
+            signal_runtime::RuntimeJackClientRole::NotJack
+        );
+        assert_eq!(
+            snapshot.guarded_state,
+            signal_runtime::RuntimeJackGuardedCoordinationState::NotJack
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"jack_coordination_snapshot\":{"));
+        assert!(rendered.contains("\"transport_posture\":\"NotJack\""));
+        assert!(rendered.contains("\"graph_state\":\"NotJack\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_advanced_hardware_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_default().expect("default local host boot");
+        let report = host.host_supervisor_report();
+
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .advanced_hardware_snapshot
+                .discovery_state,
+            signal_runtime::RuntimeExternalMidiDiscoveryState::Idle
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .advanced_hardware_snapshot
+                .graph_state,
+            signal_runtime::RuntimeAdvancedHardwareGraphState::Empty
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .advanced_hardware_snapshot
+                .provider_name,
+            "signal-host-local"
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .advanced_hardware_snapshot
+                .device_count,
+            0
+        );
+        assert!(report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .devices
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"provider_name\":\"signal-host-local\""));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_stretch_engine_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.boot_default().expect("default local host boot");
+        let report = host.host_supervisor_report();
+
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .stretch_engine_snapshot
+                .clip_count,
+            0
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .stretch_engine_snapshot
+                .ready_clip_count,
+            0
+        );
+        assert!(report
+            .observation
+            .observation
+            .stretch_engine_snapshot
+            .clips
+            .is_empty());
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"stretch_engine_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":0"));
+        assert!(rendered.contains("\"sample_domain_clip_count\":0"));
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_marker_analysis_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-local".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("configure");
+
+        let imported_path = unique_test_path("local-host-marker-analysis", "wav");
+        write_test_wav(&imported_path);
+        host.runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:local-marker-analysis".into(),
+                content_hash: "local-marker-analysis".into(),
+                source_path: imported_path.display().to_string(),
+                file_name: "local-marker-analysis.wav".into(),
+                byte_size: fs::metadata(&imported_path).expect("wav metadata").len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            }])
+            .expect("media reconcile");
+        host.runtime
+            .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+                clip_id: "clip:local-marker-analysis".into(),
+                media_asset_id: Some("asset:sha256:local-marker-analysis".into()),
+                mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .expect("warp reconcile");
+        host.runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:local-marker-analysis".into(),
+                media_asset_id: Some("asset:sha256:local-marker-analysis".into()),
+                warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+            }])
+            .expect("clip processing reconcile");
+        host.runtime
+            .apply_transport_projection(signal_runtime::TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .expect("transport projection");
+
+        let report = host.supervisor_report();
+        assert_eq!(report.observation.marker_analysis_snapshot.clip_count, 1);
+        assert_eq!(
+            report.observation.marker_analysis_snapshot.ready_clip_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .marker_analysis_snapshot
+                .tempo_assist_ready_clip_count,
+            1
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"marker_analysis_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":1"));
+        assert!(rendered.contains("\"tempo_assist_ready_clip_count\":1"));
+
+        let _ = fs::remove_file(&imported_path);
+        if let Some(path) = host
+            .runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_transform_artifact_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-local".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("configure");
+
+        let imported_path = unique_test_path("local-host-transform-artifact", "wav");
+        write_test_wav(&imported_path);
+        host.runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:local-transform-artifact".into(),
+                content_hash: "local-transform-artifact".into(),
+                source_path: imported_path.display().to_string(),
+                file_name: "local-transform-artifact.wav".into(),
+                byte_size: fs::metadata(&imported_path).expect("wav metadata").len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            }])
+            .expect("media reconcile");
+        host.runtime
+            .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+                clip_id: "clip:local-transform-artifact".into(),
+                media_asset_id: Some("asset:sha256:local-transform-artifact".into()),
+                mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 48_000,
+            }])
+            .expect("warp reconcile");
+        host.runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:local-transform-artifact".into(),
+                media_asset_id: Some("asset:sha256:local-transform-artifact".into()),
+                warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 48_000,
+                fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+            }])
+            .expect("clip processing reconcile");
+        host.runtime
+            .apply_transport_projection(signal_runtime::TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .expect("transport projection");
+
+        let report = host.supervisor_report();
+        assert_eq!(report.observation.transform_artifact_snapshot.clip_count, 1);
+        assert_eq!(
+            report
+                .observation
+                .transform_artifact_snapshot
+                .ready_clip_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .transform_artifact_snapshot
+                .reusable_clip_count,
+            1
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"transform_artifact_snapshot\":{"));
+        assert!(rendered.contains("\"clip_count\":1"));
+        assert!(rendered.contains("\"reusable_clip_count\":1"));
+
+        let _ = fs::remove_file(&imported_path);
+        if let Some(path) = host
+            .runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
+    fn local_host_shared_report_surfaces_runtime_preview_transform_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-local".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("configure");
+
+        let imported_path = unique_test_path("local-host-preview-transform", "wav");
+        write_test_wav(&imported_path);
+        host.runtime
+            .reconcile_media_assets(vec![RuntimeMediaAssetRegistration {
+                asset_id: "asset:sha256:local-preview-transform".into(),
+                content_hash: "local-preview-transform".into(),
+                source_path: imported_path.display().to_string(),
+                file_name: "local-preview-transform.wav".into(),
+                byte_size: fs::metadata(&imported_path).expect("wav metadata").len(),
+                sample_rate_hz: 48_000,
+                channel_count: 1,
+                duration_samples: 128,
+                waveform_bin_count: 16,
+            }])
+            .expect("media reconcile");
+        host.runtime
+            .reconcile_warp_clips(vec![signal_runtime::RuntimeWarpClipRegistration {
+                clip_id: "clip:local-preview-transform".into(),
+                media_asset_id: Some("asset:sha256:local-preview-transform".into()),
+                mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                source_tempo_bpm: Some(120.0),
+                anchor_timeline_samples: 0,
+                start_samples: 0,
+                duration_samples: 128,
+            }])
+            .expect("warp reconcile");
+        host.runtime
+            .reconcile_clip_processing_clips(vec![RuntimeClipProcessingRegistration {
+                clip_id: "clip:local-preview-transform".into(),
+                media_asset_id: Some("asset:sha256:local-preview-transform".into()),
+                warp_mode: signal_runtime::RuntimeWarpMode::ElastiqueDraft,
+                start_samples: 0,
+                duration_samples: 128,
+                fade_in: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                fade_out: signal_runtime::RuntimeClipFadeEnvelope::default(),
+                clip_gain: signal_runtime::RuntimeClipGainEnvelope::default(),
+            }])
+            .expect("clip processing reconcile");
+        host.runtime
+            .apply_transport_projection(signal_runtime::TransportProjection {
+                playing: false,
+                timeline_position_samples: 0,
+                tempo_bpm: 180.0,
+                loop_state: None,
+            })
+            .expect("transport projection");
+        host.runtime
+            .start_media_preview("asset:sha256:local-preview-transform")
+            .expect("preview transform media preview should start");
+
+        let report = host.supervisor_report();
+        assert_eq!(report.observation.preview_transform_snapshot.clip_count, 1);
+        assert_eq!(
+            report
+                .observation
+                .preview_transform_snapshot
+                .active_audition_clip_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .preview_transform_snapshot
+                .ready_clip_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .preview_transform_snapshot
+                .artifact_backed_clip_count,
+            1
+        );
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"preview_transform_snapshot\":{"));
+        assert!(rendered.contains("\"active_audition_clip_count\":1"));
+        assert!(rendered.contains("\"artifact_backed_clip_count\":1"));
+
+        let _ = fs::remove_file(&imported_path);
+        if let Some(path) = host
+            .runtime
+            .get_media_pipeline_snapshot()
+            .assets
+            .first()
+            .and_then(|asset| asset.cache_path.as_deref())
+        {
+            let _ = fs::remove_file(path);
+        }
+    }
+
+    #[test]
     fn local_host_shared_report_surfaces_runtime_media_service_baseline() {
         let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
         let mut host = LocalRuntimeHost::new(runtime);
@@ -8165,6 +8922,177 @@ mod tests {
     }
 
     #[test]
+    fn local_host_shared_report_surfaces_runtime_spatial_execution_baseline() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+        let mut host = LocalRuntimeHost::new(runtime);
+        host.runtime
+            .handshake(HandshakeRequest {
+                client_version: "signal-host-local".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("handshake");
+        host.runtime
+            .configure(RuntimeConfigRequest::new(48_000, 512))
+            .expect("configure");
+        host.runtime
+            .apply_graph_projection(GraphProjection {
+                graph_id: "graph:host-local:spatial".into(),
+                node_count: 2,
+                nodes: vec![
+                    GraphNodeProjection {
+                        node_id: "spatial-stereo".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: -0.2 }],
+                    },
+                    GraphNodeProjection {
+                        node_id: "spatial-surround".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 20,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: 0.35 }],
+                    },
+                ],
+            })
+            .expect("apply spatial graph");
+        host.runtime
+            .apply_graph_contract_projection(GraphContractProjection {
+                graph_id: "graph:host-local:spatial".into(),
+                contract_count: 2,
+                nodes: vec![
+                    GraphNodeContractProjection {
+                        node_id: "spatial-stereo".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:stereo".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:stereo".into()),
+                            bus_group_id: Some("bus:spatial:stereo".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    GraphNodeContractProjection {
+                        node_id: "spatial-surround".into(),
+                        buffer_contract: GraphNodeBufferContractProjection {
+                            input: GraphNodeBusEndpointProjection {
+                                bus_id: "main:surround-in".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            output: GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:surround".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            ..GraphNodeBufferContractProjection::default()
+                        },
+                        topology: GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:surround".into()),
+                            bus_group_id: Some("bus:spatial:surround".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("apply spatial contract");
+        host.runtime
+            .apply_plugin_backed_node_bindings(PluginBackedNodeBindingProjection {
+                graph_id: "graph:host-local:spatial".into(),
+                bindings: vec![
+                    PluginBackedNodeBinding {
+                        node_id: "spatial-stereo".into(),
+                        sandbox_id: "sandbox:spatial-stereo".into(),
+                    },
+                    PluginBackedNodeBinding {
+                        node_id: "spatial-surround".into(),
+                        sandbox_id: "sandbox:spatial-surround".into(),
+                    },
+                ],
+            })
+            .expect("bind spatial nodes");
+
+        let report = host.supervisor_report();
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .spatial_node_count,
+            2
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .active_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .fallback_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .surround_bed_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            report
+                .observation
+                .execution_topology_summary
+                .expanded_fallback_spatial_node_count,
+            1
+        );
+        assert!(report
+            .observation
+            .plugin_chain_snapshot
+            .chains
+            .iter()
+            .flat_map(|chain| chain.stages.iter())
+            .any(|stage| stage.node_id == "spatial-surround"
+                && stage
+                    .spatial_execution
+                    .as_ref()
+                    .is_some_and(|spatial| {
+                        spatial.fallback_outcome
+                            == Some(
+                                signal_runtime::RuntimeSpatialFallbackOutcome::BypassSpatialProcessing
+                            )
+                            && spatial.bed_class
+                                == signal_runtime::RuntimeSpatialBedClass::CanonicalSurroundBed
+                            && spatial.expanded_fallback_outcome
+                                == Some(
+                                    signal_runtime::RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial
+                                )
+                    })));
+
+        let rendered = report.render_json();
+        assert!(rendered.contains("\"spatial_node_count\":2"));
+        assert!(rendered.contains("\"active_spatial_node_count\":1"));
+        assert!(rendered.contains("\"fallback_spatial_node_count\":1"));
+        assert!(rendered.contains("\"surround_bed_spatial_node_count\":1"));
+        assert!(rendered.contains("\"expanded_fallback_spatial_node_count\":1"));
+        assert!(rendered.contains("\"adapter_class\":\"Balance\""));
+        assert!(rendered.contains("\"bed_class\":\"CanonicalSurroundBed\""));
+        assert!(rendered.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
+        assert!(rendered.contains("\"execution_mode\":\"Bypassed\""));
+    }
+
+    #[test]
     fn local_host_vst3_scan_and_sandbox_surface_runtime_owned_receipts() {
         let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
         let mut host = LocalRuntimeHost::new(runtime);
@@ -8188,7 +9116,7 @@ mod tests {
                 .observation
                 .plugin_discovery_snapshot
                 .discovered_type_count,
-            2
+            4
         );
         assert_eq!(
             report
@@ -8209,6 +9137,25 @@ mod tests {
             .any(|plugin| plugin.plugin_type_id == "plugin:vst3:instrument"
                 && plugin.format == PluginFormat::Vst3
                 && plugin.processing_contract.accepts_note_events));
+        assert!(report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(
+                |plugin| plugin.plugin_type_id == "plugin:vst3:multiout-instrument"
+                    && plugin.complex_io_summary.multi_output_instrument
+                    && plugin.complex_io_summary.instrument_output_group_count >= 2
+            ));
+        assert!(report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:vst3:bus-fx"
+                && plugin.complex_io_summary.bus_capable_fx_class.is_some()));
         let sandbox = report
             .observation
             .observation
@@ -8252,14 +9199,8 @@ mod tests {
                 RuntimePluginHostPlatform::Windows,
             ]
         );
-        assert_eq!(au_parity.discovered_type_count, 2);
-        assert_eq!(au_parity.sandbox_count, 1);
-
-        let rendered = report.render_json();
-        assert!(rendered.contains("\"parity_coverage\":["));
-        assert!(rendered.contains("\"parity_band\":\"Guarded\""));
-        assert!(rendered.contains("\"supported_platforms\":[\"MacOs\"]"));
-        assert!(rendered.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
+        assert_eq!(au_parity.discovered_type_count, 0);
+        assert_eq!(au_parity.sandbox_count, 0);
     }
 
     #[test]
@@ -8286,7 +9227,7 @@ mod tests {
                 .observation
                 .plugin_discovery_snapshot
                 .discovered_type_count,
-            2
+            4
         );
         assert_eq!(
             report
@@ -8307,6 +9248,25 @@ mod tests {
             .any(|plugin| plugin.plugin_type_id == "plugin:au:instrument"
                 && plugin.format == PluginFormat::Au
                 && plugin.processing_contract.accepts_note_events));
+        assert!(report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(
+                |plugin| plugin.plugin_type_id == "plugin:au:multiout-instrument"
+                    && plugin.complex_io_summary.multi_output_instrument
+                    && plugin.complex_io_summary.instrument_output_group_count >= 2
+            ));
+        assert!(report
+            .observation
+            .observation
+            .plugin_discovery_snapshot
+            .discovered_types
+            .iter()
+            .any(|plugin| plugin.plugin_type_id == "plugin:au:bus-fx"
+                && plugin.complex_io_summary.bus_capable_fx_class.is_some()));
         let sandbox = report
             .observation
             .observation
@@ -8673,6 +9633,7 @@ mod tests {
         );
         host.active_output_stream = Some(HardwareStreamConfig {
             device: AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio",
                 device_id: "coreaudio:cross-clock-output".into(),
                 name: "CoreAudio Cross Clock Output".into(),
@@ -8782,6 +9743,7 @@ mod tests {
         );
         host.active_output_stream = Some(HardwareStreamConfig {
             device: AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio",
                 device_id: "coreaudio:aggregate-output".into(),
                 name: "CoreAudio Aggregate Output".into(),
@@ -8872,6 +9834,7 @@ mod tests {
         );
         host.active_output_stream = Some(HardwareStreamConfig {
             device: AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio",
                 device_id: "coreaudio:cross-clock-output".into(),
                 name: "CoreAudio Cross Clock Output".into(),
@@ -8959,6 +9922,7 @@ mod tests {
         let _ = host.host_supervisor_report();
         host.active_output_stream = Some(HardwareStreamConfig {
             device: AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio",
                 device_id: "coreaudio:duplex-cross-clock".into(),
                 name: "CoreAudio Duplex Cross Clock".into(),
@@ -9047,6 +10011,7 @@ mod tests {
         let mut host = LocalRuntimeHost::new(runtime);
         host.active_output_stream = Some(HardwareStreamConfig {
             device: AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio",
                 device_id: "coreaudio:duplex-partial".into(),
                 name: "CoreAudio Duplex Partial".into(),
@@ -9123,6 +10088,7 @@ mod tests {
         );
         let stream = HardwareStreamConfig {
             device: AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::CoreAudio,
                 backend_name: "coreaudio",
                 device_id: "coreaudio:default-output".into(),
                 name: "CoreAudio Default Output".into(),

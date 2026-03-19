@@ -7,6 +7,7 @@ pub enum PluginFormat {
     Clap,
     Vst3,
     Au,
+    Lv2,
     Native,
 }
 
@@ -1212,6 +1213,9 @@ pub struct EventPacketSummary {
     pub parameter_gesture_events: usize,
     pub note_events: usize,
     pub note_expression_events: usize,
+    pub note_expression_pressure_events: usize,
+    pub note_expression_timbre_events: usize,
+    pub note_expression_tuning_events: usize,
     pub midi_events: usize,
 }
 
@@ -1223,6 +1227,9 @@ impl EventPacketSummary {
         self.parameter_gesture_events += other.parameter_gesture_events;
         self.note_events += other.note_events;
         self.note_expression_events += other.note_expression_events;
+        self.note_expression_pressure_events += other.note_expression_pressure_events;
+        self.note_expression_timbre_events += other.note_expression_timbre_events;
+        self.note_expression_tuning_events += other.note_expression_tuning_events;
         self.midi_events += other.midi_events;
     }
 }
@@ -1579,6 +1586,19 @@ impl EventPacket {
             }
             if event.is_note_expression() {
                 summary.note_expression_events += 1;
+                if let PluginEvent::NoteExpression(expression) = event {
+                    match expression.expression {
+                        NoteExpressionKind::Pressure => {
+                            summary.note_expression_pressure_events += 1;
+                        }
+                        NoteExpressionKind::Timbre => {
+                            summary.note_expression_timbre_events += 1;
+                        }
+                        NoteExpressionKind::Tuning => {
+                            summary.note_expression_tuning_events += 1;
+                        }
+                    }
+                }
             }
             if event.is_midi() {
                 summary.midi_events += 1;
@@ -2619,6 +2639,24 @@ mod tests {
                 expression: NoteExpressionKind::Pressure,
                 value: 0.7,
             }),
+            PluginEvent::NoteExpression(NoteExpressionEvent {
+                offset_frames: 28,
+                note_id: 7,
+                port_index: 0,
+                channel: 1,
+                key: 61,
+                expression: NoteExpressionKind::Timbre,
+                value: 0.5,
+            }),
+            PluginEvent::NoteExpression(NoteExpressionEvent {
+                offset_frames: 30,
+                note_id: 7,
+                port_index: 0,
+                channel: 2,
+                key: 62,
+                expression: NoteExpressionKind::Tuning,
+                value: 0.2,
+            }),
             PluginEvent::Midi(MidiEvent {
                 offset_frames: 32,
                 status: 0xB0,
@@ -2628,12 +2666,15 @@ mod tests {
         ]);
 
         let summary = packet.summary();
-        assert_eq!(summary.total_events, 6);
+        assert_eq!(summary.total_events, 8);
         assert_eq!(summary.parameter_value_events, 1);
         assert_eq!(summary.parameter_gesture_events, 1);
         assert_eq!(summary.parameter_modulation_events, 1);
         assert_eq!(summary.note_events, 1);
-        assert_eq!(summary.note_expression_events, 1);
+        assert_eq!(summary.note_expression_events, 3);
+        assert_eq!(summary.note_expression_pressure_events, 1);
+        assert_eq!(summary.note_expression_timbre_events, 1);
+        assert_eq!(summary.note_expression_tuning_events, 1);
         assert_eq!(summary.midi_events, 1);
     }
 

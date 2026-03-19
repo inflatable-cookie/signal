@@ -2134,6 +2134,7 @@ fn descriptor_payload(descriptor: &PluginDescriptor) -> PluginDescriptorPayload 
             PluginFormat::Clap => "clap",
             PluginFormat::Vst3 => "vst3",
             PluginFormat::Au => "au",
+            PluginFormat::Lv2 => "lv2",
             PluginFormat::Native => "native",
         }
         .into(),
