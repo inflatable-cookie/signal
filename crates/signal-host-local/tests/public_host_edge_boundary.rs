@@ -17,14 +17,17 @@ use signal_runtime::{
     RuntimeBlockDeadlinePressure, RuntimeBusIntent, RuntimeBusRole, RuntimeCanonicalChannelLayout,
     RuntimeConfig, RuntimeConfigRequest, RuntimeDeferredServiceBackpressureSource,
     RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
-    RuntimeDeferredServiceReason, RuntimeDeviceFaultBoundaryState, RuntimeDeviceRestartState,
-    RuntimeDeviceSupervisionState, RuntimeError, RuntimeErrorKind, RuntimeExternalIoHealthState,
-    RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
-    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole,
+    RuntimeDeferredServiceReason, RuntimeDeploymentClass, RuntimeDeviceFaultBoundaryState,
+    RuntimeDeviceRestartState, RuntimeDeviceSupervisionState, RuntimeError, RuntimeErrorKind,
+    RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
+    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeFoldDownPolicy,
     RuntimeHostClockDiscontinuityState, RuntimeHostClockDriftState, RuntimeHostDuplexMismatchState,
-    RuntimeHostEndpointTopology, RuntimeInterruptionClass, RuntimeJackClientRole,
+    RuntimeHostEndpointTopology, RuntimeImmersiveExportAuthority, RuntimeImmersiveExportClass,
+    RuntimeImmersiveExportOutcome, RuntimeImmersiveObjectRenderingPosture,
+    RuntimeImmersiveRoomOutcome, RuntimeInterruptionClass, RuntimeJackClientRole,
     RuntimeJackGraphCoordinationState, RuntimeJackGuardedCoordinationState,
-    RuntimeJackTransportPosture, RuntimeLifecycleApi, RuntimeObservationApi,
+    RuntimeJackTransportPosture, RuntimeLifecycleApi, RuntimeMonitoringOutcome,
+    RuntimeMonitoringSceneAuthority, RuntimeMonitoringSceneClass, RuntimeObservationApi,
     RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot, RuntimePluginAraDocumentContext,
     RuntimePluginAraRegionContext, RuntimePluginAraSourceContext, RuntimePluginBusCapableFxClass,
     RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord, RuntimePluginHostPlatform,
@@ -32,11 +35,12 @@ use signal_runtime::{
     RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher, RuntimePluginPresetDescriptor,
     RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass, RuntimeProjectionApi,
     RuntimeRecordingCaptureKind, RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState,
-    RuntimeSecondaryInputAttachmentPolicy, RuntimeSecondaryInputContractProjection,
-    RuntimeSecondaryInputFallbackOutcome, RuntimeSecondaryInputTargetKind, RuntimeSpatialBedClass,
-    RuntimeSpatialExecutionMode, RuntimeSpatialExpandedFallbackOutcome,
-    RuntimeSpatialFallbackOutcome, RuntimeSpatialMixPolicy, RuntimeSupervisorApi, SafeModeRequest,
-    SignalRuntime,
+    RuntimeRendererCapabilityAuthority, RuntimeRendererCapabilityNegotiationPosture,
+    RuntimeRoomPolicyAuthority, RuntimeRoomPolicyClass, RuntimeSecondaryInputAttachmentPolicy,
+    RuntimeSecondaryInputContractProjection, RuntimeSecondaryInputFallbackOutcome,
+    RuntimeSecondaryInputTargetKind, RuntimeSpatialBedClass, RuntimeSpatialExecutionMode,
+    RuntimeSpatialExpandedFallbackOutcome, RuntimeSpatialFallbackOutcome, RuntimeSpatialMixPolicy,
+    RuntimeSupervisorApi, SafeModeRequest, SignalRuntime,
 };
 
 fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
@@ -541,6 +545,7 @@ fn sample_complex_multi_output_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: false,
         },
+        lv2_extension_capabilities: None,
         summary: "local complex multi-output instrument".into(),
     }
 }
@@ -601,6 +606,7 @@ fn sample_complex_bus_fx_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: true,
         },
+        lv2_extension_capabilities: None,
         summary: "local bus-capable fx".into(),
     }
 }
@@ -1576,6 +1582,54 @@ fn local_shared_host_edge_exports_runtime_advanced_hardware_truth() {
             .device_count,
         0
     );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .display_transport_device_count,
+        0
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .motor_transport_device_count,
+        0
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .haptic_transport_device_count,
+        0
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .scene_mapping_device_count,
+        0
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .feedback_page_device_count,
+        0
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .advanced_hardware_snapshot
+            .safe_action_graph_device_count,
+        0
+    );
     assert!(report
         .observation
         .observation
@@ -1587,6 +1641,12 @@ fn local_shared_host_edge_exports_runtime_advanced_hardware_truth() {
     assert!(rendered.contains("\"advanced_hardware_snapshot\":{"));
     assert!(rendered.contains("\"graph_state\":\"Empty\""));
     assert!(rendered.contains("\"provider_name\":\"signal-host-local\""));
+    assert!(rendered.contains("\"display_transport_device_count\":0"));
+    assert!(rendered.contains("\"motor_transport_device_count\":0"));
+    assert!(rendered.contains("\"haptic_transport_device_count\":0"));
+    assert!(rendered.contains("\"scene_mapping_device_count\":0"));
+    assert!(rendered.contains("\"feedback_page_device_count\":0"));
+    assert!(rendered.contains("\"safe_action_graph_device_count\":0"));
 }
 
 #[test]
@@ -1664,6 +1724,7 @@ fn local_shared_host_edge_exports_runtime_recall_portability_truth() {
                 supports_activate: true,
                 supports_reset_while_active: true,
             },
+            lv2_extension_capabilities: None,
             summary: "local host recall portability type".into(),
         }],
     );
@@ -2350,6 +2411,69 @@ fn local_shared_host_edge_exports_runtime_jack_coordination_truth() {
 }
 
 #[test]
+fn local_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let mut host = LocalRuntimeHost::new(runtime);
+    host.boot_default()
+        .expect("public local pipewire/alsa parity default boot should succeed");
+    let report = host.supervisor_report();
+
+    assert_eq!(
+        report
+            .observation
+            .pipewire_alsa_parity_snapshot
+            .session_role_parity,
+        signal_runtime::RuntimePipeWireAlsaSessionRoleParity::NotPipeWireOrAlsa
+    );
+    assert_eq!(
+        report
+            .observation
+            .pipewire_alsa_parity_snapshot
+            .device_claim_parity,
+        signal_runtime::RuntimePipeWireAlsaDeviceClaimParity::NotPipeWireOrAlsa
+    );
+    assert_eq!(
+        report
+            .observation
+            .pipewire_alsa_parity_snapshot
+            .stream_policy_parity,
+        signal_runtime::RuntimePipeWireAlsaStreamPolicyParity::NotPipeWireOrAlsa
+    );
+    assert_eq!(
+        report
+            .observation
+            .pipewire_alsa_parity_snapshot
+            .guarded_state,
+        signal_runtime::RuntimePipeWireAlsaGuardedParityState::NotPipeWireOrAlsa
+    );
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"pipewire_alsa_parity_snapshot\":{"));
+    assert!(rendered.contains("\"session_role_parity\":\"NotPipeWireOrAlsa\""));
+    assert!(rendered.contains("\"device_claim_parity\":\"NotPipeWireOrAlsa\""));
+}
+
+#[test]
+fn local_shared_host_edge_exports_runtime_lv2_extension_truth() {
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let mut host = LocalRuntimeHost::new(runtime);
+    host.boot_default()
+        .expect("public local lv2 extension default boot should succeed");
+    let report = host.supervisor_report();
+
+    assert_eq!(
+        report.observation.lv2_extension_snapshot.plugin_type_count,
+        0
+    );
+    assert_eq!(report.observation.lv2_extension_snapshot.sandbox_count, 0);
+    assert!(report.observation.lv2_extension_snapshot.records.is_empty());
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"lv2_extension_snapshot\":{"));
+    assert!(rendered.contains("\"plugin_type_count\":0"));
+}
+
+#[test]
 fn local_shared_host_edge_exports_runtime_external_midi_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
@@ -2513,6 +2637,7 @@ fn local_shared_host_edge_exports_runtime_multichannel_truth() {
                 supports_activate: true,
                 supports_reset_while_active: true,
             },
+            lv2_extension_capabilities: None,
             summary: "local multichannel boundary plugin".into(),
         }],
     );
@@ -2795,10 +2920,34 @@ fn local_shared_host_edge_exports_runtime_complex_io_truth() {
                     == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
                 && stage.complex_io_summary.secondary_input_group_count == 1
         }));
+    let pin_matrix = &report.observation.plugin_pin_matrix_snapshot;
+    assert_eq!(pin_matrix.plugin_type_count, 2);
+    assert_eq!(pin_matrix.negotiated_type_count, 2);
+    assert_eq!(pin_matrix.dynamic_negotiated_type_count, 2);
+    assert!(pin_matrix.records.iter().any(|record| {
+        record.plugin_type_id == "plugin:vst3:host-local-multiout"
+            && record.pin_matrix_posture
+                == signal_runtime::RuntimePluginPinMatrixPosture::Negotiated
+            && record.dynamic_bus_negotiation_posture
+                == signal_runtime::RuntimeDynamicBusNegotiationPosture::Negotiated
+            && record
+                .pin_group_identities
+                .contains(&signal_runtime::RuntimePluginPinGroupIdentity::SecondaryProgramPath)
+    }));
+    assert!(pin_matrix.records.iter().any(|record| {
+        record.plugin_type_id == "plugin:vst3:host-local-bus-fx"
+            && record.fallback_outcome
+                == signal_runtime::RuntimePluginNegotiationFallbackOutcome::GuardedDegradation
+            && record
+                .pin_group_identities
+                .contains(&signal_runtime::RuntimePluginPinGroupIdentity::SidechainPath)
+    }));
 
     let rendered = report.render_json();
     assert!(rendered.contains("\"plugin_discovery_snapshot\":{"));
+    assert!(rendered.contains("\"plugin_pin_matrix_snapshot\":{"));
     assert!(rendered.contains("\"complex_io_summary\":{"));
+    assert!(rendered.contains("\"pin_matrix_posture\":\"Negotiated\""));
     assert!(rendered.contains("\"multi_output_instrument\":true"));
     assert!(rendered.contains("\"bus_capable_fx_class\":\"SendReturnCapableFx\""));
 }
@@ -2828,6 +2977,16 @@ fn local_shared_host_edge_exports_runtime_spatial_truth() {
     assert_eq!(topology.surround_bed_spatial_node_count, 1);
     assert_eq!(topology.object_aware_spatial_node_count, 0);
     assert_eq!(topology.expanded_fallback_spatial_node_count, 1);
+    assert_eq!(topology.immersive_spatial_node_count, 1);
+    assert_eq!(topology.room_policy_aware_spatial_node_count, 0);
+    assert_eq!(topology.fallback_room_policy_spatial_node_count, 1);
+    assert_eq!(topology.deployment_spatial_node_count, 1);
+    assert_eq!(topology.folded_down_spatial_node_count, 1);
+    assert_eq!(topology.fallback_monitoring_scene_spatial_node_count, 1);
+    assert_eq!(topology.renderer_capability_spatial_node_count, 1);
+    assert_eq!(topology.negotiated_renderer_spatial_node_count, 0);
+    assert_eq!(topology.immersive_export_spatial_node_count, 1);
+    assert_eq!(topology.fallback_immersive_export_spatial_node_count, 1);
     assert!(topology.nodes.iter().any(|node| {
         node.node_id == "spatial-stereo"
             && node.spatial_execution.as_ref().is_some_and(|spatial| {
@@ -2852,6 +3011,46 @@ fn local_shared_host_edge_exports_runtime_spatial_truth() {
                             == Some(
                                 RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial,
                             )
+                        && spatial
+                            .immersive_room_policy
+                            .as_ref()
+                            .is_some_and(|immersive| {
+                                immersive.object_rendering_posture
+                                    == RuntimeImmersiveObjectRenderingPosture::NotRequested
+                                    && immersive.room_policy_class
+                                        == RuntimeRoomPolicyClass::FallbackRoom
+                                    && immersive.room_policy_authority
+                                        == RuntimeRoomPolicyAuthority::RuntimeDefault
+                                    && immersive.room_outcome
+                                        == RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+                            })
+                        && spatial
+                            .deployment_monitoring
+                            .as_ref()
+                            .is_some_and(|monitoring| {
+                                monitoring.deployment_class
+                                    == RuntimeDeploymentClass::FallbackDeployment
+                                    && monitoring.fold_down_policy
+                                        == RuntimeFoldDownPolicy::FoldDownToReferenceBed
+                                    && monitoring.monitoring_scene_class
+                                        == RuntimeMonitoringSceneClass::FallbackScene
+                                    && monitoring.monitoring_scene_authority
+                                        == RuntimeMonitoringSceneAuthority::RuntimeDefault
+                                    && monitoring.monitoring_outcome
+                                        == RuntimeMonitoringOutcome::BypassMonitoringScene
+                            })
+                        && spatial.renderer_export.as_ref().is_some_and(|renderer| {
+                            renderer.renderer_capability_posture
+                                == RuntimeRendererCapabilityNegotiationPosture::FallbackNegotiation
+                                && renderer.capability_authority
+                                    == RuntimeRendererCapabilityAuthority::RuntimeDefault
+                                && renderer.immersive_export_class
+                                    == RuntimeImmersiveExportClass::FallbackExport
+                                && renderer.export_authority
+                                    == RuntimeImmersiveExportAuthority::RuntimeDefault
+                                && renderer.export_outcome
+                                    == RuntimeImmersiveExportOutcome::BypassImmersiveExport
+                        })
                 })
         }));
 
@@ -2860,11 +3059,32 @@ fn local_shared_host_edge_exports_runtime_spatial_truth() {
     assert!(rendered.contains("\"active_spatial_node_count\":1"));
     assert!(rendered.contains("\"surround_bed_spatial_node_count\":1"));
     assert!(rendered.contains("\"expanded_fallback_spatial_node_count\":1"));
+    assert!(rendered.contains("\"immersive_spatial_node_count\":1"));
+    assert!(rendered.contains("\"fallback_room_policy_spatial_node_count\":1"));
+    assert!(rendered.contains("\"deployment_spatial_node_count\":1"));
+    assert!(rendered.contains("\"folded_down_spatial_node_count\":1"));
+    assert!(rendered.contains("\"fallback_monitoring_scene_spatial_node_count\":1"));
+    assert!(rendered.contains("\"renderer_capability_spatial_node_count\":1"));
+    assert!(rendered.contains("\"negotiated_renderer_spatial_node_count\":0"));
+    assert!(rendered.contains("\"immersive_export_spatial_node_count\":1"));
+    assert!(rendered.contains("\"fallback_immersive_export_spatial_node_count\":1"));
     assert!(rendered.contains("\"bed_class\":\"CanonicalSurroundBed\""));
     assert!(rendered.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
     assert!(rendered.contains("\"execution_mode\":\"BalanceGroups\""));
     assert!(rendered.contains("\"fallback_outcome\":\"BypassSpatialProcessing\""));
     assert!(rendered.contains("\"expanded_fallback_outcome\":\"CollapseToBaselineSpatial\""));
+    assert!(rendered.contains("\"immersive_room_policy\":{"));
+    assert!(rendered.contains("\"room_policy_class\":\"FallbackRoom\""));
+    assert!(rendered.contains("\"room_outcome\":\"BypassRoomPolicy\""));
+    assert!(rendered.contains("\"deployment_monitoring\":{"));
+    assert!(rendered.contains("\"deployment_class\":\"FallbackDeployment\""));
+    assert!(rendered.contains("\"fold_down_policy\":\"FoldDownToReferenceBed\""));
+    assert!(rendered.contains("\"monitoring_scene_class\":\"FallbackScene\""));
+    assert!(rendered.contains("\"monitoring_outcome\":\"BypassMonitoringScene\""));
+    assert!(rendered.contains("\"renderer_export\":{"));
+    assert!(rendered.contains("\"renderer_capability_posture\":\"FallbackNegotiation\""));
+    assert!(rendered.contains("\"immersive_export_class\":\"FallbackExport\""));
+    assert!(rendered.contains("\"export_outcome\":\"BypassImmersiveExport\""));
 }
 
 #[test]

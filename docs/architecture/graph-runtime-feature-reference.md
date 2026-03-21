@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-03-18
+Updated: 2026-03-19
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -1637,8 +1637,278 @@ Useful implementation entry points after this doc:
   `acceptance:jack-coordination-boundary` as the repo-owned consumer-proof
   seam
 
+## g08.003 Batch 3.3 Outcome
+
+- `signal-runtime` now exports `RuntimePipeWireAlsaParitySnapshot` as the
+  bounded shared receipt for PipeWire and ALSA session-role, device-claim,
+  stream-policy, and guarded parity
+- stable host edges are aligned to the same receipt family:
+  - local host proves `NotPipeWireOrAlsa`
+  - server host proves backend-managed PipeWire policy with clock-guarded
+    parity
+- `signal-supervisor-tools` now exposes
+  `signal.runtime.pipewire-alsa-parity-boundary` as the machine-readable
+  consumer descriptor for that receipt family
+- `effigy acceptance:pipewire-alsa-parity-boundary` now composes the public
+  runtime proof, stable host-edge proofs, and descriptor proof into one
+  repo-owned acceptance seam
+- `g08.003` is complete, so later Linux workflow and acceptance milestones can
+  build on one explicit PipeWire and ALSA authority line instead of reopening
+  host-local parity reconstruction
+
+## g08.004 Batch 4.1 Outcome
+
+- `g08` now has a frozen LV2 worker, URID, patch, and extension-negotiation
+  contract in
+  `docs/contracts/055-lv2-worker-urid-patch-and-extension-negotiation-contract.md`
+  instead of leaving that richer LV2 depth as deferred prose on the earlier
+  LV2 baseline
+- worker posture, URID negotiation posture, patch exchange posture, and
+  extension-negotiation summary are now required to compose through shared
+  runtime-owned receipts instead of host-local feature tables or adapter-only
+  negotiation logs
+- full atom-schema, UI, custom extension, and Linux backend session detail
+  remain explicitly private or deferred until later promotion
+
+## g08.004 Batch 4.2 Outcome
+
+- `signal-runtime` now exports one `RuntimeLv2ExtensionSnapshot` surface for
+  worker posture, URID negotiation posture, patch exchange posture, and
+  extension-negotiation state instead of leaving that meaning in adapter-only
+  feature tables
+- the LV2 extension seam now composes from runtime-owned discovery and plugin
+  lifecycle truth, so negotiated, guarded, and unavailable outcomes stay typed
+  across shared observation and supervisor export
+- stable host-edge surfaces now expose the same runtime-owned LV2 extension
+  receipt family instead of reconstructing LV2 extension support from
+  host-local summaries
+
+## g08.004 Batch 4.3 Outcome
+
+- the existing `signal.runtime.lv2-boundary` consumer seam now points at the
+  LV2 worker, URID, patch, and extension-negotiation contract instead of the
+  earlier baseline-only LV2 contract
+- the repo-owned acceptance lane now requires public runtime proof plus stable
+  local and server host-edge proofs for the same runtime-owned LV2 extension
+  snapshot
+- supervisor-side machine-readable boundary output now describes the bounded
+  LV2 extension seam directly, so consumers can inspect the proof surface
+  without adapter-private reconstruction
+
+## g08.005 Batch 5.1 Outcome
+
+- `g08` now has a frozen complex plugin pin-matrix and dynamic
+  bus-negotiation contract in
+  `docs/contracts/056-complex-plugin-pin-matrix-and-dynamic-bus-negotiation-contract.md`
+  instead of leaving that richer plugin-routing depth as deferred prose on the
+  earlier complex-I/O baseline
+- pin-group identity, pin-matrix posture, dynamic bus-negotiation posture, and
+  negotiation fallback outcome are now required to compose through shared
+  runtime-owned receipts instead of host-local bus rules or adapter-private
+  pin graphs
+- full format-specific pin schemas, product pin-matrix UX, and richer runtime
+  execution receipts remain explicitly deferred until later promotion
+
+## g08.005 Batch 5.2 Outcome
+
+- `signal-runtime` now exports one `RuntimePluginPinMatrixSnapshot` surface for
+  pin-group identity, pin-matrix posture, dynamic bus-negotiation posture, and
+  bounded fallback outcome instead of leaving that richer routing meaning in
+  adapter-private port graphs
+- the pin-matrix seam now composes from runtime-owned complex-I/O discovery,
+  sandbox lifecycle, and plugin-chain stage truth, so declared, negotiated,
+  guarded, and unavailable outcomes stay typed across shared observation and
+  supervisor export
+- stable host-edge surfaces now expose the same runtime-owned pin-matrix
+  receipt family instead of reconstructing complex bus activation posture from
+  host-local plugin detail
+
+## g08.005 Batch 5.3 Outcome
+
+- the existing `signal.runtime.complex-io-boundary` consumer seam now points at
+  the pin-matrix and dynamic bus-negotiation contract instead of the earlier
+  baseline-only complex-I/O contract
+- the machine-readable supervisor boundary now describes both the prior
+  complex-I/O receipts and the new `plugin_pin_matrix_snapshot` surface as one
+  bounded shared proof seam
+- the repo-owned acceptance lane continues to reuse the focused runtime and
+  host-edge proofs, but now closes the widened plugin-routing consumer seam
+  without plugin-format-specific negotiation policy
+
+## g08.006 Batch 6.1 Outcome
+
+- `g08` now has a frozen immersive object-rendering and room-policy contract in
+  `docs/contracts/057-immersive-object-rendering-and-room-policy-substrate-contract.md`
+  instead of leaving immersive room-policy truth as deferred prose underneath
+  the earlier spatial and richer-spatial seams
+- immersive object-rendering posture, room-policy class, room-policy
+  authority, and immersive room outcome are now required to compose through
+  shared runtime-owned meaning instead of renderer-private room rules or
+  host-local deployment heuristics
+- speaker deployment, fold-down, monitoring-scene depth, renderer-capability
+  negotiation, and immersive export packaging remain explicitly deferred until
+  later `g08` milestones
+
+## g08.006 Batch 6.2 Outcome
+
+- `signal-runtime` now carries one bounded `immersive_room_policy` summary on
+  the existing richer-spatial execution surface instead of introducing a second
+  immersive report family or renderer-private room-policy model
+- execution topology, plugin-chain stages, and offline-render dependency
+  preview now all expose aggregate immersive room-policy counts, so later
+  immersive monitoring and export work can build on one runtime-owned
+  inspection seam
+- the current runtime-owned baseline stays explicit: canonical surround
+  fallback paths now surface `FallbackRoom` plus `BypassRoomPolicy`, while
+  stereo-only paths remain outside the immersive room-policy seam until later
+  renderer-backed depth exists
+
+## g08.006 Batch 6.3 Outcome
+
+- the existing `signal.runtime.spatial-boundary` consumer seam now points at
+  the immersive room-policy contract instead of the earlier richer-spatial-only
+  contract
+- the machine-readable supervisor boundary now describes immersive room-policy
+  topology, plugin-chain, and offline-render preview anchors as one bounded
+  shared proof seam
+- the repo-owned acceptance lane continues to reuse the focused runtime and
+  host-edge proofs, but now closes the widened immersive room-policy consumer
+  seam without a renderer-private room-policy shell
+
+## g08.007 Batch 7.3 Outcome
+
+- the existing `signal.runtime.spatial-boundary` now points at the speaker
+  deployment and monitoring contract instead of stopping at the earlier
+  immersive room-policy seam
+- the machine-readable supervisor boundary now describes deployment-aware,
+  folded-down, and fallback-monitoring topology, stage, and render-preview
+  anchors alongside `deployment_monitoring` on shared runtime receipts
+- the repo-owned acceptance lane continues to reuse the focused runtime and
+  host-edge proofs, but now closes the bounded deployment and monitoring
+  consumer seam without a renderer-private monitoring shell
+
+## g08.008 Batch 8.2 Outcome
+
+- `signal-runtime` now carries bounded renderer-capability negotiation and
+  immersive-export posture on the shared spatial execution seam through
+  `renderer_export`
+- execution topology and offline render preview now count
+  renderer-capability, negotiated-renderer, immersive-export, and
+  fallback-export work directly from runtime-owned receipts
+- the focused public runtime and stable host-edge proofs now assert the same
+  fallback renderer negotiation and immersive export answers instead of
+  relying on renderer-private capability tables or host-local export glue
+
+## g08.008 Batch 8.3 Outcome
+
+- the existing `signal.runtime.spatial-boundary` now points at the
+  renderer-capability and immersive-export contract instead of stopping at the
+  earlier deployment and monitoring seam
+- the machine-readable supervisor boundary now describes
+  `spatial_execution.renderer_export` plus renderer-capability and
+  immersive-export topology and render-preview anchors as one bounded shared
+  proof seam
+- the repo-owned acceptance lane continues to reuse the focused runtime and
+  host-edge proofs, but now closes the bounded renderer-capability and
+  immersive-export consumer seam without a renderer-private export shell
+
+## g08.009 Batch 9.1 Outcome
+
+- `g08` now has a frozen advanced control-surface display, motor, and haptic
+  transport contract in
+  `docs/contracts/060-advanced-control-surface-display-motor-and-haptic-transport-contract.md`
+  instead of leaving richer control-surface feedback depth as deferred prose
+  under the earlier control-surface and advanced-hardware seams
+- display transport posture, display content class, motor transport posture,
+  haptic transport posture, feedback authority, and feedback outcome are now
+  required to compose through shared runtime-owned meaning instead of
+  vendor-private payload schemas, host-local feedback bridges, or product-local
+  controller UX
+- runtime receipts, supervisor proof, and stable host-edge export remain
+  explicitly deferred until later `g08.009` batches
+
+## g08.009 Batch 9.2 Outcome
+
+- `signal-runtime` now carries typed display posture, display content class,
+  motor posture, haptic posture, feedback authority, and feedback outcome on
+  the existing advanced-hardware seam instead of leaving richer feedback depth
+  at the contract layer only
+- the advanced-hardware snapshot now exposes aggregate display, motor, and
+  haptic transport counts, so consumers do not need to reconstruct richer
+  feedback truth from action-class flags alone
+- the focused public runtime and stable host-edge proofs now assert the same
+  bounded guarded-display baseline instead of relying on vendor-private payload
+  schemas or host-local feedback bridges
+
+## g08.009 Batch 9.3 Outcome
+
+- the existing `signal.runtime.advanced-hardware-boundary` now points at the
+  advanced control-surface display, motor, and haptic transport contract
+  instead of stopping at the earlier advanced-hardware baseline seam
+- the machine-readable supervisor boundary now describes display, motor, and
+  haptic transport counts plus device-level posture and bounded feedback
+  outcome anchors as one bounded shared proof seam
+- the repo-owned acceptance lane continues to reuse the focused runtime and
+  host-edge proofs, but now closes the bounded advanced control-feedback
+  consumer seam without a device-private feedback shell
+
+## g08.010 Batch 10.1 Outcome
+
+- `g08` now has a frozen control-surface scene mapping, feedback-page, and
+  safe action graph contract in
+  `docs/contracts/061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md`
+  instead of leaving richer controller workflow depth as deferred prose under
+  the earlier control-surface and advanced-feedback seams
+- scene-mapping posture, feedback-page posture, feedback-page class, safe
+  action graph posture, action authority, and safe action outcome are now
+  required to compose through shared runtime-owned meaning instead of
+  controller-page assumptions, host-local scene ledgers, or unsafe device
+  scripts
+- runtime receipts, supervisor proof, and stable host-edge export remain
+  explicitly deferred until later `g08.010` batches
+
 ## Next Task
 
-Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
-session-role, device-claim, and stream-policy parity meaning on top of the
-closed live Linux ownership and JACK coordination seams.
+Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
+preview-output routing, audition-sink ownership, and low-latency device-policy
+receipts, then align stable host-edge export to the same bounded model.
+
+## g08.011 Batch 11.1 Outcome
+
+- `g08` now has a frozen preview-device contract in
+  `docs/contracts/062-preview-output-routing-audition-sink-and-low-latency-device-policy-contract.md`
+  instead of leaving preview-device routing as deferred prose under the older
+  preview-transform and external-I/O seams
+- preview-output routing, audition-sink ownership, and low-latency device
+  policy are now required to compose through the closed preview-transform,
+  media-service, external-I/O, controller, and advanced-hardware seams rather
+  than browser-local preview buses or host-local device picks
+- runtime receipts, supervisor proof, and stable host-edge export remain
+  explicitly deferred until Batch 11.2 and Batch 11.3
+
+## g08.010 Batch 10.2 Outcome
+
+- `signal-runtime` now widens the existing advanced-hardware seam with bounded
+  scene-mapping, feedback-page, and safe action graph posture instead of
+  opening a second controller-workflow report family
+- `RuntimeAdvancedHardwareSnapshot` now carries aggregate scene-mapping,
+  feedback-page, and safe-action-graph counts, while each advanced-hardware
+  device descriptor exposes bounded authority and safe-action outcome answers
+- public runtime and stable host-edge proofs now consume the same runtime-
+  owned workflow truth, so later supervisor proof can widen the current
+  advanced-hardware boundary instead of introducing a host-local workflow
+  shell
+
+## g08.010 Batch 10.3 Outcome
+
+- the existing `signal.runtime.advanced-hardware-boundary` now points at
+  `docs/contracts/061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md`
+  and describes bounded scene-mapping, feedback-page, and safe action graph
+  counts plus per-device posture, authority, and safe-action outcome on the
+  same runtime-owned seam
+- the machine-readable supervisor boundary now closes the bounded control-
+  surface workflow consumer seam through the existing public runtime and stable
+  host-edge proof spine instead of introducing a controller-workflow-only
+  acceptance lane
+- `g08.010` is now complete, and the next `g08` queue is preview-output
+  routing, audition-sink ownership, and low-latency device policy

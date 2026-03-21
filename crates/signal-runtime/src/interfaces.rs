@@ -1098,6 +1098,171 @@ pub enum RuntimeSpatialExpandedFallbackOutcome {
     TerminalExpandedSpatialFailure,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeImmersiveObjectRenderingPosture {
+    #[default]
+    NotRequested,
+    MetadataOnly,
+    RoomPolicyAware,
+    CollapsedToBed,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeRoomPolicyClass {
+    #[default]
+    NoRoomPolicy,
+    ReferenceRoom,
+    MonitoringRoom,
+    DeploymentRoom,
+    FallbackRoom,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeRoomPolicyAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    RendererAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeImmersiveRoomOutcome {
+    #[default]
+    BypassRoomPolicy,
+    RenderObjectsAgainstRoomPolicy,
+    PreserveObjectMetadataOnly,
+    CollapseObjectsIntoBed,
+    TerminalImmersiveFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeImmersiveRoomPolicySummary {
+    pub object_rendering_posture: RuntimeImmersiveObjectRenderingPosture,
+    pub room_policy_class: RuntimeRoomPolicyClass,
+    pub room_policy_authority: RuntimeRoomPolicyAuthority,
+    pub room_outcome: RuntimeImmersiveRoomOutcome,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeDeploymentClass {
+    #[default]
+    SourceLayoutDeployment,
+    ReferenceSpeakerDeployment,
+    MonitoringSpeakerDeployment,
+    PortableFoldDownDeployment,
+    FallbackDeployment,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeFoldDownPolicy {
+    #[default]
+    PreserveDeclaredDeployment,
+    FoldDownToReferenceBed,
+    FoldDownToStereoMonitoring,
+    FoldDownToPortablePreview,
+    BypassDeploymentPolicy,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMonitoringSceneClass {
+    #[default]
+    NoMonitoringScene,
+    ReferenceScene,
+    FoldDownScene,
+    ConfidenceScene,
+    FallbackScene,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMonitoringSceneAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    RendererAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMonitoringOutcome {
+    MonitorDeclaredDeployment,
+    MonitorFoldedDownScene,
+    MonitorPortablePreview,
+    #[default]
+    BypassMonitoringScene,
+    TerminalMonitoringFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeDeploymentMonitoringSummary {
+    pub deployment_class: RuntimeDeploymentClass,
+    pub fold_down_policy: RuntimeFoldDownPolicy,
+    pub monitoring_scene_class: RuntimeMonitoringSceneClass,
+    pub monitoring_scene_authority: RuntimeMonitoringSceneAuthority,
+    pub monitoring_outcome: RuntimeMonitoringOutcome,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeRendererCapabilityNegotiationPosture {
+    #[default]
+    NotRequested,
+    DeclaredCompatible,
+    NegotiatedCompatible,
+    FallbackNegotiation,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeRendererCapabilityAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    RendererAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeImmersiveExportClass {
+    #[default]
+    NoImmersiveExport,
+    BedOnlyExport,
+    ObjectAwareExport,
+    MonitoringPreviewExport,
+    FallbackExport,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeImmersiveExportAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    RendererAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeImmersiveExportOutcome {
+    PreserveDeclaredExport,
+    CollapseToBedExport,
+    PreserveMetadataOnly,
+    #[default]
+    BypassImmersiveExport,
+    TerminalExportFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeRendererImmersiveExportSummary {
+    pub renderer_capability_posture: RuntimeRendererCapabilityNegotiationPosture,
+    pub capability_authority: RuntimeRendererCapabilityAuthority,
+    pub immersive_export_class: RuntimeImmersiveExportClass,
+    pub export_authority: RuntimeImmersiveExportAuthority,
+    pub export_outcome: RuntimeImmersiveExportOutcome,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeSpatialExecutionSummary {
     pub node_id: String,
@@ -1113,6 +1278,9 @@ pub struct RuntimeSpatialExecutionSummary {
     pub mix_policy: RuntimeSpatialMixPolicy,
     pub render_scope: RuntimeSpatialRenderScope,
     pub expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+    pub immersive_room_policy: Option<RuntimeImmersiveRoomPolicySummary>,
+    pub deployment_monitoring: Option<RuntimeDeploymentMonitoringSummary>,
+    pub renderer_export: Option<RuntimeRendererImmersiveExportSummary>,
     pub balance: Option<String>,
     pub input_layout: RuntimeMultichannelLayoutSummary,
     pub output_layout: RuntimeMultichannelLayoutSummary,
@@ -1175,6 +1343,377 @@ fn runtime_spatial_render_scope_for_summary(
     }
 }
 
+fn runtime_immersive_room_policy_summary_for_spatial(
+    adapter_class: RuntimeSpatialAdapterClass,
+    execution_mode: RuntimeSpatialExecutionMode,
+    target_environment: RuntimeSpatialTargetEnvironment,
+    fallback_outcome: Option<RuntimeSpatialFallbackOutcome>,
+    bed_class: RuntimeSpatialBedClass,
+    object_role: Option<RuntimeSpatialObjectRole>,
+    object_count: usize,
+    render_scope: RuntimeSpatialRenderScope,
+    expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+) -> Option<RuntimeImmersiveRoomPolicySummary> {
+    let immersive_candidate = bed_class != RuntimeSpatialBedClass::StereoBed
+        || object_count > 0
+        || object_role.is_some()
+        || adapter_class == RuntimeSpatialAdapterClass::Renderer
+        || execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+        || target_environment != RuntimeSpatialTargetEnvironment::SourceLayout
+        || matches!(
+            render_scope,
+            RuntimeSpatialRenderScope::BedAndObjectRender
+                | RuntimeSpatialRenderScope::BedFoldDownRender
+                | RuntimeSpatialRenderScope::ObjectMetadataOnly
+        );
+    if !immersive_candidate {
+        return None;
+    }
+
+    let room_policy_class = if execution_mode == RuntimeSpatialExecutionMode::Bypassed
+        || fallback_outcome.is_some()
+        || expanded_fallback_outcome.is_some()
+    {
+        RuntimeRoomPolicyClass::FallbackRoom
+    } else {
+        match target_environment {
+            RuntimeSpatialTargetEnvironment::SourceLayout
+            | RuntimeSpatialTargetEnvironment::CanonicalLayout => {
+                RuntimeRoomPolicyClass::ReferenceRoom
+            }
+            RuntimeSpatialTargetEnvironment::DeviceLayout => RuntimeRoomPolicyClass::MonitoringRoom,
+            RuntimeSpatialTargetEnvironment::CustomEnvironment => {
+                RuntimeRoomPolicyClass::DeploymentRoom
+            }
+        }
+    };
+
+    let room_policy_authority = if room_policy_class == RuntimeRoomPolicyClass::FallbackRoom {
+        RuntimeRoomPolicyAuthority::RuntimeDefault
+    } else if execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+        || adapter_class == RuntimeSpatialAdapterClass::Renderer
+    {
+        RuntimeRoomPolicyAuthority::RendererAdvisory
+    } else {
+        RuntimeRoomPolicyAuthority::RuntimeDeclared
+    };
+
+    let object_rendering_posture = if object_count == 0 && object_role.is_none() {
+        RuntimeImmersiveObjectRenderingPosture::NotRequested
+    } else if render_scope == RuntimeSpatialRenderScope::ObjectMetadataOnly {
+        RuntimeImmersiveObjectRenderingPosture::MetadataOnly
+    } else if execution_mode == RuntimeSpatialExecutionMode::Bypassed
+        || fallback_outcome.is_some()
+        || matches!(
+            expanded_fallback_outcome,
+            Some(
+                RuntimeSpatialExpandedFallbackOutcome::CollapseObjectsIntoBed
+                    | RuntimeSpatialExpandedFallbackOutcome::CollapseToCanonicalBed
+                    | RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial
+                    | RuntimeSpatialExpandedFallbackOutcome::BypassExpandedSpatial
+            )
+        )
+    {
+        RuntimeImmersiveObjectRenderingPosture::CollapsedToBed
+    } else if room_policy_class == RuntimeRoomPolicyClass::FallbackRoom {
+        RuntimeImmersiveObjectRenderingPosture::Unavailable
+    } else {
+        RuntimeImmersiveObjectRenderingPosture::RoomPolicyAware
+    };
+
+    let room_outcome = if matches!(
+        expanded_fallback_outcome,
+        Some(RuntimeSpatialExpandedFallbackOutcome::TerminalExpandedSpatialFailure)
+    ) || fallback_outcome
+        == Some(RuntimeSpatialFallbackOutcome::TerminalSpatialFailure)
+    {
+        RuntimeImmersiveRoomOutcome::TerminalImmersiveFailure
+    } else {
+        match object_rendering_posture {
+            RuntimeImmersiveObjectRenderingPosture::RoomPolicyAware => {
+                RuntimeImmersiveRoomOutcome::RenderObjectsAgainstRoomPolicy
+            }
+            RuntimeImmersiveObjectRenderingPosture::MetadataOnly => {
+                RuntimeImmersiveRoomOutcome::PreserveObjectMetadataOnly
+            }
+            RuntimeImmersiveObjectRenderingPosture::CollapsedToBed => {
+                RuntimeImmersiveRoomOutcome::CollapseObjectsIntoBed
+            }
+            RuntimeImmersiveObjectRenderingPosture::NotRequested
+            | RuntimeImmersiveObjectRenderingPosture::Unavailable => {
+                RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+            }
+        }
+    };
+
+    Some(RuntimeImmersiveRoomPolicySummary {
+        object_rendering_posture,
+        room_policy_class,
+        room_policy_authority,
+        room_outcome,
+        summary: format!(
+            "objects={:?} room_class={:?} authority={:?} outcome={:?}",
+            object_rendering_posture, room_policy_class, room_policy_authority, room_outcome,
+        ),
+    })
+}
+
+fn runtime_deployment_monitoring_summary_for_spatial(
+    target_environment: RuntimeSpatialTargetEnvironment,
+    bed_class: RuntimeSpatialBedClass,
+    fallback_outcome: Option<RuntimeSpatialFallbackOutcome>,
+    expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+    immersive_room_policy: Option<&RuntimeImmersiveRoomPolicySummary>,
+) -> Option<RuntimeDeploymentMonitoringSummary> {
+    let immersive_room_policy = immersive_room_policy?;
+    let fallback_active = immersive_room_policy.room_policy_class
+        == RuntimeRoomPolicyClass::FallbackRoom
+        || fallback_outcome.is_some()
+        || expanded_fallback_outcome.is_some();
+
+    let deployment_class = if fallback_active {
+        RuntimeDeploymentClass::FallbackDeployment
+    } else {
+        match target_environment {
+            RuntimeSpatialTargetEnvironment::SourceLayout => {
+                RuntimeDeploymentClass::SourceLayoutDeployment
+            }
+            RuntimeSpatialTargetEnvironment::CanonicalLayout => {
+                RuntimeDeploymentClass::ReferenceSpeakerDeployment
+            }
+            RuntimeSpatialTargetEnvironment::DeviceLayout => {
+                RuntimeDeploymentClass::MonitoringSpeakerDeployment
+            }
+            RuntimeSpatialTargetEnvironment::CustomEnvironment => {
+                RuntimeDeploymentClass::PortableFoldDownDeployment
+            }
+        }
+    };
+
+    let fold_down_policy = if fallback_active {
+        match bed_class {
+            RuntimeSpatialBedClass::StereoBed => RuntimeFoldDownPolicy::FoldDownToStereoMonitoring,
+            RuntimeSpatialBedClass::CanonicalSurroundBed
+            | RuntimeSpatialBedClass::CustomDiscreteBed => {
+                RuntimeFoldDownPolicy::FoldDownToReferenceBed
+            }
+        }
+    } else {
+        match deployment_class {
+            RuntimeDeploymentClass::PortableFoldDownDeployment => {
+                RuntimeFoldDownPolicy::FoldDownToPortablePreview
+            }
+            RuntimeDeploymentClass::SourceLayoutDeployment
+            | RuntimeDeploymentClass::ReferenceSpeakerDeployment
+            | RuntimeDeploymentClass::MonitoringSpeakerDeployment => {
+                RuntimeFoldDownPolicy::PreserveDeclaredDeployment
+            }
+            RuntimeDeploymentClass::FallbackDeployment => {
+                RuntimeFoldDownPolicy::BypassDeploymentPolicy
+            }
+        }
+    };
+
+    let monitoring_scene_class = if fallback_active {
+        RuntimeMonitoringSceneClass::FallbackScene
+    } else {
+        match fold_down_policy {
+            RuntimeFoldDownPolicy::PreserveDeclaredDeployment => {
+                if deployment_class == RuntimeDeploymentClass::MonitoringSpeakerDeployment {
+                    RuntimeMonitoringSceneClass::ConfidenceScene
+                } else {
+                    RuntimeMonitoringSceneClass::ReferenceScene
+                }
+            }
+            RuntimeFoldDownPolicy::FoldDownToReferenceBed
+            | RuntimeFoldDownPolicy::FoldDownToStereoMonitoring
+            | RuntimeFoldDownPolicy::FoldDownToPortablePreview => {
+                RuntimeMonitoringSceneClass::FoldDownScene
+            }
+            RuntimeFoldDownPolicy::BypassDeploymentPolicy => {
+                RuntimeMonitoringSceneClass::FallbackScene
+            }
+        }
+    };
+
+    let monitoring_scene_authority = if fallback_active {
+        RuntimeMonitoringSceneAuthority::RuntimeDefault
+    } else if deployment_class == RuntimeDeploymentClass::MonitoringSpeakerDeployment {
+        RuntimeMonitoringSceneAuthority::HostForwarded
+    } else {
+        RuntimeMonitoringSceneAuthority::RuntimeDeclared
+    };
+
+    let monitoring_outcome = if matches!(
+        expanded_fallback_outcome,
+        Some(RuntimeSpatialExpandedFallbackOutcome::TerminalExpandedSpatialFailure)
+    ) || fallback_outcome
+        == Some(RuntimeSpatialFallbackOutcome::TerminalSpatialFailure)
+    {
+        RuntimeMonitoringOutcome::TerminalMonitoringFailure
+    } else if fallback_active {
+        RuntimeMonitoringOutcome::BypassMonitoringScene
+    } else {
+        match fold_down_policy {
+            RuntimeFoldDownPolicy::PreserveDeclaredDeployment => {
+                RuntimeMonitoringOutcome::MonitorDeclaredDeployment
+            }
+            RuntimeFoldDownPolicy::FoldDownToReferenceBed
+            | RuntimeFoldDownPolicy::FoldDownToStereoMonitoring => {
+                RuntimeMonitoringOutcome::MonitorFoldedDownScene
+            }
+            RuntimeFoldDownPolicy::FoldDownToPortablePreview => {
+                RuntimeMonitoringOutcome::MonitorPortablePreview
+            }
+            RuntimeFoldDownPolicy::BypassDeploymentPolicy => {
+                RuntimeMonitoringOutcome::BypassMonitoringScene
+            }
+        }
+    };
+
+    Some(RuntimeDeploymentMonitoringSummary {
+        deployment_class,
+        fold_down_policy,
+        monitoring_scene_class,
+        monitoring_scene_authority,
+        monitoring_outcome,
+        summary: format!(
+            "deployment={:?} fold_down={:?} scene={:?} authority={:?} outcome={:?}",
+            deployment_class,
+            fold_down_policy,
+            monitoring_scene_class,
+            monitoring_scene_authority,
+            monitoring_outcome,
+        ),
+    })
+}
+
+fn runtime_renderer_immersive_export_summary_for_spatial(
+    adapter_class: RuntimeSpatialAdapterClass,
+    execution_mode: RuntimeSpatialExecutionMode,
+    target_environment: RuntimeSpatialTargetEnvironment,
+    fallback_outcome: Option<RuntimeSpatialFallbackOutcome>,
+    expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+    immersive_room_policy: Option<&RuntimeImmersiveRoomPolicySummary>,
+    deployment_monitoring: Option<&RuntimeDeploymentMonitoringSummary>,
+) -> Option<RuntimeRendererImmersiveExportSummary> {
+    let immersive_room_policy = immersive_room_policy?;
+    let fallback_active = immersive_room_policy.room_policy_class
+        == RuntimeRoomPolicyClass::FallbackRoom
+        || deployment_monitoring.is_some_and(|monitoring| {
+            monitoring.monitoring_scene_class == RuntimeMonitoringSceneClass::FallbackScene
+        })
+        || fallback_outcome.is_some()
+        || expanded_fallback_outcome.is_some();
+
+    let renderer_capability_posture = if fallback_active {
+        RuntimeRendererCapabilityNegotiationPosture::FallbackNegotiation
+    } else if adapter_class == RuntimeSpatialAdapterClass::Renderer
+        || execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+    {
+        RuntimeRendererCapabilityNegotiationPosture::NegotiatedCompatible
+    } else if target_environment != RuntimeSpatialTargetEnvironment::SourceLayout {
+        RuntimeRendererCapabilityNegotiationPosture::DeclaredCompatible
+    } else {
+        RuntimeRendererCapabilityNegotiationPosture::DeclaredCompatible
+    };
+
+    let capability_authority = if fallback_active {
+        RuntimeRendererCapabilityAuthority::RuntimeDefault
+    } else if adapter_class == RuntimeSpatialAdapterClass::Renderer
+        || execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+    {
+        RuntimeRendererCapabilityAuthority::RendererAdvisory
+    } else if deployment_monitoring.is_some_and(|monitoring| {
+        monitoring.deployment_class == RuntimeDeploymentClass::MonitoringSpeakerDeployment
+    }) {
+        RuntimeRendererCapabilityAuthority::HostForwarded
+    } else {
+        RuntimeRendererCapabilityAuthority::RuntimeDeclared
+    };
+
+    let immersive_export_class = if fallback_active {
+        RuntimeImmersiveExportClass::FallbackExport
+    } else if immersive_room_policy.object_rendering_posture
+        == RuntimeImmersiveObjectRenderingPosture::RoomPolicyAware
+    {
+        RuntimeImmersiveExportClass::ObjectAwareExport
+    } else if deployment_monitoring.is_some_and(|monitoring| {
+        monitoring.fold_down_policy != RuntimeFoldDownPolicy::PreserveDeclaredDeployment
+    }) {
+        RuntimeImmersiveExportClass::MonitoringPreviewExport
+    } else {
+        RuntimeImmersiveExportClass::BedOnlyExport
+    };
+
+    let export_authority = if fallback_active {
+        RuntimeImmersiveExportAuthority::RuntimeDefault
+    } else if adapter_class == RuntimeSpatialAdapterClass::Renderer
+        || execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+    {
+        RuntimeImmersiveExportAuthority::RendererAdvisory
+    } else if deployment_monitoring.is_some_and(|monitoring| {
+        monitoring.monitoring_scene_authority == RuntimeMonitoringSceneAuthority::HostForwarded
+    }) {
+        RuntimeImmersiveExportAuthority::HostForwarded
+    } else {
+        RuntimeImmersiveExportAuthority::RuntimeDeclared
+    };
+
+    let export_outcome = if matches!(
+        expanded_fallback_outcome,
+        Some(RuntimeSpatialExpandedFallbackOutcome::TerminalExpandedSpatialFailure)
+    ) || fallback_outcome
+        == Some(RuntimeSpatialFallbackOutcome::TerminalSpatialFailure)
+    {
+        RuntimeImmersiveExportOutcome::TerminalExportFailure
+    } else if fallback_active {
+        match immersive_room_policy.room_outcome {
+            RuntimeImmersiveRoomOutcome::PreserveObjectMetadataOnly => {
+                RuntimeImmersiveExportOutcome::PreserveMetadataOnly
+            }
+            RuntimeImmersiveRoomOutcome::CollapseObjectsIntoBed => {
+                RuntimeImmersiveExportOutcome::CollapseToBedExport
+            }
+            RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+            | RuntimeImmersiveRoomOutcome::RenderObjectsAgainstRoomPolicy => {
+                RuntimeImmersiveExportOutcome::BypassImmersiveExport
+            }
+            RuntimeImmersiveRoomOutcome::TerminalImmersiveFailure => {
+                RuntimeImmersiveExportOutcome::TerminalExportFailure
+            }
+        }
+    } else {
+        match immersive_export_class {
+            RuntimeImmersiveExportClass::BedOnlyExport
+            | RuntimeImmersiveExportClass::ObjectAwareExport
+            | RuntimeImmersiveExportClass::MonitoringPreviewExport => {
+                RuntimeImmersiveExportOutcome::PreserveDeclaredExport
+            }
+            RuntimeImmersiveExportClass::FallbackExport
+            | RuntimeImmersiveExportClass::NoImmersiveExport => {
+                RuntimeImmersiveExportOutcome::BypassImmersiveExport
+            }
+        }
+    };
+
+    Some(RuntimeRendererImmersiveExportSummary {
+        renderer_capability_posture,
+        capability_authority,
+        immersive_export_class,
+        export_authority,
+        export_outcome,
+        summary: format!(
+            "renderer={:?} capability_authority={:?} export={:?} export_authority={:?} outcome={:?}",
+            renderer_capability_posture,
+            capability_authority,
+            immersive_export_class,
+            export_authority,
+            export_outcome,
+        ),
+    })
+}
+
 pub(crate) fn runtime_spatial_execution_summary_for_stages(
     node_id: &str,
     stages: &[GraphStageSpec],
@@ -1199,11 +1738,39 @@ pub(crate) fn runtime_spatial_execution_summary_for_stages(
             let render_scope =
                 runtime_spatial_render_scope_for_summary(object_count, expanded_fallback_outcome);
             let balance = format!("{balance:.3}");
+            let target_environment = runtime_spatial_target_environment_for_layout(output_layout);
+            let immersive_room_policy = runtime_immersive_room_policy_summary_for_spatial(
+                RuntimeSpatialAdapterClass::Balance,
+                execution_mode,
+                target_environment,
+                fallback_outcome,
+                bed_class,
+                None,
+                object_count,
+                render_scope,
+                expanded_fallback_outcome,
+            );
+            let deployment_monitoring = runtime_deployment_monitoring_summary_for_spatial(
+                target_environment,
+                bed_class,
+                fallback_outcome,
+                expanded_fallback_outcome,
+                immersive_room_policy.as_ref(),
+            );
+            let renderer_export = runtime_renderer_immersive_export_summary_for_spatial(
+                RuntimeSpatialAdapterClass::Balance,
+                execution_mode,
+                target_environment,
+                fallback_outcome,
+                expanded_fallback_outcome,
+                immersive_room_policy.as_ref(),
+                deployment_monitoring.as_ref(),
+            );
             Some(RuntimeSpatialExecutionSummary {
                 node_id: node_id.into(),
                 adapter_class: RuntimeSpatialAdapterClass::Balance,
                 execution_mode,
-                target_environment: runtime_spatial_target_environment_for_layout(output_layout),
+                target_environment,
                 control_family: RuntimeSpatialControlFamily::BalanceScalar,
                 activation_policy: RuntimeSpatialActivationPolicy::EnabledIfSupported,
                 fallback_outcome,
@@ -1213,15 +1780,18 @@ pub(crate) fn runtime_spatial_execution_summary_for_stages(
                 mix_policy,
                 render_scope,
                 expanded_fallback_outcome,
+                immersive_room_policy: immersive_room_policy.clone(),
+                deployment_monitoring: deployment_monitoring.clone(),
+                renderer_export: renderer_export.clone(),
                 balance: Some(balance.clone()),
                 input_layout: input_layout.clone(),
                 output_layout: output_layout.clone(),
                 summary: format!(
-                    "node={} adapter={:?} mode={:?} target={:?} controls={:?} policy={:?} fallback={:?}/{:?} bed={:?} objects={:?}/{} mix={:?} render={:?} balance={} input={} output={}",
+                    "node={} adapter={:?} mode={:?} target={:?} controls={:?} policy={:?} fallback={:?}/{:?} bed={:?} objects={:?}/{} mix={:?} render={:?} immersive={:?} monitoring={:?} export={:?} balance={} input={} output={}",
                     node_id,
                     RuntimeSpatialAdapterClass::Balance,
                     execution_mode,
-                    runtime_spatial_target_environment_for_layout(output_layout),
+                    target_environment,
                     RuntimeSpatialControlFamily::BalanceScalar,
                     RuntimeSpatialActivationPolicy::EnabledIfSupported,
                     fallback_outcome,
@@ -1231,6 +1801,9 @@ pub(crate) fn runtime_spatial_execution_summary_for_stages(
                     object_count,
                     mix_policy,
                     render_scope,
+                    immersive_room_policy.as_ref().map(|summary| &summary.summary),
+                    deployment_monitoring.as_ref().map(|summary| &summary.summary),
+                    renderer_export.as_ref().map(|summary| &summary.summary),
                     balance,
                     input_layout.summary,
                     output_layout.summary,
@@ -1353,6 +1926,71 @@ pub struct RuntimePluginComplexIoSummary {
     pub bus_capable_fx_class: Option<RuntimePluginBusCapableFxClass>,
     pub attachment_policy: RuntimePluginTopologyAttachmentPolicy,
     pub fallback_outcome: RuntimePluginTopologyFallbackOutcome,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePluginPinGroupIdentity {
+    PrimaryProgramPath,
+    SecondaryProgramPath,
+    AuxReturnPath,
+    SidechainPath,
+    AnalysisPath,
+    InactiveDeclaredPath,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginPinMatrixPosture {
+    #[default]
+    Simple,
+    Declared,
+    Negotiated,
+    Guarded,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeDynamicBusNegotiationPosture {
+    #[default]
+    Static,
+    Negotiated,
+    Guarded,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePluginNegotiationFallbackOutcome {
+    CollapseToDeclaredBaseline,
+    DeactivateOptionalPath,
+    #[default]
+    RoutePrimaryOnly,
+    GuardedDegradation,
+    TerminalNegotiationFailure,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginPinMatrixRecord {
+    pub plugin_type_id: String,
+    pub plugin_id: String,
+    pub pin_group_identities: Vec<RuntimePluginPinGroupIdentity>,
+    pub pin_matrix_posture: RuntimePluginPinMatrixPosture,
+    pub dynamic_bus_negotiation_posture: RuntimeDynamicBusNegotiationPosture,
+    pub fallback_outcome: RuntimePluginNegotiationFallbackOutcome,
+    pub strongest_lifecycle_state: Option<RuntimePluginLifecycleState>,
+    pub stage_count: usize,
+    pub active_stage_count: usize,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePluginPinMatrixSnapshot {
+    pub plugin_type_count: usize,
+    pub negotiated_type_count: usize,
+    pub guarded_type_count: usize,
+    pub unavailable_type_count: usize,
+    pub dynamic_negotiated_type_count: usize,
+    pub dynamic_guarded_type_count: usize,
+    pub records: Vec<RuntimePluginPinMatrixRecord>,
     pub summary: String,
 }
 
@@ -3523,6 +4161,16 @@ pub struct RuntimeOfflineRenderChainDependencyPreview {
     pub surround_bed_spatial_stage_count: usize,
     pub object_aware_spatial_stage_count: usize,
     pub expanded_fallback_spatial_stage_count: usize,
+    pub immersive_spatial_stage_count: usize,
+    pub room_policy_aware_spatial_stage_count: usize,
+    pub fallback_room_policy_spatial_stage_count: usize,
+    pub deployment_spatial_stage_count: usize,
+    pub folded_down_spatial_stage_count: usize,
+    pub fallback_monitoring_scene_spatial_stage_count: usize,
+    pub renderer_capability_spatial_stage_count: usize,
+    pub negotiated_renderer_spatial_stage_count: usize,
+    pub immersive_export_spatial_stage_count: usize,
+    pub fallback_immersive_export_spatial_stage_count: usize,
     pub secondary_inputs: Vec<RuntimeSecondaryInputRouteSummary>,
     pub bus_connections: Vec<RuntimeBusConnectionSummary>,
     pub auxiliary_paths: Vec<RuntimeAuxiliaryPathSummary>,
@@ -8053,6 +8701,114 @@ pub enum RuntimeAdvancedHardwareActionClass {
     DeviceStateObservation,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeDisplayTransportPosture {
+    NotPresent,
+    GuardedDisplay,
+    TextOnlyDisplay,
+    PageAwareDisplay,
+    UnavailableDisplay,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeDisplayContentClass {
+    NoDisplayContent,
+    StatusText,
+    ParameterValueText,
+    MeterBridgeText,
+    PagedStatusView,
+    GuardedVendorDisplay,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeMotorTransportPosture {
+    NoMotorTransport,
+    GuardedMotorTransport,
+    PositionMotorTransport,
+    BankAwareMotorTransport,
+    UnavailableMotorTransport,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeHapticTransportPosture {
+    NoHapticTransport,
+    GuardedHapticTransport,
+    CueOnlyHapticTransport,
+    StateAwareHapticTransport,
+    UnavailableHapticTransport,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeAdvancedControlFeedbackAuthority {
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    DeviceAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeAdvancedControlFeedbackOutcome {
+    PreserveDeclaredFeedback,
+    CollapseToGuardedFeedback,
+    ObserveOnlyFeedback,
+    BypassFeedbackTransport,
+    TerminalFeedbackFailure,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeSceneMappingPosture {
+    NoSceneMapping,
+    GuardedSceneMapping,
+    ContextualSceneMapping,
+    PortableSceneMapping,
+    UnavailableSceneMapping,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeFeedbackPagePosture {
+    NoFeedbackPages,
+    GuardedFeedbackPages,
+    StatusFeedbackPages,
+    SceneAwareFeedbackPages,
+    UnavailableFeedbackPages,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeFeedbackPageClass {
+    NoFeedbackPageClass,
+    StatusPage,
+    ParameterPage,
+    MeterPage,
+    ScenePage,
+    GuardedVendorPage,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeSafeActionGraphPosture {
+    NoSafeActionGraph,
+    GuardedSafeActionGraph,
+    TransportSafeActionGraph,
+    SceneSafeActionGraph,
+    UnavailableSafeActionGraph,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeControlSurfaceWorkflowAuthority {
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    DeviceAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeSafeActionOutcome {
+    PreserveDeclaredAction,
+    CollapseToGuardedAction,
+    ObserveOnlyAction,
+    BypassUnsafeAction,
+    TerminalActionFailure,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeControlSurfaceCapabilitySummary {
     pub supports_transport_control: bool,
@@ -8104,6 +8860,18 @@ pub struct RuntimeAdvancedHardwareDeviceDescriptor {
     pub device_name: String,
     pub scripting_safe_posture: RuntimeScriptingSafeDevicePolicyPosture,
     pub feedback_channel_posture: RuntimeGuardedFeedbackChannelPosture,
+    pub display_transport_posture: RuntimeDisplayTransportPosture,
+    pub display_content_class: RuntimeDisplayContentClass,
+    pub motor_transport_posture: RuntimeMotorTransportPosture,
+    pub haptic_transport_posture: RuntimeHapticTransportPosture,
+    pub feedback_authority: RuntimeAdvancedControlFeedbackAuthority,
+    pub feedback_outcome: RuntimeAdvancedControlFeedbackOutcome,
+    pub scene_mapping_posture: RuntimeSceneMappingPosture,
+    pub feedback_page_posture: RuntimeFeedbackPagePosture,
+    pub feedback_page_class: RuntimeFeedbackPageClass,
+    pub safe_action_graph_posture: RuntimeSafeActionGraphPosture,
+    pub action_authority: RuntimeControlSurfaceWorkflowAuthority,
+    pub safe_action_outcome: RuntimeSafeActionOutcome,
     pub capability: RuntimeAdvancedHardwareCapabilitySummary,
     pub summary: String,
 }
@@ -8119,6 +8887,12 @@ pub struct RuntimeAdvancedHardwareSnapshot {
     pub context_only_device_count: usize,
     pub denied_device_count: usize,
     pub feedback_channel_device_count: usize,
+    pub display_transport_device_count: usize,
+    pub motor_transport_device_count: usize,
+    pub haptic_transport_device_count: usize,
+    pub scene_mapping_device_count: usize,
+    pub feedback_page_device_count: usize,
+    pub safe_action_graph_device_count: usize,
     pub devices: Vec<RuntimeAdvancedHardwareDeviceDescriptor>,
     pub summary: String,
 }
@@ -8336,8 +9110,14 @@ impl RuntimeAdvancedHardwareSnapshot {
             context_only_device_count: 0,
             denied_device_count: 0,
             feedback_channel_device_count: 0,
+            display_transport_device_count: 0,
+            motor_transport_device_count: 0,
+            haptic_transport_device_count: 0,
+            scene_mapping_device_count: 0,
+            feedback_page_device_count: 0,
+            safe_action_graph_device_count: 0,
             devices: Vec::new(),
-            summary: "discovery=Unavailable graph=Unavailable provider=runtime-unavailable devices=0 portable=0 guarded=0 context-only=0 denied=0 feedback-channels=0".into(),
+            summary: "discovery=Unavailable graph=Unavailable provider=runtime-unavailable devices=0 portable=0 guarded=0 context-only=0 denied=0 feedback-channels=0 display-transport=0 motor-transport=0 haptic-transport=0 scene-mapping=0 feedback-pages=0 safe-action-graphs=0".into(),
         }
     }
 
@@ -8353,9 +9133,15 @@ impl RuntimeAdvancedHardwareSnapshot {
             context_only_device_count: 0,
             denied_device_count: 0,
             feedback_channel_device_count: 0,
+            display_transport_device_count: 0,
+            motor_transport_device_count: 0,
+            haptic_transport_device_count: 0,
+            scene_mapping_device_count: 0,
+            feedback_page_device_count: 0,
+            safe_action_graph_device_count: 0,
             devices: Vec::new(),
             summary: format!(
-                "discovery=Idle graph=Empty provider={} devices=0 portable=0 guarded=0 context-only=0 denied=0 feedback-channels=0",
+                "discovery=Idle graph=Empty provider={} devices=0 portable=0 guarded=0 context-only=0 denied=0 feedback-channels=0 display-transport=0 motor-transport=0 haptic-transport=0 scene-mapping=0 feedback-pages=0 safe-action-graphs=0",
                 provider_name
             ),
         }
@@ -8381,6 +9167,12 @@ impl RuntimeAdvancedHardwareSnapshot {
         let mut context_only_device_count = 0;
         let mut denied_device_count = 0;
         let mut feedback_channel_device_count = 0;
+        let mut display_transport_device_count = 0;
+        let mut motor_transport_device_count = 0;
+        let mut haptic_transport_device_count = 0;
+        let mut scene_mapping_device_count = 0;
+        let mut feedback_page_device_count = 0;
+        let mut safe_action_graph_device_count = 0;
 
         for device in &snapshot.devices {
             let scripting_safe_posture = match device.mapping_posture {
@@ -8416,6 +9208,129 @@ impl RuntimeAdvancedHardwareSnapshot {
                 RuntimeGuardedFeedbackChannelPosture::Portable
             } else {
                 RuntimeGuardedFeedbackChannelPosture::Guarded
+            };
+
+            let display_transport_posture = if !device.capability.supports_feedback_output {
+                RuntimeDisplayTransportPosture::NotPresent
+            } else if matches!(
+                feedback_channel_posture,
+                RuntimeGuardedFeedbackChannelPosture::Portable
+            ) {
+                RuntimeDisplayTransportPosture::TextOnlyDisplay
+            } else {
+                RuntimeDisplayTransportPosture::GuardedDisplay
+            };
+            let display_content_class = match display_transport_posture {
+                RuntimeDisplayTransportPosture::NotPresent
+                | RuntimeDisplayTransportPosture::UnavailableDisplay => {
+                    RuntimeDisplayContentClass::NoDisplayContent
+                }
+                RuntimeDisplayTransportPosture::GuardedDisplay => {
+                    RuntimeDisplayContentClass::GuardedVendorDisplay
+                }
+                RuntimeDisplayTransportPosture::TextOnlyDisplay => {
+                    RuntimeDisplayContentClass::StatusText
+                }
+                RuntimeDisplayTransportPosture::PageAwareDisplay => {
+                    RuntimeDisplayContentClass::PagedStatusView
+                }
+            };
+            let motor_transport_posture = RuntimeMotorTransportPosture::NoMotorTransport;
+            let haptic_transport_posture = RuntimeHapticTransportPosture::NoHapticTransport;
+            let feedback_authority = RuntimeAdvancedControlFeedbackAuthority::RuntimeDefault;
+            let feedback_outcome = if !device.capability.supports_feedback_output {
+                RuntimeAdvancedControlFeedbackOutcome::BypassFeedbackTransport
+            } else if matches!(
+                feedback_channel_posture,
+                RuntimeGuardedFeedbackChannelPosture::Portable
+            ) {
+                RuntimeAdvancedControlFeedbackOutcome::PreserveDeclaredFeedback
+            } else {
+                RuntimeAdvancedControlFeedbackOutcome::CollapseToGuardedFeedback
+            };
+            let scene_mapping_posture = match device.mapping_posture {
+                RuntimeControlSurfaceMappingPosture::Unsupported => {
+                    RuntimeSceneMappingPosture::NoSceneMapping
+                }
+                RuntimeControlSurfaceMappingPosture::ObserveOnly => {
+                    RuntimeSceneMappingPosture::ContextualSceneMapping
+                }
+                RuntimeControlSurfaceMappingPosture::Guarded => {
+                    RuntimeSceneMappingPosture::GuardedSceneMapping
+                }
+                RuntimeControlSurfaceMappingPosture::Portable => {
+                    RuntimeSceneMappingPosture::PortableSceneMapping
+                }
+            };
+            let feedback_page_posture = match display_transport_posture {
+                RuntimeDisplayTransportPosture::NotPresent => {
+                    RuntimeFeedbackPagePosture::NoFeedbackPages
+                }
+                RuntimeDisplayTransportPosture::GuardedDisplay => {
+                    RuntimeFeedbackPagePosture::GuardedFeedbackPages
+                }
+                RuntimeDisplayTransportPosture::TextOnlyDisplay => {
+                    RuntimeFeedbackPagePosture::StatusFeedbackPages
+                }
+                RuntimeDisplayTransportPosture::PageAwareDisplay => {
+                    RuntimeFeedbackPagePosture::SceneAwareFeedbackPages
+                }
+                RuntimeDisplayTransportPosture::UnavailableDisplay => {
+                    RuntimeFeedbackPagePosture::UnavailableFeedbackPages
+                }
+            };
+            let feedback_page_class = match feedback_page_posture {
+                RuntimeFeedbackPagePosture::NoFeedbackPages
+                | RuntimeFeedbackPagePosture::UnavailableFeedbackPages => {
+                    RuntimeFeedbackPageClass::NoFeedbackPageClass
+                }
+                RuntimeFeedbackPagePosture::GuardedFeedbackPages => {
+                    RuntimeFeedbackPageClass::GuardedVendorPage
+                }
+                RuntimeFeedbackPagePosture::StatusFeedbackPages => {
+                    RuntimeFeedbackPageClass::StatusPage
+                }
+                RuntimeFeedbackPagePosture::SceneAwareFeedbackPages => {
+                    RuntimeFeedbackPageClass::ScenePage
+                }
+            };
+            let safe_action_graph_posture = match scene_mapping_posture {
+                RuntimeSceneMappingPosture::NoSceneMapping => {
+                    RuntimeSafeActionGraphPosture::NoSafeActionGraph
+                }
+                RuntimeSceneMappingPosture::GuardedSceneMapping
+                | RuntimeSceneMappingPosture::ContextualSceneMapping => {
+                    RuntimeSafeActionGraphPosture::GuardedSafeActionGraph
+                }
+                RuntimeSceneMappingPosture::PortableSceneMapping => {
+                    if matches!(
+                        feedback_page_posture,
+                        RuntimeFeedbackPagePosture::SceneAwareFeedbackPages
+                    ) {
+                        RuntimeSafeActionGraphPosture::SceneSafeActionGraph
+                    } else {
+                        RuntimeSafeActionGraphPosture::TransportSafeActionGraph
+                    }
+                }
+                RuntimeSceneMappingPosture::UnavailableSceneMapping => {
+                    RuntimeSafeActionGraphPosture::UnavailableSafeActionGraph
+                }
+            };
+            let action_authority = RuntimeControlSurfaceWorkflowAuthority::RuntimeDefault;
+            let safe_action_outcome = match safe_action_graph_posture {
+                RuntimeSafeActionGraphPosture::NoSafeActionGraph => {
+                    RuntimeSafeActionOutcome::BypassUnsafeAction
+                }
+                RuntimeSafeActionGraphPosture::GuardedSafeActionGraph => {
+                    RuntimeSafeActionOutcome::CollapseToGuardedAction
+                }
+                RuntimeSafeActionGraphPosture::TransportSafeActionGraph
+                | RuntimeSafeActionGraphPosture::SceneSafeActionGraph => {
+                    RuntimeSafeActionOutcome::PreserveDeclaredAction
+                }
+                RuntimeSafeActionGraphPosture::UnavailableSafeActionGraph => {
+                    RuntimeSafeActionOutcome::ObserveOnlyAction
+                }
             };
 
             let supports_display_feedback = !matches!(
@@ -8460,6 +9375,48 @@ impl RuntimeAdvancedHardwareSnapshot {
             ) {
                 feedback_channel_device_count += 1;
             }
+            if !matches!(
+                display_transport_posture,
+                RuntimeDisplayTransportPosture::NotPresent
+                    | RuntimeDisplayTransportPosture::UnavailableDisplay
+            ) {
+                display_transport_device_count += 1;
+            }
+            if !matches!(
+                motor_transport_posture,
+                RuntimeMotorTransportPosture::NoMotorTransport
+                    | RuntimeMotorTransportPosture::UnavailableMotorTransport
+            ) {
+                motor_transport_device_count += 1;
+            }
+            if !matches!(
+                haptic_transport_posture,
+                RuntimeHapticTransportPosture::NoHapticTransport
+                    | RuntimeHapticTransportPosture::UnavailableHapticTransport
+            ) {
+                haptic_transport_device_count += 1;
+            }
+            if !matches!(
+                scene_mapping_posture,
+                RuntimeSceneMappingPosture::NoSceneMapping
+                    | RuntimeSceneMappingPosture::UnavailableSceneMapping
+            ) {
+                scene_mapping_device_count += 1;
+            }
+            if !matches!(
+                feedback_page_posture,
+                RuntimeFeedbackPagePosture::NoFeedbackPages
+                    | RuntimeFeedbackPagePosture::UnavailableFeedbackPages
+            ) {
+                feedback_page_device_count += 1;
+            }
+            if !matches!(
+                safe_action_graph_posture,
+                RuntimeSafeActionGraphPosture::NoSafeActionGraph
+                    | RuntimeSafeActionGraphPosture::UnavailableSafeActionGraph
+            ) {
+                safe_action_graph_device_count += 1;
+            }
 
             let capability = RuntimeAdvancedHardwareCapabilitySummary {
                 supports_display_feedback,
@@ -8485,10 +9442,36 @@ impl RuntimeAdvancedHardwareSnapshot {
                 device_name: device.device_name.clone(),
                 scripting_safe_posture,
                 feedback_channel_posture,
+                display_transport_posture,
+                display_content_class,
+                motor_transport_posture,
+                haptic_transport_posture,
+                feedback_authority,
+                feedback_outcome,
+                scene_mapping_posture,
+                feedback_page_posture,
+                feedback_page_class,
+                safe_action_graph_posture,
+                action_authority,
+                safe_action_outcome,
                 capability: capability.clone(),
                 summary: format!(
-                    "policy={:?} feedback={:?} capability={}",
-                    scripting_safe_posture, feedback_channel_posture, capability.summary
+                    "policy={:?} feedback={:?} display={:?}/{:?} motor={:?} haptic={:?} feedback_authority={:?} feedback_outcome={:?} scene={:?} page={:?}/{:?} action_graph={:?} action_authority={:?} action_outcome={:?} capability={}",
+                    scripting_safe_posture,
+                    feedback_channel_posture,
+                    display_transport_posture,
+                    display_content_class,
+                    motor_transport_posture,
+                    haptic_transport_posture,
+                    feedback_authority,
+                    feedback_outcome,
+                    scene_mapping_posture,
+                    feedback_page_posture,
+                    feedback_page_class,
+                    safe_action_graph_posture,
+                    action_authority,
+                    safe_action_outcome,
+                    capability.summary
                 ),
             });
         }
@@ -8503,7 +9486,7 @@ impl RuntimeAdvancedHardwareSnapshot {
 
         let device_count = devices.len();
         let summary = format!(
-            "discovery={:?} graph={:?} provider={} devices={} portable={} guarded={} context-only={} denied={} feedback-channels={}",
+            "discovery={:?} graph={:?} provider={} devices={} portable={} guarded={} context-only={} denied={} feedback-channels={} display-transport={} motor-transport={} haptic-transport={} scene-mapping={} feedback-pages={} safe-action-graphs={}",
             snapshot.discovery_state,
             graph_state,
             snapshot.provider_name,
@@ -8512,7 +9495,13 @@ impl RuntimeAdvancedHardwareSnapshot {
             guarded_device_count,
             context_only_device_count,
             denied_device_count,
-            feedback_channel_device_count
+            feedback_channel_device_count,
+            display_transport_device_count,
+            motor_transport_device_count,
+            haptic_transport_device_count,
+            scene_mapping_device_count,
+            feedback_page_device_count,
+            safe_action_graph_device_count
         );
 
         Self {
@@ -8525,6 +9514,12 @@ impl RuntimeAdvancedHardwareSnapshot {
             context_only_device_count,
             denied_device_count,
             feedback_channel_device_count,
+            display_transport_device_count,
+            motor_transport_device_count,
+            haptic_transport_device_count,
+            scene_mapping_device_count,
+            feedback_page_device_count,
+            safe_action_graph_device_count,
             devices,
             summary,
         }
@@ -8837,6 +9832,311 @@ impl RuntimeLinuxBackendSessionSnapshot {
                 device_claim_posture,
                 session_role,
                 ownership_fallback
+            ),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimePipeWireAlsaSessionRoleParity {
+    NotPipeWireOrAlsa,
+    Unavailable,
+    PrimaryAudioIo,
+    MonitoringCapable,
+    OfflineUnavailable,
+    FallbackContinuation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimePipeWireAlsaDeviceClaimParity {
+    NotPipeWireOrAlsa,
+    Unavailable,
+    NoClaim,
+    DirectClaim,
+    SharedGraph,
+    Lost,
+    Released,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimePipeWireAlsaStreamPolicyParity {
+    NotPipeWireOrAlsa,
+    Unavailable,
+    DirectHostCallback,
+    BackendManagedGraph,
+    Restarting,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimePipeWireAlsaGuardedParityState {
+    NotPipeWireOrAlsa,
+    Unavailable,
+    Direct,
+    BackendManaged,
+    ClockGuarded,
+    TransferGuarded,
+    RecoveryGuarded,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePipeWireAlsaParitySnapshot {
+    pub backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub backend_name: String,
+    pub portability_band: RuntimeLinuxAudioBackendPortabilityBand,
+    pub session_role_parity: RuntimePipeWireAlsaSessionRoleParity,
+    pub device_claim_parity: RuntimePipeWireAlsaDeviceClaimParity,
+    pub stream_policy_parity: RuntimePipeWireAlsaStreamPolicyParity,
+    pub guarded_state: RuntimePipeWireAlsaGuardedParityState,
+    pub lifecycle_ownership: RuntimeHostLifecycleOwnership,
+    pub restart_policy: RuntimeHostRestartPolicy,
+    pub clock_domain: RuntimeHostClockDomain,
+    pub fallback_state: RuntimeHostClockFallbackState,
+    pub device_id: String,
+    pub device_name: String,
+    pub stream_state: RuntimeHostAudioStreamState,
+    pub backend_health: BackendHealth,
+    pub simulated: bool,
+    pub device_loss_count: u64,
+    pub restart_attempt_count: u64,
+    pub restart_failure_count: u64,
+    pub summary: String,
+}
+
+impl RuntimePipeWireAlsaParitySnapshot {
+    pub fn unavailable() -> Self {
+        Self {
+            backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
+            backend_name: "runtime-unavailable".into(),
+            portability_band: RuntimeLinuxAudioBackendPortabilityBand::Unsupported,
+            session_role_parity: RuntimePipeWireAlsaSessionRoleParity::Unavailable,
+            device_claim_parity: RuntimePipeWireAlsaDeviceClaimParity::Unavailable,
+            stream_policy_parity: RuntimePipeWireAlsaStreamPolicyParity::Unavailable,
+            guarded_state: RuntimePipeWireAlsaGuardedParityState::Unavailable,
+            lifecycle_ownership: RuntimeHostLifecycleOwnership::HostDrivenCallback,
+            restart_policy: RuntimeHostRestartPolicy::HostMustRestart,
+            clock_domain: RuntimeHostClockDomain::Degraded,
+            fallback_state: RuntimeHostClockFallbackState::Unconfigured,
+            device_id: "runtime:unavailable".into(),
+            device_name: "Unavailable PipeWire/ALSA Parity".into(),
+            stream_state: RuntimeHostAudioStreamState::Stopped,
+            backend_health: BackendHealth::Healthy,
+            simulated: false,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+            summary:
+                "backend=Unavailable role=Unavailable claim=Unavailable policy=Unavailable guard=Unavailable"
+                    .into(),
+        }
+    }
+
+    pub fn from_host_io(host_io: &RuntimeHostIoSummary) -> Self {
+        let linux_session = RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
+        Self::from_host_io_and_linux_session(host_io, &linux_session)
+    }
+
+    pub fn from_host_io_and_linux_session(
+        host_io: &RuntimeHostIoSummary,
+        linux_session: &RuntimeLinuxBackendSessionSnapshot,
+    ) -> Self {
+        let backend_identity = linux_session.backend_identity;
+        let targets_pipewire_or_alsa = matches!(
+            backend_identity,
+            RuntimeLinuxAudioBackendIdentity::Alsa | RuntimeLinuxAudioBackendIdentity::PipeWire
+        );
+        if !targets_pipewire_or_alsa {
+            let unavailable = matches!(
+                backend_identity,
+                RuntimeLinuxAudioBackendIdentity::Unavailable
+                    | RuntimeLinuxAudioBackendIdentity::Unsupported
+            );
+            let session_role_parity = if unavailable {
+                RuntimePipeWireAlsaSessionRoleParity::Unavailable
+            } else {
+                RuntimePipeWireAlsaSessionRoleParity::NotPipeWireOrAlsa
+            };
+            let device_claim_parity = if unavailable {
+                RuntimePipeWireAlsaDeviceClaimParity::Unavailable
+            } else {
+                RuntimePipeWireAlsaDeviceClaimParity::NotPipeWireOrAlsa
+            };
+            let stream_policy_parity = if unavailable {
+                RuntimePipeWireAlsaStreamPolicyParity::Unavailable
+            } else {
+                RuntimePipeWireAlsaStreamPolicyParity::NotPipeWireOrAlsa
+            };
+            let guarded_state = if unavailable {
+                RuntimePipeWireAlsaGuardedParityState::Unavailable
+            } else {
+                RuntimePipeWireAlsaGuardedParityState::NotPipeWireOrAlsa
+            };
+            return Self {
+                backend_identity,
+                backend_name: host_io.hardware.backend_name.clone(),
+                portability_band: host_io.hardware.linux_backend_portability,
+                session_role_parity,
+                device_claim_parity,
+                stream_policy_parity,
+                guarded_state,
+                lifecycle_ownership: host_io.clocking.ownership,
+                restart_policy: host_io.clocking.restart_policy,
+                clock_domain: host_io.clocking.clock_domain,
+                fallback_state: host_io.clocking.fallback_state,
+                device_id: host_io.hardware.device_id.clone(),
+                device_name: host_io.hardware.device_name.clone(),
+                stream_state: host_io.audio_pump.stream_state,
+                backend_health: host_io.hardware.backend_health,
+                simulated: host_io.hardware.simulated,
+                device_loss_count: host_io.hardware.device_loss_count,
+                restart_attempt_count: host_io.hardware.restart_attempt_count,
+                restart_failure_count: host_io.hardware.restart_failure_count,
+                summary: format!(
+                    "backend={:?} role={:?} claim={:?} policy={:?} guard={:?}",
+                    backend_identity,
+                    session_role_parity,
+                    device_claim_parity,
+                    stream_policy_parity,
+                    guarded_state
+                ),
+            };
+        }
+
+        let session_role_parity = match linux_session.session_role {
+            RuntimeLinuxBackendSessionRole::PrimaryAudioIo => {
+                RuntimePipeWireAlsaSessionRoleParity::PrimaryAudioIo
+            }
+            RuntimeLinuxBackendSessionRole::MonitoringCapable => {
+                RuntimePipeWireAlsaSessionRoleParity::MonitoringCapable
+            }
+            RuntimeLinuxBackendSessionRole::OfflineUnavailable => {
+                RuntimePipeWireAlsaSessionRoleParity::OfflineUnavailable
+            }
+            RuntimeLinuxBackendSessionRole::FallbackContinuation => {
+                RuntimePipeWireAlsaSessionRoleParity::FallbackContinuation
+            }
+            RuntimeLinuxBackendSessionRole::Unavailable => {
+                RuntimePipeWireAlsaSessionRoleParity::Unavailable
+            }
+            RuntimeLinuxBackendSessionRole::NotLinux => {
+                RuntimePipeWireAlsaSessionRoleParity::NotPipeWireOrAlsa
+            }
+        };
+        let device_claim_parity = match linux_session.device_claim_posture {
+            RuntimeLinuxBackendDeviceClaimPosture::Unclaimed => {
+                RuntimePipeWireAlsaDeviceClaimParity::NoClaim
+            }
+            RuntimeLinuxBackendDeviceClaimPosture::DirectClaim => {
+                RuntimePipeWireAlsaDeviceClaimParity::DirectClaim
+            }
+            RuntimeLinuxBackendDeviceClaimPosture::SharedGraph => {
+                RuntimePipeWireAlsaDeviceClaimParity::SharedGraph
+            }
+            RuntimeLinuxBackendDeviceClaimPosture::Lost => {
+                RuntimePipeWireAlsaDeviceClaimParity::Lost
+            }
+            RuntimeLinuxBackendDeviceClaimPosture::Released => {
+                RuntimePipeWireAlsaDeviceClaimParity::Released
+            }
+            RuntimeLinuxBackendDeviceClaimPosture::Unavailable => {
+                RuntimePipeWireAlsaDeviceClaimParity::Unavailable
+            }
+            RuntimeLinuxBackendDeviceClaimPosture::NotLinux => {
+                RuntimePipeWireAlsaDeviceClaimParity::NotPipeWireOrAlsa
+            }
+        };
+
+        let recovering = matches!(
+            linux_session.lifecycle_state,
+            RuntimeLinuxBackendSessionLifecycleState::Interrupted
+                | RuntimeLinuxBackendSessionLifecycleState::Recovering
+        ) || matches!(
+            linux_session.ownership_fallback,
+            RuntimeLinuxBackendOwnershipFallbackState::Reacquiring
+                | RuntimeLinuxBackendOwnershipFallbackState::RecoveryConstrained
+        ) || host_io.hardware.restart_attempt_count > 0
+            || host_io.hardware.restart_failure_count > 0
+            || host_io.hardware.device_loss_count > 0
+            || host_io.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted;
+        let unavailable = matches!(
+            session_role_parity,
+            RuntimePipeWireAlsaSessionRoleParity::OfflineUnavailable
+                | RuntimePipeWireAlsaSessionRoleParity::Unavailable
+        );
+        let stream_policy_parity = if unavailable {
+            RuntimePipeWireAlsaStreamPolicyParity::Unavailable
+        } else if recovering {
+            RuntimePipeWireAlsaStreamPolicyParity::Restarting
+        } else {
+            match host_io.clocking.ownership {
+                RuntimeHostLifecycleOwnership::HostDrivenCallback => {
+                    RuntimePipeWireAlsaStreamPolicyParity::DirectHostCallback
+                }
+                RuntimeHostLifecycleOwnership::BackendManagedCallback => {
+                    RuntimePipeWireAlsaStreamPolicyParity::BackendManagedGraph
+                }
+            }
+        };
+
+        let transfer_guarded = host_io.audio_pump.transfer_policy.max_callback_frames
+            < host_io.hardware.buffer_size
+            || host_io.audio_pump.transfer_policy.max_transfer_channels
+                < host_io
+                    .hardware
+                    .input_channels
+                    .max(host_io.hardware.output_channels)
+            || !host_io
+                .audio_pump
+                .transfer_policy
+                .zero_fill_unwritten_output;
+        let clock_guarded = host_io.clocking.clock_domain != RuntimeHostClockDomain::SameClock
+            || host_io.clocking.fallback_state != RuntimeHostClockFallbackState::Direct
+            || host_io.clocking.transition_state != RuntimeHostClockTransitionState::Stable
+            || host_io.clocking.drift_state != RuntimeHostClockDriftState::Stable
+            || host_io.clocking.discontinuity_state
+                != RuntimeHostClockDiscontinuityState::Continuous;
+        let guarded_state = if unavailable {
+            RuntimePipeWireAlsaGuardedParityState::Unavailable
+        } else if recovering {
+            RuntimePipeWireAlsaGuardedParityState::RecoveryGuarded
+        } else if transfer_guarded {
+            RuntimePipeWireAlsaGuardedParityState::TransferGuarded
+        } else if clock_guarded {
+            RuntimePipeWireAlsaGuardedParityState::ClockGuarded
+        } else if host_io.clocking.ownership
+            == RuntimeHostLifecycleOwnership::BackendManagedCallback
+        {
+            RuntimePipeWireAlsaGuardedParityState::BackendManaged
+        } else {
+            RuntimePipeWireAlsaGuardedParityState::Direct
+        };
+
+        Self {
+            backend_identity,
+            backend_name: host_io.hardware.backend_name.clone(),
+            portability_band: host_io.hardware.linux_backend_portability,
+            session_role_parity,
+            device_claim_parity,
+            stream_policy_parity,
+            guarded_state,
+            lifecycle_ownership: host_io.clocking.ownership,
+            restart_policy: host_io.clocking.restart_policy,
+            clock_domain: host_io.clocking.clock_domain,
+            fallback_state: host_io.clocking.fallback_state,
+            device_id: host_io.hardware.device_id.clone(),
+            device_name: host_io.hardware.device_name.clone(),
+            stream_state: host_io.audio_pump.stream_state,
+            backend_health: host_io.hardware.backend_health,
+            simulated: host_io.hardware.simulated,
+            device_loss_count: host_io.hardware.device_loss_count,
+            restart_attempt_count: host_io.hardware.restart_attempt_count,
+            restart_failure_count: host_io.hardware.restart_failure_count,
+            summary: format!(
+                "backend={:?} role={:?} claim={:?} policy={:?} guard={:?}",
+                backend_identity,
+                session_role_parity,
+                device_claim_parity,
+                stream_policy_parity,
+                guarded_state
             ),
         }
     }
@@ -9730,6 +11030,7 @@ impl RuntimeHostObservationReport {
                 "\"device_supervision_snapshot\":{},",
                 "\"external_io_snapshot\":{},",
                 "\"linux_backend_session_snapshot\":{},",
+                "\"pipewire_alsa_parity_snapshot\":{},",
                 "\"jack_coordination_snapshot\":{},",
                 "\"external_midi_snapshot\":{},",
                 "\"control_surface_snapshot\":{},",
@@ -9830,6 +11131,9 @@ impl RuntimeHostObservationReport {
             json_runtime_external_io_snapshot(&self.observation.external_io_snapshot),
             json_runtime_linux_backend_session_snapshot(
                 &self.observation.linux_backend_session_snapshot,
+            ),
+            json_runtime_pipewire_alsa_parity_snapshot(
+                &self.observation.pipewire_alsa_parity_snapshot,
             ),
             json_runtime_jack_coordination_snapshot(&self.observation.jack_coordination_snapshot),
             json_runtime_external_midi_snapshot(&self.observation.external_midi_snapshot),
@@ -10954,6 +12258,16 @@ pub struct RuntimeExecutionTopologySummary {
     pub surround_bed_spatial_node_count: usize,
     pub object_aware_spatial_node_count: usize,
     pub expanded_fallback_spatial_node_count: usize,
+    pub immersive_spatial_node_count: usize,
+    pub room_policy_aware_spatial_node_count: usize,
+    pub fallback_room_policy_spatial_node_count: usize,
+    pub deployment_spatial_node_count: usize,
+    pub folded_down_spatial_node_count: usize,
+    pub fallback_monitoring_scene_spatial_node_count: usize,
+    pub renderer_capability_spatial_node_count: usize,
+    pub negotiated_renderer_spatial_node_count: usize,
+    pub immersive_export_spatial_node_count: usize,
+    pub fallback_immersive_export_spatial_node_count: usize,
     pub lanes: Vec<RuntimeExecutionLaneSummary>,
     pub track_lanes: Vec<RuntimeMixerTrackLaneSummary>,
     pub bus_groups: Vec<RuntimeMixerBusGroupSummary>,
@@ -11255,6 +12569,16 @@ impl RuntimeExecutionTopologySummary {
         let mut surround_bed_spatial_node_count = 0usize;
         let mut object_aware_spatial_node_count = 0usize;
         let mut expanded_fallback_spatial_node_count = 0usize;
+        let mut immersive_spatial_node_count = 0usize;
+        let mut room_policy_aware_spatial_node_count = 0usize;
+        let mut fallback_room_policy_spatial_node_count = 0usize;
+        let mut deployment_spatial_node_count = 0usize;
+        let mut folded_down_spatial_node_count = 0usize;
+        let mut fallback_monitoring_scene_spatial_node_count = 0usize;
+        let mut renderer_capability_spatial_node_count = 0usize;
+        let mut negotiated_renderer_spatial_node_count = 0usize;
+        let mut immersive_export_spatial_node_count = 0usize;
+        let mut fallback_immersive_export_spatial_node_count = 0usize;
 
         for node in &snapshot.planned_nodes {
             match node.topology_role {
@@ -11393,6 +12717,53 @@ impl RuntimeExecutionTopologySummary {
                 if spatial_execution.expanded_fallback_outcome.is_some() {
                     expanded_fallback_spatial_node_count += 1;
                 }
+                if let Some(immersive_room_policy) = &spatial_execution.immersive_room_policy {
+                    immersive_spatial_node_count += 1;
+                    if immersive_room_policy.object_rendering_posture
+                        == RuntimeImmersiveObjectRenderingPosture::RoomPolicyAware
+                    {
+                        room_policy_aware_spatial_node_count += 1;
+                    }
+                    if immersive_room_policy.room_policy_class
+                        == RuntimeRoomPolicyClass::FallbackRoom
+                    {
+                        fallback_room_policy_spatial_node_count += 1;
+                    }
+                }
+                if let Some(deployment_monitoring) = &spatial_execution.deployment_monitoring {
+                    deployment_spatial_node_count += 1;
+                    if matches!(
+                        deployment_monitoring.fold_down_policy,
+                        RuntimeFoldDownPolicy::FoldDownToReferenceBed
+                            | RuntimeFoldDownPolicy::FoldDownToStereoMonitoring
+                            | RuntimeFoldDownPolicy::FoldDownToPortablePreview
+                    ) {
+                        folded_down_spatial_node_count += 1;
+                    }
+                    if deployment_monitoring.monitoring_scene_class
+                        == RuntimeMonitoringSceneClass::FallbackScene
+                    {
+                        fallback_monitoring_scene_spatial_node_count += 1;
+                    }
+                }
+                if let Some(renderer_export) = &spatial_execution.renderer_export {
+                    renderer_capability_spatial_node_count += 1;
+                    if renderer_export.renderer_capability_posture
+                        == RuntimeRendererCapabilityNegotiationPosture::NegotiatedCompatible
+                    {
+                        negotiated_renderer_spatial_node_count += 1;
+                    }
+                    if renderer_export.immersive_export_class
+                        != RuntimeImmersiveExportClass::NoImmersiveExport
+                    {
+                        immersive_export_spatial_node_count += 1;
+                    }
+                    if renderer_export.immersive_export_class
+                        == RuntimeImmersiveExportClass::FallbackExport
+                    {
+                        fallback_immersive_export_spatial_node_count += 1;
+                    }
+                }
             }
             nodes.push(RuntimeExecutionNodeSummary {
                 node_id: node.node_id.clone(),
@@ -11451,6 +12822,16 @@ impl RuntimeExecutionTopologySummary {
             surround_bed_spatial_node_count,
             object_aware_spatial_node_count,
             expanded_fallback_spatial_node_count,
+            immersive_spatial_node_count,
+            room_policy_aware_spatial_node_count,
+            fallback_room_policy_spatial_node_count,
+            deployment_spatial_node_count,
+            folded_down_spatial_node_count,
+            fallback_monitoring_scene_spatial_node_count,
+            renderer_capability_spatial_node_count,
+            negotiated_renderer_spatial_node_count,
+            immersive_export_spatial_node_count,
+            fallback_immersive_export_spatial_node_count,
             lanes,
             track_lanes: track_lanes_by_id.into_values().collect(),
             bus_groups: bus_groups_by_id.into_values().collect(),
@@ -11636,6 +13017,112 @@ impl RuntimeOfflineRenderContractPreview {
             .iter()
             .filter(|stage| stage.spatial.expanded_fallback_outcome.is_some())
             .count();
+        let immersive_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.immersive_room_policy.is_some())
+            .count();
+        let room_policy_aware_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .immersive_room_policy
+                    .as_ref()
+                    .is_some_and(|immersive| {
+                        immersive.object_rendering_posture
+                            == RuntimeImmersiveObjectRenderingPosture::RoomPolicyAware
+                    })
+            })
+            .count();
+        let fallback_room_policy_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .immersive_room_policy
+                    .as_ref()
+                    .is_some_and(|immersive| {
+                        immersive.room_policy_class == RuntimeRoomPolicyClass::FallbackRoom
+                    })
+            })
+            .count();
+        let renderer_capability_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.renderer_export.is_some())
+            .count();
+        let negotiated_renderer_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .renderer_export
+                    .as_ref()
+                    .is_some_and(|renderer| {
+                        renderer.renderer_capability_posture
+                            == RuntimeRendererCapabilityNegotiationPosture::NegotiatedCompatible
+                    })
+            })
+            .count();
+        let immersive_export_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .renderer_export
+                    .as_ref()
+                    .is_some_and(|renderer| {
+                        renderer.immersive_export_class
+                            != RuntimeImmersiveExportClass::NoImmersiveExport
+                    })
+            })
+            .count();
+        let fallback_immersive_export_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .renderer_export
+                    .as_ref()
+                    .is_some_and(|renderer| {
+                        renderer.immersive_export_class
+                            == RuntimeImmersiveExportClass::FallbackExport
+                    })
+            })
+            .count();
+        let deployment_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| stage.spatial.deployment_monitoring.is_some())
+            .count();
+        let folded_down_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .deployment_monitoring
+                    .as_ref()
+                    .is_some_and(|monitoring| {
+                        matches!(
+                            monitoring.fold_down_policy,
+                            RuntimeFoldDownPolicy::FoldDownToReferenceBed
+                                | RuntimeFoldDownPolicy::FoldDownToStereoMonitoring
+                                | RuntimeFoldDownPolicy::FoldDownToPortablePreview
+                        )
+                    })
+            })
+            .count();
+        let fallback_monitoring_scene_spatial_stage_count = spatial_stages
+            .iter()
+            .filter(|stage| {
+                stage
+                    .spatial
+                    .deployment_monitoring
+                    .as_ref()
+                    .is_some_and(|monitoring| {
+                        monitoring.monitoring_scene_class
+                            == RuntimeMonitoringSceneClass::FallbackScene
+                    })
+            })
+            .count();
 
         Ok(RuntimeOfflineRenderChainDependencyPreview {
             chain_count: plugin_chain.chain_count,
@@ -11674,6 +13161,16 @@ impl RuntimeOfflineRenderContractPreview {
             surround_bed_spatial_stage_count,
             object_aware_spatial_stage_count,
             expanded_fallback_spatial_stage_count,
+            immersive_spatial_stage_count,
+            room_policy_aware_spatial_stage_count,
+            fallback_room_policy_spatial_stage_count,
+            deployment_spatial_stage_count,
+            folded_down_spatial_stage_count,
+            fallback_monitoring_scene_spatial_stage_count,
+            renderer_capability_spatial_stage_count,
+            negotiated_renderer_spatial_stage_count,
+            immersive_export_spatial_stage_count,
+            fallback_immersive_export_spatial_stage_count,
             secondary_inputs: topology
                 .secondary_inputs
                 .iter()
@@ -11700,7 +13197,7 @@ impl RuntimeOfflineRenderContractPreview {
             complex_io_stages,
             spatial_stages,
             summary: format!(
-                "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={} recall={}/unbound={} cold={} warm={} recovered={} unavailable={} secondary_inputs={}/required={}/optional={}/disabled={}/terminal={} bus_connections={} auxiliary_paths={} complex_io_stages={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} spatial_stages={}/active={}/bypassed={}/fallback={} surround_beds={} object_aware={} expanded_fallbacks={}",
+                "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={} recall={}/unbound={} cold={} warm={} recovered={} unavailable={} secondary_inputs={}/required={}/optional={}/disabled={}/terminal={} bus_connections={} auxiliary_paths={} complex_io_stages={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} spatial_stages={}/active={}/bypassed={}/fallback={} surround_beds={} object_aware={} expanded_fallbacks={} immersive={} room_policy_aware={} fallback_room_policy={} deployment={} folded_down={} fallback_monitoring_scene={} renderer_capability={} negotiated_renderer={} immersive_export={} fallback_immersive_export={}",
                 plugin_chain.chain_count,
                 plugin_chain.stage_count,
                 plugin_chain.pending_render_stage_count,
@@ -11736,6 +13233,16 @@ impl RuntimeOfflineRenderContractPreview {
                 surround_bed_spatial_stage_count,
                 object_aware_spatial_stage_count,
                 expanded_fallback_spatial_stage_count,
+                immersive_spatial_stage_count,
+                room_policy_aware_spatial_stage_count,
+                fallback_room_policy_spatial_stage_count,
+                deployment_spatial_stage_count,
+                folded_down_spatial_stage_count,
+                fallback_monitoring_scene_spatial_stage_count,
+                renderer_capability_spatial_stage_count,
+                negotiated_renderer_spatial_stage_count,
+                immersive_export_spatial_stage_count,
+                fallback_immersive_export_spatial_stage_count,
             ),
         })
     }
@@ -12914,6 +14421,7 @@ pub struct RuntimeObservationReport {
     pub device_supervision_snapshot: RuntimeDeviceSupervisionSnapshot,
     pub external_io_snapshot: RuntimeExternalIoSnapshot,
     pub linux_backend_session_snapshot: RuntimeLinuxBackendSessionSnapshot,
+    pub pipewire_alsa_parity_snapshot: RuntimePipeWireAlsaParitySnapshot,
     pub jack_coordination_snapshot: RuntimeJackCoordinationSnapshot,
     pub external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
     pub control_surface_snapshot: RuntimeControlSurfaceSnapshot,
@@ -12937,6 +14445,8 @@ pub struct RuntimeObservationReport {
     pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
     pub plugin_discovery_snapshot: RuntimePluginDiscoverySnapshot,
     pub plugin_lifecycle_snapshot: RuntimePluginLifecycleSnapshot,
+    pub lv2_extension_snapshot: RuntimeLv2ExtensionSnapshot,
+    pub plugin_pin_matrix_snapshot: RuntimePluginPinMatrixSnapshot,
     pub plugin_chain_snapshot: RuntimePluginChainSnapshot,
     pub scheduler_summary: RuntimeSchedulerExportSummary,
     pub block_summary: RuntimeBlockExecutionSummary,
@@ -12979,6 +14489,15 @@ impl RuntimeObservationReport {
         let plugin_discovery_snapshot = runtime.get_plugin_discovery_snapshot();
         let plugin_lifecycle_snapshot = runtime.get_plugin_lifecycle_snapshot();
         let plugin_chain_snapshot = runtime.get_plugin_chain_snapshot();
+        let lv2_extension_snapshot = RuntimeLv2ExtensionSnapshot::capture(
+            &plugin_discovery_snapshot,
+            &plugin_lifecycle_snapshot,
+        );
+        let plugin_pin_matrix_snapshot = RuntimePluginPinMatrixSnapshot::capture(
+            &plugin_discovery_snapshot,
+            &plugin_lifecycle_snapshot,
+            &plugin_chain_snapshot,
+        );
         let last_deferred_service_receipt = runtime.get_last_deferred_service_receipt();
         let scheduler_summary =
             RuntimeSchedulerExportSummary::from_snapshot(&engine_block_snapshot);
@@ -13026,6 +14545,7 @@ impl RuntimeObservationReport {
             &device_supervision_snapshot,
         );
         let linux_backend_session_snapshot = RuntimeLinuxBackendSessionSnapshot::unavailable();
+        let pipewire_alsa_parity_snapshot = RuntimePipeWireAlsaParitySnapshot::unavailable();
         let jack_coordination_snapshot = RuntimeJackCoordinationSnapshot::unavailable();
         let external_midi_snapshot = RuntimeExternalMidiEndpointGraphSnapshot::unavailable();
         let control_surface_snapshot =
@@ -13048,6 +14568,7 @@ impl RuntimeObservationReport {
             device_supervision_snapshot,
             external_io_snapshot,
             linux_backend_session_snapshot,
+            pipewire_alsa_parity_snapshot,
             jack_coordination_snapshot,
             external_midi_snapshot,
             control_surface_snapshot,
@@ -13071,6 +14592,8 @@ impl RuntimeObservationReport {
             transport_concurrency_snapshot,
             plugin_discovery_snapshot,
             plugin_lifecycle_snapshot,
+            lv2_extension_snapshot,
+            plugin_pin_matrix_snapshot,
             plugin_chain_snapshot,
             scheduler_summary,
             block_summary,
@@ -13104,6 +14627,15 @@ impl RuntimeObservationReport {
     pub fn with_linux_backend_session_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.linux_backend_session_snapshot =
             RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
+        self
+    }
+
+    pub fn with_pipewire_alsa_parity_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
+        self.pipewire_alsa_parity_snapshot =
+            RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
+                host_io,
+                &self.linux_backend_session_snapshot,
+            );
         self
     }
 
@@ -13183,6 +14715,14 @@ impl RuntimeObservationReport {
         let plugin_lifecycle = (self.plugin_lifecycle_snapshot.sandbox_count > 0)
             .then(|| {
                 format_runtime_plugin_lifecycle_snapshot_compact(&self.plugin_lifecycle_snapshot)
+            })
+            .unwrap_or_default();
+        let lv2_extension = (self.lv2_extension_snapshot.plugin_type_count > 0)
+            .then(|| format_runtime_lv2_extension_snapshot_compact(&self.lv2_extension_snapshot))
+            .unwrap_or_default();
+        let plugin_pin_matrix = (self.plugin_pin_matrix_snapshot.plugin_type_count > 0)
+            .then(|| {
+                format_runtime_plugin_pin_matrix_snapshot_compact(&self.plugin_pin_matrix_snapshot)
             })
             .unwrap_or_default();
         let plugin_chain = (self.plugin_chain_snapshot.chain_count > 0)
@@ -13290,12 +14830,15 @@ impl RuntimeObservationReport {
         let linux_backend_session_summary = format_runtime_linux_backend_session_snapshot_compact(
             &self.linux_backend_session_snapshot,
         );
+        let pipewire_alsa_parity_summary = format_runtime_pipewire_alsa_parity_snapshot_compact(
+            &self.pipewire_alsa_parity_snapshot,
+        );
         let jack_coordination_summary =
             format_runtime_jack_coordination_snapshot_compact(&self.jack_coordination_snapshot);
         let external_midi_summary =
             format_runtime_external_midi_snapshot_compact(&self.external_midi_snapshot);
         let runtime_surface_summaries = format!(
-            "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
+            "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
             tempo_map,
             warp,
             clip_processing,
@@ -13305,6 +14848,8 @@ impl RuntimeObservationReport {
             media_library,
             plugin_discovery,
             plugin_lifecycle,
+            lv2_extension,
+            plugin_pin_matrix,
             plugin_chain,
             automation,
             plugin_events,
@@ -13319,6 +14864,7 @@ impl RuntimeObservationReport {
             device_supervision_summary,
             external_io_summary,
             linux_backend_session_summary,
+            pipewire_alsa_parity_summary,
             jack_coordination_summary,
             external_midi_summary,
         );
@@ -13574,7 +15120,7 @@ impl RuntimeObservationReport {
             )
         );
         format!(
-            "{compact}{recording_capture}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{offline_render_session}{execution_topology_summary}{metering_summary}{linux_backend_session_summary}{jack_coordination_summary}{deferred_service}"
+            "{compact}{recording_capture}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{offline_render_session}{execution_topology_summary}{metering_summary}{linux_backend_session_summary}{pipewire_alsa_parity_summary}{jack_coordination_summary}{deferred_service}"
         )
     }
 }
@@ -13757,6 +15303,24 @@ impl RuntimeSupervisorReport {
                 )
             })
             .unwrap_or_default();
+        let lv2_extension = (self.observation.lv2_extension_snapshot.plugin_type_count > 0)
+            .then(|| {
+                format_runtime_lv2_extension_snapshot_multiline(
+                    &self.observation.lv2_extension_snapshot,
+                )
+            })
+            .unwrap_or_default();
+        let plugin_pin_matrix = (self
+            .observation
+            .plugin_pin_matrix_snapshot
+            .plugin_type_count
+            > 0)
+        .then(|| {
+            format_runtime_plugin_pin_matrix_snapshot_multiline(
+                &self.observation.plugin_pin_matrix_snapshot,
+            )
+        })
+        .unwrap_or_default();
         let plugin_chain = (self.observation.plugin_chain_snapshot.chain_count > 0)
             .then(|| {
                 format_runtime_plugin_chain_snapshot_multiline(
@@ -13860,6 +15424,9 @@ impl RuntimeSupervisorReport {
             format_runtime_external_io_snapshot_multiline(&self.observation.external_io_snapshot);
         let linux_backend_session_summary = format_runtime_linux_backend_session_snapshot_multiline(
             &self.observation.linux_backend_session_snapshot,
+        );
+        let pipewire_alsa_parity_summary = format_runtime_pipewire_alsa_parity_snapshot_multiline(
+            &self.observation.pipewire_alsa_parity_snapshot,
         );
         let jack_coordination_summary = format_runtime_jack_coordination_snapshot_multiline(
             &self.observation.jack_coordination_snapshot,
@@ -14320,7 +15887,7 @@ impl RuntimeSupervisorReport {
         ); */
         let multiline = self.observation.render_compact().replace(' ', "\n");
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{plugin_chain}{device_supervision_summary}{external_io_summary}{linux_backend_session_summary}{jack_coordination_summary}{external_midi_summary}{control_surface_summary}{advanced_hardware_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{lv2_extension}{plugin_pin_matrix}{plugin_chain}{device_supervision_summary}{external_io_summary}{linux_backend_session_summary}{pipewire_alsa_parity_summary}{jack_coordination_summary}{external_midi_summary}{control_surface_summary}{advanced_hardware_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 
@@ -14389,6 +15956,7 @@ impl RuntimeSupervisorReport {
                 "\"device_supervision_snapshot\":{},",
                 "\"external_io_snapshot\":{},",
                 "\"linux_backend_session_snapshot\":{},",
+                "\"pipewire_alsa_parity_snapshot\":{},",
                 "\"jack_coordination_snapshot\":{},",
                 "\"external_midi_snapshot\":{},",
                 "\"control_surface_snapshot\":{},",
@@ -14408,6 +15976,8 @@ impl RuntimeSupervisorReport {
                 "\"offline_render_session_snapshot\":{},",
                 "\"plugin_discovery_snapshot\":{},",
                 "\"plugin_lifecycle_snapshot\":{},",
+                "\"lv2_extension_snapshot\":{},",
+                "\"plugin_pin_matrix_snapshot\":{},",
                 "\"plugin_chain_snapshot\":{},",
                 "\"metering_snapshot\":{},",
                 "\"execution_topology_summary\":{},",
@@ -14537,6 +16107,9 @@ impl RuntimeSupervisorReport {
             json_runtime_linux_backend_session_snapshot(
                 &self.observation.linux_backend_session_snapshot,
             ),
+            json_runtime_pipewire_alsa_parity_snapshot(
+                &self.observation.pipewire_alsa_parity_snapshot,
+            ),
             json_runtime_jack_coordination_snapshot(&self.observation.jack_coordination_snapshot),
             json_runtime_external_midi_snapshot(&self.observation.external_midi_snapshot),
             json_runtime_control_surface_snapshot(&self.observation.control_surface_snapshot),
@@ -14562,6 +16135,8 @@ impl RuntimeSupervisorReport {
             ),
             json_runtime_plugin_discovery_snapshot(&self.observation.plugin_discovery_snapshot),
             json_runtime_plugin_lifecycle_snapshot(&self.observation.plugin_lifecycle_snapshot),
+            json_runtime_lv2_extension_snapshot(&self.observation.lv2_extension_snapshot),
+            json_runtime_plugin_pin_matrix_snapshot(&self.observation.plugin_pin_matrix_snapshot),
             json_runtime_plugin_chain_snapshot(&self.observation.plugin_chain_snapshot),
             json_runtime_metering_snapshot(&self.observation.metering_snapshot),
             json_runtime_execution_topology_summary(&self.observation.execution_topology_summary,),
@@ -15974,6 +17549,74 @@ fn format_runtime_linux_backend_session_snapshot_multiline(
     )
 }
 
+fn format_runtime_pipewire_alsa_parity_snapshot_compact(
+    snapshot: &RuntimePipeWireAlsaParitySnapshot,
+) -> String {
+    format!(
+        " pipewire_alsa={:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} simulated={} device_losses={} restart_attempts={} restart_failures={}",
+        snapshot.session_role_parity,
+        snapshot.device_claim_parity,
+        snapshot.stream_policy_parity,
+        snapshot.guarded_state,
+        snapshot.backend_name,
+        snapshot.device_id,
+        snapshot.stream_state,
+        snapshot.simulated,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+    )
+}
+
+fn format_runtime_pipewire_alsa_parity_snapshot_multiline(
+    snapshot: &RuntimePipeWireAlsaParitySnapshot,
+) -> String {
+    format!(
+        concat!(
+            "\npipewire_alsa_parity_backend_identity={:?}",
+            "\npipewire_alsa_parity_backend_name={}",
+            "\npipewire_alsa_parity_portability={:?}",
+            "\npipewire_alsa_parity_session_role={:?}",
+            "\npipewire_alsa_parity_device_claim={:?}",
+            "\npipewire_alsa_parity_stream_policy={:?}",
+            "\npipewire_alsa_parity_guarded_state={:?}",
+            "\npipewire_alsa_parity_lifecycle_ownership={:?}",
+            "\npipewire_alsa_parity_restart_policy={:?}",
+            "\npipewire_alsa_parity_clock_domain={:?}",
+            "\npipewire_alsa_parity_fallback_state={:?}",
+            "\npipewire_alsa_parity_device_id={}",
+            "\npipewire_alsa_parity_device_name={}",
+            "\npipewire_alsa_parity_stream_state={:?}",
+            "\npipewire_alsa_parity_backend_health={:?}",
+            "\npipewire_alsa_parity_simulated={}",
+            "\npipewire_alsa_parity_device_loss_count={}",
+            "\npipewire_alsa_parity_restart_attempt_count={}",
+            "\npipewire_alsa_parity_restart_failure_count={}",
+            "\npipewire_alsa_parity_summary={}",
+        ),
+        snapshot.backend_identity,
+        snapshot.backend_name,
+        snapshot.portability_band,
+        snapshot.session_role_parity,
+        snapshot.device_claim_parity,
+        snapshot.stream_policy_parity,
+        snapshot.guarded_state,
+        snapshot.lifecycle_ownership,
+        snapshot.restart_policy,
+        snapshot.clock_domain,
+        snapshot.fallback_state,
+        snapshot.device_id,
+        snapshot.device_name,
+        snapshot.stream_state,
+        snapshot.backend_health,
+        snapshot.simulated,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        snapshot.summary,
+    )
+}
+
 fn format_runtime_jack_coordination_snapshot_compact(
     snapshot: &RuntimeJackCoordinationSnapshot,
 ) -> String {
@@ -16172,11 +17815,23 @@ fn format_runtime_advanced_hardware_snapshot_multiline(
         .enumerate()
         .map(|(index, device)| {
             format!(
-                "\nadvanced_hardware_device_{}={}/policy={:?}/feedback={:?}/capability={}",
+                "\nadvanced_hardware_device_{}={}/policy={:?}/feedback={:?}/display={:?}/{:?}/motor={:?}/haptic={:?}/feedback_authority={:?}/feedback_outcome={:?}/scene={:?}/page={:?}/{:?}/action_graph={:?}/action_authority={:?}/action_outcome={:?}/capability={}",
                 index,
                 device.device_id,
                 device.scripting_safe_posture,
                 device.feedback_channel_posture,
+                device.display_transport_posture,
+                device.display_content_class,
+                device.motor_transport_posture,
+                device.haptic_transport_posture,
+                device.feedback_authority,
+                device.feedback_outcome,
+                device.scene_mapping_posture,
+                device.feedback_page_posture,
+                device.feedback_page_class,
+                device.safe_action_graph_posture,
+                device.action_authority,
+                device.safe_action_outcome,
                 device.capability.summary,
             )
         })
@@ -16192,6 +17847,12 @@ fn format_runtime_advanced_hardware_snapshot_multiline(
             "\nadvanced_hardware_context_only_device_count={}",
             "\nadvanced_hardware_denied_device_count={}",
             "\nadvanced_hardware_feedback_channel_device_count={}",
+            "\nadvanced_hardware_display_transport_device_count={}",
+            "\nadvanced_hardware_motor_transport_device_count={}",
+            "\nadvanced_hardware_haptic_transport_device_count={}",
+            "\nadvanced_hardware_scene_mapping_device_count={}",
+            "\nadvanced_hardware_feedback_page_device_count={}",
+            "\nadvanced_hardware_safe_action_graph_device_count={}",
             "\nadvanced_hardware_summary={}",
         ),
         snapshot.discovery_state,
@@ -16203,6 +17864,12 @@ fn format_runtime_advanced_hardware_snapshot_multiline(
         snapshot.context_only_device_count,
         snapshot.denied_device_count,
         snapshot.feedback_channel_device_count,
+        snapshot.display_transport_device_count,
+        snapshot.motor_transport_device_count,
+        snapshot.haptic_transport_device_count,
+        snapshot.scene_mapping_device_count,
+        snapshot.feedback_page_device_count,
+        snapshot.safe_action_graph_device_count,
         snapshot.summary,
     ) + &device_lines
 }
@@ -16831,7 +18498,7 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
         .enumerate()
         .map(|(index, record)| {
             format!(
-                "\nplugin_discovered_type_{}={}/plugin_id={}/vendor={}/name={}/format={:?}/version={:?}/features={:?}/io={:?}/audio_buses={}/parameters={}",
+                "\nplugin_discovered_type_{}={}/plugin_id={}/vendor={}/name={}/format={:?}/version={:?}/features={:?}/io={:?}/audio_buses={}/parameters={}/lv2_extension={}",
                 index,
                 record.plugin_type_id,
                 record.plugin_id,
@@ -16843,6 +18510,11 @@ fn format_runtime_plugin_discovery_snapshot_multiline(
                 record.default_io_layout,
                 record.audio_bus_count,
                 record.parameter_count,
+                record
+                    .lv2_extension_capabilities
+                    .as_ref()
+                    .map(|summary| summary.summary.as_str())
+                    .unwrap_or("none"),
             )
         })
         .collect::<String>();
@@ -16951,6 +18623,111 @@ fn format_runtime_plugin_lifecycle_snapshot_multiline(
         snapshot.terminal_sandbox_count,
         parity_coverage_lines,
         sandbox_lines,
+    )
+}
+
+fn format_runtime_lv2_extension_snapshot_compact(snapshot: &RuntimeLv2ExtensionSnapshot) -> String {
+    format!(
+        " lv2_extensions=types={}/sandboxes={} worker_required={} worker_guarded={} urid_negotiated={} patch_supported={} negotiated={} guarded={} unavailable={}",
+        snapshot.plugin_type_count,
+        snapshot.sandbox_count,
+        snapshot.worker_required_type_count,
+        snapshot.worker_guarded_type_count,
+        snapshot.urid_negotiated_type_count,
+        snapshot.patch_supported_type_count,
+        snapshot.negotiated_type_count,
+        snapshot.guarded_type_count,
+        snapshot.unavailable_type_count,
+    )
+}
+
+fn format_runtime_lv2_extension_snapshot_multiline(
+    snapshot: &RuntimeLv2ExtensionSnapshot,
+) -> String {
+    let record_lines = snapshot
+        .records
+        .iter()
+        .enumerate()
+        .map(|(index, record)| {
+            format!(
+                "\nlv2_extension_record_{}={}/plugin_id={}/worker={:?}/urid={:?}/patch={:?}/negotiation={:?}/sandboxes={}/active={}/faulted={}/lifecycle={:?}",
+                index,
+                record.plugin_type_id,
+                record.plugin_id,
+                record.worker_posture,
+                record.urid_negotiation_posture,
+                record.patch_exchange_posture,
+                record.extension_negotiation_state,
+                record.sandbox_count,
+                record.active_sandbox_count,
+                record.faulted_sandbox_count,
+                record.strongest_lifecycle_state,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nlv2_extension_plugin_type_count={}\nlv2_extension_sandbox_count={}\nlv2_extension_worker_required_type_count={}\nlv2_extension_worker_guarded_type_count={}\nlv2_extension_urid_negotiated_type_count={}\nlv2_extension_patch_supported_type_count={}\nlv2_extension_negotiated_type_count={}\nlv2_extension_guarded_type_count={}\nlv2_extension_unavailable_type_count={}\nlv2_extension_summary={}{}",
+        snapshot.plugin_type_count,
+        snapshot.sandbox_count,
+        snapshot.worker_required_type_count,
+        snapshot.worker_guarded_type_count,
+        snapshot.urid_negotiated_type_count,
+        snapshot.patch_supported_type_count,
+        snapshot.negotiated_type_count,
+        snapshot.guarded_type_count,
+        snapshot.unavailable_type_count,
+        snapshot.summary,
+        record_lines,
+    )
+}
+
+fn format_runtime_plugin_pin_matrix_snapshot_compact(
+    snapshot: &RuntimePluginPinMatrixSnapshot,
+) -> String {
+    format!(
+        " plugin_pin_matrix=types={} negotiated={} guarded={} unavailable={} dynamic_negotiated={} dynamic_guarded={}",
+        snapshot.plugin_type_count,
+        snapshot.negotiated_type_count,
+        snapshot.guarded_type_count,
+        snapshot.unavailable_type_count,
+        snapshot.dynamic_negotiated_type_count,
+        snapshot.dynamic_guarded_type_count,
+    )
+}
+
+fn format_runtime_plugin_pin_matrix_snapshot_multiline(
+    snapshot: &RuntimePluginPinMatrixSnapshot,
+) -> String {
+    let record_lines = snapshot
+        .records
+        .iter()
+        .enumerate()
+        .map(|(index, record)| {
+            format!(
+                "\nplugin_pin_matrix_record_{}={}/plugin_id={}/pin_groups={:?}/matrix={:?}/dynamic={:?}/fallback={:?}/stages={}/active={}/lifecycle={:?}",
+                index,
+                record.plugin_type_id,
+                record.plugin_id,
+                record.pin_group_identities,
+                record.pin_matrix_posture,
+                record.dynamic_bus_negotiation_posture,
+                record.fallback_outcome,
+                record.stage_count,
+                record.active_stage_count,
+                record.strongest_lifecycle_state,
+            )
+        })
+        .collect::<String>();
+    format!(
+        "\nplugin_pin_matrix_type_count={}\nplugin_pin_matrix_negotiated_type_count={}\nplugin_pin_matrix_guarded_type_count={}\nplugin_pin_matrix_unavailable_type_count={}\nplugin_pin_matrix_dynamic_negotiated_type_count={}\nplugin_pin_matrix_dynamic_guarded_type_count={}\nplugin_pin_matrix_summary={}{}",
+        snapshot.plugin_type_count,
+        snapshot.negotiated_type_count,
+        snapshot.guarded_type_count,
+        snapshot.unavailable_type_count,
+        snapshot.dynamic_negotiated_type_count,
+        snapshot.dynamic_guarded_type_count,
+        snapshot.summary,
+        record_lines,
     )
 }
 
@@ -18800,6 +20577,18 @@ fn json_runtime_advanced_hardware_device_descriptor(
             "\"device_name\":{},",
             "\"scripting_safe_posture\":{},",
             "\"feedback_channel_posture\":{},",
+            "\"display_transport_posture\":{},",
+            "\"display_content_class\":{},",
+            "\"motor_transport_posture\":{},",
+            "\"haptic_transport_posture\":{},",
+            "\"feedback_authority\":{},",
+            "\"feedback_outcome\":{},",
+            "\"scene_mapping_posture\":{},",
+            "\"feedback_page_posture\":{},",
+            "\"feedback_page_class\":{},",
+            "\"safe_action_graph_posture\":{},",
+            "\"action_authority\":{},",
+            "\"safe_action_outcome\":{},",
             "\"capability\":{},",
             "\"summary\":{}",
             "}}"
@@ -18808,6 +20597,18 @@ fn json_runtime_advanced_hardware_device_descriptor(
         json_option_string(Some(descriptor.device_name.as_str())),
         json_string(&format!("{:?}", descriptor.scripting_safe_posture)),
         json_string(&format!("{:?}", descriptor.feedback_channel_posture)),
+        json_string(&format!("{:?}", descriptor.display_transport_posture)),
+        json_string(&format!("{:?}", descriptor.display_content_class)),
+        json_string(&format!("{:?}", descriptor.motor_transport_posture)),
+        json_string(&format!("{:?}", descriptor.haptic_transport_posture)),
+        json_string(&format!("{:?}", descriptor.feedback_authority)),
+        json_string(&format!("{:?}", descriptor.feedback_outcome)),
+        json_string(&format!("{:?}", descriptor.scene_mapping_posture)),
+        json_string(&format!("{:?}", descriptor.feedback_page_posture)),
+        json_string(&format!("{:?}", descriptor.feedback_page_class)),
+        json_string(&format!("{:?}", descriptor.safe_action_graph_posture)),
+        json_string(&format!("{:?}", descriptor.action_authority)),
+        json_string(&format!("{:?}", descriptor.safe_action_outcome)),
         json_runtime_advanced_hardware_capability_summary(&descriptor.capability),
         json_option_string(Some(descriptor.summary.as_str())),
     )
@@ -18826,6 +20627,12 @@ fn json_runtime_advanced_hardware_snapshot(snapshot: &RuntimeAdvancedHardwareSna
             "\"context_only_device_count\":{},",
             "\"denied_device_count\":{},",
             "\"feedback_channel_device_count\":{},",
+            "\"display_transport_device_count\":{},",
+            "\"motor_transport_device_count\":{},",
+            "\"haptic_transport_device_count\":{},",
+            "\"scene_mapping_device_count\":{},",
+            "\"feedback_page_device_count\":{},",
+            "\"safe_action_graph_device_count\":{},",
             "\"devices\":{},",
             "\"summary\":{}",
             "}}"
@@ -18839,6 +20646,12 @@ fn json_runtime_advanced_hardware_snapshot(snapshot: &RuntimeAdvancedHardwareSna
         snapshot.context_only_device_count,
         snapshot.denied_device_count,
         snapshot.feedback_channel_device_count,
+        snapshot.display_transport_device_count,
+        snapshot.motor_transport_device_count,
+        snapshot.haptic_transport_device_count,
+        snapshot.scene_mapping_device_count,
+        snapshot.feedback_page_device_count,
+        snapshot.safe_action_graph_device_count,
         format!(
             "[{}]",
             snapshot
@@ -18964,6 +20777,57 @@ fn json_runtime_linux_backend_session_snapshot(
         json_string(&format!("{:?}", snapshot.device_claim_posture)),
         json_string(&format!("{:?}", snapshot.session_role)),
         json_string(&format!("{:?}", snapshot.ownership_fallback)),
+        json_option_string(Some(snapshot.device_id.as_str())),
+        json_option_string(Some(snapshot.device_name.as_str())),
+        json_string(&format!("{:?}", snapshot.stream_state)),
+        json_string(&format!("{:?}", snapshot.backend_health)),
+        snapshot.simulated,
+        snapshot.device_loss_count,
+        snapshot.restart_attempt_count,
+        snapshot.restart_failure_count,
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_pipewire_alsa_parity_snapshot(
+    snapshot: &RuntimePipeWireAlsaParitySnapshot,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"backend_identity\":{},",
+            "\"backend_name\":{},",
+            "\"portability_band\":{},",
+            "\"session_role_parity\":{},",
+            "\"device_claim_parity\":{},",
+            "\"stream_policy_parity\":{},",
+            "\"guarded_state\":{},",
+            "\"lifecycle_ownership\":{},",
+            "\"restart_policy\":{},",
+            "\"clock_domain\":{},",
+            "\"fallback_state\":{},",
+            "\"device_id\":{},",
+            "\"device_name\":{},",
+            "\"stream_state\":{},",
+            "\"backend_health\":{},",
+            "\"simulated\":{},",
+            "\"device_loss_count\":{},",
+            "\"restart_attempt_count\":{},",
+            "\"restart_failure_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", snapshot.backend_identity)),
+        json_option_string(Some(snapshot.backend_name.as_str())),
+        json_string(&format!("{:?}", snapshot.portability_band)),
+        json_string(&format!("{:?}", snapshot.session_role_parity)),
+        json_string(&format!("{:?}", snapshot.device_claim_parity)),
+        json_string(&format!("{:?}", snapshot.stream_policy_parity)),
+        json_string(&format!("{:?}", snapshot.guarded_state)),
+        json_string(&format!("{:?}", snapshot.lifecycle_ownership)),
+        json_string(&format!("{:?}", snapshot.restart_policy)),
+        json_string(&format!("{:?}", snapshot.clock_domain)),
+        json_string(&format!("{:?}", snapshot.fallback_state)),
         json_option_string(Some(snapshot.device_id.as_str())),
         json_option_string(Some(snapshot.device_name.as_str())),
         json_string(&format!("{:?}", snapshot.stream_state)),
@@ -20363,6 +22227,17 @@ fn json_runtime_plugin_port_class_vec(values: &[RuntimePluginPortClass]) -> Stri
     )
 }
 
+fn json_runtime_plugin_pin_group_identity_vec(values: &[RuntimePluginPinGroupIdentity]) -> String {
+    format!(
+        "[{}]",
+        values
+            .iter()
+            .map(|value| json_escape_string(&format!("{value:?}")))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
 fn json_runtime_plugin_complex_io_summary(summary: &RuntimePluginComplexIoSummary) -> String {
     let bus_capable_fx_class = summary
         .bus_capable_fx_class
@@ -20418,6 +22293,27 @@ fn json_runtime_plugin_discovered_type_record_vec(
     )
 }
 
+fn json_runtime_lv2_extension_capability_summary(
+    summary: &RuntimeLv2ExtensionCapabilitySummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"worker_capability\":{},",
+            "\"urid_capability\":{},",
+            "\"patch_capability\":{},",
+            "\"negotiated_extension_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", summary.worker_capability)),
+        json_string(&format!("{:?}", summary.urid_capability)),
+        json_string(&format!("{:?}", summary.patch_capability)),
+        summary.negotiated_extension_count,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
 fn json_runtime_plugin_discovered_type_record(
     record: &RuntimePluginDiscoveredTypeRecord,
 ) -> String {
@@ -20439,6 +22335,7 @@ fn json_runtime_plugin_discovered_type_record(
             "\"state_contract\":{},",
             "\"processing_contract\":{},",
             "\"lifecycle_contract\":{},",
+            "\"lv2_extension_capabilities\":{},",
             "\"summary\":{}",
             "}}"
         ),
@@ -20457,7 +22354,153 @@ fn json_runtime_plugin_discovered_type_record(
         json_plugin_state_contract(record.state_contract),
         json_plugin_processing_contract(record.processing_contract),
         json_plugin_lifecycle_contract(record.lifecycle_contract),
+        record.lv2_extension_capabilities.as_ref().map_or_else(
+            || "null".into(),
+            json_runtime_lv2_extension_capability_summary
+        ),
         json_option_string(Some(record.summary.as_str())),
+    )
+}
+
+fn json_runtime_lv2_extension_record(record: &RuntimeLv2ExtensionRecord) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"plugin_type_id\":{},",
+            "\"plugin_id\":{},",
+            "\"worker_posture\":{},",
+            "\"urid_negotiation_posture\":{},",
+            "\"patch_exchange_posture\":{},",
+            "\"extension_negotiation_state\":{},",
+            "\"strongest_lifecycle_state\":{},",
+            "\"sandbox_count\":{},",
+            "\"active_sandbox_count\":{},",
+            "\"faulted_sandbox_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(record.plugin_type_id.as_str())),
+        json_option_string(Some(record.plugin_id.as_str())),
+        json_string(&format!("{:?}", record.worker_posture)),
+        json_string(&format!("{:?}", record.urid_negotiation_posture)),
+        json_string(&format!("{:?}", record.patch_exchange_posture)),
+        json_string(&format!("{:?}", record.extension_negotiation_state)),
+        json_option_string(
+            record
+                .strongest_lifecycle_state
+                .map(|state| format!("{state:?}"))
+                .as_deref(),
+        ),
+        record.sandbox_count,
+        record.active_sandbox_count,
+        record.faulted_sandbox_count,
+        json_option_string(Some(record.summary.as_str())),
+    )
+}
+
+fn json_runtime_lv2_extension_snapshot(snapshot: &RuntimeLv2ExtensionSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"plugin_type_count\":{},",
+            "\"sandbox_count\":{},",
+            "\"worker_required_type_count\":{},",
+            "\"worker_guarded_type_count\":{},",
+            "\"urid_negotiated_type_count\":{},",
+            "\"patch_supported_type_count\":{},",
+            "\"negotiated_type_count\":{},",
+            "\"guarded_type_count\":{},",
+            "\"unavailable_type_count\":{},",
+            "\"records\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.plugin_type_count,
+        snapshot.sandbox_count,
+        snapshot.worker_required_type_count,
+        snapshot.worker_guarded_type_count,
+        snapshot.urid_negotiated_type_count,
+        snapshot.patch_supported_type_count,
+        snapshot.negotiated_type_count,
+        snapshot.guarded_type_count,
+        snapshot.unavailable_type_count,
+        format!(
+            "[{}]",
+            snapshot
+                .records
+                .iter()
+                .map(json_runtime_lv2_extension_record)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_pin_matrix_record(record: &RuntimePluginPinMatrixRecord) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"plugin_type_id\":{},",
+            "\"plugin_id\":{},",
+            "\"pin_group_identities\":{},",
+            "\"pin_matrix_posture\":{},",
+            "\"dynamic_bus_negotiation_posture\":{},",
+            "\"fallback_outcome\":{},",
+            "\"strongest_lifecycle_state\":{},",
+            "\"stage_count\":{},",
+            "\"active_stage_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_option_string(Some(record.plugin_type_id.as_str())),
+        json_option_string(Some(record.plugin_id.as_str())),
+        json_runtime_plugin_pin_group_identity_vec(&record.pin_group_identities),
+        json_string(&format!("{:?}", record.pin_matrix_posture)),
+        json_string(&format!("{:?}", record.dynamic_bus_negotiation_posture)),
+        json_string(&format!("{:?}", record.fallback_outcome)),
+        json_option_string(
+            record
+                .strongest_lifecycle_state
+                .map(|state| format!("{state:?}"))
+                .as_deref(),
+        ),
+        record.stage_count,
+        record.active_stage_count,
+        json_option_string(Some(record.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_pin_matrix_snapshot(snapshot: &RuntimePluginPinMatrixSnapshot) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"plugin_type_count\":{},",
+            "\"negotiated_type_count\":{},",
+            "\"guarded_type_count\":{},",
+            "\"unavailable_type_count\":{},",
+            "\"dynamic_negotiated_type_count\":{},",
+            "\"dynamic_guarded_type_count\":{},",
+            "\"records\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        snapshot.plugin_type_count,
+        snapshot.negotiated_type_count,
+        snapshot.guarded_type_count,
+        snapshot.unavailable_type_count,
+        snapshot.dynamic_negotiated_type_count,
+        snapshot.dynamic_guarded_type_count,
+        format!(
+            "[{}]",
+            snapshot
+                .records
+                .iter()
+                .map(json_runtime_plugin_pin_matrix_record)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        json_option_string(Some(snapshot.summary.as_str())),
     )
 }
 
@@ -20556,6 +22599,9 @@ fn json_runtime_spatial_execution_summary(summary: &RuntimeSpatialExecutionSumma
             "\"mix_policy\":\"{:?}\",",
             "\"render_scope\":\"{:?}\",",
             "\"expanded_fallback_outcome\":{},",
+            "\"immersive_room_policy\":{},",
+            "\"deployment_monitoring\":{},",
+            "\"renderer_export\":{},",
             "\"balance\":{},",
             "\"input_layout\":{},",
             "\"output_layout\":{},",
@@ -20590,9 +22636,88 @@ fn json_runtime_spatial_execution_summary(summary: &RuntimeSpatialExecutionSumma
                 .map(|outcome| format!("{outcome:?}"))
                 .as_deref()
         ),
+        summary
+            .immersive_room_policy
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_immersive_room_policy_summary),
+        summary
+            .deployment_monitoring
+            .as_ref()
+            .map_or_else(|| "null".into(), json_runtime_deployment_monitoring_summary),
+        summary.renderer_export.as_ref().map_or_else(
+            || "null".into(),
+            json_runtime_renderer_immersive_export_summary
+        ),
         json_option_string(summary.balance.as_deref()),
         json_runtime_multichannel_layout_summary(&summary.input_layout),
         json_runtime_multichannel_layout_summary(&summary.output_layout),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_renderer_immersive_export_summary(
+    summary: &RuntimeRendererImmersiveExportSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"renderer_capability_posture\":\"{:?}\",",
+            "\"capability_authority\":\"{:?}\",",
+            "\"immersive_export_class\":\"{:?}\",",
+            "\"export_authority\":\"{:?}\",",
+            "\"export_outcome\":\"{:?}\",",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.renderer_capability_posture,
+        summary.capability_authority,
+        summary.immersive_export_class,
+        summary.export_authority,
+        summary.export_outcome,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_deployment_monitoring_summary(
+    summary: &RuntimeDeploymentMonitoringSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"deployment_class\":\"{:?}\",",
+            "\"fold_down_policy\":\"{:?}\",",
+            "\"monitoring_scene_class\":\"{:?}\",",
+            "\"monitoring_scene_authority\":\"{:?}\",",
+            "\"monitoring_outcome\":\"{:?}\",",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.deployment_class,
+        summary.fold_down_policy,
+        summary.monitoring_scene_class,
+        summary.monitoring_scene_authority,
+        summary.monitoring_outcome,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_immersive_room_policy_summary(
+    summary: &RuntimeImmersiveRoomPolicySummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"object_rendering_posture\":\"{:?}\",",
+            "\"room_policy_class\":\"{:?}\",",
+            "\"room_policy_authority\":\"{:?}\",",
+            "\"room_outcome\":\"{:?}\",",
+            "\"summary\":{}",
+            "}}"
+        ),
+        summary.object_rendering_posture,
+        summary.room_policy_class,
+        summary.room_policy_authority,
+        summary.room_outcome,
         json_option_string(Some(summary.summary.as_str())),
     )
 }
@@ -21104,6 +23229,16 @@ fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySum
             "\"surround_bed_spatial_node_count\":{},",
             "\"object_aware_spatial_node_count\":{},",
             "\"expanded_fallback_spatial_node_count\":{},",
+            "\"immersive_spatial_node_count\":{},",
+            "\"room_policy_aware_spatial_node_count\":{},",
+            "\"fallback_room_policy_spatial_node_count\":{},",
+            "\"deployment_spatial_node_count\":{},",
+            "\"folded_down_spatial_node_count\":{},",
+            "\"fallback_monitoring_scene_spatial_node_count\":{},",
+            "\"renderer_capability_spatial_node_count\":{},",
+            "\"negotiated_renderer_spatial_node_count\":{},",
+            "\"immersive_export_spatial_node_count\":{},",
+            "\"fallback_immersive_export_spatial_node_count\":{},",
             "\"plugin_chain\":{},",
             "\"lanes\":{},",
             "\"track_lanes\":{},",
@@ -21141,6 +23276,16 @@ fn json_runtime_execution_topology_summary(summary: &RuntimeExecutionTopologySum
         summary.surround_bed_spatial_node_count,
         summary.object_aware_spatial_node_count,
         summary.expanded_fallback_spatial_node_count,
+        summary.immersive_spatial_node_count,
+        summary.room_policy_aware_spatial_node_count,
+        summary.fallback_room_policy_spatial_node_count,
+        summary.deployment_spatial_node_count,
+        summary.folded_down_spatial_node_count,
+        summary.fallback_monitoring_scene_spatial_node_count,
+        summary.renderer_capability_spatial_node_count,
+        summary.negotiated_renderer_spatial_node_count,
+        summary.immersive_export_spatial_node_count,
+        summary.fallback_immersive_export_spatial_node_count,
         json_runtime_routed_plugin_chain_summary(&summary.plugin_chain),
         json_runtime_execution_topology_lanes(&summary.lanes),
         json_runtime_mixer_track_lanes(&summary.track_lanes),
@@ -23703,6 +25848,7 @@ pub struct RuntimePluginDiscoveredTypeRecord {
     pub state_contract: PluginStateContract,
     pub processing_contract: PluginProcessingContract,
     pub lifecycle_contract: PluginLifecycleContract,
+    pub lv2_extension_capabilities: Option<RuntimeLv2ExtensionCapabilitySummary>,
     pub summary: String,
 }
 
@@ -23785,6 +25931,173 @@ pub struct RuntimePluginFormatParityRecord {
     pub summary: String,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2WorkerCapability {
+    Absent,
+    Supported,
+    Required,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2UridCapability {
+    NotRequired,
+    Supported,
+    Required,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2PatchCapability {
+    Absent,
+    Supported,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeLv2ExtensionCapabilitySummary {
+    pub worker_capability: RuntimeLv2WorkerCapability,
+    pub urid_capability: RuntimeLv2UridCapability,
+    pub patch_capability: RuntimeLv2PatchCapability,
+    pub negotiated_extension_count: usize,
+    pub summary: String,
+}
+
+impl RuntimeLv2ExtensionCapabilitySummary {
+    pub fn absent() -> Self {
+        Self {
+            worker_capability: RuntimeLv2WorkerCapability::Absent,
+            urid_capability: RuntimeLv2UridCapability::NotRequired,
+            patch_capability: RuntimeLv2PatchCapability::Absent,
+            negotiated_extension_count: 0,
+            summary: "worker=Absent urid=NotRequired patch=Absent extensions=0".into(),
+        }
+    }
+
+    pub fn from_lv2_feature_uris(
+        required_features: &[String],
+        supported_extensions: &[String],
+    ) -> Self {
+        let supports_worker = required_features
+            .iter()
+            .chain(supported_extensions.iter())
+            .any(|feature| feature.starts_with("http://lv2plug.in/ns/ext/worker#"));
+        let requires_worker = required_features
+            .iter()
+            .any(|feature| feature == "http://lv2plug.in/ns/ext/worker#schedule");
+        let supports_urid = required_features
+            .iter()
+            .chain(supported_extensions.iter())
+            .any(|feature| feature.starts_with("http://lv2plug.in/ns/ext/urid#"));
+        let requires_urid = required_features
+            .iter()
+            .any(|feature| feature == "http://lv2plug.in/ns/ext/urid#map");
+        let supports_patch = required_features
+            .iter()
+            .chain(supported_extensions.iter())
+            .any(|feature| feature.starts_with("http://lv2plug.in/ns/ext/patch#"));
+        let negotiated_extension_count = required_features
+            .iter()
+            .chain(supported_extensions.iter())
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
+        let worker_capability = if requires_worker {
+            RuntimeLv2WorkerCapability::Required
+        } else if supports_worker {
+            RuntimeLv2WorkerCapability::Supported
+        } else {
+            RuntimeLv2WorkerCapability::Absent
+        };
+        let urid_capability = if requires_urid {
+            RuntimeLv2UridCapability::Required
+        } else if supports_urid {
+            RuntimeLv2UridCapability::Supported
+        } else {
+            RuntimeLv2UridCapability::NotRequired
+        };
+        let patch_capability = if supports_patch {
+            RuntimeLv2PatchCapability::Supported
+        } else {
+            RuntimeLv2PatchCapability::Absent
+        };
+        let mut summary = Self {
+            worker_capability,
+            urid_capability,
+            patch_capability,
+            negotiated_extension_count,
+            summary: String::new(),
+        };
+        summary.summary = format!(
+            "worker={:?} urid={:?} patch={:?} extensions={}",
+            summary.worker_capability,
+            summary.urid_capability,
+            summary.patch_capability,
+            summary.negotiated_extension_count,
+        );
+        summary
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2WorkerPosture {
+    WorkerAbsent,
+    WorkerAvailable,
+    WorkerRequiredAvailable,
+    WorkerGuarded,
+    WorkerUnavailable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2UridNegotiationPosture {
+    NotRequired,
+    Negotiated,
+    Guarded,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2PatchExchangePosture {
+    Absent,
+    Supported,
+    Guarded,
+    Unavailable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimeLv2ExtensionNegotiationState {
+    NotRequired,
+    Negotiated,
+    PartiallySatisfied,
+    Unavailable,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeLv2ExtensionRecord {
+    pub plugin_type_id: String,
+    pub plugin_id: String,
+    pub worker_posture: RuntimeLv2WorkerPosture,
+    pub urid_negotiation_posture: RuntimeLv2UridNegotiationPosture,
+    pub patch_exchange_posture: RuntimeLv2PatchExchangePosture,
+    pub extension_negotiation_state: RuntimeLv2ExtensionNegotiationState,
+    pub strongest_lifecycle_state: Option<RuntimePluginLifecycleState>,
+    pub sandbox_count: usize,
+    pub active_sandbox_count: usize,
+    pub faulted_sandbox_count: usize,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeLv2ExtensionSnapshot {
+    pub plugin_type_count: usize,
+    pub sandbox_count: usize,
+    pub worker_required_type_count: usize,
+    pub worker_guarded_type_count: usize,
+    pub urid_negotiated_type_count: usize,
+    pub patch_supported_type_count: usize,
+    pub negotiated_type_count: usize,
+    pub guarded_type_count: usize,
+    pub unavailable_type_count: usize,
+    pub records: Vec<RuntimeLv2ExtensionRecord>,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginCapabilityCoverageSummary {
     pub discovered_format_count: usize,
@@ -23831,6 +26144,439 @@ pub struct RuntimePluginDiscoverySnapshot {
     pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
     pub discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
     pub summary: String,
+}
+
+impl RuntimePluginPinMatrixSnapshot {
+    pub fn capture(
+        discovery: &RuntimePluginDiscoverySnapshot,
+        lifecycle: &RuntimePluginLifecycleSnapshot,
+        plugin_chain: &RuntimePluginChainSnapshot,
+    ) -> Self {
+        let mut records = Vec::new();
+        let mut negotiated_type_count = 0usize;
+        let mut guarded_type_count = 0usize;
+        let mut unavailable_type_count = 0usize;
+        let mut dynamic_negotiated_type_count = 0usize;
+        let mut dynamic_guarded_type_count = 0usize;
+
+        for record in discovery
+            .discovered_types
+            .iter()
+            .filter(|record| record.complex_io_summary.has_complex_topology)
+        {
+            let sandboxes = lifecycle
+                .sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_type_id.as_deref() == Some(record.plugin_type_id.as_str())
+                })
+                .collect::<Vec<_>>();
+            let matching_stages = plugin_chain
+                .chains
+                .iter()
+                .flat_map(|chain| chain.stages.iter())
+                .filter(|stage| {
+                    stage.sandbox_id.as_deref().is_some_and(|sandbox_id| {
+                        sandboxes
+                            .iter()
+                            .any(|sandbox| sandbox.sandbox_id == sandbox_id)
+                    })
+                })
+                .collect::<Vec<_>>();
+            let strongest_lifecycle_state = sandboxes
+                .iter()
+                .max_by_key(|sandbox| runtime_plugin_lifecycle_state_severity(sandbox.state))
+                .map(|sandbox| sandbox.state);
+            let unavailable_lifecycle = !sandboxes.is_empty()
+                && sandboxes.iter().all(|sandbox| {
+                    matches!(
+                        sandbox.state,
+                        RuntimePluginLifecycleState::Faulted
+                            | RuntimePluginLifecycleState::Quarantined
+                            | RuntimePluginLifecycleState::Stopped
+                    )
+                });
+            let guarded_lifecycle = sandboxes.iter().any(|sandbox| {
+                matches!(
+                    sandbox.state,
+                    RuntimePluginLifecycleState::Degraded
+                        | RuntimePluginLifecycleState::Restarting
+                        | RuntimePluginLifecycleState::Faulted
+                        | RuntimePluginLifecycleState::Quarantined
+                )
+            }) || matching_stages
+                .iter()
+                .any(|stage| !stage.degraded_reasons.is_empty());
+            let stage_count = matching_stages.len();
+            let active_stage_count = matching_stages
+                .iter()
+                .filter(|stage| {
+                    stage.transport_stage == Some(PluginSandboxTransportStage::Attached)
+                })
+                .count();
+            let pin_matrix_posture = if unavailable_lifecycle {
+                RuntimePluginPinMatrixPosture::Unavailable
+            } else if guarded_lifecycle {
+                RuntimePluginPinMatrixPosture::Guarded
+            } else if active_stage_count > 0 {
+                RuntimePluginPinMatrixPosture::Negotiated
+            } else {
+                RuntimePluginPinMatrixPosture::Declared
+            };
+            let dynamic_surface_declared = record.complex_io_summary.multi_output_instrument
+                || record.complex_io_summary.bus_capable_fx_class.is_some()
+                || record.complex_io_summary.secondary_input_group_count > 0
+                || record.complex_io_summary.aux_input_group_count > 0
+                || record.complex_io_summary.aux_output_group_count > 0;
+            let dynamic_bus_negotiation_posture = if unavailable_lifecycle {
+                RuntimeDynamicBusNegotiationPosture::Unavailable
+            } else if !dynamic_surface_declared {
+                RuntimeDynamicBusNegotiationPosture::Static
+            } else if guarded_lifecycle {
+                RuntimeDynamicBusNegotiationPosture::Guarded
+            } else if active_stage_count > 0 {
+                RuntimeDynamicBusNegotiationPosture::Negotiated
+            } else {
+                RuntimeDynamicBusNegotiationPosture::Static
+            };
+            let mut pin_group_identities = Vec::new();
+            if record.complex_io_summary.main_input_group_count > 0
+                || record.complex_io_summary.main_output_group_count > 0
+            {
+                pin_group_identities.push(RuntimePluginPinGroupIdentity::PrimaryProgramPath);
+            }
+            if record.complex_io_summary.instrument_output_group_count > 0 {
+                pin_group_identities.push(RuntimePluginPinGroupIdentity::SecondaryProgramPath);
+            }
+            if record.complex_io_summary.secondary_input_group_count > 0 {
+                pin_group_identities.push(RuntimePluginPinGroupIdentity::SidechainPath);
+            }
+            if record.complex_io_summary.aux_input_group_count > 0
+                || record.complex_io_summary.aux_output_group_count > 0
+            {
+                pin_group_identities.push(RuntimePluginPinGroupIdentity::AuxReturnPath);
+            }
+            if record.complex_io_summary.analysis_output_group_count > 0 {
+                pin_group_identities.push(RuntimePluginPinGroupIdentity::AnalysisPath);
+            }
+            if active_stage_count == 0 {
+                pin_group_identities.push(RuntimePluginPinGroupIdentity::InactiveDeclaredPath);
+            }
+            let fallback_outcome = runtime_plugin_topology_fallback_to_negotiation_outcome(
+                record.complex_io_summary.fallback_outcome,
+            );
+            match pin_matrix_posture {
+                RuntimePluginPinMatrixPosture::Negotiated => negotiated_type_count += 1,
+                RuntimePluginPinMatrixPosture::Guarded => guarded_type_count += 1,
+                RuntimePluginPinMatrixPosture::Unavailable => unavailable_type_count += 1,
+                RuntimePluginPinMatrixPosture::Simple | RuntimePluginPinMatrixPosture::Declared => {
+                }
+            }
+            match dynamic_bus_negotiation_posture {
+                RuntimeDynamicBusNegotiationPosture::Negotiated => {
+                    dynamic_negotiated_type_count += 1
+                }
+                RuntimeDynamicBusNegotiationPosture::Guarded => dynamic_guarded_type_count += 1,
+                RuntimeDynamicBusNegotiationPosture::Static
+                | RuntimeDynamicBusNegotiationPosture::Unavailable => {}
+            }
+            let mut pin_record = RuntimePluginPinMatrixRecord {
+                plugin_type_id: record.plugin_type_id.clone(),
+                plugin_id: record.plugin_id.clone(),
+                pin_group_identities,
+                pin_matrix_posture,
+                dynamic_bus_negotiation_posture,
+                fallback_outcome,
+                strongest_lifecycle_state,
+                stage_count,
+                active_stage_count,
+                summary: String::new(),
+            };
+            pin_record.summary = format!(
+                "plugin_type={} pin_groups={:?} matrix={:?} dynamic={:?} fallback={:?} stages={}/active={} lifecycle={:?}",
+                pin_record.plugin_type_id,
+                pin_record.pin_group_identities,
+                pin_record.pin_matrix_posture,
+                pin_record.dynamic_bus_negotiation_posture,
+                pin_record.fallback_outcome,
+                pin_record.stage_count,
+                pin_record.active_stage_count,
+                pin_record.strongest_lifecycle_state,
+            );
+            records.push(pin_record);
+        }
+
+        let plugin_type_count = records.len();
+        let mut snapshot = Self {
+            plugin_type_count,
+            negotiated_type_count,
+            guarded_type_count,
+            unavailable_type_count,
+            dynamic_negotiated_type_count,
+            dynamic_guarded_type_count,
+            records,
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "plugin_types={} negotiated={} guarded={} unavailable={} dynamic_negotiated={} dynamic_guarded={}",
+            snapshot.plugin_type_count,
+            snapshot.negotiated_type_count,
+            snapshot.guarded_type_count,
+            snapshot.unavailable_type_count,
+            snapshot.dynamic_negotiated_type_count,
+            snapshot.dynamic_guarded_type_count,
+        );
+        snapshot
+    }
+}
+
+impl RuntimeLv2ExtensionSnapshot {
+    pub fn capture(
+        discovery: &RuntimePluginDiscoverySnapshot,
+        lifecycle: &RuntimePluginLifecycleSnapshot,
+    ) -> Self {
+        let mut records = Vec::new();
+        let mut sandbox_count = 0usize;
+        let mut worker_required_type_count = 0usize;
+        let mut worker_guarded_type_count = 0usize;
+        let mut urid_negotiated_type_count = 0usize;
+        let mut patch_supported_type_count = 0usize;
+        let mut negotiated_type_count = 0usize;
+        let mut guarded_type_count = 0usize;
+        let mut unavailable_type_count = 0usize;
+
+        for record in discovery
+            .discovered_types
+            .iter()
+            .filter(|record| record.format == PluginFormat::Lv2)
+        {
+            let capabilities = record
+                .lv2_extension_capabilities
+                .clone()
+                .unwrap_or_else(RuntimeLv2ExtensionCapabilitySummary::absent);
+            let sandboxes = lifecycle
+                .sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(PluginFormat::Lv2)
+                        && sandbox.plugin_type_id.as_deref() == Some(record.plugin_type_id.as_str())
+                })
+                .collect::<Vec<_>>();
+            let active_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.active || sandbox.active_transport)
+                .count();
+            let faulted_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    matches!(
+                        sandbox.state,
+                        RuntimePluginLifecycleState::Faulted
+                            | RuntimePluginLifecycleState::Quarantined
+                    )
+                })
+                .count();
+            let strongest_lifecycle_state = sandboxes
+                .iter()
+                .max_by_key(|sandbox| runtime_plugin_lifecycle_state_severity(sandbox.state))
+                .map(|sandbox| sandbox.state);
+            let guarded_lifecycle = sandboxes.iter().any(|sandbox| {
+                matches!(
+                    sandbox.state,
+                    RuntimePluginLifecycleState::Degraded | RuntimePluginLifecycleState::Restarting
+                )
+            }) || faulted_sandbox_count > 0;
+            let unavailable_lifecycle = !sandboxes.is_empty()
+                && sandboxes.iter().all(|sandbox| {
+                    matches!(
+                        sandbox.state,
+                        RuntimePluginLifecycleState::Faulted
+                            | RuntimePluginLifecycleState::Quarantined
+                            | RuntimePluginLifecycleState::Stopped
+                    )
+                });
+
+            let worker_posture = match capabilities.worker_capability {
+                RuntimeLv2WorkerCapability::Absent => RuntimeLv2WorkerPosture::WorkerAbsent,
+                RuntimeLv2WorkerCapability::Supported => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerUnavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerGuarded
+                    } else {
+                        RuntimeLv2WorkerPosture::WorkerAvailable
+                    }
+                }
+                RuntimeLv2WorkerCapability::Required => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerUnavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerGuarded
+                    } else {
+                        RuntimeLv2WorkerPosture::WorkerRequiredAvailable
+                    }
+                }
+            };
+            let urid_negotiation_posture = match capabilities.urid_capability {
+                RuntimeLv2UridCapability::NotRequired => {
+                    RuntimeLv2UridNegotiationPosture::NotRequired
+                }
+                RuntimeLv2UridCapability::Supported | RuntimeLv2UridCapability::Required => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2UridNegotiationPosture::Unavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2UridNegotiationPosture::Guarded
+                    } else {
+                        RuntimeLv2UridNegotiationPosture::Negotiated
+                    }
+                }
+            };
+            let patch_exchange_posture = match capabilities.patch_capability {
+                RuntimeLv2PatchCapability::Absent => RuntimeLv2PatchExchangePosture::Absent,
+                RuntimeLv2PatchCapability::Supported => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2PatchExchangePosture::Unavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2PatchExchangePosture::Guarded
+                    } else {
+                        RuntimeLv2PatchExchangePosture::Supported
+                    }
+                }
+            };
+            let extension_needed = capabilities.negotiated_extension_count > 0
+                || capabilities.worker_capability != RuntimeLv2WorkerCapability::Absent
+                || capabilities.urid_capability != RuntimeLv2UridCapability::NotRequired
+                || capabilities.patch_capability != RuntimeLv2PatchCapability::Absent;
+            let extension_negotiation_state = if !extension_needed {
+                RuntimeLv2ExtensionNegotiationState::NotRequired
+            } else if unavailable_lifecycle {
+                RuntimeLv2ExtensionNegotiationState::Unavailable
+            } else if matches!(
+                worker_posture,
+                RuntimeLv2WorkerPosture::WorkerGuarded | RuntimeLv2WorkerPosture::WorkerUnavailable
+            ) || matches!(
+                urid_negotiation_posture,
+                RuntimeLv2UridNegotiationPosture::Guarded
+                    | RuntimeLv2UridNegotiationPosture::Unavailable
+            ) || matches!(
+                patch_exchange_posture,
+                RuntimeLv2PatchExchangePosture::Guarded
+                    | RuntimeLv2PatchExchangePosture::Unavailable
+            ) {
+                RuntimeLv2ExtensionNegotiationState::PartiallySatisfied
+            } else {
+                RuntimeLv2ExtensionNegotiationState::Negotiated
+            };
+
+            if capabilities.worker_capability == RuntimeLv2WorkerCapability::Required {
+                worker_required_type_count += 1;
+            }
+            if worker_posture == RuntimeLv2WorkerPosture::WorkerGuarded {
+                worker_guarded_type_count += 1;
+            }
+            if urid_negotiation_posture == RuntimeLv2UridNegotiationPosture::Negotiated {
+                urid_negotiated_type_count += 1;
+            }
+            if patch_exchange_posture == RuntimeLv2PatchExchangePosture::Supported {
+                patch_supported_type_count += 1;
+            }
+            match extension_negotiation_state {
+                RuntimeLv2ExtensionNegotiationState::Negotiated => negotiated_type_count += 1,
+                RuntimeLv2ExtensionNegotiationState::PartiallySatisfied => guarded_type_count += 1,
+                RuntimeLv2ExtensionNegotiationState::Unavailable => unavailable_type_count += 1,
+                RuntimeLv2ExtensionNegotiationState::NotRequired => {}
+            }
+
+            sandbox_count += sandboxes.len();
+            let mut lv2_record = RuntimeLv2ExtensionRecord {
+                plugin_type_id: record.plugin_type_id.clone(),
+                plugin_id: record.plugin_id.clone(),
+                worker_posture,
+                urid_negotiation_posture,
+                patch_exchange_posture,
+                extension_negotiation_state,
+                strongest_lifecycle_state,
+                sandbox_count: sandboxes.len(),
+                active_sandbox_count,
+                faulted_sandbox_count,
+                summary: String::new(),
+            };
+            lv2_record.summary = format!(
+                "plugin_type={} worker={:?} urid={:?} patch={:?} negotiation={:?} sandboxes={}/active={} faulted={} lifecycle={:?}",
+                lv2_record.plugin_type_id,
+                lv2_record.worker_posture,
+                lv2_record.urid_negotiation_posture,
+                lv2_record.patch_exchange_posture,
+                lv2_record.extension_negotiation_state,
+                lv2_record.sandbox_count,
+                lv2_record.active_sandbox_count,
+                lv2_record.faulted_sandbox_count,
+                lv2_record.strongest_lifecycle_state,
+            );
+            records.push(lv2_record);
+        }
+
+        let plugin_type_count = records.len();
+        let mut snapshot = Self {
+            plugin_type_count,
+            sandbox_count,
+            worker_required_type_count,
+            worker_guarded_type_count,
+            urid_negotiated_type_count,
+            patch_supported_type_count,
+            negotiated_type_count,
+            guarded_type_count,
+            unavailable_type_count,
+            records,
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "plugin_types={} sandboxes={} worker_required={} worker_guarded={} urid_negotiated={} patch_supported={} negotiated={} guarded={} unavailable={}",
+            snapshot.plugin_type_count,
+            snapshot.sandbox_count,
+            snapshot.worker_required_type_count,
+            snapshot.worker_guarded_type_count,
+            snapshot.urid_negotiated_type_count,
+            snapshot.patch_supported_type_count,
+            snapshot.negotiated_type_count,
+            snapshot.guarded_type_count,
+            snapshot.unavailable_type_count,
+        );
+        snapshot
+    }
+}
+
+fn runtime_plugin_lifecycle_state_severity(state: RuntimePluginLifecycleState) -> u8 {
+    match state {
+        RuntimePluginLifecycleState::Faulted => 5,
+        RuntimePluginLifecycleState::Quarantined => 4,
+        RuntimePluginLifecycleState::Restarting => 3,
+        RuntimePluginLifecycleState::Degraded => 2,
+        RuntimePluginLifecycleState::Ready => 1,
+        RuntimePluginLifecycleState::Booting | RuntimePluginLifecycleState::Stopped => 0,
+    }
+}
+
+fn runtime_plugin_topology_fallback_to_negotiation_outcome(
+    outcome: RuntimePluginTopologyFallbackOutcome,
+) -> RuntimePluginNegotiationFallbackOutcome {
+    match outcome {
+        RuntimePluginTopologyFallbackOutcome::CollapseToPrimaryPath => {
+            RuntimePluginNegotiationFallbackOutcome::RoutePrimaryOnly
+        }
+        RuntimePluginTopologyFallbackOutcome::BypassUnavailablePortGroup => {
+            RuntimePluginNegotiationFallbackOutcome::DeactivateOptionalPath
+        }
+        RuntimePluginTopologyFallbackOutcome::MuteDependentOutput => {
+            RuntimePluginNegotiationFallbackOutcome::CollapseToDeclaredBaseline
+        }
+        RuntimePluginTopologyFallbackOutcome::SafeModeDegradation => {
+            RuntimePluginNegotiationFallbackOutcome::GuardedDegradation
+        }
+        RuntimePluginTopologyFallbackOutcome::TerminalPluginTopologyFailure => {
+            RuntimePluginNegotiationFallbackOutcome::TerminalNegotiationFailure
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24896,6 +27642,12 @@ mod tests {
         assert_eq!(empty.graph_state, RuntimeAdvancedHardwareGraphState::Empty);
         assert_eq!(empty.provider_name, "signal-host-local");
         assert_eq!(empty.device_count, 0);
+        assert_eq!(empty.display_transport_device_count, 0);
+        assert_eq!(empty.motor_transport_device_count, 0);
+        assert_eq!(empty.haptic_transport_device_count, 0);
+        assert_eq!(empty.scene_mapping_device_count, 0);
+        assert_eq!(empty.feedback_page_device_count, 0);
+        assert_eq!(empty.safe_action_graph_device_count, 0);
 
         let advanced = RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
             &RuntimeControlSurfaceSnapshot {
@@ -24934,6 +27686,12 @@ mod tests {
         assert_eq!(advanced.context_only_device_count, 0);
         assert_eq!(advanced.denied_device_count, 0);
         assert_eq!(advanced.feedback_channel_device_count, 1);
+        assert_eq!(advanced.display_transport_device_count, 1);
+        assert_eq!(advanced.motor_transport_device_count, 0);
+        assert_eq!(advanced.haptic_transport_device_count, 0);
+        assert_eq!(advanced.scene_mapping_device_count, 1);
+        assert_eq!(advanced.feedback_page_device_count, 1);
+        assert_eq!(advanced.safe_action_graph_device_count, 1);
         assert_eq!(
             advanced.devices[0].scripting_safe_posture,
             RuntimeScriptingSafeDevicePolicyPosture::Guarded
@@ -24949,6 +27707,54 @@ mod tests {
             advanced.devices[0]
                 .capability
                 .supports_device_state_observation
+        );
+        assert_eq!(
+            advanced.devices[0].display_transport_posture,
+            RuntimeDisplayTransportPosture::GuardedDisplay
+        );
+        assert_eq!(
+            advanced.devices[0].display_content_class,
+            RuntimeDisplayContentClass::GuardedVendorDisplay
+        );
+        assert_eq!(
+            advanced.devices[0].motor_transport_posture,
+            RuntimeMotorTransportPosture::NoMotorTransport
+        );
+        assert_eq!(
+            advanced.devices[0].haptic_transport_posture,
+            RuntimeHapticTransportPosture::NoHapticTransport
+        );
+        assert_eq!(
+            advanced.devices[0].feedback_authority,
+            RuntimeAdvancedControlFeedbackAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            advanced.devices[0].feedback_outcome,
+            RuntimeAdvancedControlFeedbackOutcome::CollapseToGuardedFeedback
+        );
+        assert_eq!(
+            advanced.devices[0].scene_mapping_posture,
+            RuntimeSceneMappingPosture::GuardedSceneMapping
+        );
+        assert_eq!(
+            advanced.devices[0].feedback_page_posture,
+            RuntimeFeedbackPagePosture::GuardedFeedbackPages
+        );
+        assert_eq!(
+            advanced.devices[0].feedback_page_class,
+            RuntimeFeedbackPageClass::GuardedVendorPage
+        );
+        assert_eq!(
+            advanced.devices[0].safe_action_graph_posture,
+            RuntimeSafeActionGraphPosture::GuardedSafeActionGraph
+        );
+        assert_eq!(
+            advanced.devices[0].action_authority,
+            RuntimeControlSurfaceWorkflowAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            advanced.devices[0].safe_action_outcome,
+            RuntimeSafeActionOutcome::CollapseToGuardedAction
         );
         assert!(advanced.devices[0]
             .capability
@@ -25119,6 +27925,12 @@ mod tests {
         assert!(json.contains("\"external_midi_snapshot\":{"));
         assert!(json.contains("\"control_surface_snapshot\":{"));
         assert!(json.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(json.contains("\"display_transport_device_count\":0"));
+        assert!(json.contains("\"motor_transport_device_count\":0"));
+        assert!(json.contains("\"haptic_transport_device_count\":0"));
+        assert!(json.contains("\"scene_mapping_device_count\":0"));
+        assert!(json.contains("\"feedback_page_device_count\":0"));
+        assert!(json.contains("\"safe_action_graph_device_count\":0"));
         assert!(json.contains("\"stretch_engine_snapshot\":{\"clip_count\":0"));
         assert!(json.contains("\"discovery_state\":\"Idle\""));
         assert!(json.contains("\"graph_state\":\"Empty\""));
@@ -25442,6 +28254,135 @@ mod tests {
         assert_eq!(
             pipewire_recovering.ownership_fallback,
             RuntimeLinuxBackendOwnershipFallbackState::RecoveryConstrained
+        );
+    }
+
+    #[test]
+    fn runtime_pipewire_alsa_parity_snapshot_derives_runtime_owned_parity_baselines() {
+        let alsa_host_io = linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+            RuntimeHostLifecycleOwnership::HostDrivenCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        let alsa_linux_session = RuntimeLinuxBackendSessionSnapshot::from_host_io(&alsa_host_io);
+        let alsa = RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
+            &alsa_host_io,
+            &alsa_linux_session,
+        );
+        assert_eq!(
+            alsa.session_role_parity,
+            RuntimePipeWireAlsaSessionRoleParity::PrimaryAudioIo
+        );
+        assert_eq!(
+            alsa.device_claim_parity,
+            RuntimePipeWireAlsaDeviceClaimParity::DirectClaim
+        );
+        assert_eq!(
+            alsa.stream_policy_parity,
+            RuntimePipeWireAlsaStreamPolicyParity::DirectHostCallback
+        );
+        assert_eq!(
+            alsa.guarded_state,
+            RuntimePipeWireAlsaGuardedParityState::Direct
+        );
+
+        let pipewire_host_io = linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        let pipewire_linux_session =
+            RuntimeLinuxBackendSessionSnapshot::from_host_io(&pipewire_host_io);
+        let pipewire = RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
+            &pipewire_host_io,
+            &pipewire_linux_session,
+        );
+        assert_eq!(
+            pipewire.session_role_parity,
+            RuntimePipeWireAlsaSessionRoleParity::PrimaryAudioIo
+        );
+        assert_eq!(
+            pipewire.device_claim_parity,
+            RuntimePipeWireAlsaDeviceClaimParity::SharedGraph
+        );
+        assert_eq!(
+            pipewire.stream_policy_parity,
+            RuntimePipeWireAlsaStreamPolicyParity::BackendManagedGraph
+        );
+        assert_eq!(
+            pipewire.guarded_state,
+            RuntimePipeWireAlsaGuardedParityState::BackendManaged
+        );
+
+        let pipewire_recovering_host_io = linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Faulted,
+            BackendHealth::Recovering,
+            1,
+            1,
+            1,
+        );
+        let pipewire_recovering_linux_session =
+            RuntimeLinuxBackendSessionSnapshot::from_host_io(&pipewire_recovering_host_io);
+        let pipewire_recovering = RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
+            &pipewire_recovering_host_io,
+            &pipewire_recovering_linux_session,
+        );
+        assert_eq!(
+            pipewire_recovering.session_role_parity,
+            RuntimePipeWireAlsaSessionRoleParity::FallbackContinuation
+        );
+        assert_eq!(
+            pipewire_recovering.device_claim_parity,
+            RuntimePipeWireAlsaDeviceClaimParity::Lost
+        );
+        assert_eq!(
+            pipewire_recovering.stream_policy_parity,
+            RuntimePipeWireAlsaStreamPolicyParity::Restarting
+        );
+        assert_eq!(
+            pipewire_recovering.guarded_state,
+            RuntimePipeWireAlsaGuardedParityState::RecoveryGuarded
+        );
+
+        let jack_host_io = linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        let jack_linux_session = RuntimeLinuxBackendSessionSnapshot::from_host_io(&jack_host_io);
+        let jack = RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
+            &jack_host_io,
+            &jack_linux_session,
+        );
+        assert_eq!(
+            jack.session_role_parity,
+            RuntimePipeWireAlsaSessionRoleParity::NotPipeWireOrAlsa
+        );
+        assert_eq!(
+            jack.device_claim_parity,
+            RuntimePipeWireAlsaDeviceClaimParity::NotPipeWireOrAlsa
+        );
+        assert_eq!(
+            jack.stream_policy_parity,
+            RuntimePipeWireAlsaStreamPolicyParity::NotPipeWireOrAlsa
+        );
+        assert_eq!(
+            jack.guarded_state,
+            RuntimePipeWireAlsaGuardedParityState::NotPipeWireOrAlsa
         );
     }
 

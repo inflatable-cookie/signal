@@ -32,6 +32,7 @@ pub struct Lv2DiscoveredPluginType {
     pub bundle_root: String,
     pub manifest_path: String,
     pub required_features: Vec<String>,
+    pub supported_extensions: Vec<String>,
     pub descriptor: PluginDescriptor,
     pub default_io_layout: PluginIoLayout,
 }
@@ -295,6 +296,18 @@ fn lv2_fixture_required_features(plugin_type_id: &str) -> Vec<String> {
     }
 }
 
+fn lv2_fixture_supported_extensions(plugin_type_id: &str) -> Vec<String> {
+    match plugin_type_id {
+        "plugin:lv2:linux-synth" | "plugin:lv2:multiout-instrument" => vec![
+            "http://lv2plug.in/ns/ext/patch#Message".into(),
+            "http://lv2plug.in/ns/ext/state#state".into(),
+        ],
+        "plugin:lv2:bus-fx" => vec!["http://lv2plug.in/ns/ext/patch#Message".into()],
+        "plugin:lv2:utility" => vec!["http://lv2plug.in/ns/ext/options#options".into()],
+        _ => Vec::new(),
+    }
+}
+
 fn lv2_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     match plugin_type_id {
         "plugin:lv2:linux-synth" | "plugin:lv2:multiout-instrument" => {
@@ -381,6 +394,7 @@ fn lv2_discovered_plugin_type(plugin_type_id: &str) -> Option<Lv2DiscoveredPlugi
                     lv2_fixture_bundle_name(plugin_type_id)
                 ),
                 required_features: lv2_fixture_required_features(plugin_type_id),
+                supported_extensions: lv2_fixture_supported_extensions(plugin_type_id),
                 descriptor: lv2_fixture_descriptor(plugin_type_id, default_io_layout),
                 default_io_layout,
             })

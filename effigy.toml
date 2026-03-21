@@ -141,7 +141,8 @@ qa = [
 ]
 "acceptance:lv2-boundary" = [
   { run = "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
-  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_baseline_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_lv2_extension_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_extension_truth" },
   { run = "cargo test -p signal-supervisor-tools lv2_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-lv2-boundary --format=json" },
 ]
@@ -177,6 +178,13 @@ qa = [
   { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_jack_coordination_truth" },
   { run = "cargo test -p signal-supervisor-tools jack_coordination_boundary_json_reports_runtime_and_host_edge_proofs" },
   { run = "cargo run -p signal-supervisor-tools -- --describe-jack-coordination-boundary --format=json" },
+]
+"acceptance:pipewire-alsa-parity-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_policy_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth" },
+  { run = "cargo test -p signal-supervisor-tools pipewire_alsa_parity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-pipewire-alsa-parity-boundary --format=json" },
 ]
 "acceptance:linux-backend-clock-topology-boundary" = [
   { run = "cargo test -p signal-runtime public_runtime_linux_backend_clock_topology_boundary_reports_runtime_owned_linux_parity_truth" },

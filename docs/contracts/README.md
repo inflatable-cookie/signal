@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-03-19
+Updated: 2026-03-21
 
 ## Why this section matters now
 
@@ -71,6 +71,15 @@ Use this section for:
 - `051-generation-closeout-and-loophole-feature-readiness-gate-contract.md`
 - `052-live-linux-audio-backend-ownership-and-session-lifecycle-contract.md`
 - `053-jack-transport-graph-and-backend-native-coordination-contract.md`
+- `054-pipewire-and-alsa-session-role-device-claim-and-stream-policy-parity-contract.md`
+- `055-lv2-worker-urid-patch-and-extension-negotiation-contract.md`
+- `056-complex-plugin-pin-matrix-and-dynamic-bus-negotiation-contract.md`
+- `057-immersive-object-rendering-and-room-policy-substrate-contract.md`
+- `058-speaker-deployment-fold-down-and-monitoring-scene-contract.md`
+- `059-renderer-capability-negotiation-and-immersive-export-contract.md`
+- `060-advanced-control-surface-display-motor-and-haptic-transport-contract.md`
+- `061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md`
+- `062-preview-output-routing-audition-sink-and-low-latency-device-policy-contract.md`
 
 ## Rule
 
@@ -79,6 +88,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
-session-role, device-claim, and stream-policy parity meaning on top of the
-closed live Linux ownership and JACK coordination seams.
+Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
+preview-output routing, audition-sink ownership, and low-latency device-policy
+receipts, then align stable host-edge export to the same bounded model.

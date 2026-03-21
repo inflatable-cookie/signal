@@ -58,6 +58,7 @@ enum CliMode {
     DescribeLinuxAudioBackendBoundary,
     DescribeLinuxLiveOwnershipBoundary,
     DescribeJackCoordinationBoundary,
+    DescribePipeWireAlsaParityBoundary,
     DescribeLinuxBackendClockTopologyBoundary,
     DescribeExternalMidiBoundary,
     DescribeGenericEventBoundary,
@@ -139,7 +140,7 @@ const AU_CONTRACT_PATH: &str =
 const AU_ACCEPTANCE_TASK: &str = "effigy acceptance:au-boundary";
 const LV2_BOUNDARY: &str = "signal.runtime.lv2-boundary";
 const LV2_CONTRACT_PATH: &str =
-    "docs/contracts/038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md";
+    "docs/contracts/055-lv2-worker-urid-patch-and-extension-negotiation-contract.md";
 const LV2_ACCEPTANCE_TASK: &str = "effigy acceptance:lv2-boundary";
 const CROSS_ADAPTER_PARITY_BOUNDARY: &str = "signal.runtime.cross-adapter-parity-boundary";
 const CROSS_ADAPTER_PARITY_CONTRACT_PATH: &str =
@@ -163,6 +164,11 @@ const JACK_COORDINATION_BOUNDARY: &str = "signal.runtime.jack-coordination-bound
 const JACK_COORDINATION_CONTRACT_PATH: &str =
     "docs/contracts/053-jack-transport-graph-and-backend-native-coordination-contract.md";
 const JACK_COORDINATION_ACCEPTANCE_TASK: &str = "effigy acceptance:jack-coordination-boundary";
+const PIPEWIRE_ALSA_PARITY_BOUNDARY: &str = "signal.runtime.pipewire-alsa-parity-boundary";
+const PIPEWIRE_ALSA_PARITY_CONTRACT_PATH: &str =
+    "docs/contracts/054-pipewire-and-alsa-session-role-device-claim-and-stream-policy-parity-contract.md";
+const PIPEWIRE_ALSA_PARITY_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:pipewire-alsa-parity-boundary";
 const LINUX_BACKEND_CLOCK_TOPOLOGY_BOUNDARY: &str =
     "signal.runtime.linux-backend-clock-topology-boundary";
 const LINUX_BACKEND_CLOCK_TOPOLOGY_CONTRACT_PATH: &str =
@@ -188,7 +194,7 @@ const CONTROL_SURFACE_CONTRACT_PATH: &str =
 const CONTROL_SURFACE_ACCEPTANCE_TASK: &str = "effigy acceptance:control-surface-boundary";
 const ADVANCED_HARDWARE_BOUNDARY: &str = "signal.runtime.advanced-hardware-boundary";
 const ADVANCED_HARDWARE_CONTRACT_PATH: &str =
-    "docs/contracts/045-advanced-hardware-extensibility-and-scripting-safe-device-policy-contract.md";
+    "docs/contracts/061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md";
 const ADVANCED_HARDWARE_ACCEPTANCE_TASK: &str = "effigy acceptance:advanced-hardware-boundary";
 const RECALL_PORTABILITY_BOUNDARY: &str = "signal.runtime.recall-portability-boundary";
 const RECALL_PORTABILITY_CONTRACT_PATH: &str =
@@ -228,11 +234,11 @@ const SIDECHAIN_CONTRACT_PATH: &str =
 const SIDECHAIN_ACCEPTANCE_TASK: &str = "effigy acceptance:sidechain-boundary";
 const COMPLEX_IO_BOUNDARY: &str = "signal.runtime.complex-io-boundary";
 const COMPLEX_IO_CONTRACT_PATH: &str =
-    "docs/contracts/035-plugin-complex-io-topology-and-multi-output-instrument-contract.md";
+    "docs/contracts/056-complex-plugin-pin-matrix-and-dynamic-bus-negotiation-contract.md";
 const COMPLEX_IO_ACCEPTANCE_TASK: &str = "effigy acceptance:complex-io-boundary";
 const SPATIAL_BOUNDARY: &str = "signal.runtime.spatial-boundary";
 const SPATIAL_CONTRACT_PATH: &str =
-    "docs/contracts/037-surround-bed-object-and-mix-policy-expansion-contract.md";
+    "docs/contracts/059-renderer-capability-negotiation-and-immersive-export-contract.md";
 const SPATIAL_ACCEPTANCE_TASK: &str = "effigy acceptance:spatial-boundary";
 const STRETCH_BOUNDARY: &str = "signal.runtime.stretch-boundary";
 const STRETCH_CONTRACT_PATH: &str =
@@ -813,6 +819,29 @@ struct JackCoordinationBoundarySurface {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct JackCoordinationBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PipeWireAlsaParityBoundarySurfaceKind {
+    RuntimeReport,
+    HostEdge,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PipeWireAlsaParityBoundarySurface {
+    id: &'static str,
+    kind: PipeWireAlsaParityBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PipeWireAlsaParityBoundaryValidationStep {
     id: &'static str,
     command: &'static str,
     rationale: &'static str,
@@ -1502,7 +1531,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-lv2-boundary|--describe-cross-adapter-parity-boundary|--describe-linux-plugin-parity-boundary|--describe-linux-audio-backend-boundary|--describe-linux-live-ownership-boundary|--describe-jack-coordination-boundary|--describe-linux-backend-clock-topology-boundary|--describe-external-midi-boundary|--describe-generic-event-boundary|--describe-controller-expression-boundary|--describe-control-surface-boundary|--describe-advanced-hardware-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-multichannel-boundary|--describe-multi-bus-boundary|--describe-sidechain-boundary|--describe-complex-io-boundary|--describe-spatial-boundary|--describe-stretch-boundary|--describe-marker-analysis-boundary|--describe-transform-artifact-boundary|--describe-preview-transform-boundary|--describe-integrated-acceptance-lane|--describe-g07-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-lv2-boundary|--describe-cross-adapter-parity-boundary|--describe-linux-plugin-parity-boundary|--describe-linux-audio-backend-boundary|--describe-linux-live-ownership-boundary|--describe-jack-coordination-boundary|--describe-pipewire-alsa-parity-boundary|--describe-linux-backend-clock-topology-boundary|--describe-external-midi-boundary|--describe-generic-event-boundary|--describe-controller-expression-boundary|--describe-control-surface-boundary|--describe-advanced-hardware-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-multichannel-boundary|--describe-multi-bus-boundary|--describe-sidechain-boundary|--describe-complex-io-boundary|--describe-spatial-boundary|--describe-stretch-boundary|--describe-marker-analysis-boundary|--describe-transform-artifact-boundary|--describe-preview-transform-boundary|--describe-integrated-acceptance-lane|--describe-g07-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -1672,6 +1701,15 @@ impl LinuxLiveOwnershipBoundarySurfaceKind {
 }
 
 impl JackCoordinationBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+impl PipeWireAlsaParityBoundarySurfaceKind {
     fn label(self) -> &'static str {
         match self {
             Self::RuntimeReport => "runtime-report",
@@ -2808,14 +2846,14 @@ fn au_boundary_validation_steps() -> &'static [AuBoundaryValidationStep] {
 fn lv2_boundary_surfaces() -> &'static [Lv2BoundarySurface] {
     &[
         Lv2BoundarySurface {
-            id: "runtime-lv2-discovery-report",
+            id: "runtime-lv2-extension-report",
             kind: Lv2BoundarySurfaceKind::RuntimeReport,
             crate_name: "signal-runtime",
             surface:
-                "RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot",
-            runtime_anchor: "RuntimePluginDiscoverySnapshot",
+                "RuntimeObservationReport::lv2_extension_snapshot and RuntimeSupervisorReport::observation.lv2_extension_snapshot",
+            runtime_anchor: "RuntimeLv2ExtensionSnapshot",
             rationale:
-                "Keeps discovered Linux-native LV2 types, format-filtered scan intent, and platform scope consumable through shared runtime reports rather than Linux-host-private catalogs.",
+                "Keeps LV2 worker posture, URID negotiation posture, patch exchange posture, and extension-negotiation state consumable through shared runtime-owned reports instead of adapter-private feature tables.",
         },
         Lv2BoundarySurface {
             id: "runtime-lv2-lifecycle-snapshot",
@@ -2824,7 +2862,16 @@ fn lv2_boundary_surfaces() -> &'static [Lv2BoundarySurface] {
             surface: "RuntimeObservationApi::get_plugin_lifecycle_snapshot()",
             runtime_anchor: "RuntimePluginLifecycleSnapshot",
             rationale:
-                "Keeps LV2 sandbox lifecycle, readiness, and transport attachment truth on the existing runtime-owned lifecycle seam instead of a Linux-only wrapper shell.",
+                "Keeps LV2 extension posture derived from the existing runtime-owned sandbox lifecycle seam instead of a second host-local negotiation model.",
+        },
+        Lv2BoundarySurface {
+            id: "local-host-lv2-supervisor-report",
+            kind: Lv2BoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures the stable local host edge exports the same runtime-owned LV2 extension seam without inventing local-only worker, URID, or patch summaries.",
         },
         Lv2BoundarySurface {
             id: "server-host-lv2-supervisor-report",
@@ -2833,7 +2880,7 @@ fn lv2_boundary_surfaces() -> &'static [Lv2BoundarySurface] {
             surface: "supervisor_report() -> RuntimeSupervisorReport",
             runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
             rationale:
-                "Ensures the stable Linux-facing server host edge forwards LV2 discovery and lifecycle truth without adapter-local reconstruction or host-private LV2 ledgers.",
+                "Ensures the stable server host edge forwards LV2 extension truth without adapter-local reconstruction or host-private LV2 negotiation ledgers.",
         },
     ]
 }
@@ -2845,14 +2892,21 @@ fn lv2_boundary_validation_steps() -> &'static [Lv2BoundaryValidationStep] {
             command:
                 "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth",
             rationale:
-                "Proves a downstream-style runtime consumer can inspect Linux-native LV2 discovery and lifecycle truth through public runtime reexports alone.",
+                "Proves a downstream-style runtime consumer can inspect runtime-owned LV2 extension truth through public runtime reexports alone.",
+        },
+        Lv2BoundaryValidationStep {
+            id: "local-host-lv2-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_lv2_extension_truth",
+            rationale:
+                "Proves the stable local host edge forwards the runtime-owned LV2 extension seam on supervisor export.",
         },
         Lv2BoundaryValidationStep {
             id: "server-host-lv2-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_baseline_truth",
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_extension_truth",
             rationale:
-                "Proves the stable server host edge forwards runtime-owned Linux-native LV2 discovery and lifecycle state on supervisor export.",
+                "Proves the stable server host edge forwards runtime-owned LV2 extension state on supervisor export.",
         },
         Lv2BoundaryValidationStep {
             id: "boundary-descriptor",
@@ -3173,6 +3227,64 @@ fn jack_coordination_boundary_validation_steps() -> &'static [JackCoordinationBo
                 "cargo run -p signal-supervisor-tools -- --describe-jack-coordination-boundary --format=json",
             rationale:
                 "Lets consumers inspect the shared JACK coordination proof boundary without reading backend-private host code.",
+        },
+    ]
+}
+
+fn pipewire_alsa_parity_boundary_surfaces() -> &'static [PipeWireAlsaParityBoundarySurface] {
+    &[
+        PipeWireAlsaParityBoundarySurface {
+            id: "runtime-pipewire-alsa-parity-report",
+            kind: PipeWireAlsaParityBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::pipewire_alsa_parity_snapshot and RuntimeSupervisorReport::observation.pipewire_alsa_parity_snapshot",
+            runtime_anchor: "RuntimePipeWireAlsaParitySnapshot",
+            rationale:
+                "Keeps PipeWire and ALSA session-role, device-claim, stream-policy, and guarded parity on one runtime-owned receipt instead of host-local daemon or callback policy.",
+        },
+        PipeWireAlsaParityBoundarySurface {
+            id: "shared-host-pipewire-alsa-supervisor-report",
+            kind: PipeWireAlsaParityBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures stable host edges forward the same runtime-owned PipeWire/ALSA parity seam without host-specific reclassification.",
+        },
+    ]
+}
+
+fn pipewire_alsa_parity_boundary_validation_steps(
+) -> &'static [PipeWireAlsaParityBoundaryValidationStep] {
+    &[
+        PipeWireAlsaParityBoundaryValidationStep {
+            id: "runtime-pipewire-alsa-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_policy_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect ALSA and PipeWire session-role, claim, policy, and guarded parity through public runtime surfaces.",
+        },
+        PipeWireAlsaParityBoundaryValidationStep {
+            id: "local-host-pipewire-alsa-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth",
+            rationale:
+                "Proves the stable local host edge exports an explicit non-target PipeWire/ALSA answer instead of leaving the parity seam absent.",
+        },
+        PipeWireAlsaParityBoundaryValidationStep {
+            id: "server-host-pipewire-alsa-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth",
+            rationale:
+                "Proves the stable server host edge forwards the bounded backend-managed PipeWire parity baseline without server-local policy.",
+        },
+        PipeWireAlsaParityBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-pipewire-alsa-parity-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared PipeWire/ALSA parity proof boundary without reading backend-private host code.",
         },
     ]
 }
@@ -3548,9 +3660,10 @@ fn advanced_hardware_boundary_surfaces() -> &'static [AdvancedHardwareBoundarySu
             crate_name: "signal-runtime",
             surface:
                 "RuntimeObservationReport::advanced_hardware_snapshot and RuntimeSupervisorReport::observation.advanced_hardware_snapshot",
-            runtime_anchor: "RuntimeAdvancedHardwareSnapshot",
+            runtime_anchor:
+                "RuntimeAdvancedHardwareSnapshot::{display_transport_device_count,motor_transport_device_count,haptic_transport_device_count,scene_mapping_device_count,feedback_page_device_count,safe_action_graph_device_count} + RuntimeAdvancedHardwareDeviceDescriptor::{display_transport_posture,display_content_class,motor_transport_posture,haptic_transport_posture,feedback_authority,feedback_outcome,scene_mapping_posture,feedback_page_posture,feedback_page_class,safe_action_graph_posture,action_authority,safe_action_outcome}",
             rationale:
-                "Keeps advanced-hardware graph state, scripting-safe device policy posture, guarded feedback-channel posture, and typed action classes on one runtime-owned report seam instead of host-local hardware policy.",
+                "Keeps advanced-hardware graph state, scripting-safe device policy posture, guarded feedback-channel posture, typed display or motor or haptic transport posture, bounded scene or page workflow posture, and safe-action outcome on one runtime-owned report seam instead of host-local hardware or controller-workflow policy.",
         },
         AdvancedHardwareBoundarySurface {
             id: "runtime-advanced-hardware-control-surface-anchor",
@@ -3560,7 +3673,7 @@ fn advanced_hardware_boundary_surfaces() -> &'static [AdvancedHardwareBoundarySu
                 "RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot",
             runtime_anchor: "RuntimeControlSurfaceSnapshot",
             rationale:
-                "Keeps the advanced-hardware baseline explicitly derived from the closed control-surface substrate instead of creating a second hardware shell.",
+                "Keeps the widened advanced control-feedback baseline explicitly derived from the closed control-surface substrate instead of creating a second hardware shell.",
         },
         AdvancedHardwareBoundarySurface {
             id: "shared-host-advanced-hardware-report",
@@ -3569,7 +3682,7 @@ fn advanced_hardware_boundary_surfaces() -> &'static [AdvancedHardwareBoundarySu
             surface: "supervisor_report() -> RuntimeSupervisorReport",
             runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
             rationale:
-                "Ensures both stable host edges forward the same runtime-owned advanced-hardware baseline without host-local hardware or controller-policy reconstruction.",
+                "Ensures both stable host edges forward the same runtime-owned advanced control-feedback baseline without host-local hardware or controller-policy reconstruction.",
         },
     ]
 }
@@ -3582,35 +3695,35 @@ fn advanced_hardware_boundary_validation_steps() -> &'static [AdvancedHardwareBo
             command:
                 "cargo test -p signal-runtime public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_feedback_truth",
             rationale:
-                "Proves a downstream-style runtime consumer can inspect advanced-hardware graph state, scripting-safe policy posture, guarded feedback channels, and typed action classes through public runtime surfaces.",
+                "Proves a downstream-style runtime consumer can inspect advanced-hardware graph state, scripting-safe policy posture, typed display or motor or haptic transport posture, bounded scene or page workflow posture, and safe-action outcomes through public runtime surfaces.",
         },
         AdvancedHardwareBoundaryValidationStep {
             id: "local-host-advanced-hardware-proof",
             command:
                 "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_advanced_hardware_truth",
             rationale:
-                "Proves the stable local host edge forwards the runtime-owned advanced-hardware baseline instead of rebuilding local hardware or controller policy.",
+                "Proves the stable local host edge forwards the runtime-owned advanced control-feedback and controller-workflow baseline instead of rebuilding local hardware or workflow policy.",
         },
         AdvancedHardwareBoundaryValidationStep {
             id: "server-host-advanced-hardware-proof",
             command:
                 "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_advanced_hardware_truth",
             rationale:
-                "Proves the stable server host edge forwards the same runtime-owned advanced-hardware baseline instead of inventing server-local hardware policy.",
+                "Proves the stable server host edge forwards the same runtime-owned advanced control-feedback and controller-workflow baseline instead of inventing server-local hardware or workflow policy.",
         },
         AdvancedHardwareBoundaryValidationStep {
             id: "boundary-descriptor-proof",
             command:
                 "cargo test -p signal-supervisor-tools advanced_hardware_boundary_json_reports_runtime_and_host_edge_proofs",
             rationale:
-                "Keeps the machine-readable advanced-hardware boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
+                "Keeps the machine-readable advanced control-feedback and controller-workflow boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
         },
         AdvancedHardwareBoundaryValidationStep {
             id: "boundary-descriptor",
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-advanced-hardware-boundary --format=json",
             rationale:
-                "Lets consumers inspect the shared advanced-hardware proof seam without reading host-local hardware policy or guarded feedback implementation detail.",
+                "Lets consumers inspect the shared advanced control-feedback and controller-workflow proof seam without reading host-local hardware policy or device-private workflow implementation detail.",
         },
     ]
 }
@@ -4305,6 +4418,16 @@ fn complex_io_boundary_surfaces() -> &'static [ComplexIoBoundarySurface] {
                 "Keeps complex plugin-I/O, multi-output instrument, and bus-capable FX meaning on one runtime-owned discovery and capability surface instead of adapter-local pin reconstruction.",
         },
         ComplexIoBoundarySurface {
+            id: "runtime-plugin-pin-matrix-report",
+            kind: ComplexIoBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::plugin_pin_matrix_snapshot and RuntimeSupervisorReport::observation.plugin_pin_matrix_snapshot",
+            runtime_anchor: "RuntimePluginPinMatrixSnapshot",
+            rationale:
+                "Keeps pin-group identity, pin-matrix posture, dynamic bus-negotiation posture, and bounded fallback outcome on one runtime-owned routing surface instead of host-local bus activation policy.",
+        },
+        ComplexIoBoundarySurface {
             id: "runtime-complex-io-plugin-chain-snapshot",
             kind: ComplexIoBoundarySurfaceKind::RuntimeReport,
             crate_name: "signal-runtime",
@@ -4385,9 +4508,9 @@ fn spatial_boundary_surfaces() -> &'static [SpatialBoundarySurface] {
             surface:
                 "RuntimeObservationReport::execution_topology_summary and RuntimeSupervisorReport::observation.execution_topology_summary",
             runtime_anchor:
-                "RuntimeExecutionTopologySummary::{spatial_node_count,active_spatial_node_count,bypassed_spatial_node_count,fallback_spatial_node_count,surround_bed_spatial_node_count,object_aware_spatial_node_count,expanded_fallback_spatial_node_count} + RuntimeExecutionNodeSummary::spatial_execution",
+                "RuntimeExecutionTopologySummary::{spatial_node_count,active_spatial_node_count,bypassed_spatial_node_count,fallback_spatial_node_count,surround_bed_spatial_node_count,object_aware_spatial_node_count,expanded_fallback_spatial_node_count,immersive_spatial_node_count,room_policy_aware_spatial_node_count,fallback_room_policy_spatial_node_count,deployment_spatial_node_count,folded_down_spatial_node_count,fallback_monitoring_scene_spatial_node_count,renderer_capability_spatial_node_count,negotiated_renderer_spatial_node_count,immersive_export_spatial_node_count,fallback_immersive_export_spatial_node_count} + RuntimeExecutionNodeSummary::spatial_execution.{immersive_room_policy,deployment_monitoring,renderer_export}",
             rationale:
-                "Keeps surround-bed, mix-policy, render-scope, and expanded-fallback meaning on one runtime-owned topology surface instead of host-local or renderer-local reinterpretation.",
+                "Keeps surround-bed, mix-policy, render-scope, immersive room-policy, deployment class, fold-down posture, monitoring-scene outcome, and renderer or export posture on one runtime-owned topology surface instead of host-local or renderer-local reinterpretation.",
         },
         SpatialBoundarySurface {
             id: "runtime-spatial-plugin-chain-snapshot",
@@ -4395,9 +4518,10 @@ fn spatial_boundary_surfaces() -> &'static [SpatialBoundarySurface] {
             crate_name: "signal-runtime",
             surface:
                 "RuntimeObservationReport::plugin_chain_snapshot and RuntimeSupervisorReport::observation.plugin_chain_snapshot",
-            runtime_anchor: "RuntimePluginChainStageSnapshot::spatial_execution",
+            runtime_anchor:
+                "RuntimePluginChainStageSnapshot::spatial_execution.{immersive_room_policy,deployment_monitoring,renderer_export}",
             rationale:
-                "Lets downstream consumers inspect richer spatial stage meaning, including bed class and expanded fallback, on live plugin-chain receipts instead of inferring renderer behavior from adapter-private control names.",
+                "Lets downstream consumers inspect richer spatial stage meaning, including immersive room-policy posture, deployment class, fold-down policy, fallback monitoring outcomes, and bounded renderer or export posture, on live plugin-chain receipts instead of inferring renderer behavior from adapter-private control names.",
         },
         SpatialBoundarySurface {
             id: "runtime-spatial-render-contract-preview",
@@ -4405,9 +4529,9 @@ fn spatial_boundary_surfaces() -> &'static [SpatialBoundarySurface] {
             crate_name: "signal-runtime",
             surface: "RuntimeOfflineRenderContractPreview::chain_contract",
             runtime_anchor:
-                "RuntimeOfflineRenderChainDependencyPreview::{spatial_stage_count,active_spatial_stage_count,bypassed_spatial_stage_count,fallback_spatial_stage_count,surround_bed_spatial_stage_count,object_aware_spatial_stage_count,expanded_fallback_spatial_stage_count,spatial_stages}",
+                "RuntimeOfflineRenderChainDependencyPreview::{spatial_stage_count,active_spatial_stage_count,bypassed_spatial_stage_count,fallback_spatial_stage_count,surround_bed_spatial_stage_count,object_aware_spatial_stage_count,expanded_fallback_spatial_stage_count,immersive_spatial_stage_count,room_policy_aware_spatial_stage_count,fallback_room_policy_spatial_stage_count,deployment_spatial_stage_count,folded_down_spatial_stage_count,fallback_monitoring_scene_spatial_stage_count,renderer_capability_spatial_stage_count,negotiated_renderer_spatial_stage_count,immersive_export_spatial_stage_count,fallback_immersive_export_spatial_stage_count,spatial_stages}",
             rationale:
-                "Carries the same richer spatial execution, mix-policy, and expanded-fallback truth into deferred render preview instead of rebuilding spatial policy per export path.",
+                "Carries the same richer spatial execution, immersive room-policy, deployment-monitoring posture, and bounded renderer or export truth into deferred render preview instead of rebuilding export policy per render path.",
         },
         SpatialBoundarySurface {
             id: "shared-host-spatial-report",
@@ -4416,7 +4540,7 @@ fn spatial_boundary_surfaces() -> &'static [SpatialBoundarySurface] {
             surface: "supervisor_report() -> RuntimeSupervisorReport",
             runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
             rationale:
-                "Ensures both stable host edges forward runtime-owned richer spatial receipts without host-local speaker heuristics or renderer-local reinterpretation.",
+                "Ensures both stable host edges forward runtime-owned richer spatial, deployment, monitoring, and renderer or export receipts without host-local speaker heuristics or renderer-local reinterpretation.",
         },
     ]
 }
@@ -4428,21 +4552,21 @@ fn spatial_boundary_validation_steps() -> &'static [SpatialBoundaryValidationSte
             command:
                 "cargo test -p signal-runtime public_runtime_spatial_boundary_reports_runtime_owned_execution_truth",
             rationale:
-                "Proves a downstream-style runtime consumer can inspect surround-bed, mix-policy, render-scope, expanded-fallback, and render-preview receipts through public runtime surfaces alone.",
+                "Proves a downstream-style runtime consumer can inspect surround-bed, mix-policy, render-scope, immersive room-policy, deployment class, fold-down policy, monitoring-scene posture, bounded renderer negotiation, immersive export outcome, and render-preview receipts through public runtime surfaces alone.",
         },
         SpatialBoundaryValidationStep {
             id: "local-host-spatial-proof",
             command:
                 "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_spatial_truth",
             rationale:
-                "Proves the stable local host edge forwards runtime-owned richer spatial and expanded-fallback receipts on supervisor export.",
+                "Proves the stable local host edge forwards runtime-owned richer spatial, immersive room-policy, and deployment-monitoring receipts on supervisor export.",
         },
         SpatialBoundaryValidationStep {
             id: "server-host-spatial-proof",
             command:
                 "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_spatial_truth",
             rationale:
-                "Proves the stable server host edge forwards the same runtime-owned richer spatial receipts without host-local or renderer-local reinterpretation.",
+                "Proves the stable server host edge forwards the same runtime-owned richer spatial, deployment, monitoring, and renderer or export receipts without host-local or renderer-local reinterpretation.",
         },
         SpatialBoundaryValidationStep {
             id: "boundary-descriptor-proof",
@@ -7093,8 +7217,8 @@ fn render_lv2_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "shared Linux-native LV2 discovery and lifecycle truth is now public, but worker, UI, patch, URID, and richer extension depth still remain later Linux and cross-adapter work",
-        "the current boundary proves bounded LV2 realization through runtime and the stable server host edge, not broader Linux cross-adapter parity or product-local Linux workflow behavior",
+        "shared LV2 worker, URID, patch, and bounded extension-negotiation truth is now public, but full atom-schema, UI, custom extension, and worker execution depth still remain later Linux and cross-adapter work",
+        "the current boundary proves bounded LV2 extension realization through runtime, supervisor export, and stable host edges, not broader Linux daemon policy or product-local workflow behavior",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -7145,8 +7269,8 @@ fn render_lv2_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "shared Linux-native LV2 discovery and lifecycle truth is now public, but worker, UI, patch, URID, and richer extension depth still remain later Linux and cross-adapter work",
-        "the current boundary proves bounded LV2 realization through runtime and the stable server host edge, not broader Linux cross-adapter parity or product-local Linux workflow behavior",
+        "shared LV2 worker, URID, patch, and bounded extension-negotiation truth is now public, but full atom-schema, UI, custom extension, and worker execution depth still remain later Linux and cross-adapter work",
+        "the current boundary proves bounded LV2 extension realization through runtime, supervisor export, and stable host edges, not broader Linux daemon policy or product-local workflow behavior",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -7702,6 +7826,103 @@ fn render_jack_coordination_boundary_json() -> String {
     )
 }
 
+fn render_pipewire_alsa_parity_boundary_text() -> String {
+    let mut rendered = format!(
+        "pipewire_alsa_parity_boundary: {PIPEWIRE_ALSA_PARITY_BOUNDARY}\ncontract_path: {PIPEWIRE_ALSA_PARITY_CONTRACT_PATH}\nacceptance_task: {PIPEWIRE_ALSA_PARITY_ACCEPTANCE_TASK}\nsurfaces:\n"
+    );
+    for surface in pipewire_alsa_parity_boundary_surfaces() {
+        rendered.push_str(&format!(
+            "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
+        ));
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in pipewire_alsa_parity_boundary_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str(
+        "residual_risk: the current boundary proves bounded PipeWire and ALSA parity receipts, not full daemon, portal, reservation, or distro-policy depth\n",
+    );
+    rendered
+}
+
+fn render_pipewire_alsa_parity_boundary_json() -> String {
+    let surfaces = pipewire_alsa_parity_boundary_surfaces()
+        .iter()
+        .map(|surface| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"kind\":{},",
+                    "\"crate\":{},",
+                    "\"surface\":{},",
+                    "\"runtime_anchor\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(surface.id),
+                json_string(surface.kind.label()),
+                json_string(surface.crate_name),
+                json_string(surface.surface),
+                json_string(surface.runtime_anchor),
+                json_string(surface.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = pipewire_alsa_parity_boundary_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"boundary\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"surface_count\":{},",
+            "\"validation_step_count\":{},",
+            "\"surfaces\":[{}],",
+            "\"validation_steps\":[{}],",
+            "\"residual_risk\":{}",
+            "}}"
+        ),
+        json_string(PIPEWIRE_ALSA_PARITY_BOUNDARY),
+        json_string(PIPEWIRE_ALSA_PARITY_CONTRACT_PATH),
+        json_string(PIPEWIRE_ALSA_PARITY_ACCEPTANCE_TASK),
+        pipewire_alsa_parity_boundary_surfaces().len(),
+        pipewire_alsa_parity_boundary_validation_steps().len(),
+        surfaces,
+        validation_steps,
+        json_string(
+            "the current boundary proves bounded PipeWire and ALSA parity receipts, not full daemon, portal, reservation, or distro-policy depth",
+        ),
+    )
+}
+
 fn render_linux_backend_clock_topology_boundary_text() -> String {
     let mut rendered = format!(
         "linux_backend_clock_topology_boundary: {LINUX_BACKEND_CLOCK_TOPOLOGY_BOUNDARY}\ncontract_path: {LINUX_BACKEND_CLOCK_TOPOLOGY_CONTRACT_PATH}\nacceptance_task: {LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK}\nsurfaces:\n"
@@ -7931,6 +8152,13 @@ fn print_jack_coordination_boundary(format: OutputFormat) {
     match format {
         OutputFormat::Text => println!("{}", render_jack_coordination_boundary_text()),
         OutputFormat::Json => println!("{}", render_jack_coordination_boundary_json()),
+    }
+}
+
+fn print_pipewire_alsa_parity_boundary(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_pipewire_alsa_parity_boundary_text()),
+        OutputFormat::Json => println!("{}", render_pipewire_alsa_parity_boundary_json()),
     }
 }
 
@@ -8300,8 +8528,8 @@ fn render_advanced_hardware_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "the shared boundary now proves a bounded advanced-hardware baseline, not richer vendor protocol, motor, haptic, display-layout, or executable scripting depth",
-        "the current seam keeps runtime-owned scripting-safe policy, guarded feedback posture, and typed action classes consumable through runtime and stable host edges, but fuller device execution workflows remain later work",
+        "the shared boundary now proves a bounded advanced control-feedback and controller-workflow baseline, not richer vendor protocol payloads, page-aware display depth beyond the bounded classes, real motor transport, real haptic transport, or executable scripting depth",
+        "the current seam keeps runtime-owned scripting-safe policy, guarded feedback posture, typed display or motor or haptic transport posture, bounded scene or page workflow posture, and safe-action outcomes consumable through runtime and stable host edges, but fuller device execution workflows remain later work",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -8352,8 +8580,8 @@ fn render_advanced_hardware_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "the shared boundary now proves a bounded advanced-hardware baseline, not richer vendor protocol, motor, haptic, display-layout, or executable scripting depth",
-        "the current seam keeps runtime-owned scripting-safe policy, guarded feedback posture, and typed action classes consumable through runtime and stable host edges, but fuller device execution workflows remain later work",
+        "the shared boundary now proves a bounded advanced control-feedback and controller-workflow baseline, not richer vendor protocol payloads, page-aware display depth beyond the bounded classes, real motor transport, real haptic transport, or executable scripting depth",
+        "the current seam keeps runtime-owned scripting-safe policy, guarded feedback posture, typed display or motor or haptic transport posture, bounded scene or page workflow posture, and safe-action outcomes consumable through runtime and stable host edges, but fuller device execution workflows remain later work",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -9440,8 +9668,8 @@ fn render_complex_io_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "the shared boundary now proves runtime-owned complex plugin-I/O, multi-output instrument, and bus-capable FX receipts through runtime, supervisor, and stable host-edge surfaces, but broader spatial routing, immersive buses, and product pin-matrix policy still belongs to later work",
-        "this closes the bounded complex plugin-I/O consumer seam, not deeper adapter-private negotiation breadth or richer product-local mixer assignment workflows",
+        "the shared boundary now proves runtime-owned complex plugin-I/O, pin-matrix, and dynamic bus-negotiation receipts through runtime, supervisor, and stable host-edge surfaces, but broader spatial routing, immersive buses, and product pin-matrix policy still belongs to later work",
+        "this closes the bounded pin-matrix and complex plugin-I/O consumer seam, not deeper adapter-private negotiation breadth, full format-specific pin schemas, or richer product-local mixer assignment workflows",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -9492,8 +9720,8 @@ fn render_complex_io_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "the shared boundary now proves runtime-owned complex plugin-I/O, multi-output instrument, and bus-capable FX receipts through runtime, supervisor, and stable host-edge surfaces, but broader spatial routing, immersive buses, and product pin-matrix policy still belongs to later work",
-        "this closes the bounded complex plugin-I/O consumer seam, not deeper adapter-private negotiation breadth or richer product-local mixer assignment workflows",
+        "the shared boundary now proves runtime-owned complex plugin-I/O, pin-matrix, and dynamic bus-negotiation receipts through runtime, supervisor, and stable host-edge surfaces, but broader spatial routing, immersive buses, and product pin-matrix policy still belongs to later work",
+        "this closes the bounded pin-matrix and complex plugin-I/O consumer seam, not deeper adapter-private negotiation breadth, full format-specific pin schemas, or richer product-local mixer assignment workflows",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -9554,8 +9782,8 @@ fn render_spatial_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "the shared boundary now proves runtime-owned richer spatial receipts through runtime, supervisor, and stable host-edge surfaces, but true object rendering and immersive renderer breadth still belong to later g07 work",
-        "this closes the bounded surround-bed and mix-policy consumer seam, not room-design policy, immersive renderer deployment, or product-local panner workflows",
+        "the shared boundary now proves runtime-owned richer spatial, deployment-monitoring, and bounded renderer or immersive-export receipts through runtime, supervisor, and stable host-edge surfaces, but true renderer-backed object execution and monitoring-scene breadth still belong to later g08 work",
+        "this closes the bounded renderer-capability and immersive-export consumer seam, not renderer-vendor package schemas, publication workflows, or product-local immersive export UX",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -9606,8 +9834,8 @@ fn render_spatial_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "the shared boundary now proves runtime-owned richer spatial receipts through runtime, supervisor, and stable host-edge surfaces, but true object rendering and immersive renderer breadth still belong to later g07 work",
-        "this closes the bounded surround-bed and mix-policy consumer seam, not room-design policy, immersive renderer deployment, or product-local panner workflows",
+        "the shared boundary now proves runtime-owned richer spatial, deployment-monitoring, and bounded renderer or immersive-export receipts through runtime, supervisor, and stable host-edge surfaces, but true renderer-backed object execution and monitoring-scene breadth still belong to later g08 work",
+        "this closes the bounded renderer-capability and immersive-export consumer seam, not renderer-vendor package schemas, publication workflows, or product-local immersive export UX",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -11328,6 +11556,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_linux_audio_backend_boundary = false;
     let mut describe_linux_live_ownership_boundary = false;
     let mut describe_jack_coordination_boundary = false;
+    let mut describe_pipewire_alsa_parity_boundary = false;
     let mut describe_linux_backend_clock_topology_boundary = false;
     let mut describe_external_midi_boundary = false;
     let mut describe_generic_event_boundary = false;
@@ -11443,6 +11672,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         }
         if arg == "--describe-jack-coordination-boundary" {
             describe_jack_coordination_boundary = true;
+            continue;
+        }
+        if arg == "--describe-pipewire-alsa-parity-boundary" {
+            describe_pipewire_alsa_parity_boundary = true;
             continue;
         }
         if arg == "--describe-linux-backend-clock-topology-boundary" {
@@ -11590,6 +11823,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_linux_plugin_parity_boundary,
         describe_linux_audio_backend_boundary,
         describe_linux_live_ownership_boundary,
+        describe_pipewire_alsa_parity_boundary,
         describe_linux_backend_clock_topology_boundary,
         describe_external_midi_boundary,
         describe_generic_event_boundary,
@@ -11874,6 +12108,20 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             format,
             debug,
             mode: CliMode::DescribeJackCoordinationBoundary,
+        });
+    }
+
+    if describe_pipewire_alsa_parity_boundary {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-pipewire-alsa-parity-boundary` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribePipeWireAlsaParityBoundary,
         });
     }
 
@@ -12398,6 +12646,10 @@ fn main() {
             print_jack_coordination_boundary(args.format);
             Ok(())
         }
+        CliMode::DescribePipeWireAlsaParityBoundary => {
+            print_pipewire_alsa_parity_boundary(args.format);
+            Ok(())
+        }
         CliMode::DescribeLinuxBackendClockTopologyBoundary => {
             print_linux_backend_clock_topology_boundary(args.format);
             Ok(())
@@ -12571,7 +12823,8 @@ mod tests {
         render_multi_bus_boundary_text, render_multichannel_boundary_json,
         render_multichannel_boundary_text, render_offline_render_continuity_boundary_json,
         render_offline_render_continuity_boundary_text, render_packaging_manifest_json,
-        render_packaging_manifest_text, render_plugin_continuity_boundary_json,
+        render_packaging_manifest_text, render_pipewire_alsa_parity_boundary_json,
+        render_pipewire_alsa_parity_boundary_text, render_plugin_continuity_boundary_json,
         render_plugin_continuity_boundary_text, render_preview_transform_boundary_json,
         render_preview_transform_boundary_text, render_recall_portability_boundary_json,
         render_recall_portability_boundary_text, render_recording_continuity_boundary_json,
@@ -12676,6 +12929,7 @@ mod tests {
                 supports_activate: true,
                 supports_reset_while_active: true,
             },
+            lv2_extension_capabilities: None,
             summary: "supervisor export discovered plugin".into(),
         }
     }
@@ -12736,6 +12990,7 @@ mod tests {
                 supports_activate: false,
                 supports_reset_while_active: false,
             },
+            lv2_extension_capabilities: None,
             summary: "supervisor export backend breadth plugin".into(),
         }
     }
@@ -12796,6 +13051,7 @@ mod tests {
                 supports_activate: true,
                 supports_reset_while_active: false,
             },
+            lv2_extension_capabilities: None,
             summary: "supervisor export au breadth plugin".into(),
         }
     }
@@ -13620,6 +13876,21 @@ mod tests {
                 format: OutputFormat::Json,
                 debug: ExportDebugOptions { payload: false },
                 mode: CliMode::DescribeJackCoordinationBoundary,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_pipewire_alsa_parity_boundary_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-pipewire-alsa-parity-boundary".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribePipeWireAlsaParityBoundary,
             })
         );
     }
@@ -14774,13 +15045,21 @@ mod tests {
         assert!(rendered.contains("lv2_boundary: signal.runtime.lv2-boundary"));
         assert!(rendered.contains("acceptance_task: effigy acceptance:lv2-boundary"));
         assert!(rendered.contains(
-            "surface: RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot"
+            "surface: RuntimeObservationReport::lv2_extension_snapshot and RuntimeSupervisorReport::observation.lv2_extension_snapshot"
         ));
         assert!(
             rendered.contains("surface: RuntimeObservationApi::get_plugin_lifecycle_snapshot()")
         );
+        assert!(rendered.contains("crate: signal-host-local"));
+        assert!(rendered.contains("crate: signal-host-server"));
         assert!(rendered.contains(
             "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_lv2_extension_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_extension_truth"
         ));
         assert!(rendered.contains(
             "cargo run -p signal-supervisor-tools -- --describe-lv2-boundary --format=json"
@@ -14792,12 +15071,14 @@ mod tests {
         let rendered = render_lv2_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.lv2-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/038-lv2-adapter-baseline-and-linux-native-plugin-lifecycle-contract.md\""
+            "\"contract_path\":\"docs/contracts/055-lv2-worker-urid-patch-and-extension-negotiation-contract.md\""
         ));
         assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:lv2-boundary\""));
-        assert!(rendered.contains("\"id\":\"runtime-lv2-discovery-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-lv2-extension-report\""));
         assert!(rendered.contains("\"id\":\"runtime-lv2-lifecycle-snapshot\""));
+        assert!(rendered.contains("\"id\":\"local-host-lv2-supervisor-report\""));
         assert!(rendered.contains("\"id\":\"server-host-lv2-supervisor-report\""));
+        assert!(rendered.contains("\"id\":\"local-host-lv2-proof\""));
         assert!(rendered.contains("\"id\":\"server-host-lv2-proof\""));
     }
 
@@ -14972,6 +15253,39 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-jack-coordination-report\""));
         assert!(rendered.contains("\"id\":\"runtime-transport-session-report\""));
         assert!(rendered.contains("\"id\":\"shared-host-jack-supervisor-report\""));
+    }
+
+    #[test]
+    fn pipewire_alsa_parity_boundary_text_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_pipewire_alsa_parity_boundary_text();
+        assert!(rendered.contains(
+            "pipewire_alsa_parity_boundary: signal.runtime.pipewire-alsa-parity-boundary"
+        ));
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:pipewire-alsa-parity-boundary")
+        );
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::pipewire_alsa_parity_snapshot and RuntimeSupervisorReport::observation.pipewire_alsa_parity_snapshot"
+        ));
+        assert!(rendered.contains(
+            "cargo test -p signal-runtime public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_policy_truth"
+        ));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-pipewire-alsa-parity-boundary --format=json"
+        ));
+    }
+
+    #[test]
+    fn pipewire_alsa_parity_boundary_json_reports_runtime_and_host_edge_proofs() {
+        let rendered = render_pipewire_alsa_parity_boundary_json();
+        assert!(rendered.contains("\"boundary\":\"signal.runtime.pipewire-alsa-parity-boundary\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/054-pipewire-and-alsa-session-role-device-claim-and-stream-policy-parity-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:pipewire-alsa-parity-boundary\""));
+        assert!(rendered.contains("\"id\":\"runtime-pipewire-alsa-parity-report\""));
+        assert!(rendered.contains("\"id\":\"shared-host-pipewire-alsa-supervisor-report\""));
     }
 
     #[test]
@@ -15154,8 +15468,25 @@ mod tests {
             .contains("advanced_hardware_boundary: signal.runtime.advanced-hardware-boundary"));
         assert!(rendered.contains("acceptance_task: effigy acceptance:advanced-hardware-boundary"));
         assert!(rendered.contains(
+            "contract_path: docs/contracts/061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md"
+        ));
+        assert!(rendered.contains(
             "surface: RuntimeObservationReport::advanced_hardware_snapshot and RuntimeSupervisorReport::observation.advanced_hardware_snapshot"
         ));
+        assert!(rendered.contains("display_transport_device_count"));
+        assert!(rendered.contains("motor_transport_device_count"));
+        assert!(rendered.contains("haptic_transport_device_count"));
+        assert!(rendered.contains("scene_mapping_device_count"));
+        assert!(rendered.contains("feedback_page_device_count"));
+        assert!(rendered.contains("safe_action_graph_device_count"));
+        assert!(rendered.contains("display_transport_posture"));
+        assert!(rendered.contains("scene_mapping_posture"));
+        assert!(rendered.contains("feedback_page_posture"));
+        assert!(rendered.contains("feedback_page_class"));
+        assert!(rendered.contains("safe_action_graph_posture"));
+        assert!(rendered.contains("action_authority"));
+        assert!(rendered.contains("safe_action_outcome"));
+        assert!(rendered.contains("feedback_outcome"));
         assert!(rendered.contains(
             "surface: RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot"
         ));
@@ -15172,13 +15503,27 @@ mod tests {
         let rendered = render_advanced_hardware_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.advanced-hardware-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/045-advanced-hardware-extensibility-and-scripting-safe-device-policy-contract.md\""
+            "\"contract_path\":\"docs/contracts/061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md\""
         ));
         assert!(rendered
             .contains("\"acceptance_task\":\"effigy acceptance:advanced-hardware-boundary\""));
         assert!(rendered.contains("\"id\":\"runtime-advanced-hardware-report\""));
         assert!(rendered.contains("\"id\":\"runtime-advanced-hardware-control-surface-anchor\""));
         assert!(rendered.contains("\"id\":\"shared-host-advanced-hardware-report\""));
+        assert!(rendered.contains("display_transport_device_count"));
+        assert!(rendered.contains("motor_transport_device_count"));
+        assert!(rendered.contains("haptic_transport_device_count"));
+        assert!(rendered.contains("scene_mapping_device_count"));
+        assert!(rendered.contains("feedback_page_device_count"));
+        assert!(rendered.contains("safe_action_graph_device_count"));
+        assert!(rendered.contains("display_content_class"));
+        assert!(rendered.contains("scene_mapping_posture"));
+        assert!(rendered.contains("feedback_page_posture"));
+        assert!(rendered.contains("feedback_page_class"));
+        assert!(rendered.contains("safe_action_graph_posture"));
+        assert!(rendered.contains("action_authority"));
+        assert!(rendered.contains("safe_action_outcome"));
+        assert!(rendered.contains("feedback_outcome"));
     }
 
     #[test]
@@ -15493,6 +15838,9 @@ mod tests {
         assert!(rendered.contains(
             "surface: RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot"
         ));
+        assert!(rendered.contains(
+            "surface: RuntimeObservationReport::plugin_pin_matrix_snapshot and RuntimeSupervisorReport::observation.plugin_pin_matrix_snapshot"
+        ));
         assert!(rendered.contains("surface: RuntimeOfflineRenderContractPreview::chain_contract"));
         assert!(rendered.contains(
             "cargo test -p signal-runtime public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth"
@@ -15507,10 +15855,11 @@ mod tests {
         let rendered = render_complex_io_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.complex-io-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/035-plugin-complex-io-topology-and-multi-output-instrument-contract.md\""
+            "\"contract_path\":\"docs/contracts/056-complex-plugin-pin-matrix-and-dynamic-bus-negotiation-contract.md\""
         ));
         assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:complex-io-boundary\""));
         assert!(rendered.contains("\"id\":\"runtime-complex-io-discovery-report\""));
+        assert!(rendered.contains("\"id\":\"runtime-plugin-pin-matrix-report\""));
         assert!(rendered.contains("\"id\":\"runtime-complex-io-plugin-chain-snapshot\""));
         assert!(rendered.contains("\"id\":\"runtime-complex-io-render-contract-preview\""));
         assert!(rendered.contains("\"id\":\"shared-host-complex-io-report\""));
@@ -15523,10 +15872,24 @@ mod tests {
         assert!(rendered.contains("spatial_boundary: signal.runtime.spatial-boundary"));
         assert!(rendered.contains("acceptance_task: effigy acceptance:spatial-boundary"));
         assert!(rendered.contains(
+            "contract_path: docs/contracts/059-renderer-capability-negotiation-and-immersive-export-contract.md"
+        ));
+        assert!(rendered.contains(
             "surface: RuntimeObservationReport::execution_topology_summary and RuntimeSupervisorReport::observation.execution_topology_summary"
         ));
-        assert!(rendered.contains("surround_bed_spatial_node_count"));
-        assert!(rendered.contains("expanded_fallback_spatial_stage_count"));
+        assert!(rendered.contains("immersive_spatial_node_count"));
+        assert!(rendered.contains("deployment_spatial_node_count"));
+        assert!(rendered.contains("fallback_monitoring_scene_spatial_node_count"));
+        assert!(rendered.contains("renderer_capability_spatial_node_count"));
+        assert!(rendered.contains("immersive_export_spatial_node_count"));
+        assert!(rendered.contains(
+            "spatial_execution.{immersive_room_policy,deployment_monitoring,renderer_export}"
+        ));
+        assert!(rendered.contains("fallback_room_policy_spatial_stage_count"));
+        assert!(rendered.contains("deployment_spatial_stage_count"));
+        assert!(rendered.contains("fallback_monitoring_scene_spatial_stage_count"));
+        assert!(rendered.contains("renderer_capability_spatial_stage_count"));
+        assert!(rendered.contains("fallback_immersive_export_spatial_stage_count"));
         assert!(rendered.contains("surface: RuntimeOfflineRenderContractPreview::chain_contract"));
         assert!(rendered.contains(
             "cargo test -p signal-runtime public_runtime_spatial_boundary_reports_runtime_owned_execution_truth"
@@ -15541,7 +15904,7 @@ mod tests {
         let rendered = render_spatial_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.spatial-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/037-surround-bed-object-and-mix-policy-expansion-contract.md\""
+            "\"contract_path\":\"docs/contracts/059-renderer-capability-negotiation-and-immersive-export-contract.md\""
         ));
         assert!(rendered.contains("\"acceptance_task\":\"effigy acceptance:spatial-boundary\""));
         assert!(rendered.contains("\"id\":\"runtime-spatial-topology-report\""));
@@ -15549,8 +15912,15 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-spatial-render-contract-preview\""));
         assert!(rendered.contains("\"id\":\"shared-host-spatial-report\""));
         assert!(rendered.contains("\"id\":\"runtime-spatial-public-proof\""));
-        assert!(rendered.contains("surround_bed_spatial_stage_count"));
-        assert!(rendered.contains("expanded_fallback_spatial_node_count"));
+        assert!(rendered.contains("immersive_spatial_stage_count"));
+        assert!(rendered.contains("fallback_room_policy_spatial_node_count"));
+        assert!(rendered.contains("deployment_spatial_node_count"));
+        assert!(rendered.contains("folded_down_spatial_stage_count"));
+        assert!(rendered.contains("fallback_monitoring_scene_spatial_stage_count"));
+        assert!(rendered.contains("renderer_capability_spatial_node_count"));
+        assert!(rendered.contains("immersive_export_spatial_stage_count"));
+        assert!(rendered.contains("deployment_monitoring"));
+        assert!(rendered.contains("renderer_export"));
     }
 
     #[test]

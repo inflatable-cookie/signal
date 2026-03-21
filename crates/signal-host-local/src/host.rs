@@ -442,6 +442,7 @@ fn runtime_plugin_discovered_type_record(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        None,
     )
 }
 
@@ -449,6 +450,7 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
     plugin_type_id: String,
     default_io_layout: signal_plugin::PluginIoLayout,
     descriptor: signal_plugin::PluginDescriptor,
+    lv2_extension_capabilities: Option<signal_runtime::RuntimeLv2ExtensionCapabilitySummary>,
 ) -> RuntimePluginDiscoveredTypeRecord {
     let summary = format!(
         "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
@@ -478,6 +480,7 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
         state_contract: descriptor.state_contract,
         processing_contract: descriptor.processing_contract,
         lifecycle_contract: descriptor.lifecycle_contract,
+        lv2_extension_capabilities,
         summary,
     }
 }
@@ -490,6 +493,7 @@ fn runtime_vst3_discovered_type_record(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        None,
     )
 }
 
@@ -501,6 +505,7 @@ fn runtime_au_discovered_type_record(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        None,
     )
 }
 
@@ -3507,6 +3512,7 @@ impl LocalRuntimeHost {
             .with_host_device_supervision(&host_io)
             .with_host_external_io(&host_io)
             .with_linux_backend_session_snapshot(&host_io)
+            .with_pipewire_alsa_parity_snapshot(&host_io)
             .with_jack_coordination_snapshot(&host_io)
             .with_external_midi_snapshot(external_midi_snapshot);
         (observation, host_io)
@@ -3523,6 +3529,7 @@ impl LocalRuntimeHost {
             .with_host_device_supervision(&host_io)
             .with_host_external_io(&host_io)
             .with_linux_backend_session_snapshot(&host_io)
+            .with_pipewire_alsa_parity_snapshot(&host_io)
             .with_jack_coordination_snapshot(&host_io)
             .with_external_midi_snapshot(external_midi_snapshot);
         (supervisor, host_io)

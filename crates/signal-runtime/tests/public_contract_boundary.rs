@@ -23,37 +23,45 @@ use signal_runtime::{
     RuntimeBusRole, RuntimeCanonicalChannelLayout, RuntimeConfig, RuntimeConfigRequest,
     RuntimeDeferredServiceBackpressureSource, RuntimeDeferredServiceCancellationCause,
     RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
-    RuntimeDeferredServiceReason, RuntimeDeviceFaultBoundaryState, RuntimeDeviceRestartState,
-    RuntimeDeviceSupervisionState, RuntimeError, RuntimeErrorKind, RuntimeEventRecorder,
-    RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
-    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole,
-    RuntimeExternalMidiDiscoveryState, RuntimeExternalMidiGraphState, RuntimeHostAudioPumpSummary,
-    RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
-    RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
-    RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
-    RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
-    RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
-    RuntimeHostLifecycleOwnership, RuntimeHostObservationReport, RuntimeHostRestartPolicy,
-    RuntimeHostSupervisorReport, RuntimeInterruptionClass, RuntimeJackClientRole,
-    RuntimeJackGraphCoordinationState, RuntimeJackGuardedCoordinationState,
-    RuntimeJackTransportPosture, RuntimeLifecycleApi, RuntimeObservationApi,
+    RuntimeDeferredServiceReason, RuntimeDeploymentClass, RuntimeDeviceFaultBoundaryState,
+    RuntimeDeviceRestartState, RuntimeDeviceSupervisionState, RuntimeDynamicBusNegotiationPosture,
+    RuntimeError, RuntimeErrorKind, RuntimeEventRecorder, RuntimeExternalIoLoopbackState,
+    RuntimeExternalIoMonitoringState, RuntimeExternalIoMonitoringTapPoint,
+    RuntimeExternalIoPrimaryRole, RuntimeExternalMidiDiscoveryState, RuntimeExternalMidiGraphState,
+    RuntimeFoldDownPolicy, RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState,
+    RuntimeHostAudioTransferPolicy, RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain,
+    RuntimeHostClockDriftState, RuntimeHostClockFallbackState, RuntimeHostClockSource,
+    RuntimeHostClockTransitionState, RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState,
+    RuntimeHostEndpointTopology, RuntimeHostHardwareSummary, RuntimeHostIoSummary,
+    RuntimeHostLatencySummary, RuntimeHostLifecycleOwnership, RuntimeHostObservationReport,
+    RuntimeHostRestartPolicy, RuntimeHostSupervisorReport, RuntimeImmersiveExportAuthority,
+    RuntimeImmersiveExportClass, RuntimeImmersiveExportOutcome,
+    RuntimeImmersiveObjectRenderingPosture, RuntimeImmersiveRoomOutcome, RuntimeInterruptionClass,
+    RuntimeJackClientRole, RuntimeJackGraphCoordinationState, RuntimeJackGuardedCoordinationState,
+    RuntimeJackTransportPosture, RuntimeLifecycleApi, RuntimeLv2ExtensionCapabilitySummary,
+    RuntimeLv2ExtensionNegotiationState, RuntimeLv2PatchExchangePosture,
+    RuntimeLv2UridNegotiationPosture, RuntimeLv2WorkerPosture, RuntimeMonitoringOutcome,
+    RuntimeMonitoringSceneAuthority, RuntimeMonitoringSceneClass, RuntimeObservationApi,
     RuntimeObservationReport, RuntimeOfflineRenderContractPreview,
     RuntimeOfflineRenderExecutionState, RuntimeOfflineRenderPurgeRequest,
     RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot, RuntimePluginAraDocumentContext,
     RuntimePluginAraRegionContext, RuntimePluginAraSourceContext, RuntimePluginBusCapableFxClass,
     RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
     RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePluginPlacementPolicy,
-    RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher, RuntimePluginPresetDescriptor,
-    RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass, RuntimeProjectionApi,
-    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
-    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState,
-    RuntimeSecondaryInputAttachmentPolicy, RuntimeSecondaryInputContractProjection,
-    RuntimeSecondaryInputFallbackOutcome, RuntimeSecondaryInputTargetKind,
-    RuntimeSpatialAdapterClass, RuntimeSpatialBedClass, RuntimeSpatialExecutionMode,
-    RuntimeSpatialExpandedFallbackOutcome, RuntimeSpatialFallbackOutcome, RuntimeSpatialMixPolicy,
-    RuntimeSpatialRenderScope, RuntimeSpatialTargetEnvironment, RuntimeSupervisorReport,
-    RuntimeWatchdogTrigger, SafeModeRequest, SignalRuntime, StopReason, TransportDispatchState,
+    RuntimePluginIsolationOutcome, RuntimePluginNegotiationFallbackOutcome,
+    RuntimePluginParityBand, RuntimePluginPinGroupIdentity, RuntimePluginPinMatrixPosture,
+    RuntimePluginPlacementPolicy, RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
+    RuntimePluginPresetDescriptor, RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass,
+    RuntimeProjectionApi, RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
+    RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState, RuntimeRendererCapabilityAuthority,
+    RuntimeRendererCapabilityNegotiationPosture, RuntimeRoomPolicyAuthority,
+    RuntimeRoomPolicyClass, RuntimeSecondaryInputAttachmentPolicy,
+    RuntimeSecondaryInputContractProjection, RuntimeSecondaryInputFallbackOutcome,
+    RuntimeSecondaryInputTargetKind, RuntimeSpatialAdapterClass, RuntimeSpatialBedClass,
+    RuntimeSpatialExecutionMode, RuntimeSpatialExpandedFallbackOutcome,
+    RuntimeSpatialFallbackOutcome, RuntimeSpatialMixPolicy, RuntimeSpatialRenderScope,
+    RuntimeSpatialTargetEnvironment, RuntimeSupervisorReport, RuntimeWatchdogTrigger,
+    SafeModeRequest, SignalRuntime, StopReason, TransportDispatchState,
     TransportHeartbeatFreshness, TransportSessionBoundaryMode, TransportSessionState,
     TransportSessionSummary, WatchdogRestartRecord,
 };
@@ -114,6 +122,7 @@ fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: true,
         },
+        lv2_extension_capabilities: None,
         summary: "public boundary discovered plugin".into(),
     }
 }
@@ -174,6 +183,7 @@ fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: false,
             supports_reset_while_active: false,
         },
+        lv2_extension_capabilities: None,
         summary: "public boundary backend breadth plugin".into(),
     }
 }
@@ -234,6 +244,7 @@ fn sample_complex_multi_output_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: false,
         },
+        lv2_extension_capabilities: None,
         summary: "public boundary complex multi-output instrument".into(),
     }
 }
@@ -294,6 +305,7 @@ fn sample_complex_bus_fx_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: true,
         },
+        lv2_extension_capabilities: None,
         summary: "public boundary bus-capable fx".into(),
     }
 }
@@ -829,6 +841,7 @@ fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: false,
         },
+        lv2_extension_capabilities: None,
         summary: "public boundary au breadth plugin".into(),
     }
 }
@@ -889,6 +902,15 @@ fn sample_lv2_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_activate: true,
             supports_reset_while_active: false,
         },
+        lv2_extension_capabilities: Some(
+            RuntimeLv2ExtensionCapabilitySummary::from_lv2_feature_uris(
+                &[
+                    "http://lv2plug.in/ns/ext/urid#map".into(),
+                    "http://lv2plug.in/ns/ext/worker#schedule".into(),
+                ],
+                &["http://lv2plug.in/ns/ext/patch#Message".into()],
+            ),
+        ),
         summary: "public lv2 boundary plugin".into(),
     }
 }
@@ -2232,17 +2254,62 @@ fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_tru
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
     assert!(sandbox.active_transport);
+    assert_eq!(observation.lv2_extension_snapshot.plugin_type_count, 1);
+    assert_eq!(
+        observation
+            .lv2_extension_snapshot
+            .worker_required_type_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .lv2_extension_snapshot
+            .urid_negotiated_type_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .lv2_extension_snapshot
+            .patch_supported_type_count,
+        1
+    );
+    let lv2_extension = observation
+        .lv2_extension_snapshot
+        .records
+        .iter()
+        .find(|record| record.plugin_type_id == "plugin:lv2:public-linux-synth")
+        .expect("public lv2 extension record should be visible");
+    assert_eq!(
+        lv2_extension.worker_posture,
+        RuntimeLv2WorkerPosture::WorkerRequiredAvailable
+    );
+    assert_eq!(
+        lv2_extension.urid_negotiation_posture,
+        RuntimeLv2UridNegotiationPosture::Negotiated
+    );
+    assert_eq!(
+        lv2_extension.patch_exchange_posture,
+        RuntimeLv2PatchExchangePosture::Supported
+    );
+    assert_eq!(
+        lv2_extension.extension_negotiation_state,
+        RuntimeLv2ExtensionNegotiationState::Negotiated
+    );
 
     let observation_json = observation.render_json();
     assert!(observation_json.contains("\"formats\":[\"Lv2\"]"));
     assert!(observation_json.contains("\"plugin_type_id\":\"plugin:lv2:public-linux-synth\""));
     assert!(observation_json.contains("\"transport_stage\":\"Attached\""));
     assert!(observation_json.contains("\"supported_platforms\":[\"Linux\"]"));
+    assert!(observation_json.contains("\"lv2_extension_snapshot\":{"));
+    assert!(observation_json.contains("\"worker_posture\":\"WorkerRequiredAvailable\""));
+    assert!(observation_json.contains("\"patch_exchange_posture\":\"Supported\""));
 
     let supervisor_json = supervisor.render_json();
     assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
     assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
     assert!(supervisor_json.contains("\"plugin_type_id\":\"plugin:lv2:public-linux-synth\""));
+    assert!(supervisor_json.contains("\"lv2_extension_snapshot\":{"));
 }
 
 #[test]
@@ -2908,6 +2975,160 @@ fn public_runtime_linux_live_ownership_boundary_reports_runtime_owned_session_tr
     assert!(supervisor_json.contains("\"linux_backend_session_snapshot\":{"));
     assert!(supervisor_json.contains("\"backend_identity\":\"Alsa\""));
     assert!(supervisor_json.contains("\"ownership\":\"HostBrokeredCallback\""));
+}
+
+#[test]
+fn public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_policy_truth() {
+    let mut runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
+    let recorder = RuntimeEventRecorder::default();
+    runtime
+        .handshake(HandshakeRequest {
+            client_version: "public-pipewire-alsa-parity".into(),
+            anticipative_preferred: true,
+            max_sample_rate_hint: Some(96_000),
+        })
+        .expect("public pipewire/alsa parity handshake should succeed");
+    runtime
+        .configure(RuntimeConfigRequest::new(48_000, 512))
+        .expect("public pipewire/alsa parity configure should succeed");
+
+    let mut alsa = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        "alsa",
+        "alsa:default-output",
+        "ALSA Default Output",
+        false,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+    alsa.clocking.ownership = RuntimeHostLifecycleOwnership::HostDrivenCallback;
+    alsa.clocking.restart_policy = RuntimeHostRestartPolicy::HostMustRestart;
+    alsa.clocking.clock_domain = RuntimeHostClockDomain::SameClock;
+    alsa.clocking.fallback_state = RuntimeHostClockFallbackState::Direct;
+    alsa.clocking.transition_state = RuntimeHostClockTransitionState::Stable;
+    alsa.clocking.drift_state = RuntimeHostClockDriftState::Stable;
+    alsa.clocking.discontinuity_state = RuntimeHostClockDiscontinuityState::Continuous;
+    alsa.clocking.duplex_mismatch_state = RuntimeHostDuplexMismatchState::Aligned;
+    alsa.clocking.endpoint_topology = RuntimeHostEndpointTopology::Duplex;
+
+    let pipewire = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        "pipewire",
+        "pipewire:default-graph",
+        "PipeWire Default Graph",
+        true,
+        BackendHealth::Healthy,
+        0,
+        0,
+        0,
+    );
+
+    let mut recovering_pipewire = sample_public_linux_backend_host_io(
+        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        "pipewire",
+        "pipewire:recovering-graph",
+        "PipeWire Recovering Graph",
+        true,
+        BackendHealth::Recovering,
+        1,
+        1,
+        1,
+    );
+    recovering_pipewire.audio_pump.stream_state = RuntimeHostAudioStreamState::Faulted;
+
+    let alsa_observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_linux_backend_session_snapshot(&alsa)
+        .with_pipewire_alsa_parity_snapshot(&alsa);
+    assert_eq!(
+        alsa_observation
+            .pipewire_alsa_parity_snapshot
+            .session_role_parity,
+        signal_runtime::RuntimePipeWireAlsaSessionRoleParity::PrimaryAudioIo
+    );
+    assert_eq!(
+        alsa_observation
+            .pipewire_alsa_parity_snapshot
+            .device_claim_parity,
+        signal_runtime::RuntimePipeWireAlsaDeviceClaimParity::DirectClaim
+    );
+    assert_eq!(
+        alsa_observation
+            .pipewire_alsa_parity_snapshot
+            .stream_policy_parity,
+        signal_runtime::RuntimePipeWireAlsaStreamPolicyParity::DirectHostCallback
+    );
+    assert_eq!(
+        alsa_observation.pipewire_alsa_parity_snapshot.guarded_state,
+        signal_runtime::RuntimePipeWireAlsaGuardedParityState::Direct
+    );
+
+    let pipewire_observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_linux_backend_session_snapshot(&pipewire)
+        .with_pipewire_alsa_parity_snapshot(&pipewire);
+    assert_eq!(
+        pipewire_observation
+            .pipewire_alsa_parity_snapshot
+            .device_claim_parity,
+        signal_runtime::RuntimePipeWireAlsaDeviceClaimParity::SharedGraph
+    );
+    assert_eq!(
+        pipewire_observation
+            .pipewire_alsa_parity_snapshot
+            .stream_policy_parity,
+        signal_runtime::RuntimePipeWireAlsaStreamPolicyParity::BackendManagedGraph
+    );
+    assert_eq!(
+        pipewire_observation
+            .pipewire_alsa_parity_snapshot
+            .guarded_state,
+        signal_runtime::RuntimePipeWireAlsaGuardedParityState::ClockGuarded
+    );
+
+    let recovering_observation = RuntimeObservationReport::capture(&runtime, &recorder)
+        .with_linux_backend_session_snapshot(&recovering_pipewire)
+        .with_pipewire_alsa_parity_snapshot(&recovering_pipewire);
+    assert_eq!(
+        recovering_observation
+            .pipewire_alsa_parity_snapshot
+            .session_role_parity,
+        signal_runtime::RuntimePipeWireAlsaSessionRoleParity::FallbackContinuation
+    );
+    assert_eq!(
+        recovering_observation
+            .pipewire_alsa_parity_snapshot
+            .device_claim_parity,
+        signal_runtime::RuntimePipeWireAlsaDeviceClaimParity::Lost
+    );
+    assert_eq!(
+        recovering_observation
+            .pipewire_alsa_parity_snapshot
+            .stream_policy_parity,
+        signal_runtime::RuntimePipeWireAlsaStreamPolicyParity::Restarting
+    );
+    assert_eq!(
+        recovering_observation
+            .pipewire_alsa_parity_snapshot
+            .guarded_state,
+        signal_runtime::RuntimePipeWireAlsaGuardedParityState::RecoveryGuarded
+    );
+
+    let observation_json = recovering_observation.render_json();
+    assert!(observation_json.contains("\"pipewire_alsa_parity_snapshot\":{"));
+    assert!(observation_json.contains("\"session_role_parity\":\"FallbackContinuation\""));
+    assert!(observation_json.contains("\"device_claim_parity\":\"Lost\""));
+    assert!(observation_json.contains("\"stream_policy_parity\":\"Restarting\""));
+
+    let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_linux_backend_session_snapshot(&alsa)
+        .with_pipewire_alsa_parity_snapshot(&alsa);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"pipewire_alsa_parity_snapshot\":{"));
+    assert!(supervisor_json.contains("\"stream_policy_parity\":\"DirectHostCallback\""));
 }
 
 #[test]
@@ -3696,6 +3917,42 @@ fn public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_fe
         1
     );
     assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .display_transport_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .motor_transport_device_count,
+        0
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .haptic_transport_device_count,
+        0
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .scene_mapping_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .feedback_page_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .safe_action_graph_device_count,
+        1
+    );
+    assert_eq!(
         observation.advanced_hardware_snapshot.devices[0].scripting_safe_posture,
         signal_runtime::RuntimeScriptingSafeDevicePolicyPosture::Guarded
     );
@@ -3719,6 +3976,54 @@ fn public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_fe
             .supports_macro_triggers
     );
     assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].display_transport_posture,
+        signal_runtime::RuntimeDisplayTransportPosture::GuardedDisplay
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].display_content_class,
+        signal_runtime::RuntimeDisplayContentClass::GuardedVendorDisplay
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].motor_transport_posture,
+        signal_runtime::RuntimeMotorTransportPosture::NoMotorTransport
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].haptic_transport_posture,
+        signal_runtime::RuntimeHapticTransportPosture::NoHapticTransport
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_authority,
+        signal_runtime::RuntimeAdvancedControlFeedbackAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_outcome,
+        signal_runtime::RuntimeAdvancedControlFeedbackOutcome::CollapseToGuardedFeedback
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].scene_mapping_posture,
+        signal_runtime::RuntimeSceneMappingPosture::GuardedSceneMapping
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_page_posture,
+        signal_runtime::RuntimeFeedbackPagePosture::GuardedFeedbackPages
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_page_class,
+        signal_runtime::RuntimeFeedbackPageClass::GuardedVendorPage
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].safe_action_graph_posture,
+        signal_runtime::RuntimeSafeActionGraphPosture::GuardedSafeActionGraph
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].action_authority,
+        signal_runtime::RuntimeControlSurfaceWorkflowAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].safe_action_outcome,
+        signal_runtime::RuntimeSafeActionOutcome::CollapseToGuardedAction
+    );
+    assert_eq!(
         observation.advanced_hardware_snapshot.devices[0]
             .capability
             .action_classes,
@@ -3735,8 +4040,22 @@ fn public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_fe
     assert!(observation_json.contains("\"graph_state\":\"Guarded\""));
     assert!(observation_json.contains("\"provider_name\":\"public-advanced-hardware\""));
     assert!(observation_json.contains("\"feedback_channel_device_count\":1"));
+    assert!(observation_json.contains("\"display_transport_device_count\":1"));
+    assert!(observation_json.contains("\"scene_mapping_device_count\":1"));
+    assert!(observation_json.contains("\"feedback_page_device_count\":1"));
+    assert!(observation_json.contains("\"safe_action_graph_device_count\":1"));
     assert!(observation_json.contains("\"scripting_safe_posture\":\"Guarded\""));
     assert!(observation_json.contains("\"feedback_channel_posture\":\"Guarded\""));
+    assert!(observation_json.contains("\"display_transport_posture\":\"GuardedDisplay\""));
+    assert!(observation_json.contains("\"display_content_class\":\"GuardedVendorDisplay\""));
+    assert!(observation_json.contains("\"feedback_authority\":\"RuntimeDefault\""));
+    assert!(observation_json.contains("\"feedback_outcome\":\"CollapseToGuardedFeedback\""));
+    assert!(observation_json.contains("\"scene_mapping_posture\":\"GuardedSceneMapping\""));
+    assert!(observation_json.contains("\"feedback_page_posture\":\"GuardedFeedbackPages\""));
+    assert!(observation_json.contains("\"feedback_page_class\":\"GuardedVendorPage\""));
+    assert!(observation_json.contains("\"safe_action_graph_posture\":\"GuardedSafeActionGraph\""));
+    assert!(observation_json.contains("\"action_authority\":\"RuntimeDefault\""));
+    assert!(observation_json.contains("\"safe_action_outcome\":\"CollapseToGuardedAction\""));
 
     let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     supervisor.observation = supervisor
@@ -3747,6 +4066,11 @@ fn public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_fe
     assert!(supervisor_json.contains("\"advanced_hardware_snapshot\":{"));
     assert!(supervisor_json.contains("\"supports_display_feedback\":true"));
     assert!(supervisor_json.contains("\"supports_macro_triggers\":true"));
+    assert!(supervisor_json.contains("\"display_transport_posture\":\"GuardedDisplay\""));
+    assert!(supervisor_json.contains("\"feedback_outcome\":\"CollapseToGuardedFeedback\""));
+    assert!(supervisor_json.contains("\"scene_mapping_posture\":\"GuardedSceneMapping\""));
+    assert!(supervisor_json.contains("\"feedback_page_posture\":\"GuardedFeedbackPages\""));
+    assert!(supervisor_json.contains("\"safe_action_outcome\":\"CollapseToGuardedAction\""));
 }
 
 #[test]
@@ -4590,6 +4914,56 @@ fn public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth() {
                 == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
             && record.complex_io_summary.secondary_input_group_count == 1
     }));
+    let pin_matrix = &observation.plugin_pin_matrix_snapshot;
+    assert_eq!(pin_matrix.plugin_type_count, 2);
+    assert_eq!(pin_matrix.negotiated_type_count, 2);
+    assert_eq!(pin_matrix.dynamic_negotiated_type_count, 2);
+    let multiout_pin_matrix = pin_matrix
+        .records
+        .iter()
+        .find(|record| record.plugin_type_id == "plugin:vst3:public-multiout")
+        .expect("public multi-output pin matrix record should be visible");
+    assert_eq!(
+        multiout_pin_matrix.pin_matrix_posture,
+        RuntimePluginPinMatrixPosture::Negotiated
+    );
+    assert_eq!(
+        multiout_pin_matrix.dynamic_bus_negotiation_posture,
+        RuntimeDynamicBusNegotiationPosture::Negotiated
+    );
+    assert_eq!(
+        multiout_pin_matrix.fallback_outcome,
+        RuntimePluginNegotiationFallbackOutcome::RoutePrimaryOnly
+    );
+    assert!(multiout_pin_matrix
+        .pin_group_identities
+        .contains(&RuntimePluginPinGroupIdentity::PrimaryProgramPath));
+    assert!(multiout_pin_matrix
+        .pin_group_identities
+        .contains(&RuntimePluginPinGroupIdentity::SecondaryProgramPath));
+    let bus_fx_pin_matrix = pin_matrix
+        .records
+        .iter()
+        .find(|record| record.plugin_type_id == "plugin:vst3:public-bus-fx")
+        .expect("public bus-fx pin matrix record should be visible");
+    assert_eq!(
+        bus_fx_pin_matrix.pin_matrix_posture,
+        RuntimePluginPinMatrixPosture::Negotiated
+    );
+    assert_eq!(
+        bus_fx_pin_matrix.dynamic_bus_negotiation_posture,
+        RuntimeDynamicBusNegotiationPosture::Negotiated
+    );
+    assert_eq!(
+        bus_fx_pin_matrix.fallback_outcome,
+        RuntimePluginNegotiationFallbackOutcome::GuardedDegradation
+    );
+    assert!(bus_fx_pin_matrix
+        .pin_group_identities
+        .contains(&RuntimePluginPinGroupIdentity::SidechainPath));
+    assert!(bus_fx_pin_matrix
+        .pin_group_identities
+        .contains(&RuntimePluginPinGroupIdentity::AuxReturnPath));
 
     let plugin_chain = &observation.plugin_chain_snapshot;
     assert_eq!(plugin_chain.chain_count, 1);
@@ -4671,7 +5045,10 @@ fn public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth() {
     let supervisor = signal_runtime::RuntimeSupervisorReport::capture(&runtime, &recorder);
     let rendered = supervisor.render_json();
     assert!(rendered.contains("\"plugin_discovery_snapshot\":{"));
+    assert!(rendered.contains("\"plugin_pin_matrix_snapshot\":{"));
     assert!(rendered.contains("\"complex_io_summary\":{"));
+    assert!(rendered.contains("\"pin_matrix_posture\":\"Negotiated\""));
+    assert!(rendered.contains("\"dynamic_bus_negotiation_posture\":\"Negotiated\""));
     assert!(rendered.contains("\"multi_output_instrument\":true"));
     assert!(rendered.contains("\"bus_capable_fx_class\":\"SendReturnCapableFx\""));
 }
@@ -4701,6 +5078,16 @@ fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
     assert_eq!(topology.surround_bed_spatial_node_count, 1);
     assert_eq!(topology.object_aware_spatial_node_count, 0);
     assert_eq!(topology.expanded_fallback_spatial_node_count, 1);
+    assert_eq!(topology.immersive_spatial_node_count, 1);
+    assert_eq!(topology.room_policy_aware_spatial_node_count, 0);
+    assert_eq!(topology.fallback_room_policy_spatial_node_count, 1);
+    assert_eq!(topology.deployment_spatial_node_count, 1);
+    assert_eq!(topology.folded_down_spatial_node_count, 1);
+    assert_eq!(topology.fallback_monitoring_scene_spatial_node_count, 1);
+    assert_eq!(topology.renderer_capability_spatial_node_count, 1);
+    assert_eq!(topology.negotiated_renderer_spatial_node_count, 0);
+    assert_eq!(topology.immersive_export_spatial_node_count, 1);
+    assert_eq!(topology.fallback_immersive_export_spatial_node_count, 1);
 
     let stereo = topology
         .nodes
@@ -4755,6 +5142,74 @@ fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
     assert_eq!(
         surround.expanded_fallback_outcome,
         Some(RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial)
+    );
+    let surround_immersive = surround
+        .immersive_room_policy
+        .as_ref()
+        .expect("public surround node should carry immersive room policy");
+    assert_eq!(
+        surround_immersive.object_rendering_posture,
+        RuntimeImmersiveObjectRenderingPosture::NotRequested
+    );
+    assert_eq!(
+        surround_immersive.room_policy_class,
+        RuntimeRoomPolicyClass::FallbackRoom
+    );
+    assert_eq!(
+        surround_immersive.room_policy_authority,
+        RuntimeRoomPolicyAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        surround_immersive.room_outcome,
+        RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+    );
+    let surround_monitoring = surround
+        .deployment_monitoring
+        .as_ref()
+        .expect("public surround node should carry deployment and monitoring summary");
+    assert_eq!(
+        surround_monitoring.deployment_class,
+        RuntimeDeploymentClass::FallbackDeployment
+    );
+    assert_eq!(
+        surround_monitoring.fold_down_policy,
+        RuntimeFoldDownPolicy::FoldDownToReferenceBed
+    );
+    assert_eq!(
+        surround_monitoring.monitoring_scene_class,
+        RuntimeMonitoringSceneClass::FallbackScene
+    );
+    assert_eq!(
+        surround_monitoring.monitoring_scene_authority,
+        RuntimeMonitoringSceneAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        surround_monitoring.monitoring_outcome,
+        RuntimeMonitoringOutcome::BypassMonitoringScene
+    );
+    let surround_export = surround
+        .renderer_export
+        .as_ref()
+        .expect("public surround node should carry renderer and export summary");
+    assert_eq!(
+        surround_export.renderer_capability_posture,
+        RuntimeRendererCapabilityNegotiationPosture::FallbackNegotiation
+    );
+    assert_eq!(
+        surround_export.capability_authority,
+        RuntimeRendererCapabilityAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        surround_export.immersive_export_class,
+        RuntimeImmersiveExportClass::FallbackExport
+    );
+    assert_eq!(
+        surround_export.export_authority,
+        RuntimeImmersiveExportAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        surround_export.export_outcome,
+        RuntimeImmersiveExportOutcome::BypassImmersiveExport
     );
     assert_eq!(surround.balance.as_deref(), Some("0.350"));
 
@@ -4819,6 +5274,47 @@ fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
         preview.chain_contract.expanded_fallback_spatial_stage_count,
         1
     );
+    assert_eq!(preview.chain_contract.immersive_spatial_stage_count, 1);
+    assert_eq!(
+        preview.chain_contract.room_policy_aware_spatial_stage_count,
+        0
+    );
+    assert_eq!(
+        preview
+            .chain_contract
+            .fallback_room_policy_spatial_stage_count,
+        1
+    );
+    assert_eq!(preview.chain_contract.deployment_spatial_stage_count, 1);
+    assert_eq!(preview.chain_contract.folded_down_spatial_stage_count, 1);
+    assert_eq!(
+        preview
+            .chain_contract
+            .fallback_monitoring_scene_spatial_stage_count,
+        1
+    );
+    assert_eq!(
+        preview
+            .chain_contract
+            .renderer_capability_spatial_stage_count,
+        1
+    );
+    assert_eq!(
+        preview
+            .chain_contract
+            .negotiated_renderer_spatial_stage_count,
+        0
+    );
+    assert_eq!(
+        preview.chain_contract.immersive_export_spatial_stage_count,
+        1
+    );
+    assert_eq!(
+        preview
+            .chain_contract
+            .fallback_immersive_export_spatial_stage_count,
+        1
+    );
     assert!(preview.chain_contract.spatial_stages.iter().any(|stage| {
         stage.node_id == "spatial-stereo"
             && stage.spatial.execution_mode == RuntimeSpatialExecutionMode::BalanceGroups
@@ -4832,6 +5328,39 @@ fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
             && stage.spatial.expanded_fallback_outcome
                 == Some(RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial)
             && stage.spatial.render_scope == RuntimeSpatialRenderScope::BedRender
+            && stage
+                .spatial
+                .immersive_room_policy
+                .as_ref()
+                .is_some_and(|immersive| {
+                    immersive.room_policy_class == RuntimeRoomPolicyClass::FallbackRoom
+                        && immersive.room_outcome == RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+                })
+            && stage
+                .spatial
+                .deployment_monitoring
+                .as_ref()
+                .is_some_and(|monitoring| {
+                    monitoring.deployment_class == RuntimeDeploymentClass::FallbackDeployment
+                        && monitoring.fold_down_policy
+                            == RuntimeFoldDownPolicy::FoldDownToReferenceBed
+                        && monitoring.monitoring_scene_class
+                            == RuntimeMonitoringSceneClass::FallbackScene
+                        && monitoring.monitoring_outcome
+                            == RuntimeMonitoringOutcome::BypassMonitoringScene
+                })
+            && stage
+                .spatial
+                .renderer_export
+                .as_ref()
+                .is_some_and(|renderer| {
+                    renderer.renderer_capability_posture
+                        == RuntimeRendererCapabilityNegotiationPosture::FallbackNegotiation
+                        && renderer.immersive_export_class
+                            == RuntimeImmersiveExportClass::FallbackExport
+                        && renderer.export_outcome
+                            == RuntimeImmersiveExportOutcome::BypassImmersiveExport
+                })
     }));
 
     let rendered = observation.render_json();
@@ -4839,12 +5368,33 @@ fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
     assert!(rendered.contains("\"active_spatial_node_count\":1"));
     assert!(rendered.contains("\"surround_bed_spatial_node_count\":1"));
     assert!(rendered.contains("\"expanded_fallback_spatial_node_count\":1"));
+    assert!(rendered.contains("\"immersive_spatial_node_count\":1"));
+    assert!(rendered.contains("\"fallback_room_policy_spatial_node_count\":1"));
+    assert!(rendered.contains("\"deployment_spatial_node_count\":1"));
+    assert!(rendered.contains("\"folded_down_spatial_node_count\":1"));
+    assert!(rendered.contains("\"fallback_monitoring_scene_spatial_node_count\":1"));
+    assert!(rendered.contains("\"renderer_capability_spatial_node_count\":1"));
+    assert!(rendered.contains("\"negotiated_renderer_spatial_node_count\":0"));
+    assert!(rendered.contains("\"immersive_export_spatial_node_count\":1"));
+    assert!(rendered.contains("\"fallback_immersive_export_spatial_node_count\":1"));
     assert!(rendered.contains("\"bed_class\":\"CanonicalSurroundBed\""));
     assert!(rendered.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
     assert!(rendered.contains("\"render_scope\":\"BedRender\""));
     assert!(rendered.contains("\"execution_mode\":\"BalanceGroups\""));
     assert!(rendered.contains("\"fallback_outcome\":\"BypassSpatialProcessing\""));
     assert!(rendered.contains("\"expanded_fallback_outcome\":\"CollapseToBaselineSpatial\""));
+    assert!(rendered.contains("\"immersive_room_policy\":{"));
+    assert!(rendered.contains("\"room_policy_class\":\"FallbackRoom\""));
+    assert!(rendered.contains("\"room_outcome\":\"BypassRoomPolicy\""));
+    assert!(rendered.contains("\"deployment_monitoring\":{"));
+    assert!(rendered.contains("\"deployment_class\":\"FallbackDeployment\""));
+    assert!(rendered.contains("\"fold_down_policy\":\"FoldDownToReferenceBed\""));
+    assert!(rendered.contains("\"monitoring_scene_class\":\"FallbackScene\""));
+    assert!(rendered.contains("\"monitoring_outcome\":\"BypassMonitoringScene\""));
+    assert!(rendered.contains("\"renderer_export\":{"));
+    assert!(rendered.contains("\"renderer_capability_posture\":\"FallbackNegotiation\""));
+    assert!(rendered.contains("\"immersive_export_class\":\"FallbackExport\""));
+    assert!(rendered.contains("\"export_outcome\":\"BypassImmersiveExport\""));
 
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     let supervisor_json = supervisor.render_json();
@@ -4852,9 +5402,21 @@ fn public_runtime_spatial_boundary_reports_runtime_owned_execution_truth() {
     assert!(supervisor_json.contains("\"fallback_spatial_node_count\":1"));
     assert!(supervisor_json.contains("\"surround_bed_spatial_node_count\":1"));
     assert!(supervisor_json.contains("\"expanded_fallback_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"immersive_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"fallback_room_policy_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"deployment_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"folded_down_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"fallback_monitoring_scene_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"renderer_capability_spatial_node_count\":1"));
+    assert!(supervisor_json.contains("\"immersive_export_spatial_node_count\":1"));
     assert!(supervisor_json.contains("\"adapter_class\":\"Balance\""));
     assert!(supervisor_json.contains("\"bed_class\":\"CanonicalSurroundBed\""));
     assert!(supervisor_json.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
+    assert!(supervisor_json.contains("\"room_policy_class\":\"FallbackRoom\""));
+    assert!(supervisor_json.contains("\"deployment_class\":\"FallbackDeployment\""));
+    assert!(supervisor_json.contains("\"monitoring_scene_class\":\"FallbackScene\""));
+    assert!(supervisor_json.contains("\"renderer_capability_posture\":\"FallbackNegotiation\""));
+    assert!(supervisor_json.contains("\"immersive_export_class\":\"FallbackExport\""));
 }
 
 #[test]

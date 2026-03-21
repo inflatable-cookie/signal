@@ -17516,6 +17516,66 @@ mod tests {
                 .expanded_fallback_spatial_node_count,
             1
         );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .immersive_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .room_policy_aware_spatial_node_count,
+            0
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .fallback_room_policy_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .deployment_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .folded_down_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .fallback_monitoring_scene_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .renderer_capability_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .negotiated_renderer_spatial_node_count,
+            0
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .immersive_export_spatial_node_count,
+            1
+        );
+        assert_eq!(
+            observation
+                .execution_topology_summary
+                .fallback_immersive_export_spatial_node_count,
+            1
+        );
 
         let stereo = observation
             .execution_topology_summary
@@ -17547,6 +17607,9 @@ mod tests {
         );
         assert_eq!(stereo.expanded_fallback_outcome, None);
         assert_eq!(stereo.balance.as_deref(), Some("-0.200"));
+        assert_eq!(stereo.immersive_room_policy, None);
+        assert_eq!(stereo.deployment_monitoring, None);
+        assert_eq!(stereo.renderer_export, None);
 
         let surround = observation
             .execution_topology_summary
@@ -17580,6 +17643,74 @@ mod tests {
         assert_eq!(
             surround.expanded_fallback_outcome,
             Some(crate::RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial)
+        );
+        let surround_immersive = surround
+            .immersive_room_policy
+            .as_ref()
+            .expect("surround node should carry immersive room policy summary");
+        assert_eq!(
+            surround_immersive.object_rendering_posture,
+            crate::RuntimeImmersiveObjectRenderingPosture::NotRequested
+        );
+        assert_eq!(
+            surround_immersive.room_policy_class,
+            crate::RuntimeRoomPolicyClass::FallbackRoom
+        );
+        assert_eq!(
+            surround_immersive.room_policy_authority,
+            crate::RuntimeRoomPolicyAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            surround_immersive.room_outcome,
+            crate::RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+        );
+        let surround_monitoring = surround
+            .deployment_monitoring
+            .as_ref()
+            .expect("surround node should carry deployment and monitoring summary");
+        assert_eq!(
+            surround_monitoring.deployment_class,
+            crate::RuntimeDeploymentClass::FallbackDeployment
+        );
+        assert_eq!(
+            surround_monitoring.fold_down_policy,
+            crate::RuntimeFoldDownPolicy::FoldDownToReferenceBed
+        );
+        assert_eq!(
+            surround_monitoring.monitoring_scene_class,
+            crate::RuntimeMonitoringSceneClass::FallbackScene
+        );
+        assert_eq!(
+            surround_monitoring.monitoring_scene_authority,
+            crate::RuntimeMonitoringSceneAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            surround_monitoring.monitoring_outcome,
+            crate::RuntimeMonitoringOutcome::BypassMonitoringScene
+        );
+        let surround_export = surround
+            .renderer_export
+            .as_ref()
+            .expect("surround node should carry renderer and export summary");
+        assert_eq!(
+            surround_export.renderer_capability_posture,
+            crate::RuntimeRendererCapabilityNegotiationPosture::FallbackNegotiation
+        );
+        assert_eq!(
+            surround_export.capability_authority,
+            crate::RuntimeRendererCapabilityAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            surround_export.immersive_export_class,
+            crate::RuntimeImmersiveExportClass::FallbackExport
+        );
+        assert_eq!(
+            surround_export.export_authority,
+            crate::RuntimeImmersiveExportAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            surround_export.export_outcome,
+            crate::RuntimeImmersiveExportOutcome::BypassImmersiveExport
         );
         assert_eq!(surround.balance.as_deref(), Some("0.350"));
         assert_eq!(
@@ -17626,6 +17757,47 @@ mod tests {
             preview.chain_contract.expanded_fallback_spatial_stage_count,
             1
         );
+        assert_eq!(preview.chain_contract.immersive_spatial_stage_count, 1);
+        assert_eq!(
+            preview.chain_contract.room_policy_aware_spatial_stage_count,
+            0
+        );
+        assert_eq!(
+            preview
+                .chain_contract
+                .fallback_room_policy_spatial_stage_count,
+            1
+        );
+        assert_eq!(preview.chain_contract.deployment_spatial_stage_count, 1);
+        assert_eq!(preview.chain_contract.folded_down_spatial_stage_count, 1);
+        assert_eq!(
+            preview
+                .chain_contract
+                .fallback_monitoring_scene_spatial_stage_count,
+            1
+        );
+        assert_eq!(
+            preview
+                .chain_contract
+                .renderer_capability_spatial_stage_count,
+            1
+        );
+        assert_eq!(
+            preview
+                .chain_contract
+                .negotiated_renderer_spatial_stage_count,
+            0
+        );
+        assert_eq!(
+            preview.chain_contract.immersive_export_spatial_stage_count,
+            1
+        );
+        assert_eq!(
+            preview
+                .chain_contract
+                .fallback_immersive_export_spatial_stage_count,
+            1
+        );
         assert!(preview
             .chain_contract
             .spatial_stages
@@ -17646,7 +17818,42 @@ mod tests {
                     == Some(
                         crate::RuntimeSpatialExpandedFallbackOutcome::CollapseToBaselineSpatial
                     )
-                && stage.spatial.bed_class == crate::RuntimeSpatialBedClass::CanonicalSurroundBed));
+                && stage.spatial.bed_class == crate::RuntimeSpatialBedClass::CanonicalSurroundBed
+                && stage
+                    .spatial
+                    .immersive_room_policy
+                    .as_ref()
+                    .is_some_and(|immersive| {
+                        immersive.room_policy_class == crate::RuntimeRoomPolicyClass::FallbackRoom
+                            && immersive.room_outcome
+                                == crate::RuntimeImmersiveRoomOutcome::BypassRoomPolicy
+                    })
+                && stage
+                    .spatial
+                    .deployment_monitoring
+                    .as_ref()
+                    .is_some_and(|monitoring| {
+                        monitoring.deployment_class
+                            == crate::RuntimeDeploymentClass::FallbackDeployment
+                            && monitoring.fold_down_policy
+                                == crate::RuntimeFoldDownPolicy::FoldDownToReferenceBed
+                            && monitoring.monitoring_scene_class
+                                == crate::RuntimeMonitoringSceneClass::FallbackScene
+                            && monitoring.monitoring_outcome
+                                == crate::RuntimeMonitoringOutcome::BypassMonitoringScene
+                    })
+                && stage
+                    .spatial
+                    .renderer_export
+                    .as_ref()
+                    .is_some_and(|renderer| {
+                        renderer.renderer_capability_posture
+                            == crate::RuntimeRendererCapabilityNegotiationPosture::FallbackNegotiation
+                            && renderer.immersive_export_class
+                                == crate::RuntimeImmersiveExportClass::FallbackExport
+                            && renderer.export_outcome
+                                == crate::RuntimeImmersiveExportOutcome::BypassImmersiveExport
+                    })));
 
         let supervisor =
             RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
@@ -17656,6 +17863,15 @@ mod tests {
         assert!(json.contains("\"bypassed_spatial_node_count\":1"));
         assert!(json.contains("\"surround_bed_spatial_node_count\":1"));
         assert!(json.contains("\"expanded_fallback_spatial_node_count\":1"));
+        assert!(json.contains("\"immersive_spatial_node_count\":1"));
+        assert!(json.contains("\"fallback_room_policy_spatial_node_count\":1"));
+        assert!(json.contains("\"deployment_spatial_node_count\":1"));
+        assert!(json.contains("\"folded_down_spatial_node_count\":1"));
+        assert!(json.contains("\"fallback_monitoring_scene_spatial_node_count\":1"));
+        assert!(json.contains("\"renderer_capability_spatial_node_count\":1"));
+        assert!(json.contains("\"negotiated_renderer_spatial_node_count\":0"));
+        assert!(json.contains("\"immersive_export_spatial_node_count\":1"));
+        assert!(json.contains("\"fallback_immersive_export_spatial_node_count\":1"));
         assert!(json.contains("\"adapter_class\":\"Balance\""));
         assert!(json.contains("\"bed_class\":\"CanonicalSurroundBed\""));
         assert!(json.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
@@ -17663,6 +17879,18 @@ mod tests {
         assert!(json.contains("\"execution_mode\":\"Bypassed\""));
         assert!(json.contains("\"fallback_outcome\":\"BypassSpatialProcessing\""));
         assert!(json.contains("\"expanded_fallback_outcome\":\"CollapseToBaselineSpatial\""));
+        assert!(json.contains("\"immersive_room_policy\":{"));
+        assert!(json.contains("\"room_policy_class\":\"FallbackRoom\""));
+        assert!(json.contains("\"room_outcome\":\"BypassRoomPolicy\""));
+        assert!(json.contains("\"deployment_monitoring\":{"));
+        assert!(json.contains("\"deployment_class\":\"FallbackDeployment\""));
+        assert!(json.contains("\"fold_down_policy\":\"FoldDownToReferenceBed\""));
+        assert!(json.contains("\"monitoring_scene_class\":\"FallbackScene\""));
+        assert!(json.contains("\"monitoring_outcome\":\"BypassMonitoringScene\""));
+        assert!(json.contains("\"renderer_export\":{"));
+        assert!(json.contains("\"renderer_capability_posture\":\"FallbackNegotiation\""));
+        assert!(json.contains("\"immersive_export_class\":\"FallbackExport\""));
+        assert!(json.contains("\"export_outcome\":\"BypassImmersiveExport\""));
     }
 
     #[test]
@@ -20386,6 +20614,7 @@ mod tests {
                         supports_activate: true,
                         supports_reset_while_active: false,
                     },
+                    lv2_extension_capabilities: None,
                     summary: "plugin_type=plugin:vst3:multiout-instrument".into(),
                 },
                 crate::RuntimePluginDiscoveredTypeRecord {
@@ -20450,6 +20679,7 @@ mod tests {
                         supports_activate: true,
                         supports_reset_while_active: true,
                     },
+                    lv2_extension_capabilities: None,
                     summary: "plugin_type=plugin:vst3:bus-fx".into(),
                 },
             ],
@@ -20653,6 +20883,57 @@ mod tests {
                 .secondary_input_group_count,
             1
         );
+        let observation = crate::RuntimeObservationReport::capture(
+            &runtime,
+            &crate::RuntimeEventRecorder::default(),
+        );
+        assert_eq!(observation.plugin_pin_matrix_snapshot.plugin_type_count, 2);
+        assert_eq!(
+            observation.plugin_pin_matrix_snapshot.negotiated_type_count,
+            2
+        );
+        assert_eq!(
+            observation
+                .plugin_pin_matrix_snapshot
+                .dynamic_negotiated_type_count,
+            2
+        );
+        let multiout_pin_matrix = observation
+            .plugin_pin_matrix_snapshot
+            .records
+            .iter()
+            .find(|record| record.plugin_type_id == "plugin:vst3:multiout-instrument")
+            .expect("multi-output pin matrix record should exist");
+        assert_eq!(
+            multiout_pin_matrix.pin_matrix_posture,
+            crate::RuntimePluginPinMatrixPosture::Negotiated
+        );
+        assert_eq!(
+            multiout_pin_matrix.dynamic_bus_negotiation_posture,
+            crate::RuntimeDynamicBusNegotiationPosture::Negotiated
+        );
+        assert!(multiout_pin_matrix
+            .pin_group_identities
+            .contains(&crate::RuntimePluginPinGroupIdentity::PrimaryProgramPath));
+        assert!(multiout_pin_matrix
+            .pin_group_identities
+            .contains(&crate::RuntimePluginPinGroupIdentity::SecondaryProgramPath));
+        let bus_fx_pin_matrix = observation
+            .plugin_pin_matrix_snapshot
+            .records
+            .iter()
+            .find(|record| record.plugin_type_id == "plugin:vst3:bus-fx")
+            .expect("bus-fx pin matrix record should exist");
+        assert_eq!(
+            bus_fx_pin_matrix.fallback_outcome,
+            crate::RuntimePluginNegotiationFallbackOutcome::GuardedDegradation
+        );
+        assert!(bus_fx_pin_matrix
+            .pin_group_identities
+            .contains(&crate::RuntimePluginPinGroupIdentity::SidechainPath));
+        assert!(bus_fx_pin_matrix
+            .pin_group_identities
+            .contains(&crate::RuntimePluginPinGroupIdentity::AuxReturnPath));
         assert_eq!(
             snapshot.chains[0].stages[0].compensation_state,
             RuntimePluginCompensationState::Compensated
@@ -21844,6 +22125,7 @@ mod tests {
                         supports_activate: true,
                         supports_reset_while_active: true,
                     },
+                    lv2_extension_capabilities: None,
                     summary: "plugin_type=plugin:clap:default plugin_id=com.signal.default format=Clap features=2 io=PluginIoLayout { audio_inputs: 2, audio_outputs: 2, midi_inputs: 1, midi_outputs: 1 } parameters=16".into(),
                 },
                 crate::RuntimePluginDiscoveredTypeRecord {
@@ -21908,6 +22190,7 @@ mod tests {
                         supports_activate: false,
                         supports_reset_while_active: false,
                     },
+                    lv2_extension_capabilities: None,
                     summary: "plugin_type=plugin:vst3:instrument plugin_id=com.signal.instrument format=Vst3 features=2 io=PluginIoLayout { audio_inputs: 0, audio_outputs: 2, midi_inputs: 1, midi_outputs: 0 } parameters=24".into(),
                 },
             ],
@@ -22228,6 +22511,12 @@ mod tests {
                     supports_activate,
                     supports_reset_while_active: supports_activate,
                 },
+                lv2_extension_capabilities: (format == PluginFormat::Lv2).then(|| {
+                    crate::RuntimeLv2ExtensionCapabilitySummary::from_lv2_feature_uris(
+                        &["http://lv2plug.in/ns/ext/urid#map".into()],
+                        &["http://lv2plug.in/ns/ext/patch#Message".into()],
+                    )
+                }),
                 summary: format!("plugin_type={plugin_type_id} format={format:?}"),
             };
         runtime.record_plugin_scan_results(
@@ -22367,14 +22656,53 @@ mod tests {
             Some(RuntimePluginIsolationOutcome::IsolatedSandbox)
         );
 
-        let rendered =
-            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default())
-                .render_json();
+        let observation =
+            RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+        assert_eq!(observation.lv2_extension_snapshot.plugin_type_count, 1);
+        assert_eq!(
+            observation
+                .lv2_extension_snapshot
+                .worker_required_type_count,
+            0
+        );
+        assert_eq!(
+            observation
+                .lv2_extension_snapshot
+                .patch_supported_type_count,
+            0
+        );
+        assert_eq!(observation.lv2_extension_snapshot.unavailable_type_count, 1);
+        let lv2_extension = observation
+            .lv2_extension_snapshot
+            .records
+            .iter()
+            .find(|record| record.plugin_type_id == "plugin:lv2:linux-parity")
+            .expect("lv2 extension snapshot should be present");
+        assert_eq!(
+            lv2_extension.worker_posture,
+            crate::RuntimeLv2WorkerPosture::WorkerAbsent
+        );
+        assert_eq!(
+            lv2_extension.urid_negotiation_posture,
+            crate::RuntimeLv2UridNegotiationPosture::Unavailable
+        );
+        assert_eq!(
+            lv2_extension.patch_exchange_posture,
+            crate::RuntimeLv2PatchExchangePosture::Unavailable
+        );
+        assert_eq!(
+            lv2_extension.extension_negotiation_state,
+            crate::RuntimeLv2ExtensionNegotiationState::Unavailable
+        );
+
+        let rendered = observation.render_json();
         assert!(rendered.contains("\"linux_parity_band\":\"Portable\""));
         assert!(rendered.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
         assert!(rendered.contains("\"linux_strict_sandbox_default\":true"));
         assert!(rendered.contains("\"restarting_sandbox_count\":1"));
         assert!(rendered.contains("\"faulted_sandbox_count\":1"));
+        assert!(rendered.contains("\"lv2_extension_snapshot\":{"));
+        assert!(rendered.contains("\"urid_negotiation_posture\":\"Unavailable\""));
     }
 
     #[test]
@@ -22451,6 +22779,7 @@ mod tests {
                         supports_activate: true,
                         supports_reset_while_active: false,
                     },
+                    lv2_extension_capabilities: None,
                     summary: "plugin_type=plugin:vst3:multiout-instrument".into(),
                 },
                 crate::RuntimePluginDiscoveredTypeRecord {
@@ -22515,6 +22844,7 @@ mod tests {
                         supports_activate: true,
                         supports_reset_while_active: true,
                     },
+                    lv2_extension_capabilities: None,
                     summary: "plugin_type=plugin:vst3:bus-fx".into(),
                 },
             ],

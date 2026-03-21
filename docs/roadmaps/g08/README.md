@@ -1,7 +1,7 @@
 # g08 Milestones
 
 Status: active
-Updated: 2026-03-19
+Updated: 2026-03-21
 
 ## Why this generation matters now
 
@@ -44,23 +44,23 @@ This generation therefore focuses on the next reusable depth:
   - live Linux audio backend ownership and session lifecycle substrate
 - `g08.002` `complete`
   - JACK transport, graph, and backend-native coordination depth
-- `g08.003` `active`
+- `g08.003` `complete`
   - PipeWire and ALSA session-role, device-claim, and stream-policy parity
-- `g08.004` `todo`
+- `g08.004` `complete`
   - LV2 worker, URID, patch, and extension negotiation baseline
-- `g08.005` `todo`
+- `g08.005` `complete`
   - complex plugin pin-matrix and dynamic bus negotiation depth
-- `g08.006` `todo`
+- `g08.006` `complete`
   - immersive object rendering and room-policy substrate
-- `g08.007` `todo`
+- `g08.007` `complete`
   - speaker deployment, fold-down, and monitoring scene depth
-- `g08.008` `todo`
+- `g08.008` `complete`
   - renderer-capability negotiation and immersive export baseline
-- `g08.009` `todo`
+- `g08.009` `complete`
   - advanced control-surface display, motor, and haptic transport
-- `g08.010` `todo`
+- `g08.010` `complete`
   - control-surface scene mapping, feedback pages, and safe action graphs
-- `g08.011` `todo`
+- `g08.011` `active`
   - preview-output routing, audition sink ownership, and low-latency device policy
 - `g08.012` `todo`
   - preview-browser queue, media audition, and transform scheduling depth
@@ -131,6 +131,6 @@ generation is ready for downstream reliance.
 
 ## Next Task
 
-Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
-session-role, device-claim, and stream-policy parity meaning on top of the
-closed live Linux ownership and JACK coordination seams.
+Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
+preview-output routing, audition-sink ownership, and low-latency device-policy
+receipts, then align stable host-edge export to the same bounded model.

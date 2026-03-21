@@ -35,12 +35,13 @@ use signal_runtime::{
     RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
     RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
     RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy, RuntimeLifecycleApi,
-    RuntimeMediaAssetRegistration, RuntimeMultichannelIoSummary, RuntimeObservationApi,
-    RuntimeObservationDiagnostics, RuntimeObservationReport,
-    RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
-    RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
-    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
-    RuntimeOfflineRenderResult, RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimeLv2ExtensionCapabilitySummary, RuntimeMediaAssetRegistration,
+    RuntimeMultichannelIoSummary, RuntimeObservationApi, RuntimeObservationDiagnostics,
+    RuntimeObservationReport, RuntimeOfflineRenderExecutionCancellationReceipt,
+    RuntimeOfflineRenderExecutionProgressReceipt, RuntimeOfflineRenderExecutionReceipt,
+    RuntimeOfflineRenderPurgeReceipt, RuntimeOfflineRenderPurgeRequest,
+    RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
+    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
     RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
     RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePreworkServicePressure,
     RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
@@ -99,6 +100,7 @@ fn runtime_plugin_discovered_type_record(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        None,
     )
 }
 
@@ -106,6 +108,7 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
     plugin_type_id: String,
     default_io_layout: signal_plugin::PluginIoLayout,
     descriptor: signal_plugin::PluginDescriptor,
+    lv2_extension_capabilities: Option<RuntimeLv2ExtensionCapabilitySummary>,
 ) -> RuntimePluginDiscoveredTypeRecord {
     let summary = format!(
         "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
@@ -135,6 +138,7 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
         state_contract: descriptor.state_contract,
         processing_contract: descriptor.processing_contract,
         lifecycle_contract: descriptor.lifecycle_contract,
+        lv2_extension_capabilities,
         summary,
     }
 }
@@ -147,6 +151,7 @@ fn runtime_vst3_discovered_type_record(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        None,
     )
 }
 
@@ -158,17 +163,23 @@ fn runtime_au_discovered_type_record(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        None,
     )
 }
 
 fn runtime_lv2_discovered_type_record(
     discovered: Lv2DiscoveredPluginType,
 ) -> RuntimePluginDiscoveredTypeRecord {
+    let lv2_extension_capabilities = RuntimeLv2ExtensionCapabilitySummary::from_lv2_feature_uris(
+        &discovered.required_features,
+        &discovered.supported_extensions,
+    );
     let descriptor = discovered.descriptor;
     runtime_plugin_discovered_type_record_from_descriptor(
         discovered.plugin_type_id.0,
         discovered.default_io_layout,
         descriptor,
+        Some(lv2_extension_capabilities),
     )
 }
 
@@ -2949,6 +2960,7 @@ impl ServerRuntimeHost {
         let jack_host_io = self.jack_host_io_summary(&observation);
         observation
             .with_linux_backend_session_snapshot(&host_io)
+            .with_pipewire_alsa_parity_snapshot(&host_io)
             .with_jack_coordination_snapshot(&jack_host_io)
             .with_external_midi_snapshot(
                 signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty(
@@ -2964,6 +2976,7 @@ impl ServerRuntimeHost {
         report.observation = report
             .observation
             .with_linux_backend_session_snapshot(&host_io)
+            .with_pipewire_alsa_parity_snapshot(&host_io)
             .with_jack_coordination_snapshot(&jack_host_io)
             .with_external_midi_snapshot(
                 signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty(
