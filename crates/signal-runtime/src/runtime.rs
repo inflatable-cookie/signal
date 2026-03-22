@@ -14936,8 +14936,9 @@ mod tests {
         PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRender,
         PluginNodeRenderBatch, PluginSandboxLifecycleStage, PluginSandboxSpec,
         PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent, RestartRequest,
-        RuntimeAutomationInterpolation, RuntimeAutomationLaneProjection,
-        RuntimeAutomationPointProjection, RuntimeAutomationProjection, RuntimeAutomationResolution,
+        RuntimeAuditionSinkAuthority, RuntimeAuditionSinkClass, RuntimeAutomationInterpolation,
+        RuntimeAutomationLaneProjection, RuntimeAutomationPointProjection,
+        RuntimeAutomationProjection, RuntimeAutomationResolution,
         RuntimeAutomationTargetProjection, RuntimeBlockDeadlinePressure, RuntimeClipFadeEnvelope,
         RuntimeClipFadeShape, RuntimeClipGainEnvelope, RuntimeClipGainShape,
         RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
@@ -14949,10 +14950,13 @@ mod tests {
         RuntimeDeferredServiceReason, RuntimeError, RuntimeErrorKind, RuntimeEvent,
         RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase, RuntimeFaultCause,
         RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
+        RuntimeLowLatencyDevicePolicyClass, RuntimeLowLatencyDevicePolicyOutcome,
         RuntimeMarkerAnalysisReadiness, RuntimeMediaAssetRegistration, RuntimeMediaAssetState,
-        RuntimeMediaPreviewState, RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot,
-        RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineFreezeArtifactRequest,
-        RuntimeOfflinePluginDelegatedExecutionMerge, RuntimeOfflinePluginDelegatedExecutionOutcome,
+        RuntimeMediaAuditionContinuityOutcome, RuntimeMediaAuditionOrchestrationAuthority,
+        RuntimeMediaAuditionOrchestrationPosture, RuntimeMediaPreviewState, RuntimeMeterSourceRole,
+        RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
+        RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
+        RuntimeOfflinePluginDelegatedExecutionOutcome,
         RuntimeOfflinePluginDelegatedExecutionReceipt,
         RuntimeOfflinePluginDelegatedExecutionStageReceipt,
         RuntimeOfflinePluginDelegatedExecutionStatus,
@@ -14969,9 +14973,13 @@ mod tests {
         RuntimePluginPlacementPolicy, RuntimePluginPlacementRule,
         RuntimePluginPlacementRuleMatcher, RuntimePluginRecallHandoffSelection,
         RuntimePluginRecallHandoffStageId, RuntimePluginRecallPayload, RuntimePluginRecallState,
+        RuntimePreviewBrowserQueueClass, RuntimePreviewBrowserQueueOutcome,
+        RuntimePreviewBrowserQueuePosture, RuntimePreviewOutputRoutingPosture,
         RuntimePreviewTransformFallbackKind, RuntimePreviewTransformReadiness,
-        RuntimePreviewTransformServiceClass, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
-        RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+        RuntimePreviewTransformSchedulingAuthority, RuntimePreviewTransformSchedulingOutcome,
+        RuntimePreviewTransformSchedulingPosture, RuntimePreviewTransformServiceClass,
+        RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
+        RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
         RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
         RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason,
         RuntimePreworkRetirementReason, RuntimePreworkServicePressure,
@@ -14985,10 +14993,13 @@ mod tests {
         RuntimeSupervisorReport, RuntimeTempoAssistHintSource, RuntimeTempoAssistPosture,
         RuntimeTempoMapInterpolation, RuntimeTempoMapProjection, RuntimeTempoSource,
         RuntimeTransformArtifactReadiness, RuntimeTransformArtifactReuseState,
-        RuntimeWarpClipRegistration, RuntimeWarpMode, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
-        SafeModeRequest, SandboxOperationFailureStage, ScheduleProjection, StopReason,
-        TransportAttachIntent, TransportProjection, TransportSessionProvenance,
-        WatchdogRestartRecord,
+        RuntimeTransformCachePlacementAuthority, RuntimeTransformCachePlacementOutcome,
+        RuntimeTransformCachePlacementPosture, RuntimeTransformPersistencePosture,
+        RuntimeTransformRetentionAuthority, RuntimeTransformRetentionOutcome,
+        RuntimeTransformRetentionPolicyClass, RuntimeWarpClipRegistration, RuntimeWarpMode,
+        RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest,
+        SandboxOperationFailureStage, ScheduleProjection, StopReason, TransportAttachIntent,
+        TransportProjection, TransportSessionProvenance, WatchdogRestartRecord,
     };
     use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
     use signal_graph::{
@@ -30455,6 +30466,64 @@ mod tests {
         assert_eq!(transform_artifact.requires_render_clip_count, 0);
         assert_eq!(transform_artifact.guarded_reuse_clip_count, 0);
         assert_eq!(
+            transform_artifact.transform_persistence.persistence_posture,
+            RuntimeTransformPersistencePosture::AssetScopedTransformPersistence
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .retention_policy_class,
+            RuntimeTransformRetentionPolicyClass::AssetLifetimeRetentionPolicy
+        );
+        assert_eq!(
+            transform_artifact.transform_persistence.retention_authority,
+            RuntimeTransformRetentionAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            transform_artifact.transform_persistence.retention_outcome,
+            RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .cache_placement_posture,
+            RuntimeTransformCachePlacementPosture::RuntimeCacheRootPlacement
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .cache_placement_authority,
+            RuntimeTransformCachePlacementAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .cache_placement_outcome,
+            RuntimeTransformCachePlacementOutcome::PreserveRuntimeCacheRoot
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .persistent_clip_count,
+            1
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .guarded_persistence_clip_count,
+            0
+        );
+        assert_eq!(
+            transform_artifact
+                .transform_persistence
+                .invalidated_persistence_clip_count,
+            0
+        );
+        assert!(!transform_artifact
+            .transform_persistence
+            .cache_root_path
+            .is_empty());
+        assert_eq!(
             transform_artifact.clips[0].readiness,
             RuntimeTransformArtifactReadiness::Ready
         );
@@ -30472,12 +30541,22 @@ mod tests {
             observation.transform_artifact_snapshot.reusable_clip_count,
             1
         );
+        assert_eq!(
+            observation
+                .transform_artifact_snapshot
+                .transform_persistence
+                .persistence_posture,
+            RuntimeTransformPersistencePosture::AssetScopedTransformPersistence
+        );
         assert!(observation
             .render_compact()
             .contains("transform_artifacts=1/1/0/0/0"));
         assert!(observation
             .render_json()
             .contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
+        assert!(observation.render_json().contains(
+            "\"transform_persistence\":{\"persistence_posture\":\"AssetScopedTransformPersistence\""
+        ));
 
         let rendered = runtime
             .render_clip_processing_buffer(RuntimeClipRenderRequest {
@@ -30526,6 +30605,13 @@ mod tests {
         assert_eq!(preview.transform_artifact_snapshot.clip_count, 1);
         assert_eq!(preview.transform_artifact_snapshot.ready_clip_count, 1);
         assert_eq!(preview.transform_artifact_snapshot.reusable_clip_count, 1);
+        assert_eq!(
+            preview
+                .transform_artifact_snapshot
+                .transform_persistence
+                .retention_outcome,
+            RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
+        );
         assert!(preview.summary.contains("transform_artifacts=1/reusable=1"));
 
         let _ = fs::remove_file(imported_path);
@@ -30607,6 +30693,110 @@ mod tests {
         assert_eq!(preview_transform.artifact_backed_clip_count, 1);
         assert_eq!(preview_transform.fallback_clip_count, 0);
         assert_eq!(
+            preview_transform.preview_device_policy.routing_posture,
+            RuntimePreviewOutputRoutingPosture::GuardedPreviewOutputRouting
+        );
+        assert_eq!(
+            preview_transform.preview_device_policy.audition_sink_class,
+            RuntimeAuditionSinkClass::GuardedPreviewSink
+        );
+        assert_eq!(
+            preview_transform
+                .preview_device_policy
+                .audition_sink_authority,
+            RuntimeAuditionSinkAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            preview_transform
+                .preview_device_policy
+                .low_latency_device_policy_class,
+            RuntimeLowLatencyDevicePolicyClass::GuardedLowLatencyDevicePolicy
+        );
+        assert_eq!(
+            preview_transform
+                .preview_device_policy
+                .low_latency_device_policy_outcome,
+            RuntimeLowLatencyDevicePolicyOutcome::ObserveOnlyPreview
+        );
+        assert_eq!(
+            preview_transform.preview_workflow.queue_posture,
+            RuntimePreviewBrowserQueuePosture::SingleActivePreviewQueue
+        );
+        assert_eq!(
+            preview_transform.preview_workflow.queue_class,
+            RuntimePreviewBrowserQueueClass::SingleAssetAuditionQueue
+        );
+        assert_eq!(
+            preview_transform.preview_workflow.queue_outcome,
+            RuntimePreviewBrowserQueueOutcome::PreserveActivePreviewRequest
+        );
+        assert_eq!(
+            preview_transform.preview_workflow.audition_posture,
+            RuntimeMediaAuditionOrchestrationPosture::DirectRuntimeAuditionOrchestration
+        );
+        assert_eq!(
+            preview_transform.preview_workflow.audition_authority,
+            RuntimeMediaAuditionOrchestrationAuthority::RuntimeDefault
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .audition_continuity_outcome,
+            RuntimeMediaAuditionContinuityOutcome::PreserveActiveAudition
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .transform_scheduling_posture,
+            RuntimePreviewTransformSchedulingPosture::DirectRuntimeTransformScheduling
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .transform_scheduling_authority,
+            RuntimePreviewTransformSchedulingAuthority::PreviewDemandDerived
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .transform_scheduling_outcome,
+            RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .queued_preview_request_count,
+            1
+        );
+        assert_eq!(
+            preview_transform.preview_workflow.previewable_asset_count,
+            1
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .active_audition_clip_count,
+            1
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .pending_transform_clip_count,
+            0
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .ready_transform_clip_count,
+            1
+        );
+        assert_eq!(
+            preview_transform
+                .preview_workflow
+                .fallback_transform_clip_count,
+            0
+        );
+        assert_eq!(
             preview_transform.clips[0].service_class,
             RuntimePreviewTransformServiceClass::ArtifactBacked
         );
@@ -30631,9 +30821,29 @@ mod tests {
                 .active_audition_clip_count,
             1
         );
+        assert_eq!(
+            observation
+                .preview_transform_snapshot
+                .preview_device_policy
+                .routing_posture,
+            RuntimePreviewOutputRoutingPosture::GuardedPreviewOutputRouting
+        );
+        assert_eq!(
+            observation
+                .preview_transform_snapshot
+                .preview_workflow
+                .queue_posture,
+            RuntimePreviewBrowserQueuePosture::SingleActivePreviewQueue
+        );
         assert!(observation
             .render_json()
             .contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
+        assert!(observation.render_json().contains(
+            "\"preview_device_policy\":{\"routing_posture\":\"GuardedPreviewOutputRouting\""
+        ));
+        assert!(observation
+            .render_json()
+            .contains("\"preview_workflow\":{\"queue_posture\":\"SingleActivePreviewQueue\""));
 
         let rendered = runtime
             .render_clip_processing_buffer(RuntimeClipRenderRequest {
@@ -30692,6 +30902,48 @@ mod tests {
                 .preview_transform_snapshot
                 .active_audition_clip_count,
             0
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .preview_device_policy
+                .routing_posture,
+            RuntimePreviewOutputRoutingPosture::NoPreviewOutputRouting
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .preview_workflow
+                .queue_posture,
+            RuntimePreviewBrowserQueuePosture::GuardedPreviewQueue
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .preview_workflow
+                .queue_class,
+            RuntimePreviewBrowserQueueClass::PreviewAssetSelectionQueue
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .preview_workflow
+                .queue_outcome,
+            RuntimePreviewBrowserQueueOutcome::CollapseToSingleActivePreview
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .preview_workflow
+                .audition_continuity_outcome,
+            RuntimeMediaAuditionContinuityOutcome::ResumePreviewAudition
+        );
+        assert_eq!(
+            preview
+                .preview_transform_snapshot
+                .preview_workflow
+                .transform_scheduling_outcome,
+            RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview
         );
         assert!(preview
             .summary

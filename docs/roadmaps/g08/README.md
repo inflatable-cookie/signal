@@ -60,15 +60,15 @@ This generation therefore focuses on the next reusable depth:
   - advanced control-surface display, motor, and haptic transport
 - `g08.010` `complete`
   - control-surface scene mapping, feedback pages, and safe action graphs
-- `g08.011` `active`
+- `g08.011` `complete`
   - preview-output routing, audition sink ownership, and low-latency device policy
-- `g08.012` `todo`
+- `g08.012` `complete`
   - preview-browser queue, media audition, and transform scheduling depth
-- `g08.013` `todo`
+- `g08.013` `complete`
   - asset/session transform persistence, retention, and cache placement policy
-- `g08.014` `todo`
+- `g08.014` `complete`
   - live external MIDI device ownership and backend parity depth
-- `g08.015` `todo`
+- `g08.015` `active`
   - cross-backend device protocol and live workflow acceptance
 - `g08.016` `todo`
   - Linux live backend acceptance and failure-injection depth
@@ -131,6 +131,6 @@ generation is ready for downstream reliance.
 
 ## Next Task
 
-Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
-preview-output routing, audition-sink ownership, and low-latency device-policy
-receipts, then align stable host-edge export to the same bounded model.
+Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
+device protocol and live workflow acceptance contract on top of the closed
+live external MIDI ownership seam.

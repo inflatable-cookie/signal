@@ -177,7 +177,7 @@ const LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK: &str =
     "effigy acceptance:linux-backend-clock-topology-boundary";
 const EXTERNAL_MIDI_BOUNDARY: &str = "signal.runtime.external-midi-boundary";
 const EXTERNAL_MIDI_CONTRACT_PATH: &str =
-    "docs/contracts/042-external-midi-endpoint-graph-and-device-identity-contract.md";
+    "docs/contracts/065-live-external-midi-device-ownership-and-backend-parity-contract.md";
 const EXTERNAL_MIDI_ACCEPTANCE_TASK: &str = "effigy acceptance:external-midi-boundary";
 const GENERIC_EVENT_BOUNDARY: &str = "signal.runtime.generic-event-boundary";
 const GENERIC_EVENT_CONTRACT_PATH: &str =
@@ -250,11 +250,11 @@ const MARKER_ANALYSIS_CONTRACT_PATH: &str =
 const MARKER_ANALYSIS_ACCEPTANCE_TASK: &str = "effigy acceptance:marker-analysis-boundary";
 const TRANSFORM_ARTIFACT_BOUNDARY: &str = "signal.runtime.transform-artifact-boundary";
 const TRANSFORM_ARTIFACT_CONTRACT_PATH: &str =
-    "docs/contracts/048-post-warp-render-cache-and-transform-artifact-contract.md";
+    "docs/contracts/064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md";
 const TRANSFORM_ARTIFACT_ACCEPTANCE_TASK: &str = "effigy acceptance:transform-artifact-boundary";
 const PREVIEW_TRANSFORM_BOUNDARY: &str = "signal.runtime.preview-transform-boundary";
 const PREVIEW_TRANSFORM_CONTRACT_PATH: &str =
-    "docs/contracts/049-low-latency-audition-scrub-and-preview-transform-service-contract.md";
+    "docs/contracts/063-preview-browser-queue-media-audition-and-transform-scheduling-contract.md";
 const PREVIEW_TRANSFORM_ACCEPTANCE_TASK: &str = "effigy acceptance:preview-transform-boundary";
 const INTEGRATED_ACCEPTANCE_LANE: &str = "signal.runtime.integrated-acceptance-lane";
 const INTEGRATED_ACCEPTANCE_CONTRACT_PATH: &str =
@@ -3373,9 +3373,10 @@ fn external_midi_boundary_surfaces() -> &'static [ExternalMidiBoundarySurface] {
             crate_name: "signal-runtime",
             surface:
                 "RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot",
-            runtime_anchor: "RuntimeExternalMidiEndpointGraphSnapshot",
+            runtime_anchor:
+                "RuntimeExternalMidiEndpointGraphSnapshot::{discovery_state, graph_state, live_ownership, provider_name, device_count, endpoint_count, active_route_count, guarded_route_count} + RuntimeExternalMidiLiveOwnershipSummary::{ownership_posture, attach_continuity, backend_parity, guarded_parity_outcome}",
             rationale:
-                "Keeps external MIDI discovery, graph, endpoint, capability, and route truth on one runtime-owned report seam instead of host-local MIDI device reconstruction.",
+                "Keeps external MIDI discovery, graph, endpoint, route, live ownership, and backend parity truth on one runtime-owned report seam instead of host-local MIDI device reconstruction or backend-local endpoint policy.",
         },
         ExternalMidiBoundarySurface {
             id: "shared-host-external-midi-report",
@@ -3384,7 +3385,7 @@ fn external_midi_boundary_surfaces() -> &'static [ExternalMidiBoundarySurface] {
             surface: "supervisor_report() -> RuntimeSupervisorReport",
             runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
             rationale:
-                "Ensures both stable host edges forward the same runtime-owned external MIDI graph baseline instead of inventing host-private device tables or route heuristics.",
+                "Ensures both stable host edges forward the same runtime-owned external MIDI graph, live ownership, and backend parity receipts instead of inventing host-private device tables or route heuristics.",
         },
     ]
 }
@@ -3396,35 +3397,35 @@ fn external_midi_boundary_validation_steps() -> &'static [ExternalMidiBoundaryVa
             command:
                 "cargo test -p signal-runtime public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_truth",
             rationale:
-                "Proves a downstream-style runtime consumer can inspect unavailable and empty external MIDI endpoint graph truth through public runtime surfaces alone.",
+                "Proves a downstream-style runtime consumer can inspect runtime-owned external MIDI graph, live ownership, and backend parity truth through public runtime surfaces alone.",
         },
         ExternalMidiBoundaryValidationStep {
             id: "local-host-external-midi-proof",
             command:
                 "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_external_midi_truth",
             rationale:
-                "Proves the stable local host edge forwards the runtime-owned empty external MIDI graph baseline instead of rebuilding local MIDI device truth.",
+                "Proves the stable local host edge forwards runtime-owned external MIDI graph and live ownership receipts instead of rebuilding local MIDI device truth.",
         },
         ExternalMidiBoundaryValidationStep {
             id: "server-host-external-midi-proof",
             command:
                 "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_external_midi_truth",
             rationale:
-                "Proves the stable server host edge forwards the same runtime-owned external MIDI graph baseline instead of inventing server-local device reconstruction.",
+                "Proves the stable server host edge forwards the same runtime-owned external MIDI graph and backend parity receipts instead of inventing server-local device reconstruction.",
         },
         ExternalMidiBoundaryValidationStep {
             id: "boundary-descriptor-proof",
             command:
                 "cargo test -p signal-supervisor-tools external_midi_boundary_json_reports_runtime_and_host_edge_proofs",
             rationale:
-                "Keeps the machine-readable external MIDI boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
+                "Keeps the machine-readable external MIDI, live ownership, and backend parity boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only documentation.",
         },
         ExternalMidiBoundaryValidationStep {
             id: "boundary-descriptor",
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-external-midi-boundary --format=json",
             rationale:
-                "Lets consumers inspect the shared external MIDI endpoint graph and device-identity proof seam without reading host-private MIDI integration code.",
+                "Lets consumers inspect the shared external MIDI graph, live ownership, and backend parity proof seam without reading host-private MIDI integration code.",
         },
     ]
 }
@@ -4731,9 +4732,10 @@ fn transform_artifact_boundary_surfaces() -> &'static [TransformArtifactBoundary
             crate_name: "signal-runtime",
             surface:
                 "RuntimeObservationReport::transform_artifact_snapshot and RuntimeSupervisorReport::observation.transform_artifact_snapshot",
-            runtime_anchor: "RuntimeTransformArtifactSnapshot",
+            runtime_anchor:
+                "RuntimeTransformArtifactSnapshot::{clip_count, ready_clip_count, pending_media_clip_count, degraded_clip_count, invalidated_clip_count, unsupported_clip_count, cached_media_ready_clip_count, reusable_clip_count, requires_render_clip_count, guarded_reuse_clip_count, transform_persistence} + RuntimeTransformPersistenceSummary::{persistence_posture, retention_policy_class, retention_authority, retention_outcome, cache_placement_posture, cache_placement_authority, cache_placement_outcome}",
             rationale:
-                "Keeps post-warp render, cache readiness, invalidation, and reuse truth on one runtime-owned report seam instead of host-local preview-cache policy.",
+                "Keeps post-warp render, cache readiness, invalidation, reuse, retention, and cache-placement truth on one runtime-owned report seam instead of host-local preview-cache or browser-local persistence policy.",
         },
         TransformArtifactBoundarySurface {
             id: "runtime-transform-artifact-render-preview-snapshot",
@@ -4742,9 +4744,9 @@ fn transform_artifact_boundary_surfaces() -> &'static [TransformArtifactBoundary
             surface:
                 "RuntimeClipRenderResult::transform_artifact_snapshot and RuntimeOfflineRenderContractPreview::transform_artifact_snapshot",
             runtime_anchor:
-                "RuntimeClipRenderResult + RuntimeOfflineRenderContractPreview",
+                "RuntimeClipRenderResult::transform_artifact_snapshot + RuntimeOfflineRenderContractPreview::transform_artifact_snapshot",
             rationale:
-                "Proves clip render and offline preview carry the same runtime-owned transform-artifact posture instead of splitting render and cache truth across private paths.",
+                "Proves clip render and offline preview carry the same runtime-owned transform-artifact and transform-persistence posture instead of splitting render, cache, and retention truth across private paths.",
         },
         TransformArtifactBoundarySurface {
             id: "shared-host-transform-artifact-report",
@@ -4753,7 +4755,7 @@ fn transform_artifact_boundary_surfaces() -> &'static [TransformArtifactBoundary
             surface: "supervisor_report() -> RuntimeSupervisorReport",
             runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
             rationale:
-                "Ensures both stable host edges forward runtime-owned transform-artifact receipts without host-local preview-cache reconstruction.",
+                "Ensures both stable host edges forward runtime-owned transform-artifact and transform-persistence receipts without host-local preview-cache or cache-policy reconstruction.",
         },
     ]
 }
@@ -4766,35 +4768,35 @@ fn transform_artifact_boundary_validation_steps(
             command:
                 "cargo test -p signal-runtime public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_truth",
             rationale:
-                "Proves a downstream-style runtime consumer can inspect runtime-owned transform-artifact readiness, invalidation, and reuse through public runtime surfaces alone.",
+                "Proves a downstream-style runtime consumer can inspect runtime-owned transform-artifact readiness, invalidation, reuse, retention, and cache-placement truth through public runtime surfaces alone.",
         },
         TransformArtifactBoundaryValidationStep {
             id: "local-host-transform-artifact-proof",
             command:
                 "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_transform_artifact_truth",
             rationale:
-                "Proves the stable local host edge forwards runtime-owned transform-artifact receipts instead of rebuilding local preview-cache posture.",
+                "Proves the stable local host edge forwards runtime-owned transform-artifact and transform-persistence receipts instead of rebuilding local preview-cache or persistence posture.",
         },
         TransformArtifactBoundaryValidationStep {
             id: "server-host-transform-artifact-proof",
             command:
                 "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_transform_artifact_truth",
             rationale:
-                "Proves the stable server host edge forwards the same runtime-owned transform-artifact receipts without server-local cache heuristics.",
+                "Proves the stable server host edge forwards the same runtime-owned transform-artifact and transform-persistence receipts without server-local cache heuristics.",
         },
         TransformArtifactBoundaryValidationStep {
             id: "boundary-descriptor-proof",
             command:
                 "cargo test -p signal-supervisor-tools transform_artifact_boundary_json_reports_runtime_and_host_edge_proofs",
             rationale:
-                "Keeps the machine-readable transform-artifact boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
+                "Keeps the machine-readable transform-artifact and transform-persistence boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
         },
         TransformArtifactBoundaryValidationStep {
             id: "boundary-descriptor",
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-transform-artifact-boundary --format=json",
             rationale:
-                "Lets consumers inspect the shared transform-artifact proof seam without reading host-local preview-cache glue.",
+                "Lets consumers inspect the shared transform-artifact and transform-persistence proof seam without reading host-local preview-cache or cache-policy glue.",
         },
     ]
 }
@@ -4807,9 +4809,10 @@ fn preview_transform_boundary_surfaces() -> &'static [PreviewTransformBoundarySu
             crate_name: "signal-runtime",
             surface:
                 "RuntimeObservationReport::preview_transform_snapshot and RuntimeSupervisorReport::observation.preview_transform_snapshot",
-            runtime_anchor: "RuntimePreviewTransformServiceSnapshot",
+            runtime_anchor:
+                "RuntimePreviewTransformServiceSnapshot::{clip_count,active_audition_clip_count,scrub_supported_clip_count,ready_clip_count,pending_clip_count,degraded_clip_count,invalidated_clip_count,unsupported_clip_count,stretch_aligned_clip_count,artifact_backed_clip_count,fallback_clip_count,preview_device_policy,preview_workflow} + RuntimePreviewDevicePolicySummary::{routing_posture,audition_sink_class,audition_sink_authority,low_latency_device_policy_class,low_latency_device_policy_outcome} + RuntimePreviewWorkflowSummary::{queue_posture,queue_class,queue_outcome,audition_posture,audition_authority,audition_continuity_outcome,transform_scheduling_posture,transform_scheduling_authority,transform_scheduling_outcome}",
             rationale:
-                "Keeps low-latency audition, scrub support, readiness, degraded-state, and fallback truth on one runtime-owned report seam instead of host-local preview playback policy.",
+                "Keeps low-latency audition, scrub support, readiness, degraded-state, fallback, bounded preview-device routing, and bounded preview-workflow queue or scheduling truth on one runtime-owned report seam instead of browser-local queue state or host-local preview playback policy.",
         },
         PreviewTransformBoundarySurface {
             id: "runtime-preview-transform-render-preview-snapshot",
@@ -4820,7 +4823,7 @@ fn preview_transform_boundary_surfaces() -> &'static [PreviewTransformBoundarySu
             runtime_anchor:
                 "RuntimeClipRenderResult + RuntimeOfflineRenderContractPreview",
             rationale:
-                "Proves clip render and offline preview carry the same runtime-owned preview-transform posture instead of splitting preview truth across private render helpers.",
+                "Proves clip render and offline preview carry the same runtime-owned preview-transform, preview-device, and preview-workflow posture instead of splitting preview truth across private render helpers or browser-side queue logic.",
         },
         PreviewTransformBoundarySurface {
             id: "shared-host-preview-transform-report",
@@ -4829,7 +4832,7 @@ fn preview_transform_boundary_surfaces() -> &'static [PreviewTransformBoundarySu
             surface: "supervisor_report() -> RuntimeSupervisorReport",
             runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
             rationale:
-                "Ensures both stable host edges forward runtime-owned preview-transform receipts without host-local preview playback reconstruction.",
+                "Ensures both stable host edges forward runtime-owned preview-transform, preview-device, and preview-workflow receipts without browser-local queue or host-local audition scheduler reconstruction.",
         },
     ]
 }
@@ -4842,35 +4845,35 @@ fn preview_transform_boundary_validation_steps() -> &'static [PreviewTransformBo
             command:
                 "cargo test -p signal-runtime public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth",
             rationale:
-                "Proves a downstream-style runtime consumer can inspect runtime-owned preview service class, readiness, degraded-state, fallback, and audition posture through public runtime surfaces alone.",
+                "Proves a downstream-style runtime consumer can inspect runtime-owned preview service class, readiness, degraded-state, fallback, bounded preview-device policy, and bounded preview-workflow queue or scheduling truth through public runtime surfaces alone.",
         },
         PreviewTransformBoundaryValidationStep {
             id: "local-host-preview-transform-proof",
             command:
                 "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_preview_transform_truth",
             rationale:
-                "Proves the stable local host edge forwards runtime-owned preview-transform receipts instead of rebuilding local preview playback posture.",
+                "Proves the stable local host edge forwards runtime-owned preview-transform and preview-device receipts instead of rebuilding local preview playback or sink policy.",
         },
         PreviewTransformBoundaryValidationStep {
             id: "server-host-preview-transform-proof",
             command:
                 "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_preview_transform_truth",
             rationale:
-                "Proves the stable server host edge forwards the same runtime-owned preview-transform receipts without server-local preview heuristics.",
+                "Proves the stable server host edge forwards the same runtime-owned preview-transform and preview-device receipts without server-local preview heuristics or device-pick policy.",
         },
         PreviewTransformBoundaryValidationStep {
             id: "boundary-descriptor-proof",
             command:
                 "cargo test -p signal-supervisor-tools preview_transform_boundary_json_reports_runtime_and_host_edge_proofs",
             rationale:
-                "Keeps the machine-readable preview-transform boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
+                "Keeps the machine-readable preview-transform, preview-device, and preview-workflow boundary aligned with the focused runtime and host proof spine instead of drifting into prose-only closure notes.",
         },
         PreviewTransformBoundaryValidationStep {
             id: "boundary-descriptor",
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-preview-transform-boundary --format=json",
             rationale:
-                "Lets consumers inspect the shared preview-transform proof seam without reading host-local preview playback glue.",
+                "Lets consumers inspect the shared preview-transform, preview-device, and preview-workflow proof seam without reading browser-local queue glue, host-local preview playback logic, or device-picker policy.",
         },
     ]
 }
@@ -8044,8 +8047,8 @@ fn render_external_midi_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "shared external MIDI endpoint graph truth is now consumable, but live cross-backend device ownership and richer endpoint breadth remain later work",
-        "the current boundary proves unavailable and empty graph baselines through runtime and stable host edges, not fuller MIDI 2.0, MPE, or control-surface transport depth",
+        "shared external MIDI graph, live ownership, and backend parity truth are now consumable, but richer session-manager, reservation, and attach-policy depth remain later work",
+        "the current boundary proves bounded unavailable and empty ownership baselines through runtime and stable host edges, not fuller MIDI 2.0, MPE, or control-surface transport depth",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -8096,8 +8099,8 @@ fn render_external_midi_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "shared external MIDI endpoint graph truth is now consumable, but live cross-backend device ownership and richer endpoint breadth remain later work",
-        "the current boundary proves unavailable and empty graph baselines through runtime and stable host edges, not fuller MIDI 2.0, MPE, or control-surface transport depth",
+        "shared external MIDI graph, live ownership, and backend parity truth are now consumable, but richer session-manager, reservation, and attach-policy depth remain later work",
+        "the current boundary proves bounded unavailable and empty ownership baselines through runtime and stable host edges, not fuller MIDI 2.0, MPE, or control-surface transport depth",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -10124,8 +10127,8 @@ fn render_transform_artifact_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "the shared boundary now proves runtime-owned post-warp render, cache readiness, invalidation, and reuse receipts through runtime, supervisor, clip-render, offline preview, and stable host-edge surfaces, but fuller cache-retention, low-latency audition, and richer storage-policy depth still belongs to later g07 work",
-        "this closes the bounded transform-artifact consumer seam, not a full cache engine, preview browser, or product-local transform management workflow",
+        "the shared boundary now proves runtime-owned post-warp render, cache readiness, invalidation, reuse, persistence, retention, and cache-placement receipts through runtime, supervisor, clip-render, offline preview, and stable host-edge surfaces, but fuller session persistence UX, cloud sync, quota, and eviction depth still belongs to later g08 work",
+        "this closes the bounded transform-artifact and transform-persistence consumer seam, not a full cache engine, browser storage ledger, or product-local transform management workflow",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -10176,8 +10179,8 @@ fn render_transform_artifact_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "the shared boundary now proves runtime-owned post-warp render, cache readiness, invalidation, and reuse receipts through runtime, supervisor, clip-render, offline preview, and stable host-edge surfaces, but fuller cache-retention, low-latency audition, and richer storage-policy depth still belongs to later g07 work",
-        "this closes the bounded transform-artifact consumer seam, not a full cache engine, preview browser, or product-local transform management workflow",
+        "the shared boundary now proves runtime-owned post-warp render, cache readiness, invalidation, reuse, persistence, retention, and cache-placement receipts through runtime, supervisor, clip-render, offline preview, and stable host-edge surfaces, but fuller session persistence UX, cloud sync, quota, and eviction depth still belongs to later g08 work",
+        "this closes the bounded transform-artifact and transform-persistence consumer seam, not a full cache engine, browser storage ledger, or product-local transform management workflow",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -10238,8 +10241,8 @@ fn render_preview_transform_boundary_text() -> String {
     }
     rendered.push_str("deferred_scope:\n");
     for scope in [
-        "the shared boundary now proves runtime-owned low-latency audition, scrub support, preview-transform readiness, degraded-state, and fallback receipts through runtime, supervisor, render-preview, offline preview, and stable host-edge surfaces, but fuller low-latency execution, preview-device routing, and browser workflow depth still belongs to later g07 work",
-        "this closes the bounded preview-transform consumer seam, not a full preview playback engine, browser shell, or product-local audition workflow",
+        "the shared boundary now proves runtime-owned low-latency audition, scrub support, preview-transform readiness, degraded-state, fallback, bounded preview-device policy, and bounded preview-workflow queue or scheduling receipts through runtime, supervisor, render-preview, offline preview, and stable host-edge surfaces, but richer browser queue editing and deeper preview workflow depth still belong to later g08 work",
+        "this closes the bounded preview-transform, preview-device, and preview-workflow consumer seam, not a full preview playback engine, browser shell, product-local audition workflow, or end-user device picker",
     ] {
         rendered.push_str(&format!("- {scope}\n"));
     }
@@ -10290,8 +10293,8 @@ fn render_preview_transform_boundary_json() -> String {
         .collect::<Vec<_>>()
         .join(",");
     let deferred_scope = [
-        "the shared boundary now proves runtime-owned low-latency audition, scrub support, preview-transform readiness, degraded-state, and fallback receipts through runtime, supervisor, render-preview, offline preview, and stable host-edge surfaces, but fuller low-latency execution, preview-device routing, and browser workflow depth still belongs to later g07 work",
-        "this closes the bounded preview-transform consumer seam, not a full preview playback engine, browser shell, or product-local audition workflow",
+        "the shared boundary now proves runtime-owned low-latency audition, scrub support, preview-transform readiness, degraded-state, fallback, bounded preview-device policy, and bounded preview-workflow queue or scheduling receipts through runtime, supervisor, render-preview, offline preview, and stable host-edge surfaces, but richer browser queue editing and deeper preview workflow depth still belong to later g08 work",
+        "this closes the bounded preview-transform, preview-device, and preview-workflow consumer seam, not a full preview playback engine, browser shell, product-local audition workflow, or end-user device picker",
     ]
     .iter()
     .map(|scope| json_string(scope))
@@ -13331,6 +13334,8 @@ mod tests {
         signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
             discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
             graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+            live_ownership:
+                signal_runtime::RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
             provider_name: "signal-host-local".into(),
             device_count: 1,
             endpoint_count: 1,
@@ -15329,8 +15334,16 @@ mod tests {
         assert!(rendered.contains("external_midi_boundary: signal.runtime.external-midi-boundary"));
         assert!(rendered.contains("acceptance_task: effigy acceptance:external-midi-boundary"));
         assert!(rendered.contains(
+            "contract_path: docs/contracts/065-live-external-midi-device-ownership-and-backend-parity-contract.md"
+        ));
+        assert!(rendered.contains(
             "surface: RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot"
         ));
+        assert!(rendered.contains("live_ownership"));
+        assert!(rendered.contains("ownership_posture"));
+        assert!(rendered.contains("attach_continuity"));
+        assert!(rendered.contains("backend_parity"));
+        assert!(rendered.contains("guarded_parity_outcome"));
         assert!(rendered.contains(
             "cargo test -p signal-runtime public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_truth"
         ));
@@ -15344,7 +15357,7 @@ mod tests {
         let rendered = render_external_midi_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.external-midi-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/042-external-midi-endpoint-graph-and-device-identity-contract.md\""
+            "\"contract_path\":\"docs/contracts/065-live-external-midi-device-ownership-and-backend-parity-contract.md\""
         ));
         assert!(
             rendered.contains("\"acceptance_task\":\"effigy acceptance:external-midi-boundary\"")
@@ -15352,6 +15365,11 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-external-midi-report\""));
         assert!(rendered.contains("\"id\":\"shared-host-external-midi-report\""));
         assert!(rendered.contains("\"id\":\"runtime-external-midi-public-proof\""));
+        assert!(rendered.contains("live_ownership"));
+        assert!(rendered.contains("ownership_posture"));
+        assert!(rendered.contains("attach_continuity"));
+        assert!(rendered.contains("backend_parity"));
+        assert!(rendered.contains("guarded_parity_outcome"));
     }
 
     #[test]
@@ -15996,8 +16014,15 @@ mod tests {
             .contains("transform_artifact_boundary: signal.runtime.transform-artifact-boundary"));
         assert!(rendered.contains("acceptance_task: effigy acceptance:transform-artifact-boundary"));
         assert!(rendered.contains(
+            "contract_path: docs/contracts/064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md"
+        ));
+        assert!(rendered.contains(
             "surface: RuntimeObservationReport::transform_artifact_snapshot and RuntimeSupervisorReport::observation.transform_artifact_snapshot"
         ));
+        assert!(rendered.contains("transform_persistence"));
+        assert!(rendered.contains("persistence_posture"));
+        assert!(rendered.contains("retention_outcome"));
+        assert!(rendered.contains("cache_placement_outcome"));
         assert!(rendered.contains(
             "surface: RuntimeClipRenderResult::transform_artifact_snapshot and RuntimeOfflineRenderContractPreview::transform_artifact_snapshot"
         ));
@@ -16014,7 +16039,7 @@ mod tests {
         let rendered = render_transform_artifact_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.transform-artifact-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/048-post-warp-render-cache-and-transform-artifact-contract.md\""
+            "\"contract_path\":\"docs/contracts/064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md\""
         ));
         assert!(rendered
             .contains("\"acceptance_task\":\"effigy acceptance:transform-artifact-boundary\""));
@@ -16022,6 +16047,10 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-transform-artifact-render-preview-snapshot\""));
         assert!(rendered.contains("\"id\":\"shared-host-transform-artifact-report\""));
         assert!(rendered.contains("\"id\":\"runtime-transform-artifact-public-proof\""));
+        assert!(rendered.contains("transform_persistence"));
+        assert!(rendered.contains("persistence_posture"));
+        assert!(rendered.contains("retention_outcome"));
+        assert!(rendered.contains("cache_placement_outcome"));
     }
 
     #[test]
@@ -16031,11 +16060,22 @@ mod tests {
             .contains("preview_transform_boundary: signal.runtime.preview-transform-boundary"));
         assert!(rendered.contains("acceptance_task: effigy acceptance:preview-transform-boundary"));
         assert!(rendered.contains(
+            "contract_path: docs/contracts/063-preview-browser-queue-media-audition-and-transform-scheduling-contract.md"
+        ));
+        assert!(rendered.contains(
             "surface: RuntimeObservationReport::preview_transform_snapshot and RuntimeSupervisorReport::observation.preview_transform_snapshot"
         ));
         assert!(rendered.contains(
             "surface: RuntimeClipRenderResult::preview_transform_snapshot and RuntimeOfflineRenderContractPreview::preview_transform_snapshot"
         ));
+        assert!(rendered.contains("preview_device_policy"));
+        assert!(rendered.contains("preview_workflow"));
+        assert!(rendered.contains("queue_posture"));
+        assert!(rendered.contains("audition_continuity_outcome"));
+        assert!(rendered.contains("transform_scheduling_outcome"));
+        assert!(rendered.contains("routing_posture"));
+        assert!(rendered.contains("audition_sink_class"));
+        assert!(rendered.contains("low_latency_device_policy_outcome"));
         assert!(rendered.contains(
             "cargo test -p signal-runtime public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth"
         ));
@@ -16049,7 +16089,7 @@ mod tests {
         let rendered = render_preview_transform_boundary_json();
         assert!(rendered.contains("\"boundary\":\"signal.runtime.preview-transform-boundary\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/049-low-latency-audition-scrub-and-preview-transform-service-contract.md\""
+            "\"contract_path\":\"docs/contracts/063-preview-browser-queue-media-audition-and-transform-scheduling-contract.md\""
         ));
         assert!(rendered
             .contains("\"acceptance_task\":\"effigy acceptance:preview-transform-boundary\""));
@@ -16057,6 +16097,14 @@ mod tests {
         assert!(rendered.contains("\"id\":\"runtime-preview-transform-render-preview-snapshot\""));
         assert!(rendered.contains("\"id\":\"shared-host-preview-transform-report\""));
         assert!(rendered.contains("\"id\":\"runtime-preview-transform-public-proof\""));
+        assert!(rendered.contains("preview_device_policy"));
+        assert!(rendered.contains("preview_workflow"));
+        assert!(rendered.contains("queue_posture"));
+        assert!(rendered.contains("audition_continuity_outcome"));
+        assert!(rendered.contains("transform_scheduling_outcome"));
+        assert!(rendered.contains("routing_posture"));
+        assert!(rendered.contains("audition_sink_class"));
+        assert!(rendered.contains("low_latency_device_policy_outcome"));
     }
 
     #[test]

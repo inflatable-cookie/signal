@@ -1869,9 +1869,10 @@ Useful implementation entry points after this doc:
 
 ## Next Task
 
-Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
-preview-output routing, audition-sink ownership, and low-latency device-policy
-receipts, then align stable host-edge export to the same bounded model.
+Continue `g08.013` with Batch 13.3 by proving the widened persistence-policy
+seam through shared runtime, supervisor, and stable host-edge surfaces
+without introducing a browser-local storage ledger or host-local cache-policy
+shell.
 
 ## g08.011 Batch 11.1 Outcome
 
@@ -1885,6 +1886,165 @@ receipts, then align stable host-edge export to the same bounded model.
   than browser-local preview buses or host-local device picks
 - runtime receipts, supervisor proof, and stable host-edge export remain
   explicitly deferred until Batch 11.2 and Batch 11.3
+
+## g08.011 Batch 11.2 Outcome
+
+- `signal-runtime` now widens the existing preview-transform seam with bounded
+  preview-output routing, audition-sink, and low-latency device-policy truth
+  instead of opening a second preview delivery report family
+- `RuntimePreviewTransformServiceSnapshot` now carries a typed
+  `preview_device_policy` summary covering routing posture, sink class,
+  authority, policy class, and policy outcome
+- public runtime and stable host-edge proofs now consume the same runtime-
+  owned preview-device truth, so later supervisor proof can widen the current
+  preview-transform boundary instead of introducing a host-local route or
+  device-picker shell
+
+## g08.011 Batch 11.3 Outcome
+
+- the existing `signal.runtime.preview-transform-boundary` now points at
+  `docs/contracts/062-preview-output-routing-audition-sink-and-low-latency-device-policy-contract.md`
+  and describes bounded preview-device policy on observation, supervisor,
+  render-preview, and offline-preview surfaces
+- the machine-readable supervisor boundary now closes the bounded preview-route
+  and audition-sink consumer seam through the existing public runtime and
+  stable host-edge proof spine instead of introducing a preview-device-only
+  acceptance lane
+- `g08.011` is now complete, and the next `g08` queue is preview-browser
+  queueing, media audition orchestration, and transform scheduling depth
+
+## g08.012 Batch 12.1 Outcome
+
+- `g08` now has a frozen preview-workflow contract in
+  `docs/contracts/063-preview-browser-queue-media-audition-and-transform-scheduling-contract.md`
+  instead of leaving preview-browser queueing, media audition orchestration,
+  and transform scheduling as deferred prose under the earlier preview seams
+- preview-browser queueing, media audition orchestration, and transform
+  scheduling are now required to compose through the closed media-service,
+  preview-transform, and preview-device seams rather than browser-local
+  queues, editor-local audition schedulers, or app-specific transform timing
+  shells
+- runtime receipts, supervisor proof, and stable host-edge export remain
+  explicitly deferred until later `g08.012` batches
+
+## g08.012 Batch 12.2 Outcome
+
+- `signal-runtime` now widens the existing preview-transform seam with bounded
+  preview-browser queue, media audition orchestration, and transform-
+  scheduling truth instead of opening a second preview-workflow report family
+- `RuntimePreviewTransformServiceSnapshot` now carries a typed
+  `preview_workflow` summary covering queue posture, queue class, queue
+  outcome, audition posture, audition authority, continuity outcome, and
+  transform-scheduling posture, authority, and outcome
+- public runtime and stable host-edge proofs now consume the same runtime-
+  owned preview-workflow truth, so later supervisor proof can widen the
+  current preview-transform boundary instead of introducing a browser-local
+  queue or host-local preview workflow shell
+
+## g08.012 Batch 12.3 Outcome
+
+- the existing `signal.runtime.preview-transform-boundary` now points at
+  `docs/contracts/063-preview-browser-queue-media-audition-and-transform-scheduling-contract.md`
+  and describes bounded preview-workflow queue and scheduling posture on the
+  same runtime-owned seam as preview-transform and preview-device receipts
+- the machine-readable supervisor boundary now closes the bounded preview-
+  workflow consumer seam through the focused public runtime and stable
+  host-edge proof spine instead of introducing a preview-queue-only
+  acceptance lane
+- `g08.012` is now complete, and the next `g08` queue is asset/session
+  transform persistence, retention, and cache placement policy
+
+## g08.013 Batch 13.1 Outcome
+
+- `g08` now has a frozen transform-persistence contract in
+  `docs/contracts/064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md`
+  instead of leaving asset/session transform persistence, retention, and cache
+  placement as deferred prose under the earlier transform-artifact and
+  preview-workflow seams
+- asset/session transform persistence, retention, and cache placement are now
+  required to compose through the closed media-service, transform-artifact,
+  preview-transform, and preview-workflow seams rather than browser-local
+  storage, editor-local session ledgers, or host-private cache policy
+- runtime receipts, supervisor proof, and stable host-edge export remain
+  explicitly deferred until later `g08.013` batches
+
+## g08.013 Batch 13.2 Outcome
+
+- `signal-runtime` now widens the existing transform-artifact seam with
+  bounded asset/session transform persistence, retention, and cache-placement
+  truth instead of opening a second cache-policy report family
+- `RuntimeTransformArtifactSnapshot` now carries a typed
+  `transform_persistence` summary covering persistence posture, retention
+  policy class, retention authority and outcome, plus cache-placement posture,
+  authority, and outcome
+- public runtime and stable host-edge proofs now consume the same runtime-
+  owned transform-persistence truth, so later supervisor proof can widen the
+  current transform-artifact boundary instead of introducing a browser-local
+  storage ledger or host-local cache-policy shell
+
+## g08.013 Batch 13.3 Outcome
+
+- `signal-supervisor-tools` now widens the existing shared
+  `signal.runtime.transform-artifact-boundary` so it points at
+  `docs/contracts/064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md`
+  and explicitly describes `transform_persistence` on the same runtime-owned
+  seam as transform-artifact readiness, invalidation, and reuse
+- the repo-owned proof path remains
+  `effigy acceptance:transform-artifact-boundary`, so runtime, supervisor,
+  clip-render, offline preview, and both stable host edges close the bounded
+  persistence-policy seam without creating a second persistence-only
+  acceptance shell
+- `g08.013` is now complete, and the next `g08` queue is live external MIDI
+  device ownership and backend parity depth
+
+## g08.014 Batch 14.1 Outcome
+
+- `g08` now has a frozen live external MIDI ownership and backend-parity
+  contract in
+  `docs/contracts/065-live-external-midi-device-ownership-and-backend-parity-contract.md`
+  instead of leaving this seam implicit under the older external MIDI graph,
+  controller-expression, live backend, and backend-parity contracts
+- live external MIDI ownership, attach continuity, and backend parity are now
+  required to compose through the closed external MIDI graph,
+  controller-expression, live backend lifecycle, backend parity, and
+  transform-persistence seams rather than backend-local endpoint policy or
+  host-local device picks
+- runtime receipts, supervisor proof, and stable host-edge export remain
+  explicitly deferred until later `g08.014` batches
+
+## g08.014 Batch 14.2 Outcome
+
+- `signal-runtime` now widens the existing external MIDI seam with a typed
+  `live_ownership` summary on `RuntimeExternalMidiEndpointGraphSnapshot`
+  instead of opening a second live-MIDI-only report family
+- the new runtime-owned receipt family carries ownership posture, attach
+  continuity, backend parity, and guarded parity outcome, derived from the
+  existing Linux-session and interruption seams rather than backend-local
+  device picks or session-manager policy
+- public runtime and stable host-edge proofs now consume the same runtime-
+  owned live external MIDI truth, so later supervisor proof can widen the
+  current external MIDI boundary instead of introducing a backend-local
+  endpoint policy shell
+
+## g08.014 Batch 14.3 Outcome
+
+- `signal-supervisor-tools` now widens the existing shared
+  `signal.runtime.external-midi-boundary` so it points at
+  `docs/contracts/065-live-external-midi-device-ownership-and-backend-parity-contract.md`
+  and explicitly describes `live_ownership` on the same runtime-owned seam as
+  external MIDI discovery, graph, endpoint, capability, and route truth
+- the repo-owned proof path remains `effigy acceptance:external-midi-boundary`,
+  so runtime, supervisor, and both stable host edges close the bounded live
+  ownership and backend-parity seam without creating a second live-MIDI-only
+  acceptance shell
+- `g08.014` is now complete, and the next `g08` queue is cross-backend device
+  protocol and live workflow acceptance
+
+## Next Task
+
+Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
+device protocol and live workflow acceptance contract on top of the closed
+live external MIDI ownership seam.
 
 ## g08.010 Batch 10.2 Outcome
 

@@ -112,6 +112,6 @@ The deferred continuation scope after `g06` is:
 
 ## Next Task
 
-Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
-preview-output routing, audition-sink ownership, and low-latency device-policy
-receipts, then align stable host-edge export to the same bounded model.
+Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
+device protocol and live workflow acceptance contract on top of the closed
+live external MIDI ownership seam.

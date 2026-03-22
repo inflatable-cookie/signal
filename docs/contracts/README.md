@@ -80,6 +80,9 @@ Use this section for:
 - `060-advanced-control-surface-display-motor-and-haptic-transport-contract.md`
 - `061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md`
 - `062-preview-output-routing-audition-sink-and-low-latency-device-policy-contract.md`
+- `063-preview-browser-queue-media-audition-and-transform-scheduling-contract.md`
+- `064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md`
+- `065-live-external-midi-device-ownership-and-backend-parity-contract.md`
 
 ## Rule
 
@@ -88,6 +91,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
-preview-output routing, audition-sink ownership, and low-latency device-policy
-receipts, then align stable host-edge export to the same bounded model.
+Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
+device protocol and live workflow acceptance contract on top of the closed
+live external MIDI ownership seam.

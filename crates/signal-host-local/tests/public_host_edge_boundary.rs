@@ -2499,11 +2499,38 @@ fn local_shared_host_edge_exports_runtime_external_midi_truth() {
         report.observation.external_midi_snapshot.active_route_count,
         0
     );
+    assert_eq!(
+        report
+            .observation
+            .external_midi_snapshot
+            .live_ownership
+            .ownership_posture,
+        signal_runtime::RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership
+    );
+    assert_eq!(
+        report
+            .observation
+            .external_midi_snapshot
+            .live_ownership
+            .attach_continuity,
+        signal_runtime::RuntimeExternalMidiAttachContinuity::Detached
+    );
+    assert_eq!(
+        report
+            .observation
+            .external_midi_snapshot
+            .live_ownership
+            .backend_parity,
+        signal_runtime::RuntimeExternalMidiBackendParity::NotLinux
+    );
 
     let rendered = report.render_json();
     assert!(rendered.contains("\"external_midi_snapshot\":{"));
+    assert!(rendered.contains("\"live_ownership\":{"));
     assert!(rendered.contains("\"discovery_state\":\"Idle\""));
     assert!(rendered.contains("\"graph_state\":\"Empty\""));
+    assert!(rendered.contains("\"ownership_posture\":\"NoLiveOwnership\""));
+    assert!(rendered.contains("\"backend_parity\":\"NotLinux\""));
     assert!(rendered.contains("\"provider_name\":\"signal-host-local\""));
 }
 
@@ -3419,6 +3446,15 @@ fn local_shared_host_edge_exports_runtime_transform_artifact_truth() {
             .observation
             .observation
             .transform_artifact_snapshot
+            .transform_persistence
+            .persistence_posture,
+        signal_runtime::RuntimeTransformPersistencePosture::AssetScopedTransformPersistence
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .transform_artifact_snapshot
             .clips[0]
             .reuse_state,
         signal_runtime::RuntimeTransformArtifactReuseState::Reusable
@@ -3429,6 +3465,7 @@ fn local_shared_host_edge_exports_runtime_transform_artifact_truth() {
     assert!(rendered.contains("\"clip_count\":1"));
     assert!(rendered.contains("\"reusable_clip_count\":1"));
     assert!(rendered.contains("\"reuse_state\":\"Reusable\""));
+    assert!(rendered.contains("\"persistence_posture\":\"AssetScopedTransformPersistence\""));
 
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
@@ -3537,6 +3574,33 @@ fn local_shared_host_edge_exports_runtime_preview_transform_truth() {
             .observation
             .observation
             .preview_transform_snapshot
+            .preview_device_policy
+            .routing_posture,
+        signal_runtime::RuntimePreviewOutputRoutingPosture::GuardedPreviewOutputRouting
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_posture,
+        signal_runtime::RuntimePreviewBrowserQueuePosture::SingleActivePreviewQueue
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .transform_scheduling_outcome,
+        signal_runtime::RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview
+    );
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .preview_transform_snapshot
             .artifact_backed_clip_count,
         1
     );
@@ -3555,6 +3619,8 @@ fn local_shared_host_edge_exports_runtime_preview_transform_truth() {
     assert!(rendered.contains("\"active_audition_clip_count\":1"));
     assert!(rendered.contains("\"artifact_backed_clip_count\":1"));
     assert!(rendered.contains("\"service_class\":\"ArtifactBacked\""));
+    assert!(rendered.contains("\"routing_posture\":\"GuardedPreviewOutputRouting\""));
+    assert!(rendered.contains("\"queue_posture\":\"SingleActivePreviewQueue\""));
 
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host

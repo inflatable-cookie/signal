@@ -8293,6 +8293,24 @@ mod tests {
                 .endpoint_count,
             0
         );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .live_ownership
+                .ownership_posture,
+            signal_runtime::RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership
+        );
+        assert_eq!(
+            report
+                .observation
+                .observation
+                .external_midi_snapshot
+                .live_ownership
+                .backend_parity,
+            signal_runtime::RuntimeExternalMidiBackendParity::NotLinux
+        );
         assert!(report
             .observation
             .observation
@@ -8308,8 +8326,10 @@ mod tests {
 
         let rendered = report.render_json();
         assert!(rendered.contains("\"external_midi_snapshot\":{"));
+        assert!(rendered.contains("\"live_ownership\":{"));
         assert!(rendered.contains("\"discovery_state\":\"Idle\""));
         assert!(rendered.contains("\"graph_state\":\"Empty\""));
+        assert!(rendered.contains("\"backend_parity\":\"NotLinux\""));
         assert!(rendered.contains("\"provider_name\":\"signal-host-local\""));
     }
 

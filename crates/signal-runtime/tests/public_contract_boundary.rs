@@ -3428,6 +3428,20 @@ fn public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_tr
     );
     assert_eq!(unavailable.external_midi_snapshot.device_count, 0);
     assert_eq!(unavailable.external_midi_snapshot.endpoint_count, 0);
+    assert_eq!(
+        unavailable
+            .external_midi_snapshot
+            .live_ownership
+            .ownership_posture,
+        signal_runtime::RuntimeExternalMidiLiveOwnershipPosture::Unavailable
+    );
+    assert_eq!(
+        unavailable
+            .external_midi_snapshot
+            .live_ownership
+            .backend_parity,
+        signal_runtime::RuntimeExternalMidiBackendParity::Unavailable
+    );
     assert!(unavailable.external_midi_snapshot.devices.is_empty());
     assert!(unavailable.external_midi_snapshot.endpoints.is_empty());
 
@@ -3450,6 +3464,27 @@ fn public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_tr
     assert_eq!(empty_observation.external_midi_snapshot.device_count, 0);
     assert_eq!(empty_observation.external_midi_snapshot.endpoint_count, 0);
     assert_eq!(
+        empty_observation
+            .external_midi_snapshot
+            .live_ownership
+            .ownership_posture,
+        signal_runtime::RuntimeExternalMidiLiveOwnershipPosture::Unavailable
+    );
+    assert_eq!(
+        empty_observation
+            .external_midi_snapshot
+            .live_ownership
+            .attach_continuity,
+        signal_runtime::RuntimeExternalMidiAttachContinuity::Unavailable
+    );
+    assert_eq!(
+        empty_observation
+            .external_midi_snapshot
+            .live_ownership
+            .backend_parity,
+        signal_runtime::RuntimeExternalMidiBackendParity::Unavailable
+    );
+    assert_eq!(
         empty_observation.external_midi_snapshot.active_route_count,
         0
     );
@@ -3460,8 +3495,11 @@ fn public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_tr
 
     let observation_json = empty_observation.render_json();
     assert!(observation_json.contains("\"external_midi_snapshot\":{"));
+    assert!(observation_json.contains("\"live_ownership\":{"));
     assert!(observation_json.contains("\"discovery_state\":\"Idle\""));
     assert!(observation_json.contains("\"graph_state\":\"Empty\""));
+    assert!(observation_json.contains("\"ownership_posture\":\"Unavailable\""));
+    assert!(observation_json.contains("\"backend_parity\":\"Unavailable\""));
     assert!(observation_json.contains("\"provider_name\":\"public-runtime\""));
 
     let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
@@ -3472,6 +3510,8 @@ fn public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_tr
     let supervisor_json = supervisor.render_json();
     assert!(supervisor_json.contains("\"external_midi_snapshot\":{"));
     assert!(supervisor_json.contains("\"discovery_state\":\"Idle\""));
+    assert!(supervisor_json.contains("\"live_ownership\":{"));
+    assert!(supervisor_json.contains("\"ownership_posture\":\"Unavailable\""));
     assert!(supervisor_json.contains("\"provider_name\":\"public-runtime\""));
 }
 
@@ -3593,6 +3633,8 @@ fn public_runtime_controller_expression_boundary_reports_runtime_owned_expressio
     let controller_graph = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
         discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
         graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+        live_ownership:
+            signal_runtime::RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
         provider_name: "controller-expression-runtime".into(),
         device_count: 1,
         endpoint_count: 1,
@@ -3708,6 +3750,8 @@ fn public_runtime_control_surface_boundary_reports_runtime_owned_transport_and_f
     let control_surface_graph = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
         discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
         graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+        live_ownership:
+            signal_runtime::RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
         provider_name: "public-control-surface".into(),
         device_count: 1,
         endpoint_count: 2,
@@ -3846,6 +3890,8 @@ fn public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_fe
     let advanced_hardware_graph = signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
         discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
         graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+        live_ownership:
+            signal_runtime::RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
         provider_name: "public-advanced-hardware".into(),
         device_count: 1,
         endpoint_count: 2,
@@ -5764,6 +5810,27 @@ fn public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_tru
         1
     );
     assert_eq!(
+        observation
+            .transform_artifact_snapshot
+            .transform_persistence
+            .persistence_posture,
+        signal_runtime::RuntimeTransformPersistencePosture::AssetScopedTransformPersistence
+    );
+    assert_eq!(
+        observation
+            .transform_artifact_snapshot
+            .transform_persistence
+            .retention_outcome,
+        signal_runtime::RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
+    );
+    assert_eq!(
+        observation
+            .transform_artifact_snapshot
+            .transform_persistence
+            .cache_placement_outcome,
+        signal_runtime::RuntimeTransformCachePlacementOutcome::PreserveRuntimeCacheRoot
+    );
+    assert_eq!(
         observation.transform_artifact_snapshot.clips[0].readiness,
         signal_runtime::RuntimeTransformArtifactReadiness::Ready
     );
@@ -5775,6 +5842,9 @@ fn public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_tru
     assert!(observation
         .render_json()
         .contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
+    assert!(observation.render_json().contains(
+        "\"transform_persistence\":{\"persistence_posture\":\"AssetScopedTransformPersistence\""
+    ));
     assert!(observation
         .render_compact()
         .contains("transform_artifacts=1/1/0/0/0"));
@@ -5827,6 +5897,13 @@ fn public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_tru
     assert_eq!(preview.transform_artifact_snapshot.ready_clip_count, 1);
     assert_eq!(preview.transform_artifact_snapshot.reusable_clip_count, 1);
     assert_eq!(
+        preview
+            .transform_artifact_snapshot
+            .transform_persistence
+            .retention_outcome,
+        signal_runtime::RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
+    );
+    assert_eq!(
         preview.transform_artifact_snapshot.clips[0].reuse_state,
         signal_runtime::RuntimeTransformArtifactReuseState::Reusable
     );
@@ -5837,6 +5914,7 @@ fn public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_tru
     assert!(supervisor_json.contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
     assert!(supervisor_json.contains("\"reusable_clip_count\":1"));
     assert!(supervisor_json.contains("\"reuse_state\":\"Reusable\""));
+    assert!(supervisor_json.contains("\"persistence_posture\":\"AssetScopedTransformPersistence\""));
 
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = runtime
@@ -5926,6 +6004,104 @@ fn public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth
     assert_eq!(
         observation
             .preview_transform_snapshot
+            .preview_device_policy
+            .routing_posture,
+        signal_runtime::RuntimePreviewOutputRoutingPosture::GuardedPreviewOutputRouting
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_device_policy
+            .audition_sink_class,
+        signal_runtime::RuntimeAuditionSinkClass::GuardedPreviewSink
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_device_policy
+            .audition_sink_authority,
+        signal_runtime::RuntimeAuditionSinkAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_device_policy
+            .low_latency_device_policy_class,
+        signal_runtime::RuntimeLowLatencyDevicePolicyClass::GuardedLowLatencyDevicePolicy
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_device_policy
+            .low_latency_device_policy_outcome,
+        signal_runtime::RuntimeLowLatencyDevicePolicyOutcome::ObserveOnlyPreview
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_posture,
+        signal_runtime::RuntimePreviewBrowserQueuePosture::SingleActivePreviewQueue
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_class,
+        signal_runtime::RuntimePreviewBrowserQueueClass::SingleAssetAuditionQueue
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_outcome,
+        signal_runtime::RuntimePreviewBrowserQueueOutcome::PreserveActivePreviewRequest
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .audition_posture,
+        signal_runtime::RuntimeMediaAuditionOrchestrationPosture::DirectRuntimeAuditionOrchestration
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .audition_authority,
+        signal_runtime::RuntimeMediaAuditionOrchestrationAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .audition_continuity_outcome,
+        signal_runtime::RuntimeMediaAuditionContinuityOutcome::PreserveActiveAudition
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .transform_scheduling_posture,
+        signal_runtime::RuntimePreviewTransformSchedulingPosture::DirectRuntimeTransformScheduling
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .transform_scheduling_authority,
+        signal_runtime::RuntimePreviewTransformSchedulingAuthority::PreviewDemandDerived
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
+            .preview_workflow
+            .transform_scheduling_outcome,
+        signal_runtime::RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview
+    );
+    assert_eq!(
+        observation
+            .preview_transform_snapshot
             .artifact_backed_clip_count,
         1
     );
@@ -5944,6 +6120,12 @@ fn public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth
     assert!(observation
         .render_json()
         .contains("\"active_audition_clip_count\":1"));
+    assert!(observation.render_json().contains(
+        "\"preview_device_policy\":{\"routing_posture\":\"GuardedPreviewOutputRouting\""
+    ));
+    assert!(observation
+        .render_json()
+        .contains("\"preview_workflow\":{\"queue_posture\":\"SingleActivePreviewQueue\""));
 
     let rendered = runtime
         .render_clip_processing_buffer(signal_runtime::RuntimeClipRenderRequest {
@@ -6003,6 +6185,48 @@ fn public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth
             .active_audition_clip_count,
         0
     );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .preview_device_policy
+            .routing_posture,
+        signal_runtime::RuntimePreviewOutputRoutingPosture::NoPreviewOutputRouting
+    );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_posture,
+        signal_runtime::RuntimePreviewBrowserQueuePosture::GuardedPreviewQueue
+    );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_class,
+        signal_runtime::RuntimePreviewBrowserQueueClass::PreviewAssetSelectionQueue
+    );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .preview_workflow
+            .queue_outcome,
+        signal_runtime::RuntimePreviewBrowserQueueOutcome::CollapseToSingleActivePreview
+    );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .preview_workflow
+            .audition_continuity_outcome,
+        signal_runtime::RuntimeMediaAuditionContinuityOutcome::ResumePreviewAudition
+    );
+    assert_eq!(
+        preview
+            .preview_transform_snapshot
+            .preview_workflow
+            .transform_scheduling_outcome,
+        signal_runtime::RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview
+    );
     assert!(preview
         .summary
         .contains("preview_transform=1/artifact_backed=1/fallback=0"));
@@ -6012,6 +6236,8 @@ fn public_runtime_preview_transform_boundary_reports_runtime_owned_preview_truth
     assert!(supervisor_json.contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
     assert!(supervisor_json.contains("\"active_audition_clip_count\":1"));
     assert!(supervisor_json.contains("\"service_class\":\"ArtifactBacked\""));
+    assert!(supervisor_json.contains("\"routing_posture\":\"GuardedPreviewOutputRouting\""));
+    assert!(supervisor_json.contains("\"queue_posture\":\"SingleActivePreviewQueue\""));
 
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = runtime

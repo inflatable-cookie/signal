@@ -3217,6 +3217,169 @@ pub struct RuntimePreviewTransformClipSnapshot {
     pub summary: String,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewOutputRoutingPosture {
+    #[default]
+    NoPreviewOutputRouting,
+    ProgramAlignedPreviewRouting,
+    MonitorAlignedPreviewRouting,
+    GuardedPreviewOutputRouting,
+    UnavailablePreviewOutputRouting,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeAuditionSinkClass {
+    #[default]
+    NoAuditionSink,
+    ProgramOutputSink,
+    MonitoringSink,
+    GuardedPreviewSink,
+    UnavailableAuditionSink,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeAuditionSinkAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    DeviceAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeLowLatencyDevicePolicyClass {
+    #[default]
+    NoLowLatencyDevicePolicy,
+    ProgramAlignedLowLatencyPolicy,
+    MonitorAlignedLowLatencyPolicy,
+    GuardedLowLatencyDevicePolicy,
+    UnavailableLowLatencyDevicePolicy,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeLowLatencyDevicePolicyOutcome {
+    #[default]
+    ObserveOnlyPreview,
+    PreserveProgramRoute,
+    PreserveMonitoringRoute,
+    CollapseToGuardedSink,
+    TerminalPreviewRouteFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePreviewDevicePolicySummary {
+    pub routing_posture: RuntimePreviewOutputRoutingPosture,
+    pub audition_sink_class: RuntimeAuditionSinkClass,
+    pub audition_sink_authority: RuntimeAuditionSinkAuthority,
+    pub low_latency_device_policy_class: RuntimeLowLatencyDevicePolicyClass,
+    pub low_latency_device_policy_outcome: RuntimeLowLatencyDevicePolicyOutcome,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewBrowserQueuePosture {
+    #[default]
+    NoRuntimePreviewQueue,
+    SingleActivePreviewQueue,
+    GuardedPreviewQueue,
+    UnavailablePreviewQueue,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewBrowserQueueClass {
+    #[default]
+    NoPreviewQueue,
+    SingleAssetAuditionQueue,
+    PreviewAssetSelectionQueue,
+    GuardedPreviewRequestQueue,
+    UnavailablePreviewQueue,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewBrowserQueueOutcome {
+    #[default]
+    IdlePreviewQueue,
+    PreserveActivePreviewRequest,
+    CollapseToSingleActivePreview,
+    TerminalPreviewQueueFailure,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaAuditionOrchestrationPosture {
+    #[default]
+    NoAuditionOrchestration,
+    DirectRuntimeAuditionOrchestration,
+    GuardedRuntimeAuditionOrchestration,
+    UnavailableAuditionOrchestration,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaAuditionOrchestrationAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    WorkflowForwarded,
+    GuardedRuntimeOverride,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeMediaAuditionContinuityOutcome {
+    #[default]
+    IdleAuditionContinuity,
+    PreserveActiveAudition,
+    ResumePreviewAudition,
+    CollapseToGuardedAudition,
+    TerminalAuditionFailure,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformSchedulingPosture {
+    #[default]
+    NoTransformScheduling,
+    DirectRuntimeTransformScheduling,
+    GuardedRuntimeTransformScheduling,
+    UnavailableTransformScheduling,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformSchedulingAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    PreviewDemandDerived,
+    GuardedRuntimeOverride,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimePreviewTransformSchedulingOutcome {
+    #[default]
+    IdleTransformScheduling,
+    PreserveReadyTransformSchedule,
+    PreferArtifactBackedPreview,
+    CollapseToFallbackTransforms,
+    TerminalTransformSchedulingFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimePreviewWorkflowSummary {
+    pub queue_posture: RuntimePreviewBrowserQueuePosture,
+    pub queue_class: RuntimePreviewBrowserQueueClass,
+    pub queue_outcome: RuntimePreviewBrowserQueueOutcome,
+    pub audition_posture: RuntimeMediaAuditionOrchestrationPosture,
+    pub audition_authority: RuntimeMediaAuditionOrchestrationAuthority,
+    pub audition_continuity_outcome: RuntimeMediaAuditionContinuityOutcome,
+    pub transform_scheduling_posture: RuntimePreviewTransformSchedulingPosture,
+    pub transform_scheduling_authority: RuntimePreviewTransformSchedulingAuthority,
+    pub transform_scheduling_outcome: RuntimePreviewTransformSchedulingOutcome,
+    pub queued_preview_request_count: usize,
+    pub previewable_asset_count: usize,
+    pub active_audition_clip_count: usize,
+    pub pending_transform_clip_count: usize,
+    pub ready_transform_clip_count: usize,
+    pub fallback_transform_clip_count: usize,
+    pub summary: String,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePreviewTransformServiceSnapshot {
     pub clip_count: usize,
@@ -3230,6 +3393,8 @@ pub struct RuntimePreviewTransformServiceSnapshot {
     pub stretch_aligned_clip_count: usize,
     pub artifact_backed_clip_count: usize,
     pub fallback_clip_count: usize,
+    pub preview_device_policy: RuntimePreviewDevicePolicySummary,
+    pub preview_workflow: RuntimePreviewWorkflowSummary,
     pub clips: Vec<RuntimePreviewTransformClipSnapshot>,
     pub summary: String,
 }
@@ -3261,7 +3426,89 @@ pub struct RuntimeTransformArtifactSnapshot {
     pub reusable_clip_count: usize,
     pub requires_render_clip_count: usize,
     pub guarded_reuse_clip_count: usize,
+    pub transform_persistence: RuntimeTransformPersistenceSummary,
     pub clips: Vec<RuntimeTransformArtifactClipSnapshot>,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformPersistencePosture {
+    #[default]
+    NoTransformPersistence,
+    AssetScopedTransformPersistence,
+    GuardedTransformPersistence,
+    UnavailableTransformPersistence,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformRetentionPolicyClass {
+    #[default]
+    NoTransformRetentionPolicy,
+    AssetLifetimeRetentionPolicy,
+    SessionHintRetentionPolicy,
+    GuardedTransformRetentionPolicy,
+    UnavailableTransformRetentionPolicy,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformRetentionAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    WorkflowForwarded,
+    CacheSubstrateAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformRetentionOutcome {
+    #[default]
+    IdleTransformRetention,
+    PreserveAssetScopedTransforms,
+    GuardedTransformRetention,
+    EvictInvalidatedTransforms,
+    TerminalTransformRetentionFailure,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformCachePlacementPosture {
+    #[default]
+    NoCachePlacement,
+    RuntimeCacheRootPlacement,
+    GuardedCachePlacement,
+    UnavailableCachePlacement,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformCachePlacementAuthority {
+    #[default]
+    RuntimeDefault,
+    RuntimeDeclared,
+    HostForwarded,
+    CacheSubstrateAdvisory,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RuntimeTransformCachePlacementOutcome {
+    #[default]
+    IdleCachePlacement,
+    PreserveRuntimeCacheRoot,
+    CollapseToGuardedCachePlacement,
+    TerminalCachePlacementFailure,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RuntimeTransformPersistenceSummary {
+    pub persistence_posture: RuntimeTransformPersistencePosture,
+    pub retention_policy_class: RuntimeTransformRetentionPolicyClass,
+    pub retention_authority: RuntimeTransformRetentionAuthority,
+    pub retention_outcome: RuntimeTransformRetentionOutcome,
+    pub cache_placement_posture: RuntimeTransformCachePlacementPosture,
+    pub cache_placement_authority: RuntimeTransformCachePlacementAuthority,
+    pub cache_placement_outcome: RuntimeTransformCachePlacementOutcome,
+    pub cache_root_path: String,
+    pub persistent_clip_count: usize,
+    pub guarded_persistence_clip_count: usize,
+    pub invalidated_persistence_clip_count: usize,
     pub summary: String,
 }
 
@@ -3520,6 +3767,112 @@ impl RuntimeMarkerAnalysisSnapshot {
 }
 
 impl RuntimeTransformArtifactSnapshot {
+    fn derive_transform_persistence(
+        media_pipeline: &RuntimeMediaPipelineSnapshot,
+        reusable_clip_count: usize,
+        requires_render_clip_count: usize,
+        guarded_reuse_clip_count: usize,
+        invalidated_clip_count: usize,
+        unsupported_clip_count: usize,
+    ) -> RuntimeTransformPersistenceSummary {
+        let has_cache_root = !media_pipeline.cache_root_path.trim().is_empty();
+        let persistent_clip_count = reusable_clip_count;
+        let guarded_persistence_clip_count = guarded_reuse_clip_count + requires_render_clip_count;
+        let invalidated_persistence_clip_count = invalidated_clip_count;
+
+        let (
+            persistence_posture,
+            retention_policy_class,
+            retention_authority,
+            retention_outcome,
+            cache_placement_posture,
+            cache_placement_authority,
+            cache_placement_outcome,
+        ) = if persistent_clip_count == 0
+            && guarded_persistence_clip_count == 0
+            && invalidated_persistence_clip_count == 0
+            && unsupported_clip_count == 0
+        {
+            (
+                RuntimeTransformPersistencePosture::NoTransformPersistence,
+                RuntimeTransformRetentionPolicyClass::NoTransformRetentionPolicy,
+                RuntimeTransformRetentionAuthority::RuntimeDefault,
+                RuntimeTransformRetentionOutcome::IdleTransformRetention,
+                RuntimeTransformCachePlacementPosture::NoCachePlacement,
+                RuntimeTransformCachePlacementAuthority::RuntimeDefault,
+                RuntimeTransformCachePlacementOutcome::IdleCachePlacement,
+            )
+        } else if !has_cache_root {
+            (
+                RuntimeTransformPersistencePosture::UnavailableTransformPersistence,
+                RuntimeTransformRetentionPolicyClass::UnavailableTransformRetentionPolicy,
+                RuntimeTransformRetentionAuthority::CacheSubstrateAdvisory,
+                RuntimeTransformRetentionOutcome::TerminalTransformRetentionFailure,
+                RuntimeTransformCachePlacementPosture::UnavailableCachePlacement,
+                RuntimeTransformCachePlacementAuthority::CacheSubstrateAdvisory,
+                RuntimeTransformCachePlacementOutcome::TerminalCachePlacementFailure,
+            )
+        } else if invalidated_persistence_clip_count > 0 {
+            (
+                RuntimeTransformPersistencePosture::GuardedTransformPersistence,
+                RuntimeTransformRetentionPolicyClass::GuardedTransformRetentionPolicy,
+                RuntimeTransformRetentionAuthority::CacheSubstrateAdvisory,
+                RuntimeTransformRetentionOutcome::EvictInvalidatedTransforms,
+                RuntimeTransformCachePlacementPosture::GuardedCachePlacement,
+                RuntimeTransformCachePlacementAuthority::RuntimeDefault,
+                RuntimeTransformCachePlacementOutcome::CollapseToGuardedCachePlacement,
+            )
+        } else if guarded_persistence_clip_count > 0 || unsupported_clip_count > 0 {
+            (
+                RuntimeTransformPersistencePosture::GuardedTransformPersistence,
+                RuntimeTransformRetentionPolicyClass::SessionHintRetentionPolicy,
+                RuntimeTransformRetentionAuthority::RuntimeDefault,
+                RuntimeTransformRetentionOutcome::GuardedTransformRetention,
+                RuntimeTransformCachePlacementPosture::GuardedCachePlacement,
+                RuntimeTransformCachePlacementAuthority::RuntimeDefault,
+                RuntimeTransformCachePlacementOutcome::CollapseToGuardedCachePlacement,
+            )
+        } else {
+            (
+                RuntimeTransformPersistencePosture::AssetScopedTransformPersistence,
+                RuntimeTransformRetentionPolicyClass::AssetLifetimeRetentionPolicy,
+                RuntimeTransformRetentionAuthority::RuntimeDefault,
+                RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms,
+                RuntimeTransformCachePlacementPosture::RuntimeCacheRootPlacement,
+                RuntimeTransformCachePlacementAuthority::RuntimeDefault,
+                RuntimeTransformCachePlacementOutcome::PreserveRuntimeCacheRoot,
+            )
+        };
+
+        RuntimeTransformPersistenceSummary {
+            persistence_posture,
+            retention_policy_class,
+            retention_authority,
+            retention_outcome,
+            cache_placement_posture,
+            cache_placement_authority,
+            cache_placement_outcome,
+            cache_root_path: media_pipeline.cache_root_path.clone(),
+            persistent_clip_count,
+            guarded_persistence_clip_count,
+            invalidated_persistence_clip_count,
+            summary: format!(
+                "persistence={:?} retention={:?}/{:?}/{:?} cache={:?}/{:?}/{:?} persistent={} guarded={} invalidated={} cache_root={}",
+                persistence_posture,
+                retention_policy_class,
+                retention_authority,
+                retention_outcome,
+                cache_placement_posture,
+                cache_placement_authority,
+                cache_placement_outcome,
+                persistent_clip_count,
+                guarded_persistence_clip_count,
+                invalidated_persistence_clip_count,
+                media_pipeline.cache_root_path,
+            ),
+        }
+    }
+
     pub fn from_runtime_transform_state(
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
         stretch_engine: &RuntimeStretchEngineSnapshot,
@@ -3732,6 +4085,17 @@ impl RuntimeTransformArtifactSnapshot {
             .iter()
             .filter(|clip| clip.reuse_state == RuntimeTransformArtifactReuseState::Guarded)
             .count();
+        let transform_persistence = Self::derive_transform_persistence(
+            media_pipeline,
+            reusable_clip_count,
+            requires_render_clip_count,
+            guarded_reuse_clip_count,
+            invalidated_clip_count,
+            unsupported_clip_count,
+        );
+        let persistence_posture = transform_persistence.persistence_posture;
+        let retention_outcome = transform_persistence.retention_outcome;
+        let cache_placement_outcome = transform_persistence.cache_placement_outcome;
 
         RuntimeTransformArtifactSnapshot {
             clip_count: clips.len(),
@@ -3744,9 +4108,10 @@ impl RuntimeTransformArtifactSnapshot {
             reusable_clip_count,
             requires_render_clip_count,
             guarded_reuse_clip_count,
+            transform_persistence,
             clips,
             summary: format!(
-                "transform_artifacts clips={} ready={} pending_media={} degraded={} invalidated={} unsupported={} cached_media_ready={} reusable={} requires_render={} guarded_reuse={}",
+                "transform_artifacts clips={} ready={} pending_media={} degraded={} invalidated={} unsupported={} cached_media_ready={} reusable={} requires_render={} guarded_reuse={} persistence={:?} retention_outcome={:?} cache_outcome={:?}",
                 clip_processing.clip_count,
                 ready_clip_count,
                 pending_media_clip_count,
@@ -3757,12 +4122,200 @@ impl RuntimeTransformArtifactSnapshot {
                 reusable_clip_count,
                 requires_render_clip_count,
                 guarded_reuse_clip_count,
+                persistence_posture,
+                retention_outcome,
+                cache_placement_outcome,
             ),
         }
     }
 }
 
 impl RuntimePreviewTransformServiceSnapshot {
+    fn derive_preview_device_policy(
+        media_service: &RuntimeMediaServiceSnapshot,
+        active_audition_clip_count: usize,
+    ) -> RuntimePreviewDevicePolicySummary {
+        let audition_active = active_audition_clip_count > 0
+            || media_service.preview_state == RuntimeMediaPreviewState::Previewing;
+
+        if !audition_active {
+            return RuntimePreviewDevicePolicySummary {
+                routing_posture: RuntimePreviewOutputRoutingPosture::NoPreviewOutputRouting,
+                audition_sink_class: RuntimeAuditionSinkClass::NoAuditionSink,
+                audition_sink_authority: RuntimeAuditionSinkAuthority::RuntimeDefault,
+                low_latency_device_policy_class:
+                    RuntimeLowLatencyDevicePolicyClass::NoLowLatencyDevicePolicy,
+                low_latency_device_policy_outcome:
+                    RuntimeLowLatencyDevicePolicyOutcome::ObserveOnlyPreview,
+                summary: "preview_route=NoPreviewOutputRouting sink=NoAuditionSink authority=RuntimeDefault policy=NoLowLatencyDevicePolicy outcome=ObserveOnlyPreview".into(),
+            };
+        }
+
+        RuntimePreviewDevicePolicySummary {
+            routing_posture: RuntimePreviewOutputRoutingPosture::GuardedPreviewOutputRouting,
+            audition_sink_class: RuntimeAuditionSinkClass::GuardedPreviewSink,
+            audition_sink_authority: RuntimeAuditionSinkAuthority::RuntimeDefault,
+            low_latency_device_policy_class:
+                RuntimeLowLatencyDevicePolicyClass::GuardedLowLatencyDevicePolicy,
+            low_latency_device_policy_outcome:
+                RuntimeLowLatencyDevicePolicyOutcome::ObserveOnlyPreview,
+            summary: "preview_route=GuardedPreviewOutputRouting sink=GuardedPreviewSink authority=RuntimeDefault policy=GuardedLowLatencyDevicePolicy outcome=ObserveOnlyPreview".into(),
+        }
+    }
+
+    fn derive_preview_workflow(
+        media_service: &RuntimeMediaServiceSnapshot,
+        active_audition_clip_count: usize,
+        ready_clip_count: usize,
+        pending_clip_count: usize,
+        fallback_clip_count: usize,
+        artifact_backed_clip_count: usize,
+        unsupported_clip_count: usize,
+    ) -> RuntimePreviewWorkflowSummary {
+        let queued_preview_request_count = usize::from(media_service.previewing_asset_id.is_some());
+        let previewable_asset_count = media_service.previewable_asset_count;
+
+        let (queue_posture, queue_class, queue_outcome) =
+            if queued_preview_request_count > 0 && previewable_asset_count > 0 {
+                (
+                    RuntimePreviewBrowserQueuePosture::SingleActivePreviewQueue,
+                    RuntimePreviewBrowserQueueClass::SingleAssetAuditionQueue,
+                    RuntimePreviewBrowserQueueOutcome::PreserveActivePreviewRequest,
+                )
+            } else if media_service.preview_state == RuntimeMediaPreviewState::Invalidated {
+                (
+                    RuntimePreviewBrowserQueuePosture::GuardedPreviewQueue,
+                    RuntimePreviewBrowserQueueClass::GuardedPreviewRequestQueue,
+                    RuntimePreviewBrowserQueueOutcome::CollapseToSingleActivePreview,
+                )
+            } else if previewable_asset_count > 0 {
+                (
+                    RuntimePreviewBrowserQueuePosture::GuardedPreviewQueue,
+                    RuntimePreviewBrowserQueueClass::PreviewAssetSelectionQueue,
+                    RuntimePreviewBrowserQueueOutcome::CollapseToSingleActivePreview,
+                )
+            } else if unsupported_clip_count > 0 {
+                (
+                    RuntimePreviewBrowserQueuePosture::UnavailablePreviewQueue,
+                    RuntimePreviewBrowserQueueClass::UnavailablePreviewQueue,
+                    RuntimePreviewBrowserQueueOutcome::TerminalPreviewQueueFailure,
+                )
+            } else {
+                (
+                    RuntimePreviewBrowserQueuePosture::NoRuntimePreviewQueue,
+                    RuntimePreviewBrowserQueueClass::NoPreviewQueue,
+                    RuntimePreviewBrowserQueueOutcome::IdlePreviewQueue,
+                )
+            };
+
+        let (audition_posture, audition_authority, audition_continuity_outcome) =
+            if active_audition_clip_count > 0
+                || media_service.preview_state == RuntimeMediaPreviewState::Previewing
+            {
+                (
+                    RuntimeMediaAuditionOrchestrationPosture::DirectRuntimeAuditionOrchestration,
+                    RuntimeMediaAuditionOrchestrationAuthority::RuntimeDefault,
+                    RuntimeMediaAuditionContinuityOutcome::PreserveActiveAudition,
+                )
+            } else if media_service.preview_state == RuntimeMediaPreviewState::Invalidated {
+                (
+                    RuntimeMediaAuditionOrchestrationPosture::GuardedRuntimeAuditionOrchestration,
+                    RuntimeMediaAuditionOrchestrationAuthority::GuardedRuntimeOverride,
+                    RuntimeMediaAuditionContinuityOutcome::CollapseToGuardedAudition,
+                )
+            } else if previewable_asset_count > 0 {
+                (
+                    RuntimeMediaAuditionOrchestrationPosture::GuardedRuntimeAuditionOrchestration,
+                    RuntimeMediaAuditionOrchestrationAuthority::RuntimeDefault,
+                    RuntimeMediaAuditionContinuityOutcome::ResumePreviewAudition,
+                )
+            } else if unsupported_clip_count > 0 {
+                (
+                    RuntimeMediaAuditionOrchestrationPosture::UnavailableAuditionOrchestration,
+                    RuntimeMediaAuditionOrchestrationAuthority::GuardedRuntimeOverride,
+                    RuntimeMediaAuditionContinuityOutcome::TerminalAuditionFailure,
+                )
+            } else {
+                (
+                    RuntimeMediaAuditionOrchestrationPosture::NoAuditionOrchestration,
+                    RuntimeMediaAuditionOrchestrationAuthority::RuntimeDefault,
+                    RuntimeMediaAuditionContinuityOutcome::IdleAuditionContinuity,
+                )
+            };
+
+        let (
+            transform_scheduling_posture,
+            transform_scheduling_authority,
+            transform_scheduling_outcome,
+        ) = if artifact_backed_clip_count > 0 {
+            (
+                RuntimePreviewTransformSchedulingPosture::DirectRuntimeTransformScheduling,
+                RuntimePreviewTransformSchedulingAuthority::PreviewDemandDerived,
+                RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview,
+            )
+        } else if ready_clip_count > 0 {
+            (
+                RuntimePreviewTransformSchedulingPosture::DirectRuntimeTransformScheduling,
+                RuntimePreviewTransformSchedulingAuthority::PreviewDemandDerived,
+                RuntimePreviewTransformSchedulingOutcome::PreserveReadyTransformSchedule,
+            )
+        } else if pending_clip_count > 0 || fallback_clip_count > 0 {
+            (
+                RuntimePreviewTransformSchedulingPosture::GuardedRuntimeTransformScheduling,
+                RuntimePreviewTransformSchedulingAuthority::GuardedRuntimeOverride,
+                RuntimePreviewTransformSchedulingOutcome::CollapseToFallbackTransforms,
+            )
+        } else if unsupported_clip_count > 0 {
+            (
+                RuntimePreviewTransformSchedulingPosture::UnavailableTransformScheduling,
+                RuntimePreviewTransformSchedulingAuthority::GuardedRuntimeOverride,
+                RuntimePreviewTransformSchedulingOutcome::TerminalTransformSchedulingFailure,
+            )
+        } else {
+            (
+                RuntimePreviewTransformSchedulingPosture::NoTransformScheduling,
+                RuntimePreviewTransformSchedulingAuthority::RuntimeDefault,
+                RuntimePreviewTransformSchedulingOutcome::IdleTransformScheduling,
+            )
+        };
+
+        RuntimePreviewWorkflowSummary {
+            queue_posture,
+            queue_class,
+            queue_outcome,
+            audition_posture,
+            audition_authority,
+            audition_continuity_outcome,
+            transform_scheduling_posture,
+            transform_scheduling_authority,
+            transform_scheduling_outcome,
+            queued_preview_request_count,
+            previewable_asset_count,
+            active_audition_clip_count,
+            pending_transform_clip_count: pending_clip_count,
+            ready_transform_clip_count: ready_clip_count,
+            fallback_transform_clip_count: fallback_clip_count,
+            summary: format!(
+                "queue={:?}/{:?}/{:?} queue_requests={} previewable_assets={} audition={:?}/{:?}/{:?} active_audition={} scheduling={:?}/{:?}/{:?} ready_transforms={} pending_transforms={} fallback_transforms={}",
+                queue_posture,
+                queue_class,
+                queue_outcome,
+                queued_preview_request_count,
+                previewable_asset_count,
+                audition_posture,
+                audition_authority,
+                audition_continuity_outcome,
+                active_audition_clip_count,
+                transform_scheduling_posture,
+                transform_scheduling_authority,
+                transform_scheduling_outcome,
+                ready_clip_count,
+                pending_clip_count,
+                fallback_clip_count,
+            ),
+        }
+    }
+
     pub fn from_runtime_preview_state(
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
         media_service: &RuntimeMediaServiceSnapshot,
@@ -4005,6 +4558,25 @@ impl RuntimePreviewTransformServiceSnapshot {
             .iter()
             .filter(|clip| clip.service_class == RuntimePreviewTransformServiceClass::Fallback)
             .count();
+        let preview_device_policy =
+            Self::derive_preview_device_policy(media_service, active_audition_clip_count);
+        let routing_posture = preview_device_policy.routing_posture;
+        let audition_sink_class = preview_device_policy.audition_sink_class;
+        let low_latency_device_policy_class = preview_device_policy.low_latency_device_policy_class;
+        let low_latency_device_policy_outcome =
+            preview_device_policy.low_latency_device_policy_outcome;
+        let preview_workflow = Self::derive_preview_workflow(
+            media_service,
+            active_audition_clip_count,
+            ready_clip_count,
+            pending_clip_count,
+            fallback_clip_count,
+            artifact_backed_clip_count,
+            unsupported_clip_count,
+        );
+        let queue_posture = preview_workflow.queue_posture;
+        let audition_posture = preview_workflow.audition_posture;
+        let transform_scheduling_posture = preview_workflow.transform_scheduling_posture;
 
         RuntimePreviewTransformServiceSnapshot {
             clip_count: clips.len(),
@@ -4018,9 +4590,11 @@ impl RuntimePreviewTransformServiceSnapshot {
             stretch_aligned_clip_count,
             artifact_backed_clip_count,
             fallback_clip_count,
+            preview_device_policy,
+            preview_workflow,
             clips,
             summary: format!(
-                "preview_transform clips={} active_audition={} scrub_supported={} ready={} pending={} degraded={} invalidated={} unsupported={} stretch_aligned={} artifact_backed={} fallback={}",
+                "preview_transform clips={} active_audition={} scrub_supported={} ready={} pending={} degraded={} invalidated={} unsupported={} stretch_aligned={} artifact_backed={} fallback={} route={:?} sink={:?} policy={:?} outcome={:?} queue={:?} audition={:?} scheduling={:?}",
                 clip_processing.clip_count,
                 active_audition_clip_count,
                 scrub_supported_clip_count,
@@ -4032,6 +4606,13 @@ impl RuntimePreviewTransformServiceSnapshot {
                 stretch_aligned_clip_count,
                 artifact_backed_clip_count,
                 fallback_clip_count,
+                routing_posture,
+                audition_sink_class,
+                low_latency_device_policy_class,
+                low_latency_device_policy_outcome,
+                queue_posture,
+                audition_posture,
+                transform_scheduling_posture,
             ),
         }
     }
@@ -8520,6 +9101,222 @@ pub enum RuntimeExternalMidiRouteState {
     Guarded,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiLiveOwnershipPosture {
+    Unavailable,
+    NoLiveOwnership,
+    RuntimeDeclaredLiveOwnership,
+    GuardedLiveOwnership,
+    BackendAdvisoryLiveOwnership,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiAttachContinuity {
+    Unavailable,
+    Detached,
+    Attached,
+    Resumable,
+    Restartable,
+    Terminal,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiBackendParity {
+    NotLinux,
+    Unavailable,
+    Portable,
+    Guarded,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RuntimeExternalMidiGuardedParityOutcome {
+    NotLinux,
+    Unavailable,
+    Direct,
+    BackendManaged,
+    RecoveryGuarded,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeExternalMidiLiveOwnershipSummary {
+    pub ownership_posture: RuntimeExternalMidiLiveOwnershipPosture,
+    pub attach_continuity: RuntimeExternalMidiAttachContinuity,
+    pub backend_parity: RuntimeExternalMidiBackendParity,
+    pub guarded_parity_outcome: RuntimeExternalMidiGuardedParityOutcome,
+    pub backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub device_loss_count: u64,
+    pub restart_attempt_count: u64,
+    pub restart_failure_count: u64,
+    pub summary: String,
+}
+
+impl RuntimeExternalMidiLiveOwnershipSummary {
+    pub fn unavailable() -> Self {
+        Self {
+            ownership_posture: RuntimeExternalMidiLiveOwnershipPosture::Unavailable,
+            attach_continuity: RuntimeExternalMidiAttachContinuity::Unavailable,
+            backend_parity: RuntimeExternalMidiBackendParity::Unavailable,
+            guarded_parity_outcome: RuntimeExternalMidiGuardedParityOutcome::Unavailable,
+            backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+            summary:
+                "ownership=Unavailable continuity=Unavailable parity=Unavailable guarded=Unavailable backend=Unavailable"
+                    .into(),
+        }
+    }
+
+    pub fn detached_without_backend_context() -> Self {
+        Self {
+            ownership_posture: RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership,
+            attach_continuity: RuntimeExternalMidiAttachContinuity::Detached,
+            backend_parity: RuntimeExternalMidiBackendParity::Unavailable,
+            guarded_parity_outcome: RuntimeExternalMidiGuardedParityOutcome::Unavailable,
+            backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+            summary:
+                "ownership=NoLiveOwnership continuity=Detached parity=Unavailable guarded=Unavailable backend=Unavailable"
+                    .into(),
+        }
+    }
+
+    pub fn from_linux_session_and_interruption(
+        linux_session: &RuntimeLinuxBackendSessionSnapshot,
+        interruption_summary: &RuntimeInterruptionSummary,
+        graph_state: RuntimeExternalMidiGraphState,
+        device_count: usize,
+        endpoint_count: usize,
+    ) -> Self {
+        let backend_identity = linux_session.backend_identity;
+        let backend_parity = match backend_identity {
+            RuntimeLinuxAudioBackendIdentity::NotLinux => {
+                RuntimeExternalMidiBackendParity::NotLinux
+            }
+            RuntimeLinuxAudioBackendIdentity::Unavailable
+            | RuntimeLinuxAudioBackendIdentity::Unsupported => {
+                RuntimeExternalMidiBackendParity::Unavailable
+            }
+            RuntimeLinuxAudioBackendIdentity::Alsa
+            | RuntimeLinuxAudioBackendIdentity::Jack
+            | RuntimeLinuxAudioBackendIdentity::PipeWire => {
+                if linux_session.portability_band
+                    == RuntimeLinuxAudioBackendPortabilityBand::Portable
+                {
+                    RuntimeExternalMidiBackendParity::Portable
+                } else {
+                    RuntimeExternalMidiBackendParity::Guarded
+                }
+            }
+        };
+        let guarded_parity_outcome = match backend_parity {
+            RuntimeExternalMidiBackendParity::NotLinux => {
+                RuntimeExternalMidiGuardedParityOutcome::NotLinux
+            }
+            RuntimeExternalMidiBackendParity::Unavailable => {
+                RuntimeExternalMidiGuardedParityOutcome::Unavailable
+            }
+            RuntimeExternalMidiBackendParity::Portable => {
+                RuntimeExternalMidiGuardedParityOutcome::Direct
+            }
+            RuntimeExternalMidiBackendParity::Guarded => match linux_session.ownership_fallback {
+                RuntimeLinuxBackendOwnershipFallbackState::BackendManagedGuarded => {
+                    RuntimeExternalMidiGuardedParityOutcome::BackendManaged
+                }
+                RuntimeLinuxBackendOwnershipFallbackState::Reacquiring
+                | RuntimeLinuxBackendOwnershipFallbackState::RecoveryConstrained => {
+                    RuntimeExternalMidiGuardedParityOutcome::RecoveryGuarded
+                }
+                RuntimeLinuxBackendOwnershipFallbackState::Direct => {
+                    RuntimeExternalMidiGuardedParityOutcome::Direct
+                }
+                RuntimeLinuxBackendOwnershipFallbackState::NotLinux => {
+                    RuntimeExternalMidiGuardedParityOutcome::NotLinux
+                }
+                RuntimeLinuxBackendOwnershipFallbackState::Unavailable => {
+                    RuntimeExternalMidiGuardedParityOutcome::Unavailable
+                }
+            },
+        };
+        let attach_continuity = match backend_parity {
+            RuntimeExternalMidiBackendParity::Unavailable => {
+                RuntimeExternalMidiAttachContinuity::Unavailable
+            }
+            _ if matches!(
+                interruption_summary.class,
+                RuntimeInterruptionClass::Terminal
+            ) || graph_state == RuntimeExternalMidiGraphState::Faulted =>
+            {
+                RuntimeExternalMidiAttachContinuity::Terminal
+            }
+            _ if endpoint_count == 0 || graph_state == RuntimeExternalMidiGraphState::Empty => {
+                RuntimeExternalMidiAttachContinuity::Detached
+            }
+            _ => match interruption_summary.class {
+                RuntimeInterruptionClass::Steady => RuntimeExternalMidiAttachContinuity::Attached,
+                RuntimeInterruptionClass::Resumable => {
+                    RuntimeExternalMidiAttachContinuity::Resumable
+                }
+                RuntimeInterruptionClass::Restartable | RuntimeInterruptionClass::Recoverable => {
+                    RuntimeExternalMidiAttachContinuity::Restartable
+                }
+                RuntimeInterruptionClass::Terminal => RuntimeExternalMidiAttachContinuity::Terminal,
+            },
+        };
+        let ownership_posture = match backend_parity {
+            RuntimeExternalMidiBackendParity::Unavailable => {
+                RuntimeExternalMidiLiveOwnershipPosture::Unavailable
+            }
+            _ if device_count == 0 || endpoint_count == 0 => {
+                RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership
+            }
+            _ if linux_session.ownership
+                == RuntimeLinuxBackendSessionOwnership::BackendManagedGraph =>
+            {
+                RuntimeExternalMidiLiveOwnershipPosture::BackendAdvisoryLiveOwnership
+            }
+            _ if guarded_parity_outcome != RuntimeExternalMidiGuardedParityOutcome::Direct
+                || matches!(
+                    interruption_summary.class,
+                    RuntimeInterruptionClass::Resumable
+                        | RuntimeInterruptionClass::Restartable
+                        | RuntimeInterruptionClass::Recoverable
+                        | RuntimeInterruptionClass::Terminal
+                ) =>
+            {
+                RuntimeExternalMidiLiveOwnershipPosture::GuardedLiveOwnership
+            }
+            _ => RuntimeExternalMidiLiveOwnershipPosture::RuntimeDeclaredLiveOwnership,
+        };
+
+        let mut summary = Self {
+            ownership_posture,
+            attach_continuity,
+            backend_parity,
+            guarded_parity_outcome,
+            backend_identity,
+            device_loss_count: linux_session.device_loss_count,
+            restart_attempt_count: linux_session.restart_attempt_count,
+            restart_failure_count: linux_session.restart_failure_count,
+            summary: String::new(),
+        };
+        summary.summary = format!(
+            "ownership={:?} continuity={:?} parity={:?} guarded={:?} backend={:?} device_losses={} restart_attempts={} restart_failures={}",
+            summary.ownership_posture,
+            summary.attach_continuity,
+            summary.backend_parity,
+            summary.guarded_parity_outcome,
+            summary.backend_identity,
+            summary.device_loss_count,
+            summary.restart_attempt_count,
+            summary.restart_failure_count,
+        );
+        summary
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeExternalMidiEndpointCapabilitySummary {
     pub supports_bounded_midi_input: bool,
@@ -8580,6 +9377,7 @@ pub struct RuntimeExternalMidiEndpointDescriptor {
 pub struct RuntimeExternalMidiEndpointGraphSnapshot {
     pub discovery_state: RuntimeExternalMidiDiscoveryState,
     pub graph_state: RuntimeExternalMidiGraphState,
+    pub live_ownership: RuntimeExternalMidiLiveOwnershipSummary,
     pub provider_name: String,
     pub device_count: usize,
     pub endpoint_count: usize,
@@ -8598,6 +9396,7 @@ impl RuntimeExternalMidiEndpointGraphSnapshot {
         Self {
             discovery_state: RuntimeExternalMidiDiscoveryState::Unavailable,
             graph_state: RuntimeExternalMidiGraphState::Unavailable,
+            live_ownership: RuntimeExternalMidiLiveOwnershipSummary::unavailable(),
             provider_name: "runtime-unavailable".into(),
             device_count: 0,
             endpoint_count: 0,
@@ -8608,7 +9407,7 @@ impl RuntimeExternalMidiEndpointGraphSnapshot {
             guarded_route_count: 0,
             devices: Vec::new(),
             endpoints: Vec::new(),
-            summary: "discovery=Unavailable graph=Unavailable provider=runtime-unavailable devices=0 endpoints=0 routes=0".into(),
+            summary: "discovery=Unavailable graph=Unavailable ownership=Unavailable continuity=Unavailable parity=Unavailable provider=runtime-unavailable devices=0 endpoints=0 routes=0".into(),
         }
     }
 
@@ -8617,6 +9416,7 @@ impl RuntimeExternalMidiEndpointGraphSnapshot {
         Self {
             discovery_state: RuntimeExternalMidiDiscoveryState::Idle,
             graph_state: RuntimeExternalMidiGraphState::Empty,
+            live_ownership: RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
             provider_name: provider_name.clone(),
             device_count: 0,
             endpoint_count: 0,
@@ -8628,10 +9428,39 @@ impl RuntimeExternalMidiEndpointGraphSnapshot {
             devices: Vec::new(),
             endpoints: Vec::new(),
             summary: format!(
-                "discovery=Idle graph=Empty provider={} devices=0 endpoints=0 routes=0",
-                provider_name
+                "discovery=Idle graph=Empty ownership=NoLiveOwnership continuity=Detached parity=Unavailable provider={} devices=0 endpoints=0 routes=0",
+                provider_name,
             ),
         }
+    }
+
+    pub fn with_live_ownership_summary(
+        mut self,
+        linux_session: &RuntimeLinuxBackendSessionSnapshot,
+        interruption_summary: &RuntimeInterruptionSummary,
+    ) -> Self {
+        self.live_ownership =
+            RuntimeExternalMidiLiveOwnershipSummary::from_linux_session_and_interruption(
+                linux_session,
+                interruption_summary,
+                self.graph_state,
+                self.device_count,
+                self.endpoint_count,
+            );
+        self.summary = format!(
+            "discovery={:?} graph={:?} ownership={:?} continuity={:?} parity={:?} provider={} devices={} endpoints={} routes={}/{}",
+            self.discovery_state,
+            self.graph_state,
+            self.live_ownership.ownership_posture,
+            self.live_ownership.attach_continuity,
+            self.live_ownership.backend_parity,
+            self.provider_name,
+            self.device_count,
+            self.endpoint_count,
+            self.active_route_count,
+            self.guarded_route_count,
+        );
+        self
     }
 }
 
@@ -14652,6 +15481,10 @@ impl RuntimeObservationReport {
         mut self,
         external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
     ) -> Self {
+        let external_midi_snapshot = external_midi_snapshot.with_live_ownership_summary(
+            &self.linux_backend_session_snapshot,
+            &self.interruption_summary,
+        );
         self.control_surface_snapshot =
             RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(&external_midi_snapshot);
         self.advanced_hardware_snapshot =
@@ -17687,9 +18520,13 @@ fn format_runtime_external_midi_snapshot_compact(
     snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
 ) -> String {
     format!(
-        " external_midi={:?}/{:?} provider={} devices={} endpoints={}/{}/{}/{} routes={}/{}",
+        " external_midi={:?}/{:?}/{:?}/{:?}/{:?}/{:?} provider={} devices={} endpoints={}/{}/{}/{} routes={}/{}",
         snapshot.discovery_state,
         snapshot.graph_state,
+        snapshot.live_ownership.ownership_posture,
+        snapshot.live_ownership.attach_continuity,
+        snapshot.live_ownership.backend_parity,
+        snapshot.live_ownership.guarded_parity_outcome,
         snapshot.provider_name,
         snapshot.device_count,
         snapshot.endpoint_count,
@@ -17740,6 +18577,14 @@ fn format_runtime_external_midi_snapshot_multiline(
         concat!(
             "\nexternal_midi_discovery_state={:?}",
             "\nexternal_midi_graph_state={:?}",
+            "\nexternal_midi_live_ownership_posture={:?}",
+            "\nexternal_midi_attach_continuity={:?}",
+            "\nexternal_midi_backend_parity={:?}",
+            "\nexternal_midi_guarded_parity_outcome={:?}",
+            "\nexternal_midi_backend_identity={:?}",
+            "\nexternal_midi_device_loss_count={}",
+            "\nexternal_midi_restart_attempt_count={}",
+            "\nexternal_midi_restart_failure_count={}",
             "\nexternal_midi_provider_name={}",
             "\nexternal_midi_device_count={}",
             "\nexternal_midi_endpoint_count={}",
@@ -17752,6 +18597,14 @@ fn format_runtime_external_midi_snapshot_multiline(
         ),
         snapshot.discovery_state,
         snapshot.graph_state,
+        snapshot.live_ownership.ownership_posture,
+        snapshot.live_ownership.attach_continuity,
+        snapshot.live_ownership.backend_parity,
+        snapshot.live_ownership.guarded_parity_outcome,
+        snapshot.live_ownership.backend_identity,
+        snapshot.live_ownership.device_loss_count,
+        snapshot.live_ownership.restart_attempt_count,
+        snapshot.live_ownership.restart_failure_count,
         snapshot.provider_name,
         snapshot.device_count,
         snapshot.endpoint_count,
@@ -20392,6 +21245,35 @@ fn json_runtime_external_midi_endpoint_descriptor(
     )
 }
 
+fn json_runtime_external_midi_live_ownership_summary(
+    summary: &RuntimeExternalMidiLiveOwnershipSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"ownership_posture\":{},",
+            "\"attach_continuity\":{},",
+            "\"backend_parity\":{},",
+            "\"guarded_parity_outcome\":{},",
+            "\"backend_identity\":{},",
+            "\"device_loss_count\":{},",
+            "\"restart_attempt_count\":{},",
+            "\"restart_failure_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", summary.ownership_posture)),
+        json_string(&format!("{:?}", summary.attach_continuity)),
+        json_string(&format!("{:?}", summary.backend_parity)),
+        json_string(&format!("{:?}", summary.guarded_parity_outcome)),
+        json_string(&format!("{:?}", summary.backend_identity)),
+        summary.device_loss_count,
+        summary.restart_attempt_count,
+        summary.restart_failure_count,
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
 fn json_runtime_external_midi_snapshot(
     snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
 ) -> String {
@@ -20400,6 +21282,7 @@ fn json_runtime_external_midi_snapshot(
             "{{",
             "\"discovery_state\":{},",
             "\"graph_state\":{},",
+            "\"live_ownership\":{},",
             "\"provider_name\":{},",
             "\"device_count\":{},",
             "\"endpoint_count\":{},",
@@ -20415,6 +21298,7 @@ fn json_runtime_external_midi_snapshot(
         ),
         json_string(&format!("{:?}", snapshot.discovery_state)),
         json_string(&format!("{:?}", snapshot.graph_state)),
+        json_runtime_external_midi_live_ownership_summary(&snapshot.live_ownership),
         json_option_string(Some(snapshot.provider_name.as_str())),
         snapshot.device_count,
         snapshot.endpoint_count,
@@ -21629,6 +22513,7 @@ fn json_runtime_transform_artifact_snapshot(snapshot: &RuntimeTransformArtifactS
             "\"reusable_clip_count\":{},",
             "\"requires_render_clip_count\":{},",
             "\"guarded_reuse_clip_count\":{},",
+            "\"transform_persistence\":{},",
             "\"clips\":{},",
             "\"summary\":{}",
             "}}"
@@ -21643,6 +22528,7 @@ fn json_runtime_transform_artifact_snapshot(snapshot: &RuntimeTransformArtifactS
         snapshot.reusable_clip_count,
         snapshot.requires_render_clip_count,
         snapshot.guarded_reuse_clip_count,
+        json_runtime_transform_persistence_summary(&snapshot.transform_persistence),
         format!(
             "[{}]",
             snapshot
@@ -21653,6 +22539,41 @@ fn json_runtime_transform_artifact_snapshot(snapshot: &RuntimeTransformArtifactS
                 .join(",")
         ),
         json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_transform_persistence_summary(
+    summary: &RuntimeTransformPersistenceSummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"persistence_posture\":{},",
+            "\"retention_policy_class\":{},",
+            "\"retention_authority\":{},",
+            "\"retention_outcome\":{},",
+            "\"cache_placement_posture\":{},",
+            "\"cache_placement_authority\":{},",
+            "\"cache_placement_outcome\":{},",
+            "\"cache_root_path\":{},",
+            "\"persistent_clip_count\":{},",
+            "\"guarded_persistence_clip_count\":{},",
+            "\"invalidated_persistence_clip_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", summary.persistence_posture)),
+        json_string(&format!("{:?}", summary.retention_policy_class)),
+        json_string(&format!("{:?}", summary.retention_authority)),
+        json_string(&format!("{:?}", summary.retention_outcome)),
+        json_string(&format!("{:?}", summary.cache_placement_posture)),
+        json_string(&format!("{:?}", summary.cache_placement_authority)),
+        json_string(&format!("{:?}", summary.cache_placement_outcome)),
+        json_option_string(Some(summary.cache_root_path.as_str())),
+        summary.persistent_clip_count,
+        summary.guarded_persistence_clip_count,
+        summary.invalidated_persistence_clip_count,
+        json_option_string(Some(summary.summary.as_str())),
     )
 }
 
@@ -21704,6 +22625,8 @@ fn json_runtime_preview_transform_service_snapshot(
             "\"stretch_aligned_clip_count\":{},",
             "\"artifact_backed_clip_count\":{},",
             "\"fallback_clip_count\":{},",
+            "\"preview_device_policy\":{},",
+            "\"preview_workflow\":{},",
             "\"clips\":{},",
             "\"summary\":{}",
             "}}"
@@ -21719,6 +22642,8 @@ fn json_runtime_preview_transform_service_snapshot(
         snapshot.stretch_aligned_clip_count,
         snapshot.artifact_backed_clip_count,
         snapshot.fallback_clip_count,
+        json_runtime_preview_device_policy_summary(&snapshot.preview_device_policy),
+        json_runtime_preview_workflow_summary(&snapshot.preview_workflow),
         format!(
             "[{}]",
             snapshot
@@ -21729,6 +22654,70 @@ fn json_runtime_preview_transform_service_snapshot(
                 .join(",")
         ),
         json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_preview_device_policy_summary(
+    summary: &RuntimePreviewDevicePolicySummary,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"routing_posture\":{},",
+            "\"audition_sink_class\":{},",
+            "\"audition_sink_authority\":{},",
+            "\"low_latency_device_policy_class\":{},",
+            "\"low_latency_device_policy_outcome\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", summary.routing_posture)),
+        json_string(&format!("{:?}", summary.audition_sink_class)),
+        json_string(&format!("{:?}", summary.audition_sink_authority)),
+        json_string(&format!("{:?}", summary.low_latency_device_policy_class)),
+        json_string(&format!("{:?}", summary.low_latency_device_policy_outcome)),
+        json_option_string(Some(summary.summary.as_str())),
+    )
+}
+
+fn json_runtime_preview_workflow_summary(summary: &RuntimePreviewWorkflowSummary) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"queue_posture\":{},",
+            "\"queue_class\":{},",
+            "\"queue_outcome\":{},",
+            "\"audition_posture\":{},",
+            "\"audition_authority\":{},",
+            "\"audition_continuity_outcome\":{},",
+            "\"transform_scheduling_posture\":{},",
+            "\"transform_scheduling_authority\":{},",
+            "\"transform_scheduling_outcome\":{},",
+            "\"queued_preview_request_count\":{},",
+            "\"previewable_asset_count\":{},",
+            "\"active_audition_clip_count\":{},",
+            "\"pending_transform_clip_count\":{},",
+            "\"ready_transform_clip_count\":{},",
+            "\"fallback_transform_clip_count\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", summary.queue_posture)),
+        json_string(&format!("{:?}", summary.queue_class)),
+        json_string(&format!("{:?}", summary.queue_outcome)),
+        json_string(&format!("{:?}", summary.audition_posture)),
+        json_string(&format!("{:?}", summary.audition_authority)),
+        json_string(&format!("{:?}", summary.audition_continuity_outcome)),
+        json_string(&format!("{:?}", summary.transform_scheduling_posture)),
+        json_string(&format!("{:?}", summary.transform_scheduling_authority)),
+        json_string(&format!("{:?}", summary.transform_scheduling_outcome)),
+        summary.queued_preview_request_count,
+        summary.previewable_asset_count,
+        summary.active_audition_clip_count,
+        summary.pending_transform_clip_count,
+        summary.ready_transform_clip_count,
+        summary.fallback_transform_clip_count,
+        json_option_string(Some(summary.summary.as_str())),
     )
 }
 
@@ -27503,6 +28492,10 @@ mod tests {
         assert_eq!(unavailable.provider_name, "runtime-unavailable");
         assert_eq!(unavailable.device_count, 0);
         assert_eq!(unavailable.endpoint_count, 0);
+        assert_eq!(
+            unavailable.live_ownership.ownership_posture,
+            RuntimeExternalMidiLiveOwnershipPosture::Unavailable
+        );
         assert!(unavailable.devices.is_empty());
         assert!(unavailable.endpoints.is_empty());
         assert!(unavailable.summary.contains("graph=Unavailable"));
@@ -27517,7 +28510,120 @@ mod tests {
         assert_eq!(empty.device_count, 0);
         assert_eq!(empty.endpoint_count, 0);
         assert_eq!(empty.active_route_count, 0);
+        assert_eq!(
+            empty.live_ownership.ownership_posture,
+            RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership
+        );
+        assert_eq!(
+            empty.live_ownership.attach_continuity,
+            RuntimeExternalMidiAttachContinuity::Detached
+        );
         assert!(empty.summary.contains("graph=Empty"));
+    }
+
+    #[test]
+    fn runtime_external_midi_live_ownership_summary_derives_runtime_owned_baselines() {
+        let unavailable = RuntimeExternalMidiEndpointGraphSnapshot::empty("runtime-test")
+            .with_live_ownership_summary(
+                &RuntimeLinuxBackendSessionSnapshot::unavailable(),
+                &RuntimeInterruptionSummary {
+                    active: false,
+                    class: RuntimeInterruptionClass::Steady,
+                    rebindable: false,
+                    recovery_state: RuntimeRecoveryState::Steady,
+                    primary_fault_cause: None,
+                    safe_mode_enabled: false,
+                    deferred_service_class: None,
+                    deferred_service_decision: None,
+                    summary: "steady".into(),
+                },
+            );
+        assert_eq!(
+            unavailable.live_ownership.ownership_posture,
+            RuntimeExternalMidiLiveOwnershipPosture::Unavailable
+        );
+        assert_eq!(
+            unavailable.live_ownership.backend_parity,
+            RuntimeExternalMidiBackendParity::Unavailable
+        );
+
+        let not_linux_host = host_io_summary(
+            RuntimeHostClockFallbackState::Direct,
+            RuntimeHostClockTransitionState::Stable,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        let not_linux = RuntimeExternalMidiEndpointGraphSnapshot::empty("coreaudio-test")
+            .with_live_ownership_summary(
+                &RuntimeLinuxBackendSessionSnapshot::from_host_io(&not_linux_host),
+                &RuntimeInterruptionSummary {
+                    active: false,
+                    class: RuntimeInterruptionClass::Steady,
+                    rebindable: false,
+                    recovery_state: RuntimeRecoveryState::Steady,
+                    primary_fault_cause: None,
+                    safe_mode_enabled: false,
+                    deferred_service_class: None,
+                    deferred_service_decision: None,
+                    summary: "steady".into(),
+                },
+            );
+        assert_eq!(
+            not_linux.live_ownership.ownership_posture,
+            RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership
+        );
+        assert_eq!(
+            not_linux.live_ownership.backend_parity,
+            RuntimeExternalMidiBackendParity::NotLinux
+        );
+        assert_eq!(
+            not_linux.live_ownership.guarded_parity_outcome,
+            RuntimeExternalMidiGuardedParityOutcome::NotLinux
+        );
+
+        let pipewire_host = linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        );
+        let pipewire = RuntimeExternalMidiEndpointGraphSnapshot::empty("pipewire-test")
+            .with_live_ownership_summary(
+                &RuntimeLinuxBackendSessionSnapshot::from_host_io(&pipewire_host),
+                &RuntimeInterruptionSummary {
+                    active: false,
+                    class: RuntimeInterruptionClass::Steady,
+                    rebindable: false,
+                    recovery_state: RuntimeRecoveryState::Steady,
+                    primary_fault_cause: None,
+                    safe_mode_enabled: false,
+                    deferred_service_class: None,
+                    deferred_service_decision: None,
+                    summary: "steady".into(),
+                },
+            );
+        assert_eq!(
+            pipewire.live_ownership.ownership_posture,
+            RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership
+        );
+        assert_eq!(
+            pipewire.live_ownership.attach_continuity,
+            RuntimeExternalMidiAttachContinuity::Detached
+        );
+        assert_eq!(
+            pipewire.live_ownership.backend_parity,
+            RuntimeExternalMidiBackendParity::Guarded
+        );
+        assert_eq!(
+            pipewire.live_ownership.guarded_parity_outcome,
+            RuntimeExternalMidiGuardedParityOutcome::BackendManaged
+        );
     }
 
     #[test]
@@ -27566,6 +28672,8 @@ mod tests {
             &RuntimeExternalMidiEndpointGraphSnapshot {
                 discovery_state: RuntimeExternalMidiDiscoveryState::Enumerated,
                 graph_state: RuntimeExternalMidiGraphState::Stable,
+                live_ownership:
+                    RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
                 provider_name: "control-surface-provider".into(),
                 device_count: 1,
                 endpoint_count: 1,

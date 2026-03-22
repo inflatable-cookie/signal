@@ -1,6 +1,6 @@
 # 062 Preview-Output Routing, Audition Sink, And Low-Latency Device Policy Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-03-21
 Related contracts: `docs/contracts/027-external-io-monitoring-tap-point-and-loopback-measurement-contract.md`, `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/044-control-surface-transport-mapping-and-feedback-contract.md`, `docs/contracts/045-advanced-hardware-extensibility-and-scripting-safe-device-policy-contract.md`, `docs/contracts/049-low-latency-audition-scrub-and-preview-transform-service-contract.md`, `docs/contracts/061-control-surface-scene-mapping-feedback-pages-and-safe-action-graph-contract.md`
@@ -214,6 +214,45 @@ Batch 11.1 freezes the first reusable preview-device contract for Signal:
 
 ## Next Task
 
-Continue `g08.011` with Batch 11.2 by materializing the first runtime-owned
-preview-output routing, audition-sink ownership, and low-latency device-policy
-receipts, then align stable host-edge export to the same bounded model.
+Open `g08.012` with Batch 12.1 by freezing the first runtime-owned preview-
+browser queue, media audition orchestration, and transform-scheduling contract
+on top of the closed preview-device seam.
+
+## Batch 11.2 outcome
+
+Batch 11.2 materializes the first runtime-owned preview-device receipt family
+on the existing preview-transform seam:
+
+- `signal-runtime` now exposes bounded preview-output routing posture,
+  audition-sink class, audition-sink authority, low-latency device-policy
+  class, and device-policy outcome on `RuntimePreviewTransformServiceSnapshot`
+- the same preview-device truth now flows through public runtime surfaces and
+  stable local or server host-edge export without a host-local preview-route
+  or device-picker shell
+- the widened receipt family stays additive on top of the closed preview-
+  transform contract instead of opening a second preview delivery report model
+
+This still keeps richer live hardware negotiation, browser-local routing UX,
+and fuller preview-device selection depth out of scope, but it turns the
+bounded preview-device contract into typed runtime evidence that Batch 11.3
+can now prove at the supervisor boundary.
+
+## Batch 11.3 outcome
+
+Batch 11.3 closes the bounded consumer seam on top of the Batch 11.2 runtime
+receipt family:
+
+- the existing `signal.runtime.preview-transform-boundary` now points at this
+  preview-device contract instead of the narrower preview-transform contract
+  alone
+- the machine-readable supervisor boundary explicitly describes runtime-owned
+  preview-device policy on observation, supervisor, render-preview, and
+  offline-preview surfaces
+- the repo-owned acceptance lane continues to reuse the focused public runtime
+  and stable host-edge proofs, but now closes the preview-route and audition-
+  sink seam without a second preview-device acceptance shell
+
+This leaves fuller live device negotiation, browser-local routing UX, and
+product-specific audition workflow out of scope while making the bounded
+preview-device seam fully consumable through shared runtime, supervisor, and
+host-edge surfaces.
