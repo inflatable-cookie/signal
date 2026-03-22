@@ -82,6 +82,11 @@ enum CliMode {
     DescribePreviewTransformBoundary,
     DescribeIntegratedAcceptanceLane,
     DescribeG07AcceptanceLane,
+    DescribeDeviceWorkflowAcceptanceLane,
+    DescribeLinuxLiveAcceptanceLane,
+    DescribeImmersiveAcceptanceLane,
+    DescribeControlPreviewWorkflowAcceptanceLane,
+    DescribeIntegratedLiveWorkflowAcceptanceLane,
     DescribeG06SoakLane,
     DescribeHostEdgeBoundary,
     DescribeReleaseBoundary,
@@ -264,6 +269,30 @@ const G07_ACCEPTANCE_LANE: &str = "signal.runtime.g07-integrated-acceptance-lane
 const G07_ACCEPTANCE_CONTRACT_PATH: &str =
     "docs/contracts/050-multichannel-linux-time-stretch-and-control-surface-acceptance-contract.md";
 const G07_ACCEPTANCE_TASK: &str = "effigy acceptance:g07-integrated-acceptance-lane";
+const DEVICE_WORKFLOW_ACCEPTANCE_LANE: &str = "signal.runtime.device-workflow-acceptance-lane";
+const DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/066-cross-backend-device-protocol-and-live-workflow-acceptance-contract.md";
+const DEVICE_WORKFLOW_ACCEPTANCE_TASK: &str = "effigy acceptance:device-workflow-acceptance-lane";
+const LINUX_LIVE_ACCEPTANCE_LANE: &str = "signal.runtime.linux-live-acceptance-lane";
+const LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/067-live-linux-backend-acceptance-and-failure-injection-contract.md";
+const LINUX_LIVE_ACCEPTANCE_TASK: &str = "effigy acceptance:linux-live-acceptance-lane";
+const IMMERSIVE_ACCEPTANCE_LANE: &str = "signal.runtime.immersive-acceptance-lane";
+const IMMERSIVE_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/068-immersive-render-and-monitoring-acceptance-contract.md";
+const IMMERSIVE_ACCEPTANCE_TASK: &str = "effigy acceptance:immersive-acceptance-lane";
+const CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE: &str =
+    "signal.runtime.control-preview-workflow-acceptance-lane";
+const CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/069-control-surface-and-preview-workflow-acceptance-contract.md";
+const CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:control-preview-workflow-acceptance-lane";
+const INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE: &str =
+    "signal.runtime.integrated-live-ownership-and-workflow-acceptance-lane";
+const INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH: &str =
+    "docs/contracts/070-integrated-live-ownership-and-workflow-acceptance-contract.md";
+const INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:integrated-live-ownership-and-workflow-acceptance-lane";
 const G06_SOAK_LANE: &str = "signal.g06.long-session-soak-lane";
 const G06_SOAK_CONTRACT_PATH: &str =
     "docs/contracts/031-long-session-soak-promotion-gate-and-loophole-readiness-contract.md";
@@ -369,6 +398,103 @@ const G07_STRETCH_REQUIRED_TASKS: &[&str] = &[
     PREVIEW_TRANSFORM_ACCEPTANCE_TASK,
 ];
 const G07_STRETCH_ADVISORY_TASKS: &[&str] = &[];
+const DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[
+    EXTERNAL_MIDI_ACCEPTANCE_TASK,
+    CONTROLLER_EXPRESSION_ACCEPTANCE_TASK,
+    CONTROL_SURFACE_ACCEPTANCE_TASK,
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+];
+const DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[];
+const DEVICE_WORKFLOW_LIVE_PROTOCOL_REQUIRED_TASKS: &[&str] = &[
+    EXTERNAL_MIDI_ACCEPTANCE_TASK,
+    CONTROLLER_EXPRESSION_ACCEPTANCE_TASK,
+];
+const DEVICE_WORKFLOW_LIVE_PROTOCOL_ADVISORY_TASKS: &[&str] = &[];
+const DEVICE_WORKFLOW_CONTROL_REQUIRED_TASKS: &[&str] = &[
+    CONTROL_SURFACE_ACCEPTANCE_TASK,
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+];
+const DEVICE_WORKFLOW_CONTROL_ADVISORY_TASKS: &[&str] = &[];
+const DEVICE_WORKFLOW_HOST_EDGE_REQUIRED_TASKS: &[&str] = &[
+    EXTERNAL_MIDI_ACCEPTANCE_TASK,
+    CONTROL_SURFACE_ACCEPTANCE_TASK,
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+];
+const DEVICE_WORKFLOW_HOST_EDGE_ADVISORY_TASKS: &[&str] = &[];
+const LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[
+    LINUX_LIVE_OWNERSHIP_ACCEPTANCE_TASK,
+    JACK_COORDINATION_ACCEPTANCE_TASK,
+    PIPEWIRE_ALSA_PARITY_ACCEPTANCE_TASK,
+    LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK,
+];
+const LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[];
+const LINUX_LIVE_OWNERSHIP_REQUIRED_TASKS: &[&str] = &[
+    LINUX_LIVE_OWNERSHIP_ACCEPTANCE_TASK,
+    LINUX_BACKEND_CLOCK_TOPOLOGY_ACCEPTANCE_TASK,
+];
+const LINUX_LIVE_OWNERSHIP_ADVISORY_TASKS: &[&str] = &[];
+const LINUX_LIVE_BACKEND_PROTOCOL_REQUIRED_TASKS: &[&str] = &[
+    JACK_COORDINATION_ACCEPTANCE_TASK,
+    PIPEWIRE_ALSA_PARITY_ACCEPTANCE_TASK,
+];
+const LINUX_LIVE_BACKEND_PROTOCOL_ADVISORY_TASKS: &[&str] = &[];
+const LINUX_LIVE_HOST_EDGE_REQUIRED_TASKS: &[&str] = &[
+    LINUX_LIVE_OWNERSHIP_ACCEPTANCE_TASK,
+    JACK_COORDINATION_ACCEPTANCE_TASK,
+    PIPEWIRE_ALSA_PARITY_ACCEPTANCE_TASK,
+];
+const LINUX_LIVE_HOST_EDGE_ADVISORY_TASKS: &[&str] = &[];
+const IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[SPATIAL_ACCEPTANCE_TASK];
+const IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[];
+const IMMERSIVE_RENDER_REQUIRED_TASKS: &[&str] = &[SPATIAL_ACCEPTANCE_TASK];
+const IMMERSIVE_RENDER_ADVISORY_TASKS: &[&str] = &[];
+const IMMERSIVE_MONITORING_REQUIRED_TASKS: &[&str] = &[SPATIAL_ACCEPTANCE_TASK];
+const IMMERSIVE_MONITORING_ADVISORY_TASKS: &[&str] = &[];
+const IMMERSIVE_HOST_EDGE_REQUIRED_TASKS: &[&str] = &[SPATIAL_ACCEPTANCE_TASK];
+const IMMERSIVE_HOST_EDGE_ADVISORY_TASKS: &[&str] = &[];
+const CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+    PREVIEW_TRANSFORM_ACCEPTANCE_TASK,
+];
+const CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[];
+const CONTROL_WORKFLOW_REQUIRED_TASKS: &[&str] = &[ADVANCED_HARDWARE_ACCEPTANCE_TASK];
+const CONTROL_WORKFLOW_ADVISORY_TASKS: &[&str] = &[];
+const PREVIEW_WORKFLOW_REQUIRED_TASKS: &[&str] = &[PREVIEW_TRANSFORM_ACCEPTANCE_TASK];
+const PREVIEW_WORKFLOW_ADVISORY_TASKS: &[&str] = &[];
+const CONTROL_PREVIEW_HOST_EDGE_REQUIRED_TASKS: &[&str] = &[
+    ADVANCED_HARDWARE_ACCEPTANCE_TASK,
+    PREVIEW_TRANSFORM_ACCEPTANCE_TASK,
+];
+const CONTROL_PREVIEW_HOST_EDGE_ADVISORY_TASKS: &[&str] = &[];
+const INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS: &[&str] = &[
+    LINUX_LIVE_ACCEPTANCE_TASK,
+    DEVICE_WORKFLOW_ACCEPTANCE_TASK,
+    IMMERSIVE_ACCEPTANCE_TASK,
+    CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+];
+const INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS: &[&str] = &[];
+const INTEGRATED_LIVE_AND_DEVICE_REQUIRED_TASKS: &[&str] =
+    &[LINUX_LIVE_ACCEPTANCE_TASK, DEVICE_WORKFLOW_ACCEPTANCE_TASK];
+const INTEGRATED_LIVE_AND_DEVICE_ADVISORY_TASKS: &[&str] = &[];
+const INTEGRATED_IMMERSIVE_AND_PREVIEW_REQUIRED_TASKS: &[&str] = &[
+    IMMERSIVE_ACCEPTANCE_TASK,
+    CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+];
+const INTEGRATED_IMMERSIVE_AND_PREVIEW_ADVISORY_TASKS: &[&str] = &[];
+const INTEGRATED_CROSS_SURFACE_REQUIRED_TASKS: &[&str] = &[
+    LINUX_LIVE_ACCEPTANCE_TASK,
+    DEVICE_WORKFLOW_ACCEPTANCE_TASK,
+    IMMERSIVE_ACCEPTANCE_TASK,
+    CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+];
+const INTEGRATED_CROSS_SURFACE_ADVISORY_TASKS: &[&str] = &[];
+const INTEGRATED_GROUPED_EXPORT_REQUIRED_TASKS: &[&str] = &[
+    LINUX_LIVE_ACCEPTANCE_TASK,
+    DEVICE_WORKFLOW_ACCEPTANCE_TASK,
+    IMMERSIVE_ACCEPTANCE_TASK,
+    CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+];
+const INTEGRATED_GROUPED_EXPORT_ADVISORY_TASKS: &[&str] = &[];
 const HOST_EDGE_BOUNDARY: &str = "signal.host.edge.boundary";
 const HOST_EDGE_CONTRACT_PATH: &str =
     "docs/contracts/009-shared-host-convenience-api-and-consumer-edge-contract.md";
@@ -390,16 +516,20 @@ const DOWNSTREAM_AUTOMATION_COMBINED_TASK: &str = "effigy acceptance:downstream-
 const DOWNSTREAM_FAIL_GATES: &str = "signal.downstream.fail-gates";
 const DOWNSTREAM_FAIL_GATE_TASK: &str = "effigy acceptance:downstream-gate";
 const GENERATION_CLOSEOUT: &str = "signal.generation.closeout";
-const GENERATION_CLOSEOUT_GENERATION: &str = "g07";
-const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g07-closeout";
+const GENERATION_CLOSEOUT_GENERATION: &str = "g08";
+const GENERATION_CLOSEOUT_TASK: &str = "effigy acceptance:g08-closeout";
 const GENERATION_CLOSEOUT_CONTRACT_PATH: &str =
-    "docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md";
+    "docs/contracts/071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md";
 const GENERATION_CLOSEOUT_ROADMAP_PATH: &str =
-    "docs/roadmaps/g07/020-generation-closeout-and-loophole-feature-readiness-gate.md";
-const G08_README_PATH: &str = "docs/roadmaps/g08/README.md";
-const GENERATION_CLOSEOUT_GATE_STATUS: &str = "closed-promoted-g08";
-const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "promoted-g08-active";
-const GENERATION_CLOSEOUT_PROMOTION_DECISION: &str = "promote-g08";
+    "docs/roadmaps/g08/020-generation-closeout-and-downstream-workflow-readiness-gate.md";
+const GENERATION_CLOSEOUT_BACKLOG_PATH: &str =
+    "docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md";
+const G08_INTEGRATED_ACCEPTANCE_LANE_COMMAND: &str =
+    "cargo run -p signal-supervisor-tools -- --describe-integrated-live-workflow-acceptance-lane --format=json";
+const GENERATION_CLOSEOUT_NEXT_QUEUE_PATH: &str = GENERATION_CLOSEOUT_BACKLOG_PATH;
+const GENERATION_CLOSEOUT_GATE_STATUS: &str = "complete";
+const GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS: &str = "backlog";
+const GENERATION_CLOSEOUT_PROMOTION_DECISION: &str = "close-g08-and-handoff-to-post-g08-backlog";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ConformanceMatrixEntryKind {
@@ -1531,7 +1661,7 @@ impl OutputFormat {
 
 fn print_usage() {
     eprintln!(
-        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-lv2-boundary|--describe-cross-adapter-parity-boundary|--describe-linux-plugin-parity-boundary|--describe-linux-audio-backend-boundary|--describe-linux-live-ownership-boundary|--describe-jack-coordination-boundary|--describe-pipewire-alsa-parity-boundary|--describe-linux-backend-clock-topology-boundary|--describe-external-midi-boundary|--describe-generic-event-boundary|--describe-controller-expression-boundary|--describe-control-surface-boundary|--describe-advanced-hardware-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-multichannel-boundary|--describe-multi-bus-boundary|--describe-sidechain-boundary|--describe-complex-io-boundary|--describe-spatial-boundary|--describe-stretch-boundary|--describe-marker-analysis-boundary|--describe-transform-artifact-boundary|--describe-preview-transform-boundary|--describe-integrated-acceptance-lane|--describe-g07-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
+        "usage: signal-supervisor-tools [--format text|json] [--include-payload] [--describe-export|--describe-conformance-matrix|--describe-interruption-boundary|--describe-fault-diagnostic-boundary|--describe-critical-path-boundary|--describe-block-timing-boundary|--describe-deferred-work-policy-boundary|--describe-recording-continuity-boundary|--describe-offline-render-continuity-boundary|--describe-plugin-continuity-boundary|--describe-vst3-boundary|--describe-au-boundary|--describe-lv2-boundary|--describe-cross-adapter-parity-boundary|--describe-linux-plugin-parity-boundary|--describe-linux-audio-backend-boundary|--describe-linux-live-ownership-boundary|--describe-jack-coordination-boundary|--describe-pipewire-alsa-parity-boundary|--describe-linux-backend-clock-topology-boundary|--describe-external-midi-boundary|--describe-generic-event-boundary|--describe-controller-expression-boundary|--describe-control-surface-boundary|--describe-advanced-hardware-boundary|--describe-recall-portability-boundary|--describe-device-supervision-boundary|--describe-clock-topology-boundary|--describe-external-io-boundary|--describe-media-service-boundary|--describe-analysis-metadata-boundary|--describe-multichannel-boundary|--describe-multi-bus-boundary|--describe-sidechain-boundary|--describe-complex-io-boundary|--describe-spatial-boundary|--describe-stretch-boundary|--describe-marker-analysis-boundary|--describe-transform-artifact-boundary|--describe-preview-transform-boundary|--describe-integrated-acceptance-lane|--describe-g07-acceptance-lane|--describe-device-workflow-acceptance-lane|--describe-linux-live-acceptance-lane|--describe-immersive-acceptance-lane|--describe-control-preview-workflow-acceptance-lane|--describe-integrated-live-workflow-acceptance-lane|--describe-g06-soak-lane|--describe-host-edge-boundary|--describe-release-boundary|--describe-packaging-manifest|--describe-downstream-automation|--describe-downstream-fail-gates|--describe-generation-closeout] <local|server> <default|timeout|crash|heartbeat|soak|mixed>"
     );
 }
 
@@ -5024,6 +5154,321 @@ fn g07_acceptance_validation_steps() -> &'static [IntegratedAcceptanceValidation
     ]
 }
 
+fn device_workflow_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "live-endpoint-ownership-and-protocol-continuity",
+            title: "Live Endpoint Ownership And Protocol Continuity",
+            required_tasks: DEVICE_WORKFLOW_LIVE_PROTOCOL_REQUIRED_TASKS,
+            advisory_tasks: DEVICE_WORKFLOW_LIVE_PROTOCOL_ADVISORY_TASKS,
+            rationale:
+                "Keeps live endpoint graph, ownership, parity, and controller-expression truth on one required protocol lane instead of letting backend-local endpoint policy define the shared proof surface.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "control-surface-and-advanced-hardware-workflow",
+            title: "Control-Surface And Advanced Hardware Workflow",
+            required_tasks: DEVICE_WORKFLOW_CONTROL_REQUIRED_TASKS,
+            advisory_tasks: DEVICE_WORKFLOW_CONTROL_ADVISORY_TASKS,
+            rationale:
+                "Requires bounded control-surface, advanced feedback, scene-mapping, and safe-action workflow posture together rather than treating device workflow as optional host-private glue.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "cross-backend-host-edge-coherence",
+            title: "Cross-Backend Host-Edge Coherence",
+            required_tasks: DEVICE_WORKFLOW_HOST_EDGE_REQUIRED_TASKS,
+            advisory_tasks: DEVICE_WORKFLOW_HOST_EDGE_ADVISORY_TASKS,
+            rationale:
+                "Pins the shared lane to public runtime, supervisor, and both stable host edges so one backend or one host path cannot define a special-case workflow story.",
+        },
+    ]
+}
+
+fn device_workflow_acceptance_validation_steps() -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_device_workflow_acceptance_evidence",
+            rationale:
+                "Proves one repo-owned supervisor export carries external MIDI live ownership, controller-expression, control-surface, and advanced-hardware receipts together instead of reducing the lane to isolated boundary-local proofs.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools device_workflow_acceptance_lane_json_reports_required_and_deferred_policy",
+            rationale:
+                "Keeps the machine-readable device workflow acceptance descriptor aligned with the frozen required, advisory, and deferred policy.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-device-workflow-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the grouped device workflow acceptance lane without reading contract prose or Effigy internals.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: DEVICE_WORKFLOW_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded device workflow acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist of isolated boundary proofs.",
+        },
+    ]
+}
+
+fn linux_live_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "live-ownership-and-guarded-continuity",
+            title: "Live Ownership And Guarded Continuity",
+            required_tasks: LINUX_LIVE_OWNERSHIP_REQUIRED_TASKS,
+            advisory_tasks: LINUX_LIVE_OWNERSHIP_ADVISORY_TASKS,
+            rationale:
+                "Keeps live Linux ownership, guarded continuity, and clock-topology impact on one required lane instead of letting backend-local recovery policy define the shared proof surface.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "backend-native-coordination-and-parity",
+            title: "Backend-Native Coordination And Parity",
+            required_tasks: LINUX_LIVE_BACKEND_PROTOCOL_REQUIRED_TASKS,
+            advisory_tasks: LINUX_LIVE_BACKEND_PROTOCOL_ADVISORY_TASKS,
+            rationale:
+                "Requires JACK coordination and PipeWire/ALSA parity truth together rather than treating backend-native coordination as optional daemon-local depth.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "cross-backend-host-edge-coherence",
+            title: "Cross-Backend Host-Edge Coherence",
+            required_tasks: LINUX_LIVE_HOST_EDGE_REQUIRED_TASKS,
+            advisory_tasks: LINUX_LIVE_HOST_EDGE_ADVISORY_TASKS,
+            rationale:
+                "Pins the shared lane to public runtime, supervisor, and both stable host edges so one backend or one host path cannot define a special-case Linux live story.",
+        },
+    ]
+}
+
+fn linux_live_acceptance_validation_steps() -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_linux_live_acceptance_evidence",
+            rationale:
+                "Proves one supervisor export can carry Linux live ownership, JACK coordination, PipeWire/ALSA parity, and clock-topology truth together instead of only listing separate boundary-local descriptors.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools linux_live_acceptance_lane_json_reports_required_and_deferred_policy",
+            rationale:
+                "Keeps the machine-readable Linux live acceptance descriptor aligned with the frozen required, advisory, and deferred policy.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-linux-live-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the grouped Linux live acceptance lane without reading contract prose or Effigy internals.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: LINUX_LIVE_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded Linux live acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist of isolated boundary proofs.",
+        },
+    ]
+}
+
+fn immersive_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "room-policy-and-render-continuity",
+            title: "Room-Policy And Render Continuity",
+            required_tasks: IMMERSIVE_RENDER_REQUIRED_TASKS,
+            advisory_tasks: IMMERSIVE_RENDER_ADVISORY_TASKS,
+            rationale:
+                "Keeps immersive room-policy, object-rendering fallback, and renderer-export posture on one required lane instead of letting renderer-private capability shells define the shared proof surface.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "deployment-fold-down-and-monitoring-coherence",
+            title: "Deployment Fold-Down And Monitoring Coherence",
+            required_tasks: IMMERSIVE_MONITORING_REQUIRED_TASKS,
+            advisory_tasks: IMMERSIVE_MONITORING_ADVISORY_TASKS,
+            rationale:
+                "Requires deployment-aware, fold-down, and fallback-monitoring truth to stay on the same shared seam instead of drifting into product-local monitoring workflows.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "cross-surface-immersive-coherence",
+            title: "Cross-Surface Immersive Coherence",
+            required_tasks: IMMERSIVE_HOST_EDGE_REQUIRED_TASKS,
+            advisory_tasks: IMMERSIVE_HOST_EDGE_ADVISORY_TASKS,
+            rationale:
+                "Pins the shared lane to public runtime, supervisor, and both stable host edges so one renderer posture or one host path cannot define a special-case immersive story.",
+        },
+    ]
+}
+
+fn immersive_acceptance_validation_steps() -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_immersive_acceptance_evidence",
+            rationale:
+                "Proves one supervisor export can carry immersive room-policy, deployment-monitoring, and renderer-export truth together instead of only listing a grouped descriptor over the broader spatial seam.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools immersive_acceptance_lane_json_reports_required_and_deferred_policy",
+            rationale:
+                "Keeps the machine-readable immersive acceptance descriptor aligned with the frozen required, advisory, and deferred policy.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-immersive-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the grouped immersive render and monitoring acceptance lane without reading contract prose or Effigy internals.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: IMMERSIVE_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded immersive render and monitoring acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist of isolated spatial proofs.",
+        },
+    ]
+}
+
+fn control_preview_workflow_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "control-surface-workflow-coherence",
+            title: "Control-Surface Workflow Coherence",
+            required_tasks: CONTROL_WORKFLOW_REQUIRED_TASKS,
+            advisory_tasks: CONTROL_WORKFLOW_ADVISORY_TASKS,
+            rationale:
+                "Keeps scene-mapping, feedback-page, safe-action, and bounded advanced-feedback workflow truth on one required lane instead of letting device-private page logic define the shared proof surface.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "preview-workflow-coherence",
+            title: "Preview Workflow Coherence",
+            required_tasks: PREVIEW_WORKFLOW_REQUIRED_TASKS,
+            advisory_tasks: PREVIEW_WORKFLOW_ADVISORY_TASKS,
+            rationale:
+                "Requires preview-device policy, queue posture, audition continuity, and transform-scheduling truth to stay on the same shared seam instead of drifting into browser-local queue policy.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "cross-surface-workflow-coherence",
+            title: "Cross-Surface Workflow Coherence",
+            required_tasks: CONTROL_PREVIEW_HOST_EDGE_REQUIRED_TASKS,
+            advisory_tasks: CONTROL_PREVIEW_HOST_EDGE_ADVISORY_TASKS,
+            rationale:
+                "Pins the shared lane to public runtime, supervisor, and both stable host edges so one device path or one preview path cannot define a special-case workflow story.",
+        },
+    ]
+}
+
+fn control_preview_workflow_acceptance_validation_steps(
+) -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_control_preview_workflow_acceptance_evidence",
+            rationale:
+                "Proves one supervisor export can carry control-surface workflow, advanced-feedback, preview-device policy, and preview-workflow truth together instead of only listing a grouped descriptor over isolated boundary seams.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools control_preview_workflow_acceptance_lane_json_reports_required_and_deferred_policy",
+            rationale:
+                "Keeps the machine-readable control and preview workflow acceptance descriptor aligned with the frozen required, advisory, and deferred policy.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-control-preview-workflow-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the grouped control-surface and preview workflow acceptance lane without reading contract prose or Effigy internals.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded control-surface and preview workflow acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist of isolated workflow proofs.",
+        },
+    ]
+}
+
+fn integrated_live_workflow_acceptance_families() -> &'static [IntegratedAcceptanceFamily] {
+    &[
+        IntegratedAcceptanceFamily {
+            id: "linux-live-and-device-workflow-continuity",
+            title: "Linux Live And Device Workflow Continuity",
+            required_tasks: INTEGRATED_LIVE_AND_DEVICE_REQUIRED_TASKS,
+            advisory_tasks: INTEGRATED_LIVE_AND_DEVICE_ADVISORY_TASKS,
+            rationale:
+                "Keeps Linux live ownership, backend-native coordination, external MIDI live ownership, and bounded device workflow posture on one required family instead of letting backend-local or device-private glue define the integrated proof surface.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "immersive-and-preview-workflow-continuity",
+            title: "Immersive And Preview Workflow Continuity",
+            required_tasks: INTEGRATED_IMMERSIVE_AND_PREVIEW_REQUIRED_TASKS,
+            advisory_tasks: INTEGRATED_IMMERSIVE_AND_PREVIEW_ADVISORY_TASKS,
+            rationale:
+                "Requires immersive render and monitoring posture to stay coherent with preview-device and preview-workflow truth instead of splitting monitoring and workflow evidence into renderer-private or browser-local lanes.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "cross-surface-integrated-coherence",
+            title: "Cross-Surface Integrated Coherence",
+            required_tasks: INTEGRATED_CROSS_SURFACE_REQUIRED_TASKS,
+            advisory_tasks: INTEGRATED_CROSS_SURFACE_ADVISORY_TASKS,
+            rationale:
+                "Pins the grouped integrated seam to public runtime, supervisor export, and both stable host edges by requiring the already-closed shared lanes together instead of allowing one host path or one family to define a special-case story.",
+        },
+        IntegratedAcceptanceFamily {
+            id: "shared-grouped-integrated-acceptance-export",
+            title: "Shared Grouped Integrated Acceptance Export",
+            required_tasks: INTEGRATED_GROUPED_EXPORT_REQUIRED_TASKS,
+            advisory_tasks: INTEGRATED_GROUPED_EXPORT_ADVISORY_TASKS,
+            rationale:
+                "Requires one repo-owned grouped descriptor and runnable lane to span Linux live, device workflow, immersive, and control-preview acceptance instead of leaving the integrated claim as four unrelated checklists.",
+        },
+    ]
+}
+
+fn integrated_live_workflow_acceptance_validation_steps(
+) -> &'static [IntegratedAcceptanceValidationStep] {
+    &[
+        IntegratedAcceptanceValidationStep {
+            id: "cross-family-export-proof",
+            command:
+                "cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_live_workflow_acceptance_evidence",
+            rationale:
+                "Proves one supervisor export can carry Linux live ownership, device workflow, immersive render and monitoring, and control-preview workflow evidence together instead of leaving the integrated lane as a grouped descriptor over four separate acceptance seams.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools integrated_live_workflow_acceptance_lane_json_reports_required_and_deferred_policy",
+            rationale:
+                "Keeps the machine-readable integrated live-ownership and workflow descriptor aligned with the frozen required, advisory, and deferred policy before the later grouped consumer proof lands.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "lane-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-integrated-live-workflow-acceptance-lane --format=json",
+            rationale:
+                "Lets consumers inspect the grouped integrated acceptance lane without reading contract prose or manually composing the four grouped acceptance descriptors.",
+        },
+        IntegratedAcceptanceValidationStep {
+            id: "required-lane-task",
+            command: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK,
+            rationale:
+                "Proves the bounded integrated live-ownership and workflow acceptance lane is runnable as one repo-owned grouped task instead of a loose checklist of already-closed grouped lanes.",
+        },
+    ]
+}
+
 fn g06_soak_lane_records() -> &'static [G06SoakLaneScenarioRecord] {
     &[
         G06SoakLaneScenarioRecord {
@@ -5431,9 +5876,9 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
     &[
         GenerationCloseoutValidationStep {
             id: "integrated-acceptance-base",
-            command: G07_ACCEPTANCE_TASK,
+            command: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK,
             rationale:
-                "The final g07 closeout gate must build on the already-closed grouped acceptance lane instead of replacing routed, Linux, controller, and stretch evidence with prose-only summary.",
+                "The final g08 closeout gate must build on the already-closed integrated live-ownership and workflow lane instead of replacing Linux live, device workflow, immersive, and preview evidence with prose-only summary.",
         },
         GenerationCloseoutValidationStep {
             id: "closeout-descriptor-proof",
@@ -5447,7 +5892,7 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
             command:
                 "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json",
             rationale:
-                "Consumers and maintainers need one machine-readable g07 closeout record tying together grouped acceptance, required validation, and the final Loophole-facing readiness posture.",
+                "Consumers and maintainers need one machine-readable g08 closeout record tying together grouped acceptance, required validation, and the final bounded downstream workflow readiness verdict.",
         },
         GenerationCloseoutValidationStep {
             id: "repo-validation",
@@ -5460,41 +5905,41 @@ fn generation_closeout_validation_steps() -> &'static [GenerationCloseoutValidat
 
 fn generation_closeout_residual_risks() -> &'static [&'static str] {
     &[
-        "full live Linux backend ownership, richer immersive routing, and deeper vendor-protocol or preview-browser workflow depth remain deferred into g08 instead of blocking g07 closeout",
-        "advisory complex-io and lv2 breadth remain visible next-queue depth rather than required g07 blockers",
-        "the g07 closeout verdict is sufficient to promote g08, but it remains a reusable Signal substrate verdict rather than a Loophole product-launch verdict",
+        "broader repeated-run and environment-specific acceptance depth remain outside the bounded g08 closeout fast path and are now explicit post-g08 backlog work instead of implied follow-up",
+        "product-local controller, browser, immersive, certification, and downstream launch workflows remain deferred instead of becoming implicit g08 closeout requirements",
+        "post-g08 work should open from the recorded backlog item only when maintainers choose to promote stronger rerun depth or broader shared environment matrices into a new active queue",
     ]
 }
 
 fn generation_closeout_next_queue_summary() -> &'static str {
-    "g07 now closes cleanly enough to promote g08. The next queue stays focused on live Linux ownership, richer immersive routing, device protocol depth, and preview workflow substrate instead of reopening bounded g07 seams."
+    "g08 is closed. The next likely queue is recorded as explicit post-g08 backlog work for repeated-run confidence, environment matrices, and stronger shared downstream workflow depth rather than a new active generation."
 }
 
 fn generation_closeout_readiness_areas() -> &'static [GenerationReadinessArea] {
     &[
         GenerationReadinessArea {
-            id: "routing-and-multichannel-feature-surface",
-            status: "sufficient-for-promotion",
+            id: "linux-live-and-guarded-ownership-surface",
+            status: "sufficient-for-closeout",
             rationale:
-                "Closed multichannel, sidechain, multi-bus, complex-I/O, and bounded spatial seams now give Loophole one reusable routing substrate strong enough to stop treating routing depth as a blocker for the next generation.",
+                "Closed Linux live ownership, JACK coordination, PipeWire and ALSA parity, and bounded integrated acceptance now give Signal one reusable live backend substrate strong enough to close g08 without widening into distro-specific or daemon-specific certification matrices.",
         },
         GenerationReadinessArea {
-            id: "linux-native-runtime-breadth",
-            status: "sufficient-for-promotion",
+            id: "immersive-render-and-monitoring-surface",
+            status: "sufficient-for-closeout",
             rationale:
-                "Closed LV2 baseline, Linux plugin parity, backend portability, and Linux clock-topology seams now give Signal bounded Linux-native evidence strong enough to move the next queue into live-ownership depth.",
+                "Closed immersive room-policy, deployment-monitoring, renderer-export, and grouped immersive acceptance now give Signal bounded immersive evidence strong enough to close g08 without expanding into renderer-vendor or product-console depth.",
         },
         GenerationReadinessArea {
-            id: "controller-and-hardware-substrate",
-            status: "sufficient-for-promotion",
+            id: "device-protocol-and-workflow-surface",
+            status: "sufficient-for-closeout",
             rationale:
-                "Closed external MIDI, controller-expression, control-surface, and advanced-hardware seams now give Signal bounded reusable controller evidence without escalating g07 itself into vendor-protocol depth.",
+                "Closed external MIDI, controller-expression, control-surface, advanced hardware, and grouped device workflow acceptance now give Signal bounded device-workflow evidence strong enough to close g08 without promoting vendor-private control workflows into shared runtime policy.",
         },
         GenerationReadinessArea {
-            id: "sample-domain-stretch-and-preview-services",
-            status: "sufficient-for-promotion",
+            id: "preview-and-workflow-service-surface",
+            status: "sufficient-for-closeout",
             rationale:
-                "Closed stretch, marker-analysis, transform-artifact, and preview-transform seams now give Signal bounded sample-domain evidence strong enough to move later interactive workflow depth into a new generation.",
+                "Closed preview-device policy, preview-workflow posture, transform persistence, and grouped control-preview workflow acceptance now give Signal bounded preview-workflow evidence strong enough to close g08 without promoting browser-local queue UX or downstream launch workflow policy.",
         },
     ]
 }
@@ -10639,6 +11084,784 @@ fn print_g07_acceptance_lane(format: OutputFormat) {
     }
 }
 
+fn render_device_workflow_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "device_workflow_acceptance_lane: {DEVICE_WORKFLOW_ACCEPTANCE_LANE}\ncontract_path: {DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {DEVICE_WORKFLOW_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in device_workflow_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in device_workflow_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane groups required external MIDI, controller-expression, control-surface, and advanced-hardware acceptance tasks without claiming exhaustive backend certification",
+        "backend-native patchbay, reservation, session-manager, and richer repeated-run device matrices remain advisory or deferred instead of silently entering the required lane",
+        "broader Linux failure-injection, immersive, preview, and generation-level integrated acceptance still belong to later g08 milestones",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_device_workflow_acceptance_lane_json() -> String {
+    let required_tasks = DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = device_workflow_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = device_workflow_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane groups required external MIDI, controller-expression, control-surface, and advanced-hardware acceptance tasks without claiming exhaustive backend certification",
+        "backend-native patchbay, reservation, session-manager, and richer repeated-run device matrices remain advisory or deferred instead of silently entering the required lane",
+        "broader Linux failure-injection, immersive, preview, and generation-level integrated acceptance still belong to later g08 milestones",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(DEVICE_WORKFLOW_ACCEPTANCE_LANE),
+        json_string(DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH),
+        json_string(DEVICE_WORKFLOW_ACCEPTANCE_TASK),
+        DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        device_workflow_acceptance_families().len(),
+        families,
+        device_workflow_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_device_workflow_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_device_workflow_acceptance_lane_text()),
+        OutputFormat::Json => println!("{}", render_device_workflow_acceptance_lane_json()),
+    }
+}
+
+fn render_linux_live_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "linux_live_acceptance_lane: {LINUX_LIVE_ACCEPTANCE_LANE}\ncontract_path: {LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {LINUX_LIVE_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in linux_live_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in linux_live_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane groups required Linux live ownership, JACK coordination, PipeWire/ALSA parity, and clock-topology acceptance tasks without claiming exhaustive distro or daemon certification",
+        "backend-native daemon policy, session-manager glue, and richer repeated-run Linux recovery matrices remain advisory or deferred instead of silently entering the required lane",
+        "broader immersive, preview, device-workflow, and generation-level integrated acceptance still belong to later g08 milestones",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_linux_live_acceptance_lane_json() -> String {
+    let required_tasks = LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = linux_live_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = linux_live_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane groups required Linux live ownership, JACK coordination, PipeWire/ALSA parity, and clock-topology acceptance tasks without claiming exhaustive distro or daemon certification",
+        "backend-native daemon policy, session-manager glue, and richer repeated-run Linux recovery matrices remain advisory or deferred instead of silently entering the required lane",
+        "broader immersive, preview, device-workflow, and generation-level integrated acceptance still belong to later g08 milestones",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(LINUX_LIVE_ACCEPTANCE_LANE),
+        json_string(LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH),
+        json_string(LINUX_LIVE_ACCEPTANCE_TASK),
+        LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        linux_live_acceptance_families().len(),
+        families,
+        linux_live_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_linux_live_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_linux_live_acceptance_lane_text()),
+        OutputFormat::Json => println!("{}", render_linux_live_acceptance_lane_json()),
+    }
+}
+
+fn render_immersive_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "immersive_acceptance_lane: {IMMERSIVE_ACCEPTANCE_LANE}\ncontract_path: {IMMERSIVE_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {IMMERSIVE_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in immersive_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in immersive_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane groups required room-policy, deployment-monitoring, and renderer-export proof through the existing spatial boundary without claiming exhaustive renderer certification",
+        "renderer-native reruns, richer monitoring-scene variants, and immersive authoring or export-adjacent confidence passes remain advisory or deferred instead of silently entering the required lane",
+        "broader preview, device-workflow, Linux live, and generation-level integrated acceptance still belong to later g08 milestones",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_immersive_acceptance_lane_json() -> String {
+    let required_tasks = IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = immersive_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = immersive_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane groups required room-policy, deployment-monitoring, and renderer-export proof through the existing spatial boundary without claiming exhaustive renderer certification",
+        "renderer-native reruns, richer monitoring-scene variants, and immersive authoring or export-adjacent confidence passes remain advisory or deferred instead of silently entering the required lane",
+        "broader preview, device-workflow, Linux live, and generation-level integrated acceptance still belong to later g08 milestones",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(IMMERSIVE_ACCEPTANCE_LANE),
+        json_string(IMMERSIVE_ACCEPTANCE_CONTRACT_PATH),
+        json_string(IMMERSIVE_ACCEPTANCE_TASK),
+        IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        immersive_acceptance_families().len(),
+        families,
+        immersive_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_immersive_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => println!("{}", render_immersive_acceptance_lane_text()),
+        OutputFormat::Json => println!("{}", render_immersive_acceptance_lane_json()),
+    }
+}
+
+fn render_control_preview_workflow_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "control_preview_workflow_acceptance_lane: {CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE}\ncontract_path: {CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in control_preview_workflow_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in control_preview_workflow_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane groups required advanced-hardware and preview-transform proof without claiming exhaustive device-vendor or browser UX certification",
+        "device-native page, display, motor, haptic, and browser-native queue reruns remain advisory or deferred instead of silently entering the required lane",
+        "cross-family grouped export proof and broader integrated live or immersive acceptance still belong to later g08 batches",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_control_preview_workflow_acceptance_lane_json() -> String {
+    let required_tasks = CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = control_preview_workflow_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = control_preview_workflow_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane groups required advanced-hardware and preview-transform proof without claiming exhaustive device-vendor or browser UX certification",
+        "device-native page, display, motor, haptic, and browser-native queue reruns remain advisory or deferred instead of silently entering the required lane",
+        "cross-family grouped export proof and broader integrated live or immersive acceptance still belong to later g08 batches",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE),
+        json_string(CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH),
+        json_string(CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK),
+        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        control_preview_workflow_acceptance_families().len(),
+        families,
+        control_preview_workflow_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_control_preview_workflow_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => {
+            println!("{}", render_control_preview_workflow_acceptance_lane_text())
+        }
+        OutputFormat::Json => {
+            println!("{}", render_control_preview_workflow_acceptance_lane_json())
+        }
+    }
+}
+
+fn render_integrated_live_workflow_acceptance_lane_text() -> String {
+    let mut rendered = format!(
+        "integrated_live_workflow_acceptance_lane: {INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE}\ncontract_path: {INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH}\nacceptance_task: {INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK}\nrequired_tasks:\n"
+    );
+    for task in INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("advisory_tasks:\n");
+    for task in INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS {
+        rendered.push_str(&format!("- {task}\n"));
+    }
+    rendered.push_str("families:\n");
+    for family in integrated_live_workflow_acceptance_families() {
+        rendered.push_str(&format!(
+            "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
+            family.id, family.title, family.rationale
+        ));
+        for task in family.required_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+        rendered.push_str("  advisory_tasks:\n");
+        for task in family.advisory_tasks {
+            rendered.push_str(&format!("    - {task}\n"));
+        }
+    }
+    rendered.push_str("validation_steps:\n");
+    for step in integrated_live_workflow_acceptance_validation_steps() {
+        rendered.push_str(&format!(
+            "- id: {}\n  command: {}\n  rationale: {}\n",
+            step.id, step.command, step.rationale,
+        ));
+    }
+    rendered.push_str("deferred_scope:\n");
+    for scope in [
+        "the bounded lane groups required Linux live, device workflow, immersive, and control-preview workflow acceptance tasks without claiming repeated-run certification or environment-specific exhaustiveness",
+        "broader repeated-run confidence passes, richer host-profile or environment-specific permutations, and closer-to-closeout reruns remain advisory or deferred instead of silently entering the required lane",
+        "broader environment certification, repeated-run stress matrices, and closeout-adjacent downstream workflow depth remain outside the bounded integrated lane until later closeout work promotes them explicitly",
+    ] {
+        rendered.push_str(&format!("- {scope}\n"));
+    }
+    rendered
+}
+
+fn render_integrated_live_workflow_acceptance_lane_json() -> String {
+    let required_tasks = INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let advisory_tasks = INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS
+        .iter()
+        .map(|task| json_string(task))
+        .collect::<Vec<_>>()
+        .join(",");
+    let families = integrated_live_workflow_acceptance_families()
+        .iter()
+        .map(|family| {
+            let required = family
+                .required_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            let advisory = family
+                .advisory_tasks
+                .iter()
+                .map(|task| json_string(task))
+                .collect::<Vec<_>>()
+                .join(",");
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"title\":{},",
+                    "\"rationale\":{},",
+                    "\"required_tasks\":[{}],",
+                    "\"advisory_tasks\":[{}]",
+                    "}}"
+                ),
+                json_string(family.id),
+                json_string(family.title),
+                json_string(family.rationale),
+                required,
+                advisory,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let validation_steps = integrated_live_workflow_acceptance_validation_steps()
+        .iter()
+        .map(|step| {
+            format!(
+                concat!(
+                    "{{",
+                    "\"id\":{},",
+                    "\"command\":{},",
+                    "\"rationale\":{}",
+                    "}}"
+                ),
+                json_string(step.id),
+                json_string(step.command),
+                json_string(step.rationale),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let deferred_scope = [
+        "the bounded lane groups required Linux live, device workflow, immersive, and control-preview workflow acceptance tasks without claiming repeated-run certification or environment-specific exhaustiveness",
+        "broader repeated-run confidence passes, richer host-profile or environment-specific permutations, and closer-to-closeout reruns remain advisory or deferred instead of silently entering the required lane",
+        "broader environment certification, repeated-run stress matrices, and closeout-adjacent downstream workflow depth remain outside the bounded integrated lane until later closeout work promotes them explicitly",
+    ]
+    .iter()
+    .map(|scope| json_string(scope))
+    .collect::<Vec<_>>()
+    .join(",");
+    format!(
+        concat!(
+            "{{",
+            "\"lane\":{},",
+            "\"contract_path\":{},",
+            "\"acceptance_task\":{},",
+            "\"required_task_count\":{},",
+            "\"required_tasks\":[{}],",
+            "\"advisory_task_count\":{},",
+            "\"advisory_tasks\":[{}],",
+            "\"family_count\":{},",
+            "\"families\":[{}],",
+            "\"validation_step_count\":{},",
+            "\"validation_steps\":[{}],",
+            "\"deferred_scope\":[{}]",
+            "}}"
+        ),
+        json_string(INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE),
+        json_string(INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH),
+        json_string(INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK),
+        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS.len(),
+        required_tasks,
+        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS.len(),
+        advisory_tasks,
+        integrated_live_workflow_acceptance_families().len(),
+        families,
+        integrated_live_workflow_acceptance_validation_steps().len(),
+        validation_steps,
+        deferred_scope,
+    )
+}
+
+fn print_integrated_live_workflow_acceptance_lane(format: OutputFormat) {
+    match format {
+        OutputFormat::Text => {
+            println!("{}", render_integrated_live_workflow_acceptance_lane_text())
+        }
+        OutputFormat::Json => {
+            println!("{}", render_integrated_live_workflow_acceptance_lane_json())
+        }
+    }
+}
+
 fn render_g06_soak_lane_text() -> String {
     let mut rendered = format!(
         "g06_soak_lane: {G06_SOAK_LANE}\ncontract_path: {G06_SOAK_CONTRACT_PATH}\nacceptance_task: {G06_SOAK_ACCEPTANCE_TASK}\nrecords:\n"
@@ -11318,7 +12541,7 @@ fn print_downstream_fail_gates(format: OutputFormat) {
 
 fn render_generation_closeout_text() -> String {
     let mut rendered = format!(
-        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncontract_path: {GENERATION_CLOSEOUT_CONTRACT_PATH}\nroadmap_path: {GENERATION_CLOSEOUT_ROADMAP_PATH}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\npromotion_decision: {GENERATION_CLOSEOUT_PROMOTION_DECISION}\ncloseout_gate_status: {GENERATION_CLOSEOUT_GATE_STATUS}\ng07_acceptance_lane_command: cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json\nnext_queue_path: {G08_README_PATH}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
+        "generation_closeout: {GENERATION_CLOSEOUT}\ngeneration: {GENERATION_CLOSEOUT_GENERATION}\ncontract_path: {GENERATION_CLOSEOUT_CONTRACT_PATH}\nroadmap_path: {GENERATION_CLOSEOUT_ROADMAP_PATH}\ncloseout_task: {GENERATION_CLOSEOUT_TASK}\npromotion_decision: {GENERATION_CLOSEOUT_PROMOTION_DECISION}\ncloseout_gate_status: {GENERATION_CLOSEOUT_GATE_STATUS}\ng08_integrated_acceptance_lane_command: {G08_INTEGRATED_ACCEPTANCE_LANE_COMMAND}\nnext_queue_path: {GENERATION_CLOSEOUT_NEXT_QUEUE_PATH}\nnext_queue_status: {GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS}\nvalidation_steps:\n"
     );
     for step in generation_closeout_validation_steps() {
         rendered.push_str(&format!(
@@ -11326,7 +12549,7 @@ fn render_generation_closeout_text() -> String {
             step.id, step.command, step.rationale,
         ));
     }
-    rendered.push_str("loophole_readiness_areas:\n");
+    rendered.push_str("downstream_workflow_readiness_areas:\n");
     for area in generation_closeout_readiness_areas() {
         rendered.push_str(&format!(
             "- id: {}\n  status: {}\n  rationale: {}\n",
@@ -11396,11 +12619,11 @@ fn render_generation_closeout_json() -> String {
             "\"closeout_task\":{},",
             "\"promotion_decision\":{},",
             "\"closeout_gate_status\":{},",
-            "\"g07_acceptance_lane_command\":{},",
+            "\"g08_integrated_acceptance_lane_command\":{},",
             "\"next_queue_path\":{},",
             "\"next_queue_status\":{},",
             "\"validation_steps\":[{}],",
-            "\"loophole_readiness_areas\":[{}],",
+            "\"downstream_workflow_readiness_areas\":[{}],",
             "\"residual_risks\":[{}],",
             "\"next_queue_summary\":{}",
             "}}"
@@ -11412,10 +12635,8 @@ fn render_generation_closeout_json() -> String {
         json_string(GENERATION_CLOSEOUT_TASK),
         json_string(GENERATION_CLOSEOUT_PROMOTION_DECISION),
         json_string(GENERATION_CLOSEOUT_GATE_STATUS,),
-        json_string(
-            "cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json",
-        ),
-        json_string(G08_README_PATH),
+        json_string(G08_INTEGRATED_ACCEPTANCE_LANE_COMMAND),
+        json_string(GENERATION_CLOSEOUT_NEXT_QUEUE_PATH),
         json_string(GENERATION_CLOSEOUT_NEXT_QUEUE_STATUS),
         validation_steps,
         readiness_areas,
@@ -11583,6 +12804,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
     let mut describe_preview_transform_boundary = false;
     let mut describe_integrated_acceptance_lane = false;
     let mut describe_g07_acceptance_lane = false;
+    let mut describe_device_workflow_acceptance_lane = false;
+    let mut describe_linux_live_acceptance_lane = false;
+    let mut describe_immersive_acceptance_lane = false;
+    let mut describe_control_preview_workflow_acceptance_lane = false;
+    let mut describe_integrated_live_workflow_acceptance_lane = false;
     let mut describe_g06_soak_lane = false;
     let mut describe_host_edge_boundary = false;
     let mut describe_release_boundary = false;
@@ -11773,6 +12999,26 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
             describe_g07_acceptance_lane = true;
             continue;
         }
+        if arg == "--describe-device-workflow-acceptance-lane" {
+            describe_device_workflow_acceptance_lane = true;
+            continue;
+        }
+        if arg == "--describe-linux-live-acceptance-lane" {
+            describe_linux_live_acceptance_lane = true;
+            continue;
+        }
+        if arg == "--describe-immersive-acceptance-lane" {
+            describe_immersive_acceptance_lane = true;
+            continue;
+        }
+        if arg == "--describe-control-preview-workflow-acceptance-lane" {
+            describe_control_preview_workflow_acceptance_lane = true;
+            continue;
+        }
+        if arg == "--describe-integrated-live-workflow-acceptance-lane" {
+            describe_integrated_live_workflow_acceptance_lane = true;
+            continue;
+        }
         if arg == "--describe-g06-soak-lane" {
             describe_g06_soak_lane = true;
             continue;
@@ -11850,6 +13096,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         describe_preview_transform_boundary,
         describe_integrated_acceptance_lane,
         describe_g07_acceptance_lane,
+        describe_device_workflow_acceptance_lane,
+        describe_linux_live_acceptance_lane,
+        describe_immersive_acceptance_lane,
+        describe_control_preview_workflow_acceptance_lane,
+        describe_integrated_live_workflow_acceptance_lane,
         describe_g06_soak_lane,
         describe_host_edge_boundary,
         describe_release_boundary,
@@ -12450,6 +13701,76 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<CliArgs, String>
         });
     }
 
+    if describe_device_workflow_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-device-workflow-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeDeviceWorkflowAcceptanceLane,
+        });
+    }
+
+    if describe_linux_live_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-linux-live-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeLinuxLiveAcceptanceLane,
+        });
+    }
+
+    if describe_immersive_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-immersive-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeImmersiveAcceptanceLane,
+        });
+    }
+
+    if describe_control_preview_workflow_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-control-preview-workflow-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeControlPreviewWorkflowAcceptanceLane,
+        });
+    }
+
+    if describe_integrated_live_workflow_acceptance_lane {
+        if !positional.is_empty() {
+            return Err(
+                "`--describe-integrated-live-workflow-acceptance-lane` does not accept <profile> <scenario> positionals"
+                    .into(),
+            );
+        }
+        return Ok(CliArgs {
+            format,
+            debug,
+            mode: CliMode::DescribeIntegratedLiveWorkflowAcceptanceLane,
+        });
+    }
+
     if describe_g06_soak_lane {
         if !positional.is_empty() {
             return Err(
@@ -12745,6 +14066,26 @@ fn main() {
             print_g07_acceptance_lane(args.format);
             Ok(())
         }
+        CliMode::DescribeDeviceWorkflowAcceptanceLane => {
+            print_device_workflow_acceptance_lane(args.format);
+            Ok(())
+        }
+        CliMode::DescribeLinuxLiveAcceptanceLane => {
+            print_linux_live_acceptance_lane(args.format);
+            Ok(())
+        }
+        CliMode::DescribeImmersiveAcceptanceLane => {
+            print_immersive_acceptance_lane(args.format);
+            Ok(())
+        }
+        CliMode::DescribeControlPreviewWorkflowAcceptanceLane => {
+            print_control_preview_workflow_acceptance_lane(args.format);
+            Ok(())
+        }
+        CliMode::DescribeIntegratedLiveWorkflowAcceptanceLane => {
+            print_integrated_live_workflow_acceptance_lane(args.format);
+            Ok(())
+        }
         CliMode::DescribeG06SoakLane => {
             print_g06_soak_lane(args.format);
             Ok(())
@@ -12794,13 +14135,15 @@ mod tests {
         render_block_timing_boundary_text, render_clock_topology_boundary_json,
         render_clock_topology_boundary_text, render_complex_io_boundary_json,
         render_complex_io_boundary_text, render_conformance_matrix_json,
-        render_conformance_matrix_text, render_control_surface_boundary_json,
+        render_conformance_matrix_text, render_control_preview_workflow_acceptance_lane_json,
+        render_control_preview_workflow_acceptance_lane_text, render_control_surface_boundary_json,
         render_control_surface_boundary_text, render_controller_expression_boundary_json,
         render_controller_expression_boundary_text, render_critical_path_boundary_json,
         render_critical_path_boundary_text, render_cross_adapter_parity_boundary_json,
         render_cross_adapter_parity_boundary_text, render_deferred_work_policy_boundary_json,
         render_deferred_work_policy_boundary_text, render_device_supervision_boundary_json,
-        render_device_supervision_boundary_text, render_downstream_automation_json,
+        render_device_supervision_boundary_text, render_device_workflow_acceptance_lane_json,
+        render_device_workflow_acceptance_lane_text, render_downstream_automation_json,
         render_downstream_automation_text, render_downstream_fail_gates_json,
         render_downstream_fail_gates_text, render_export_description_json,
         render_export_description_text, render_external_io_boundary_json,
@@ -12811,16 +14154,20 @@ mod tests {
         render_g07_acceptance_lane_text, render_generation_closeout_json,
         render_generation_closeout_text, render_generic_event_boundary_json,
         render_generic_event_boundary_text, render_host_edge_boundary_json,
-        render_host_edge_boundary_text, render_integrated_acceptance_lane_json,
-        render_integrated_acceptance_lane_text, render_interruption_boundary_json,
+        render_host_edge_boundary_text, render_immersive_acceptance_lane_json,
+        render_immersive_acceptance_lane_text, render_integrated_acceptance_lane_json,
+        render_integrated_acceptance_lane_text,
+        render_integrated_live_workflow_acceptance_lane_json,
+        render_integrated_live_workflow_acceptance_lane_text, render_interruption_boundary_json,
         render_interruption_boundary_text, render_jack_coordination_boundary_json,
         render_jack_coordination_boundary_text, render_linux_audio_backend_boundary_json,
         render_linux_audio_backend_boundary_text,
         render_linux_backend_clock_topology_boundary_json,
-        render_linux_backend_clock_topology_boundary_text,
-        render_linux_live_ownership_boundary_json, render_linux_live_ownership_boundary_text,
-        render_linux_plugin_parity_boundary_json, render_linux_plugin_parity_boundary_text,
-        render_lv2_boundary_json, render_lv2_boundary_text, render_marker_analysis_boundary_json,
+        render_linux_backend_clock_topology_boundary_text, render_linux_live_acceptance_lane_json,
+        render_linux_live_acceptance_lane_text, render_linux_live_ownership_boundary_json,
+        render_linux_live_ownership_boundary_text, render_linux_plugin_parity_boundary_json,
+        render_linux_plugin_parity_boundary_text, render_lv2_boundary_json,
+        render_lv2_boundary_text, render_marker_analysis_boundary_json,
         render_marker_analysis_boundary_text, render_media_service_boundary_json,
         render_media_service_boundary_text, render_multi_bus_boundary_json,
         render_multi_bus_boundary_text, render_multichannel_boundary_json,
@@ -12839,6 +14186,7 @@ mod tests {
         render_vst3_boundary_json, render_vst3_boundary_text, CliArgs, CliMode, ExportDebugOptions,
         HostProfile, HostSummaryDebugSection, OutputFormat, Scenario,
     };
+    use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
     use signal_hardware::{
         AudioSampleFormat, BackendHealth, HardwareBackendIdentity, HardwareDiagnosticsSnapshot,
         HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareRestartPolicy,
@@ -12854,6 +14202,7 @@ mod tests {
         CompletionState, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
         PluginProcessingContract, PluginStateContract, WatchdogTriggerReason,
     };
+    use signal_primitives::{ChannelCount, ChannelLayout};
     use signal_runtime::{
         BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
         HandshakeRequest, HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxSpec,
@@ -13376,6 +14725,71 @@ mod tests {
                 summary: "endpoint Signal Controller Duplex direction=Duplex route=DuplexObserved lifecycle=Active".into(),
             }],
             summary: "discovery=Ready graph=Ready provider=signal-host-local devices=1 endpoints=1 routes=1".into(),
+        }
+    }
+
+    fn sample_control_preview_workflow_external_midi_snapshot(
+    ) -> signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+        let capability = signal_runtime::RuntimeExternalMidiEndpointCapabilitySummary {
+            supports_bounded_midi_input: true,
+            supports_bounded_midi_output: true,
+            supports_transport_clock: true,
+            supports_note_events: true,
+            supports_controller_events: true,
+            supports_note_pressure_expression: true,
+            supports_note_timbre_expression: false,
+            supports_note_tuning_expression: false,
+            supports_mpe: false,
+            midi2_posture: signal_runtime::RuntimeControllerExpressionMidi2Posture::Unsupported,
+            control_surface_guarded: true,
+            summary: "midi-input=true midi-output=true transport-clock=true note-events=true controller-events=true pressure=true timbre=false tuning=false mpe=false midi2=Unsupported control-surface=guarded".into(),
+        };
+        signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot {
+            discovery_state: signal_runtime::RuntimeExternalMidiDiscoveryState::Enumerated,
+            graph_state: signal_runtime::RuntimeExternalMidiGraphState::Stable,
+            live_ownership:
+                signal_runtime::RuntimeExternalMidiLiveOwnershipSummary::detached_without_backend_context(),
+            provider_name: "public-control-preview-workflow".into(),
+            device_count: 1,
+            endpoint_count: 2,
+            input_endpoint_count: 1,
+            output_endpoint_count: 1,
+            duplex_endpoint_count: 1,
+            active_route_count: 1,
+            guarded_route_count: 1,
+            devices: vec![signal_runtime::RuntimeExternalMidiDeviceDescriptor {
+                device_id: "device:control-preview-workflow:1".into(),
+                device_name: "Control Preview Workflow Surface".into(),
+                lifecycle_state:
+                    signal_runtime::RuntimeExternalMidiDeviceLifecycleState::Discovered,
+                endpoint_count: 2,
+                summary: "device=Control Preview Workflow Surface endpoints=2".into(),
+            }],
+            endpoints: vec![
+                signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                    endpoint_id: "endpoint:control-preview-workflow:input".into(),
+                    endpoint_name: "Control Preview Workflow Input".into(),
+                    device_id: "device:control-preview-workflow:1".into(),
+                    direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Input,
+                    lifecycle_state:
+                        signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                    route_state: signal_runtime::RuntimeExternalMidiRouteState::InputObserved,
+                    capability: capability.clone(),
+                    summary: "input".into(),
+                },
+                signal_runtime::RuntimeExternalMidiEndpointDescriptor {
+                    endpoint_id: "endpoint:control-preview-workflow:output".into(),
+                    endpoint_name: "Control Preview Workflow Output".into(),
+                    device_id: "device:control-preview-workflow:1".into(),
+                    direction: signal_runtime::RuntimeExternalMidiEndpointDirection::Output,
+                    lifecycle_state:
+                        signal_runtime::RuntimeExternalMidiEndpointLifecycleState::Active,
+                    route_state: signal_runtime::RuntimeExternalMidiRouteState::OutputObserved,
+                    capability,
+                    summary: "output".into(),
+                },
+            ],
+            summary: "provider=public-control-preview-workflow state=Stable devices=1 endpoints=2 routes=1 guarded-routes=1".into(),
         }
     }
 
@@ -14240,6 +15654,81 @@ mod tests {
     }
 
     #[test]
+    fn parse_args_supports_describe_device_workflow_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-device-workflow-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeDeviceWorkflowAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_linux_live_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-linux-live-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeLinuxLiveAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_immersive_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-immersive-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeImmersiveAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_control_preview_workflow_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-control-preview-workflow-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeControlPreviewWorkflowAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
+    fn parse_args_supports_describe_integrated_live_workflow_acceptance_lane_mode() {
+        assert_eq!(
+            parse_args([
+                "--format=json".into(),
+                "--describe-integrated-live-workflow-acceptance-lane".into()
+            ]),
+            Ok(CliArgs {
+                format: OutputFormat::Json,
+                debug: ExportDebugOptions { payload: false },
+                mode: CliMode::DescribeIntegratedLiveWorkflowAcceptanceLane,
+            })
+        );
+    }
+
+    #[test]
     fn parse_args_supports_describe_g06_soak_lane_mode() {
         assert_eq!(
             parse_args(["--format=json".into(), "--describe-g06-soak-lane".into()]),
@@ -14453,6 +15942,61 @@ mod tests {
     fn parse_args_rejects_positionals_with_describe_g07_acceptance_lane() {
         let error = parse_args([
             "--describe-g07-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_device_workflow_acceptance_lane() {
+        let error = parse_args([
+            "--describe-device-workflow-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_linux_live_acceptance_lane() {
+        let error = parse_args([
+            "--describe-linux-live-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_immersive_acceptance_lane() {
+        let error = parse_args([
+            "--describe-immersive-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_control_preview_workflow_acceptance_lane() {
+        let error = parse_args([
+            "--describe-control-preview-workflow-acceptance-lane".into(),
+            "local".into(),
+            "default".into(),
+        ])
+        .unwrap_err();
+        assert!(error.contains("does not accept"));
+    }
+
+    #[test]
+    fn parse_args_rejects_positionals_with_describe_integrated_live_workflow_acceptance_lane() {
+        let error = parse_args([
+            "--describe-integrated-live-workflow-acceptance-lane".into(),
             "local".into(),
             "default".into(),
         ])
@@ -16190,6 +17734,648 @@ mod tests {
     }
 
     #[test]
+    fn device_workflow_acceptance_lane_text_reports_required_and_deferred_policy() {
+        let rendered = render_device_workflow_acceptance_lane_text();
+        assert!(rendered.contains(
+            "device_workflow_acceptance_lane: signal.runtime.device-workflow-acceptance-lane"
+        ));
+        assert!(
+            rendered.contains("acceptance_task: effigy acceptance:device-workflow-acceptance-lane")
+        );
+        assert!(rendered.contains(
+            "contract_path: docs/contracts/066-cross-backend-device-protocol-and-live-workflow-acceptance-contract.md"
+        ));
+        assert!(rendered.contains("- effigy acceptance:external-midi-boundary"));
+        assert!(rendered.contains("- effigy acceptance:advanced-hardware-boundary"));
+        assert!(rendered.contains("title: Live Endpoint Ownership And Protocol Continuity"));
+        assert!(rendered.contains("title: Control-Surface And Advanced Hardware Workflow"));
+        assert!(rendered.contains("title: Cross-Backend Host-Edge Coherence"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains("id: required-lane-task"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-device-workflow-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn device_workflow_acceptance_lane_json_reports_required_and_deferred_policy() {
+        let rendered = render_device_workflow_acceptance_lane_json();
+        assert!(rendered.contains("\"lane\":\"signal.runtime.device-workflow-acceptance-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/066-cross-backend-device-protocol-and-live-workflow-acceptance-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:device-workflow-acceptance-lane\""));
+        assert!(rendered.contains("\"required_task_count\":4"));
+        assert!(rendered.contains("\"advisory_task_count\":0"));
+        assert!(rendered.contains("\"id\":\"live-endpoint-ownership-and-protocol-continuity\""));
+        assert!(rendered.contains("\"id\":\"control-surface-and-advanced-hardware-workflow\""));
+        assert!(rendered.contains("\"id\":\"cross-backend-host-edge-coherence\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_device_workflow_acceptance_evidence\""
+        ));
+        assert!(rendered.contains("\"id\":\"required-lane-task\""));
+        assert!(
+            rendered.contains("\"command\":\"effigy acceptance:device-workflow-acceptance-lane\"")
+        );
+    }
+
+    #[test]
+    fn linux_live_acceptance_lane_text_reports_required_and_deferred_policy() {
+        let rendered = render_linux_live_acceptance_lane_text();
+        assert!(rendered
+            .contains("linux_live_acceptance_lane: signal.runtime.linux-live-acceptance-lane"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:linux-live-acceptance-lane"));
+        assert!(rendered.contains(
+            "contract_path: docs/contracts/067-live-linux-backend-acceptance-and-failure-injection-contract.md"
+        ));
+        assert!(rendered.contains("- effigy acceptance:linux-live-ownership-boundary"));
+        assert!(rendered.contains("- effigy acceptance:jack-coordination-boundary"));
+        assert!(rendered.contains("- effigy acceptance:pipewire-alsa-parity-boundary"));
+        assert!(rendered.contains("- effigy acceptance:linux-backend-clock-topology-boundary"));
+        assert!(rendered.contains("title: Live Ownership And Guarded Continuity"));
+        assert!(rendered.contains("title: Backend-Native Coordination And Parity"));
+        assert!(rendered.contains("title: Cross-Backend Host-Edge Coherence"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains(
+            "cargo test -p signal-supervisor-tools export_json_carries_cross_family_linux_live_acceptance_evidence"
+        ));
+        assert!(rendered.contains("id: required-lane-task"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-linux-live-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn linux_live_acceptance_lane_json_reports_required_and_deferred_policy() {
+        let rendered = render_linux_live_acceptance_lane_json();
+        assert!(rendered.contains("\"lane\":\"signal.runtime.linux-live-acceptance-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/067-live-linux-backend-acceptance-and-failure-injection-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:linux-live-acceptance-lane\""));
+        assert!(rendered.contains("\"required_task_count\":4"));
+        assert!(rendered.contains("\"advisory_task_count\":0"));
+        assert!(rendered.contains("\"id\":\"live-ownership-and-guarded-continuity\""));
+        assert!(rendered.contains("\"id\":\"backend-native-coordination-and-parity\""));
+        assert!(rendered.contains("\"id\":\"cross-backend-host-edge-coherence\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_linux_live_acceptance_evidence\""
+        ));
+        assert!(rendered.contains("\"id\":\"required-lane-task\""));
+        assert!(rendered.contains("\"command\":\"effigy acceptance:linux-live-acceptance-lane\""));
+    }
+
+    #[test]
+    fn immersive_acceptance_lane_text_reports_required_and_deferred_policy() {
+        let rendered = render_immersive_acceptance_lane_text();
+        assert!(rendered
+            .contains("immersive_acceptance_lane: signal.runtime.immersive-acceptance-lane"));
+        assert!(rendered.contains("acceptance_task: effigy acceptance:immersive-acceptance-lane"));
+        assert!(rendered.contains(
+            "contract_path: docs/contracts/068-immersive-render-and-monitoring-acceptance-contract.md"
+        ));
+        assert!(rendered.contains("- effigy acceptance:spatial-boundary"));
+        assert!(rendered.contains("title: Room-Policy And Render Continuity"));
+        assert!(rendered.contains("title: Deployment Fold-Down And Monitoring Coherence"));
+        assert!(rendered.contains("title: Cross-Surface Immersive Coherence"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains(
+            "cargo test -p signal-supervisor-tools export_json_carries_cross_family_immersive_acceptance_evidence"
+        ));
+        assert!(rendered.contains("id: required-lane-task"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-immersive-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn immersive_acceptance_lane_json_reports_required_and_deferred_policy() {
+        let rendered = render_immersive_acceptance_lane_json();
+        assert!(rendered.contains("\"lane\":\"signal.runtime.immersive-acceptance-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/068-immersive-render-and-monitoring-acceptance-contract.md\""
+        ));
+        assert!(rendered
+            .contains("\"acceptance_task\":\"effigy acceptance:immersive-acceptance-lane\""));
+        assert!(rendered.contains("\"required_task_count\":1"));
+        assert!(rendered.contains("\"advisory_task_count\":0"));
+        assert!(rendered.contains("\"id\":\"room-policy-and-render-continuity\""));
+        assert!(rendered.contains("\"id\":\"deployment-fold-down-and-monitoring-coherence\""));
+        assert!(rendered.contains("\"id\":\"cross-surface-immersive-coherence\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_immersive_acceptance_evidence\""
+        ));
+        assert!(rendered.contains("\"id\":\"required-lane-task\""));
+        assert!(rendered.contains("\"command\":\"effigy acceptance:immersive-acceptance-lane\""));
+    }
+
+    #[test]
+    fn control_preview_workflow_acceptance_lane_text_reports_required_and_deferred_policy() {
+        let rendered = render_control_preview_workflow_acceptance_lane_text();
+        assert!(rendered.contains(
+            "control_preview_workflow_acceptance_lane: signal.runtime.control-preview-workflow-acceptance-lane"
+        ));
+        assert!(rendered.contains(
+            "acceptance_task: effigy acceptance:control-preview-workflow-acceptance-lane"
+        ));
+        assert!(rendered.contains(
+            "contract_path: docs/contracts/069-control-surface-and-preview-workflow-acceptance-contract.md"
+        ));
+        assert!(rendered.contains("- effigy acceptance:advanced-hardware-boundary"));
+        assert!(rendered.contains("- effigy acceptance:preview-transform-boundary"));
+        assert!(rendered.contains("title: Control-Surface Workflow Coherence"));
+        assert!(rendered.contains("title: Preview Workflow Coherence"));
+        assert!(rendered.contains("title: Cross-Surface Workflow Coherence"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains(
+            "cargo test -p signal-supervisor-tools export_json_carries_cross_family_control_preview_workflow_acceptance_evidence"
+        ));
+        assert!(rendered.contains("id: lane-descriptor-proof"));
+        assert!(rendered.contains("id: required-lane-task"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-control-preview-workflow-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn control_preview_workflow_acceptance_lane_json_reports_required_and_deferred_policy() {
+        let rendered = render_control_preview_workflow_acceptance_lane_json();
+        assert!(rendered
+            .contains("\"lane\":\"signal.runtime.control-preview-workflow-acceptance-lane\""));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/069-control-surface-and-preview-workflow-acceptance-contract.md\""
+        ));
+        assert!(rendered.contains(
+            "\"acceptance_task\":\"effigy acceptance:control-preview-workflow-acceptance-lane\""
+        ));
+        assert!(rendered.contains("\"required_task_count\":2"));
+        assert!(rendered.contains("\"advisory_task_count\":0"));
+        assert!(rendered.contains("\"id\":\"control-surface-workflow-coherence\""));
+        assert!(rendered.contains("\"id\":\"preview-workflow-coherence\""));
+        assert!(rendered.contains("\"id\":\"cross-surface-workflow-coherence\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_control_preview_workflow_acceptance_evidence\""
+        ));
+        assert!(rendered.contains("\"id\":\"lane-descriptor-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools control_preview_workflow_acceptance_lane_json_reports_required_and_deferred_policy\""
+        ));
+        assert!(rendered.contains("\"id\":\"required-lane-task\""));
+        assert!(rendered.contains(
+            "\"command\":\"effigy acceptance:control-preview-workflow-acceptance-lane\""
+        ));
+    }
+
+    #[test]
+    fn integrated_live_workflow_acceptance_lane_text_reports_required_and_deferred_policy() {
+        let rendered = render_integrated_live_workflow_acceptance_lane_text();
+        assert!(rendered.contains(
+            "integrated_live_workflow_acceptance_lane: signal.runtime.integrated-live-ownership-and-workflow-acceptance-lane"
+        ));
+        assert!(rendered.contains(
+            "acceptance_task: effigy acceptance:integrated-live-ownership-and-workflow-acceptance-lane"
+        ));
+        assert!(rendered.contains(
+            "contract_path: docs/contracts/070-integrated-live-ownership-and-workflow-acceptance-contract.md"
+        ));
+        assert!(rendered.contains("- effigy acceptance:linux-live-acceptance-lane"));
+        assert!(rendered.contains("- effigy acceptance:device-workflow-acceptance-lane"));
+        assert!(rendered.contains("- effigy acceptance:immersive-acceptance-lane"));
+        assert!(rendered.contains("- effigy acceptance:control-preview-workflow-acceptance-lane"));
+        assert!(rendered.contains("title: Linux Live And Device Workflow Continuity"));
+        assert!(rendered.contains("title: Immersive And Preview Workflow Continuity"));
+        assert!(rendered.contains("title: Cross-Surface Integrated Coherence"));
+        assert!(rendered.contains("title: Shared Grouped Integrated Acceptance Export"));
+        assert!(rendered.contains("id: cross-family-export-proof"));
+        assert!(rendered.contains(
+            "cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_live_workflow_acceptance_evidence"
+        ));
+        assert!(rendered.contains("id: lane-descriptor-proof"));
+        assert!(rendered.contains("id: required-lane-task"));
+        assert!(rendered.contains(
+            "cargo run -p signal-supervisor-tools -- --describe-integrated-live-workflow-acceptance-lane --format=json"
+        ));
+    }
+
+    #[test]
+    fn integrated_live_workflow_acceptance_lane_json_reports_required_and_deferred_policy() {
+        let rendered = render_integrated_live_workflow_acceptance_lane_json();
+        assert!(rendered.contains(
+            "\"lane\":\"signal.runtime.integrated-live-ownership-and-workflow-acceptance-lane\""
+        ));
+        assert!(rendered.contains(
+            "\"contract_path\":\"docs/contracts/070-integrated-live-ownership-and-workflow-acceptance-contract.md\""
+        ));
+        assert!(rendered.contains(
+            "\"acceptance_task\":\"effigy acceptance:integrated-live-ownership-and-workflow-acceptance-lane\""
+        ));
+        assert!(rendered.contains("\"required_task_count\":4"));
+        assert!(rendered.contains("\"advisory_task_count\":0"));
+        assert!(rendered.contains("\"id\":\"linux-live-and-device-workflow-continuity\""));
+        assert!(rendered.contains("\"id\":\"immersive-and-preview-workflow-continuity\""));
+        assert!(rendered.contains("\"id\":\"cross-surface-integrated-coherence\""));
+        assert!(rendered.contains("\"id\":\"shared-grouped-integrated-acceptance-export\""));
+        assert!(rendered.contains("\"id\":\"cross-family-export-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools export_json_carries_cross_family_integrated_live_workflow_acceptance_evidence\""
+        ));
+        assert!(rendered.contains("\"id\":\"lane-descriptor-proof\""));
+        assert!(rendered.contains(
+            "\"command\":\"cargo test -p signal-supervisor-tools integrated_live_workflow_acceptance_lane_json_reports_required_and_deferred_policy\""
+        ));
+        assert!(rendered.contains("\"id\":\"required-lane-task\""));
+        assert!(rendered.contains(
+            "\"command\":\"effigy acceptance:integrated-live-ownership-and-workflow-acceptance-lane\""
+        ));
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_device_workflow_acceptance_evidence() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        let recorder = RuntimeEventRecorder::default();
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let observation = report
+            .observation
+            .clone()
+            .with_host_external_io(&sample_g07_acceptance_host_io())
+            .with_external_midi_snapshot(sample_g07_external_midi_snapshot());
+        let report = RuntimeSupervisorReport {
+            observation,
+            ..report
+        };
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"external_midi_snapshot\":{"));
+        assert!(export.contains("\"live_ownership\":{"));
+        assert!(export.contains("\"backend_parity\":\""));
+        assert!(export.contains("\"attach_continuity\":\""));
+        assert!(export.contains("\"supports_widened_expression\":true"));
+        assert!(export.contains("\"control_surface_snapshot\":{"));
+        assert!(export.contains("\"graph_state\":\"Guarded\""));
+        assert!(export.contains("\"advanced_hardware_snapshot\":{"));
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_linux_live_acceptance_evidence() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        let recorder = RuntimeEventRecorder::default();
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let observation = report
+            .observation
+            .clone()
+            .with_host_external_io(&sample_g07_acceptance_host_io())
+            .with_external_midi_snapshot(sample_control_preview_workflow_external_midi_snapshot());
+        let report = RuntimeSupervisorReport {
+            observation,
+            ..report
+        };
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"linux_backend_session_snapshot\":{"));
+        assert!(export.contains("\"jack_coordination_snapshot\":{"));
+        assert!(export.contains("\"pipewire_alsa_parity_snapshot\":{"));
+        assert!(export.contains("\"transport_posture\":\"Unavailable\""));
+        assert!(export.contains("\"session_role\":\"Unavailable\""));
+        assert!(export.contains("\"clock_domain\":\"SameClock\""));
+        assert!(export.contains("\"linux_clocking_parity\":\"Portable\""));
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_immersive_acceptance_evidence() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 128));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "immersive-acceptance-export".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("immersive acceptance export handshake should succeed");
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 128))
+            .expect("immersive acceptance export configure should succeed");
+        runtime
+            .apply_graph_projection(signal_runtime::GraphProjection {
+                graph_id: "graph:supervisor:immersive-acceptance".into(),
+                node_count: 2,
+                nodes: vec![
+                    signal_runtime::GraphNodeProjection {
+                        node_id: "spatial-stereo".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: -0.2 }],
+                    },
+                    signal_runtime::GraphNodeProjection {
+                        node_id: "spatial-surround".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 20,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: 0.35 }],
+                    },
+                ],
+            })
+            .expect("immersive acceptance graph should apply");
+        runtime
+            .apply_graph_contract_projection(signal_runtime::GraphContractProjection {
+                graph_id: "graph:supervisor:immersive-acceptance".into(),
+                contract_count: 2,
+                nodes: vec![
+                    signal_runtime::GraphNodeContractProjection {
+                        node_id: "spatial-stereo".into(),
+                        buffer_contract: signal_runtime::GraphNodeBufferContractProjection {
+                            input: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:stereo".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..signal_runtime::GraphNodeBufferContractProjection::default()
+                        },
+                        topology: signal_runtime::GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:stereo".into()),
+                            bus_group_id: Some("bus:spatial:stereo".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    signal_runtime::GraphNodeContractProjection {
+                        node_id: "spatial-surround".into(),
+                        buffer_contract: signal_runtime::GraphNodeBufferContractProjection {
+                            input: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "main:surround-in".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            output: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:surround".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            ..signal_runtime::GraphNodeBufferContractProjection::default()
+                        },
+                        topology: signal_runtime::GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:surround".into()),
+                            bus_group_id: Some("bus:spatial:surround".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("immersive acceptance graph contract should apply");
+        runtime
+            .apply_plugin_backed_node_bindings(signal_runtime::PluginBackedNodeBindingProjection {
+                graph_id: "graph:supervisor:immersive-acceptance".into(),
+                bindings: vec![
+                    signal_runtime::PluginBackedNodeBinding {
+                        node_id: "spatial-stereo".into(),
+                        sandbox_id: "sandbox:spatial-stereo".into(),
+                    },
+                    signal_runtime::PluginBackedNodeBinding {
+                        node_id: "spatial-surround".into(),
+                        sandbox_id: "sandbox:spatial-surround".into(),
+                    },
+                ],
+            })
+            .expect("immersive acceptance bindings should apply");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:spatial-stereo",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:spatial-surround",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+
+        let recorder = RuntimeEventRecorder::default();
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"execution_topology_summary\":{"));
+        assert!(export.contains("\"plugin_chain_snapshot\":{"));
+        assert!(export.contains("\"immersive_spatial_node_count\":"));
+        assert!(export.contains("\"fallback_monitoring_scene_spatial_node_count\":"));
+        assert!(export.contains("\"renderer_capability_spatial_node_count\":"));
+        assert!(export.contains("\"immersive_export_spatial_node_count\":"));
+        assert!(export.contains("\"immersive_room_policy\":{"));
+        assert!(export.contains("\"deployment_monitoring\":{"));
+        assert!(export.contains("\"renderer_export\":{"));
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_control_preview_workflow_acceptance_evidence() {
+        let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
+        let recorder = RuntimeEventRecorder::default();
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let observation = report
+            .observation
+            .clone()
+            .with_host_external_io(&sample_g07_acceptance_host_io());
+        let report = RuntimeSupervisorReport {
+            observation,
+            ..report
+        };
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"control_surface_snapshot\":{"));
+        assert!(export.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(export.contains("\"preview_transform_snapshot\":{"));
+        assert!(export.contains("\"preview_device_policy\":{"));
+        assert!(export.contains("\"routing_posture\":\""));
+        assert!(export.contains("\"low_latency_device_policy_outcome\":\""));
+        assert!(export.contains("\"preview_workflow\":{"));
+        assert!(export.contains("\"queue_posture\":\""));
+        assert!(export.contains("\"audition_continuity_outcome\":\""));
+        assert!(export.contains("\"transform_scheduling_outcome\":\""));
+    }
+
+    #[test]
+    fn export_json_carries_cross_family_integrated_live_workflow_acceptance_evidence() {
+        let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 128));
+        runtime
+            .handshake(HandshakeRequest {
+                client_version: "integrated-live-workflow-acceptance-export".into(),
+                anticipative_preferred: true,
+                max_sample_rate_hint: Some(96_000),
+            })
+            .expect("integrated live workflow acceptance handshake should succeed");
+        runtime
+            .configure(RuntimeConfigRequest::new(48_000, 128))
+            .expect("integrated live workflow acceptance configure should succeed");
+        runtime
+            .apply_graph_projection(signal_runtime::GraphProjection {
+                graph_id: "graph:supervisor:integrated-live-workflow".into(),
+                node_count: 2,
+                nodes: vec![
+                    signal_runtime::GraphNodeProjection {
+                        node_id: "spatial-stereo".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 12,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: -0.2 }],
+                    },
+                    signal_runtime::GraphNodeProjection {
+                        node_id: "spatial-surround".into(),
+                        execution_class: GraphNodeExecutionClass::PluginBacked,
+                        latency_samples: 20,
+                        stages: vec![GraphStageSpec::StereoBalance { balance: 0.35 }],
+                    },
+                ],
+            })
+            .expect("integrated live workflow graph should apply");
+        runtime
+            .apply_graph_contract_projection(signal_runtime::GraphContractProjection {
+                graph_id: "graph:supervisor:integrated-live-workflow".into(),
+                contract_count: 2,
+                nodes: vec![
+                    signal_runtime::GraphNodeContractProjection {
+                        node_id: "spatial-stereo".into(),
+                        buffer_contract: signal_runtime::GraphNodeBufferContractProjection {
+                            input: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "main:in".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            output: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:stereo".into(),
+                                channels: ChannelLayout::Stereo,
+                            },
+                            ..signal_runtime::GraphNodeBufferContractProjection::default()
+                        },
+                        topology: signal_runtime::GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:stereo".into()),
+                            bus_group_id: Some("bus:spatial:stereo".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                    signal_runtime::GraphNodeContractProjection {
+                        node_id: "spatial-surround".into(),
+                        buffer_contract: signal_runtime::GraphNodeBufferContractProjection {
+                            input: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "main:surround-in".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            output: signal_runtime::GraphNodeBusEndpointProjection {
+                                bus_id: "bus:spatial:surround".into(),
+                                channels: ChannelLayout::Count(ChannelCount(6)),
+                            },
+                            ..signal_runtime::GraphNodeBufferContractProjection::default()
+                        },
+                        topology: signal_runtime::GraphNodeTopologyProjection {
+                            role: Some(GraphNodeTopologyRole::TrackLane),
+                            track_lane_id: Some("track:surround".into()),
+                            bus_group_id: Some("bus:spatial:surround".into()),
+                            console_group_id: None,
+                            send_return_id: None,
+                        },
+                    },
+                ],
+            })
+            .expect("integrated live workflow graph contract should apply");
+        runtime
+            .apply_plugin_backed_node_bindings(signal_runtime::PluginBackedNodeBindingProjection {
+                graph_id: "graph:supervisor:integrated-live-workflow".into(),
+                bindings: vec![
+                    signal_runtime::PluginBackedNodeBinding {
+                        node_id: "spatial-stereo".into(),
+                        sandbox_id: "sandbox:integrated-live-stereo".into(),
+                    },
+                    signal_runtime::PluginBackedNodeBinding {
+                        node_id: "spatial-surround".into(),
+                        sandbox_id: "sandbox:integrated-live-surround".into(),
+                    },
+                ],
+            })
+            .expect("integrated live workflow bindings should apply");
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:integrated-live-stereo",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+        runtime.record_plugin_sandbox_lifecycle(
+            "sandbox:integrated-live-surround",
+            PluginSandboxLifecycleStage::InstancePrepared,
+            Some(1),
+        );
+
+        let recorder = RuntimeEventRecorder::default();
+        let report = RuntimeSupervisorReport::capture(&runtime, &recorder);
+        let observation = report
+            .observation
+            .clone()
+            .with_host_external_io(&sample_g07_acceptance_host_io())
+            .with_external_midi_snapshot(sample_control_preview_workflow_external_midi_snapshot());
+        let report = RuntimeSupervisorReport {
+            observation,
+            ..report
+        };
+
+        let export = render_supervisor_export_json(
+            HostProfile::Local,
+            Scenario::Mixed,
+            "{}".into(),
+            &report.profiling_receipt(),
+            &report.soak_receipt(),
+            &report,
+        );
+
+        assert!(export.contains("\"linux_backend_session_snapshot\":{"));
+        assert!(export.contains("\"jack_coordination_snapshot\":{"));
+        assert!(export.contains("\"pipewire_alsa_parity_snapshot\":{"));
+        assert!(export.contains("\"external_midi_snapshot\":{"));
+        assert!(export.contains("\"live_ownership\":{"));
+        assert!(export.contains("\"control_surface_snapshot\":{"));
+        assert!(export.contains("\"advanced_hardware_snapshot\":{"));
+        assert!(export.contains("\"preview_transform_snapshot\":{"));
+        assert!(export.contains("\"preview_workflow\":{"));
+        assert!(export.contains("\"execution_topology_summary\":{"));
+        assert!(export.contains("\"plugin_chain_snapshot\":{"));
+        assert!(export.contains("\"immersive_room_policy\":{"));
+        assert!(export.contains("\"deployment_monitoring\":{"));
+        assert!(export.contains("\"renderer_export\":{"));
+    }
+
+    #[test]
     fn export_json_carries_cross_family_g07_acceptance_evidence() {
         let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 256));
         runtime
@@ -16572,52 +18758,57 @@ mod tests {
     fn generation_closeout_text_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_text();
         assert!(rendered.contains("generation_closeout: signal.generation.closeout"));
-        assert!(rendered.contains("generation: g07"));
+        assert!(rendered.contains("generation: g08"));
         assert!(rendered.contains(
-            "contract_path: docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md"
+            "contract_path: docs/contracts/071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md"
         ));
         assert!(rendered.contains(
-            "roadmap_path: docs/roadmaps/g07/020-generation-closeout-and-loophole-feature-readiness-gate.md"
+            "roadmap_path: docs/roadmaps/g08/020-generation-closeout-and-downstream-workflow-readiness-gate.md"
         ));
-        assert!(rendered.contains("closeout_task: effigy acceptance:g07-closeout"));
-        assert!(rendered.contains("promotion_decision: promote-g08"));
-        assert!(rendered.contains("closeout_gate_status: closed-promoted-g08"));
+        assert!(rendered.contains("closeout_task: effigy acceptance:g08-closeout"));
+        assert!(rendered.contains("promotion_decision: close-g08-and-handoff-to-post-g08-backlog"));
+        assert!(rendered.contains("closeout_gate_status: complete"));
         assert!(rendered.contains(
-            "cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json"
+            "cargo run -p signal-supervisor-tools -- --describe-integrated-live-workflow-acceptance-lane --format=json"
         ));
-        assert!(rendered.contains("next_queue_path: docs/roadmaps/g08/README.md"));
-        assert!(rendered.contains("next_queue_status: promoted-g08-active"));
-        assert!(rendered.contains("id: routing-and-multichannel-feature-surface"));
-        assert!(rendered.contains("status: sufficient-for-promotion"));
-        assert!(rendered.contains("g07 now closes cleanly enough to promote g08"));
+        assert!(rendered.contains(
+            "next_queue_path: docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md"
+        ));
+        assert!(rendered.contains("next_queue_status: backlog"));
+        assert!(rendered.contains("id: linux-live-and-guarded-ownership-surface"));
+        assert!(rendered.contains("status: sufficient-for-closeout"));
+        assert!(rendered.contains("g08 is closed."));
     }
 
     #[test]
     fn generation_closeout_json_reports_combined_boundary_and_next_queue() {
         let rendered = render_generation_closeout_json();
         assert!(rendered.contains("\"closeout\":\"signal.generation.closeout\""));
-        assert!(rendered.contains("\"generation\":\"g07\""));
+        assert!(rendered.contains("\"generation\":\"g08\""));
         assert!(rendered.contains(
-            "\"contract_path\":\"docs/contracts/051-generation-closeout-and-loophole-feature-readiness-gate-contract.md\""
+            "\"contract_path\":\"docs/contracts/071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md\""
         ));
         assert!(rendered.contains(
-            "\"roadmap_path\":\"docs/roadmaps/g07/020-generation-closeout-and-loophole-feature-readiness-gate.md\""
+            "\"roadmap_path\":\"docs/roadmaps/g08/020-generation-closeout-and-downstream-workflow-readiness-gate.md\""
         ));
-        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g07-closeout\""));
-        assert!(rendered.contains("\"promotion_decision\":\"promote-g08\""));
-        assert!(rendered.contains("\"closeout_gate_status\":\"closed-promoted-g08\""));
+        assert!(rendered.contains("\"closeout_task\":\"effigy acceptance:g08-closeout\""));
+        assert!(rendered
+            .contains("\"promotion_decision\":\"close-g08-and-handoff-to-post-g08-backlog\""));
+        assert!(rendered.contains("\"closeout_gate_status\":\"complete\""));
         assert!(rendered.contains(
-            "\"g07_acceptance_lane_command\":\"cargo run -p signal-supervisor-tools -- --describe-g07-acceptance-lane --format=json\""
+            "\"g08_integrated_acceptance_lane_command\":\"cargo run -p signal-supervisor-tools -- --describe-integrated-live-workflow-acceptance-lane --format=json\""
         ));
-        assert!(rendered.contains("\"next_queue_path\":\"docs/roadmaps/g08/README.md\""));
-        assert!(rendered.contains("\"next_queue_status\":\"promoted-g08-active\""));
+        assert!(rendered.contains(
+            "\"next_queue_path\":\"docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md\""
+        ));
+        assert!(rendered.contains("\"next_queue_status\":\"backlog\""));
         assert!(rendered.contains("\"id\":\"integrated-acceptance-base\""));
         assert!(rendered.contains("\"id\":\"closeout-descriptor-proof\""));
         assert!(rendered.contains("\"id\":\"generation-closeout-description\""));
-        assert!(rendered.contains("\"id\":\"routing-and-multichannel-feature-surface\""));
-        assert!(rendered.contains("\"status\":\"sufficient-for-promotion\""));
+        assert!(rendered.contains("\"id\":\"linux-live-and-guarded-ownership-surface\""));
+        assert!(rendered.contains("\"status\":\"sufficient-for-closeout\""));
         assert!(rendered.contains(
-            "\"the g07 closeout verdict is sufficient to promote g08, but it remains a reusable Signal substrate verdict rather than a Loophole product-launch verdict\""
+            "\"broader repeated-run and environment-specific acceptance depth remain outside the bounded g08 closeout fast path and are now explicit post-g08 backlog work instead of implied follow-up\""
         ));
     }
 

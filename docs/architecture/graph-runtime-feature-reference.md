@@ -2033,12 +2033,63 @@ shell.
   `docs/contracts/065-live-external-midi-device-ownership-and-backend-parity-contract.md`
   and explicitly describes `live_ownership` on the same runtime-owned seam as
   external MIDI discovery, graph, endpoint, capability, and route truth
-- the repo-owned proof path remains `effigy acceptance:external-midi-boundary`,
-  so runtime, supervisor, and both stable host edges close the bounded live
-  ownership and backend-parity seam without creating a second live-MIDI-only
+
+## g08.016 Batch 16.3 Outcome
+
+- `signal-supervisor-tools` now proves one grouped supervisor export can carry
+  Linux live ownership, JACK coordination, PipeWire/ALSA parity, and
+  clock-topology truth together instead of only listing isolated Linux boundary
+  descriptors
+- the repo-owned proof path remains
+  `effigy acceptance:linux-live-acceptance-lane`, so the bounded Linux live
+  acceptance seam closes through public runtime receipts, supervisor export,
+  and both stable host edges without creating a daemon-local recovery shell
+- `g08.016` is now complete, and the next `g08` queue is immersive render and
+  monitoring acceptance depth
+
+## g08.017 Batch 17.1 Outcome
+
+- `g08` now has a frozen shared immersive render and monitoring acceptance
+  contract in
+  `docs/contracts/068-immersive-render-and-monitoring-acceptance-contract.md`
+  instead of leaving grouped immersive proof fragmented across the existing
+  spatial boundary and the earlier room-policy, deployment-monitoring, and
+  renderer-export contracts
+- the shared acceptance lane is now explicitly required to compose through
+  public runtime receipts, supervisor export, and both stable host edges rather
+  than renderer-private capability shells or product-local monitoring workflow
+  glue
+- grouped descriptor, Effigy lane, and broader advisory versus deferred
+  immersive rerun depth remain intentionally deferred until later `g08.017`
+  batches
+
+## g08.017 Batch 17.2 Outcome
+
+- `signal-supervisor-tools` now exposes one grouped
+  `signal.runtime.immersive-acceptance-lane` descriptor so immersive
+  room-policy, deployment-monitoring, and renderer-export acceptance can be
+  inspected as one repo-owned seam instead of only through the broader spatial
+  boundary
+- the repo-owned proof path is now `effigy acceptance:immersive-acceptance-lane`,
+  which composes the existing spatial boundary proof with the grouped
+  descriptor instead of inventing a second renderer-private or workflow-local
   acceptance shell
-- `g08.014` is now complete, and the next `g08` queue is cross-backend device
-  protocol and live workflow acceptance
+- broader renderer-native reruns and richer monitoring-scene depth remain
+  advisory or deferred until the grouped consumer proof lands in Batch 17.3
+
+## g08.017 Batch 17.3 Outcome
+
+- `signal-supervisor-tools` now proves one grouped supervisor export can carry
+  immersive room-policy, deployment-monitoring, and renderer-export truth
+  together instead of only listing the grouped immersive descriptor over the
+  broader spatial seam
+- the repo-owned proof path remains
+  `effigy acceptance:immersive-acceptance-lane`, so the bounded immersive
+  acceptance seam closes through public runtime receipts, supervisor export,
+  and both stable host edges without creating a renderer-private or
+  workflow-local acceptance shell
+- `g08.017` is now complete, and the next `g08` queue is control-surface and
+  preview workflow acceptance depth
 
 ## g08.015 Batch 15.1 Outcome
 
@@ -2055,11 +2106,192 @@ shell.
   deferred device-depth policy remain explicitly deferred until later
   `g08.015` batches
 
+## g08.015 Batch 15.2 Outcome
+
+- `signal-supervisor-tools` now exposes one machine-readable
+  `signal.runtime.device-workflow-acceptance-lane` descriptor instead of
+  leaving grouped device-workflow proof spread across isolated external MIDI,
+  controller-expression, control-surface, and advanced-hardware boundaries
+- Effigy now owns one runnable
+  `effigy acceptance:device-workflow-acceptance-lane` task that composes the
+  already-closed bounded proof spine into one shared lane while keeping
+  backend-native transport depth explicitly non-blocking
+- `g08.015` now has a real grouped acceptance surface, and the remaining work
+  is the final consumer-proof closure rather than more policy setup
+
+## g08.015 Batch 15.3 Outcome
+
+- one repo-owned supervisor export proof now demonstrates that external MIDI
+  live ownership, controller-expression, control-surface posture, and
+  advanced-hardware workflow receipts are consumable together instead of only
+  through separate boundary-local descriptors
+- `effigy acceptance:device-workflow-acceptance-lane` now composes the
+  grouped descriptor, grouped export proof, and existing boundary proofs into
+  one reusable shared acceptance lane
+- `g08.015` is now complete, and the next `g08` queue is Linux live backend
+  acceptance and failure-injection depth
+
+## g08.016 Batch 16.1 Outcome
+
+- `g08` now has a frozen shared live Linux backend acceptance contract in
+  `docs/contracts/067-live-linux-backend-acceptance-and-failure-injection-contract.md`
+  instead of leaving grouped Linux live-backend proof fragmented across the
+  existing live ownership, JACK coordination, PipeWire/ALSA parity, and
+  clock-topology seams
+- the later shared acceptance lane is now required to compose through public
+  runtime receipts, supervisor export, and both stable host edges rather than
+  daemon-local policy or backend-specific recovery glue
+- grouped descriptor, Effigy acceptance lane, and broader advisory or
+  deferred Linux failure depth remain explicitly deferred until later
+  `g08.016` batches
+
+## g08.016 Batch 16.2 Outcome
+
+- `signal-supervisor-tools` now exposes one machine-readable
+  `signal.runtime.linux-live-acceptance-lane` descriptor instead of leaving
+  grouped Linux live proof spread across isolated live ownership, JACK,
+  PipeWire/ALSA, and clock-topology boundaries
+- Effigy now owns one runnable `effigy acceptance:linux-live-acceptance-lane`
+  task that composes the already-closed bounded proof spine into one shared
+  lane while keeping backend-native daemon and recovery depth explicitly
+  non-blocking
+- `g08.016` now has a real grouped acceptance surface, and the remaining work
+  is the final consumer-proof closure rather than more policy setup
+
+## g08.017 Batch 17.3 Outcome
+
+- one repo-owned supervisor export proof now demonstrates that immersive
+  room-policy, deployment-monitoring, and renderer-export receipts are
+  consumable together instead of only through the grouped descriptor and the
+  broader spatial boundary task
+- `effigy acceptance:immersive-acceptance-lane` now composes the grouped
+  descriptor, grouped export proof, and existing spatial proof spine into one
+  reusable shared acceptance lane
+- `g08.017` is now complete, and the next `g08` queue is shared
+  control-surface and preview workflow acceptance depth
+
+## g08.018 Batch 18.1 Outcome
+
+- `g08` now has a frozen shared control-surface and preview workflow
+  acceptance contract in
+  `docs/contracts/069-control-surface-and-preview-workflow-acceptance-contract.md`
+  instead of leaving grouped workflow proof fragmented across the existing
+  advanced-hardware and preview-transform seams
+- the later shared acceptance lane is now required to compose through public
+  runtime receipts, supervisor export, and both stable host edges rather than
+  device-private page logic or browser-local queue policy
+- grouped descriptor, Effigy acceptance lane, and broader device-native or
+  browser-native workflow depth remain explicitly deferred until later
+  `g08.018` batches
+
+## g08.018 Batch 18.2 Outcome
+
+- `signal-supervisor-tools` now exposes one machine-readable
+  `signal.runtime.control-preview-workflow-acceptance-lane` descriptor instead
+  of leaving grouped controller and preview workflow proof spread across the
+  isolated advanced-hardware and preview-transform boundaries
+- Effigy now owns one runnable
+  `effigy acceptance:control-preview-workflow-acceptance-lane` task that
+  composes the bounded workflow proof spine into one shared lane while keeping
+  broader device-native and browser-native reruns explicitly non-blocking
+- `g08.018` now has a real grouped acceptance surface, and the remaining work
+  is the final consumer-proof closure rather than more policy setup
+
+## g08.018 Batch 18.3 Outcome
+
+- one repo-owned supervisor export proof now demonstrates that control-surface
+  workflow, advanced-feedback, preview-device policy, and preview-workflow
+  receipts are consumable together instead of only through the grouped
+  descriptor and the isolated boundary tasks
+- `effigy acceptance:control-preview-workflow-acceptance-lane` now composes
+  the grouped descriptor, grouped export proof, and the existing advanced-
+  hardware and preview-transform proof spine into one reusable shared
+  acceptance lane
+- `g08.018` is now complete, and the next `g08` queue is integrated
+  live-ownership and workflow acceptance depth
+
+## g08.019 Batch 19.1 Outcome
+
+- `g08` now has a frozen shared integrated live-ownership and workflow
+  acceptance contract in
+  `docs/contracts/070-integrated-live-ownership-and-workflow-acceptance-contract.md`
+  instead of leaving the broader closeout-facing proof split across four
+  parallel grouped lanes only
+- the later integrated lane is now required to compose through public runtime
+  receipts, supervisor export, and both stable host edges rather than
+  backend-local, device-private, browser-local, or renderer-private
+  coordination glue
+- integrated descriptor, Effigy acceptance lane, and broader repeated-run or
+  closeout-adjacent depth remain explicitly deferred until later `g08.019`
+  batches
+
+## g08.019 Batch 19.2 Outcome
+
+- `signal-supervisor-tools` now exposes one machine-readable
+  `signal.runtime.integrated-live-ownership-and-workflow-acceptance-lane`
+  descriptor that groups the closed Linux live, device workflow, immersive,
+  and control-preview workflow acceptance seams instead of leaving integrated
+  acceptance as four parallel grouped descriptors only
+- Effigy now owns one runnable
+  `effigy acceptance:integrated-live-ownership-and-workflow-acceptance-lane`
+  task that composes those grouped lanes into one shared integrated seam
+  while keeping repeated-run and environment-specific depth explicit and
+  non-blocking
+- the next remaining `g08.019` work is the grouped runtime, supervisor, and
+  stable host-edge consumer proof closure rather than more descriptor setup
+
+## g08.020 Batch 20.1 Outcome
+
+- `g08` now has a frozen shared generation closeout and downstream workflow
+  readiness contract in
+  `docs/contracts/071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md`
+  instead of leaving the final `g08` verdict as an untyped review over the
+  completed acceptance lanes only
+- the later closeout gate is now required to compose through the closed
+  `g08.019` integrated acceptance seam and one machine-readable closeout
+  surface instead of product-local or CI-local closeout judgment
+- concrete closeout descriptor, Effigy gate task, and final readiness verdict
+  remain explicitly deferred to later `g08.020` batches
+
+## g08.020 Batch 20.2 Outcome
+
+- `signal-supervisor-tools` now emits one machine-readable `g08` closeout
+  descriptor instead of leaving the final `g08` review as a docs-only or
+  manual summary
+- Effigy now owns one runnable `acceptance:g08-closeout` task that composes
+  the closed `g08.019` integrated acceptance lane, the closeout descriptor
+  proof, the descriptor export, and repo validation into one shared gate
+- the final closeout verdict remains explicitly deferred to Batch 20.3, but
+  the reusable `g08` closeout surface is now real rather than provisional
+
+## g08.020 Batch 20.3 Outcome
+
+- `signal-supervisor-tools` now records the final bounded `g08` closeout
+  verdict, with each readiness area marked sufficient for closeout instead of
+  review-only
+- the shared closeout surface now points at
+  `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
+  as the explicit post-`g08` queue instead of a self-referential placeholder
+- `g08` is now complete, and broader repeated-run or environment-matrix depth
+  is explicit backlog work rather than an implied still-active generation
+
 ## Next Task
 
-Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
-and acceptance lane for the shared cross-backend device protocol and live
-workflow seam while keeping backend-specific depth explicit and non-blocking.
+COMPLETE. `g08` is closed. Promote
+`docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
+only when maintainers choose to open the post-`g08` generation.
+
+## g08.019 Batch 19.3 Outcome
+
+- one repo-owned supervisor export proof now demonstrates that Linux live
+  ownership, device workflow, immersive render and monitoring, and
+  control-preview workflow receipts are consumable together instead of only
+  through the grouped descriptor and grouped Effigy lane
+- `effigy acceptance:integrated-live-ownership-and-workflow-acceptance-lane`
+  now composes the grouped export proof together with the four grouped lanes
+  and the integrated descriptor, closing the shared integrated acceptance seam
+- `g08.019` is now complete, and `g08.020` is the next queue for generation
+  closeout and downstream workflow readiness
 
 ## g08.010 Batch 10.2 Outcome
 

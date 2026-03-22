@@ -1,6 +1,6 @@
 # g08 Milestones
 
-Status: active
+Status: complete
 Updated: 2026-03-22
 
 ## Why this generation matters now
@@ -68,17 +68,17 @@ This generation therefore focuses on the next reusable depth:
   - asset/session transform persistence, retention, and cache placement policy
 - `g08.014` `complete`
   - live external MIDI device ownership and backend parity depth
-- `g08.015` `active`
+- `g08.015` `complete`
   - cross-backend device protocol and live workflow acceptance
-- `g08.016` `todo`
+- `g08.016` `complete`
   - Linux live backend acceptance and failure-injection depth
-- `g08.017` `todo`
+- `g08.017` `complete`
   - immersive render and monitoring acceptance depth
-- `g08.018` `todo`
+- `g08.018` `complete`
   - control-surface and preview workflow acceptance depth
-- `g08.019` `todo`
+- `g08.019` `complete`
   - integrated live-ownership and workflow acceptance depth
-- `g08.020` `todo`
+- `g08.020` `complete`
   - generation closeout and downstream workflow readiness gate
 
 ## Lane structure
@@ -131,6 +131,6 @@ generation is ready for downstream reliance.
 
 ## Next Task
 
-Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
-and acceptance lane for the shared cross-backend device protocol and live
-workflow seam while keeping backend-specific depth explicit and non-blocking.
+COMPLETE. `g08` closed on 2026-03-22 after the integrated acceptance and final
+generation closeout batches landed. The next likely queue is recorded in
+`docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`.

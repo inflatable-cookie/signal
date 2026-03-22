@@ -387,10 +387,12 @@ dependencies = [
 name = "signal-supervisor-tools"
 version = "0.1.0"
 dependencies = [
+ "signal-graph",
  "signal-hardware",
  "signal-host-local",
  "signal-host-server",
  "signal-plugin",
+ "signal-primitives",
  "signal-runtime",
 ]
 

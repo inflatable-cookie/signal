@@ -1,6 +1,6 @@
 # 015 - Cross-Backend Device Protocol And Live Workflow Acceptance
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-03-22
 Depends on: g08.014
@@ -44,22 +44,22 @@ workflows, or ad hoc rerun coverage that shared consumers cannot rely on.
 
 ### Batch 15.2 - Acceptance Descriptor And Task
 
-- [ ] wire the first repo-owned descriptor and acceptance lane for the shared
+- [x] wire the first repo-owned descriptor and acceptance lane for the shared
       device workflow seam
-- [ ] keep optional backend-specific depth explicit rather than folding it into
+- [x] keep optional backend-specific depth explicit rather than folding it into
       the mandatory shared contract
 
 ### Batch 15.3 - Consumer Proof Closure
 
-- [ ] prove the widened device workflow acceptance seam through shared runtime,
+- [x] prove the widened device workflow acceptance seam through shared runtime,
       supervisor, and stable host-edge surfaces
 
 ## Acceptance Criteria
 
-- [ ] cross-backend device protocol and live workflow acceptance are repo-owned
+- [x] cross-backend device protocol and live workflow acceptance are repo-owned
       and inspectable
-- [ ] backend-local or host-local device workflow detail stays bounded and typed
-- [ ] later Linux and integrated acceptance work can build on one explicit
+- [x] backend-local or host-local device workflow detail stays bounded and typed
+- [x] later Linux and integrated acceptance work can build on one explicit
       device-protocol acceptance seam
 
 ## Risks And Mitigations
@@ -89,8 +89,35 @@ workflows, or ad hoc rerun coverage that shared consumers cannot rely on.
   deferred device-depth policy remain explicitly deferred until Batch 15.2
   and Batch 15.3
 
+## Batch 15.2 Outcome
+
+- `signal-supervisor-tools` now exposes one machine-readable
+  `signal.runtime.device-workflow-acceptance-lane` descriptor so the shared
+  device-workflow acceptance seam is inspectable without reading multiple
+  isolated boundary descriptors by hand
+- Effigy now owns one runnable
+  `effigy acceptance:device-workflow-acceptance-lane` task that composes the
+  already-closed external MIDI, controller-expression, control-surface, and
+  advanced-hardware acceptance proofs into one bounded shared lane
+- broader backend-native transport depth and richer rerun matrices remain
+  explicitly advisory or deferred instead of being smuggled into the required
+  path
+
+## Batch 15.3 Outcome
+
+- the shared device-workflow acceptance lane now has one grouped
+  consumer-facing supervisor export proof instead of only a grouped
+  descriptor, so external MIDI live ownership, controller-expression,
+  control-surface posture, and advanced-hardware workflow truth are proven
+  consumable together on one shared path
+- `effigy acceptance:device-workflow-acceptance-lane` now composes the
+  existing boundary proofs, the grouped export proof, and the machine-readable
+  descriptor into one reusable acceptance lane
+- `g08.015` is now complete, and the next `g08` queue is Linux live backend
+  acceptance and failure-injection depth
+
 ## Next Task
 
-Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
-and acceptance lane for the shared cross-backend device protocol and live
-workflow seam while keeping backend-specific depth explicit and non-blocking.
+Continue `g08.016` with Batch 16.1 by freezing the shared live Linux backend
+acceptance and failure-injection contract on top of the closed live ownership,
+JACK coordination, PipeWire/ALSA parity, and clock-topology seams.

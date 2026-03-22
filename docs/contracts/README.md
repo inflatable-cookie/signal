@@ -84,6 +84,11 @@ Use this section for:
 - `064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md`
 - `065-live-external-midi-device-ownership-and-backend-parity-contract.md`
 - `066-cross-backend-device-protocol-and-live-workflow-acceptance-contract.md`
+- `067-live-linux-backend-acceptance-and-failure-injection-contract.md`
+- `068-immersive-render-and-monitoring-acceptance-contract.md`
+- `069-control-surface-and-preview-workflow-acceptance-contract.md`
+- `070-integrated-live-ownership-and-workflow-acceptance-contract.md`
+- `071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md`
 
 ## Rule
 
@@ -92,6 +97,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
-and acceptance lane for the shared cross-backend device protocol and live
-workflow seam while keeping backend-specific depth explicit and non-blocking.
+COMPLETE. `g08` is closed. Promote
+`docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
+only when maintainers choose to open the post-`g08` generation.

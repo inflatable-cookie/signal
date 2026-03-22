@@ -13,5 +13,7 @@ signal-host-server = { path = "../signal-host-server" }
 signal-runtime = { path = "../signal-runtime" }
 
 [dev-dependencies]
+signal-graph = { path = "../signal-graph" }
 signal-hardware = { path = "../signal-hardware" }
 signal-plugin = { path = "../signal-plugin" }
+signal-primitives = { path = "../signal-primitives" }
