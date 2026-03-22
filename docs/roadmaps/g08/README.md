@@ -1,7 +1,7 @@
 # g08 Milestones
 
 Status: active
-Updated: 2026-03-21
+Updated: 2026-03-22
 
 ## Why this generation matters now
 
@@ -131,6 +131,6 @@ generation is ready for downstream reliance.
 
 ## Next Task
 
-Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
-device protocol and live workflow acceptance contract on top of the closed
-live external MIDI ownership seam.
+Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
+and acceptance lane for the shared cross-backend device protocol and live
+workflow seam while keeping backend-specific depth explicit and non-blocking.

@@ -37,9 +37,9 @@ workflows, or ad hoc rerun coverage that shared consumers cannot rely on.
 
 ### Batch 15.1 - Device Workflow Acceptance Contract
 
-- [ ] freeze the shared cross-backend device protocol and live workflow
+- [x] freeze the shared cross-backend device protocol and live workflow
       acceptance contract
-- [ ] define the mandatory runtime, supervisor, and stable host-edge proof
+- [x] define the mandatory runtime, supervisor, and stable host-edge proof
       spine explicitly
 
 ### Batch 15.2 - Acceptance Descriptor And Task
@@ -75,8 +75,22 @@ workflows, or ad hoc rerun coverage that shared consumers cannot rely on.
 - [ ] run focused validation after descriptor/task changes land
 - [ ] record the next milestone step explicitly
 
+## Batch 15.1 Outcome
+
+- `g08` now has a frozen shared device-workflow acceptance contract in
+  `docs/contracts/066-cross-backend-device-protocol-and-live-workflow-acceptance-contract.md`
+  instead of leaving grouped live device protocol proof fragmented across the
+  external MIDI, controller, control-surface, advanced-hardware, and live
+  ownership seams
+- the shared acceptance lane is now required to compose through public
+  runtime receipts, supervisor export, and both stable host edges rather than
+  backend-local endpoint policy or host-private workflow glue
+- the grouped descriptor, Effigy acceptance lane, and broader advisory versus
+  deferred device-depth policy remain explicitly deferred until Batch 15.2
+  and Batch 15.3
+
 ## Next Task
 
-Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
-device protocol and live workflow acceptance contract on top of the closed
-live external MIDI ownership seam.
+Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
+and acceptance lane for the shared cross-backend device protocol and live
+workflow seam while keeping backend-specific depth explicit and non-blocking.

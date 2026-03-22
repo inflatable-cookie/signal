@@ -2040,11 +2040,26 @@ shell.
 - `g08.014` is now complete, and the next `g08` queue is cross-backend device
   protocol and live workflow acceptance
 
+## g08.015 Batch 15.1 Outcome
+
+- `g08` now has a frozen shared cross-backend device protocol and live
+  workflow acceptance contract in
+  `docs/contracts/066-cross-backend-device-protocol-and-live-workflow-acceptance-contract.md`
+  instead of leaving grouped device proof fragmented across the existing
+  external MIDI, controller-expression, control-surface, advanced-hardware,
+  and live ownership seams
+- the later shared acceptance lane is now required to compose through public
+  runtime receipts, supervisor export, and both stable host edges rather than
+  backend-local endpoint policy or host-private workflow glue
+- grouped descriptor, Effigy acceptance lane, and broader advisory or
+  deferred device-depth policy remain explicitly deferred until later
+  `g08.015` batches
+
 ## Next Task
 
-Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
-device protocol and live workflow acceptance contract on top of the closed
-live external MIDI ownership seam.
+Continue `g08.015` with Batch 15.2 by wiring the first repo-owned descriptor
+and acceptance lane for the shared cross-backend device protocol and live
+workflow seam while keeping backend-specific depth explicit and non-blocking.
 
 ## g08.010 Batch 10.2 Outcome
 
