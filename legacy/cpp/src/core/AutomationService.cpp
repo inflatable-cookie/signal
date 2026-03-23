@@ -220,7 +220,8 @@ float AutomationService::getCurrentValue(
     const std::string& targetId,
     const std::string& parameter
 ) const {
-    // Deprecated: Use getParameterValue() after beginBlock() instead
+    // Legacy compatibility entry point. Newer call sites should use
+    // getParameterValue() after beginBlock() publishes the active snapshot.
     std::string key = makeKey(targetId, parameter);
 
     std::lock_guard<std::mutex> lock(_mutex);
@@ -256,7 +257,8 @@ float AutomationService::getParameterValue(
 }
 
 void AutomationService::updateCurrentValues(uint64_t samplePosition) {
-    // Deprecated: Use beginBlock() instead
+    // Legacy compatibility helper retained for older paths. Newer call sites
+    // should use beginBlock() to publish one block-scoped snapshot.
     std::lock_guard<std::mutex> lock(_mutex);
 
     for (auto& pair : _curves) {

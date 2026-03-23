@@ -1,0 +1,216 @@
+use super::*;
+impl RuntimeLv2ExtensionSnapshot {
+    pub fn capture(
+        discovery: &RuntimePluginDiscoverySnapshot,
+        lifecycle: &RuntimePluginLifecycleSnapshot,
+    ) -> Self {
+        let mut records = Vec::new();
+        let mut sandbox_count = 0usize;
+        let mut worker_required_type_count = 0usize;
+        let mut worker_guarded_type_count = 0usize;
+        let mut urid_negotiated_type_count = 0usize;
+        let mut patch_supported_type_count = 0usize;
+        let mut negotiated_type_count = 0usize;
+        let mut guarded_type_count = 0usize;
+        let mut unavailable_type_count = 0usize;
+
+        for record in discovery
+            .discovered_types
+            .iter()
+            .filter(|record| record.format == PluginFormat::Lv2)
+        {
+            let capabilities = record
+                .lv2_extension_capabilities
+                .clone()
+                .unwrap_or_else(RuntimeLv2ExtensionCapabilitySummary::absent);
+            let sandboxes = lifecycle
+                .sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(PluginFormat::Lv2)
+                        && sandbox.plugin_type_id.as_deref() == Some(record.plugin_type_id.as_str())
+                })
+                .collect::<Vec<_>>();
+            let active_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.active || sandbox.active_transport)
+                .count();
+            let faulted_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    matches!(
+                        sandbox.state,
+                        RuntimePluginLifecycleState::Faulted
+                            | RuntimePluginLifecycleState::Quarantined
+                    )
+                })
+                .count();
+            let strongest_lifecycle_state = sandboxes
+                .iter()
+                .max_by_key(|sandbox| runtime_plugin_lifecycle_state_severity(sandbox.state))
+                .map(|sandbox| sandbox.state);
+            let guarded_lifecycle = sandboxes.iter().any(|sandbox| {
+                matches!(
+                    sandbox.state,
+                    RuntimePluginLifecycleState::Degraded | RuntimePluginLifecycleState::Restarting
+                )
+            }) || faulted_sandbox_count > 0;
+            let unavailable_lifecycle = !sandboxes.is_empty()
+                && sandboxes.iter().all(|sandbox| {
+                    matches!(
+                        sandbox.state,
+                        RuntimePluginLifecycleState::Faulted
+                            | RuntimePluginLifecycleState::Quarantined
+                            | RuntimePluginLifecycleState::Stopped
+                    )
+                });
+
+            let worker_posture = match capabilities.worker_capability {
+                RuntimeLv2WorkerCapability::Absent => RuntimeLv2WorkerPosture::WorkerAbsent,
+                RuntimeLv2WorkerCapability::Supported => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerUnavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerGuarded
+                    } else {
+                        RuntimeLv2WorkerPosture::WorkerAvailable
+                    }
+                }
+                RuntimeLv2WorkerCapability::Required => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerUnavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2WorkerPosture::WorkerGuarded
+                    } else {
+                        RuntimeLv2WorkerPosture::WorkerRequiredAvailable
+                    }
+                }
+            };
+            let urid_negotiation_posture = match capabilities.urid_capability {
+                RuntimeLv2UridCapability::NotRequired => {
+                    RuntimeLv2UridNegotiationPosture::NotRequired
+                }
+                RuntimeLv2UridCapability::Supported | RuntimeLv2UridCapability::Required => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2UridNegotiationPosture::Unavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2UridNegotiationPosture::Guarded
+                    } else {
+                        RuntimeLv2UridNegotiationPosture::Negotiated
+                    }
+                }
+            };
+            let patch_exchange_posture = match capabilities.patch_capability {
+                RuntimeLv2PatchCapability::Absent => RuntimeLv2PatchExchangePosture::Absent,
+                RuntimeLv2PatchCapability::Supported => {
+                    if unavailable_lifecycle {
+                        RuntimeLv2PatchExchangePosture::Unavailable
+                    } else if guarded_lifecycle {
+                        RuntimeLv2PatchExchangePosture::Guarded
+                    } else {
+                        RuntimeLv2PatchExchangePosture::Supported
+                    }
+                }
+            };
+            let extension_needed = capabilities.negotiated_extension_count > 0
+                || capabilities.worker_capability != RuntimeLv2WorkerCapability::Absent
+                || capabilities.urid_capability != RuntimeLv2UridCapability::NotRequired
+                || capabilities.patch_capability != RuntimeLv2PatchCapability::Absent;
+            let extension_negotiation_state = if !extension_needed {
+                RuntimeLv2ExtensionNegotiationState::NotRequired
+            } else if unavailable_lifecycle {
+                RuntimeLv2ExtensionNegotiationState::Unavailable
+            } else if matches!(
+                worker_posture,
+                RuntimeLv2WorkerPosture::WorkerGuarded | RuntimeLv2WorkerPosture::WorkerUnavailable
+            ) || matches!(
+                urid_negotiation_posture,
+                RuntimeLv2UridNegotiationPosture::Guarded
+                    | RuntimeLv2UridNegotiationPosture::Unavailable
+            ) || matches!(
+                patch_exchange_posture,
+                RuntimeLv2PatchExchangePosture::Guarded
+                    | RuntimeLv2PatchExchangePosture::Unavailable
+            ) {
+                RuntimeLv2ExtensionNegotiationState::PartiallySatisfied
+            } else {
+                RuntimeLv2ExtensionNegotiationState::Negotiated
+            };
+
+            if capabilities.worker_capability == RuntimeLv2WorkerCapability::Required {
+                worker_required_type_count += 1;
+            }
+            if worker_posture == RuntimeLv2WorkerPosture::WorkerGuarded {
+                worker_guarded_type_count += 1;
+            }
+            if urid_negotiation_posture == RuntimeLv2UridNegotiationPosture::Negotiated {
+                urid_negotiated_type_count += 1;
+            }
+            if patch_exchange_posture == RuntimeLv2PatchExchangePosture::Supported {
+                patch_supported_type_count += 1;
+            }
+            match extension_negotiation_state {
+                RuntimeLv2ExtensionNegotiationState::Negotiated => negotiated_type_count += 1,
+                RuntimeLv2ExtensionNegotiationState::PartiallySatisfied => guarded_type_count += 1,
+                RuntimeLv2ExtensionNegotiationState::Unavailable => unavailable_type_count += 1,
+                RuntimeLv2ExtensionNegotiationState::NotRequired => {}
+            }
+
+            sandbox_count += sandboxes.len();
+            let mut lv2_record = RuntimeLv2ExtensionRecord {
+                plugin_type_id: record.plugin_type_id.clone(),
+                plugin_id: record.plugin_id.clone(),
+                worker_posture,
+                urid_negotiation_posture,
+                patch_exchange_posture,
+                extension_negotiation_state,
+                strongest_lifecycle_state,
+                sandbox_count: sandboxes.len(),
+                active_sandbox_count,
+                faulted_sandbox_count,
+                summary: String::new(),
+            };
+            lv2_record.summary = format!(
+                "plugin_type={} worker={:?} urid={:?} patch={:?} negotiation={:?} sandboxes={}/active={} faulted={} lifecycle={:?}",
+                lv2_record.plugin_type_id,
+                lv2_record.worker_posture,
+                lv2_record.urid_negotiation_posture,
+                lv2_record.patch_exchange_posture,
+                lv2_record.extension_negotiation_state,
+                lv2_record.sandbox_count,
+                lv2_record.active_sandbox_count,
+                lv2_record.faulted_sandbox_count,
+                lv2_record.strongest_lifecycle_state,
+            );
+            records.push(lv2_record);
+        }
+
+        let plugin_type_count = records.len();
+        let mut snapshot = Self {
+            plugin_type_count,
+            sandbox_count,
+            worker_required_type_count,
+            worker_guarded_type_count,
+            urid_negotiated_type_count,
+            patch_supported_type_count,
+            negotiated_type_count,
+            guarded_type_count,
+            unavailable_type_count,
+            records,
+            summary: String::new(),
+        };
+        snapshot.summary = format!(
+            "plugin_types={} sandboxes={} worker_required={} worker_guarded={} urid_negotiated={} patch_supported={} negotiated={} guarded={} unavailable={}",
+            snapshot.plugin_type_count,
+            snapshot.sandbox_count,
+            snapshot.worker_required_type_count,
+            snapshot.worker_guarded_type_count,
+            snapshot.urid_negotiated_type_count,
+            snapshot.patch_supported_type_count,
+            snapshot.negotiated_type_count,
+            snapshot.guarded_type_count,
+            snapshot.unavailable_type_count,
+        );
+        snapshot
+    }
+}

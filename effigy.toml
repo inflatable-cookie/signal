@@ -491,7 +491,7 @@ test = "cargo test --workspace --no-run"
 ]
 "reference:legacy:configure:debug" = "cmake -S legacy/cpp -B legacy/cpp/build"
 "reference:legacy:compile:debug" = "cmake --build legacy/cpp/build --config Debug"
-"audit:god-files" = "python3 ../chorus/meta/tools/check_god_file_audit.py --workspace-root .. --fail-on high"
+"audit:god-files" = "effigy scan god-files --fail-on-findings"
 
 [docs_policy.indexes.vision]
 file = "docs/vision/README.md"

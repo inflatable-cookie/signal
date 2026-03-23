@@ -3815,280 +3815,39 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
 }
 
 #[cfg(test)]
+#[path = "host_test_support.rs"]
+mod host_test_support;
+
+#[cfg(test)]
 mod tests {
-    use super::{server_demo_runtime_assembly, LifecycleRunSummary, ServerRuntimeHost};
+    use super::host_test_support::{
+        assert_runtime_automation_continuity, assert_runtime_automation_values,
+        assert_runtime_plugin_event_snapshot, assert_runtime_sequence_continuity,
+        prepare_server_host_with_lifecycle, prepare_server_host_without_lifecycle,
+        temp_media_fixture_path,
+    };
+    use super::ServerRuntimeHost;
     use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
     use signal_plugin::{CompletionState, PluginFormat, WatchdogTriggerReason};
-    use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
+    use signal_plugin_clap::ClapSandboxLifecycleHarness;
     use signal_primitives::{ChannelCount, ChannelLayout};
     use signal_runtime::{
-        BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
-        CompletionSlotStage, GraphContractProjection, GraphNodeBufferContractProjection,
-        GraphNodeBusEndpointProjection, GraphNodeContractProjection, GraphNodeProjection,
-        GraphNodeTopologyProjection, GraphProjection, HandshakeRequest, HeartbeatCycleStage,
-        LingeringCleanupMode, PluginBackedNodeBinding, PluginBackedNodeBindingProjection,
-        PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
-        PluginScanRequest, RecoveryRestartIntent, RuntimeConfig, RuntimeConfigRequest,
-        RuntimeErrorKind, RuntimeExternalIoDeviceChangeState, RuntimeExternalIoHealthState,
-        RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
-        RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeLifecycleApi,
-        RuntimeMediaAssetRegistration, RuntimeMediaPreviewState, RuntimeObservationApi,
-        RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginParityBand,
-        RuntimeProjectionApi, RuntimeReadiness, RuntimeSupervisorApi, RuntimeSupervisorReport,
-        SandboxOperationFailureStage, SignalRuntime, StopReason, TransportAttachIntent,
+        BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
+        GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
+        GraphNodeContractProjection, GraphNodeProjection, GraphNodeTopologyProjection,
+        GraphProjection, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
+        PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage,
+        PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
+        RuntimeConfig, RuntimeConfigRequest, RuntimeErrorKind, RuntimeExternalIoDeviceChangeState,
+        RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState,
+        RuntimeExternalIoMonitoringState, RuntimeExternalIoMonitoringTapPoint,
+        RuntimeExternalIoPrimaryRole, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
+        RuntimeMediaPreviewState, RuntimeObservationApi, RuntimePluginHostPlatform,
+        RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimeProjectionApi,
+        RuntimeReadiness, RuntimeSupervisorApi, SandboxOperationFailureStage, SignalRuntime,
+        StopReason, TransportAttachIntent,
     };
-    use std::{
-        fs,
-        path::{Path, PathBuf},
-        time::{SystemTime, UNIX_EPOCH},
-    };
-
-    fn assert_runtime_automation_values(
-        supervisor: &RuntimeSupervisorReport,
-        value_events: usize,
-        modulation_events: usize,
-        gesture_begin_events: usize,
-        gesture_end_events: usize,
-        first_value: f32,
-        last_value: f32,
-        last_modulation: f32,
-    ) {
-        let snapshot = &supervisor.observation.automation_snapshot;
-        assert_eq!(snapshot.parameter_id, 4096);
-        assert_eq!(snapshot.value_events, value_events);
-        assert_eq!(snapshot.modulation_events, modulation_events);
-        assert_eq!(snapshot.gesture_begin_events, gesture_begin_events);
-        assert_eq!(snapshot.gesture_end_events, gesture_end_events);
-        assert!(snapshot
-            .first_value
-            .is_some_and(|observed| (observed - first_value).abs() < 1.0e-6));
-        assert!(snapshot
-            .last_value
-            .is_some_and(|observed| (observed - last_value).abs() < 1.0e-6));
-        assert!(snapshot
-            .last_modulation
-            .is_some_and(|observed| (observed - last_modulation).abs() < 1.0e-6));
-    }
-
-    fn assert_runtime_automation_continuity(
-        supervisor: &RuntimeSupervisorReport,
-        first_epoch: u64,
-        last_epoch: u64,
-        epochs: &[u64],
-        lease_rollovers: usize,
-    ) {
-        let snapshot = &supervisor.observation.automation_snapshot;
-        assert_eq!(snapshot.first_epoch, Some(first_epoch));
-        assert_eq!(snapshot.last_epoch, Some(last_epoch));
-        assert_eq!(snapshot.segment_count, epochs.len());
-        assert_eq!(snapshot.segment_epochs, epochs);
-        assert_eq!(snapshot.lease_rollovers, lease_rollovers);
-    }
-
-    fn assert_runtime_plugin_event_snapshot(
-        supervisor: &RuntimeSupervisorReport,
-        first_epoch: u64,
-        last_epoch: u64,
-        epochs: &[u64],
-        lease_rollovers: usize,
-    ) {
-        let snapshot = &supervisor.observation.plugin_event_snapshot;
-        assert!(snapshot.total_events > 0, "{snapshot:?}");
-        assert!(snapshot.note_events > 0, "{snapshot:?}");
-        assert!(snapshot.note_expression_events > 0, "{snapshot:?}");
-        assert!(snapshot.midi_events > 0, "{snapshot:?}");
-        assert!(snapshot.last_generated_event_bytes > 0, "{snapshot:?}");
-        assert_eq!(snapshot.first_epoch, Some(first_epoch));
-        assert_eq!(snapshot.last_epoch, Some(last_epoch));
-        assert_eq!(snapshot.segment_count, epochs.len());
-        assert_eq!(snapshot.segment_epochs, epochs);
-        assert_eq!(snapshot.lease_rollovers, lease_rollovers);
-        assert!(snapshot.last_block_sequence.is_some(), "{snapshot:?}");
-    }
-
-    fn assert_runtime_sequence_continuity(
-        supervisor: &RuntimeSupervisorReport,
-        epochs: &[u64],
-        first_block_sequence: u64,
-        last_block_sequence: u64,
-        sequence_gaps: usize,
-        lease_rollovers: usize,
-    ) {
-        let timeline = &supervisor
-            .observation
-            .timeline_snapshot
-            .block_sequence_continuity;
-        assert_eq!(timeline.segment_count(), epochs.len());
-        assert_eq!(timeline.segment_epochs(), epochs);
-        assert_eq!(timeline.first_block_sequence(), Some(first_block_sequence));
-        assert_eq!(timeline.last_block_sequence(), Some(last_block_sequence));
-        assert_eq!(timeline.sequence_gaps, sequence_gaps);
-        assert_eq!(timeline.lease_rollovers, lease_rollovers);
-    }
-
-    fn temp_media_fixture_path(label: &str) -> PathBuf {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("clock should be monotonic enough for tests")
-            .as_nanos();
-        std::env::temp_dir().join(format!(
-            "signal-host-server-{label}-{}-{unique}.bin",
-            std::process::id()
-        ))
-    }
-
-    fn prepare_server_host_with_lifecycle() -> (
-        ServerRuntimeHost,
-        ClapBlockProtocol,
-        ClapSandboxLifecycleHarness,
-        LifecycleRunSummary,
-    ) {
-        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
-        let mut host = ServerRuntimeHost::new(runtime);
-        let mut runtime_config = RuntimeConfigRequest::new(
-            host.runtime.config().sample_rate.0,
-            host.runtime.config().graph.block_size,
-        );
-        runtime_config.anticipative_enabled = false;
-        host.runtime
-            .handshake(HandshakeRequest {
-                client_version: "signal-host-server".into(),
-                anticipative_preferred: true,
-                max_sample_rate_hint: Some(192_000),
-            })
-            .expect("handshake");
-        host.runtime.configure(runtime_config).expect("configure");
-        let assembly = server_demo_runtime_assembly();
-        host.runtime
-            .apply_graph_projection(assembly.graph.clone())
-            .expect("graph projection");
-
-        let hardware_request = signal_hardware::HardwareConfigRequest::new(
-            host.runtime.config().sample_rate.0,
-            host.runtime.config().graph.block_size,
-            signal_hardware::BackendPolicyTier::Tier0InHost,
-        );
-        host.runtime
-            .apply_hardware_config(hardware_request)
-            .expect("hardware config");
-        host.runtime
-            .set_active_output_device("server:virtual-output");
-        host.set_backend_policy(BackendPolicyOverride {
-            tier: hardware_request.backend_policy,
-        })
-        .expect("backend policy");
-        host.runtime
-            .set_backend_policy_tier(hardware_request.backend_policy);
-        host.start_plugin_scan(PluginScanRequest {
-            roots: vec!["/srv/plugins/clap".into()],
-            formats: vec![PluginFormat::Clap],
-        })
-        .expect("plugin scan");
-        for sandbox in &assembly.plugin_sandboxes {
-            host.ensure_plugin_sandbox(sandbox.spec())
-                .expect("ensure sandbox");
-        }
-        host.runtime
-            .apply_plugin_backed_node_bindings(assembly.plugin_bindings())
-            .expect("plugin bindings");
-        host.runtime
-            .set_active_plugin_sandboxes(assembly.active_plugin_sandbox_count());
-        host.runtime.set_cpu_load_percent(1.2);
-        host.runtime.set_graph_latency_ms(1.1);
-        host.runtime.start().expect("start runtime");
-
-        let protocol = ClapBlockProtocol::new(
-            "plugin:clap:server",
-            "instance:server:default",
-            signal_plugin::PluginIoLayout {
-                audio_inputs: 2,
-                audio_outputs: 2,
-                midi_inputs: 1,
-                midi_outputs: 0,
-            },
-            2048,
-        );
-        let mut lifecycle = ClapSandboxLifecycleHarness::default();
-        let sandbox = assembly.primary_sandbox();
-        let run = host
-            .run_lifecycle(
-                &protocol,
-                sandbox.request.sandbox_id.as_str(),
-                1,
-                &mut lifecycle,
-            )
-            .expect("lifecycle");
-        (host, protocol, lifecycle, run)
-    }
-
-    fn prepare_server_host_without_lifecycle() -> (ServerRuntimeHost, ClapBlockProtocol) {
-        let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
-        let mut host = ServerRuntimeHost::new(runtime);
-        let mut runtime_config = RuntimeConfigRequest::new(
-            host.runtime.config().sample_rate.0,
-            host.runtime.config().graph.block_size,
-        );
-        runtime_config.anticipative_enabled = false;
-        host.runtime
-            .handshake(HandshakeRequest {
-                client_version: "signal-host-server".into(),
-                anticipative_preferred: true,
-                max_sample_rate_hint: Some(192_000),
-            })
-            .expect("handshake");
-        host.runtime.configure(runtime_config).expect("configure");
-        let assembly = server_demo_runtime_assembly();
-        host.runtime
-            .apply_graph_projection(assembly.graph.clone())
-            .expect("graph projection");
-
-        let hardware_request = signal_hardware::HardwareConfigRequest::new(
-            host.runtime.config().sample_rate.0,
-            host.runtime.config().graph.block_size,
-            signal_hardware::BackendPolicyTier::Tier0InHost,
-        );
-        host.runtime
-            .apply_hardware_config(hardware_request)
-            .expect("hardware config");
-        host.runtime
-            .set_active_output_device("server:virtual-output");
-        host.set_backend_policy(BackendPolicyOverride {
-            tier: hardware_request.backend_policy,
-        })
-        .expect("backend policy");
-        host.runtime
-            .set_backend_policy_tier(hardware_request.backend_policy);
-        host.start_plugin_scan(PluginScanRequest {
-            roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
-            formats: vec![PluginFormat::Clap],
-        })
-        .expect("plugin scan");
-        for sandbox in &assembly.plugin_sandboxes {
-            host.ensure_plugin_sandbox(sandbox.spec())
-                .expect("ensure sandbox");
-        }
-        host.runtime
-            .apply_plugin_backed_node_bindings(assembly.plugin_bindings())
-            .expect("plugin bindings");
-        host.runtime
-            .set_active_plugin_sandboxes(assembly.active_plugin_sandbox_count());
-        host.runtime.set_cpu_load_percent(3.2);
-        host.runtime.set_graph_latency_ms(1.1);
-        host.runtime.start().expect("start runtime");
-
-        let protocol = ClapBlockProtocol::new(
-            "plugin:clap:server",
-            "instance:server:default",
-            signal_plugin::PluginIoLayout {
-                audio_inputs: 2,
-                audio_outputs: 2,
-                midi_inputs: 1,
-                midi_outputs: 0,
-            },
-            2048,
-        );
-        (host, protocol)
-    }
+    use std::{fs, path::Path};
 
     #[test]
     fn server_host_rolls_leases_forward_after_timeout() {
