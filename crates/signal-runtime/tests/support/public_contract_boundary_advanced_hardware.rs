@@ -1,0 +1,214 @@
+use signal_runtime::{
+    RuntimeEventRecorder, RuntimeExternalMidiDiscoveryState, RuntimeObservationReport,
+    RuntimeSupervisorReport,
+};
+
+pub fn assert_unavailable_advanced_hardware(unavailable: &RuntimeObservationReport) {
+    assert_eq!(
+        unavailable.advanced_hardware_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Unavailable
+    );
+    assert_eq!(
+        unavailable.advanced_hardware_snapshot.graph_state,
+        signal_runtime::RuntimeAdvancedHardwareGraphState::Unavailable
+    );
+    assert_eq!(
+        unavailable.advanced_hardware_snapshot.provider_name,
+        "runtime-unavailable"
+    );
+    assert_eq!(unavailable.advanced_hardware_snapshot.device_count, 0);
+    assert!(unavailable.advanced_hardware_snapshot.devices.is_empty());
+}
+
+pub fn assert_guarded_advanced_hardware(observation: &RuntimeObservationReport) {
+    assert_eq!(
+        observation.advanced_hardware_snapshot.discovery_state,
+        RuntimeExternalMidiDiscoveryState::Enumerated
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.graph_state,
+        signal_runtime::RuntimeAdvancedHardwareGraphState::Guarded
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.provider_name,
+        "public-advanced-hardware"
+    );
+    assert_eq!(observation.advanced_hardware_snapshot.device_count, 1);
+    assert_eq!(
+        observation.advanced_hardware_snapshot.portable_device_count,
+        0
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.guarded_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .feedback_channel_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .display_transport_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .motor_transport_device_count,
+        0
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .haptic_transport_device_count,
+        0
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .scene_mapping_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .feedback_page_device_count,
+        1
+    );
+    assert_eq!(
+        observation
+            .advanced_hardware_snapshot
+            .safe_action_graph_device_count,
+        1
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].scripting_safe_posture,
+        signal_runtime::RuntimeScriptingSafeDevicePolicyPosture::Guarded
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_channel_posture,
+        signal_runtime::RuntimeGuardedFeedbackChannelPosture::Guarded
+    );
+    assert!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .supports_display_feedback
+    );
+    assert!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .supports_bank_navigation
+    );
+    assert!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .supports_macro_triggers
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].display_transport_posture,
+        signal_runtime::RuntimeDisplayTransportPosture::GuardedDisplay
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].display_content_class,
+        signal_runtime::RuntimeDisplayContentClass::GuardedVendorDisplay
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].motor_transport_posture,
+        signal_runtime::RuntimeMotorTransportPosture::NoMotorTransport
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].haptic_transport_posture,
+        signal_runtime::RuntimeHapticTransportPosture::NoHapticTransport
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_authority,
+        signal_runtime::RuntimeAdvancedControlFeedbackAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_outcome,
+        signal_runtime::RuntimeAdvancedControlFeedbackOutcome::CollapseToGuardedFeedback
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].scene_mapping_posture,
+        signal_runtime::RuntimeSceneMappingPosture::GuardedSceneMapping
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_page_posture,
+        signal_runtime::RuntimeFeedbackPagePosture::GuardedFeedbackPages
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].feedback_page_class,
+        signal_runtime::RuntimeFeedbackPageClass::GuardedVendorPage
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].safe_action_graph_posture,
+        signal_runtime::RuntimeSafeActionGraphPosture::GuardedSafeActionGraph
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].action_authority,
+        signal_runtime::RuntimeControlSurfaceWorkflowAuthority::RuntimeDefault
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0].safe_action_outcome,
+        signal_runtime::RuntimeSafeActionOutcome::CollapseToGuardedAction
+    );
+    assert_eq!(
+        observation.advanced_hardware_snapshot.devices[0]
+            .capability
+            .action_classes,
+        vec![
+            signal_runtime::RuntimeAdvancedHardwareActionClass::DisplayFeedback,
+            signal_runtime::RuntimeAdvancedHardwareActionClass::BankNavigation,
+            signal_runtime::RuntimeAdvancedHardwareActionClass::MacroTrigger,
+            signal_runtime::RuntimeAdvancedHardwareActionClass::DeviceStateObservation,
+        ]
+    );
+}
+
+pub fn assert_advanced_hardware_json(observation: &RuntimeObservationReport) {
+    let observation_json = observation.render_json();
+    assert!(observation_json.contains("\"advanced_hardware_snapshot\":{"));
+    assert!(observation_json.contains("\"graph_state\":\"Guarded\""));
+    assert!(observation_json.contains("\"provider_name\":\"public-advanced-hardware\""));
+    assert!(observation_json.contains("\"feedback_channel_device_count\":1"));
+    assert!(observation_json.contains("\"display_transport_device_count\":1"));
+    assert!(observation_json.contains("\"scene_mapping_device_count\":1"));
+    assert!(observation_json.contains("\"feedback_page_device_count\":1"));
+    assert!(observation_json.contains("\"safe_action_graph_device_count\":1"));
+    assert!(observation_json.contains("\"scripting_safe_posture\":\"Guarded\""));
+    assert!(observation_json.contains("\"feedback_channel_posture\":\"Guarded\""));
+    assert!(observation_json.contains("\"display_transport_posture\":\"GuardedDisplay\""));
+    assert!(observation_json.contains("\"display_content_class\":\"GuardedVendorDisplay\""));
+    assert!(observation_json.contains("\"feedback_authority\":\"RuntimeDefault\""));
+    assert!(observation_json.contains("\"feedback_outcome\":\"CollapseToGuardedFeedback\""));
+    assert!(observation_json.contains("\"scene_mapping_posture\":\"GuardedSceneMapping\""));
+    assert!(observation_json.contains("\"feedback_page_posture\":\"GuardedFeedbackPages\""));
+    assert!(observation_json.contains("\"feedback_page_class\":\"GuardedVendorPage\""));
+    assert!(observation_json.contains("\"safe_action_graph_posture\":\"GuardedSafeActionGraph\""));
+    assert!(observation_json.contains("\"action_authority\":\"RuntimeDefault\""));
+    assert!(observation_json.contains("\"safe_action_outcome\":\"CollapseToGuardedAction\""));
+}
+
+pub fn assert_advanced_hardware_supervisor_json(
+    runtime: &signal_runtime::SignalRuntime,
+    recorder: &RuntimeEventRecorder,
+    advanced_hardware_graph: signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot,
+) {
+    let mut supervisor = RuntimeSupervisorReport::capture(runtime, recorder);
+    supervisor.observation = supervisor
+        .observation
+        .clone()
+        .with_external_midi_snapshot(advanced_hardware_graph);
+    let supervisor_json = supervisor.render_json();
+    assert!(supervisor_json.contains("\"advanced_hardware_snapshot\":{"));
+    assert!(supervisor_json.contains("\"supports_display_feedback\":true"));
+    assert!(supervisor_json.contains("\"supports_macro_triggers\":true"));
+    assert!(supervisor_json.contains("\"display_transport_posture\":\"GuardedDisplay\""));
+    assert!(supervisor_json.contains("\"feedback_outcome\":\"CollapseToGuardedFeedback\""));
+    assert!(supervisor_json.contains("\"scene_mapping_posture\":\"GuardedSceneMapping\""));
+    assert!(supervisor_json.contains("\"feedback_page_posture\":\"GuardedFeedbackPages\""));
+    assert!(supervisor_json.contains("\"safe_action_outcome\":\"CollapseToGuardedAction\""));
+}
