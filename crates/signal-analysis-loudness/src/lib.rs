@@ -414,12 +414,15 @@ const PRE_FILTER_48K: BiquadCoefficients = BiquadCoefficients {
     a2: 0.73248076,
 };
 
+// ITU-R BS.1770-4 stage-2 high-pass filter at 48 kHz.
+// Previous coefficients (b0=1.005, b1=-1.990, b2=0.985) were incorrect and
+// caused filter instability on longer signals (growing output → overflow).
 const HIGH_SHELF_48K: BiquadCoefficients = BiquadCoefficients {
-    b0: 1.0049943,
-    b1: -1.9899137,
-    b2: 0.9849193,
-    a1: -1.9970102,
-    a2: 0.9970102,
+    b0: 1.0,
+    b1: -2.0,
+    b2: 1.0,
+    a1: -1.9900474548339844,
+    a2: 0.9900722503662109,
 };
 
 fn apply_loudness_weighting(sample_rate: SampleRate, samples: &[f32]) -> Vec<f32> {

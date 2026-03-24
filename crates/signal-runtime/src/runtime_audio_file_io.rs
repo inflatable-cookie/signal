@@ -1,0 +1,86 @@
+use super::runtime_recording_capture::RuntimeRecordingCaptureActiveSession;
+use super::*;
+use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
+
+pub(super) fn commit_recording_capture_wav(
+    active: &RuntimeRecordingCaptureActiveSession,
+) -> Result<u32, RuntimeError> {
+    if let Some(parent) = Path::new(&active.capture_path).parent() {
+        fs::create_dir_all(parent).map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!("failed to create recording capture directory: {error}"),
+            )
+        })?;
+    }
+
+    let spec = WavSpec {
+        channels: active.channel_count as u16,
+        sample_rate: active.sample_rate_hz,
+        bits_per_sample: 32,
+        sample_format: HoundSampleFormat::Float,
+    };
+    let mut writer = WavWriter::create(&active.capture_path, spec).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!("failed to create recording capture wav: {error}"),
+        )
+    })?;
+    for sample in &active.samples {
+        writer.write_sample(*sample).map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!("failed to write recording capture sample: {error}"),
+            )
+        })?;
+    }
+    writer.finalize().map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!("failed to finalize recording capture wav: {error}"),
+        )
+    })?;
+
+    Ok(active.buffered_frame_count.min(u32::MAX as u64) as u32)
+}
+
+pub(super) fn write_audio_buffer_wav(
+    path: &Path,
+    buffer: &AudioBuffer,
+) -> Result<(), RuntimeError> {
+    let spec = WavSpec {
+        channels: buffer.channel_count().0 as u16,
+        sample_rate: buffer.sample_rate().0,
+        bits_per_sample: 32,
+        sample_format: HoundSampleFormat::Float,
+    };
+    let mut writer = WavWriter::create(path, spec).map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to create offline render wav {}: {error}",
+                path.display()
+            ),
+        )
+    })?;
+    for sample in buffer.samples() {
+        writer.write_sample(*sample).map_err(|error| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                format!(
+                    "failed to write offline render wav sample {}: {error}",
+                    path.display()
+                ),
+            )
+        })?;
+    }
+    writer.finalize().map_err(|error| {
+        RuntimeError::new(
+            RuntimeErrorKind::ResourceUnavailable,
+            format!(
+                "failed to finalize offline render wav {}: {error}",
+                path.display()
+            ),
+        )
+    })
+}
