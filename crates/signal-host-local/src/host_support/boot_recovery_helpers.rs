@@ -2,13 +2,13 @@ use signal_plugin::CompletionState;
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{RuntimeError, RuntimeErrorKind};
 
+use super::super::INTER_EPISODE_CONTINUITY_BLOCKS;
 use super::super::{
     FaultInjection, LocalRuntimeHost, RecoveryFailureInjection, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 use super::demo::LocalDemoPluginSandboxAssembly;
 use super::lifecycle_run::LifecycleRunSummary;
 use super::{build_fault_envelope, record_runtime_fault};
-use super::super::INTER_EPISODE_CONTINUITY_BLOCKS;
 
 impl LocalRuntimeHost {
     pub(super) fn apply_timeout_recovery_failure(
@@ -28,7 +28,10 @@ impl LocalRuntimeHost {
                 run,
                 Some(failure),
             ) {
-                Ok(_) => Err(RuntimeError::new(RuntimeErrorKind::ResourceUnavailable, detail)),
+                Ok(_) => Err(RuntimeError::new(
+                    RuntimeErrorKind::ResourceUnavailable,
+                    detail,
+                )),
                 Err(error) => Err(error),
             }
         })
@@ -59,7 +62,10 @@ impl LocalRuntimeHost {
                     } else {
                         "expected deferred teardown recovery failure"
                     };
-                    return Err(RuntimeError::new(RuntimeErrorKind::ResourceUnavailable, detail));
+                    return Err(RuntimeError::new(
+                        RuntimeErrorKind::ResourceUnavailable,
+                        detail,
+                    ));
                 }
             }
             if recover_after_failures {
@@ -143,7 +149,9 @@ impl LocalRuntimeHost {
                     simulate_timeout,
                 )?;
                 let watchdog_fired = match episode_fault {
-                    FaultInjection::HeartbeatMiss => outcome.is_none() && run.current_watchdog_triggered,
+                    FaultInjection::HeartbeatMiss => {
+                        outcome.is_none() && run.current_watchdog_triggered
+                    }
                     FaultInjection::Timeout => outcome.as_ref().is_some_and(|outcome| {
                         outcome.result.slot.state == CompletionState::TimedOut
                             && run.current_watchdog_triggered
@@ -203,14 +211,8 @@ impl LocalRuntimeHost {
         let mut on_trigger = Some(on_trigger);
         for _ in 0..WATCHDOG_TRIGGER_WINDOW_BLOCKS {
             let block_sequence = self.runtime.allocate_block_sequence();
-            let timeout_result = self.run_realtime_cycle(
-                protocol,
-                run,
-                block_sequence,
-                lifecycle,
-                false,
-                true,
-            )?;
+            let timeout_result =
+                self.run_realtime_cycle(protocol, run, block_sequence, lifecycle, false, true)?;
             if let Some(outcome) = timeout_result {
                 if outcome.result.slot.state == CompletionState::TimedOut
                     && run.current_watchdog_triggered

@@ -58,8 +58,14 @@ impl LocalRuntimeHost {
             }
             FaultInjection::Crash => {
                 let crash_sequence = self.runtime.allocate_block_sequence();
-                let _ =
-                    self.run_realtime_cycle(protocol, run, crash_sequence, lifecycle, false, false)?;
+                let _ = self.run_realtime_cycle(
+                    protocol,
+                    run,
+                    crash_sequence,
+                    lifecycle,
+                    false,
+                    false,
+                )?;
                 let failure = build_fault_envelope(
                     &sandbox.request.sandbox_id,
                     "instance:local:default",

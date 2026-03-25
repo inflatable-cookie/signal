@@ -3,10 +3,9 @@ use signal_runtime::{
     BrokerInvalidationStage, CompletionSlotStage, RecoveryRestartIntent, RuntimeError, StopReason,
 };
 
-use super::super::{LocalRuntimeHost, RecoveryFailureInjection};
-use super::LifecycleRunSummary;
+use super::super::{LifecycleRunSummary, RecoveryFailureInjection, ServerRuntimeHost};
 
-impl LocalRuntimeHost {
+impl ServerRuntimeHost {
     pub(crate) fn recover_sandbox(
         &mut self,
         protocol: &ClapBlockProtocol,

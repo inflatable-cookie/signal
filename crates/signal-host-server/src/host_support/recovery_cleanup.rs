@@ -1,9 +1,8 @@
 use signal_runtime::{LingeringCleanupMode, RuntimeError, RuntimeObservationApi};
 
-use super::super::LocalRuntimeHost;
-use super::LifecycleRunSummary;
+use super::super::{LifecycleRunSummary, ServerRuntimeHost};
 
-impl LocalRuntimeHost {
+impl ServerRuntimeHost {
     pub(crate) fn session_is_lingering(
         &self,
         sandbox_id: &str,

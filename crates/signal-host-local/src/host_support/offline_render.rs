@@ -1,8 +1,8 @@
 use signal_runtime::{
-    RuntimeError, RuntimeOfflinePluginDelegatedExecutionOutcome,
-    RuntimeOfflinePluginDelegatedExecutionReceipt,
+    RuntimeError, RuntimeOfflinePluginDelegatedExecutionMerge,
+    RuntimeOfflinePluginDelegatedExecutionOutcome, RuntimeOfflinePluginDelegatedExecutionReceipt,
     RuntimeOfflinePluginDelegatedExecutionStageReceipt,
-    RuntimeOfflinePluginDelegatedExecutionStatus, RuntimeOfflinePluginDelegatedExecutionMerge,
+    RuntimeOfflinePluginDelegatedExecutionStatus,
     RuntimeOfflinePluginDelegatedFreezeArtifactOutput, RuntimeOfflinePluginDelegatedStemOutput,
     RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
 };

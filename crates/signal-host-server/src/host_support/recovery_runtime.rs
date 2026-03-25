@@ -4,10 +4,11 @@ use signal_runtime::{
     RuntimeSupervisorApi, StopReason,
 };
 
-use super::super::{LocalRuntimeHost, RecoveryFailureInjection};
-use super::{LifecycleRunSummary, RecoveryHistory};
+use super::super::{
+    LifecycleRunSummary, RecoveryFailureInjection, RecoveryHistory, ServerRuntimeHost,
+};
 
-impl LocalRuntimeHost {
+impl ServerRuntimeHost {
     pub(crate) fn recover_from_lingering_session(
         &mut self,
         protocol: &ClapBlockProtocol,
@@ -47,60 +48,18 @@ impl LocalRuntimeHost {
             self.runtime.set_active_plugin_sandboxes(0);
             return Err(error);
         }
-        if let Some(transport) = restarted_run.transport.as_ref() {
-            self.runtime.promote_transport_session_to_steady_state(
-                sandbox_id,
-                restarted_run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-            );
-        }
         self.reconcile_late_lingering_sessions_after_start(sandbox_id, &restarted_run);
 
         *lifecycle = restarted_lifecycle;
         Ok(restarted_run)
     }
 
-    pub(crate) fn stop_runtime_with_reason(
-        &mut self,
-        reason: StopReason,
-    ) -> Result<(), RuntimeError> {
+    pub(crate) fn stop_runtime_for_recovery(&mut self) -> Result<(), RuntimeError> {
         if self.runtime.get_control_snapshot().running {
-            self.audio_pump.stop();
-            self.supervisor.last_stop_reason = Some(reason);
-            self.runtime.stop(reason)
+            self.runtime.stop(StopReason::DegradedModeRecovery)
         } else {
             Ok(())
         }
-    }
-
-    pub(crate) fn stop_runtime_for_recovery(&mut self) -> Result<(), RuntimeError> {
-        self.stop_runtime_with_reason(StopReason::DegradedModeRecovery)
-    }
-
-    pub(crate) fn handle_device_loss_transition(
-        &mut self,
-        restart_should_fail: bool,
-    ) -> Result<(), RuntimeError> {
-        self.coreaudio
-            .simulate_device_loss("simulated CoreAudio device disconnect");
-        self.stop_runtime_with_reason(StopReason::DeviceReconfigure)?;
-        self.audio_pump.fault();
-        self.coreaudio
-            .simulate_restart_attempt("simulated CoreAudio device restart attempt");
-
-        if restart_should_fail {
-            self.coreaudio
-                .simulate_restart_failure("simulated CoreAudio device restart failure");
-            return Err(RuntimeError::new(
-                signal_runtime::RuntimeErrorKind::HardwareFailure,
-                "simulated device-loss restart failure",
-            ));
-        }
-
-        self.prepare_default_output_hardware()?;
-        self.runtime.start()?;
-        self.coreaudio.mark_recovered();
-        Ok(())
     }
 
     pub(crate) fn handle_watchdog_recovery(

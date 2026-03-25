@@ -2,9 +2,7 @@ use signal_ipc::{PluginMessageEnvelope, PluginMessagePayload, SharedMemoryTransp
 use signal_plugin_clap::{
     classify_sandbox_failure, sandbox_failure_event, ClapSandboxFailureStage,
 };
-use signal_runtime::{
-    PluginFaultKind, RuntimeError, SandboxOperationFailureStage, SignalRuntime,
-};
+use signal_runtime::{PluginFaultKind, RuntimeError, SandboxOperationFailureStage, SignalRuntime};
 
 use super::super::FaultInjection;
 use super::instance_state::plugin_instance_state_record;

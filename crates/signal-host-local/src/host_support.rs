@@ -1,5 +1,3 @@
-#[path = "host_support/broker.rs"]
-mod broker;
 #[path = "host_support/boot_entrypoints.rs"]
 mod boot_entrypoints;
 #[path = "host_support/boot_recovery.rs"]
@@ -8,6 +6,8 @@ mod boot_recovery;
 mod boot_recovery_helpers;
 #[path = "host_support/boot_summary.rs"]
 mod boot_summary;
+#[path = "host_support/broker.rs"]
+mod broker;
 #[path = "host_support/clocking.rs"]
 mod clocking;
 #[path = "host_support/demo.rs"]
@@ -18,16 +18,26 @@ mod demo_graph;
 mod faults;
 #[path = "host_support/instance_state.rs"]
 mod instance_state;
-#[path = "host_support/lifecycle_run.rs"]
-mod lifecycle_run;
+#[path = "host_support/lifecycle_admission.rs"]
+mod lifecycle_admission;
 #[path = "host_support/lifecycle_control.rs"]
 mod lifecycle_control;
+#[path = "host_support/lifecycle_run.rs"]
+mod lifecycle_run;
 #[path = "host_support/metadata.rs"]
 mod metadata;
 #[path = "host_support/offline_render.rs"]
 mod offline_render;
 #[path = "host_support/recovery_cleanup.rs"]
 mod recovery_cleanup;
+#[path = "host_support/recovery_cleanup_transport.rs"]
+mod recovery_cleanup_transport;
+#[path = "host_support/recovery_overlap_finish.rs"]
+mod recovery_overlap_finish;
+#[path = "host_support/recovery_overlap_prepare.rs"]
+mod recovery_overlap_prepare;
+#[path = "host_support/recovery_overlap_restart.rs"]
+mod recovery_overlap_restart;
 #[path = "host_support/recovery_runtime.rs"]
 mod recovery_runtime;
 #[path = "host_support/recovery_sandbox.rs"]

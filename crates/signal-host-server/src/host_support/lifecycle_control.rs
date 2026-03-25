@@ -5,14 +5,14 @@ use signal_runtime::{
     PluginSandboxTransportStage, TransportAttachIntent,
 };
 
-use super::super::LocalRuntimeHost;
+use super::super::{LifecycleRunSummary, ServerRuntimeHost};
 use super::{
     extract_prepare_metadata, lifecycle_stage_for_request,
     plugin_instance_state_record_from_response, record_broker_failure_and_convert,
-    record_runtime_fault, runtime_error_from_failure, transport_attach_intent, LifecycleRunSummary,
+    record_runtime_fault, runtime_error_from_failure, transport_attach_intent,
 };
 
-impl LocalRuntimeHost {
+impl ServerRuntimeHost {
     pub(crate) fn run_lifecycle(
         &mut self,
         protocol: &ClapBlockProtocol,
@@ -168,12 +168,6 @@ impl LocalRuntimeHost {
             last_midi_event_count: 0,
             last_generated_event_bytes: 0,
             last_output_first_sample: None,
-            last_plugin_render_context: None,
-            last_plugin_automation_value: None,
-            plugin_render_bypass_count: 0,
-            last_plugin_render_bypassed: false,
-            last_plugin_render_latency_samples: 0,
-            last_plugin_render_tail_samples: 0,
             deadline_misses: 0,
             heartbeat_misses: 0,
             watchdog_triggered: false,

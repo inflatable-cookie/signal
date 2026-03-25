@@ -3,9 +3,9 @@ use signal_plugin_au::AuDiscoveredPluginType;
 use signal_plugin_clap::ClapDiscoveredPluginType;
 use signal_plugin_vst3::Vst3DiscoveredPluginType;
 use signal_runtime::{
-    RuntimeMultichannelIoSummary, RuntimePluginComplexIoSummary,
-    RuntimePluginDiscoveredTypeRecord, RuntimePluginFormatPlatformCoverageRecord,
-    RuntimePluginHostPlatform, RuntimePluginIsolationOutcome, RuntimePluginParityBand,
+    RuntimeMultichannelIoSummary, RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
+    RuntimePluginIsolationOutcome, RuntimePluginParityBand,
 };
 
 pub(crate) fn runtime_plugin_discovered_type_record(
