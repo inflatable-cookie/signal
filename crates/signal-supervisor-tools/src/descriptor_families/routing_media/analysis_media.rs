@@ -1,5 +1,13 @@
 use super::*;
 
+#[path = "analysis_media_data.rs"]
+mod analysis_media_data;
+
+use analysis_media_data::{
+    analysis_metadata_boundary_surfaces, analysis_metadata_boundary_validation_steps,
+    media_service_boundary_surfaces, media_service_boundary_validation_steps,
+};
+
 pub(crate) fn render_media_service_boundary_text() -> String {
     let mut rendered = format!(
         "media_service_boundary: {MEDIA_SERVICE_BOUNDARY}\ncontract_path: {MEDIA_SERVICE_CONTRACT_PATH}\nacceptance_task: {MEDIA_SERVICE_ACCEPTANCE_TASK}\nsurfaces:\n"

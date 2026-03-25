@@ -1,5 +1,13 @@
 use super::*;
 
+#[path = "fault_critical_data.rs"]
+mod fault_critical_data;
+
+use fault_critical_data::{
+    critical_path_boundary_surfaces, critical_path_boundary_validation_steps,
+    fault_diagnostic_boundary_surfaces, fault_diagnostic_boundary_validation_steps,
+};
+
 pub(crate) fn render_fault_diagnostic_boundary_text() -> String {
     let mut rendered = format!(
         "fault_diagnostic_boundary: {FAULT_DIAGNOSTIC_BOUNDARY}\ncontract_path: {FAULT_DIAGNOSTIC_CONTRACT_PATH}\nacceptance_task: {FAULT_DIAGNOSTIC_ACCEPTANCE_TASK}\nsurfaces:\n"

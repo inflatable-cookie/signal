@@ -1,5 +1,10 @@
 use super::*;
 
+#[path = "channel_layout_data.rs"]
+mod channel_layout_data;
+
+use channel_layout_data::{multichannel_boundary_surfaces, multichannel_boundary_validation_steps};
+
 pub(crate) fn render_multichannel_boundary_text() -> String {
     let mut rendered = format!(
         "multichannel_boundary: {MULTICHANNEL_BOUNDARY}\ncontract_path: {MULTICHANNEL_CONTRACT_PATH}\nacceptance_task: {MULTICHANNEL_ACCEPTANCE_TASK}\nsurfaces:\n"

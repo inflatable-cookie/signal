@@ -1,5 +1,13 @@
 use super::*;
 
+#[path = "interruption_recording_data.rs"]
+mod interruption_recording_data;
+
+use interruption_recording_data::{
+    interruption_boundary_surfaces, interruption_boundary_validation_steps,
+    recording_continuity_boundary_surfaces, recording_continuity_validation_steps,
+};
+
 pub(crate) fn render_interruption_boundary_text() -> String {
     let mut rendered = format!(
         "interruption_boundary: {INTERRUPTION_BOUNDARY}\ncontract_path: {INTERRUPTION_CONTRACT_PATH}\nacceptance_task: {INTERRUPTION_ACCEPTANCE_TASK}\nsurfaces:\n"
@@ -100,14 +108,14 @@ pub(crate) fn render_recording_continuity_boundary_text() -> String {
         "recording_continuity_boundary: {RECORDING_CONTINUITY_BOUNDARY}\ncontract_path: {RECORDING_CONTINUITY_CONTRACT_PATH}\nacceptance_task: {RECORDING_CONTINUITY_ACCEPTANCE_TASK}\nsurfaces:\n"
     );
     for surface in recording_continuity_boundary_surfaces() {
-        let kind = match surface.kind {
-            RecordingContinuityBoundarySurfaceKind::RuntimeReceipt => "runtime-receipt",
-            RecordingContinuityBoundarySurfaceKind::RuntimeReport => "runtime-report",
-            RecordingContinuityBoundarySurfaceKind::HostEdge => "host-edge",
-        };
         rendered.push_str(&format!(
             "- id: {}\n  kind: {}\n  crate: {}\n  surface: {}\n  runtime_anchor: {}\n  rationale: {}\n",
-            surface.id, kind, surface.crate_name, surface.surface, surface.runtime_anchor, surface.rationale,
+            surface.id,
+            surface.kind.label(),
+            surface.crate_name,
+            surface.surface,
+            surface.runtime_anchor,
+            surface.rationale,
         ));
     }
     rendered.push_str("validation_steps:\n");
@@ -131,11 +139,6 @@ pub(crate) fn render_recording_continuity_boundary_json() -> String {
     let surfaces = recording_continuity_boundary_surfaces()
         .iter()
         .map(|surface| {
-            let kind = match surface.kind {
-                RecordingContinuityBoundarySurfaceKind::RuntimeReceipt => "runtime-receipt",
-                RecordingContinuityBoundarySurfaceKind::RuntimeReport => "runtime-report",
-                RecordingContinuityBoundarySurfaceKind::HostEdge => "host-edge",
-            };
             format!(
                 concat!(
                     "{{",
@@ -148,7 +151,7 @@ pub(crate) fn render_recording_continuity_boundary_json() -> String {
                     "}}"
                 ),
                 json_string(surface.id),
-                json_string(kind),
+                json_string(surface.kind.label()),
                 json_string(surface.crate_name),
                 json_string(surface.surface),
                 json_string(surface.runtime_anchor),

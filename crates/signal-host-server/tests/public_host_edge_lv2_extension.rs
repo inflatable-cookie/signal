@@ -3,7 +3,7 @@ use signal_plugin::PluginFormat;
 use signal_runtime::{
     PluginSandboxSpec, PluginScanRequest, RuntimeConfig, RuntimeLv2ExtensionNegotiationState,
     RuntimeLv2PatchExchangePosture, RuntimeLv2UridNegotiationPosture, RuntimeLv2WorkerPosture,
-    SignalRuntime,
+    RuntimeSupervisorApi, SignalRuntime,
 };
 
 #[test]

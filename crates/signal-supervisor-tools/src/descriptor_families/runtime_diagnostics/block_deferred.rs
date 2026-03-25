@@ -1,5 +1,13 @@
 use super::*;
 
+#[path = "block_deferred_data.rs"]
+mod block_deferred_data;
+
+use block_deferred_data::{
+    block_timing_boundary_surfaces, block_timing_boundary_validation_steps,
+    deferred_work_policy_boundary_surfaces, deferred_work_policy_boundary_validation_steps,
+};
+
 pub(crate) fn render_block_timing_boundary_text() -> String {
     let mut rendered = format!(
         "block_timing_boundary: {BLOCK_TIMING_BOUNDARY}\ncontract_path: {BLOCK_TIMING_CONTRACT_PATH}\nacceptance_task: {BLOCK_TIMING_ACCEPTANCE_TASK}\nsurfaces:\n"

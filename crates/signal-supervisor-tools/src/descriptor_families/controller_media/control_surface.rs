@@ -1,5 +1,113 @@
 use super::*;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ControlSurfaceBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+impl ControlSurfaceBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ControlSurfaceBoundarySurface {
+    id: &'static str,
+    kind: ControlSurfaceBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct ControlSurfaceBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+fn control_surface_boundary_surfaces() -> &'static [ControlSurfaceBoundarySurface] {
+    &[
+        ControlSurfaceBoundarySurface {
+            id: "runtime-control-surface-report",
+            kind: ControlSurfaceBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::control_surface_snapshot and RuntimeSupervisorReport::observation.control_surface_snapshot",
+            runtime_anchor: "RuntimeControlSurfaceSnapshot",
+            rationale:
+                "Keeps control-surface graph state, transport posture, mapping posture, feedback readiness, and bounded capability on one runtime-owned report seam instead of host-local controller policy.",
+        },
+        ControlSurfaceBoundarySurface {
+            id: "runtime-control-surface-external-midi-anchor",
+            kind: ControlSurfaceBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::external_midi_snapshot and RuntimeSupervisorReport::observation.external_midi_snapshot",
+            runtime_anchor: "RuntimeExternalMidiEndpointGraphSnapshot",
+            rationale:
+                "Keeps the control-surface baseline explicitly derived from the closed external MIDI endpoint graph instead of creating a second controller-device shell.",
+        },
+        ControlSurfaceBoundarySurface {
+            id: "shared-host-control-surface-report",
+            kind: ControlSurfaceBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward the same runtime-owned control-surface baseline without host-local controller-policy reconstruction.",
+        },
+    ]
+}
+
+fn control_surface_boundary_validation_steps() -> &'static [ControlSurfaceBoundaryValidationStep] {
+    &[
+        ControlSurfaceBoundaryValidationStep {
+            id: "runtime-control-surface-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_control_surface_boundary_reports_runtime_owned_transport_and_feedback_truth",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect control-surface graph state, transport posture, mapping posture, and feedback readiness through public runtime surfaces.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "local-host-control-surface-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_control_surface_truth",
+            rationale:
+                "Proves the stable local host edge forwards the runtime-owned control-surface baseline instead of rebuilding local controller policy.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "server-host-control-surface-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_control_surface_truth",
+            rationale:
+                "Proves the stable server host edge forwards the same runtime-owned control-surface baseline instead of inventing server-local controller heuristics.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools control_surface_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable control-surface boundary aligned with the focused runtime and host-edge proof spine instead of drifting into prose-only documentation.",
+        },
+        ControlSurfaceBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-control-surface-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared control-surface proof seam without reading host-local controller policy or implementation detail.",
+        },
+    ]
+}
+
 pub(crate) fn render_control_surface_boundary_text() -> String {
     let mut rendered = format!(
         "control_surface_boundary: {CONTROL_SURFACE_BOUNDARY}\ncontract_path: {CONTROL_SURFACE_CONTRACT_PATH}\nacceptance_task: {CONTROL_SURFACE_ACCEPTANCE_TASK}\nsurfaces:\n"

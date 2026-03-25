@@ -1,5 +1,13 @@
 use super::*;
 
+#[path = "bus_routing_data.rs"]
+mod bus_routing_data;
+
+use bus_routing_data::{
+    multi_bus_boundary_surfaces, multi_bus_boundary_validation_steps, sidechain_boundary_surfaces,
+    sidechain_boundary_validation_steps,
+};
+
 pub(crate) fn render_multi_bus_boundary_text() -> String {
     let mut rendered = format!(
         "multi_bus_boundary: {MULTI_BUS_BOUNDARY}\ncontract_path: {MULTI_BUS_CONTRACT_PATH}\nacceptance_task: {MULTI_BUS_ACCEPTANCE_TASK}\nsurfaces:\n"

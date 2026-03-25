@@ -1,5 +1,10 @@
 use super::*;
 
+#[path = "complex_routing_data.rs"]
+mod complex_routing_data;
+
+use complex_routing_data::{complex_io_boundary_surfaces, complex_io_boundary_validation_steps};
+
 pub(crate) fn render_complex_io_boundary_text() -> String {
     let mut rendered = format!(
         "complex_io_boundary: {COMPLEX_IO_BOUNDARY}\ncontract_path: {COMPLEX_IO_CONTRACT_PATH}\nacceptance_task: {COMPLEX_IO_ACCEPTANCE_TASK}\nsurfaces:\n"

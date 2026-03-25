@@ -1,5 +1,13 @@
 use super::*;
 
+#[path = "clock_external_data.rs"]
+mod clock_external_data;
+
+use clock_external_data::{
+    clock_topology_boundary_surfaces, clock_topology_boundary_validation_steps,
+    external_io_boundary_surfaces, external_io_boundary_validation_steps,
+};
+
 pub(crate) fn render_clock_topology_boundary_text() -> String {
     let mut rendered = format!(
         "clock_topology_boundary: {CLOCK_TOPOLOGY_BOUNDARY}\ncontract_path: {CLOCK_TOPOLOGY_CONTRACT_PATH}\nacceptance_task: {CLOCK_TOPOLOGY_ACCEPTANCE_TASK}\nsurfaces:\n"

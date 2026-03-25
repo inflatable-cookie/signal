@@ -9,6 +9,7 @@ mod jack_coordination;
 mod linux_audio_backend;
 mod linux_backend_clock_topology;
 mod linux_live_ownership;
+mod marker_analysis;
 mod packaging;
 mod pipewire_alsa;
 mod plugin_au;
@@ -21,6 +22,7 @@ mod routing_media;
 mod runtime_continuity;
 mod runtime_diagnostics;
 mod spatial;
+mod stretch;
 mod transform_artifact;
 
 pub(crate) use advanced_hardware::{
@@ -53,6 +55,9 @@ pub(crate) use linux_backend_clock_topology::{
 };
 pub(crate) use linux_live_ownership::{
     render_linux_live_ownership_boundary_json, render_linux_live_ownership_boundary_text,
+};
+pub(crate) use marker_analysis::{
+    render_marker_analysis_boundary_json, render_marker_analysis_boundary_text,
 };
 pub(crate) use packaging::{render_packaging_manifest_json, render_packaging_manifest_text};
 pub(crate) use pipewire_alsa::{
@@ -92,6 +97,7 @@ pub(crate) use runtime_diagnostics::{
     render_fault_diagnostic_boundary_json, render_fault_diagnostic_boundary_text,
 };
 pub(crate) use spatial::{render_spatial_boundary_json, render_spatial_boundary_text};
+pub(crate) use stretch::{render_stretch_boundary_json, render_stretch_boundary_text};
 pub(crate) use transform_artifact::{
     render_transform_artifact_boundary_json, render_transform_artifact_boundary_text,
 };

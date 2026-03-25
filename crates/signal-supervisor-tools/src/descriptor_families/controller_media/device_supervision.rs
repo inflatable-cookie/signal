@@ -1,5 +1,114 @@
 use super::*;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DeviceSupervisionBoundarySurfaceKind {
+    RuntimeReport,
+    RuntimeSnapshot,
+    HostEdge,
+}
+
+impl DeviceSupervisionBoundarySurfaceKind {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RuntimeReport => "runtime-report",
+            Self::RuntimeSnapshot => "runtime-snapshot",
+            Self::HostEdge => "host-edge",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DeviceSupervisionBoundarySurface {
+    id: &'static str,
+    kind: DeviceSupervisionBoundarySurfaceKind,
+    crate_name: &'static str,
+    surface: &'static str,
+    runtime_anchor: &'static str,
+    rationale: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct DeviceSupervisionBoundaryValidationStep {
+    id: &'static str,
+    command: &'static str,
+    rationale: &'static str,
+}
+
+fn device_supervision_boundary_surfaces() -> &'static [DeviceSupervisionBoundarySurface] {
+    &[
+        DeviceSupervisionBoundarySurface {
+            id: "runtime-device-supervision-report",
+            kind: DeviceSupervisionBoundarySurfaceKind::RuntimeReport,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::device_supervision_snapshot and RuntimeSupervisorReport::observation.device_supervision_snapshot",
+            runtime_anchor: "RuntimeDeviceSupervisionSnapshot",
+            rationale:
+                "Keeps restart-state, exhaustion, and fault-boundary meaning on a shared runtime-owned report seam instead of host-private restart heuristics.",
+        },
+        DeviceSupervisionBoundarySurface {
+            id: "runtime-supervision-fault-alignment",
+            kind: DeviceSupervisionBoundarySurfaceKind::RuntimeSnapshot,
+            crate_name: "signal-runtime",
+            surface:
+                "RuntimeObservationReport::fault_status and RuntimeObservationReport::interruption_summary",
+            runtime_anchor: "RuntimeFaultStatusSnapshot + RuntimeInterruptionSummary",
+            rationale:
+                "Keeps device supervision classification aligned with shared runtime fault and interruption truth instead of a second hardware-only taxonomy.",
+        },
+        DeviceSupervisionBoundarySurface {
+            id: "shared-host-device-supervision-supervisor-report",
+            kind: DeviceSupervisionBoundarySurfaceKind::HostEdge,
+            crate_name: "signal-host-local + signal-host-server",
+            surface: "supervisor_report() -> RuntimeSupervisorReport",
+            runtime_anchor: "RuntimeSupervisorApi::supervisor_report()",
+            rationale:
+                "Ensures both stable host edges forward runtime-owned device supervision truth without private restart-loop reconstruction or host-local fault classes.",
+        },
+    ]
+}
+
+fn device_supervision_boundary_validation_steps(
+) -> &'static [DeviceSupervisionBoundaryValidationStep] {
+    &[
+        DeviceSupervisionBoundaryValidationStep {
+            id: "runtime-device-supervision-public-proof",
+            command:
+                "cargo test -p signal-runtime public_runtime_device_supervision_boundary_reports_recovering_and_faulted_runtime_states",
+            rationale:
+                "Proves a downstream-style runtime consumer can inspect recovering and explicit faulted device supervision truth through public runtime reexports alone.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "local-host-device-supervision-proof",
+            command:
+                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_device_supervision_truth",
+            rationale:
+                "Proves the local stable host edge forwards recovered, exhausted, and faulted device supervision outcomes on the shared supervisor report seam.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "server-host-device-supervision-proof",
+            command:
+                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_device_supervision_truth",
+            rationale:
+                "Proves the server stable host edge forwards runtime-owned recovering and faulted device supervision outcomes without host-private restart policy.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "boundary-descriptor-proof",
+            command:
+                "cargo test -p signal-supervisor-tools device_supervision_boundary_json_reports_runtime_and_host_edge_proofs",
+            rationale:
+                "Keeps the machine-readable device supervision boundary aligned with the focused proof spine instead of drifting into prose-only documentation.",
+        },
+        DeviceSupervisionBoundaryValidationStep {
+            id: "boundary-descriptor",
+            command:
+                "cargo run -p signal-supervisor-tools -- --describe-device-supervision-boundary --format=json",
+            rationale:
+                "Lets consumers inspect the shared device supervision proof seam without reading private host restart policy or hardware-loop glue.",
+        },
+    ]
+}
+
 pub(crate) fn render_device_supervision_boundary_text() -> String {
     let mut rendered = format!(
         "device_supervision_boundary: {DEVICE_SUPERVISION_BOUNDARY}\ncontract_path: {DEVICE_SUPERVISION_CONTRACT_PATH}\nacceptance_task: {DEVICE_SUPERVISION_ACCEPTANCE_TASK}\nsurfaces:\n"

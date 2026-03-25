@@ -2,6 +2,8 @@ use super::*;
 
 mod closeout;
 mod grouped;
+mod integrated_acceptance;
+mod soak;
 mod workflow;
 
 pub(crate) use closeout::{render_generation_closeout_json, render_generation_closeout_text};
@@ -10,6 +12,10 @@ pub(crate) use grouped::{
     render_g07_acceptance_lane_json, render_g07_acceptance_lane_text,
     render_linux_live_acceptance_lane_json, render_linux_live_acceptance_lane_text,
 };
+pub(crate) use integrated_acceptance::{
+    render_integrated_acceptance_lane_json, render_integrated_acceptance_lane_text,
+};
+pub(crate) use soak::{render_g06_soak_lane_json, render_g06_soak_lane_text};
 pub(crate) use workflow::{
     render_control_preview_workflow_acceptance_lane_json,
     render_control_preview_workflow_acceptance_lane_text, render_immersive_acceptance_lane_json,
