@@ -1,0 +1,60 @@
+#[path = "host_support/broker.rs"]
+mod broker;
+#[path = "host_support/boot_entrypoints.rs"]
+mod boot_entrypoints;
+#[path = "host_support/boot_recovery.rs"]
+mod boot_recovery;
+#[path = "host_support/boot_recovery_helpers.rs"]
+mod boot_recovery_helpers;
+#[path = "host_support/boot_summary.rs"]
+mod boot_summary;
+#[path = "host_support/clocking.rs"]
+mod clocking;
+#[path = "host_support/demo.rs"]
+mod demo;
+#[path = "host_support/demo_graph.rs"]
+mod demo_graph;
+#[path = "host_support/faults.rs"]
+mod faults;
+#[path = "host_support/instance_state.rs"]
+mod instance_state;
+#[path = "host_support/lifecycle_run.rs"]
+mod lifecycle_run;
+#[path = "host_support/lifecycle_control.rs"]
+mod lifecycle_control;
+#[path = "host_support/metadata.rs"]
+mod metadata;
+#[path = "host_support/offline_render.rs"]
+mod offline_render;
+#[path = "host_support/recovery_cleanup.rs"]
+mod recovery_cleanup;
+#[path = "host_support/recovery_runtime.rs"]
+mod recovery_runtime;
+#[path = "host_support/recovery_sandbox.rs"]
+mod recovery_sandbox;
+#[path = "host_support/recovery_teardown.rs"]
+mod recovery_teardown;
+#[path = "host_support/transfer.rs"]
+mod transfer;
+
+pub(crate) use broker::{record_broker_failure_and_convert, runtime_error_from_io};
+pub(crate) use clocking::{
+    host_clock_discontinuity_state, host_clock_domain, host_clock_drift_state,
+    host_clock_fallback_state, host_duplex_mismatch_state, host_endpoint_topology,
+    host_partial_availability, samples_to_ms,
+};
+pub(crate) use demo::{
+    local_demo_runtime_assembly, payload_automation_value,
+    plugin_automation_value_from_runtime_batch, runtime_watchdog_trigger, transport_attach_intent,
+};
+pub(crate) use faults::{
+    build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
+    record_runtime_fault, runtime_error_from_failure,
+};
+pub(crate) use instance_state::plugin_instance_state_record_from_response;
+pub(crate) use lifecycle_run::{LifecycleRunSummary, RecoveryHistory};
+pub(crate) use metadata::{
+    runtime_au_discovered_type_record, runtime_plugin_discovered_type_record,
+    runtime_plugin_format_platform_coverage, runtime_vst3_discovered_type_record,
+};
+pub(crate) use transfer::transfer_runtime_output_to_host_buffer;

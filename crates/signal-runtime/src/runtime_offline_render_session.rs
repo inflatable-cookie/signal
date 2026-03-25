@@ -7,6 +7,8 @@ mod delegated_execution;
 mod execution;
 #[path = "runtime_offline_render_session/materialization.rs"]
 mod materialization;
+#[path = "runtime_offline_render_session/preparation.rs"]
+mod preparation;
 #[path = "runtime_offline_render_session/snapshot.rs"]
 mod snapshot;
 

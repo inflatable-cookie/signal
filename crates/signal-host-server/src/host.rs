@@ -1,53 +1,54 @@
 use signal_graph::{synthetic_stereo_block, GraphNodeExecutionClass, GraphStageSpec};
 use signal_hardware::{
-    BackendPolicyTier, HardwareBackend, HardwareClockSource, HardwareConfigRequest,
-    HardwareLifecycleOwnership, HardwareRestartPolicy, HardwareStreamRequest,
+    BackendPolicyTier, HardwareBackend, HardwareConfigRequest, HardwareStreamRequest,
     SimulatedHardwareBackend,
 };
-use signal_ipc::{
-    PluginInstanceStatePayload, PluginMessageEnvelope, PluginMessagePayload, SharedMemoryBroker,
-    SharedMemoryTransportPayload,
-};
+use signal_ipc::{SharedMemoryBroker, SharedMemoryTransportPayload};
 use signal_plugin::{
     CompletionState, PluginFormat, PluginSandboxRequest, SandboxPolicy, SandboxWatchdogState,
     WatchdogOutcome, WatchdogTriggerReason,
 };
-use signal_plugin_au::{AuDiscoveredPluginType, AuHostAdapter, AuHostPlatform};
+use signal_plugin_au::{AuHostAdapter, AuHostPlatform};
 use signal_plugin_clap::{
-    classify_sandbox_failure, sandbox_failure_event, BrokeredBlockOutcome, ClapBlockProtocol,
-    ClapDiscoveredPluginType, ClapPluginHostAdapter, ClapSandboxFailureStage,
-    ClapSandboxLifecycleHarness,
+    BrokeredBlockOutcome, ClapBlockProtocol, ClapPluginHostAdapter, ClapSandboxLifecycleHarness,
 };
-use signal_plugin_lv2::{Lv2DiscoveredPluginType, Lv2HostAdapter, Lv2HostPlatform};
-use signal_plugin_vst3::{Vst3DiscoveredPluginType, Vst3HostAdapter, Vst3HostPlatform};
+use signal_plugin_lv2::{Lv2HostAdapter, Lv2HostPlatform};
+use signal_plugin_vst3::{Vst3HostAdapter, Vst3HostPlatform};
 use signal_primitives::FrameCount;
 use signal_runtime::{
     BackendPolicyOverride, BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage,
     CompletionSlotStage, GraphNodeProjection, GraphProjection, HandshakeRequest,
     HeartbeatCycleStage, LingeringCleanupMode, PluginBackedNodeBinding,
-    PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxInstanceFaultRecord,
-    PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
-    PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
-    RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder,
-    RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
-    RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
-    RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
+    PluginBackedNodeBindingProjection, PluginSandboxInstanceStateRecord,
+    PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest,
+    RecoveryRestartIntent, RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError,
+    RuntimeEventRecorder, RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState,
+    RuntimeHostAudioTransferPolicy, RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain,
+    RuntimeHostClockDriftState, RuntimeHostClockFallbackState, RuntimeHostClockTransitionState,
     RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
     RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
-    RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy, RuntimeLifecycleApi,
-    RuntimeLv2ExtensionCapabilitySummary, RuntimeMediaAssetRegistration,
-    RuntimeMultichannelIoSummary, RuntimeObservationApi, RuntimeObservationDiagnostics,
-    RuntimeObservationReport, RuntimeOfflineRenderExecutionCancellationReceipt,
-    RuntimeOfflineRenderExecutionProgressReceipt, RuntimeOfflineRenderExecutionReceipt,
-    RuntimeOfflineRenderPurgeReceipt, RuntimeOfflineRenderPurgeRequest,
-    RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
-    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
-    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePreworkServicePressure,
+    RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeObservationApi,
+    RuntimeObservationDiagnostics, RuntimeObservationReport,
+    RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
+    RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
+    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
+    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord, RuntimePreworkServicePressure,
     RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeSupervisorReport,
-    RuntimeWarpClipRegistration, RuntimeWatchdogTrigger, SandboxOperationFailureStage,
-    SignalRuntime, StopReason, TransportAttachIntent, WatchdogRestartRecord,
+    RuntimeWarpClipRegistration, SignalRuntime, StopReason, TransportAttachIntent,
+    WatchdogRestartRecord,
+};
+
+#[path = "host_support.rs"]
+mod host_support;
+use host_support::{
+    build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
+    plugin_instance_state_record_from_response, record_broker_failure_and_convert,
+    record_runtime_fault, runtime_au_discovered_type_record, runtime_error_from_failure,
+    runtime_error_from_io, runtime_host_clock_source, runtime_host_lifecycle_ownership,
+    runtime_host_restart_policy, runtime_lv2_discovered_type_record,
+    runtime_plugin_discovered_type_record, runtime_plugin_format_platform_coverage,
+    runtime_vst3_discovered_type_record, runtime_watchdog_trigger, transport_attach_intent,
 };
 
 const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
@@ -55,193 +56,12 @@ const STEADY_STATE_BLOCKS: u64 = 8;
 const SOAK_RESTART_EPISODES: u32 = 3;
 const INTER_EPISODE_CONTINUITY_BLOCKS: u64 = 2;
 
-fn runtime_host_clock_source(clock_source: HardwareClockSource) -> RuntimeHostClockSource {
-    match clock_source {
-        HardwareClockSource::Internal => RuntimeHostClockSource::Internal,
-        HardwareClockSource::ExternalWordClock => RuntimeHostClockSource::ExternalWordClock,
-        HardwareClockSource::DigitalInput => RuntimeHostClockSource::DigitalInput,
-        HardwareClockSource::Virtual => RuntimeHostClockSource::Virtual,
-    }
-}
-
-fn runtime_host_lifecycle_ownership(
-    ownership: HardwareLifecycleOwnership,
-) -> RuntimeHostLifecycleOwnership {
-    match ownership {
-        HardwareLifecycleOwnership::HostDrivenCallback => {
-            RuntimeHostLifecycleOwnership::HostDrivenCallback
-        }
-        HardwareLifecycleOwnership::BackendManagedCallback => {
-            RuntimeHostLifecycleOwnership::BackendManagedCallback
-        }
-    }
-}
-
-fn runtime_host_restart_policy(restart_policy: HardwareRestartPolicy) -> RuntimeHostRestartPolicy {
-    match restart_policy {
-        HardwareRestartPolicy::HostMustRestart => RuntimeHostRestartPolicy::HostMustRestart,
-        HardwareRestartPolicy::BackendMayRestart => RuntimeHostRestartPolicy::BackendMayRestart,
-    }
-}
-
 fn samples_to_ms(samples: u32, sample_rate_hz: u32) -> f32 {
     if sample_rate_hz == 0 {
         0.0
     } else {
         samples as f32 * 1_000.0 / sample_rate_hz as f32
     }
-}
-
-fn runtime_plugin_discovered_type_record(
-    discovered: ClapDiscoveredPluginType,
-) -> RuntimePluginDiscoveredTypeRecord {
-    let descriptor = discovered.descriptor;
-    runtime_plugin_discovered_type_record_from_descriptor(
-        discovered.plugin_type_id.0,
-        discovered.default_io_layout,
-        descriptor,
-        None,
-    )
-}
-
-fn runtime_plugin_discovered_type_record_from_descriptor(
-    plugin_type_id: String,
-    default_io_layout: signal_plugin::PluginIoLayout,
-    descriptor: signal_plugin::PluginDescriptor,
-    lv2_extension_capabilities: Option<RuntimeLv2ExtensionCapabilitySummary>,
-) -> RuntimePluginDiscoveredTypeRecord {
-    let summary = format!(
-        "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
-        plugin_type_id,
-        descriptor.plugin_id,
-        descriptor.format,
-        descriptor.features.len(),
-        default_io_layout,
-        descriptor.parameters.len(),
-    );
-    RuntimePluginDiscoveredTypeRecord {
-        plugin_type_id,
-        plugin_id: descriptor.plugin_id.clone(),
-        vendor: descriptor.vendor.clone(),
-        name: descriptor.name.clone(),
-        format: descriptor.format,
-        version: descriptor.version.clone(),
-        features: descriptor.features.clone(),
-        default_io_layout,
-        default_multichannel_io: RuntimeMultichannelIoSummary::for_plugin_io(default_io_layout),
-        complex_io_summary: RuntimePluginComplexIoSummary::from_plugin_features_and_layout(
-            &descriptor.features,
-            default_io_layout,
-        ),
-        audio_bus_count: descriptor.audio_buses.len(),
-        parameter_count: descriptor.parameters.len(),
-        state_contract: descriptor.state_contract,
-        processing_contract: descriptor.processing_contract,
-        lifecycle_contract: descriptor.lifecycle_contract,
-        lv2_extension_capabilities,
-        summary,
-    }
-}
-
-fn runtime_vst3_discovered_type_record(
-    discovered: Vst3DiscoveredPluginType,
-) -> RuntimePluginDiscoveredTypeRecord {
-    let descriptor = discovered.descriptor;
-    runtime_plugin_discovered_type_record_from_descriptor(
-        discovered.plugin_type_id.0,
-        discovered.default_io_layout,
-        descriptor,
-        None,
-    )
-}
-
-fn runtime_au_discovered_type_record(
-    discovered: AuDiscoveredPluginType,
-) -> RuntimePluginDiscoveredTypeRecord {
-    let descriptor = discovered.descriptor;
-    runtime_plugin_discovered_type_record_from_descriptor(
-        discovered.plugin_type_id.0,
-        discovered.default_io_layout,
-        descriptor,
-        None,
-    )
-}
-
-fn runtime_lv2_discovered_type_record(
-    discovered: Lv2DiscoveredPluginType,
-) -> RuntimePluginDiscoveredTypeRecord {
-    let lv2_extension_capabilities = RuntimeLv2ExtensionCapabilitySummary::from_lv2_feature_uris(
-        &discovered.required_features,
-        &discovered.supported_extensions,
-    );
-    let descriptor = discovered.descriptor;
-    runtime_plugin_discovered_type_record_from_descriptor(
-        discovered.plugin_type_id.0,
-        discovered.default_io_layout,
-        descriptor,
-        Some(lv2_extension_capabilities),
-    )
-}
-
-fn runtime_plugin_format_platform_coverage() -> Vec<RuntimePluginFormatPlatformCoverageRecord> {
-    vec![
-        RuntimePluginFormatPlatformCoverageRecord {
-            format: PluginFormat::Clap,
-            supported_platforms: vec![
-                RuntimePluginHostPlatform::MacOs,
-                RuntimePluginHostPlatform::Linux,
-                RuntimePluginHostPlatform::Windows,
-            ],
-            unsupported_platforms: Vec::new(),
-            linux_parity_band: RuntimePluginParityBand::Portable,
-            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
-            linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
-        },
-        RuntimePluginFormatPlatformCoverageRecord {
-            format: PluginFormat::Vst3,
-            supported_platforms: vec![
-                RuntimePluginHostPlatform::MacOs,
-                RuntimePluginHostPlatform::Linux,
-                RuntimePluginHostPlatform::Windows,
-            ],
-            unsupported_platforms: Vec::new(),
-            linux_parity_band: RuntimePluginParityBand::Portable,
-            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
-            linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
-        },
-        RuntimePluginFormatPlatformCoverageRecord {
-            format: PluginFormat::Au,
-            supported_platforms: vec![RuntimePluginHostPlatform::MacOs],
-            unsupported_platforms: vec![
-                RuntimePluginHostPlatform::Linux,
-                RuntimePluginHostPlatform::Windows,
-            ],
-            linux_parity_band: RuntimePluginParityBand::Unsupported,
-            linux_preferred_sandbox_outcome: None,
-            linux_strict_sandbox_default: false,
-            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
-        },
-        RuntimePluginFormatPlatformCoverageRecord {
-            format: PluginFormat::Lv2,
-            supported_platforms: vec![RuntimePluginHostPlatform::Linux],
-            unsupported_platforms: vec![
-                RuntimePluginHostPlatform::MacOs,
-                RuntimePluginHostPlatform::Windows,
-            ],
-            linux_parity_band: RuntimePluginParityBand::Portable,
-            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
-            linux_strict_sandbox_default: true,
-            summary:
-                "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
-                    .into(),
-        },
-    ]
 }
 
 #[derive(Clone, Debug, Default)]
@@ -3350,283 +3170,6 @@ fn server_demo_runtime_assembly() -> ServerDemoRuntimeAssembly {
             plugin_format: PluginFormat::Clap,
             bound_node_ids: vec!["drive"],
         }],
-    }
-}
-
-fn runtime_watchdog_trigger(reason: WatchdogTriggerReason) -> RuntimeWatchdogTrigger {
-    match reason {
-        WatchdogTriggerReason::DeadlineMisses => RuntimeWatchdogTrigger::DeadlineMisses,
-        WatchdogTriggerReason::HeartbeatMisses => RuntimeWatchdogTrigger::HeartbeatMisses,
-    }
-}
-
-fn transport_attach_intent(processing_epoch: u64) -> TransportAttachIntent {
-    if processing_epoch > 1 {
-        TransportAttachIntent::RecoveryOverlap
-    } else {
-        TransportAttachIntent::SteadyState
-    }
-}
-
-fn lifecycle_stage_for_request(
-    payload: &PluginMessagePayload,
-) -> Option<PluginSandboxLifecycleStage> {
-    match payload {
-        PluginMessagePayload::SandboxHandshakeRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::SandboxHandshaken)
-        }
-        PluginMessagePayload::LoadPluginTypeRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::PluginTypeLoaded)
-        }
-        PluginMessagePayload::CreateInstanceRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::InstanceCreated)
-        }
-        PluginMessagePayload::PrepareInstanceRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::InstancePrepared)
-        }
-        PluginMessagePayload::ActivateInstanceRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::InstanceActivated)
-        }
-        PluginMessagePayload::DeactivateInstanceRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::InstanceDeactivated)
-        }
-        PluginMessagePayload::ResetInstanceRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::InstanceReset)
-        }
-        PluginMessagePayload::DestroyInstanceRequest { .. } => {
-            Some(PluginSandboxLifecycleStage::InstanceDestroyed)
-        }
-        _ => None,
-    }
-}
-
-fn record_runtime_fault(runtime: &mut SignalRuntime, failure: &signal_ipc::PluginMessageEnvelope) {
-    if let signal_ipc::PluginMessagePayload::SandboxFailure {
-        sandbox_id,
-        detail,
-        processing_epoch,
-        fault,
-        instance_state,
-        ..
-    } = &failure.payload
-    {
-        let kind = runtime_plugin_fault_kind(Some(fault));
-        runtime.record_plugin_sandbox_fault(
-            sandbox_id.clone(),
-            kind,
-            detail.clone(),
-            *processing_epoch,
-        );
-        if let Some(instance_state) = instance_state.as_ref() {
-            runtime.record_plugin_sandbox_instance_state(plugin_instance_state_record(
-                sandbox_id,
-                *processing_epoch,
-                instance_state,
-            ));
-        }
-        if let Some(classification) = classify_sandbox_failure(failure) {
-            runtime.record_sandbox_operation_failure(
-                classification.sandbox_id,
-                classification.lease_id,
-                classification.processing_epoch,
-                classification.operation,
-                classification.error_kind,
-                map_clap_sandbox_failure_stage(classification.stage),
-                classification.detail,
-            );
-        }
-    }
-}
-
-fn runtime_plugin_fault_kind(fault: Option<&signal_ipc::PluginFaultPayload>) -> PluginFaultKind {
-    match fault.map(|fault| fault.kind.as_str()) {
-        Some("timeout") => PluginFaultKind::Timeout,
-        Some("crash") => PluginFaultKind::Crash,
-        _ => PluginFaultKind::ProtocolViolation,
-    }
-}
-
-fn plugin_instance_state_record(
-    sandbox_id: &str,
-    processing_epoch: Option<u64>,
-    state: &PluginInstanceStatePayload,
-) -> PluginSandboxInstanceStateRecord {
-    let processing = state.processing.as_ref();
-    PluginSandboxInstanceStateRecord {
-        sandbox_id: sandbox_id.to_string(),
-        plugin_type_id: state.plugin_type_id.clone(),
-        instance_id: state.instance_id.clone(),
-        lifecycle_state: state.lifecycle_state.clone(),
-        readiness_state: state.readiness_state.clone(),
-        degraded_reasons: state.degraded_reasons.clone(),
-        active: state.active,
-        processing_epoch,
-        processing_sample_rate_hz: processing.map(|processing| processing.sample_rate_hz),
-        processing_max_block_frames: processing.map(|processing| processing.max_block_frames),
-        audio_inputs: processing.map(|processing| processing.io_layout.audio_inputs),
-        audio_outputs: processing.map(|processing| processing.io_layout.audio_outputs),
-        midi_inputs: processing.map(|processing| processing.io_layout.midi_inputs),
-        midi_outputs: processing.map(|processing| processing.io_layout.midi_outputs),
-        last_fault: state
-            .last_fault
-            .as_ref()
-            .map(|fault| PluginSandboxInstanceFaultRecord {
-                kind: fault.kind.clone(),
-                severity: fault.severity.clone(),
-                message: fault.message.clone(),
-            }),
-    }
-}
-
-fn plugin_instance_state_record_from_response(
-    sandbox_id: &str,
-    processing_epoch: Option<u64>,
-    response: &PluginMessageEnvelope,
-) -> Option<PluginSandboxInstanceStateRecord> {
-    match &response.payload {
-        PluginMessagePayload::CreateInstanceResponse { instance_state, .. }
-        | PluginMessagePayload::PrepareInstanceResponse { instance_state, .. }
-        | PluginMessagePayload::ActivateInstanceResponse { instance_state, .. }
-        | PluginMessagePayload::DeactivateInstanceResponse { instance_state, .. }
-        | PluginMessagePayload::ResetInstanceResponse { instance_state, .. }
-        | PluginMessagePayload::DestroyInstanceResponse { instance_state, .. } => Some(
-            plugin_instance_state_record(sandbox_id, processing_epoch, instance_state),
-        ),
-        PluginMessagePayload::HeartbeatResponse {
-            instance_state: Some(instance_state),
-            ..
-        } => Some(plugin_instance_state_record(
-            sandbox_id,
-            processing_epoch,
-            instance_state,
-        )),
-        PluginMessagePayload::SandboxFailure {
-            instance_state: Some(instance_state),
-            ..
-        } => Some(plugin_instance_state_record(
-            sandbox_id,
-            processing_epoch,
-            instance_state,
-        )),
-        _ => None,
-    }
-}
-
-fn map_clap_sandbox_failure_stage(stage: ClapSandboxFailureStage) -> SandboxOperationFailureStage {
-    match stage {
-        ClapSandboxFailureStage::PrepareAttach => SandboxOperationFailureStage::PrepareAttach,
-        ClapSandboxFailureStage::ProcessAttach => SandboxOperationFailureStage::ProcessAttach,
-        ClapSandboxFailureStage::ProcessFlush => SandboxOperationFailureStage::ProcessFlush,
-        ClapSandboxFailureStage::ProcessProtocolViolation => {
-            SandboxOperationFailureStage::ProcessProtocolViolation
-        }
-        ClapSandboxFailureStage::ControlProtocolViolation => {
-            SandboxOperationFailureStage::ControlProtocolViolation
-        }
-    }
-}
-
-fn build_fault_envelope(
-    sandbox_id: &str,
-    instance_id: &str,
-    lease_id: &str,
-    processing_epoch: u64,
-    fault: FaultInjection,
-) -> PluginMessageEnvelope {
-    let (error_kind, detail) = match fault {
-        FaultInjection::Timeout => ("timeout", "sandbox exceeded block deadline"),
-        FaultInjection::Crash => ("crash", "sandbox process exited unexpectedly"),
-        FaultInjection::HeartbeatMiss
-        | FaultInjection::RecoveryDeferredTeardownFailure
-        | FaultInjection::RecoveryDeferredTeardownThenCleanup
-        | FaultInjection::RecoveryDeferredTeardownCleanupRetry
-        | FaultInjection::RecoveryTeardownFailure
-        | FaultInjection::RecoveryRestartFailure
-        | FaultInjection::RecoveryOverlapContention
-        | FaultInjection::RecoveryInterleavedFailures
-        | FaultInjection::EscalatingHeartbeatMisses {
-            restart_episodes: _,
-        }
-        | FaultInjection::MixedWatchdogEpisodes {
-            restart_episodes: _,
-        } => ("timeout", "sandbox heartbeat watchdog threshold exceeded"),
-    };
-    sandbox_failure_event(
-        sandbox_id,
-        Some(instance_id.into()),
-        "processBlock",
-        error_kind,
-        detail,
-        Some(processing_epoch),
-        Some(lease_id.into()),
-        None,
-    )
-}
-
-fn extract_prepare_metadata(
-    responses: &[PluginMessageEnvelope],
-) -> (String, Option<SharedMemoryTransportPayload>) {
-    responses
-        .iter()
-        .find_map(|response| match &response.payload {
-            PluginMessagePayload::PrepareInstanceResponse {
-                shared_memory_lease_id,
-                shared_memory_transport,
-                ..
-            } => Some((
-                shared_memory_lease_id.clone(),
-                Some(shared_memory_transport.clone()),
-            )),
-            _ => None,
-        })
-        .unwrap_or_default()
-}
-
-fn runtime_error_from_failure(failure: &signal_ipc::PluginMessageEnvelope) -> RuntimeError {
-    match &failure.payload {
-        signal_ipc::PluginMessagePayload::SandboxFailure { detail, fault, .. } => RuntimeError {
-            kind: match Some(fault).map(|fault| fault.kind.as_str()) {
-                Some("timeout") => signal_runtime::RuntimeErrorKind::Timeout,
-                Some("crash") | Some("fatal") => signal_runtime::RuntimeErrorKind::Fatal,
-                _ => signal_runtime::RuntimeErrorKind::PluginFailure,
-            },
-            message: detail.clone(),
-        },
-        _ => RuntimeError {
-            kind: signal_runtime::RuntimeErrorKind::PluginFailure,
-            message: "plugin sandbox lifecycle failed".into(),
-        },
-    }
-}
-
-fn runtime_error_from_io(error: std::io::Error) -> RuntimeError {
-    RuntimeError {
-        kind: signal_runtime::RuntimeErrorKind::ResourceUnavailable,
-        message: error.to_string(),
-    }
-}
-
-fn record_broker_failure_and_convert(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: Option<String>,
-    processing_epoch: Option<u64>,
-    block_sequence: Option<u64>,
-    stage: BrokerFailureStage,
-    error: std::io::Error,
-) -> RuntimeError {
-    let detail = error.to_string();
-    runtime.record_broker_failure(
-        sandbox_id,
-        lease_id,
-        processing_epoch,
-        block_sequence,
-        stage,
-        detail.clone(),
-    );
-    RuntimeError {
-        kind: signal_runtime::RuntimeErrorKind::ResourceUnavailable,
-        message: detail,
     }
 }
 
