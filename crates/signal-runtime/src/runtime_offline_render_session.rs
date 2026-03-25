@@ -1,4 +1,10 @@
 use super::*;
+#[path = "runtime_offline_render_session/control.rs"]
+mod control;
+#[path = "runtime_offline_render_session/delegated_execution.rs"]
+mod delegated_execution;
+#[path = "runtime_offline_render_session/execution.rs"]
+mod execution;
 #[path = "runtime_offline_render_session/materialization.rs"]
 mod materialization;
 #[path = "runtime_offline_render_session/snapshot.rs"]
@@ -126,7 +132,7 @@ impl SignalRuntime {
         let plugin_execution_boundary =
             self.offline_plugin_execution_boundary_from_preview(&request, &preview);
         let delegated_execution_request =
-            offline_plugin_delegated_execution_request(&plugin_execution_boundary);
+            Self::offline_plugin_delegated_execution_request(&plugin_execution_boundary);
         let input_layout = self.offline_render_input_layout()?;
         let plugin_overrides = self.offline_render_plugin_node_overrides()?;
         let captured_bus_ids = preview

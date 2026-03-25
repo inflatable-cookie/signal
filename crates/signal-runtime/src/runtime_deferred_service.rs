@@ -1,5 +1,10 @@
 use super::*;
 
+#[path = "runtime_deferred_service/offline_render.rs"]
+mod offline_render;
+#[path = "runtime_deferred_service/plugin_bindings.rs"]
+mod plugin_bindings;
+
 pub(super) fn summarize_deferred_service_receipt(
     receipt: &RuntimeDeferredServiceReceipt,
 ) -> String {

@@ -4,6 +4,7 @@ mod advanced_hardware;
 mod control_surface;
 mod external_midi;
 mod linux_live;
+mod render;
 
 pub(super) fn json_runtime_external_midi_snapshot(
     snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
@@ -40,3 +41,5 @@ pub(super) fn json_runtime_jack_coordination_snapshot(
 ) -> String {
     linux_live::json_runtime_jack_coordination_snapshot(snapshot)
 }
+
+pub(crate) use render::*;

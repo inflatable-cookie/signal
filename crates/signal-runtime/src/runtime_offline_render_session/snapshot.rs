@@ -22,8 +22,10 @@ impl SignalRuntime {
         crate::interfaces::RuntimeOfflineRenderSessionStateSnapshot {
             request_id: session.request.request_id.clone(),
             state: session.state,
-            interruption_class: offline_render_execution_observed_interruption_class(session),
-            interruption_rebindable: offline_render_execution_interruption_rebindable(session),
+            interruption_class: Self::offline_render_execution_observed_interruption_class(session),
+            interruption_rebindable: Self::offline_render_execution_interruption_rebindable(
+                session,
+            ),
             interruption_count: session.interruption_count,
             emitted_checkpoint_count: session.emitted_checkpoint_count,
             checkpoint_count: session.checkpoint_count,
@@ -153,8 +155,10 @@ impl SignalRuntime {
         RuntimeOfflineRenderExecutionProgressReceipt {
             request_id: session.request.request_id.clone(),
             state: session.state,
-            interruption_class: offline_render_execution_observed_interruption_class(session),
-            interruption_rebindable: offline_render_execution_interruption_rebindable(session),
+            interruption_class: Self::offline_render_execution_observed_interruption_class(session),
+            interruption_rebindable: Self::offline_render_execution_interruption_rebindable(
+                session,
+            ),
             emitted_checkpoint_count: session.emitted_checkpoint_count,
             checkpoint_count: session.checkpoint_count,
             checkpoint: None,
