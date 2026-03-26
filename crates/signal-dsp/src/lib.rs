@@ -32,17 +32,19 @@ mod filter;
 mod fixtures;
 mod level;
 mod mix;
+pub mod ramp;
 
 pub use block::{
     apply_gain_control, process_delay_with_feedback_control, process_low_pass_with_cutoff_control,
 };
+pub use control::SmoothedValue;
 pub use control::{ControlPlan, ControlSegment, ControlSegmentPlayer, ControlSegmentShape};
-pub use control::{ExponentialRamp, LinearRamp, SmoothedValue};
 pub use delay::DelayLine;
 pub use filter::OnePoleLowPass;
 pub use fixtures::SignalFixture;
 pub use level::{EnvelopeFollower, PeakMeter, RmsMeter};
 pub use mix::{apply_gain_in_place, clear_block, mix_in_place, sum_in_place, Gain};
+pub use ramp::{ExponentialRamp, LinearRamp};
 
 use signal_primitives::Sample;
 

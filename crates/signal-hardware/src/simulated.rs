@@ -1,0 +1,446 @@
+//! Simulated hardware backend for testing and development.
+//!
+//! This module provides a [`SimulatedHardwareBackend`] that implements the
+//! [`HardwareBackend`] trait for testing stream negotiation, lifecycle
+//! contracts, and diagnostic reporting without requiring actual hardware.
+
+use crate::{
+    AudioDeviceDescriptor, BackendHealth, BackendPolicyRecord, BackendPolicyTier, HardwareBackend,
+    HardwareBackendIdentity, HardwareClockSource, HardwareClockTopology,
+    HardwareDiagnosticsSnapshot, HardwareLatencyProfile, HardwareLifecycleContract,
+    HardwareLifecycleOwnership, HardwareNegotiationError, HardwareNegotiationErrorKind,
+    HardwareRestartPolicy, HardwareStreamConfig, HardwareStreamRequest, LinuxAudioBackendKind,
+};
+use signal_primitives::SampleRate;
+
+/// A simulated hardware backend for testing and development.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SimulatedHardwareBackend {
+    backend_identity: HardwareBackendIdentity,
+    backend_name: &'static str,
+    policy_tier: BackendPolicyTier,
+    devices: Vec<AudioDeviceDescriptor>,
+    lifecycle: HardwareLifecycleContract,
+    clock_source: HardwareClockSource,
+    clock_topology: HardwareClockTopology,
+    diagnostics: HardwareDiagnosticsSnapshot,
+}
+
+impl SimulatedHardwareBackend {
+    /// Create a new simulated backend with the given identity, name, tier, and devices.
+    pub fn new(
+        backend_identity: HardwareBackendIdentity,
+        backend_name: &'static str,
+        policy_tier: BackendPolicyTier,
+        devices: Vec<AudioDeviceDescriptor>,
+    ) -> Self {
+        Self {
+            backend_identity,
+            backend_name,
+            policy_tier,
+            devices,
+            lifecycle: HardwareLifecycleContract::default(),
+            clock_source: HardwareClockSource::Virtual,
+            clock_topology: HardwareClockTopology::SingleEndpoint,
+            diagnostics: HardwareDiagnosticsSnapshot::healthy(),
+        }
+    }
+
+    /// Create a default stereo output backend with standard configuration.
+    pub fn default_stereo_output(
+        backend_identity: HardwareBackendIdentity,
+        backend_name: &'static str,
+        device_id: &str,
+        name: &str,
+    ) -> Self {
+        Self::new(
+            backend_identity,
+            backend_name,
+            BackendPolicyTier::Tier0InHost,
+            vec![AudioDeviceDescriptor {
+                backend_identity,
+                backend_name,
+                device_id: device_id.into(),
+                name: name.into(),
+                default_input: false,
+                default_output: true,
+                max_input_channels: 0,
+                max_output_channels: 2,
+                nominal_sample_rate: SampleRate(48_000),
+                preferred_buffer_sizes: vec![128, 256, 512],
+            }],
+        )
+    }
+
+    /// Create a simulated ALSA default output backend.
+    pub fn linux_alsa_default_output() -> Self {
+        Self::default_stereo_output(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+            "alsa",
+            "alsa:default-output",
+            "ALSA Default Output",
+        )
+        .with_clock_source(HardwareClockSource::Internal)
+        .with_clock_topology(HardwareClockTopology::SingleEndpoint)
+        .with_lifecycle(HardwareLifecycleContract {
+            ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+            restart_policy: HardwareRestartPolicy::HostMustRestart,
+        })
+    }
+
+    /// Create a simulated JACK duplex backend.
+    pub fn linux_jack_duplex() -> Self {
+        Self::new(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            "jack",
+            BackendPolicyTier::Tier1Brokered,
+            vec![AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+                backend_name: "jack",
+                device_id: "jack:graph-main".into(),
+                name: "JACK Graph Main".into(),
+                default_input: true,
+                default_output: true,
+                max_input_channels: 2,
+                max_output_channels: 2,
+                nominal_sample_rate: SampleRate(48_000),
+                preferred_buffer_sizes: vec![128, 256],
+            }],
+        )
+        .with_clock_source(HardwareClockSource::ExternalWordClock)
+        .with_clock_topology(HardwareClockTopology::Aggregate)
+        .with_lifecycle(HardwareLifecycleContract {
+            ownership: HardwareLifecycleOwnership::BackendManagedCallback,
+            restart_policy: HardwareRestartPolicy::BackendMayRestart,
+        })
+    }
+
+    /// Create a simulated PipeWire duplex backend.
+    pub fn linux_pipewire_duplex() -> Self {
+        Self::new(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+            "pipewire",
+            BackendPolicyTier::Tier1Brokered,
+            vec![AudioDeviceDescriptor {
+                backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+                backend_name: "pipewire",
+                device_id: "pipewire:default-graph".into(),
+                name: "PipeWire Default Graph".into(),
+                default_input: true,
+                default_output: true,
+                max_input_channels: 2,
+                max_output_channels: 2,
+                nominal_sample_rate: SampleRate(48_000),
+                preferred_buffer_sizes: vec![128, 256, 512],
+            }],
+        )
+        .with_clock_source(HardwareClockSource::Virtual)
+        .with_clock_topology(HardwareClockTopology::Aggregate)
+        .with_lifecycle(HardwareLifecycleContract {
+            ownership: HardwareLifecycleOwnership::BackendManagedCallback,
+            restart_policy: HardwareRestartPolicy::BackendMayRestart,
+        })
+    }
+
+    /// Set the lifecycle contract for this backend.
+    pub fn with_lifecycle(mut self, lifecycle: HardwareLifecycleContract) -> Self {
+        self.lifecycle = lifecycle;
+        self
+    }
+
+    /// Set the clock source for this backend.
+    pub fn with_clock_source(mut self, clock_source: HardwareClockSource) -> Self {
+        self.clock_source = clock_source;
+        self
+    }
+
+    /// Set the clock topology for this backend.
+    pub fn with_clock_topology(mut self, clock_topology: HardwareClockTopology) -> Self {
+        self.clock_topology = clock_topology;
+        self
+    }
+
+    /// Set the diagnostics snapshot for this backend.
+    pub fn with_diagnostics(mut self, diagnostics: HardwareDiagnosticsSnapshot) -> Self {
+        self.diagnostics = diagnostics;
+        self
+    }
+}
+
+impl HardwareBackend for SimulatedHardwareBackend {
+    fn backend_identity(&self) -> HardwareBackendIdentity {
+        self.backend_identity
+    }
+
+    fn backend_name(&self) -> &'static str {
+        self.backend_name
+    }
+
+    fn policy_record(&self) -> BackendPolicyRecord {
+        BackendPolicyRecord {
+            backend_identity: self.backend_identity,
+            tier: self.policy_tier,
+            in_host_default: true,
+        }
+    }
+
+    fn health(&self) -> BackendHealth {
+        self.diagnostics.health
+    }
+
+    fn enumerate_devices(&self) -> Vec<AudioDeviceDescriptor> {
+        self.devices.clone()
+    }
+
+    fn default_output_device(&self) -> Option<AudioDeviceDescriptor> {
+        self.devices
+            .iter()
+            .find(|device| device.default_output)
+            .cloned()
+    }
+
+    fn negotiate_stream(
+        &self,
+        request: &HardwareStreamRequest,
+    ) -> Result<HardwareStreamConfig, HardwareNegotiationError> {
+        let device = self
+            .devices
+            .iter()
+            .find(|device| device.device_id == request.device_id)
+            .cloned()
+            .ok_or_else(|| {
+                HardwareNegotiationError::new(
+                    HardwareNegotiationErrorKind::DeviceUnavailable,
+                    format!("unknown device {}", request.device_id),
+                )
+            })?;
+
+        if request.buffer_size == 0 || request.sample_rate.0 == 0 {
+            return Err(HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::UnsupportedConfiguration,
+                "sample_rate and buffer_size must be non-zero",
+            ));
+        }
+        if request.output_channels > device.max_output_channels
+            || request.input_channels > device.max_input_channels
+        {
+            return Err(HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::UnsupportedConfiguration,
+                format!(
+                    "requested {} input and {} output channels exceeds device capacity",
+                    request.input_channels, request.output_channels
+                ),
+            ));
+        }
+
+        Ok(HardwareStreamConfig {
+            device,
+            direction: request.direction,
+            sample_rate: request.sample_rate,
+            buffer_size: request.buffer_size,
+            input_channels: request.input_channels,
+            output_channels: request.output_channels,
+            sample_format: request.sample_format,
+            interleaved: request.interleaved,
+            clock_source: self.clock_source,
+            clock_topology: self.clock_topology,
+            lifecycle: self.lifecycle,
+            latency: HardwareLatencyProfile::output_only(request.buffer_size as u32),
+            simulated: true,
+        })
+    }
+
+    fn diagnostics(&self) -> HardwareDiagnosticsSnapshot {
+        self.diagnostics.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        AudioSampleFormat, AudioStreamDirection, HardwareConfigRequest, HardwareDiagnosticEvent,
+        HardwareDiagnosticKind, HardwareDiagnosticSeverity,
+    };
+
+    #[test]
+    fn simulated_backend_negotiates_default_output_stream_and_runtime_request() {
+        let backend = SimulatedHardwareBackend::default_stereo_output(
+            HardwareBackendIdentity::Unsupported,
+            "simulated",
+            "sim:default-output",
+            "Simulated Output",
+        )
+        .with_lifecycle(HardwareLifecycleContract {
+            ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+            restart_policy: HardwareRestartPolicy::BackendMayRestart,
+        });
+
+        let device = backend
+            .default_output_device()
+            .expect("default output device available");
+        let request = HardwareStreamRequest::new_output(device.device_id.clone(), 48_000, 256)
+            .with_output_channels(2);
+        let stream = backend
+            .negotiate_stream(&request)
+            .expect("negotiate simulated output stream");
+
+        assert_eq!(stream.device.device_id, "sim:default-output");
+        assert_eq!(
+            stream.device.backend_identity,
+            HardwareBackendIdentity::Unsupported
+        );
+        assert_eq!(stream.direction, AudioStreamDirection::Output);
+        assert_eq!(stream.sample_rate, SampleRate(48_000));
+        assert_eq!(stream.buffer_size, 256);
+        assert_eq!(stream.output_channels, 2);
+        assert_eq!(stream.sample_format, AudioSampleFormat::F32);
+        assert!(stream.interleaved);
+        assert_eq!(stream.clock_source, HardwareClockSource::Virtual);
+        assert_eq!(stream.clock_topology, HardwareClockTopology::SingleEndpoint);
+        assert_eq!(
+            stream.lifecycle,
+            HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+                restart_policy: HardwareRestartPolicy::BackendMayRestart,
+            }
+        );
+        assert_eq!(stream.latency, HardwareLatencyProfile::output_only(256));
+        assert!(stream.simulated);
+
+        let runtime_request =
+            HardwareConfigRequest::from_stream(&stream, backend.policy_record().tier);
+        assert_eq!(runtime_request.sample_rate, SampleRate(48_000));
+        assert_eq!(runtime_request.buffer_size, 256);
+        assert_eq!(runtime_request.output_channels, 2);
+        assert_eq!(
+            runtime_request.backend_policy,
+            BackendPolicyTier::Tier0InHost
+        );
+        assert_eq!(
+            backend.policy_record().backend_identity,
+            HardwareBackendIdentity::Unsupported
+        );
+    }
+
+    #[test]
+    fn simulated_backend_surfaces_diagnostics_contract() {
+        let diagnostics = HardwareDiagnosticsSnapshot {
+            health: BackendHealth::Degraded,
+            xrun_count: 3,
+            callback_overrun_count: 1,
+            device_loss_count: 1,
+            restart_attempt_count: 2,
+            restart_failure_count: 1,
+            last_event: Some(HardwareDiagnosticEvent {
+                kind: HardwareDiagnosticKind::RestartFailed,
+                severity: HardwareDiagnosticSeverity::Critical,
+                device_id: Some("sim:default-output".into()),
+                callback_index: Some(42),
+                detail: "simulated restart failure".into(),
+            }),
+        };
+        let backend = SimulatedHardwareBackend::default_stereo_output(
+            HardwareBackendIdentity::Unsupported,
+            "simulated",
+            "sim:default-output",
+            "Simulated Output",
+        )
+        .with_diagnostics(diagnostics.clone());
+
+        assert_eq!(backend.health(), BackendHealth::Degraded);
+        assert_eq!(backend.diagnostics(), diagnostics);
+    }
+
+    #[test]
+    fn simulated_linux_backend_baselines_surface_typed_identity_and_contracts() {
+        let alsa = SimulatedHardwareBackend::linux_alsa_default_output();
+        let jack = SimulatedHardwareBackend::linux_jack_duplex();
+        let pipewire = SimulatedHardwareBackend::linux_pipewire_duplex();
+
+        assert_eq!(
+            alsa.policy_record().backend_identity,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa)
+        );
+        assert_eq!(
+            jack.policy_record().backend_identity,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        );
+        assert_eq!(
+            pipewire.policy_record().backend_identity,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire)
+        );
+
+        let alsa_stream = alsa
+            .negotiate_stream(&HardwareStreamRequest::new_output(
+                "alsa:default-output",
+                48_000,
+                256,
+            ))
+            .expect("alsa baseline should negotiate");
+        assert_eq!(
+            alsa_stream.device.backend_identity,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa)
+        );
+        assert_eq!(alsa_stream.clock_source, HardwareClockSource::Internal);
+        assert_eq!(
+            alsa_stream.clock_topology,
+            HardwareClockTopology::SingleEndpoint
+        );
+        assert_eq!(
+            alsa_stream.lifecycle,
+            HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+                restart_policy: HardwareRestartPolicy::HostMustRestart,
+            }
+        );
+
+        let jack_stream = jack
+            .negotiate_stream(
+                &HardwareStreamRequest::new_output("jack:graph-main", 48_000, 128)
+                    .with_input_channels(2)
+                    .with_output_channels(2),
+            )
+            .expect("jack baseline should negotiate");
+        assert_eq!(
+            jack_stream.device.backend_identity,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
+        );
+        assert_eq!(
+            jack_stream.clock_source,
+            HardwareClockSource::ExternalWordClock
+        );
+        assert_eq!(jack_stream.clock_topology, HardwareClockTopology::Aggregate);
+        assert_eq!(
+            jack_stream.lifecycle,
+            HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::BackendManagedCallback,
+                restart_policy: HardwareRestartPolicy::BackendMayRestart,
+            }
+        );
+
+        let pipewire_stream = pipewire
+            .negotiate_stream(
+                &HardwareStreamRequest::new_output("pipewire:default-graph", 48_000, 512)
+                    .with_input_channels(2)
+                    .with_output_channels(2),
+            )
+            .expect("pipewire baseline should negotiate");
+        assert_eq!(
+            pipewire_stream.device.backend_identity,
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire)
+        );
+        assert_eq!(pipewire_stream.clock_source, HardwareClockSource::Virtual);
+        assert_eq!(
+            pipewire_stream.clock_topology,
+            HardwareClockTopology::Aggregate
+        );
+        assert_eq!(
+            pipewire_stream.lifecycle,
+            HardwareLifecycleContract {
+                ownership: HardwareLifecycleOwnership::BackendManagedCallback,
+                restart_policy: HardwareRestartPolicy::BackendMayRestart,
+            }
+        );
+    }
+}
