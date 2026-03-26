@@ -1,3 +1,15 @@
+#[path = "host_support/boot_entrypoints.rs"]
+mod boot_entrypoints;
+#[path = "host_support/boot_recovery.rs"]
+mod boot_recovery;
+#[path = "host_support/boot_recovery_helpers.rs"]
+mod boot_recovery_helpers;
+#[path = "host_support/boot_summary.rs"]
+mod boot_summary;
+#[path = "host_support/demo.rs"]
+mod demo;
+#[path = "host_support/demo_graph.rs"]
+mod demo_graph;
 #[path = "host_support/faults.rs"]
 mod faults;
 #[path = "host_support/instance_state.rs"]
@@ -6,8 +18,12 @@ mod instance_state;
 mod lifecycle_admission;
 #[path = "host_support/lifecycle_control.rs"]
 mod lifecycle_control;
+#[path = "host_support/lifecycle_run.rs"]
+mod lifecycle_run;
 #[path = "host_support/metadata.rs"]
 mod metadata;
+#[path = "host_support/observation.rs"]
+mod observation;
 #[path = "host_support/recovery_cleanup.rs"]
 mod recovery_cleanup;
 #[path = "host_support/recovery_cleanup_transport.rs"]
@@ -24,16 +40,28 @@ mod recovery_runtime;
 mod recovery_sandbox;
 #[path = "host_support/recovery_teardown.rs"]
 mod recovery_teardown;
+#[path = "host_support/runtime_block.rs"]
+mod runtime_block;
+#[path = "host_support/runtime_cycle.rs"]
+mod runtime_cycle;
+#[path = "host_support/summary_types.rs"]
+mod summary_types;
 
+pub(crate) use demo::{server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly};
 pub(crate) use faults::{
     build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
     record_broker_failure_and_convert, record_runtime_fault, runtime_error_from_failure,
     runtime_error_from_io, runtime_watchdog_trigger, transport_attach_intent,
 };
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
+pub(crate) use lifecycle_run::{LifecycleRunSummary, RecoveryHistory};
 pub(crate) use metadata::{
     runtime_au_discovered_type_record, runtime_host_clock_source, runtime_host_lifecycle_ownership,
     runtime_host_restart_policy, runtime_lv2_discovered_type_record,
     runtime_plugin_discovered_type_record, runtime_plugin_format_platform_coverage,
     runtime_vst3_discovered_type_record,
+};
+pub use summary_types::{
+    ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,
+    ServerTransportSummary,
 };

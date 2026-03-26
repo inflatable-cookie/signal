@@ -5,11 +5,11 @@ use signal_runtime::{
     PluginSandboxTransportStage, TransportAttachIntent,
 };
 
-use super::super::{LifecycleRunSummary, ServerRuntimeHost};
+use super::super::ServerRuntimeHost;
 use super::{
     extract_prepare_metadata, lifecycle_stage_for_request,
     plugin_instance_state_record_from_response, record_broker_failure_and_convert,
-    record_runtime_fault, runtime_error_from_failure, transport_attach_intent,
+    record_runtime_fault, runtime_error_from_failure, transport_attach_intent, LifecycleRunSummary,
 };
 
 impl ServerRuntimeHost {

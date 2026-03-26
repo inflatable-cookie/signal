@@ -4,10 +4,10 @@ use signal_runtime::{
     RuntimeSupervisorApi,
 };
 
-use super::super::{LifecycleRunSummary, RecoveryFailureInjection, ServerRuntimeHost};
+use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
 use super::{
     lifecycle_stage_for_request, record_runtime_fault, runtime_error_from_failure,
-    runtime_error_from_io,
+    runtime_error_from_io, LifecycleRunSummary,
 };
 
 impl ServerRuntimeHost {

@@ -1,4 +1,7 @@
 use super::super::super::*;
+use crate::runtime::runtime_engine_state::{
+    RuntimeEnginePreworkCache, RuntimePendingPreworkTarget,
+};
 
 impl RuntimeEngineState {
     fn classify_prework_backlog_class(

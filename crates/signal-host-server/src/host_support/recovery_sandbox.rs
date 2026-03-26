@@ -3,7 +3,8 @@ use signal_runtime::{
     BrokerInvalidationStage, CompletionSlotStage, RecoveryRestartIntent, RuntimeError, StopReason,
 };
 
-use super::super::{LifecycleRunSummary, RecoveryFailureInjection, ServerRuntimeHost};
+use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
+use super::LifecycleRunSummary;
 
 impl ServerRuntimeHost {
     pub(crate) fn recover_sandbox(

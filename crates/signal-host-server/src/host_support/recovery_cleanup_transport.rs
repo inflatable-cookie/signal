@@ -4,8 +4,8 @@ use signal_runtime::{
     BrokerFailureStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage, RuntimeError,
 };
 
-use super::super::{LifecycleRunSummary, RecoveryFailureInjection, ServerRuntimeHost};
-use super::runtime_error_from_io;
+use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
+use super::{runtime_error_from_io, LifecycleRunSummary};
 
 impl ServerRuntimeHost {
     pub(crate) fn cleanup_orphan_lingering_transport(

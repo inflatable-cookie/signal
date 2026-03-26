@@ -1,4 +1,5 @@
 use super::super::super::*;
+use crate::runtime::runtime_engine_state::RuntimeEnginePreworkCache;
 
 impl RuntimeEngineState {
     pub(crate) fn retire_prework_entry(

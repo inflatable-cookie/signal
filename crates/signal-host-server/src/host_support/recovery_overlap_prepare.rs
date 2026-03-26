@@ -1,7 +1,8 @@
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::RuntimeError;
 
-use super::super::{LifecycleRunSummary, RecoveryFailureInjection, ServerRuntimeHost};
+use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
+use super::LifecycleRunSummary;
 
 impl ServerRuntimeHost {
     pub(crate) fn prepare_replacement_recovery_session(

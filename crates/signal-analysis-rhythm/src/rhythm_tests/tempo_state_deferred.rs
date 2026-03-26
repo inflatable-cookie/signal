@@ -1,0 +1,211 @@
+use super::*;
+
+#[test]
+fn tempo_state_defers_unstable_interpretation() {
+    let interpretation = synthetic_tempo_interpretation(
+        super::TempoRecommendation::Defer,
+        super::TempoTrustLevel::Tentative,
+        super::TempoInterpretationReason::UnstableTempo,
+        89.9,
+        None,
+        0.38,
+        0.03,
+        0.8,
+        0.3,
+    );
+    let state = super::tempo_state_recommendation(
+        interpretation,
+        super::Confidence::new(0.42),
+        super::Confidence::new(0.55),
+    );
+
+    assert_eq!(state.action, super::TempoStateAction::Defer);
+    assert_eq!(state.reason, super::TempoStateReason::TempoDeferred);
+    assert!(state.confidence.0 > 0.4);
+    assert_eq!(state.continuity.action, super::TempoContinuityAction::Clear);
+    assert_eq!(
+        state.continuity.provenance,
+        super::TempoContinuityProvenance::NoTempo
+    );
+    assert_eq!(
+        state.continuity.severity,
+        super::TempoContinuitySeverity::Cleared
+    );
+    assert_eq!(
+        state.continuity.history,
+        super::TempoContinuityHistory::Degrading
+    );
+    assert_eq!(state.continuity.arc, super::TempoContinuityArc::Collapsing);
+    assert_eq!(
+        state.continuity.arc_rationale,
+        super::TempoContinuityArcRationale::EvidenceLoss
+    );
+    assert_eq!(
+        state.continuity.arc_decision.recommendation,
+        super::TempoContinuityArcRecommendation::Clear
+    );
+    assert_eq!(
+        state.continuity.arc_decision.action,
+        super::TempoContinuityArcAction::ClearTempo
+    );
+    assert_eq!(
+        state.continuity.arc_decision.severity,
+        super::TempoContinuitySeverity::Cleared
+    );
+    assert_eq!(
+        state.continuity.arc_decision.fallback_action,
+        super::TempoContinuityArcAction::ClearTempo
+    );
+    assert_eq!(
+        state.continuity.arc_decision.downgrade_rationale,
+        super::TempoContinuityArcDowngradeRationale::EvidenceLoss
+    );
+    assert_eq!(
+        state.continuity.arc_decision.downgrade_trend,
+        super::TempoContinuityArcDowngradeTrend::Stable
+    );
+    assert_eq!(
+        state.continuity.arc_decision.downgrade_trend_rationale,
+        super::TempoContinuityArcDowngradeTrendRationale::FlatCollapse
+    );
+    assert_eq!(
+        state.continuity.arc_decision.downgrade_inflection.stage,
+        super::TempoContinuityArcDowngradeInflectionStage::FlatWindow
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .after_beats,
+        0
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .competing_stage,
+        None
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .competing_support,
+        super::Confidence::new(0.0)
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .balance
+            .primary_weight,
+        super::Confidence::new(0.0)
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .balance
+            .competing_weight,
+        super::Confidence::new(0.0)
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .balance
+            .unattributed_weight,
+        super::Confidence::new(1.0)
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .balance
+            .dominance,
+        super::Confidence::new(0.0)
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .rationale_balance
+            .primary
+            .dominant,
+        super::TempoContinuityArcDowngradeStageRationale::EvidenceLoss
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_inflection
+            .rationale_balance
+            .competing,
+        None
+    );
+    assert_eq!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_trend_support
+            .current_pressure
+            .0,
+        1.0 - state.confidence.0
+    );
+    assert!(
+        state
+            .continuity
+            .arc_decision
+            .downgrade_support
+            .evidence_loss_pressure
+            .0
+            >= 0.95
+    );
+    assert_eq!(
+        state.continuity.arc_decision.provenance,
+        super::TempoContinuityProvenance::NoTempo
+    );
+    assert_eq!(
+        state.continuity.arc_decision.expiry,
+        super::TempoContinuityArcActionExpiry {
+            guaranteed_until_beats: 0,
+            fallback_after_beats: 0,
+            clear_after_beats: 0,
+            max_failed_revalidations: 0,
+        }
+    );
+    assert_eq!(
+        state.continuity.trigger,
+        super::TempoContinuityTrigger::EvidenceLoss
+    );
+    assert_eq!(
+        state.continuity.causes.primary,
+        super::TempoContinuityCause::TempoAmbiguity
+    );
+    assert_eq!(state.continuity.expiry.clear_after_beats, 0);
+    assert_eq!(
+        state.continuity.lifecycle.refresh.action,
+        super::TempoContinuityAction::Clear
+    );
+    assert_eq!(
+        state.continuity.lifecycle.refresh.provenance,
+        super::TempoContinuityProvenance::NoTempo
+    );
+    assert_eq!(
+        state.continuity.lifecycle.refresh.severity,
+        super::TempoContinuitySeverity::Cleared
+    );
+    assert_eq!(
+        state.continuity.lifecycle.refresh.history,
+        super::TempoContinuityHistory::Degrading
+    );
+    assert_eq!(state.continuity.refresh_strength.0, 0.0);
+}

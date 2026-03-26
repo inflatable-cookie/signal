@@ -4,8 +4,8 @@ use signal_runtime::{
     RuntimeSupervisorApi,
 };
 
-use super::super::{LifecycleRunSummary, ServerRuntimeHost};
-use super::{lifecycle_stage_for_request, record_runtime_fault};
+use super::super::ServerRuntimeHost;
+use super::{lifecycle_stage_for_request, record_runtime_fault, LifecycleRunSummary};
 
 impl ServerRuntimeHost {
     pub(crate) fn abort_origin_recovery_session(

@@ -1,4 +1,5 @@
 use super::super::*;
+use crate::runtime::runtime_engine_state::RuntimePendingPreworkTarget;
 
 impl RuntimeEngineState {
     pub(crate) fn classify_prework_service_semantic_policy(

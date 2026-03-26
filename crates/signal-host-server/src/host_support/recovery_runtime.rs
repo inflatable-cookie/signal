@@ -4,9 +4,8 @@ use signal_runtime::{
     RuntimeSupervisorApi, StopReason,
 };
 
-use super::super::{
-    LifecycleRunSummary, RecoveryFailureInjection, RecoveryHistory, ServerRuntimeHost,
-};
+use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
+use super::{LifecycleRunSummary, RecoveryHistory};
 
 impl ServerRuntimeHost {
     pub(crate) fn recover_from_lingering_session(
