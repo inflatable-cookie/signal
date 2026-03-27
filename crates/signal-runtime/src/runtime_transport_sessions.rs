@@ -4,7 +4,8 @@ use crate::interfaces::{
     TransportAttachIntent, TransportSessionProvenance,
 };
 
-use super::{transport_session_provenance, SignalRuntime};
+use super::runtime_utils::transport_session_provenance;
+use super::SignalRuntime;
 
 impl SignalRuntime {
     pub fn begin_transport_session(

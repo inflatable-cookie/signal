@@ -1,5 +1,6 @@
 use crate::{
-    PluginInstanceId, PluginIoLayout, PluginRenderContext, SandboxTransport, SharedMemoryLayout,
+    write_render_context_to_slice, PluginInstanceId, PluginIoLayout, PluginRenderContext,
+    SandboxTransport, SharedMemoryLayout,
 };
 
 use super::header::BlockProcessingHeader;
@@ -54,7 +55,8 @@ impl BlockDispatch {
 
         self.header
             .write_to_slice(&mut render_region[..BlockProcessingHeader::ENCODED_BYTES])?;
-        self.render_context.write_to_slice(
+        write_render_context_to_slice(
+            &self.render_context,
             &mut render_region[BlockProcessingHeader::ENCODED_BYTES..packet_bytes],
         )?;
         Ok(())
@@ -76,7 +78,7 @@ impl BlockDispatch {
         let header = BlockProcessingHeader::read_from_slice(
             &render_region[..BlockProcessingHeader::ENCODED_BYTES],
         )?;
-        let render_context = PluginRenderContext::read_from_slice(
+        let render_context = crate::read_render_context_from_slice(
             &render_region[BlockProcessingHeader::ENCODED_BYTES..packet_bytes],
         )?;
 

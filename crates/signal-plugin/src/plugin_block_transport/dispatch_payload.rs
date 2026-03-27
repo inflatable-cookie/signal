@@ -1,5 +1,6 @@
 use crate::{
-    AudioBlock, BlockDispatch, BlockPayload, EventPacket, PluginEvent, SharedMemoryRegion,
+    read_event_from_slice, write_event_to_slice, AudioBlock, BlockDispatch, BlockPayload,
+    EventPacket, PluginEvent, SharedMemoryRegion,
 };
 
 impl BlockDispatch {
@@ -149,7 +150,7 @@ impl BlockDispatch {
         for (index, event) in packet.events.iter().enumerate() {
             let start = header_bytes + index * PluginEvent::ENCODED_BYTES;
             let end = start + PluginEvent::ENCODED_BYTES;
-            event.write_to_slice(&mut region_bytes[start..end])?;
+            write_event_to_slice(event, &mut region_bytes[start..end])?;
         }
         Ok(())
     }
@@ -178,7 +179,7 @@ impl BlockDispatch {
         for index in 0..event_count {
             let start = 4 + index * PluginEvent::ENCODED_BYTES;
             let end = start + PluginEvent::ENCODED_BYTES;
-            events.push(PluginEvent::read_from_slice(&region_bytes[start..end])?);
+            events.push(read_event_from_slice(&region_bytes[start..end])?);
         }
         Ok(EventPacket::new(events))
     }

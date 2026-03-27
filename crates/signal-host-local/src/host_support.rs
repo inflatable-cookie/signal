@@ -95,4 +95,6 @@ pub use summary_types::{
     LocalFaultSummary, LocalHardwareSummary, LocalPayloadSummary, LocalPluginDispatchSummary,
     LocalRuntimeHostSummary, LocalTransportSummary,
 };
-pub(crate) use transfer::transfer_runtime_output_to_host_buffer;
+pub(crate) use transfer::{
+    transfer_runtime_output_to_host_buffer, LocalAudioTransferOutcome, LocalAudioTransferResult,
+};

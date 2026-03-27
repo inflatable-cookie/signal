@@ -2,8 +2,9 @@ use rayon::prelude::*;
 use signal_analysis::Confidence;
 use signal_primitives::SampleRate;
 
+use crate::beat_utils::{beat_phase_score, select_beat_phase};
 use crate::tempo_policy::{filter_interval_outliers, median};
-use crate::{beat_phase_score, select_beat_phase, TempoEstimate, TempoHypothesis};
+use crate::{TempoEstimate, TempoHypothesis};
 
 #[path = "beat_tempo_core/refinement.rs"]
 mod refinement;

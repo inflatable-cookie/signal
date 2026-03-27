@@ -1,4 +1,5 @@
-use super::super::{server_demo_runtime_assembly, LifecycleRunSummary, ServerRuntimeHost};
+use crate::host::host_support::{server_demo_runtime_assembly, LifecycleRunSummary};
+use crate::host::ServerRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{

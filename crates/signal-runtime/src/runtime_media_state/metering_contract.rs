@@ -1,4 +1,5 @@
 use super::*;
+use crate::runtime::runtime_utils::{runtime_meter_source_role, unique_string};
 
 impl RuntimeMeteringStateModel {
     pub(crate) fn meter_contract_metadata(

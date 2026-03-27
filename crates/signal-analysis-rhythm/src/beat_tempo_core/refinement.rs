@@ -1,7 +1,7 @@
 use signal_analysis::Confidence;
 use signal_primitives::SampleRate;
 
-use crate::refine_beat;
+use crate::beat_utils::refine_beat;
 
 pub(crate) fn combined_confidence(
     onset_envelope: &[f32],

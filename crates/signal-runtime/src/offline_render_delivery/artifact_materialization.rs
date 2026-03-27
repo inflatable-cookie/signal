@@ -1,4 +1,5 @@
 use super::*;
+use crate::runtime::runtime_utils::sanitize_asset_id;
 
 fn render_artifact_receipt(
     artifact_id: String,
