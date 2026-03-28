@@ -6,7 +6,7 @@ use super::placement::runtime_plugin_sandbox_snapshot;
 use sandbox_state::RuntimePluginLifecyclePolicy;
 pub(super) use sandbox_state::RuntimePluginSandboxStateModel;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct RuntimePluginLifecycleStateModel {
     policy: RuntimePluginLifecyclePolicy,
     sandboxes: BTreeMap<String, RuntimePluginSandboxStateModel>,
@@ -347,16 +347,6 @@ impl RuntimePluginLifecycleStateModel {
                     sandbox.state = RuntimePluginLifecycleState::Degraded;
                 }
             }
-        }
-    }
-}
-
-impl Default for RuntimePluginLifecycleStateModel {
-    fn default() -> Self {
-        Self {
-            policy: RuntimePluginLifecyclePolicy::default(),
-            sandboxes: BTreeMap::new(),
-            active_sandbox_count: 0,
         }
     }
 }

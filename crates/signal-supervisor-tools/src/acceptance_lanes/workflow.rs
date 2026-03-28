@@ -194,106 +194,109 @@ fn integrated_live_workflow_acceptance_validation_steps(
 }
 
 pub(crate) fn render_immersive_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "immersive_acceptance_lane",
-        IMMERSIVE_ACCEPTANCE_LANE,
-        IMMERSIVE_ACCEPTANCE_CONTRACT_PATH,
-        IMMERSIVE_ACCEPTANCE_TASK,
-        IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS,
-        IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS,
-        immersive_acceptance_families(),
-        immersive_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "immersive_acceptance_lane",
+        lane: IMMERSIVE_ACCEPTANCE_LANE,
+        contract_path: IMMERSIVE_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: IMMERSIVE_ACCEPTANCE_TASK,
+        required_tasks: IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS,
+        families: immersive_acceptance_families(),
+        validation_steps: immersive_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required room-policy, deployment-monitoring, and renderer-export proof through the existing spatial boundary without claiming exhaustive renderer certification",
             "renderer-native reruns, richer monitoring-scene variants, and immersive authoring or export-adjacent confidence passes remain advisory or deferred instead of silently entering the required lane",
             "broader preview, device-workflow, Linux live, and generation-level integrated acceptance still belong to later g08 milestones",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_immersive_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        IMMERSIVE_ACCEPTANCE_LANE,
-        IMMERSIVE_ACCEPTANCE_CONTRACT_PATH,
-        IMMERSIVE_ACCEPTANCE_TASK,
-        IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS,
-        IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS,
-        immersive_acceptance_families(),
-        immersive_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "immersive_acceptance_lane",
+        lane: IMMERSIVE_ACCEPTANCE_LANE,
+        contract_path: IMMERSIVE_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: IMMERSIVE_ACCEPTANCE_TASK,
+        required_tasks: IMMERSIVE_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: IMMERSIVE_ACCEPTANCE_ADVISORY_TASKS,
+        families: immersive_acceptance_families(),
+        validation_steps: immersive_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required room-policy, deployment-monitoring, and renderer-export proof through the existing spatial boundary without claiming exhaustive renderer certification",
             "renderer-native reruns, richer monitoring-scene variants, and immersive authoring or export-adjacent confidence passes remain advisory or deferred instead of silently entering the required lane",
             "broader preview, device-workflow, Linux live, and generation-level integrated acceptance still belong to later g08 milestones",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_control_preview_workflow_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "control_preview_workflow_acceptance_lane",
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
-        control_preview_workflow_acceptance_families(),
-        control_preview_workflow_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "control_preview_workflow_acceptance_lane",
+        lane: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE,
+        contract_path: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+        required_tasks: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
+        families: control_preview_workflow_acceptance_families(),
+        validation_steps: control_preview_workflow_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required advanced-hardware and preview-transform proof without claiming exhaustive device-vendor or browser UX certification",
             "device-native page, display, motor, haptic, and browser-native queue reruns remain advisory or deferred instead of silently entering the required lane",
             "cross-family grouped export proof and broader integrated live or immersive acceptance still belong to later g08 batches",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_control_preview_workflow_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
-        CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
-        control_preview_workflow_acceptance_families(),
-        control_preview_workflow_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "control_preview_workflow_acceptance_lane",
+        lane: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_LANE,
+        contract_path: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_TASK,
+        required_tasks: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: CONTROL_PREVIEW_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
+        families: control_preview_workflow_acceptance_families(),
+        validation_steps: control_preview_workflow_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required advanced-hardware and preview-transform proof without claiming exhaustive device-vendor or browser UX certification",
             "device-native page, display, motor, haptic, and browser-native queue reruns remain advisory or deferred instead of silently entering the required lane",
             "cross-family grouped export proof and broader integrated live or immersive acceptance still belong to later g08 batches",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_integrated_live_workflow_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "integrated_live_workflow_acceptance_lane",
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
-        integrated_live_workflow_acceptance_families(),
-        integrated_live_workflow_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "integrated_live_workflow_acceptance_lane",
+        lane: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE,
+        contract_path: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK,
+        required_tasks: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
+        families: integrated_live_workflow_acceptance_families(),
+        validation_steps: integrated_live_workflow_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required Linux live, device workflow, immersive, and control-preview workflow acceptance tasks without claiming repeated-run certification or environment-specific exhaustiveness",
             "broader repeated-run confidence passes, richer host-profile or environment-specific permutations, and closer-to-closeout reruns remain advisory or deferred instead of silently entering the required lane",
             "broader environment certification, repeated-run stress matrices, and closeout-adjacent downstream workflow depth remain outside the bounded integrated lane until later closeout work promotes them explicitly",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_integrated_live_workflow_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
-        INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
-        integrated_live_workflow_acceptance_families(),
-        integrated_live_workflow_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "integrated_live_workflow_acceptance_lane",
+        lane: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_LANE,
+        contract_path: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_TASK,
+        required_tasks: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: INTEGRATED_LIVE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
+        families: integrated_live_workflow_acceptance_families(),
+        validation_steps: integrated_live_workflow_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required Linux live, device workflow, immersive, and control-preview workflow acceptance tasks without claiming repeated-run certification or environment-specific exhaustiveness",
             "broader repeated-run confidence passes, richer host-profile or environment-specific permutations, and closer-to-closeout reruns remain advisory or deferred instead of silently entering the required lane",
             "broader environment certification, repeated-run stress matrices, and closeout-adjacent downstream workflow depth remain outside the bounded integrated lane until later closeout work promotes them explicitly",
         ],
-    )
+    })
 }

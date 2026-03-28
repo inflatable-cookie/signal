@@ -2,10 +2,9 @@
 use crate::{
     bus, parameter_application_report, planning_group_for_node, stage_parameter_events_for_node,
     stage_processor::apply_stage, AudioBuffer, ExecutableGraph, GraphBlockReport,
-    GraphBusLevelReport, GraphBusState, GraphCapturedBusOutput, GraphContractSummary,
-    GraphExecutionContext, GraphExecutionLane, GraphExecutionRequest, GraphNodeRenderOverride,
-    GraphNodeSilencePolicy, GraphParameterBatch, GraphPlanningSummary, GraphPreparedBus,
-    GraphPreparedDispatch, GraphRoutingSummary,
+    GraphBusLevelReport, GraphBusState, GraphCapturedBusOutput, GraphExecutionContext,
+    GraphExecutionLane, GraphExecutionRequest, GraphNodeRenderOverride, GraphNodeSilencePolicy,
+    GraphParameterBatch, GraphPreparedBus, GraphPreparedDispatch, GraphRealtimeExecutionRequest,
 };
 
 impl ExecutableGraph {
@@ -49,15 +48,18 @@ impl ExecutableGraph {
         let routing = self.routing_summary();
         let prepared = self.prepare_anticipative(buffer, &context, parameter_batch);
         let (working_buffer, report) = self.execute_realtime_from_prepared_with_node_overrides(
-            buffer,
-            input_peak,
-            prepared,
-            context,
-            parameter_batch,
-            &planning,
-            &contract,
-            &routing,
-            node_render_overrides,
+            GraphRealtimeExecutionRequest {
+                input: buffer,
+                input_peak,
+                prepared,
+                context,
+                parameter_batch,
+                planning: &planning,
+                contract: &contract,
+                routing: &routing,
+                node_render_overrides,
+                captured_bus_ids: &[],
+            },
         );
         *buffer = working_buffer;
         report
@@ -120,53 +122,26 @@ impl ExecutableGraph {
     /// Execute real-time dispatches from a prepared state.
     pub fn execute_realtime_from_prepared(
         &self,
-        input: &AudioBuffer,
-        input_peak: f32,
-        prepared: Option<GraphPreparedDispatch>,
-        context: GraphExecutionContext,
-        parameter_batch: Option<&GraphParameterBatch>,
-        planning: &GraphPlanningSummary,
-        contract: &GraphContractSummary,
-        routing: &GraphRoutingSummary,
+        request: GraphRealtimeExecutionRequest<'_>,
     ) -> (AudioBuffer, GraphBlockReport) {
-        self.execute_realtime_from_prepared_with_node_overrides(
-            input,
-            input_peak,
-            prepared,
-            context,
-            parameter_batch,
-            planning,
-            contract,
-            routing,
-            &[],
-        )
+        self.execute_realtime_from_prepared_with_node_overrides(GraphRealtimeExecutionRequest {
+            node_render_overrides: &[],
+            captured_bus_ids: &[],
+            ..request
+        })
     }
 
     /// Execute with optional node render overrides.
     pub fn execute_realtime_from_prepared_with_node_overrides(
         &self,
-        input: &AudioBuffer,
-        input_peak: f32,
-        prepared: Option<GraphPreparedDispatch>,
-        context: GraphExecutionContext,
-        parameter_batch: Option<&GraphParameterBatch>,
-        planning: &GraphPlanningSummary,
-        contract: &GraphContractSummary,
-        routing: &GraphRoutingSummary,
-        node_render_overrides: &[GraphNodeRenderOverride],
+        request: GraphRealtimeExecutionRequest<'_>,
     ) -> (AudioBuffer, GraphBlockReport) {
         let (buffer, report, _) = self
             .execute_realtime_from_prepared_with_node_overrides_and_bus_captures(
-                input,
-                input_peak,
-                prepared,
-                context,
-                parameter_batch,
-                planning,
-                contract,
-                routing,
-                node_render_overrides,
-                &[],
+                GraphRealtimeExecutionRequest {
+                    captured_bus_ids: &[],
+                    ..request
+                },
             );
         (buffer, report)
     }
@@ -174,70 +149,69 @@ impl ExecutableGraph {
     /// Execute with node overrides and bus capture support.
     pub fn execute_realtime_from_prepared_with_node_overrides_and_bus_captures(
         &self,
-        input: &AudioBuffer,
-        input_peak: f32,
-        prepared: Option<GraphPreparedDispatch>,
-        context: GraphExecutionContext,
-        parameter_batch: Option<&GraphParameterBatch>,
-        planning: &GraphPlanningSummary,
-        contract: &GraphContractSummary,
-        routing: &GraphRoutingSummary,
-        node_render_overrides: &[GraphNodeRenderOverride],
-        captured_bus_ids: &[String],
+        request: GraphRealtimeExecutionRequest<'_>,
     ) -> (AudioBuffer, GraphBlockReport, Vec<GraphCapturedBusOutput>) {
-        let realtime_dispatches = planning
+        let realtime_dispatches = request
+            .planning
             .dispatches
             .iter()
             .filter(|dispatch| dispatch.lane == GraphExecutionLane::Realtime)
             .collect::<Vec<_>>();
 
-        let prework_output_peak = prepared.as_ref().map(|prepared| prepared.output_peak);
+        let prework_output_peak = request
+            .prepared
+            .as_ref()
+            .map(|prepared| prepared.output_peak);
         let mut realtime_input_peak = prework_output_peak;
-        let mut working_state = prepared
+        let mut working_state = request
+            .prepared
             .as_ref()
             .map(bus::prepared_bus_state)
-            .unwrap_or_else(|| bus::seeded_bus_state(input));
-        let parameter_report =
-            parameter_application_report(&self.plan, input.frames().0, parameter_batch);
+            .unwrap_or_else(|| bus::seeded_bus_state(request.input));
+        let parameter_report = parameter_application_report(
+            &self.plan,
+            request.input.frames().0,
+            request.parameter_batch,
+        );
 
         if !realtime_dispatches.is_empty() {
             if prework_output_peak.is_none() {
                 realtime_input_peak = Some(bus::peak_abs(
-                    bus::graph_output_buffer(&working_state, input).samples(),
+                    bus::graph_output_buffer(&working_state, request.input).samples(),
                 ));
             }
             self.execute_dispatches(
                 &mut working_state,
                 &realtime_dispatches,
-                context.anticipative_enabled,
-                parameter_batch,
-                node_render_overrides,
+                request.context.anticipative_enabled,
+                request.parameter_batch,
+                request.node_render_overrides,
             );
         }
 
-        let working_buffer = bus::graph_output_buffer(&working_state, input);
+        let working_buffer = bus::graph_output_buffer(&working_state, request.input);
         let output_latency_samples = working_state
             .latencies
             .get("main:out")
             .copied()
-            .unwrap_or_else(|| routing.output_latency_samples);
+            .unwrap_or(request.routing.output_latency_samples);
         let max_bus_latency_samples = working_state
             .latencies
             .values()
             .copied()
             .max()
-            .unwrap_or_else(|| routing.max_bus_latency_samples);
+            .unwrap_or(request.routing.max_bus_latency_samples);
         let output_tail_samples = working_state
             .tails
             .get("main:out")
             .copied()
-            .unwrap_or_else(|| routing.output_tail_samples);
+            .unwrap_or(request.routing.output_tail_samples);
         let max_bus_tail_samples = working_state
             .tails
             .values()
             .copied()
             .max()
-            .unwrap_or_else(|| routing.max_bus_tail_samples);
+            .unwrap_or(request.routing.max_bus_tail_samples);
         let bus_levels = working_state
             .buses
             .iter()
@@ -249,7 +223,8 @@ impl ExecutableGraph {
                 tail_samples: working_state.tails.get(bus_id).copied().unwrap_or(0),
             })
             .collect::<Vec<_>>();
-        let captured_buses = captured_bus_ids
+        let captured_buses = request
+            .captured_bus_ids
             .iter()
             .filter_map(|bus_id| {
                 working_state
@@ -267,45 +242,47 @@ impl ExecutableGraph {
             working_buffer.clone(),
             GraphBlockReport {
                 graph_id: self.plan.graph_id.clone(),
-                context,
+                context: request.context,
                 node_count: self.node_count(),
                 stateful_node_count: self.stateful_node_count(),
                 latency_node_count: self.latency_node_count(),
                 plugin_backed_node_count: self.plugin_backed_node_count(),
-                contract_issue_count: contract.issue_count,
-                silence_clear_node_count: contract.silence_clear_node_count,
-                adaptive_channel_node_count: contract.adaptive_channel_node_count,
-                resettable_node_count: contract.resettable_node_count,
-                scratch_buffer_count: contract.scratch_buffer_count,
-                track_lane_node_count: contract.track_lane_node_count,
-                bus_node_count: contract.bus_node_count,
-                send_return_node_count: contract.send_return_node_count,
-                console_node_count: contract.console_node_count,
-                routed_bus_count: routing.routed_bus_count,
-                direct_edge_count: routing.direct_edge_count,
-                fan_in_bus_count: routing.fan_in_bus_count,
-                fan_out_bus_count: routing.fan_out_bus_count,
-                mixed_bus_count: routing.mixed_bus_count,
+                contract_issue_count: request.contract.issue_count,
+                silence_clear_node_count: request.contract.silence_clear_node_count,
+                adaptive_channel_node_count: request.contract.adaptive_channel_node_count,
+                resettable_node_count: request.contract.resettable_node_count,
+                scratch_buffer_count: request.contract.scratch_buffer_count,
+                track_lane_node_count: request.contract.track_lane_node_count,
+                bus_node_count: request.contract.bus_node_count,
+                send_return_node_count: request.contract.send_return_node_count,
+                console_node_count: request.contract.console_node_count,
+                routed_bus_count: request.routing.routed_bus_count,
+                direct_edge_count: request.routing.direct_edge_count,
+                fan_in_bus_count: request.routing.fan_in_bus_count,
+                fan_out_bus_count: request.routing.fan_out_bus_count,
+                mixed_bus_count: request.routing.mixed_bus_count,
                 silent_source_bus_count: working_state.silent_source_bus_count,
-                phase_count: planning.phase_count,
-                anticipative_phase_count: planning.anticipative_phase_count,
-                phase_order: planning.phase_order.clone(),
-                lane_count: planning.lane_count,
-                anticipative_lane_count: planning.anticipative_lane_count,
-                lane_order: planning.lane_order.clone(),
-                dispatch_count: planning.dispatch_count,
-                dispatch_boundary_count: planning.dispatch_boundary_count,
-                dispatch_order: planning
+                phase_count: request.planning.phase_count,
+                anticipative_phase_count: request.planning.anticipative_phase_count,
+                phase_order: request.planning.phase_order.clone(),
+                lane_count: request.planning.lane_count,
+                anticipative_lane_count: request.planning.anticipative_lane_count,
+                lane_order: request.planning.lane_order.clone(),
+                dispatch_count: request.planning.dispatch_count,
+                dispatch_boundary_count: request.planning.dispatch_boundary_count,
+                dispatch_order: request
+                    .planning
                     .dispatches
                     .iter()
                     .map(|dispatch| dispatch.lane)
                     .collect(),
-                prepared_dispatch_count: prepared
+                prepared_dispatch_count: request
+                    .prepared
                     .as_ref()
                     .map_or(0, |prepared| prepared.dispatch_count),
                 realtime_dispatch_count: realtime_dispatches.len(),
                 dispatch_handoff_count: usize::from(
-                    prepared.is_some() && !realtime_dispatches.is_empty(),
+                    request.prepared.is_some() && !realtime_dispatches.is_empty(),
                 ),
                 stage_count: self.stage_count(),
                 dynamic_kernel_stage_count: self.dynamic_kernel_stage_count(),
@@ -318,7 +295,7 @@ impl ExecutableGraph {
                 max_bus_latency_samples,
                 output_tail_samples,
                 max_bus_tail_samples,
-                parameter_epoch: parameter_batch.map(|batch| batch.epoch),
+                parameter_epoch: request.parameter_batch.map(|batch| batch.epoch),
                 parameter_event_count: parameter_report.event_count,
                 parameter_targeted_node_count: parameter_report.targeted_node_count,
                 parameter_ignored_event_count: parameter_report.ignored_event_count,
@@ -326,7 +303,7 @@ impl ExecutableGraph {
                 parameter_coalesced_event_count: parameter_report.coalesced_event_count,
                 frame_count: working_buffer.frames().0,
                 channel_count: working_buffer.channel_count().0,
-                input_peak,
+                input_peak: request.input_peak,
                 prework_output_peak,
                 realtime_input_peak,
                 output_peak: bus::peak_abs(working_buffer.samples()),

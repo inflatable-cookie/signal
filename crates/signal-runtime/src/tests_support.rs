@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports)]
+
 // Tests for signal-runtime
 use std::{
     env, fs,
@@ -217,8 +219,8 @@ fn record_ready_plugin_sandbox(
     );
     runtime.record_plugin_sandbox_transport(
         sandbox_id,
-        &format!("lease-{sandbox_id}"),
-        &format!("region-{sandbox_id}"),
+        format!("lease-{sandbox_id}"),
+        format!("region-{sandbox_id}"),
         PluginSandboxTransportStage::Attached,
         Some(processing_epoch),
         None,
@@ -1061,4 +1063,3 @@ fn install_scheduler_topology_runtime_graph(
         .refresh_planning(runtime.anticipative_enabled);
     runtime.refresh_scheduler_topology_summary();
 }
-

@@ -2,7 +2,7 @@ use signal_plugin::{CompletionState, SandboxWatchdogState};
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{
     BrokerFailureStage, HeartbeatCycleStage, PluginSandboxLifecycleStage,
-    PluginSandboxTransportStage, TransportAttachIntent,
+    PluginSandboxTransportStage, RuntimeTransportSessionAttachRequest, TransportAttachIntent,
 };
 
 use super::super::ServerRuntimeHost;
@@ -100,31 +100,35 @@ impl ServerRuntimeHost {
             if let Err(error) = self
                 .runtime
                 .begin_transport_session_with_metadata_for_epoch(
-                    sandbox_id,
-                    shared_memory_lease_id.as_str(),
-                    transport.region_id.as_str(),
-                    intent,
-                    Some(processing_epoch),
-                    match intent {
-                        TransportAttachIntent::SteadyState => {
-                            signal_runtime::TransportSessionProvenance::SteadyOrigin
-                        }
-                        TransportAttachIntent::RecoveryOverlap => {
-                            signal_runtime::TransportSessionProvenance::RecoveryReplacement
-                        }
+                    RuntimeTransportSessionAttachRequest {
+                        sandbox_id: sandbox_id.to_string(),
+                        lease_id: shared_memory_lease_id.clone(),
+                        region_id: transport.region_id.clone(),
+                        intent,
+                        provenance: match intent {
+                            TransportAttachIntent::SteadyState => {
+                                signal_runtime::TransportSessionProvenance::SteadyOrigin
+                            }
+                            TransportAttachIntent::RecoveryOverlap => {
+                                signal_runtime::TransportSessionProvenance::RecoveryReplacement
+                            }
+                        },
+                        attach_processing_epoch: Some(processing_epoch),
+                        backing_path: Some(transport.backing_path.clone()),
+                        total_bytes: Some(transport.total_bytes),
                     },
-                    Some(transport.backing_path.clone()),
-                    Some(transport.total_bytes),
                 )
             {
                 self.rollback_unadmitted_lifecycle_setup(
                     protocol,
-                    sandbox_id,
-                    lifecycle,
-                    processing_epoch,
-                    shared_memory_lease_id.as_str(),
-                    transport,
-                    "transport admission rejected",
+                    super::LifecycleAdmissionRollback {
+                        sandbox_id,
+                        lifecycle,
+                        processing_epoch,
+                        lease_id: shared_memory_lease_id.as_str(),
+                        transport,
+                        detail: "transport admission rejected",
+                    },
                 );
                 return Err(error);
             }
@@ -186,7 +190,7 @@ impl ServerRuntimeHost {
                         response,
                     )
                 })
-                .last(),
+                .next_back(),
         })
     }
 }

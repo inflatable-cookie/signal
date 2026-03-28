@@ -4,7 +4,9 @@ use crate::tempo_state_continuity_basics::{
     continuity_trigger, has_tempo_cause, unresolved_span,
 };
 use crate::tempo_state_continuity_refresh::continuity_refresh_strength;
-use crate::tempo_state_continuity_transition::{continuity_expiry, continuity_transition};
+use crate::tempo_state_continuity_transition::{
+    continuity_expiry, continuity_transition, TempoContinuityTransitionInputs,
+};
 use signal_analysis::Confidence;
 
 pub fn tempo_state_recommendation_with_scope(
@@ -13,6 +15,50 @@ pub fn tempo_state_recommendation_with_scope(
     tempo_ambiguity: Confidence,
     stability_scope: TempoStabilityScopeSummary,
 ) -> TempoStateRecommendation {
+    #[derive(Clone, Copy)]
+    struct TempoContinuityArcInputs {
+        source: TempoContinuitySource,
+        confidence: Confidence,
+        unresolved: TempoContinuityUnresolvedSpan,
+        causes: TempoContinuityCauseStack,
+        current: TempoContinuityHistory,
+        refresh: TempoContinuityTransition,
+        first_decay: TempoContinuityTransition,
+        final_decay: TempoContinuityTransition,
+    }
+
+    #[derive(Clone, Copy)]
+    struct TempoContinuityArcDecisionInputs {
+        arc: TempoContinuityArc,
+        rationale: TempoContinuityArcRationale,
+        support: TempoContinuityArcSupport,
+        severity: TempoContinuitySeverity,
+        history: TempoContinuityHistory,
+        trigger: TempoContinuityTrigger,
+        causes: TempoContinuityCauseStack,
+        provenance: TempoContinuityProvenance,
+        expiry: TempoContinuityExpiry,
+        trusted_beats: usize,
+        revalidate_after_beats: usize,
+        confidence: Confidence,
+        unresolved: TempoContinuityUnresolvedSpan,
+        refresh: TempoContinuityTransition,
+        first_decay: TempoContinuityTransition,
+        final_decay: TempoContinuityTransition,
+    }
+
+    #[derive(Clone, Copy)]
+    struct TempoContinuityPlanInputs {
+        action: TempoContinuityAction,
+        source: TempoContinuitySource,
+        reason: TempoContinuityReason,
+        boundary_pressure: Confidence,
+        tempo_ambiguity: Confidence,
+        confidence: Confidence,
+        trusted_beats: usize,
+        revalidate_after_beats: usize,
+    }
+
     fn continuity_arc_support(
         unresolved: TempoContinuityUnresolvedSpan,
         causes: TempoContinuityCauseStack,
@@ -94,19 +140,22 @@ pub fn tempo_state_recommendation_with_scope(
     }
 
     pub(crate) fn continuity_arc_assessment(
-        source: TempoContinuitySource,
-        confidence: Confidence,
-        unresolved: TempoContinuityUnresolvedSpan,
-        causes: TempoContinuityCauseStack,
-        current: TempoContinuityHistory,
-        refresh: TempoContinuityTransition,
-        first_decay: TempoContinuityTransition,
-        final_decay: TempoContinuityTransition,
+        inputs: TempoContinuityArcInputs,
     ) -> (
         TempoContinuityArc,
         TempoContinuityArcRationale,
         TempoContinuityArcSupport,
     ) {
+        let TempoContinuityArcInputs {
+            source,
+            confidence,
+            unresolved,
+            causes,
+            current,
+            refresh,
+            first_decay,
+            final_decay,
+        } = inputs;
         let has_evidence_loss = has_tempo_cause(causes, TempoContinuityCause::EvidenceLoss);
         let has_boundary = has_tempo_cause(causes, TempoContinuityCause::BoundaryDrift);
         let has_prior_carry = has_tempo_cause(causes, TempoContinuityCause::PriorTempoCarry);
@@ -189,23 +238,26 @@ pub fn tempo_state_recommendation_with_scope(
     }
 
     pub(crate) fn continuity_arc_decision(
-        arc: TempoContinuityArc,
-        rationale: TempoContinuityArcRationale,
-        support: TempoContinuityArcSupport,
-        severity: TempoContinuitySeverity,
-        history: TempoContinuityHistory,
-        trigger: TempoContinuityTrigger,
-        causes: TempoContinuityCauseStack,
-        provenance: TempoContinuityProvenance,
-        expiry: TempoContinuityExpiry,
-        trusted_beats: usize,
-        revalidate_after_beats: usize,
-        confidence: Confidence,
-        unresolved: TempoContinuityUnresolvedSpan,
-        refresh: TempoContinuityTransition,
-        first_decay: TempoContinuityTransition,
-        final_decay: TempoContinuityTransition,
+        inputs: TempoContinuityArcDecisionInputs,
     ) -> TempoContinuityArcDecision {
+        let TempoContinuityArcDecisionInputs {
+            arc,
+            rationale,
+            support,
+            severity,
+            history,
+            trigger,
+            causes,
+            provenance,
+            expiry,
+            trusted_beats,
+            revalidate_after_beats,
+            confidence,
+            unresolved,
+            refresh,
+            first_decay,
+            final_decay,
+        } = inputs;
         let cause_stack = causes;
         let action_expiry = |action: TempoContinuityArcAction| -> TempoContinuityArcActionExpiry {
             let guaranteed_until_beats = match action {
@@ -232,10 +284,10 @@ pub fn tempo_state_recommendation_with_scope(
                 TempoContinuityArcAction::LockCurrentTempo => expiry.max_failed_revalidations,
                 TempoContinuityArcAction::PreferCoreWindowTempo
                 | TempoContinuityArcAction::PreservePriorTempo => {
-                    expiry.max_failed_revalidations.min(2).max(1)
+                    expiry.max_failed_revalidations.clamp(1, 2)
                 }
                 TempoContinuityArcAction::ReacquireCurrentTempo => {
-                    expiry.max_failed_revalidations.min(3).max(1)
+                    expiry.max_failed_revalidations.clamp(1, 3)
                 }
                 TempoContinuityArcAction::ClearTempo => 0,
             };
@@ -942,18 +994,21 @@ pub fn tempo_state_recommendation_with_scope(
     }
 
     fn continuity_plan(
-        action: TempoContinuityAction,
-        source: TempoContinuitySource,
-        reason: TempoContinuityReason,
-        boundary_pressure: Confidence,
-        tempo_ambiguity: Confidence,
-        confidence: Confidence,
-        trusted_beats: usize,
-        revalidate_after_beats: usize,
+        plan: TempoContinuityPlanInputs,
         refresh: TempoContinuityTransition,
         first_decay: TempoContinuityTransition,
         final_decay: TempoContinuityTransition,
     ) -> TempoContinuityPlan {
+        let TempoContinuityPlanInputs {
+            action,
+            source,
+            reason,
+            boundary_pressure,
+            tempo_ambiguity,
+            confidence,
+            trusted_beats,
+            revalidate_after_beats,
+        } = plan;
         let trigger =
             continuity_trigger(action, source, reason, boundary_pressure, tempo_ambiguity);
         let unresolved = unresolved_span(trigger, trusted_beats, revalidate_after_beats, 0);
@@ -968,20 +1023,21 @@ pub fn tempo_state_recommendation_with_scope(
             first_decay,
             final_decay,
         );
-        let (arc, arc_rationale, arc_support) = continuity_arc_assessment(
-            source,
-            confidence,
-            unresolved,
-            causes,
-            history,
-            refresh,
-            first_decay,
-            final_decay,
-        );
-        let arc_decision = continuity_arc_decision(
+        let (arc, arc_rationale, arc_support) =
+            continuity_arc_assessment(TempoContinuityArcInputs {
+                source,
+                confidence,
+                unresolved,
+                causes,
+                current: history,
+                refresh,
+                first_decay,
+                final_decay,
+            });
+        let arc_decision = continuity_arc_decision(TempoContinuityArcDecisionInputs {
             arc,
-            arc_rationale,
-            arc_support,
+            rationale: arc_rationale,
+            support: arc_support,
             severity,
             history,
             trigger,
@@ -995,7 +1051,7 @@ pub fn tempo_state_recommendation_with_scope(
             refresh,
             first_decay,
             final_decay,
-        );
+        });
         TempoContinuityPlan {
             action,
             source,
@@ -1042,7 +1098,6 @@ pub fn tempo_state_recommendation_with_scope(
             (12, 8, 14, 20, 0.64)
         }
     };
-    let whole_track_scope = matches!(stability_scope.scope, TempoStabilityScope::WholeTrackStable);
     let localized_edge_scope = matches!(
         stability_scope.scope,
         TempoStabilityScope::StableWithLocalizedEdgeDamage
@@ -1087,91 +1142,93 @@ pub fn tempo_state_recommendation_with_scope(
                     },
                     confidence: state_confidence,
                     continuity: continuity_plan(
-                        if core_stable_scope {
-                            TempoContinuityAction::Reacquire
-                        } else {
-                            TempoContinuityAction::Clear
-                        },
-                        if core_stable_scope {
-                            TempoContinuitySource::CurrentTempo
-                        } else {
-                            TempoContinuitySource::Cleared
-                        },
-                        if core_stable_scope {
-                            TempoContinuityReason::RevalidationDecay
-                        } else {
-                            TempoContinuityReason::InsufficientEvidence
-                        },
-                        interpretation.support.boundary_pressure,
-                        tempo_ambiguity,
-                        state_confidence,
-                        if core_stable_scope { 4 } else { 0 },
-                        if core_stable_scope { 4 } else { 0 },
-                        continuity_transition(
-                            if core_stable_scope { 4 } else { 0 },
-                            if core_stable_scope {
-                                TempoContinuityAction::Lock
-                            } else {
-                                TempoContinuityAction::Clear
-                            },
-                            if core_stable_scope {
-                                TempoContinuitySource::CurrentTempo
-                            } else {
-                                TempoContinuitySource::Cleared
-                            },
-                            if core_stable_scope {
-                                TempoContinuityReason::StableTempo
-                            } else {
-                                TempoContinuityReason::InsufficientEvidence
-                            },
-                            interpretation.support.boundary_pressure,
-                            tempo_ambiguity,
-                            if core_stable_scope { 4 } else { 0 },
-                            0,
-                            if core_stable_scope {
-                                Confidence::new((state_confidence.0 * 0.92).clamp(0.0, 1.0))
-                            } else {
-                                Confidence::new(0.0)
-                            },
-                        ),
-                        continuity_transition(
-                            if core_stable_scope { 8 } else { 0 },
-                            if core_stable_scope {
+                        TempoContinuityPlanInputs {
+                            action: if core_stable_scope {
                                 TempoContinuityAction::Reacquire
                             } else {
                                 TempoContinuityAction::Clear
                             },
-                            if core_stable_scope {
+                            source: if core_stable_scope {
                                 TempoContinuitySource::CurrentTempo
                             } else {
                                 TempoContinuitySource::Cleared
                             },
-                            if core_stable_scope {
+                            reason: if core_stable_scope {
                                 TempoContinuityReason::RevalidationDecay
                             } else {
                                 TempoContinuityReason::InsufficientEvidence
                             },
-                            interpretation.support.boundary_pressure,
+                            boundary_pressure: interpretation.support.boundary_pressure,
                             tempo_ambiguity,
-                            if core_stable_scope { 4 } else { 0 },
-                            1,
-                            if core_stable_scope {
+                            confidence: state_confidence,
+                            trusted_beats: if core_stable_scope { 4 } else { 0 },
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                        },
+                        continuity_transition(TempoContinuityTransitionInputs {
+                            after_beats: if core_stable_scope { 4 } else { 0 },
+                            action: if core_stable_scope {
+                                TempoContinuityAction::Lock
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            source: if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            reason: if core_stable_scope {
+                                TempoContinuityReason::StableTempo
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            boundary_pressure: interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                            stage_index: 0,
+                            confidence: if core_stable_scope {
+                                Confidence::new((state_confidence.0 * 0.92).clamp(0.0, 1.0))
+                            } else {
+                                Confidence::new(0.0)
+                            },
+                        }),
+                        continuity_transition(TempoContinuityTransitionInputs {
+                            after_beats: if core_stable_scope { 8 } else { 0 },
+                            action: if core_stable_scope {
+                                TempoContinuityAction::Reacquire
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            source: if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            reason: if core_stable_scope {
+                                TempoContinuityReason::RevalidationDecay
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            boundary_pressure: interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                            stage_index: 1,
+                            confidence: if core_stable_scope {
                                 Confidence::new((state_confidence.0 * 0.64).clamp(0.0, 1.0))
                             } else {
                                 Confidence::new(0.0)
                             },
-                        ),
-                        continuity_transition(
-                            if core_stable_scope { 12 } else { 0 },
-                            TempoContinuityAction::Clear,
-                            TempoContinuitySource::Cleared,
-                            TempoContinuityReason::InsufficientEvidence,
-                            interpretation.support.boundary_pressure,
+                        }),
+                        continuity_transition(TempoContinuityTransitionInputs {
+                            after_beats: if core_stable_scope { 12 } else { 0 },
+                            action: TempoContinuityAction::Clear,
+                            source: TempoContinuitySource::Cleared,
+                            reason: TempoContinuityReason::InsufficientEvidence,
+                            boundary_pressure: interpretation.support.boundary_pressure,
                             tempo_ambiguity,
-                            if core_stable_scope { 4 } else { 0 },
-                            2,
-                            Confidence::new(0.0),
-                        ),
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                            stage_index: 2,
+                            confidence: Confidence::new(0.0),
+                        }),
                     ),
                 };
             }
@@ -1198,59 +1255,61 @@ pub fn tempo_state_recommendation_with_scope(
                 },
                 confidence: state_confidence,
                 continuity: continuity_plan(
-                    TempoContinuityAction::Lock,
-                    TempoContinuitySource::CurrentTempo,
-                    TempoContinuityReason::IntegerTempoSnap,
-                    interpretation.support.boundary_pressure,
-                    tempo_ambiguity,
-                    state_confidence,
-                    if localized_edge_scope {
-                        localized_trusted_beats
-                    } else {
-                        16
-                    },
-                    if localized_edge_scope {
-                        localized_revalidate_after_beats
-                    } else {
-                        12
-                    },
-                    continuity_transition(
-                        if localized_edge_scope {
-                            localized_revalidate_after_beats
-                        } else {
-                            12
-                        },
-                        TempoContinuityAction::Lock,
-                        TempoContinuitySource::CurrentTempo,
-                        TempoContinuityReason::IntegerTempoSnap,
-                        interpretation.support.boundary_pressure,
+                    TempoContinuityPlanInputs {
+                        action: TempoContinuityAction::Lock,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::IntegerTempoSnap,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        if localized_edge_scope {
+                        confidence: state_confidence,
+                        trusted_beats: if localized_edge_scope {
+                            localized_trusted_beats
+                        } else {
+                            16
+                        },
+                        revalidate_after_beats: if localized_edge_scope {
                             localized_revalidate_after_beats
                         } else {
                             12
                         },
-                        0,
-                        state_confidence,
-                    ),
-                    continuity_transition(
-                        if localized_edge_scope {
+                    },
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        action: TempoContinuityAction::Lock,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::IntegerTempoSnap,
+                        boundary_pressure: interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        revalidate_after_beats: if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        stage_index: 0,
+                        confidence: state_confidence,
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: if localized_edge_scope {
                             localized_downgrade_after_beats
                         } else {
                             20
                         },
-                        TempoContinuityAction::Retain,
-                        TempoContinuitySource::CurrentTempo,
-                        TempoContinuityReason::RevalidationDecay,
-                        interpretation.support.boundary_pressure,
+                        action: TempoContinuityAction::Retain,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::RevalidationDecay,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        if localized_edge_scope {
+                        revalidate_after_beats: if localized_edge_scope {
                             localized_revalidate_after_beats
                         } else {
                             12
                         },
-                        1,
-                        Confidence::new(
+                        stage_index: 1,
+                        confidence: Confidence::new(
                             (state_confidence.0
                                 * if localized_edge_scope {
                                     localized_decay_confidence_scale
@@ -1259,26 +1318,26 @@ pub fn tempo_state_recommendation_with_scope(
                                 })
                             .clamp(0.0, 1.0),
                         ),
-                    ),
-                    continuity_transition(
-                        if localized_edge_scope {
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: if localized_edge_scope {
                             localized_clear_after_beats
                         } else {
                             28
                         },
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        if localized_edge_scope {
+                        revalidate_after_beats: if localized_edge_scope {
                             localized_revalidate_after_beats
                         } else {
                             12
                         },
-                        2,
-                        Confidence::new(0.0),
-                    ),
+                        stage_index: 2,
+                        confidence: Confidence::new(0.0),
+                    }),
                 ),
             }
         }
@@ -1307,91 +1366,93 @@ pub fn tempo_state_recommendation_with_scope(
                     },
                     confidence: state_confidence,
                     continuity: continuity_plan(
-                        if core_stable_scope {
-                            TempoContinuityAction::Reacquire
-                        } else {
-                            TempoContinuityAction::Clear
-                        },
-                        if core_stable_scope {
-                            TempoContinuitySource::CurrentTempo
-                        } else {
-                            TempoContinuitySource::Cleared
-                        },
-                        if core_stable_scope {
-                            TempoContinuityReason::RevalidationDecay
-                        } else {
-                            TempoContinuityReason::InsufficientEvidence
-                        },
-                        interpretation.support.boundary_pressure,
-                        tempo_ambiguity,
-                        state_confidence,
-                        if core_stable_scope { 4 } else { 0 },
-                        if core_stable_scope { 4 } else { 0 },
-                        continuity_transition(
-                            if core_stable_scope { 4 } else { 0 },
-                            if core_stable_scope {
-                                TempoContinuityAction::Lock
-                            } else {
-                                TempoContinuityAction::Clear
-                            },
-                            if core_stable_scope {
-                                TempoContinuitySource::CurrentTempo
-                            } else {
-                                TempoContinuitySource::Cleared
-                            },
-                            if core_stable_scope {
-                                TempoContinuityReason::StableTempo
-                            } else {
-                                TempoContinuityReason::InsufficientEvidence
-                            },
-                            interpretation.support.boundary_pressure,
-                            tempo_ambiguity,
-                            if core_stable_scope { 4 } else { 0 },
-                            0,
-                            if core_stable_scope {
-                                Confidence::new((state_confidence.0 * 0.94).clamp(0.0, 1.0))
-                            } else {
-                                Confidence::new(0.0)
-                            },
-                        ),
-                        continuity_transition(
-                            if core_stable_scope { 8 } else { 0 },
-                            if core_stable_scope {
+                        TempoContinuityPlanInputs {
+                            action: if core_stable_scope {
                                 TempoContinuityAction::Reacquire
                             } else {
                                 TempoContinuityAction::Clear
                             },
-                            if core_stable_scope {
+                            source: if core_stable_scope {
                                 TempoContinuitySource::CurrentTempo
                             } else {
                                 TempoContinuitySource::Cleared
                             },
-                            if core_stable_scope {
+                            reason: if core_stable_scope {
                                 TempoContinuityReason::RevalidationDecay
                             } else {
                                 TempoContinuityReason::InsufficientEvidence
                             },
-                            interpretation.support.boundary_pressure,
+                            boundary_pressure: interpretation.support.boundary_pressure,
                             tempo_ambiguity,
-                            if core_stable_scope { 4 } else { 0 },
-                            1,
-                            if core_stable_scope {
+                            confidence: state_confidence,
+                            trusted_beats: if core_stable_scope { 4 } else { 0 },
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                        },
+                        continuity_transition(TempoContinuityTransitionInputs {
+                            after_beats: if core_stable_scope { 4 } else { 0 },
+                            action: if core_stable_scope {
+                                TempoContinuityAction::Lock
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            source: if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            reason: if core_stable_scope {
+                                TempoContinuityReason::StableTempo
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            boundary_pressure: interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                            stage_index: 0,
+                            confidence: if core_stable_scope {
+                                Confidence::new((state_confidence.0 * 0.94).clamp(0.0, 1.0))
+                            } else {
+                                Confidence::new(0.0)
+                            },
+                        }),
+                        continuity_transition(TempoContinuityTransitionInputs {
+                            after_beats: if core_stable_scope { 8 } else { 0 },
+                            action: if core_stable_scope {
+                                TempoContinuityAction::Reacquire
+                            } else {
+                                TempoContinuityAction::Clear
+                            },
+                            source: if core_stable_scope {
+                                TempoContinuitySource::CurrentTempo
+                            } else {
+                                TempoContinuitySource::Cleared
+                            },
+                            reason: if core_stable_scope {
+                                TempoContinuityReason::RevalidationDecay
+                            } else {
+                                TempoContinuityReason::InsufficientEvidence
+                            },
+                            boundary_pressure: interpretation.support.boundary_pressure,
+                            tempo_ambiguity,
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                            stage_index: 1,
+                            confidence: if core_stable_scope {
                                 Confidence::new((state_confidence.0 * 0.66).clamp(0.0, 1.0))
                             } else {
                                 Confidence::new(0.0)
                             },
-                        ),
-                        continuity_transition(
-                            if core_stable_scope { 12 } else { 0 },
-                            TempoContinuityAction::Clear,
-                            TempoContinuitySource::Cleared,
-                            TempoContinuityReason::InsufficientEvidence,
-                            interpretation.support.boundary_pressure,
+                        }),
+                        continuity_transition(TempoContinuityTransitionInputs {
+                            after_beats: if core_stable_scope { 12 } else { 0 },
+                            action: TempoContinuityAction::Clear,
+                            source: TempoContinuitySource::Cleared,
+                            reason: TempoContinuityReason::InsufficientEvidence,
+                            boundary_pressure: interpretation.support.boundary_pressure,
                             tempo_ambiguity,
-                            if core_stable_scope { 4 } else { 0 },
-                            2,
-                            Confidence::new(0.0),
-                        ),
+                            revalidate_after_beats: if core_stable_scope { 4 } else { 0 },
+                            stage_index: 2,
+                            confidence: Confidence::new(0.0),
+                        }),
                     ),
                 };
             }
@@ -1411,66 +1472,66 @@ pub fn tempo_state_recommendation_with_scope(
                 action: TempoStateAction::Lock,
                 reason: if localized_edge_scope {
                     TempoStateReason::StableTempoWithEdgeDamage
-                } else if whole_track_scope {
-                    TempoStateReason::StableRefinedTempo
                 } else {
                     TempoStateReason::StableRefinedTempo
                 },
                 confidence: state_confidence,
                 continuity: continuity_plan(
-                    TempoContinuityAction::Lock,
-                    TempoContinuitySource::CurrentTempo,
-                    TempoContinuityReason::StableTempo,
-                    interpretation.support.boundary_pressure,
-                    tempo_ambiguity,
-                    state_confidence,
-                    if localized_edge_scope {
-                        localized_trusted_beats
-                    } else {
-                        16
-                    },
-                    if localized_edge_scope {
-                        localized_revalidate_after_beats
-                    } else {
-                        12
-                    },
-                    continuity_transition(
-                        if localized_edge_scope {
-                            localized_revalidate_after_beats
-                        } else {
-                            12
-                        },
-                        TempoContinuityAction::Lock,
-                        TempoContinuitySource::CurrentTempo,
-                        TempoContinuityReason::StableTempo,
-                        interpretation.support.boundary_pressure,
+                    TempoContinuityPlanInputs {
+                        action: TempoContinuityAction::Lock,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::StableTempo,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        if localized_edge_scope {
+                        confidence: state_confidence,
+                        trusted_beats: if localized_edge_scope {
+                            localized_trusted_beats
+                        } else {
+                            16
+                        },
+                        revalidate_after_beats: if localized_edge_scope {
                             localized_revalidate_after_beats
                         } else {
                             12
                         },
-                        0,
-                        state_confidence,
-                    ),
-                    continuity_transition(
-                        if localized_edge_scope {
+                    },
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        action: TempoContinuityAction::Lock,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::StableTempo,
+                        boundary_pressure: interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        revalidate_after_beats: if localized_edge_scope {
+                            localized_revalidate_after_beats
+                        } else {
+                            12
+                        },
+                        stage_index: 0,
+                        confidence: state_confidence,
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: if localized_edge_scope {
                             localized_downgrade_after_beats
                         } else {
                             20
                         },
-                        TempoContinuityAction::Retain,
-                        TempoContinuitySource::CurrentTempo,
-                        TempoContinuityReason::RevalidationDecay,
-                        interpretation.support.boundary_pressure,
+                        action: TempoContinuityAction::Retain,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::RevalidationDecay,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        if localized_edge_scope {
+                        revalidate_after_beats: if localized_edge_scope {
                             localized_revalidate_after_beats
                         } else {
                             12
                         },
-                        1,
-                        Confidence::new(
+                        stage_index: 1,
+                        confidence: Confidence::new(
                             (state_confidence.0
                                 * if localized_edge_scope {
                                     localized_decay_confidence_scale
@@ -1479,26 +1540,26 @@ pub fn tempo_state_recommendation_with_scope(
                                 })
                             .clamp(0.0, 1.0),
                         ),
-                    ),
-                    continuity_transition(
-                        if localized_edge_scope {
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: if localized_edge_scope {
                             localized_clear_after_beats
                         } else {
                             28
                         },
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        if localized_edge_scope {
+                        revalidate_after_beats: if localized_edge_scope {
                             localized_revalidate_after_beats
                         } else {
                             12
                         },
-                        2,
-                        Confidence::new(0.0),
-                    ),
+                        stage_index: 2,
+                        confidence: Confidence::new(0.0),
+                    }),
                 ),
             }
         }
@@ -1512,47 +1573,49 @@ pub fn tempo_state_recommendation_with_scope(
                 reason: TempoStateReason::CoreWindowFallback,
                 confidence: state_confidence,
                 continuity: continuity_plan(
-                    TempoContinuityAction::Retain,
-                    TempoContinuitySource::CoreWindow,
-                    TempoContinuityReason::CoreWindowCarry,
-                    interpretation.support.boundary_pressure,
-                    tempo_ambiguity,
-                    state_confidence,
-                    8,
-                    4,
-                    continuity_transition(
-                        4,
-                        TempoContinuityAction::Retain,
-                        TempoContinuitySource::CoreWindow,
-                        TempoContinuityReason::CoreWindowCarry,
-                        interpretation.support.boundary_pressure,
+                    TempoContinuityPlanInputs {
+                        action: TempoContinuityAction::Retain,
+                        source: TempoContinuitySource::CoreWindow,
+                        reason: TempoContinuityReason::CoreWindowCarry,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        4,
-                        0,
-                        state_confidence,
-                    ),
-                    continuity_transition(
-                        8,
-                        TempoContinuityAction::Reacquire,
-                        TempoContinuitySource::PriorTempo,
-                        TempoContinuityReason::RevalidationDecay,
-                        interpretation.support.boundary_pressure,
+                        confidence: state_confidence,
+                        trusted_beats: 8,
+                        revalidate_after_beats: 4,
+                    },
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 4,
+                        action: TempoContinuityAction::Retain,
+                        source: TempoContinuitySource::CoreWindow,
+                        reason: TempoContinuityReason::CoreWindowCarry,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        4,
-                        1,
-                        Confidence::new((state_confidence.0 * 0.68).clamp(0.0, 1.0)),
-                    ),
-                    continuity_transition(
-                        12,
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                        revalidate_after_beats: 4,
+                        stage_index: 0,
+                        confidence: state_confidence,
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 8,
+                        action: TempoContinuityAction::Reacquire,
+                        source: TempoContinuitySource::PriorTempo,
+                        reason: TempoContinuityReason::RevalidationDecay,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        4,
-                        2,
-                        Confidence::new(0.0),
-                    ),
+                        revalidate_after_beats: 4,
+                        stage_index: 1,
+                        confidence: Confidence::new((state_confidence.0 * 0.68).clamp(0.0, 1.0)),
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 12,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        revalidate_after_beats: 4,
+                        stage_index: 2,
+                        confidence: Confidence::new(0.0),
+                    }),
                 ),
             }
         }
@@ -1566,47 +1629,49 @@ pub fn tempo_state_recommendation_with_scope(
                 reason: TempoStateReason::StableRefinedTempo,
                 confidence: state_confidence,
                 continuity: continuity_plan(
-                    TempoContinuityAction::Reacquire,
-                    TempoContinuitySource::CurrentTempo,
-                    TempoContinuityReason::RevalidationDecay,
-                    interpretation.support.boundary_pressure,
-                    tempo_ambiguity,
-                    state_confidence,
-                    4,
-                    4,
-                    continuity_transition(
-                        4,
-                        TempoContinuityAction::Lock,
-                        TempoContinuitySource::CurrentTempo,
-                        TempoContinuityReason::StableTempo,
-                        interpretation.support.boundary_pressure,
+                    TempoContinuityPlanInputs {
+                        action: TempoContinuityAction::Reacquire,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::RevalidationDecay,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        4,
-                        0,
-                        Confidence::new((state_confidence.0 * 0.96).clamp(0.0, 1.0)),
-                    ),
-                    continuity_transition(
-                        8,
-                        TempoContinuityAction::Reacquire,
-                        TempoContinuitySource::CurrentTempo,
-                        TempoContinuityReason::RevalidationDecay,
-                        interpretation.support.boundary_pressure,
+                        confidence: state_confidence,
+                        trusted_beats: 4,
+                        revalidate_after_beats: 4,
+                    },
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 4,
+                        action: TempoContinuityAction::Lock,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::StableTempo,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        4,
-                        1,
-                        Confidence::new((state_confidence.0 * 0.66).clamp(0.0, 1.0)),
-                    ),
-                    continuity_transition(
-                        12,
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                        revalidate_after_beats: 4,
+                        stage_index: 0,
+                        confidence: Confidence::new((state_confidence.0 * 0.96).clamp(0.0, 1.0)),
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 8,
+                        action: TempoContinuityAction::Reacquire,
+                        source: TempoContinuitySource::CurrentTempo,
+                        reason: TempoContinuityReason::RevalidationDecay,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        4,
-                        2,
-                        Confidence::new(0.0),
-                    ),
+                        revalidate_after_beats: 4,
+                        stage_index: 1,
+                        confidence: Confidence::new((state_confidence.0 * 0.66).clamp(0.0, 1.0)),
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 12,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        revalidate_after_beats: 4,
+                        stage_index: 2,
+                        confidence: Confidence::new(0.0),
+                    }),
                 ),
             }
         }
@@ -1621,47 +1686,49 @@ pub fn tempo_state_recommendation_with_scope(
                 reason: TempoStateReason::TempoDeferred,
                 confidence: state_confidence,
                 continuity: continuity_plan(
-                    TempoContinuityAction::Clear,
-                    TempoContinuitySource::Cleared,
-                    TempoContinuityReason::InsufficientEvidence,
-                    interpretation.support.boundary_pressure,
-                    tempo_ambiguity,
-                    state_confidence,
-                    0,
-                    0,
-                    continuity_transition(
-                        0,
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                    TempoContinuityPlanInputs {
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        0,
-                        0,
-                        Confidence::new(0.0),
-                    ),
-                    continuity_transition(
-                        0,
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                        confidence: state_confidence,
+                        trusted_beats: 0,
+                        revalidate_after_beats: 0,
+                    },
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 0,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        0,
-                        1,
-                        Confidence::new(0.0),
-                    ),
-                    continuity_transition(
-                        0,
-                        TempoContinuityAction::Clear,
-                        TempoContinuitySource::Cleared,
-                        TempoContinuityReason::InsufficientEvidence,
-                        interpretation.support.boundary_pressure,
+                        revalidate_after_beats: 0,
+                        stage_index: 0,
+                        confidence: Confidence::new(0.0),
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 0,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
                         tempo_ambiguity,
-                        0,
-                        2,
-                        Confidence::new(0.0),
-                    ),
+                        revalidate_after_beats: 0,
+                        stage_index: 1,
+                        confidence: Confidence::new(0.0),
+                    }),
+                    continuity_transition(TempoContinuityTransitionInputs {
+                        after_beats: 0,
+                        action: TempoContinuityAction::Clear,
+                        source: TempoContinuitySource::Cleared,
+                        reason: TempoContinuityReason::InsufficientEvidence,
+                        boundary_pressure: interpretation.support.boundary_pressure,
+                        tempo_ambiguity,
+                        revalidate_after_beats: 0,
+                        stage_index: 2,
+                        confidence: Confidence::new(0.0),
+                    }),
                 ),
             }
         }

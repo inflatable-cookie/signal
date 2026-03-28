@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
 use signal_plugin::PluginFormat;
 use signal_runtime::{
@@ -126,8 +128,8 @@ pub fn record_public_plugin_sandbox_ready(
     );
     runtime.record_plugin_sandbox_transport(
         sandbox_id,
-        &format!("lease-{sandbox_id}"),
-        &format!("region-{sandbox_id}"),
+        format!("lease-{sandbox_id}"),
+        format!("region-{sandbox_id}"),
         PluginSandboxTransportStage::Attached,
         Some(epoch),
         None,

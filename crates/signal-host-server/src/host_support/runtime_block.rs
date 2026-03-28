@@ -3,7 +3,7 @@ use signal_plugin::{CompletionState, WatchdogOutcome};
 use signal_plugin_clap::{BrokeredBlockOutcome, ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_primitives::FrameCount;
 use signal_runtime::{
-    BlockDispatchStage, BrokerFailureStage, CompletionSlotStage, RuntimeError,
+    BlockDispatchRecord, BlockDispatchStage, BrokerFailureStage, CompletionSlotStage, RuntimeError,
     WatchdogRestartRecord,
 };
 
@@ -35,15 +35,15 @@ impl ServerRuntimeHost {
             frame_count,
             protocol.default_render_context(frame_count),
         );
-        self.runtime.record_block_dispatch(
-            run.sandbox_id.as_str(),
-            run.shared_memory_lease_id.as_str(),
-            run.processing_epoch,
+        self.runtime.record_block_dispatch(BlockDispatchRecord {
+            sandbox_id: run.sandbox_id.clone(),
+            lease_id: run.shared_memory_lease_id.clone(),
+            processing_epoch: run.processing_epoch,
             block_sequence,
             frame_count,
-            BlockDispatchStage::Requested,
-            None,
-        );
+            stage: BlockDispatchStage::Requested,
+            completion_state: None,
+        });
         let payload = protocol.test_input_payload(block_sequence, frame_count);
         protocol
             .write_block_payload(&self.broker, &transport, &dispatch, &payload)
@@ -171,15 +171,15 @@ impl ServerRuntimeHost {
         } else {
             BlockDispatchStage::Completed
         };
-        self.runtime.record_block_dispatch(
-            run.sandbox_id.as_str(),
-            run.shared_memory_lease_id.as_str(),
-            run.processing_epoch,
+        self.runtime.record_block_dispatch(BlockDispatchRecord {
+            sandbox_id: run.sandbox_id.clone(),
+            lease_id: run.shared_memory_lease_id.clone(),
+            processing_epoch: run.processing_epoch,
             block_sequence,
             frame_count,
-            dispatch_stage,
-            Some(stored_result.result.slot.state),
-        );
+            stage: dispatch_stage,
+            completion_state: Some(stored_result.result.slot.state),
+        });
         self.runtime.record_block_sequence(
             run.sandbox_id.as_str(),
             run.processing_epoch,

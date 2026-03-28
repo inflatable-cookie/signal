@@ -1,10 +1,11 @@
 // Tests for signal-plugin-clap
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{
         classify_sandbox_failure, sandbox_failure_event, ClapBlockProtocol, ClapEvent,
         ClapHostExtension, ClapNoteExpressionEvent, ClapNoteExpressionKind, ClapParamGestureEvent,
-        ClapParamGesturePhase, ClapPluginHostAdapter, ClapSandboxFailureStage,
-        ClapSandboxLifecycleHarness,
+        ClapParamGesturePhase, ClapPluginHostAdapter, ClapSandboxFailureInput,
+        ClapSandboxFailureStage, ClapSandboxLifecycleHarness,
     };
     use signal_ipc::{
         PluginDescriptorPayload, PluginMessageName, PluginMessagePayload, SharedMemoryBroker,
@@ -35,8 +36,7 @@ mod tests {
         assert!(adapter.supports_format(PluginFormat::Clap));
         assert!(adapter
             .minimum_extension_set()
-            .iter()
-            .any(|extension| *extension == ClapHostExtension::Params));
+            .contains(&ClapHostExtension::Params));
         assert_eq!(adapter.minimum_extension_set()[0].as_str(), "audio-ports");
     }
 
@@ -784,16 +784,17 @@ mod tests {
 
     #[test]
     fn sandbox_failure_event_exposes_timeout_kind() {
-        let failure = sandbox_failure_event(
-            "sandbox-a",
-            Some("instance-a".into()),
-            "processBlock",
-            "timeout",
-            "sandbox exceeded block deadline",
-            Some(3),
-            Some("lease-a".into()),
-            None,
-        );
+        let failure = sandbox_failure_event(ClapSandboxFailureInput {
+            sandbox_id: "sandbox-a".to_string(),
+            instance_id: Some("instance-a".into()),
+            stage: "processBlock".to_string(),
+            error_kind: "timeout".to_string(),
+            detail: "sandbox exceeded block deadline".to_string(),
+            processing_epoch: Some(3),
+            shared_memory_lease_id: Some("lease-a".into()),
+            correlation_id: None,
+            instance_state: None,
+        });
 
         match failure.payload {
             PluginMessagePayload::SandboxFailure { error_kind, .. } => {
@@ -805,16 +806,17 @@ mod tests {
 
     #[test]
     fn classify_sandbox_failure_maps_process_attach_errors() {
-        let failure = sandbox_failure_event(
-            "sandbox-a",
-            Some("instance-a".into()),
-            "processBlock",
-            "resourceUnavailable",
-            "failed to attach shared-memory region: stale mapping",
-            Some(3),
-            Some("lease-a".into()),
-            None,
-        );
+        let failure = sandbox_failure_event(ClapSandboxFailureInput {
+            sandbox_id: "sandbox-a".to_string(),
+            instance_id: Some("instance-a".into()),
+            stage: "processBlock".to_string(),
+            error_kind: "resourceUnavailable".to_string(),
+            detail: "failed to attach shared-memory region: stale mapping".to_string(),
+            processing_epoch: Some(3),
+            shared_memory_lease_id: Some("lease-a".into()),
+            correlation_id: None,
+            instance_state: None,
+        });
 
         let classification = classify_sandbox_failure(&failure).expect("classification");
         assert_eq!(classification.stage, ClapSandboxFailureStage::ProcessAttach);

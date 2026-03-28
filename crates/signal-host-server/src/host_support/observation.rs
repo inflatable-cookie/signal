@@ -164,30 +164,41 @@ impl ServerRuntimeHost {
                 endpoint_topology,
                 linux_clocking_parity:
                     signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
-                        RuntimeHostHardwareSummary::classify_linux_backend_identity(
-                            stream.device.backend_identity,
-                        ),
-                        diagnostics.health,
-                        RuntimeHostAudioStreamState::Running,
-                        RuntimeHostClockDomain::Aggregate,
-                        RuntimeHostClockFallbackState::Direct,
-                        RuntimeHostClockTransitionState::Stable,
-                        RuntimeHostClockDriftState::AggregateManaged,
-                        RuntimeHostClockDiscontinuityState::Continuous,
+                        signal_runtime::RuntimeLinuxHostIoParityInput {
+                            linux_backend_identity:
+                                RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                                    stream.device.backend_identity,
+                                ),
+                            backend_health: diagnostics.health,
+                            stream_state: RuntimeHostAudioStreamState::Running,
+                            clock_domain: RuntimeHostClockDomain::Aggregate,
+                            fallback_state: RuntimeHostClockFallbackState::Direct,
+                            transition_state: RuntimeHostClockTransitionState::Stable,
+                            drift_state: RuntimeHostClockDriftState::AggregateManaged,
+                            discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+                            duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
+                            endpoint_topology,
+                            partial_availability: false,
+                        },
                     ),
                 linux_duplex_parity:
                     signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
-                        RuntimeHostHardwareSummary::classify_linux_backend_identity(
-                            stream.device.backend_identity,
-                        ),
-                        diagnostics.health,
-                        RuntimeHostAudioStreamState::Running,
-                        RuntimeHostClockDomain::Aggregate,
-                        RuntimeHostClockFallbackState::Direct,
-                        RuntimeHostClockTransitionState::Stable,
-                        RuntimeHostDuplexMismatchState::Aligned,
-                        endpoint_topology,
-                        false,
+                        signal_runtime::RuntimeLinuxHostIoParityInput {
+                            linux_backend_identity:
+                                RuntimeHostHardwareSummary::classify_linux_backend_identity(
+                                    stream.device.backend_identity,
+                                ),
+                            backend_health: diagnostics.health,
+                            stream_state: RuntimeHostAudioStreamState::Running,
+                            clock_domain: RuntimeHostClockDomain::Aggregate,
+                            fallback_state: RuntimeHostClockFallbackState::Direct,
+                            transition_state: RuntimeHostClockTransitionState::Stable,
+                            drift_state: RuntimeHostClockDriftState::AggregateManaged,
+                            discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+                            duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
+                            endpoint_topology,
+                            partial_availability: false,
+                        },
                     ),
                 linux_endpoint_topology_parity:
                     signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(

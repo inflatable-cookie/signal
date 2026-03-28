@@ -128,12 +128,12 @@ fn push_four_four_groove(
             .unwrap_or(section.beat_pattern);
         let is_dropout_bar = section.dropout_bars.contains(&bar);
 
-        for beat_in_bar in 0..4usize {
+        for (beat_in_bar, pattern_value) in beat_pattern.iter().copied().enumerate() {
             let beat_index = start_beat + bar * 4 + beat_in_bar;
             let beat_amplitude = if is_dropout_bar {
-                0.35 * beat_pattern[beat_in_bar]
+                0.35 * pattern_value
             } else {
-                beat_pattern[beat_in_bar]
+                pattern_value
             };
             beats.push(beat_amplitude);
 

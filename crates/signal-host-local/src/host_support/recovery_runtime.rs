@@ -7,17 +7,29 @@ use signal_runtime::{
 use super::super::{LocalRuntimeHost, RecoveryFailureInjection};
 use super::{LifecycleRunSummary, RecoveryHistory};
 
+pub(crate) struct LingeringSessionRecovery<'a> {
+    pub(crate) sandbox_id: &'a str,
+    pub(crate) lifecycle: &'a mut ClapSandboxLifecycleHarness,
+    pub(crate) run: &'a LifecycleRunSummary,
+    pub(crate) prior_history: RecoveryHistory,
+    pub(crate) next_epoch: u64,
+    pub(crate) failure: Option<RecoveryFailureInjection>,
+}
+
 impl LocalRuntimeHost {
     pub(crate) fn recover_from_lingering_session(
         &mut self,
         protocol: &ClapBlockProtocol,
-        sandbox_id: &str,
-        lifecycle: &mut ClapSandboxLifecycleHarness,
-        run: &LifecycleRunSummary,
-        prior_history: RecoveryHistory,
-        next_epoch: u64,
-        failure: Option<RecoveryFailureInjection>,
+        recovery: LingeringSessionRecovery<'_>,
     ) -> Result<LifecycleRunSummary, RuntimeError> {
+        let LingeringSessionRecovery {
+            sandbox_id,
+            lifecycle,
+            run,
+            prior_history,
+            next_epoch,
+            failure,
+        } = recovery;
         self.cleanup_lingering_origin_transport(sandbox_id, lifecycle, run, failure)?;
         self.cleanup_orphan_lingering_sessions_for_sandbox(
             sandbox_id,

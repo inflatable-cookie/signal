@@ -26,6 +26,18 @@ pub enum LingeringCleanupTrigger {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeTransportSessionAttachRequest {
+    pub sandbox_id: String,
+    pub lease_id: String,
+    pub region_id: String,
+    pub intent: TransportAttachIntent,
+    pub provenance: TransportSessionProvenance,
+    pub attach_processing_epoch: Option<u64>,
+    pub backing_path: Option<String>,
+    pub total_bytes: Option<u32>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ActiveTransportConcurrencySession {
     pub sandbox_id: String,
     pub lease_id: String,

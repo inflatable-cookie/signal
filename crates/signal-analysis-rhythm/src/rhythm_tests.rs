@@ -1,11 +1,14 @@
+#[cfg(test)]
 use super::*;
+#[cfg(test)]
 use signal_analysis::{
     run_audio_acceptance_harness, AcceptanceSeverity, AcceptanceStatus, AnalysisCorpusCase,
     AnalysisCorpusCaseMetadata, AnalysisCorpusFamily, AnalysisMetricValue, AnalysisStage,
 };
+#[cfg(test)]
 use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate, Seconds};
 
-
+#[cfg(test)]
 fn default_tempo_stability_scope() -> TempoStabilityScopeSummary {
     TempoStabilityScopeSummary {
         scope: TempoStabilityScope::WholeTrackStable,

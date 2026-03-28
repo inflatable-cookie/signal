@@ -1,7 +1,9 @@
 #[path = "support/public_contract_boundary_host_io_clock.rs"]
 mod public_contract_boundary_host_io_clock_support;
 
-use public_contract_boundary_host_io_clock_support::sample_public_clock_topology_host_io;
+use public_contract_boundary_host_io_clock_support::{
+    sample_public_clock_topology_host_io, PublicClockTopologyHostIoConfig,
+};
 use signal_runtime::{
     RuntimeConfig, RuntimeEventRecorder, RuntimeExternalIoLoopbackState,
     RuntimeExternalIoMonitoringState, RuntimeExternalIoMonitoringTapPoint,
@@ -36,16 +38,17 @@ fn public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopbac
         RuntimeExternalIoLoopbackState::Unavailable
     );
 
-    let cross_clock_duplex = sample_public_clock_topology_host_io(
-        RuntimeHostClockDomain::CrossClock,
-        RuntimeHostClockFallbackState::RuntimeResampled,
-        RuntimeHostClockTransitionState::EnteredCrossClockFallback,
-        RuntimeHostClockDriftState::CrossClockManaged,
-        RuntimeHostClockDiscontinuityState::Reconfigured,
-        RuntimeHostDuplexMismatchState::CrossClockDiverged,
-        RuntimeHostEndpointTopology::Duplex,
-        false,
-    );
+    let cross_clock_duplex =
+        sample_public_clock_topology_host_io(PublicClockTopologyHostIoConfig {
+            clock_domain: RuntimeHostClockDomain::CrossClock,
+            fallback_state: RuntimeHostClockFallbackState::RuntimeResampled,
+            transition_state: RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+            drift_state: RuntimeHostClockDriftState::CrossClockManaged,
+            discontinuity_state: RuntimeHostClockDiscontinuityState::Reconfigured,
+            duplex_mismatch_state: RuntimeHostDuplexMismatchState::CrossClockDiverged,
+            endpoint_topology: RuntimeHostEndpointTopology::Duplex,
+            partial_availability: false,
+        });
     let observation = baseline.with_host_external_io(&cross_clock_duplex);
     let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     supervisor.observation = supervisor

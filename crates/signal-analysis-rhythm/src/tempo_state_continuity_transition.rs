@@ -10,17 +10,33 @@ use crate::{
     TempoContinuityTransition,
 };
 
+#[derive(Clone, Copy)]
+pub(crate) struct TempoContinuityTransitionInputs {
+    pub(crate) after_beats: usize,
+    pub(crate) action: TempoContinuityAction,
+    pub(crate) source: TempoContinuitySource,
+    pub(crate) reason: TempoContinuityReason,
+    pub(crate) boundary_pressure: Confidence,
+    pub(crate) tempo_ambiguity: Confidence,
+    pub(crate) revalidate_after_beats: usize,
+    pub(crate) stage_index: usize,
+    pub(crate) confidence: Confidence,
+}
+
 pub(crate) fn continuity_transition(
-    after_beats: usize,
-    action: TempoContinuityAction,
-    source: TempoContinuitySource,
-    reason: TempoContinuityReason,
-    boundary_pressure: Confidence,
-    tempo_ambiguity: Confidence,
-    revalidate_after_beats: usize,
-    stage_index: usize,
-    confidence: Confidence,
+    inputs: TempoContinuityTransitionInputs,
 ) -> TempoContinuityTransition {
+    let TempoContinuityTransitionInputs {
+        after_beats,
+        action,
+        source,
+        reason,
+        boundary_pressure,
+        tempo_ambiguity,
+        revalidate_after_beats,
+        stage_index,
+        confidence,
+    } = inputs;
     let trigger = continuity_trigger(action, source, reason, boundary_pressure, tempo_ambiguity);
     let unresolved = unresolved_span(trigger, after_beats, revalidate_after_beats, stage_index);
     let causes = continuity_cause_stack(action, source, reason, boundary_pressure, tempo_ambiguity);

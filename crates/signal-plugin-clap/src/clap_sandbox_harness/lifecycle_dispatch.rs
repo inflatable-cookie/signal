@@ -1,24 +1,26 @@
 use signal_ipc::{PluginMessageEnvelope, PluginMessagePayload};
 
-use super::failure::failure_event;
+use super::failure::{failure_event, ClapSandboxFailureInput};
 use super::state::ClapSandboxLifecycleHarness;
+use crate::ClapHarnessResult;
 
 impl ClapSandboxLifecycleHarness {
     pub fn handle(
         &mut self,
         request: PluginMessageEnvelope,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         let correlation = request.message.correlation_id.clone().ok_or_else(|| {
-            failure_event(
-                "unknown",
-                None,
-                "handshake",
-                "protocolViolation",
-                "plugin lifecycle message is missing correlation_id",
-                None,
-                None,
-                None,
-            )
+            Box::new(failure_event(ClapSandboxFailureInput {
+                sandbox_id: "unknown".to_string(),
+                instance_id: None,
+                stage: "handshake".to_string(),
+                error_kind: "protocolViolation".to_string(),
+                detail: "plugin lifecycle message is missing correlation_id".to_string(),
+                processing_epoch: None,
+                shared_memory_lease_id: None,
+                correlation_id: None,
+                instance_state: None,
+            }))
         })?;
 
         match request.payload {
@@ -89,18 +91,16 @@ impl ClapSandboxLifecycleHarness {
             PluginMessagePayload::SandboxFailure { .. } => {
                 self.handle_sandbox_failure_request(correlation)
             }
-            other => Err(failure_event(
-                self.sandbox_id.as_deref().unwrap_or("unknown"),
+            other => Err(self.failure_error_for_instance(
                 self.active_instance
                     .as_ref()
                     .map(|instance| instance.instance_id.0.clone()),
-                "unsupported",
-                "protocolViolation",
-                format!("unsupported CLAP lifecycle request: {other:?}"),
-                self.prepared_epoch,
                 self.active_lease
                     .as_ref()
                     .map(|lease| lease.lease_id.clone()),
+                "unsupported",
+                "protocolViolation",
+                format!("unsupported CLAP lifecycle request: {other:?}"),
                 Some(correlation),
             )),
         }

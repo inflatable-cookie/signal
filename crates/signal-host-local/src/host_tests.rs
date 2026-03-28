@@ -3,6 +3,7 @@
         assert_local_plugin_topology, assert_plugin_dispatch_summary,
         assert_runtime_automation_continuity, assert_runtime_automation_values,
         assert_runtime_plugin_event_snapshot, assert_runtime_sequence_continuity,
+        RuntimeAutomationExpectations,
         prepare_local_host_for_offline_render, prepare_local_host_with_lifecycle,
         prepare_local_host_without_lifecycle, temp_artifact_dir, unique_test_path, write_test_wav,
     };
@@ -2042,7 +2043,18 @@
             .transport
             .shared_memory_path
             .ends_with(".signal-shm"));
-        assert_runtime_automation_values(&supervisor, 9, 9, 3, 6, 0.0, 0.0, 0.08);
+        assert_runtime_automation_values(
+            &supervisor,
+            RuntimeAutomationExpectations {
+                value_events: 9,
+                modulation_events: 9,
+                gesture_begin_events: 3,
+                gesture_end_events: 6,
+                first_value: 0.0,
+                last_value: 0.0,
+                last_modulation: 0.08,
+            },
+        );
         assert_runtime_automation_continuity(&supervisor, 1, 2, &[1, 2], 1);
         assert_runtime_sequence_continuity(&supervisor, &[1, 2], 0, 8, 0, 1);
     }
@@ -2100,7 +2112,18 @@
                 .supervision_snapshot
                 .safe_mode_enabled
         );
-        assert_runtime_automation_values(&supervisor, 8, 8, 2, 6, 2.0 / 7.0, 1.0 / 7.0, 0.10);
+        assert_runtime_automation_values(
+            &supervisor,
+            RuntimeAutomationExpectations {
+                value_events: 8,
+                modulation_events: 8,
+                gesture_begin_events: 2,
+                gesture_end_events: 6,
+                first_value: 2.0 / 7.0,
+                last_value: 1.0 / 7.0,
+                last_modulation: 0.10,
+            },
+        );
         assert_runtime_automation_continuity(&supervisor, 2, 2, &[2], 0);
         assert_runtime_sequence_continuity(&supervisor, &[2], 2, 9, 0, 0);
         assert_local_plugin_topology(&summary);
@@ -2157,7 +2180,18 @@
             supervisor.observation.control_snapshot.last_stop_reason,
             Some(StopReason::DegradedModeRecovery)
         );
-        assert_runtime_automation_values(&supervisor, 10, 10, 2, 8, 2.0 / 7.0, 3.0 / 7.0, 0.14);
+        assert_runtime_automation_values(
+            &supervisor,
+            RuntimeAutomationExpectations {
+                value_events: 10,
+                modulation_events: 10,
+                gesture_begin_events: 2,
+                gesture_end_events: 8,
+                first_value: 2.0 / 7.0,
+                last_value: 3.0 / 7.0,
+                last_modulation: 0.14,
+            },
+        );
         assert_runtime_automation_continuity(&supervisor, 2, 3, &[2, 3], 1);
         assert_runtime_sequence_continuity(&supervisor, &[2, 3], 2, 11, 0, 1);
         assert_plugin_dispatch_summary(&summary, &supervisor, 0);
@@ -2431,7 +2465,18 @@
                 .count(),
             3
         );
-        assert_runtime_automation_values(&supervisor, 12, 12, 3, 9, 2.0 / 7.0, 5.0 / 7.0, 0.18);
+        assert_runtime_automation_values(
+            &supervisor,
+            RuntimeAutomationExpectations {
+                value_events: 12,
+                modulation_events: 12,
+                gesture_begin_events: 3,
+                gesture_end_events: 9,
+                first_value: 2.0 / 7.0,
+                last_value: 5.0 / 7.0,
+                last_modulation: 0.18,
+            },
+        );
         assert_runtime_automation_continuity(&supervisor, 2, 4, &[2, 3, 4], 2);
         assert_runtime_sequence_continuity(&supervisor, &[2, 3, 4], 2, 13, 0, 2);
         assert_plugin_dispatch_summary(&summary, &supervisor, 0);
@@ -5127,7 +5172,18 @@
                 .count(),
             3
         );
-        assert_runtime_automation_values(&supervisor, 14, 14, 3, 11, 2.0 / 7.0, 5.0 / 7.0, 0.18);
+        assert_runtime_automation_values(
+            &supervisor,
+            RuntimeAutomationExpectations {
+                value_events: 14,
+                modulation_events: 14,
+                gesture_begin_events: 3,
+                gesture_end_events: 11,
+                first_value: 2.0 / 7.0,
+                last_value: 5.0 / 7.0,
+                last_modulation: 0.18,
+            },
+        );
         assert_runtime_automation_continuity(&supervisor, 2, 4, &[2, 3, 4], 2);
         assert_runtime_sequence_continuity(&supervisor, &[2, 2, 3, 4], 2, 13, 1, 2);
         assert_plugin_dispatch_summary(&summary, &supervisor, 2);
@@ -5166,4 +5222,3 @@
         assert!(rendered.contains("last_watchdog=HeartbeatMisses"));
         assert!(rendered.contains(&format!("event_stream={}", supervisor.event_count())));
     }
-

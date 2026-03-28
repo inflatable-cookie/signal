@@ -3,7 +3,9 @@ mod public_contract_boundary_host_io_linux_support;
 #[path = "support/public_contract_boundary_transport_summary.rs"]
 mod public_contract_boundary_transport_summary_support;
 
-use public_contract_boundary_host_io_linux_support::sample_public_linux_backend_host_io;
+use public_contract_boundary_host_io_linux_support::{
+    sample_public_linux_backend_host_io, PublicLinuxBackendHostIoConfig,
+};
 use public_contract_boundary_transport_summary_support::sample_public_transport_session_summary;
 use signal_hardware::{BackendHealth, HardwareBackendIdentity, LinuxAudioBackendKind};
 use signal_runtime::{
@@ -29,39 +31,39 @@ fn public_runtime_jack_coordination_boundary_reports_runtime_owned_transport_gra
         .configure(RuntimeConfigRequest::new(48_000, 512))
         .expect("public jack coordination configure should succeed");
 
-    let alsa = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
-        "alsa",
-        "alsa:default-output",
-        "ALSA Default Output",
-        false,
-        BackendHealth::Healthy,
-        0,
-        0,
-        0,
-    );
-    let jack = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
-        "jack",
-        "jack:main-graph",
-        "JACK Main Graph",
-        true,
-        BackendHealth::Healthy,
-        0,
-        0,
-        0,
-    );
-    let mut recovering_jack = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
-        "jack",
-        "jack:recovering-graph",
-        "JACK Recovering Graph",
-        true,
-        BackendHealth::Recovering,
-        1,
-        1,
-        0,
-    );
+    let alsa = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        backend_name: "alsa",
+        device_id: "alsa:default-output",
+        device_name: "ALSA Default Output",
+        simulated: false,
+        backend_health: BackendHealth::Healthy,
+        device_loss_count: 0,
+        restart_attempt_count: 0,
+        restart_failure_count: 0,
+    });
+    let jack = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        backend_name: "jack",
+        device_id: "jack:main-graph",
+        device_name: "JACK Main Graph",
+        simulated: true,
+        backend_health: BackendHealth::Healthy,
+        device_loss_count: 0,
+        restart_attempt_count: 0,
+        restart_failure_count: 0,
+    });
+    let mut recovering_jack = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        backend_name: "jack",
+        device_id: "jack:recovering-graph",
+        device_name: "JACK Recovering Graph",
+        simulated: true,
+        backend_health: BackendHealth::Recovering,
+        device_loss_count: 1,
+        restart_attempt_count: 1,
+        restart_failure_count: 0,
+    });
     recovering_jack.audio_pump.stream_state = RuntimeHostAudioStreamState::Faulted;
 
     let not_jack_observation = RuntimeObservationReport::capture(&runtime, &recorder)

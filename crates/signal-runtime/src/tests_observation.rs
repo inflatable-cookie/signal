@@ -1663,17 +1663,18 @@ fn runtime_fault_status_snapshot_classifies_watchdog_plugin_fault_and_xrun_press
         processing_epoch: 4,
     });
 
-    let status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
 
     assert_eq!(status.recovery_state, RuntimeRecoveryState::Recovering);
     assert_eq!(
@@ -1709,17 +1710,18 @@ fn runtime_fault_status_snapshot_clears_watchdog_active_after_safe_mode_recovery
         .set_safe_mode(SafeModeRequest { enabled: false })
         .expect("safe mode should clear after watchdog recovery");
 
-    let status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
 
     assert_eq!(status.recovery_state, RuntimeRecoveryState::Steady);
     assert_eq!(status.primary_fault_cause, None);

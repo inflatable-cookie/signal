@@ -39,22 +39,16 @@ impl RuntimeTransportConcurrencyState {
 
     pub(crate) fn begin_session(
         &mut self,
-        sandbox_id: &str,
-        lease_id: &str,
-        region_id: &str,
-        intent: TransportAttachIntent,
-        provenance: TransportSessionProvenance,
-        attach_processing_epoch: Option<u64>,
-        backing_path: Option<String>,
-        total_bytes: Option<u32>,
+        request: crate::RuntimeTransportSessionAttachRequest,
     ) -> Result<RuntimeTransportConcurrencySnapshot, RuntimeError> {
-        let key = (
-            sandbox_id.to_string(),
-            lease_id.to_string(),
-            region_id.to_string(),
-        );
-        if self.active_sessions.contains_key(&key) {
-            self.last_rejected_sandbox_id = Some(sandbox_id.to_string());
+        let key = RuntimeTransportSessionKey {
+            sandbox_id: request.sandbox_id.clone(),
+            lease_id: request.lease_id.clone(),
+            region_id: request.region_id.clone(),
+        };
+        let map_key = key.as_map_key();
+        if self.active_sessions.contains_key(&map_key) {
+            self.last_rejected_sandbox_id = Some(request.sandbox_id.clone());
             self.last_rejection_reason = Some("transport session is already attached".to_string());
             return Err(RuntimeError::new(
                 RuntimeErrorKind::InvalidState,
@@ -65,7 +59,7 @@ impl RuntimeTransportConcurrencyState {
         let steady_sessions = self.steady_session_count();
         let recovery_sessions = self.recovery_overlap_session_count();
 
-        if matches!(intent, TransportAttachIntent::SteadyState)
+        if matches!(request.intent, TransportAttachIntent::SteadyState)
             && steady_sessions >= self.policy.steady_session_limit
         {
             let reason = format!(
@@ -73,7 +67,7 @@ impl RuntimeTransportConcurrencyState {
                 self.policy.steady_session_limit,
                 self.lingering_reason_suffix(TransportAttachIntent::SteadyState)
             );
-            self.last_rejected_sandbox_id = Some(sandbox_id.to_string());
+            self.last_rejected_sandbox_id = Some(request.sandbox_id.clone());
             self.last_rejection_reason = Some(reason.clone());
             return Err(RuntimeError::new(
                 RuntimeErrorKind::ResourceUnavailable,
@@ -81,7 +75,7 @@ impl RuntimeTransportConcurrencyState {
             ));
         }
 
-        if matches!(intent, TransportAttachIntent::RecoveryOverlap)
+        if matches!(request.intent, TransportAttachIntent::RecoveryOverlap)
             && recovery_sessions >= self.recovery_overlap_limit()
         {
             let reason = format!(
@@ -89,7 +83,7 @@ impl RuntimeTransportConcurrencyState {
                 self.recovery_overlap_limit(),
                 self.lingering_reason_suffix(TransportAttachIntent::RecoveryOverlap)
             );
-            self.last_rejected_sandbox_id = Some(sandbox_id.to_string());
+            self.last_rejected_sandbox_id = Some(request.sandbox_id.clone());
             self.last_rejection_reason = Some(reason.clone());
             return Err(RuntimeError::new(
                 RuntimeErrorKind::ResourceUnavailable,
@@ -97,16 +91,16 @@ impl RuntimeTransportConcurrencyState {
             ));
         }
 
-        let limit = match intent {
+        let limit = match request.intent {
             TransportAttachIntent::SteadyState => self.policy.steady_session_limit,
             TransportAttachIntent::RecoveryOverlap => self.policy.recovery_session_limit,
         };
         if self.active_sessions.len() >= limit {
             let reason = format!(
                 "transport session admission exceeds {:?} limit {}",
-                intent, limit
+                request.intent, limit
             );
-            self.last_rejected_sandbox_id = Some(sandbox_id.to_string());
+            self.last_rejected_sandbox_id = Some(request.sandbox_id.clone());
             self.last_rejection_reason = Some(reason.clone());
             return Err(RuntimeError::new(
                 RuntimeErrorKind::ResourceUnavailable,
@@ -115,18 +109,18 @@ impl RuntimeTransportConcurrencyState {
         }
 
         self.active_sessions.insert(
-            key,
+            map_key,
             RuntimeTransportConcurrencySession {
-                sandbox_id: sandbox_id.to_string(),
-                lease_id: lease_id.to_string(),
-                region_id: region_id.to_string(),
-                intent,
-                provenance,
+                sandbox_id: request.sandbox_id.clone(),
+                lease_id: request.lease_id,
+                region_id: request.region_id,
+                intent: request.intent,
+                provenance: request.provenance,
                 attach_sequence: self.next_attach_sequence,
-                attach_processing_epoch,
+                attach_processing_epoch: request.attach_processing_epoch,
                 state: TransportSessionState::AttachActive,
-                backing_path,
-                total_bytes,
+                backing_path: request.backing_path,
+                total_bytes: request.total_bytes,
                 cleanup_attempt_count: 0,
                 last_cleanup_mode: None,
                 last_cleanup_wave: None,
@@ -142,7 +136,7 @@ impl RuntimeTransportConcurrencyState {
             self.peak_recovery_overlap_sessions.max(recovery_sessions);
         let lingering_sessions = self.lingering_session_count();
         self.peak_lingering_sessions = self.peak_lingering_sessions.max(lingering_sessions);
-        self.last_admitted_sandbox_id = Some(sandbox_id.to_string());
+        self.last_admitted_sandbox_id = Some(request.sandbox_id);
         self.last_rejected_sandbox_id = None;
         self.last_rejection_reason = None;
         Ok(self.snapshot())

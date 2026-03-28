@@ -46,6 +46,9 @@ impl RuntimeHostSupervisorReport {
     }
 
     pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
-        build_runtime_soak_receipt(&self.observation.observation, self.events.len())
+        build_runtime_soak_receipt(RuntimeSoakReceiptInput {
+            observation: &self.observation.observation,
+            event_stream_count: self.events.len(),
+        })
     }
 }

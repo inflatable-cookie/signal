@@ -1,31 +1,14 @@
 use super::super::host_test_support::{
     assert_runtime_automation_continuity, assert_runtime_automation_values,
-    assert_runtime_plugin_event_snapshot, assert_runtime_sequence_continuity,
-    prepare_server_host_with_lifecycle, prepare_server_host_without_lifecycle,
-    temp_media_fixture_path,
+    assert_runtime_sequence_continuity, RuntimeAutomationExpectations,
 };
 use super::super::ServerRuntimeHost;
-use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
-use signal_plugin::{CompletionState, PluginFormat, WatchdogTriggerReason};
-use signal_plugin_clap::ClapSandboxLifecycleHarness;
-use signal_primitives::{ChannelCount, ChannelLayout};
 use signal_runtime::{
     BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-    GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
-    GraphNodeContractProjection, GraphNodeProjection, GraphNodeTopologyProjection,
-    GraphProjection, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
-    PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
-    RuntimeConfig, RuntimeConfigRequest, RuntimeErrorKind, RuntimeExternalIoDeviceChangeState,
-    RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState,
-    RuntimeExternalIoMonitoringState, RuntimeExternalIoMonitoringTapPoint,
-    RuntimeExternalIoPrimaryRole, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
-    RuntimeMediaPreviewState, RuntimeObservationApi, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimeProjectionApi,
-    RuntimeReadiness, RuntimeSupervisorApi, SandboxOperationFailureStage, SignalRuntime,
-    StopReason, TransportAttachIntent,
+    HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
+    RecoveryRestartIntent, RuntimeConfig, RuntimeObservationApi,
+    SandboxOperationFailureStage, SignalRuntime, StopReason,
 };
-use std::{fs, path::Path};
 
 #[test]
 fn server_host_soak_path_rolls_across_multiple_lease_generations() {
@@ -292,7 +275,18 @@ fn server_host_soak_path_rolls_across_multiple_lease_generations() {
             .count(),
         3
     );
-    assert_runtime_automation_values(&supervisor, 12, 12, 2, 10, 0.2, 0.95, 0.26);
+    assert_runtime_automation_values(
+        &supervisor,
+        RuntimeAutomationExpectations {
+            value_events: 12,
+            modulation_events: 12,
+            gesture_begin_events: 2,
+            gesture_end_events: 10,
+            first_value: 0.2,
+            last_value: 0.95,
+            last_modulation: 0.26,
+        },
+    );
     assert_runtime_automation_continuity(&supervisor, 2, 4, &[2, 3, 4], 2);
     assert_runtime_sequence_continuity(&supervisor, &[2, 3, 4], 2, 17, 0, 2);
 }
@@ -601,7 +595,18 @@ fn server_host_mixed_watchdog_soak_tracks_deadlines_and_heartbeats() {
             .count(),
         3
     );
-    assert_runtime_automation_values(&supervisor, 14, 14, 2, 12, 0.2, 0.95, 0.26);
+    assert_runtime_automation_values(
+        &supervisor,
+        RuntimeAutomationExpectations {
+            value_events: 14,
+            modulation_events: 14,
+            gesture_begin_events: 2,
+            gesture_end_events: 12,
+            first_value: 0.2,
+            last_value: 0.95,
+            last_modulation: 0.26,
+        },
+    );
     assert_runtime_automation_continuity(&supervisor, 2, 4, &[2, 3, 4], 2);
     assert_runtime_sequence_continuity(&supervisor, &[2, 3, 4], 2, 17, 0, 2);
     assert!(supervisor.event_count() > 24);

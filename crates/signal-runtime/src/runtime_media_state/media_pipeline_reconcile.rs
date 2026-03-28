@@ -197,14 +197,3 @@ impl RuntimeMediaPipelineStateModel {
         ))
     }
 }
-
-impl Default for RuntimeMediaPipelineStateModel {
-    fn default() -> Self {
-        Self {
-            policy: RuntimeMediaPipelinePolicy::default(),
-            assets: BTreeMap::new(),
-            previewing_asset_id: None,
-            last_preview_error: None,
-        }
-    }
-}

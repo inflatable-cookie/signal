@@ -197,8 +197,8 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
             samples.extend_from_slice(interleaved);
         } else {
             for frame in interleaved.chunks(actual_channels) {
-                for channel_index in 0..output_channels {
-                    samples.push(frame[channel_index]);
+                for sample in frame.iter().take(output_channels) {
+                    samples.push(*sample);
                 }
             }
         }

@@ -20,16 +20,18 @@ impl RuntimeEngineState {
         let routing = graph.routing_summary();
         let (output, _, captured_buses) = graph
             .execute_realtime_from_prepared_with_node_overrides_and_bus_captures(
-                &buffer,
-                peak_abs(buffer.samples()),
-                None,
-                context,
-                parameter_batch.as_ref(),
-                &planning,
-                &contract,
-                &routing,
-                node_render_overrides,
-                captured_bus_ids,
+                signal_graph::GraphRealtimeExecutionRequest {
+                    input: &buffer,
+                    input_peak: peak_abs(buffer.samples()),
+                    prepared: None,
+                    context,
+                    parameter_batch: parameter_batch.as_ref(),
+                    planning: &planning,
+                    contract: &contract,
+                    routing: &routing,
+                    node_render_overrides,
+                    captured_bus_ids,
+                },
             );
         Ok((output, captured_buses))
     }

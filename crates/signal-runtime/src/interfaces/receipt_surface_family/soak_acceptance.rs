@@ -54,32 +54,50 @@ pub struct RuntimeAcceptanceReceipt {
 
 impl RuntimeAcceptanceReceipt {
     pub fn capture(runtime: &impl RuntimeObservationApi) -> Self {
-        build_runtime_acceptance_receipt(
-            runtime.get_readiness(),
-            runtime.get_effective_config(),
-            runtime.get_control_snapshot(),
-            runtime.get_scheduler_topology_summary(),
-            runtime.get_recording_capture_snapshot(),
-            runtime.get_media_service_snapshot(),
-            runtime.get_clip_processing_pipeline_snapshot(),
-            runtime.get_plugin_lifecycle_snapshot(),
-        )
+        build_runtime_acceptance_receipt(RuntimeAcceptanceReceiptInput {
+            readiness: runtime.get_readiness(),
+            effective_config: runtime.get_effective_config(),
+            control_snapshot: runtime.get_control_snapshot(),
+            scheduler_topology_summary: runtime.get_scheduler_topology_summary(),
+            recording_capture_snapshot: runtime.get_recording_capture_snapshot(),
+            media_service_snapshot: runtime.get_media_service_snapshot(),
+            clip_processing_pipeline_snapshot: runtime.get_clip_processing_pipeline_snapshot(),
+            plugin_lifecycle_snapshot: runtime.get_plugin_lifecycle_snapshot(),
+        })
     }
 }
 
 impl RuntimeSupervisorReport {
     pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
-        build_runtime_soak_receipt(&self.observation, self.events.len())
+        build_runtime_soak_receipt(RuntimeSoakReceiptInput {
+            observation: &self.observation,
+            event_stream_count: self.events.len(),
+        })
     }
 }
 
 const RUNTIME_ACCEPTANCE_MIN_TRACE_OBSERVATIONS: usize = 128;
 const RUNTIME_ACCEPTANCE_MIN_SOAK_EVENTS: usize = 64;
 
-pub(crate) fn build_runtime_soak_receipt(
-    observation: &RuntimeObservationReport,
-    event_stream_count: usize,
-) -> RuntimeSoakReceipt {
+pub(crate) struct RuntimeSoakReceiptInput<'a> {
+    pub(crate) observation: &'a RuntimeObservationReport,
+    pub(crate) event_stream_count: usize,
+}
+
+pub(crate) struct RuntimeAcceptanceReceiptInput {
+    pub(crate) readiness: RuntimeReadiness,
+    pub(crate) effective_config: EffectiveRuntimeConfig,
+    pub(crate) control_snapshot: RuntimeControlSnapshot,
+    pub(crate) scheduler_topology_summary: RuntimeSchedulerTopologySummary,
+    pub(crate) recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
+    pub(crate) media_service_snapshot: RuntimeMediaServiceSnapshot,
+    pub(crate) clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
+    pub(crate) plugin_lifecycle_snapshot: RuntimePluginLifecycleSnapshot,
+}
+
+pub(crate) fn build_runtime_soak_receipt(input: RuntimeSoakReceiptInput<'_>) -> RuntimeSoakReceipt {
+    let observation = input.observation;
+    let event_stream_count = input.event_stream_count;
     let recall_handoff = RuntimePluginRecallHandoffSnapshot::from_plugin_chain_snapshot(
         &observation.plugin_chain_snapshot,
     );
@@ -148,42 +166,42 @@ pub(crate) fn build_runtime_soak_receipt(
 }
 
 pub(crate) fn build_runtime_acceptance_receipt(
-    readiness: RuntimeReadiness,
-    effective_config: EffectiveRuntimeConfig,
-    control_snapshot: RuntimeControlSnapshot,
-    scheduler_topology_summary: RuntimeSchedulerTopologySummary,
-    recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
-    media_service_snapshot: RuntimeMediaServiceSnapshot,
-    clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
-    plugin_lifecycle_snapshot: RuntimePluginLifecycleSnapshot,
+    input: RuntimeAcceptanceReceiptInput,
 ) -> RuntimeAcceptanceReceipt {
-    let playback_ready = effective_config.block_size > 0
-        && effective_config.sample_rate.0 > 0
-        && scheduler_topology_summary.compatible;
-    let recording_ready = recording_capture_snapshot.capture_ready
-        || recording_capture_snapshot.last_checkpoint.is_some();
-    let media_ready = media_service_snapshot.indexed_asset_count > 0
-        && !media_service_snapshot.invalidation_active
+    let playback_ready = input.effective_config.block_size > 0
+        && input.effective_config.sample_rate.0 > 0
+        && input.scheduler_topology_summary.compatible;
+    let recording_ready = input.recording_capture_snapshot.capture_ready
+        || input.recording_capture_snapshot.last_checkpoint.is_some();
+    let media_ready = input.media_service_snapshot.indexed_asset_count > 0
+        && !input.media_service_snapshot.invalidation_active
         && matches!(
-            media_service_snapshot.indexing_state,
+            input.media_service_snapshot.indexing_state,
             RuntimeMediaIndexingState::Ready
         )
         && matches!(
-            media_service_snapshot.preview_state,
+            input.media_service_snapshot.preview_state,
             RuntimeMediaPreviewState::Ready | RuntimeMediaPreviewState::Previewing
         );
-    let clip_processing_ready = clip_processing_pipeline_snapshot.clip_count > 0
-        && clip_processing_pipeline_snapshot.ready_clip_count
-            == clip_processing_pipeline_snapshot.clip_count
-        && clip_processing_pipeline_snapshot.pending_media_clip_count == 0
-        && clip_processing_pipeline_snapshot.pending_warp_clip_count == 0
-        && clip_processing_pipeline_snapshot.invalid_clip_count == 0;
-    let plugin_ready = plugin_lifecycle_snapshot.sandbox_count > 0
-        && plugin_lifecycle_snapshot.ready_sandbox_count == plugin_lifecycle_snapshot.sandbox_count
-        && plugin_lifecycle_snapshot.faulted_sandbox_count == 0
-        && plugin_lifecycle_snapshot.quarantined_sandbox_count == 0;
-    let recovery_ready =
-        !matches!(readiness, RuntimeReadiness::Failed { .. }) || control_snapshot.restart_count > 0;
+    let clip_processing_ready = input.clip_processing_pipeline_snapshot.clip_count > 0
+        && input.clip_processing_pipeline_snapshot.ready_clip_count
+            == input.clip_processing_pipeline_snapshot.clip_count
+        && input
+            .clip_processing_pipeline_snapshot
+            .pending_media_clip_count
+            == 0
+        && input
+            .clip_processing_pipeline_snapshot
+            .pending_warp_clip_count
+            == 0
+        && input.clip_processing_pipeline_snapshot.invalid_clip_count == 0;
+    let plugin_ready = input.plugin_lifecycle_snapshot.sandbox_count > 0
+        && input.plugin_lifecycle_snapshot.ready_sandbox_count
+            == input.plugin_lifecycle_snapshot.sandbox_count
+        && input.plugin_lifecycle_snapshot.faulted_sandbox_count == 0
+        && input.plugin_lifecycle_snapshot.quarantined_sandbox_count == 0;
+    let recovery_ready = !matches!(input.readiness, RuntimeReadiness::Failed { .. })
+        || input.control_snapshot.restart_count > 0;
     let runtime_ready_lane_count = [
         playback_ready,
         recording_ready,

@@ -10,22 +10,26 @@ use signal_runtime::{
     RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy,
 };
 
+pub struct PublicLinuxBackendHostIoConfig<'a> {
+    pub backend_identity: HardwareBackendIdentity,
+    pub backend_name: &'a str,
+    pub device_id: &'a str,
+    pub device_name: &'a str,
+    pub simulated: bool,
+    pub backend_health: BackendHealth,
+    pub device_loss_count: u64,
+    pub restart_attempt_count: u64,
+    pub restart_failure_count: u64,
+}
+
 pub fn sample_public_linux_backend_host_io(
-    backend_identity: HardwareBackendIdentity,
-    backend_name: &str,
-    device_id: &str,
-    device_name: &str,
-    simulated: bool,
-    backend_health: BackendHealth,
-    device_loss_count: u64,
-    restart_attempt_count: u64,
-    restart_failure_count: u64,
+    config: PublicLinuxBackendHostIoConfig<'_>,
 ) -> RuntimeHostIoSummary {
     let linux_backend_identity =
         signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_identity(
-            backend_identity,
+            config.backend_identity,
         );
-    let clock_source = match backend_identity {
+    let clock_source = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostClockSource::Internal
         }
@@ -37,7 +41,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostClockSource::Internal,
     };
-    let clock_domain = match backend_identity {
+    let clock_domain = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostClockDomain::SameClock
         }
@@ -47,7 +51,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostClockDomain::SameClock,
     };
-    let fallback_state = match backend_identity {
+    let fallback_state = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostClockFallbackState::Direct
         }
@@ -57,7 +61,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostClockFallbackState::Direct,
     };
-    let transition_state = match backend_identity {
+    let transition_state = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostClockTransitionState::Stable
         }
@@ -67,7 +71,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostClockTransitionState::Stable,
     };
-    let drift_state = match backend_identity {
+    let drift_state = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostClockDriftState::Stable
         }
@@ -77,7 +81,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostClockDriftState::Stable,
     };
-    let discontinuity_state = match backend_identity {
+    let discontinuity_state = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostClockDiscontinuityState::Continuous
         }
@@ -87,7 +91,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostClockDiscontinuityState::Continuous,
     };
-    let duplex_mismatch_state = match backend_identity {
+    let duplex_mismatch_state = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostDuplexMismatchState::Aligned
         }
@@ -97,7 +101,7 @@ pub fn sample_public_linux_backend_host_io(
         }
         _ => RuntimeHostDuplexMismatchState::NotApplicable,
     };
-    let endpoint_topology = match backend_identity {
+    let endpoint_topology = match config.backend_identity {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
             RuntimeHostEndpointTopology::Duplex
         }
@@ -111,32 +115,32 @@ pub fn sample_public_linux_backend_host_io(
     let stream_state = RuntimeHostAudioStreamState::Running;
     RuntimeHostIoSummary {
         hardware: RuntimeHostHardwareSummary {
-            backend_identity,
-            backend_name: backend_name.into(),
+            backend_identity: config.backend_identity,
+            backend_name: config.backend_name.into(),
             linux_backend_identity,
             linux_backend_portability:
                 signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_portability(
-                    backend_identity,
-                    simulated,
-                    backend_health,
-                    device_loss_count,
-                    restart_attempt_count,
-                    restart_failure_count,
+                    config.backend_identity,
+                    config.simulated,
+                    config.backend_health,
+                    config.device_loss_count,
+                    config.restart_attempt_count,
+                    config.restart_failure_count,
                 ),
-            device_id: device_id.into(),
-            device_name: device_name.into(),
+            device_id: config.device_id.into(),
+            device_name: config.device_name.into(),
             sample_rate: 48_000,
             buffer_size: 256,
             input_channels: 2,
             output_channels: 2,
             sample_format: AudioSampleFormat::F32,
-            simulated,
-            backend_health,
+            simulated: config.simulated,
+            backend_health: config.backend_health,
             xrun_count: 0,
             callback_overrun_count: 0,
-            device_loss_count,
-            restart_attempt_count,
-            restart_failure_count,
+            device_loss_count: config.device_loss_count,
+            restart_attempt_count: config.restart_attempt_count,
+            restart_failure_count: config.restart_failure_count,
         },
         audio_pump: RuntimeHostAudioPumpSummary {
             stream_state,
@@ -169,30 +173,39 @@ pub fn sample_public_linux_backend_host_io(
             endpoint_topology,
             linux_clocking_parity:
                 signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
+                    signal_runtime::RuntimeLinuxHostIoParityInput {
+                        linux_backend_identity,
+                        backend_health: config.backend_health,
+                        stream_state,
+                        clock_domain,
+                        fallback_state,
+                        transition_state,
+                        drift_state,
+                        discontinuity_state,
+                        duplex_mismatch_state,
+                        endpoint_topology,
+                        partial_availability,
+                    },
+                ),
+            linux_duplex_parity: signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
+                signal_runtime::RuntimeLinuxHostIoParityInput {
                     linux_backend_identity,
-                    backend_health,
+                    backend_health: config.backend_health,
                     stream_state,
                     clock_domain,
                     fallback_state,
                     transition_state,
                     drift_state,
                     discontinuity_state,
-                ),
-            linux_duplex_parity: signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
-                linux_backend_identity,
-                backend_health,
-                stream_state,
-                clock_domain,
-                fallback_state,
-                transition_state,
-                duplex_mismatch_state,
-                endpoint_topology,
-                partial_availability,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                },
             ),
             linux_endpoint_topology_parity:
                 signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
                     linux_backend_identity,
-                    backend_health,
+                    config.backend_health,
                     transition_state,
                     discontinuity_state,
                     duplex_mismatch_state,

@@ -7,17 +7,29 @@ use signal_runtime::{
 use super::super::LocalRuntimeHost;
 use super::{lifecycle_stage_for_request, record_runtime_fault};
 
+pub(crate) struct LifecycleAdmissionRollback<'a> {
+    pub(crate) sandbox_id: &'a str,
+    pub(crate) lifecycle: &'a mut ClapSandboxLifecycleHarness,
+    pub(crate) processing_epoch: u64,
+    pub(crate) lease_id: &'a str,
+    pub(crate) transport: &'a SharedMemoryTransportPayload,
+    pub(crate) detail: &'a str,
+}
+
 impl LocalRuntimeHost {
     pub(crate) fn rollback_unadmitted_lifecycle_setup(
         &mut self,
         protocol: &ClapBlockProtocol,
-        sandbox_id: &str,
-        lifecycle: &mut ClapSandboxLifecycleHarness,
-        processing_epoch: u64,
-        lease_id: &str,
-        transport: &SharedMemoryTransportPayload,
-        detail: &str,
+        rollback: LifecycleAdmissionRollback<'_>,
     ) {
+        let LifecycleAdmissionRollback {
+            sandbox_id,
+            lifecycle,
+            processing_epoch,
+            lease_id,
+            transport,
+            detail,
+        } = rollback;
         for request in protocol.teardown_sequence(sandbox_id, processing_epoch) {
             match lifecycle.handle(request.clone()) {
                 Ok(_) => {

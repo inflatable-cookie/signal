@@ -166,7 +166,7 @@ impl RuntimeTimelineState {
             Some(pending)
                 if pending
                     .effective_block_sequence
-                    .map_or(true, |effective| effective == block_sequence) =>
+                    .is_none_or(|effective| effective == block_sequence) =>
             {
                 self.pending_transport_transition = None;
                 Some(pending)

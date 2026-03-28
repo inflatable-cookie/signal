@@ -82,25 +82,34 @@ fn host_io_summary(
             duplex_mismatch_state,
             endpoint_topology,
             linux_clocking_parity: RuntimeHostIoSummary::classify_linux_clocking_parity(
-                linux_backend_identity,
-                backend_health,
-                stream_state,
-                clock_domain,
-                fallback_state,
-                transition_state,
-                drift_state,
-                discontinuity_state,
+                RuntimeHostIoSummary::linux_parity_input(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                ),
             ),
             linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(
-                linux_backend_identity,
-                backend_health,
-                stream_state,
-                clock_domain,
-                fallback_state,
-                transition_state,
-                duplex_mismatch_state,
-                endpoint_topology,
-                partial_availability,
+                RuntimeHostIoSummary::linux_parity_input(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                ),
             ),
             linux_endpoint_topology_parity:
                 RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
@@ -228,25 +237,34 @@ fn linux_host_io_summary(
             duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
             endpoint_topology,
             linux_clocking_parity: RuntimeHostIoSummary::classify_linux_clocking_parity(
-                linux_backend_identity,
-                backend_health,
-                stream_state,
-                RuntimeHostClockDomain::SameClock,
-                RuntimeHostClockFallbackState::Direct,
-                RuntimeHostClockTransitionState::Stable,
-                RuntimeHostClockDriftState::Stable,
-                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostIoSummary::linux_parity_input(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    RuntimeHostClockDomain::SameClock,
+                    RuntimeHostClockFallbackState::Direct,
+                    RuntimeHostClockTransitionState::Stable,
+                    RuntimeHostClockDriftState::Stable,
+                    RuntimeHostClockDiscontinuityState::Continuous,
+                    RuntimeHostDuplexMismatchState::Aligned,
+                    endpoint_topology,
+                    false,
+                ),
             ),
             linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(
-                linux_backend_identity,
-                backend_health,
-                stream_state,
-                RuntimeHostClockDomain::SameClock,
-                RuntimeHostClockFallbackState::Direct,
-                RuntimeHostClockTransitionState::Stable,
-                RuntimeHostDuplexMismatchState::Aligned,
-                endpoint_topology,
-                false,
+                RuntimeHostIoSummary::linux_parity_input(
+                    linux_backend_identity,
+                    backend_health,
+                    stream_state,
+                    RuntimeHostClockDomain::SameClock,
+                    RuntimeHostClockFallbackState::Direct,
+                    RuntimeHostClockTransitionState::Stable,
+                    RuntimeHostClockDriftState::Stable,
+                    RuntimeHostClockDiscontinuityState::Continuous,
+                    RuntimeHostDuplexMismatchState::Aligned,
+                    endpoint_topology,
+                    false,
+                ),
             ),
             linux_endpoint_topology_parity:
                 RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
@@ -1378,28 +1396,37 @@ fn runtime_host_io_classifies_linux_clocking_duplex_and_endpoint_parity() {
     );
     assert_eq!(
         RuntimeHostIoSummary::classify_linux_clocking_parity(
-            alsa_identity,
-            BackendHealth::Healthy,
-            RuntimeHostAudioStreamState::Running,
-            RuntimeHostClockDomain::SameClock,
-            RuntimeHostClockFallbackState::Direct,
-            RuntimeHostClockTransitionState::Stable,
-            RuntimeHostClockDriftState::Stable,
-            RuntimeHostClockDiscontinuityState::Continuous,
+            RuntimeHostIoSummary::linux_parity_input(
+                alsa_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDriftState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            )
         ),
         RuntimeLinuxAudioBackendClockingParityBand::Portable
     );
     assert_eq!(
         RuntimeHostIoSummary::classify_linux_duplex_parity(
-            alsa_identity,
-            BackendHealth::Healthy,
-            RuntimeHostAudioStreamState::Running,
-            RuntimeHostClockDomain::SameClock,
-            RuntimeHostClockFallbackState::Direct,
-            RuntimeHostClockTransitionState::Stable,
-            RuntimeHostDuplexMismatchState::Aligned,
-            RuntimeHostEndpointTopology::Duplex,
-            false,
+            RuntimeHostIoSummary::linux_parity_input(
+                alsa_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDriftState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            )
         ),
         RuntimeLinuxAudioBackendDuplexParityState::Aligned
     );
@@ -1421,28 +1448,37 @@ fn runtime_host_io_classifies_linux_clocking_duplex_and_endpoint_parity() {
     );
     assert_eq!(
         RuntimeHostIoSummary::classify_linux_clocking_parity(
-            jack_identity,
-            BackendHealth::Recovering,
-            RuntimeHostAudioStreamState::Running,
-            RuntimeHostClockDomain::Aggregate,
-            RuntimeHostClockFallbackState::RuntimeResampled,
-            RuntimeHostClockTransitionState::EnteredAggregateClock,
-            RuntimeHostClockDriftState::AggregateManaged,
-            RuntimeHostClockDiscontinuityState::Reconfigured,
+            RuntimeHostIoSummary::linux_parity_input(
+                jack_identity,
+                BackendHealth::Recovering,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::Aggregate,
+                RuntimeHostClockFallbackState::RuntimeResampled,
+                RuntimeHostClockTransitionState::EnteredAggregateClock,
+                RuntimeHostClockDriftState::AggregateManaged,
+                RuntimeHostClockDiscontinuityState::Reconfigured,
+                RuntimeHostDuplexMismatchState::CrossClockDiverged,
+                RuntimeHostEndpointTopology::Aggregate,
+                false,
+            )
         ),
         RuntimeLinuxAudioBackendClockingParityBand::Guarded
     );
     assert_eq!(
         RuntimeHostIoSummary::classify_linux_duplex_parity(
-            jack_identity,
-            BackendHealth::Recovering,
-            RuntimeHostAudioStreamState::Running,
-            RuntimeHostClockDomain::Aggregate,
-            RuntimeHostClockFallbackState::RuntimeResampled,
-            RuntimeHostClockTransitionState::EnteredAggregateClock,
-            RuntimeHostDuplexMismatchState::CrossClockDiverged,
-            RuntimeHostEndpointTopology::Aggregate,
-            false,
+            RuntimeHostIoSummary::linux_parity_input(
+                jack_identity,
+                BackendHealth::Recovering,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::Aggregate,
+                RuntimeHostClockFallbackState::RuntimeResampled,
+                RuntimeHostClockTransitionState::EnteredAggregateClock,
+                RuntimeHostClockDriftState::AggregateManaged,
+                RuntimeHostClockDiscontinuityState::Reconfigured,
+                RuntimeHostDuplexMismatchState::CrossClockDiverged,
+                RuntimeHostEndpointTopology::Aggregate,
+                false,
+            )
         ),
         RuntimeLinuxAudioBackendDuplexParityState::Guarded
     );
@@ -1464,28 +1500,37 @@ fn runtime_host_io_classifies_linux_clocking_duplex_and_endpoint_parity() {
     );
     assert_eq!(
         RuntimeHostIoSummary::classify_linux_clocking_parity(
-            not_linux_identity,
-            BackendHealth::Healthy,
-            RuntimeHostAudioStreamState::Running,
-            RuntimeHostClockDomain::SameClock,
-            RuntimeHostClockFallbackState::Direct,
-            RuntimeHostClockTransitionState::Stable,
-            RuntimeHostClockDriftState::Stable,
-            RuntimeHostClockDiscontinuityState::Continuous,
+            RuntimeHostIoSummary::linux_parity_input(
+                not_linux_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDriftState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            )
         ),
         RuntimeLinuxAudioBackendClockingParityBand::Unsupported
     );
     assert_eq!(
         RuntimeHostIoSummary::classify_linux_duplex_parity(
-            not_linux_identity,
-            BackendHealth::Healthy,
-            RuntimeHostAudioStreamState::Running,
-            RuntimeHostClockDomain::SameClock,
-            RuntimeHostClockFallbackState::Direct,
-            RuntimeHostClockTransitionState::Stable,
-            RuntimeHostDuplexMismatchState::Aligned,
-            RuntimeHostEndpointTopology::Duplex,
-            false,
+            RuntimeHostIoSummary::linux_parity_input(
+                not_linux_identity,
+                BackendHealth::Healthy,
+                RuntimeHostAudioStreamState::Running,
+                RuntimeHostClockDomain::SameClock,
+                RuntimeHostClockFallbackState::Direct,
+                RuntimeHostClockTransitionState::Stable,
+                RuntimeHostClockDriftState::Stable,
+                RuntimeHostClockDiscontinuityState::Continuous,
+                RuntimeHostDuplexMismatchState::Aligned,
+                RuntimeHostEndpointTopology::Duplex,
+                false,
+            )
         ),
         RuntimeLinuxAudioBackendDuplexParityState::Unsupported
     );

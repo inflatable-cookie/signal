@@ -1,7 +1,9 @@
 #[path = "support/public_contract_boundary_host_io_linux.rs"]
 mod public_contract_boundary_host_io_linux_support;
 
-use public_contract_boundary_host_io_linux_support::sample_public_linux_backend_host_io;
+use public_contract_boundary_host_io_linux_support::{
+    sample_public_linux_backend_host_io, PublicLinuxBackendHostIoConfig,
+};
 use signal_hardware::{BackendHealth, HardwareBackendIdentity, LinuxAudioBackendKind};
 use signal_runtime::{
     HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
@@ -27,17 +29,17 @@ fn public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_
         .configure(RuntimeConfigRequest::new(48_000, 512))
         .expect("public pipewire/alsa parity configure should succeed");
 
-    let mut alsa = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
-        "alsa",
-        "alsa:default-output",
-        "ALSA Default Output",
-        false,
-        BackendHealth::Healthy,
-        0,
-        0,
-        0,
-    );
+    let mut alsa = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        backend_name: "alsa",
+        device_id: "alsa:default-output",
+        device_name: "ALSA Default Output",
+        simulated: false,
+        backend_health: BackendHealth::Healthy,
+        device_loss_count: 0,
+        restart_attempt_count: 0,
+        restart_failure_count: 0,
+    });
     alsa.clocking.ownership = RuntimeHostLifecycleOwnership::HostDrivenCallback;
     alsa.clocking.restart_policy = RuntimeHostRestartPolicy::HostMustRestart;
     alsa.clocking.clock_domain = RuntimeHostClockDomain::SameClock;
@@ -48,29 +50,30 @@ fn public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_
     alsa.clocking.duplex_mismatch_state = RuntimeHostDuplexMismatchState::Aligned;
     alsa.clocking.endpoint_topology = RuntimeHostEndpointTopology::Duplex;
 
-    let pipewire = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
-        "pipewire",
-        "pipewire:default-graph",
-        "PipeWire Default Graph",
-        true,
-        BackendHealth::Healthy,
-        0,
-        0,
-        0,
-    );
+    let pipewire = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        backend_name: "pipewire",
+        device_id: "pipewire:default-graph",
+        device_name: "PipeWire Default Graph",
+        simulated: true,
+        backend_health: BackendHealth::Healthy,
+        device_loss_count: 0,
+        restart_attempt_count: 0,
+        restart_failure_count: 0,
+    });
 
-    let mut recovering_pipewire = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
-        "pipewire",
-        "pipewire:recovering-graph",
-        "PipeWire Recovering Graph",
-        true,
-        BackendHealth::Recovering,
-        1,
-        1,
-        1,
-    );
+    let mut recovering_pipewire =
+        sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+            backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+            backend_name: "pipewire",
+            device_id: "pipewire:recovering-graph",
+            device_name: "PipeWire Recovering Graph",
+            simulated: true,
+            backend_health: BackendHealth::Recovering,
+            device_loss_count: 1,
+            restart_attempt_count: 1,
+            restart_failure_count: 1,
+        });
     recovering_pipewire.audio_pump.stream_state = RuntimeHostAudioStreamState::Faulted;
 
     let alsa_observation = RuntimeObservationReport::capture(&runtime, &recorder)

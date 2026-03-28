@@ -20,7 +20,7 @@ pub(super) struct RuntimeRecordingCaptureActiveSession {
     pub(super) pressure_event_count: u64,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(super) struct RuntimeRecordingCaptureStateModel {
     policy: RuntimeRecordingCapturePolicy,
     active: Option<RuntimeRecordingCaptureActiveSession>,
@@ -206,19 +206,5 @@ impl RuntimeRecordingCaptureStateModel {
             "capture cancelled before commit",
         );
         Ok(())
-    }
-}
-
-impl Default for RuntimeRecordingCaptureStateModel {
-    fn default() -> Self {
-        Self {
-            policy: RuntimeRecordingCapturePolicy::default(),
-            active: None,
-            last_committed_take_id: None,
-            last_committed_path: None,
-            last_committed_duration_samples: None,
-            last_checkpoint: None,
-            last_error: None,
-        }
     }
 }

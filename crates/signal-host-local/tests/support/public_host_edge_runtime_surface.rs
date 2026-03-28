@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -225,8 +227,8 @@ pub fn record_public_plugin_sandbox_ready(
     );
     runtime.record_plugin_sandbox_transport(
         sandbox_id,
-        &format!("lease-{sandbox_id}"),
-        &format!("region-{sandbox_id}"),
+        format!("lease-{sandbox_id}"),
+        format!("region-{sandbox_id}"),
         PluginSandboxTransportStage::Attached,
         Some(epoch),
         None,

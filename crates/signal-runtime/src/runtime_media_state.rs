@@ -17,7 +17,7 @@ mod metering_capture;
 #[path = "runtime_media_state/metering_contract.rs"]
 mod metering_contract;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct RuntimeMediaPipelineStateModel {
     pub(crate) policy: RuntimeMediaPipelinePolicy,
     pub(crate) assets: BTreeMap<String, RuntimeMediaPipelineAsset>,
@@ -48,6 +48,16 @@ pub(crate) struct RuntimeMeteringStateModel {
     pub(crate) integrated_sum: f64,
     pub(crate) integrated_sample_count: u64,
     pub(crate) clipped_sample_count: u64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct RuntimeMeterContractMetadata {
+    pub(crate) topology_role: RuntimeMeterSourceRole,
+    pub(crate) track_lane_id: Option<String>,
+    pub(crate) bus_group_id: Option<String>,
+    pub(crate) console_group_id: Option<String>,
+    pub(crate) send_return_id: Option<String>,
+    pub(crate) producer_node_ids: Vec<String>,
 }
 
 pub(crate) fn media_family_state(

@@ -158,14 +158,14 @@ impl RuntimeEngineState {
             .into_iter()
             .map(|level| {
                 let bus_id = level.bus_id.clone();
-                let (
+                let RuntimeMeterContractMetadata {
                     topology_role,
                     track_lane_id,
                     bus_group_id,
                     console_group_id,
                     send_return_id,
                     producer_node_ids,
-                ) = RuntimeMeteringStateModel::meter_contract_metadata(
+                } = RuntimeMeteringStateModel::meter_contract_metadata(
                     contract,
                     level.bus_id.as_str(),
                 );

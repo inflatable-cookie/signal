@@ -47,6 +47,7 @@ mod runtime_cycle;
 #[path = "host_support/summary_types.rs"]
 mod summary_types;
 
+pub(crate) use boot_recovery_helpers::{RepeatedWatchdogRecoveryPlan, TimeoutRecoveryRetryPlan};
 pub(crate) use demo::{server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly};
 pub(crate) use faults::{
     build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
@@ -54,6 +55,7 @@ pub(crate) use faults::{
     runtime_error_from_io, runtime_watchdog_trigger, transport_attach_intent,
 };
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
+pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;
 pub(crate) use lifecycle_run::{LifecycleRunSummary, RecoveryHistory};
 pub(crate) use metadata::{
     runtime_au_discovered_type_record, runtime_host_clock_source, runtime_host_lifecycle_ownership,
@@ -61,6 +63,8 @@ pub(crate) use metadata::{
     runtime_plugin_discovered_type_record, runtime_plugin_format_platform_coverage,
     runtime_vst3_discovered_type_record,
 };
+pub(crate) use recovery_overlap_finish::RecoveryOverlapTransition;
+pub(crate) use recovery_runtime::LingeringSessionRecovery;
 pub use summary_types::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,
     ServerTransportSummary,

@@ -9,20 +9,20 @@ use signal_ipc::{
 };
 use signal_plugin::{
     AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, BlockProcessingHeader,
-    EventPacket, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
-    ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent,
-    PluginDescriptor, PluginEvent, PluginFormat, PluginInstanceId, PluginIoLayout,
-    PluginLifecycleContract, PluginProcessingContract, PluginRenderContext,
-    PluginSandboxCapabilities, PluginTypeId, SandboxTransport, SharedMemoryLayout,
-    SharedMemoryLease, SharedMemoryRegion,
+    EventPacket, MidiEvent, NoteExpressionEvent, NoteExpressionKind, ParameterGestureEvent,
+    ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent, PluginDescriptor,
+    PluginEvent, PluginFormat, PluginInstanceId, PluginIoLayout, PluginLifecycleContract,
+    PluginProcessingContract, PluginRenderContext, PluginSandboxCapabilities, PluginTypeId,
+    SandboxTransport, SharedMemoryLayout, SharedMemoryLease,
 };
 
 mod clap_sandbox_harness;
 mod event_translation;
 
 pub use clap_sandbox_harness::{
-    classify_sandbox_failure, sandbox_failure_event, ClapSandboxFailureClassification,
-    ClapSandboxFailureStage, ClapSandboxLifecycleHarness,
+    classify_sandbox_failure, sandbox_failure_event, ClapHarnessError, ClapHarnessResult,
+    ClapSandboxFailureClassification, ClapSandboxFailureInput, ClapSandboxFailureStage,
+    ClapSandboxLifecycleHarness,
 };
 pub use event_translation::{
     io_layout_from_payload, io_layout_payload, shared_memory_layout, shared_memory_layout_payload,

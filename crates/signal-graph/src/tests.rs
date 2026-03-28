@@ -1,17 +1,8 @@
-use signal_dsp::{
-    process_delay_with_feedback_control, process_low_pass_with_cutoff_control, DelayLine,
-    OnePoleLowPass,
-};
-
 use super::{
     synthetic_stereo_block, AudioBuffer, ChannelLayout, ExecutableGraph, FrameCount,
-    GraphChannelAdaptationMode, GraphChannelAdaptationResult, GraphContractIssue,
     GraphDynamicStageStateModel, GraphExecutionContext, GraphExecutionLane, GraphExecutionRequest,
     GraphNodeBufferContract, GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodePlanningGroup,
-    GraphNodeRenderOverride, GraphNodeResetPolicy, GraphNodeSilencePolicy, GraphNodeSpec,
-    GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphParameterApplicationStrategy,
-    GraphParameterBatch, GraphParameterEvent, GraphParameterTarget, GraphStageParameter,
-    GraphStageSpec, SampleRate,
+    GraphNodeSpec, GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec, SampleRate,
 };
 
 fn test_node(
@@ -85,43 +76,6 @@ fn routed_node(
         },
         topology,
         ..test_node(node_id, GraphNodeExecutionClass::Stateful, 0, stages)
-    }
-}
-
-fn stage_event(
-    node_id: &str,
-    stage_index: usize,
-    parameter: GraphStageParameter,
-    sample_offset: usize,
-    value: f32,
-) -> GraphParameterEvent {
-    GraphParameterEvent {
-        sample_offset,
-        target: GraphParameterTarget {
-            node_id: node_id.into(),
-            stage_index,
-            parameter,
-        },
-        value,
-    }
-}
-
-fn parameter_batch(events: Vec<GraphParameterEvent>) -> GraphParameterBatch {
-    GraphParameterBatch {
-        epoch: 7,
-        strategy: GraphParameterApplicationStrategy::SplitAtEvents { max_sub_blocks: 8 },
-        events,
-    }
-}
-
-fn parameter_batch_with_strategy(
-    events: Vec<GraphParameterEvent>,
-    strategy: GraphParameterApplicationStrategy,
-) -> GraphParameterBatch {
-    GraphParameterBatch {
-        epoch: 7,
-        strategy,
-        events,
     }
 }
 

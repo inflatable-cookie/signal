@@ -1,9 +1,12 @@
 use crate::interfaces::{
     LingeringCleanupMode, LingeringCleanupPlan, LingeringCleanupQueueReceipt,
     LingeringCleanupTrigger, RuntimeError, RuntimeTransportConcurrencySnapshot,
-    TransportAttachIntent, TransportSessionProvenance,
+    RuntimeTransportSessionAttachRequest, TransportAttachIntent,
 };
 
+use super::runtime_transport_concurrency::{
+    RuntimeLingeringCleanupEnqueueRequest, RuntimeTransportSessionKey,
+};
 use super::runtime_utils::transport_session_provenance;
 use super::SignalRuntime;
 
@@ -15,16 +18,18 @@ impl SignalRuntime {
         region_id: &str,
         intent: TransportAttachIntent,
     ) -> Result<RuntimeTransportConcurrencySnapshot, RuntimeError> {
-        let snapshot = self.transport_concurrency.begin_session(
-            sandbox_id,
-            lease_id,
-            region_id,
-            intent,
-            transport_session_provenance(intent),
-            None,
-            None,
-            None,
-        )?;
+        let snapshot =
+            self.transport_concurrency
+                .begin_session(RuntimeTransportSessionAttachRequest {
+                    sandbox_id: sandbox_id.to_string(),
+                    lease_id: lease_id.to_string(),
+                    region_id: region_id.to_string(),
+                    intent,
+                    provenance: transport_session_provenance(intent),
+                    attach_processing_epoch: None,
+                    backing_path: None,
+                    total_bytes: None,
+                })?;
         self.refresh_prework_service_policy_and_state(None);
         Ok(snapshot)
     }
@@ -50,39 +55,24 @@ impl SignalRuntime {
         backing_path: Option<String>,
         total_bytes: Option<u32>,
     ) -> Result<RuntimeTransportConcurrencySnapshot, RuntimeError> {
-        self.begin_transport_session_with_metadata_for_epoch(
-            sandbox_id,
-            lease_id,
-            region_id,
+        self.begin_transport_session_with_metadata_for_epoch(RuntimeTransportSessionAttachRequest {
+            sandbox_id: sandbox_id.to_string(),
+            lease_id: lease_id.to_string(),
+            region_id: region_id.to_string(),
             intent,
-            None,
-            transport_session_provenance(intent),
+            provenance: transport_session_provenance(intent),
+            attach_processing_epoch: None,
             backing_path,
             total_bytes,
-        )
+        })
     }
 
     pub fn begin_transport_session_with_metadata_for_epoch(
         &mut self,
-        sandbox_id: &str,
-        lease_id: &str,
-        region_id: &str,
-        intent: TransportAttachIntent,
-        attach_processing_epoch: Option<u64>,
-        provenance: TransportSessionProvenance,
-        backing_path: Option<String>,
-        total_bytes: Option<u32>,
+        request: RuntimeTransportSessionAttachRequest,
     ) -> Result<RuntimeTransportConcurrencySnapshot, RuntimeError> {
-        let snapshot = self.transport_concurrency.begin_session(
-            sandbox_id,
-            lease_id,
-            region_id,
-            intent,
-            provenance,
-            attach_processing_epoch,
-            backing_path,
-            total_bytes,
-        )?;
+        let attach_processing_epoch = request.attach_processing_epoch;
+        let snapshot = self.transport_concurrency.begin_session(request)?;
         self.refresh_prework_service_policy_and_state(attach_processing_epoch);
         Ok(snapshot)
     }
@@ -96,16 +86,21 @@ impl SignalRuntime {
         exclude_lease_id: Option<&str>,
         exclude_region_id: Option<&str>,
     ) -> Option<LingeringCleanupQueueReceipt> {
-        self.transport_concurrency.enqueue_cleanup_work(
-            sandbox_id,
-            mode,
-            trigger,
-            0,
-            processing_epoch,
-            None,
-            exclude_lease_id,
-            exclude_region_id,
-        )
+        self.transport_concurrency
+            .enqueue_cleanup_work(RuntimeLingeringCleanupEnqueueRequest {
+                sandbox_id: sandbox_id.to_string(),
+                mode,
+                trigger,
+                retry_count: 0,
+                processing_epoch,
+                cleanup_wave: None,
+                exclude_session: match (exclude_lease_id, exclude_region_id) {
+                    (Some(lease_id), Some(region_id)) => Some(
+                        RuntimeTransportSessionKey::from_parts(sandbox_id, lease_id, region_id),
+                    ),
+                    _ => None,
+                },
+            })
     }
 
     pub fn dequeue_lingering_cleanup_work_for_sandbox(
@@ -135,6 +130,8 @@ impl SignalRuntime {
             error,
         );
         if matches!(mode, LingeringCleanupMode::BestEffortPostStart) {
+            let session_key =
+                RuntimeTransportSessionKey::from_parts(sandbox_id, lease_id, region_id);
             let retry_count = self
                 .transport_concurrency
                 .cleanup_attempt_count(sandbox_id, lease_id, region_id);
@@ -142,14 +139,15 @@ impl SignalRuntime {
                 .transport_concurrency
                 .cleanup_wave_for_session(sandbox_id, lease_id, region_id);
             let _ = self.transport_concurrency.enqueue_cleanup_work(
-                sandbox_id,
-                mode,
-                LingeringCleanupTrigger::DeferredRetry,
-                retry_count,
-                processing_epoch,
-                cleanup_wave,
-                Some(lease_id),
-                Some(region_id),
+                RuntimeLingeringCleanupEnqueueRequest {
+                    sandbox_id: sandbox_id.to_string(),
+                    mode,
+                    trigger: LingeringCleanupTrigger::DeferredRetry,
+                    retry_count,
+                    processing_epoch,
+                    cleanup_wave,
+                    exclude_session: Some(session_key),
+                },
             );
         }
         self.transport_concurrency.snapshot()

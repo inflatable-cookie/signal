@@ -8,6 +8,18 @@ use batch::graph_parameter_batch;
 pub(crate) use batch::RuntimeAutomationBatchMetrics;
 pub(crate) use math::{graph_parameter_target_from_runtime_target, graph_stage_parameter_sort_key};
 
+pub(crate) struct RuntimeAutomationExecutionRecord {
+    pub(crate) block_sequence: u64,
+    pub(crate) timeline_position_samples: Option<i64>,
+    pub(crate) transport_playing: Option<bool>,
+    pub(crate) parameter_epoch: Option<u64>,
+    pub(crate) parameter_event_count: usize,
+    pub(crate) parameter_ignored_event_count: usize,
+    pub(crate) parameter_sub_block_count: usize,
+    pub(crate) parameter_coalesced_event_count: usize,
+    pub(crate) metrics: RuntimeAutomationBatchMetrics,
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct RuntimeAutomationState {
     continuity: AutomationContinuityReport,
@@ -73,34 +85,23 @@ impl RuntimeAutomationState {
         )
     }
 
-    pub(crate) fn record_execution(
-        &mut self,
-        block_sequence: u64,
-        timeline_position_samples: Option<i64>,
-        transport_playing: Option<bool>,
-        parameter_epoch: Option<u64>,
-        parameter_event_count: usize,
-        parameter_ignored_event_count: usize,
-        parameter_sub_block_count: usize,
-        parameter_coalesced_event_count: usize,
-        metrics: RuntimeAutomationBatchMetrics,
-    ) {
-        self.projected_segment_count = metrics.projected_segment_count;
-        self.mapped_lane_count = metrics.mapped_lane_count;
-        self.unmapped_lane_count = metrics.unmapped_lane_count;
-        self.hold_lane_count = metrics.hold_lane_count;
-        self.linear_lane_count = metrics.linear_lane_count;
-        self.last_batch_epoch = parameter_epoch;
-        self.last_batch_event_count = parameter_event_count;
-        self.last_batch_ignored_event_count = parameter_ignored_event_count;
-        self.last_batch_sub_block_count = parameter_sub_block_count;
-        self.last_batch_coalesced_event_count = parameter_coalesced_event_count;
-        self.last_batch_strategy_max_sub_blocks = metrics.strategy_max_sub_blocks;
-        self.last_batch_min_ramp_step_samples = metrics.min_ramp_step_samples;
-        self.last_batch_max_sample_offset = metrics.max_sample_offset;
-        self.last_block_sequence = Some(block_sequence);
-        self.last_timeline_position_samples = timeline_position_samples;
-        self.transport_playing = transport_playing;
+    pub(crate) fn record_execution(&mut self, record: RuntimeAutomationExecutionRecord) {
+        self.projected_segment_count = record.metrics.projected_segment_count;
+        self.mapped_lane_count = record.metrics.mapped_lane_count;
+        self.unmapped_lane_count = record.metrics.unmapped_lane_count;
+        self.hold_lane_count = record.metrics.hold_lane_count;
+        self.linear_lane_count = record.metrics.linear_lane_count;
+        self.last_batch_epoch = record.parameter_epoch;
+        self.last_batch_event_count = record.parameter_event_count;
+        self.last_batch_ignored_event_count = record.parameter_ignored_event_count;
+        self.last_batch_sub_block_count = record.parameter_sub_block_count;
+        self.last_batch_coalesced_event_count = record.parameter_coalesced_event_count;
+        self.last_batch_strategy_max_sub_blocks = record.metrics.strategy_max_sub_blocks;
+        self.last_batch_min_ramp_step_samples = record.metrics.min_ramp_step_samples;
+        self.last_batch_max_sample_offset = record.metrics.max_sample_offset;
+        self.last_block_sequence = Some(record.block_sequence);
+        self.last_timeline_position_samples = record.timeline_position_samples;
+        self.transport_playing = record.transport_playing;
     }
 
     pub(crate) fn reset(&mut self) {

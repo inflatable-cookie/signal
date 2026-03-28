@@ -54,15 +54,18 @@ impl RuntimeEngineState {
         let routing = graph.routing_summary();
 
         let (output, report) = graph.execute_realtime_from_prepared_with_node_overrides(
-            &buffer,
-            peak_abs(buffer.samples()),
-            prepared,
-            context,
-            parameter_batch.as_ref(),
-            &planning,
-            &contract,
-            &routing,
-            &plugin_node_renders,
+            signal_graph::GraphRealtimeExecutionRequest {
+                input: &buffer,
+                input_peak: peak_abs(buffer.samples()),
+                prepared,
+                context,
+                parameter_batch: parameter_batch.as_ref(),
+                planning: &planning,
+                contract: &contract,
+                routing: &routing,
+                node_render_overrides: &plugin_node_renders,
+                captured_bus_ids: &[],
+            },
         );
 
         let meter_sources =

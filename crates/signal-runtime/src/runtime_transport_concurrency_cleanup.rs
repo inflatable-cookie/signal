@@ -34,16 +34,21 @@ impl RuntimeTransportConcurrencyState {
 
     pub(crate) fn enqueue_cleanup_work(
         &mut self,
-        sandbox_id: &str,
-        mode: LingeringCleanupMode,
-        trigger: LingeringCleanupTrigger,
-        retry_count: u32,
-        processing_epoch: u64,
-        cleanup_wave: Option<u64>,
-        exclude_lease_id: Option<&str>,
-        exclude_region_id: Option<&str>,
+        request: RuntimeLingeringCleanupEnqueueRequest,
     ) -> Option<LingeringCleanupQueueReceipt> {
-        if !self.has_lingering_candidates(sandbox_id, exclude_lease_id, exclude_region_id) {
+        let exclude_lease_id = request
+            .exclude_session
+            .as_ref()
+            .map(|session| session.lease_id.as_str());
+        let exclude_region_id = request
+            .exclude_session
+            .as_ref()
+            .map(|session| session.region_id.as_str());
+        if !self.has_lingering_candidates(
+            request.sandbox_id.as_str(),
+            exclude_lease_id,
+            exclude_region_id,
+        ) {
             return None;
         }
 
@@ -51,10 +56,11 @@ impl RuntimeTransportConcurrencyState {
         self.next_cleanup_work_id = self.next_cleanup_work_id.saturating_add(1);
         let cleanup_epoch = self.next_cleanup_epoch;
         self.next_cleanup_epoch = self.next_cleanup_epoch.saturating_add(1);
-        let cleanup_wave =
-            cleanup_wave.unwrap_or_else(|| self.next_cleanup_wave_for_sandbox(sandbox_id));
-        let backoff = match trigger {
-            LingeringCleanupTrigger::DeferredRetry => retry_count.max(1) as u64,
+        let cleanup_wave = request
+            .cleanup_wave
+            .unwrap_or_else(|| self.next_cleanup_wave_for_sandbox(request.sandbox_id.as_str()));
+        let backoff = match request.trigger {
+            LingeringCleanupTrigger::DeferredRetry => request.retry_count.max(1) as u64,
             LingeringCleanupTrigger::RecoveryPreAttach
             | LingeringCleanupTrigger::PostStartReconciliation => 0,
         };
@@ -63,14 +69,20 @@ impl RuntimeTransportConcurrencyState {
                 work_id,
                 cleanup_epoch,
                 cleanup_wave,
-                sandbox_id: sandbox_id.to_string(),
-                mode,
-                trigger,
-                retry_count,
-                processing_epoch,
-                ready_at_processing_epoch: processing_epoch.saturating_add(backoff),
-                exclude_lease_id: exclude_lease_id.map(ToOwned::to_owned),
-                exclude_region_id: exclude_region_id.map(ToOwned::to_owned),
+                sandbox_id: request.sandbox_id,
+                mode: request.mode,
+                trigger: request.trigger,
+                retry_count: request.retry_count,
+                processing_epoch: request.processing_epoch,
+                ready_at_processing_epoch: request.processing_epoch.saturating_add(backoff),
+                exclude_lease_id: request
+                    .exclude_session
+                    .as_ref()
+                    .map(|session| session.lease_id.clone()),
+                exclude_region_id: request
+                    .exclude_session
+                    .as_ref()
+                    .map(|session| session.region_id.clone()),
             });
         Some(LingeringCleanupQueueReceipt {
             work_id,

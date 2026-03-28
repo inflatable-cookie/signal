@@ -217,8 +217,8 @@ fn record_ready_plugin_sandbox(
     );
     runtime.record_plugin_sandbox_transport(
         sandbox_id,
-        &format!("lease-{sandbox_id}"),
-        &format!("region-{sandbox_id}"),
+        format!("lease-{sandbox_id}"),
+        format!("region-{sandbox_id}"),
         PluginSandboxTransportStage::Attached,
         Some(processing_epoch),
         None,
@@ -3453,7 +3453,7 @@ fn runtime_executes_applied_graph_block_and_updates_snapshot() {
             .map(|context| context.timeline_position_samples),
         Some(96)
     );
-    assert!(result.output.samples().first().is_some());
+    assert!(!result.output.samples().is_empty());
     assert_eq!(
         runtime
             .applied_transport
@@ -17472,17 +17472,18 @@ fn runtime_fault_status_snapshot_classifies_watchdog_plugin_fault_and_xrun_press
         processing_epoch: 4,
     });
 
-    let status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
 
     assert_eq!(status.recovery_state, RuntimeRecoveryState::Recovering);
     assert_eq!(
@@ -17518,17 +17519,18 @@ fn runtime_fault_status_snapshot_clears_watchdog_active_after_safe_mode_recovery
         .set_safe_mode(SafeModeRequest { enabled: false })
         .expect("safe mode should clear after watchdog recovery");
 
-    let status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
 
     assert_eq!(status.recovery_state, RuntimeRecoveryState::Steady);
     assert_eq!(status.primary_fault_cause, None);
@@ -17689,17 +17691,18 @@ fn runtime_xrun_overload_escalates_into_safe_mode_and_clears_after_recovery() {
         RuntimeReadiness::Degraded { .. }
     ));
 
-    let active_status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let active_status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
     assert_eq!(
         active_status.recovery_state,
         RuntimeRecoveryState::Recovering
@@ -17716,17 +17719,18 @@ fn runtime_xrun_overload_escalates_into_safe_mode_and_clears_after_recovery() {
         .set_safe_mode(SafeModeRequest { enabled: false })
         .expect("safe mode should clear");
 
-    let recovered_status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let recovered_status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
     assert_eq!(
         recovered_status.recovery_state,
         RuntimeRecoveryState::Steady
@@ -17749,17 +17753,18 @@ fn runtime_fail_runtime_marks_faulted_recovery_state() {
     ));
     assert!(matches!(readiness, RuntimeReadiness::Failed { .. }));
 
-    let status = RuntimeFaultStatusSnapshot::capture(
-        runtime.get_readiness(),
-        &runtime.get_control_snapshot(),
-        &runtime.get_diagnostics_snapshot(),
-        &runtime.get_supervision_snapshot(),
-        &runtime.get_engine_block_snapshot(),
-        &runtime.get_transport_concurrency_snapshot(),
-        &runtime.get_plugin_lifecycle_snapshot(),
-        false,
-        0,
-    );
+    let status =
+        RuntimeFaultStatusSnapshot::capture(crate::interfaces::RuntimeFaultStatusCaptureInput {
+            readiness: runtime.get_readiness(),
+            control_snapshot: &runtime.get_control_snapshot(),
+            diagnostics_snapshot: &runtime.get_diagnostics_snapshot(),
+            supervision_snapshot: &runtime.get_supervision_snapshot(),
+            engine_block_snapshot: &runtime.get_engine_block_snapshot(),
+            transport_concurrency_snapshot: &runtime.get_transport_concurrency_snapshot(),
+            plugin_lifecycle_snapshot: &runtime.get_plugin_lifecycle_snapshot(),
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
     assert_eq!(status.recovery_state, RuntimeRecoveryState::Faulted);
     assert_eq!(
         status.primary_fault_cause,
@@ -18878,14 +18883,16 @@ fn runtime_orders_lingering_cleanup_candidates_by_provenance_then_attach_sequenc
 
     runtime
         .begin_transport_session_with_metadata_for_epoch(
-            "sandbox-a",
-            "lease-origin",
-            "region-origin",
-            TransportAttachIntent::SteadyState,
-            Some(2),
-            TransportSessionProvenance::SteadyOrigin,
-            Some("/tmp/signal-origin".into()),
-            Some(4096),
+            crate::RuntimeTransportSessionAttachRequest {
+                sandbox_id: "sandbox-a".into(),
+                lease_id: "lease-origin".into(),
+                region_id: "region-origin".into(),
+                intent: TransportAttachIntent::SteadyState,
+                provenance: TransportSessionProvenance::SteadyOrigin,
+                attach_processing_epoch: Some(2),
+                backing_path: Some("/tmp/signal-origin".into()),
+                total_bytes: Some(4096),
+            },
         )
         .unwrap();
     runtime.record_plugin_sandbox_transport(
@@ -18899,14 +18906,16 @@ fn runtime_orders_lingering_cleanup_candidates_by_provenance_then_attach_sequenc
 
     runtime
         .begin_transport_session_with_metadata_for_epoch(
-            "sandbox-a",
-            "lease-replacement",
-            "region-replacement",
-            TransportAttachIntent::RecoveryOverlap,
-            Some(3),
-            TransportSessionProvenance::RecoveryReplacement,
-            Some("/tmp/signal-replacement".into()),
-            Some(8192),
+            crate::RuntimeTransportSessionAttachRequest {
+                sandbox_id: "sandbox-a".into(),
+                lease_id: "lease-replacement".into(),
+                region_id: "region-replacement".into(),
+                intent: TransportAttachIntent::RecoveryOverlap,
+                provenance: TransportSessionProvenance::RecoveryReplacement,
+                attach_processing_epoch: Some(3),
+                backing_path: Some("/tmp/signal-replacement".into()),
+                total_bytes: Some(8192),
+            },
         )
         .unwrap();
     runtime.record_plugin_sandbox_transport(

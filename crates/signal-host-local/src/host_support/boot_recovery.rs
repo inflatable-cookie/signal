@@ -8,7 +8,10 @@ use super::super::{
 };
 use super::demo::LocalDemoPluginSandboxAssembly;
 use super::lifecycle_run::LifecycleRunSummary;
-use super::{build_fault_envelope, record_runtime_fault};
+use super::{
+    build_fault_envelope, record_runtime_fault, RepeatedWatchdogRecoveryPlan,
+    TimeoutRecoveryRetryPlan,
+};
 
 impl LocalRuntimeHost {
     pub(crate) fn apply_boot_fault_recovery(
@@ -156,9 +159,11 @@ impl LocalRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    &[RecoveryFailureInjection::DeferredOldTransportTeardown],
-                    "expected deferred teardown recovery failure",
-                    true,
+                    TimeoutRecoveryRetryPlan {
+                        failures: &[RecoveryFailureInjection::DeferredOldTransportTeardown],
+                        terminal_detail: "expected deferred teardown recovery failure",
+                        recover_after_failures: true,
+                    },
                 )?;
             }
             FaultInjection::RecoveryDeferredTeardownCleanupRetry => {
@@ -167,12 +172,14 @@ impl LocalRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    &[
-                        RecoveryFailureInjection::DeferredOldTransportTeardown,
-                        RecoveryFailureInjection::LingeringCleanupTeardown,
-                    ],
-                    "expected lingering cleanup retry failure",
-                    true,
+                    TimeoutRecoveryRetryPlan {
+                        failures: &[
+                            RecoveryFailureInjection::DeferredOldTransportTeardown,
+                            RecoveryFailureInjection::LingeringCleanupTeardown,
+                        ],
+                        terminal_detail: "expected lingering cleanup retry failure",
+                        recover_after_failures: true,
+                    },
                 )?;
             }
             FaultInjection::RecoveryRestartFailure => {
@@ -204,8 +211,10 @@ impl LocalRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    restart_episodes,
-                    false,
+                    RepeatedWatchdogRecoveryPlan {
+                        restart_episodes,
+                        mixed_faults: false,
+                    },
                 )?;
             }
             FaultInjection::MixedWatchdogEpisodes { restart_episodes } => {
@@ -214,8 +223,10 @@ impl LocalRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    restart_episodes,
-                    true,
+                    RepeatedWatchdogRecoveryPlan {
+                        restart_episodes,
+                        mixed_faults: true,
+                    },
                 )?;
             }
         }

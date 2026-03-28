@@ -9,6 +9,7 @@ pub(crate) use assertions::{
     assert_local_plugin_topology, assert_plugin_dispatch_summary,
     assert_runtime_automation_continuity, assert_runtime_automation_values,
     assert_runtime_plugin_event_snapshot, assert_runtime_sequence_continuity,
+    RuntimeAutomationExpectations,
 };
 pub(crate) use setup::{
     prepare_local_host_for_offline_render, prepare_local_host_with_lifecycle,

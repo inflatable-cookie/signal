@@ -133,21 +133,22 @@ impl SignalRuntime {
             &result.output,
             result.meter_sources.clone(),
         );
-        self.automation.record_execution(
-            block_sequence,
-            result.snapshot.transport_block_start_samples,
-            result
-                .snapshot
-                .last_execution_context
-                .as_ref()
-                .map(|context| context.transport_playing),
-            result.snapshot.parameter_epoch,
-            result.snapshot.parameter_event_count,
-            result.snapshot.parameter_ignored_event_count,
-            result.snapshot.parameter_sub_block_count,
-            result.snapshot.parameter_coalesced_event_count,
-            automation_metrics,
-        );
+        self.automation
+            .record_execution(RuntimeAutomationExecutionRecord {
+                block_sequence,
+                timeline_position_samples: result.snapshot.transport_block_start_samples,
+                transport_playing: result
+                    .snapshot
+                    .last_execution_context
+                    .as_ref()
+                    .map(|context| context.transport_playing),
+                parameter_epoch: result.snapshot.parameter_epoch,
+                parameter_event_count: result.snapshot.parameter_event_count,
+                parameter_ignored_event_count: result.snapshot.parameter_ignored_event_count,
+                parameter_sub_block_count: result.snapshot.parameter_sub_block_count,
+                parameter_coalesced_event_count: result.snapshot.parameter_coalesced_event_count,
+                metrics: automation_metrics,
+            });
         self.recording_capture.record_output_block(&result.output);
         let _ = self.enforce_scheduler_after_engine_block(processing_epoch, block_sequence)?;
         self.refresh_scheduler_topology_summary();

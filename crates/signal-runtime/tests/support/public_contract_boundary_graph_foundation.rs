@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
 use signal_plugin::{
     PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,

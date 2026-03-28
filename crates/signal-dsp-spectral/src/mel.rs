@@ -156,12 +156,12 @@ pub fn build_filterbank(
             MelFilterNorm::None => 1.0,
         };
 
-        for k in 0..fft_bin_count {
+        for (k, weight) in filterbank[i].iter_mut().enumerate().take(fft_bin_count) {
             let kf = k as f32;
             if kf > left && kf <= center && center > left {
-                filterbank[i][k] = norm_scale * (kf - left) / (center - left);
+                *weight = norm_scale * (kf - left) / (center - left);
             } else if kf > center && kf < right && right > center {
-                filterbank[i][k] = norm_scale * (right - kf) / (right - center);
+                *weight = norm_scale * (right - kf) / (right - center);
             }
         }
     }

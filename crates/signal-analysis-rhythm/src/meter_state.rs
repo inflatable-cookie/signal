@@ -41,7 +41,8 @@ pub(crate) fn meter_state_recommendation(
         }
     }
 
-    fn cause_stack(
+    #[derive(Clone, Copy)]
+    struct MeterContinuityCauseInputs {
         action: MeterContinuityAction,
         source: MeterContinuitySource,
         reason: MeterContinuityReason,
@@ -50,7 +51,67 @@ pub(crate) fn meter_state_recommendation(
         tempo_ambiguity: Confidence,
         phase_displaced: bool,
         stage_index: usize,
-    ) -> MeterContinuityCauseStack {
+    }
+
+    #[derive(Clone, Copy)]
+    struct MeterContinuityStageContext {
+        action: MeterContinuityAction,
+        source: MeterContinuitySource,
+        reason: MeterContinuityReason,
+        confidence: Confidence,
+        trigger: MeterContinuityTrigger,
+        unresolved: MeterContinuityUnresolvedSpan,
+        causes: MeterContinuityCauseStack,
+        stage_index: usize,
+    }
+
+    #[derive(Clone, Copy)]
+    struct MeterContinuityArcInputs {
+        source: MeterContinuitySource,
+        reason: MeterContinuityReason,
+        confidence: Confidence,
+        unresolved: MeterContinuityUnresolvedSpan,
+        causes: MeterContinuityCauseStack,
+        current: MeterContinuityHistory,
+        refresh: MeterContinuityTransition,
+        first_decay: MeterContinuityTransition,
+        final_decay: MeterContinuityTransition,
+    }
+
+    #[derive(Clone, Copy)]
+    struct MeterContinuityPlanInputs {
+        action: MeterContinuityAction,
+        source: MeterContinuitySource,
+        reason: MeterContinuityReason,
+        confidence: Confidence,
+        trigger: MeterContinuityTrigger,
+        unresolved: MeterContinuityUnresolvedSpan,
+        causes: MeterContinuityCauseStack,
+        trusted_beats: usize,
+        revalidate_after_beats: usize,
+    }
+
+    #[derive(Clone, Copy)]
+    struct MeterContinuityInputs<'a> {
+        estimate: Option<&'a MeterEstimate>,
+        suppression_profile: MeterSuppressionProfile,
+        confidence: Confidence,
+        tempo_ambiguity: Confidence,
+        bpm: f32,
+        beat_positions_seconds: &'a [f32],
+    }
+
+    fn cause_stack(inputs: MeterContinuityCauseInputs) -> MeterContinuityCauseStack {
+        let MeterContinuityCauseInputs {
+            action,
+            source,
+            reason,
+            trigger,
+            suppression_profile,
+            tempo_ambiguity,
+            phase_displaced,
+            stage_index,
+        } = inputs;
         let mut causes = [None; 3];
         let mut count = 0usize;
 
@@ -171,7 +232,7 @@ pub(crate) fn meter_state_recommendation(
             push_cause(&mut causes, &mut count, MeterContinuityCause::EvidenceLoss);
         }
 
-        let primary = causes[0].unwrap_or_else(|| match action {
+        let primary = causes[0].unwrap_or(match action {
             MeterContinuityAction::Lock => MeterContinuityCause::StableMeterEvidence,
             MeterContinuityAction::Retain | MeterContinuityAction::Reacquire => {
                 MeterContinuityCause::SparseMeterSupport
@@ -195,16 +256,17 @@ pub(crate) fn meter_state_recommendation(
                 .any(|entry| entry == cause)
     }
 
-    fn continuity_history(
-        action: MeterContinuityAction,
-        source: MeterContinuitySource,
-        reason: MeterContinuityReason,
-        confidence: Confidence,
-        trigger: MeterContinuityTrigger,
-        unresolved: MeterContinuityUnresolvedSpan,
-        causes: MeterContinuityCauseStack,
-        stage_index: usize,
-    ) -> MeterContinuityHistory {
+    fn continuity_history(context: MeterContinuityStageContext) -> MeterContinuityHistory {
+        let MeterContinuityStageContext {
+            action,
+            source,
+            reason,
+            confidence,
+            trigger,
+            unresolved,
+            causes,
+            stage_index,
+        } = context;
         let has_evidence_loss = has_cause(causes, MeterContinuityCause::EvidenceLoss);
         let has_irregularity = has_cause(causes, MeterContinuityCause::IrregularBarStructure);
         let has_phase_displacement = has_cause(causes, MeterContinuityCause::PhaseDisplacement);
@@ -315,20 +377,23 @@ pub(crate) fn meter_state_recommendation(
     }
 
     fn continuity_arc_assessment(
-        source: MeterContinuitySource,
-        reason: MeterContinuityReason,
-        confidence: Confidence,
-        unresolved: MeterContinuityUnresolvedSpan,
-        causes: MeterContinuityCauseStack,
-        current: MeterContinuityHistory,
-        refresh: MeterContinuityTransition,
-        first_decay: MeterContinuityTransition,
-        final_decay: MeterContinuityTransition,
+        inputs: MeterContinuityArcInputs,
     ) -> (
         MeterContinuityArc,
         MeterContinuityArcRationale,
         MeterContinuityArcSupport,
     ) {
+        let MeterContinuityArcInputs {
+            source,
+            reason,
+            confidence,
+            unresolved,
+            causes,
+            current,
+            refresh,
+            first_decay,
+            final_decay,
+        } = inputs;
         let has_evidence_loss = has_cause(causes, MeterContinuityCause::EvidenceLoss);
         let has_irregularity = has_cause(causes, MeterContinuityCause::IrregularBarStructure);
         let persistent_decay = matches!(first_decay.history, MeterContinuityHistory::Degrading)
@@ -465,12 +530,12 @@ pub(crate) fn meter_state_recommendation(
         let bars = if beats == 0 {
             0
         } else {
-            (beats + beats_per_bar.saturating_sub(1)) / beats_per_bar.max(1)
+            beats.div_ceil(beats_per_bar.max(1))
         };
         let failed_revalidations = if beats == 0 || revalidate_after_beats == 0 {
             0
         } else {
-            ((beats + revalidate_after_beats - 1) / revalidate_after_beats).max(stage_index)
+            beats.div_ceil(revalidate_after_beats).max(stage_index)
         };
         MeterContinuityUnresolvedSpan {
             beats,
@@ -560,30 +625,24 @@ pub(crate) fn meter_state_recommendation(
 
     fn transition(
         after_beats: usize,
-        action: MeterContinuityAction,
-        source: MeterContinuitySource,
-        reason: MeterContinuityReason,
-        confidence: Confidence,
-        trigger: MeterContinuityTrigger,
-        unresolved: MeterContinuityUnresolvedSpan,
-        causes: MeterContinuityCauseStack,
-        stage_index: usize,
+        context: MeterContinuityStageContext,
     ) -> MeterContinuityTransition {
+        let MeterContinuityStageContext {
+            action,
+            source,
+            reason,
+            confidence,
+            trigger,
+            unresolved,
+            causes,
+            ..
+        } = context;
         MeterContinuityTransition {
             after_beats,
             action,
             source,
             severity: continuity_severity(action, source),
-            history: continuity_history(
-                action,
-                source,
-                reason,
-                confidence,
-                trigger,
-                unresolved,
-                causes,
-                stage_index,
-            ),
+            history: continuity_history(context),
             reason,
             confidence,
             trigger,
@@ -593,33 +652,44 @@ pub(crate) fn meter_state_recommendation(
     }
 
     fn continuity_plan(
-        action: MeterContinuityAction,
-        source: MeterContinuitySource,
-        reason: MeterContinuityReason,
-        confidence: Confidence,
-        trigger: MeterContinuityTrigger,
-        unresolved: MeterContinuityUnresolvedSpan,
-        causes: MeterContinuityCauseStack,
-        trusted_beats: usize,
-        revalidate_after_beats: usize,
+        plan: MeterContinuityPlanInputs,
         refresh: MeterContinuityTransition,
         first_decay: MeterContinuityTransition,
         final_decay: MeterContinuityTransition,
     ) -> MeterContinuityPlan {
-        let history = continuity_history(
-            action, source, reason, confidence, trigger, unresolved, causes, 0,
-        );
-        let (arc, arc_rationale, arc_support) = continuity_arc_assessment(
+        let MeterContinuityPlanInputs {
+            action,
             source,
             reason,
             confidence,
+            trigger,
             unresolved,
             causes,
-            history,
-            refresh,
-            first_decay,
-            final_decay,
-        );
+            trusted_beats,
+            revalidate_after_beats,
+        } = plan;
+        let history = continuity_history(MeterContinuityStageContext {
+            action,
+            source,
+            reason,
+            confidence,
+            trigger,
+            unresolved,
+            causes,
+            stage_index: 0,
+        });
+        let (arc, arc_rationale, arc_support) =
+            continuity_arc_assessment(MeterContinuityArcInputs {
+                source,
+                reason,
+                confidence,
+                unresolved,
+                causes,
+                current: history,
+                refresh,
+                first_decay,
+                final_decay,
+            });
         MeterContinuityPlan {
             action,
             source,
@@ -645,13 +715,16 @@ pub(crate) fn meter_state_recommendation(
     fn continuity_for(
         action: MeterStateAction,
         reason: MeterStateReason,
-        estimate: Option<&MeterEstimate>,
-        suppression_profile: MeterSuppressionProfile,
-        confidence: Confidence,
-        tempo_ambiguity: Confidence,
-        bpm: f32,
-        beat_positions_seconds: &[f32],
+        inputs: MeterContinuityInputs<'_>,
     ) -> MeterContinuityRecommendation {
+        let MeterContinuityInputs {
+            estimate,
+            suppression_profile,
+            confidence,
+            tempo_ambiguity,
+            bpm,
+            beat_positions_seconds,
+        } = inputs;
         let beat_duration = if bpm > 0.0 { 60.0 / bpm } else { 0.0 };
         let pickup_like_phase = estimate
             .and_then(|estimate| estimate.downbeat_positions_seconds.first().copied())
@@ -700,32 +773,34 @@ pub(crate) fn meter_state_recommendation(
                 phase_displacement_beats,
                 stage_index,
             );
-            let stage_causes = cause_stack(
-                stage_action,
-                stage_source,
-                stage_reason,
-                stage_trigger,
+            let stage_causes = cause_stack(MeterContinuityCauseInputs {
+                action: stage_action,
+                source: stage_source,
+                reason: stage_reason,
+                trigger: stage_trigger,
                 suppression_profile,
                 tempo_ambiguity,
-                phase_displacement_beats > 0,
+                phase_displaced: phase_displacement_beats > 0,
                 stage_index,
-            );
+            });
             transition(
                 after_beats,
-                stage_action,
-                stage_source,
-                stage_reason,
-                continuity_confidence(
-                    stage_action,
-                    stage_source,
-                    confidence,
-                    after_beats,
+                MeterContinuityStageContext {
+                    action: stage_action,
+                    source: stage_source,
+                    reason: stage_reason,
+                    confidence: continuity_confidence(
+                        stage_action,
+                        stage_source,
+                        confidence,
+                        after_beats,
+                        stage_index,
+                    ),
+                    trigger: stage_trigger,
+                    unresolved: stage_unresolved,
+                    causes: stage_causes,
                     stage_index,
-                ),
-                stage_trigger,
-                stage_unresolved,
-                stage_causes,
-                stage_index,
+                },
             )
         };
         let plan = |plan_action: MeterContinuityAction,
@@ -745,26 +820,34 @@ pub(crate) fn meter_state_recommendation(
                 phase_displacement_beats,
                 0,
             );
-            let plan_causes = cause_stack(
-                plan_action,
-                plan_source,
-                plan_reason,
-                plan_trigger,
+            let plan_causes = cause_stack(MeterContinuityCauseInputs {
+                action: plan_action,
+                source: plan_source,
+                reason: plan_reason,
+                trigger: plan_trigger,
                 suppression_profile,
                 tempo_ambiguity,
-                phase_displacement_beats > 0,
-                0,
-            );
+                phase_displaced: phase_displacement_beats > 0,
+                stage_index: 0,
+            });
             continuity_plan(
-                plan_action,
-                plan_source,
-                plan_reason,
-                continuity_confidence(plan_action, plan_source, confidence, trusted_beats, 0),
-                plan_trigger,
-                plan_unresolved,
-                plan_causes,
-                trusted_beats,
-                revalidate_after_beats,
+                MeterContinuityPlanInputs {
+                    action: plan_action,
+                    source: plan_source,
+                    reason: plan_reason,
+                    confidence: continuity_confidence(
+                        plan_action,
+                        plan_source,
+                        confidence,
+                        trusted_beats,
+                        0,
+                    ),
+                    trigger: plan_trigger,
+                    unresolved: plan_unresolved,
+                    causes: plan_causes,
+                    trusted_beats,
+                    revalidate_after_beats,
+                },
                 refresh,
                 first_decay,
                 final_decay,
@@ -1202,27 +1285,13 @@ pub(crate) fn meter_state_recommendation(
     fn build_meter_state(
         action: MeterStateAction,
         reason: MeterStateReason,
-        confidence: Confidence,
-        estimate: Option<&MeterEstimate>,
-        suppression_profile: MeterSuppressionProfile,
-        tempo_ambiguity: Confidence,
-        bpm: f32,
-        beat_positions_seconds: &[f32],
+        inputs: MeterContinuityInputs<'_>,
     ) -> MeterStateRecommendation {
         MeterStateRecommendation {
             action,
             reason,
-            confidence,
-            continuity: continuity_for(
-                action,
-                reason,
-                estimate,
-                suppression_profile,
-                confidence,
-                tempo_ambiguity,
-                bpm,
-                beat_positions_seconds,
-            ),
+            confidence: inputs.confidence,
+            continuity: continuity_for(action, reason, inputs),
         }
     }
 
@@ -1231,41 +1300,47 @@ pub(crate) fn meter_state_recommendation(
             MeterRecommendation::Lock => build_meter_state(
                 MeterStateAction::Lock,
                 MeterStateReason::StableMeter,
-                estimate.confidence,
-                Some(estimate),
-                suppression_profile,
-                tempo_ambiguity,
-                bpm,
-                beat_positions_seconds,
+                MeterContinuityInputs {
+                    estimate: Some(estimate),
+                    suppression_profile,
+                    confidence: estimate.confidence,
+                    tempo_ambiguity,
+                    bpm,
+                    beat_positions_seconds,
+                },
             ),
             MeterRecommendation::Monitor if estimate.trust == MeterTrustLevel::Recovering => {
                 build_meter_state(
                     MeterStateAction::Watch,
                     MeterStateReason::RecoveringMeter,
-                    Confidence::new(
-                        0.5 * estimate.support_profile.segment_recovery_strength.0
-                            + 0.3 * estimate.support_profile.recovery_duration_strength.0
-                            + 0.2 * estimate.confidence.0,
-                    ),
-                    Some(estimate),
-                    suppression_profile,
-                    tempo_ambiguity,
-                    bpm,
-                    beat_positions_seconds,
+                    MeterContinuityInputs {
+                        estimate: Some(estimate),
+                        suppression_profile,
+                        confidence: Confidence::new(
+                            0.5 * estimate.support_profile.segment_recovery_strength.0
+                                + 0.3 * estimate.support_profile.recovery_duration_strength.0
+                                + 0.2 * estimate.confidence.0,
+                        ),
+                        tempo_ambiguity,
+                        bpm,
+                        beat_positions_seconds,
+                    },
                 )
             }
             MeterRecommendation::Monitor | MeterRecommendation::Defer => build_meter_state(
                 MeterStateAction::Hold,
                 MeterStateReason::TentativeMeter,
-                Confidence::new(
-                    0.6 * estimate.confidence.0
-                        + 0.4 * estimate.support_profile.whole_track_strength.0,
-                ),
-                Some(estimate),
-                suppression_profile,
-                tempo_ambiguity,
-                bpm,
-                beat_positions_seconds,
+                MeterContinuityInputs {
+                    estimate: Some(estimate),
+                    suppression_profile,
+                    confidence: Confidence::new(
+                        0.6 * estimate.confidence.0
+                            + 0.4 * estimate.support_profile.whole_track_strength.0,
+                    ),
+                    tempo_ambiguity,
+                    bpm,
+                    beat_positions_seconds,
+                },
             ),
         };
     }
@@ -1281,17 +1356,19 @@ pub(crate) fn meter_state_recommendation(
             return build_meter_state(
                 MeterStateAction::Clear,
                 MeterStateReason::MeterCleared,
-                Confidence::new(
-                    (0.5 * tempo_ambiguity.0
-                        + 0.3 * trailing_recovery_strength
-                        + 0.2 * (1.0 - suppression_profile.best_support.clamp(0.0, 1.0)))
-                    .clamp(0.0, 1.0),
-                ),
-                None,
-                suppression_profile,
-                tempo_ambiguity,
-                bpm,
-                beat_positions_seconds,
+                MeterContinuityInputs {
+                    estimate: None,
+                    suppression_profile,
+                    confidence: Confidence::new(
+                        (0.5 * tempo_ambiguity.0
+                            + 0.3 * trailing_recovery_strength
+                            + 0.2 * (1.0 - suppression_profile.best_support.clamp(0.0, 1.0)))
+                        .clamp(0.0, 1.0),
+                    ),
+                    tempo_ambiguity,
+                    bpm,
+                    beat_positions_seconds,
+                },
             );
         }
 
@@ -1299,31 +1376,35 @@ pub(crate) fn meter_state_recommendation(
             return build_meter_state(
                 MeterStateAction::Hold,
                 MeterStateReason::DestabilizedHold,
-                Confidence::new(
-                    (0.55 * pulse_stability
-                        + 0.25 * suppression_profile.best_confidence.0
-                        + 0.20 * suppression_profile.best_support)
-                        .clamp(0.0, 1.0),
-                ),
-                None,
-                suppression_profile,
-                tempo_ambiguity,
-                bpm,
-                beat_positions_seconds,
+                MeterContinuityInputs {
+                    estimate: None,
+                    suppression_profile,
+                    confidence: Confidence::new(
+                        (0.55 * pulse_stability
+                            + 0.25 * suppression_profile.best_confidence.0
+                            + 0.20 * suppression_profile.best_support)
+                            .clamp(0.0, 1.0),
+                    ),
+                    tempo_ambiguity,
+                    bpm,
+                    beat_positions_seconds,
+                },
             );
         }
 
         build_meter_state(
             MeterStateAction::Watch,
             MeterStateReason::RecoveryEmerging,
-            Confidence::new(
-                (0.55 * trailing_recovery_strength + 0.45 * pulse_stability).clamp(0.0, 1.0),
-            ),
-            None,
-            suppression_profile,
-            tempo_ambiguity,
-            bpm,
-            beat_positions_seconds,
+            MeterContinuityInputs {
+                estimate: None,
+                suppression_profile,
+                confidence: Confidence::new(
+                    (0.55 * trailing_recovery_strength + 0.45 * pulse_stability).clamp(0.0, 1.0),
+                ),
+                tempo_ambiguity,
+                bpm,
+                beat_positions_seconds,
+            },
         )
     } else if pulse_stability >= 0.55
         && suppression_profile.best_confidence.0 >= 0.12
@@ -1333,33 +1414,37 @@ pub(crate) fn meter_state_recommendation(
         build_meter_state(
             MeterStateAction::Hold,
             MeterStateReason::DestabilizedHold,
-            Confidence::new(
-                (0.5 * pulse_stability
-                    + 0.3 * suppression_profile.best_confidence.0
-                    + 0.2 * suppression_profile.best_support)
-                    .clamp(0.0, 1.0),
-            ),
-            None,
-            suppression_profile,
-            tempo_ambiguity,
-            bpm,
-            beat_positions_seconds,
+            MeterContinuityInputs {
+                estimate: None,
+                suppression_profile,
+                confidence: Confidence::new(
+                    (0.5 * pulse_stability
+                        + 0.3 * suppression_profile.best_confidence.0
+                        + 0.2 * suppression_profile.best_support)
+                        .clamp(0.0, 1.0),
+                ),
+                tempo_ambiguity,
+                bpm,
+                beat_positions_seconds,
+            },
         )
     } else {
         build_meter_state(
             MeterStateAction::Clear,
             MeterStateReason::MeterCleared,
-            Confidence::new(
-                (0.45 * (1.0 - suppression_profile.best_confidence.0)
-                    + 0.35 * (1.0 - suppression_profile.best_support.clamp(0.0, 1.0))
-                    + 0.20 * tempo_ambiguity.0)
-                    .clamp(0.0, 1.0),
-            ),
-            None,
-            suppression_profile,
-            tempo_ambiguity,
-            bpm,
-            beat_positions_seconds,
+            MeterContinuityInputs {
+                estimate: None,
+                suppression_profile,
+                confidence: Confidence::new(
+                    (0.45 * (1.0 - suppression_profile.best_confidence.0)
+                        + 0.35 * (1.0 - suppression_profile.best_support.clamp(0.0, 1.0))
+                        + 0.20 * tempo_ambiguity.0)
+                        .clamp(0.0, 1.0),
+                ),
+                tempo_ambiguity,
+                bpm,
+                beat_positions_seconds,
+            },
         )
     }
 }

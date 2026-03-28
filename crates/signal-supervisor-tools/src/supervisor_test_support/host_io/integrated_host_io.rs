@@ -92,6 +92,19 @@ pub(crate) fn sample_g07_acceptance_host_io() -> RuntimeHostIoSummary {
     let linux_backend_identity = RuntimeHostHardwareSummary::classify_linux_backend_identity(
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
     );
+    let linux_parity = RuntimeHostIoSummary::linux_parity_input(
+        linux_backend_identity,
+        BackendHealth::Healthy,
+        RuntimeHostAudioStreamState::Running,
+        RuntimeHostClockDomain::SameClock,
+        RuntimeHostClockFallbackState::Direct,
+        RuntimeHostClockTransitionState::Stable,
+        RuntimeHostClockDriftState::Stable,
+        RuntimeHostClockDiscontinuityState::Continuous,
+        RuntimeHostDuplexMismatchState::Aligned,
+        RuntimeHostEndpointTopology::Duplex,
+        false,
+    );
     RuntimeHostIoSummary {
         hardware: RuntimeHostHardwareSummary {
             backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
@@ -151,26 +164,9 @@ pub(crate) fn sample_g07_acceptance_host_io() -> RuntimeHostIoSummary {
             duplex_mismatch_state: RuntimeHostDuplexMismatchState::Aligned,
             endpoint_topology: RuntimeHostEndpointTopology::Duplex,
             linux_clocking_parity: RuntimeHostIoSummary::classify_linux_clocking_parity(
-                linux_backend_identity,
-                BackendHealth::Healthy,
-                RuntimeHostAudioStreamState::Running,
-                RuntimeHostClockDomain::SameClock,
-                RuntimeHostClockFallbackState::Direct,
-                RuntimeHostClockTransitionState::Stable,
-                RuntimeHostClockDriftState::Stable,
-                RuntimeHostClockDiscontinuityState::Continuous,
+                linux_parity,
             ),
-            linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(
-                linux_backend_identity,
-                BackendHealth::Healthy,
-                RuntimeHostAudioStreamState::Running,
-                RuntimeHostClockDomain::SameClock,
-                RuntimeHostClockFallbackState::Direct,
-                RuntimeHostClockTransitionState::Stable,
-                RuntimeHostDuplexMismatchState::Aligned,
-                RuntimeHostEndpointTopology::Duplex,
-                false,
-            ),
+            linux_duplex_parity: RuntimeHostIoSummary::classify_linux_duplex_parity(linux_parity),
             linux_endpoint_topology_parity:
                 RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
                     linux_backend_identity,

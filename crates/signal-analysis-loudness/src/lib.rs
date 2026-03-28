@@ -421,8 +421,8 @@ const HIGH_SHELF_48K: BiquadCoefficients = BiquadCoefficients {
     b0: 1.0,
     b1: -2.0,
     b2: 1.0,
-    a1: -1.9900474548339844,
-    a2: 0.9900722503662109,
+    a1: -1.990_047_5,
+    a2: 0.990_072_25,
 };
 
 fn apply_loudness_weighting(sample_rate: SampleRate, samples: &[f32]) -> Vec<f32> {
@@ -570,7 +570,6 @@ fn loudness_range_from_energies(short_term_energies: &[f32]) -> f32 {
     let mut loudness_values: Vec<f32> = short_term_energies
         .iter()
         .copied()
-        .into_iter()
         .map(lufs_from_mean_square)
         .filter(|value| value.is_finite() && *value >= -70.0)
         .collect();

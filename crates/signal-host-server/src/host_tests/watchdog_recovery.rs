@@ -1,31 +1,12 @@
 use super::super::host_test_support::{
     assert_runtime_automation_continuity, assert_runtime_automation_values,
-    assert_runtime_plugin_event_snapshot, assert_runtime_sequence_continuity,
-    prepare_server_host_with_lifecycle, prepare_server_host_without_lifecycle,
-    temp_media_fixture_path,
+    assert_runtime_sequence_continuity, RuntimeAutomationExpectations,
 };
 use super::super::ServerRuntimeHost;
-use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
-use signal_plugin::{CompletionState, PluginFormat, WatchdogTriggerReason};
-use signal_plugin_clap::ClapSandboxLifecycleHarness;
-use signal_primitives::{ChannelCount, ChannelLayout};
+use signal_plugin::{CompletionState, WatchdogTriggerReason};
 use signal_runtime::{
-    BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-    GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
-    GraphNodeContractProjection, GraphNodeProjection, GraphNodeTopologyProjection,
-    GraphProjection, HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode,
-    PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
-    RuntimeConfig, RuntimeConfigRequest, RuntimeErrorKind, RuntimeExternalIoDeviceChangeState,
-    RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState,
-    RuntimeExternalIoMonitoringState, RuntimeExternalIoMonitoringTapPoint,
-    RuntimeExternalIoPrimaryRole, RuntimeLifecycleApi, RuntimeMediaAssetRegistration,
-    RuntimeMediaPreviewState, RuntimeObservationApi, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimeProjectionApi,
-    RuntimeReadiness, RuntimeSupervisorApi, SandboxOperationFailureStage, SignalRuntime,
-    StopReason, TransportAttachIntent,
+    RecoveryRestartIntent, RuntimeConfig, SignalRuntime, StopReason,
 };
-use std::{fs, path::Path};
 
 #[test]
 fn server_host_recovers_after_crash() {
@@ -80,7 +61,18 @@ fn server_host_recovers_after_crash() {
         .transport
         .shared_memory_region_id
         .starts_with("region-"));
-    assert_runtime_automation_values(&supervisor, 9, 9, 3, 6, 0.1, 0.5, 0.08);
+    assert_runtime_automation_values(
+        &supervisor,
+        RuntimeAutomationExpectations {
+            value_events: 9,
+            modulation_events: 9,
+            gesture_begin_events: 3,
+            gesture_end_events: 6,
+            first_value: 0.1,
+            last_value: 0.5,
+            last_modulation: 0.08,
+        },
+    );
     assert_runtime_automation_continuity(&supervisor, 1, 2, &[1, 2], 1);
     assert_runtime_sequence_continuity(&supervisor, &[1, 2], 0, 8, 0, 1);
 }
@@ -138,7 +130,18 @@ fn server_host_recovers_after_heartbeat_watchdog_trigger() {
             .supervision_snapshot
             .safe_mode_enabled
     );
-    assert_runtime_automation_values(&supervisor, 8, 8, 2, 6, 0.2, 0.55, 0.10);
+    assert_runtime_automation_values(
+        &supervisor,
+        RuntimeAutomationExpectations {
+            value_events: 8,
+            modulation_events: 8,
+            gesture_begin_events: 2,
+            gesture_end_events: 6,
+            first_value: 0.2,
+            last_value: 0.55,
+            last_modulation: 0.10,
+        },
+    );
     assert_runtime_automation_continuity(&supervisor, 2, 2, &[2], 0);
     assert_runtime_sequence_continuity(&supervisor, &[2], 2, 9, 0, 0);
 }
@@ -190,8 +193,18 @@ fn server_host_enters_safe_mode_after_repeated_watchdog_restarts() {
         supervisor.observation.control_snapshot.last_stop_reason,
         Some(StopReason::DegradedModeRecovery)
     );
-    assert_runtime_automation_values(&supervisor, 10, 10, 2, 8, 0.2, 0.75, 0.18);
+    assert_runtime_automation_values(
+        &supervisor,
+        RuntimeAutomationExpectations {
+            value_events: 10,
+            modulation_events: 10,
+            gesture_begin_events: 2,
+            gesture_end_events: 8,
+            first_value: 0.2,
+            last_value: 0.75,
+            last_modulation: 0.18,
+        },
+    );
     assert_runtime_automation_continuity(&supervisor, 2, 3, &[2, 3], 1);
     assert_runtime_sequence_continuity(&supervisor, &[2, 3], 2, 13, 0, 1);
 }
-

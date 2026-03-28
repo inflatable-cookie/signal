@@ -23,29 +23,36 @@ pub(crate) use workflow::{
     render_integrated_live_workflow_acceptance_lane_text,
 };
 
-fn render_acceptance_lane_text(
-    lane_label: &str,
-    lane: &str,
-    contract_path: &str,
-    acceptance_task: &str,
-    required_tasks: &[&str],
-    advisory_tasks: &[&str],
-    families: &[IntegratedAcceptanceFamily],
-    validation_steps: &[IntegratedAcceptanceValidationStep],
-    deferred_scope: &[&str],
-) -> String {
+struct AcceptanceLaneRender<'a> {
+    lane_label: &'a str,
+    lane: &'a str,
+    contract_path: &'a str,
+    acceptance_task: &'a str,
+    required_tasks: &'a [&'a str],
+    advisory_tasks: &'a [&'a str],
+    families: &'a [IntegratedAcceptanceFamily],
+    validation_steps: &'a [IntegratedAcceptanceValidationStep],
+    deferred_scope: &'a [&'a str],
+}
+
+fn render_acceptance_lane_text(render: &AcceptanceLaneRender<'_>) -> String {
     let mut rendered = format!(
         "{lane_label}: {lane}\ncontract_path: {contract_path}\nacceptance_task: {acceptance_task}\nrequired_tasks:\n"
+        ,
+        lane_label = render.lane_label,
+        lane = render.lane,
+        contract_path = render.contract_path,
+        acceptance_task = render.acceptance_task,
     );
-    for task in required_tasks {
+    for task in render.required_tasks {
         rendered.push_str(&format!("- {task}\n"));
     }
     rendered.push_str("advisory_tasks:\n");
-    for task in advisory_tasks {
+    for task in render.advisory_tasks {
         rendered.push_str(&format!("- {task}\n"));
     }
     rendered.push_str("families:\n");
-    for family in families {
+    for family in render.families {
         rendered.push_str(&format!(
             "- id: {}\n  title: {}\n  rationale: {}\n  required_tasks:\n",
             family.id, family.title, family.rationale
@@ -59,44 +66,38 @@ fn render_acceptance_lane_text(
         }
     }
     rendered.push_str("validation_steps:\n");
-    for step in validation_steps {
+    for step in render.validation_steps {
         rendered.push_str(&format!(
             "- id: {}\n  command: {}\n  rationale: {}\n",
             step.id, step.command, step.rationale,
         ));
     }
     rendered.push_str("deferred_scope:\n");
-    for scope in deferred_scope {
+    for scope in render.deferred_scope {
         rendered.push_str(&format!("- {scope}\n"));
     }
     rendered
 }
 
-fn render_acceptance_lane_json(
-    lane: &str,
-    contract_path: &str,
-    acceptance_task: &str,
-    required_tasks: &[&str],
-    advisory_tasks: &[&str],
-    families: &[IntegratedAcceptanceFamily],
-    validation_steps: &[IntegratedAcceptanceValidationStep],
-    deferred_scope: &[&str],
-) -> String {
-    let required_task_count = required_tasks.len();
-    let advisory_task_count = advisory_tasks.len();
-    let family_count = families.len();
-    let validation_step_count = validation_steps.len();
-    let required_tasks = required_tasks
+fn render_acceptance_lane_json(render: &AcceptanceLaneRender<'_>) -> String {
+    let required_task_count = render.required_tasks.len();
+    let advisory_task_count = render.advisory_tasks.len();
+    let family_count = render.families.len();
+    let validation_step_count = render.validation_steps.len();
+    let required_tasks = render
+        .required_tasks
         .iter()
         .map(|task| json_string(task))
         .collect::<Vec<_>>()
         .join(",");
-    let advisory_tasks = advisory_tasks
+    let advisory_tasks = render
+        .advisory_tasks
         .iter()
         .map(|task| json_string(task))
         .collect::<Vec<_>>()
         .join(",");
-    let families = families
+    let families = render
+        .families
         .iter()
         .map(|family| {
             let required = family
@@ -130,7 +131,8 @@ fn render_acceptance_lane_json(
         })
         .collect::<Vec<_>>()
         .join(",");
-    let validation_steps = validation_steps
+    let validation_steps = render
+        .validation_steps
         .iter()
         .map(|step| {
             format!(
@@ -148,7 +150,8 @@ fn render_acceptance_lane_json(
         })
         .collect::<Vec<_>>()
         .join(",");
-    let deferred_scope = deferred_scope
+    let deferred_scope = render
+        .deferred_scope
         .iter()
         .map(|scope| json_string(scope))
         .collect::<Vec<_>>()
@@ -170,9 +173,9 @@ fn render_acceptance_lane_json(
             "\"deferred_scope\":[{}]",
             "}}"
         ),
-        json_string(lane),
-        json_string(contract_path),
-        json_string(acceptance_task),
+        json_string(render.lane),
+        json_string(render.contract_path),
+        json_string(render.acceptance_task),
         required_task_count,
         required_tasks,
         advisory_task_count,

@@ -8,18 +8,25 @@ impl SignalRuntime {
         let request_id = request.request_id.trim().to_string();
         if request_id.is_empty() {
             self.record_deferred_service_receipt(deferred_service_receipt(
-                RuntimeDeferredServiceClass::OfflineRenderPurge,
-                RuntimeDeferredServiceDecision::Abort,
-                RuntimeDeferredServiceReason::InvalidRequest,
-                1,
-                0,
-                self.control.running,
-                self.safe_mode_enabled,
-                matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
-                self.transport_concurrency.pending_work_item_count(),
-                self.transport_concurrency
-                    .pending_deferred_retry_work_count(),
-                self.transport_concurrency.recovery_overlap_session_count(),
+                RuntimeDeferredServiceReceiptInput {
+                    work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
+                    decision: RuntimeDeferredServiceDecision::Abort,
+                    reason: RuntimeDeferredServiceReason::InvalidRequest,
+                    queued_work_item_count: 1,
+                    admitted_work_item_count: 0,
+                    runtime_running: self.control.running,
+                    safe_mode_enabled: self.safe_mode_enabled,
+                    readiness_degraded: matches!(self.readiness, RuntimeReadiness::Degraded { .. }),
+                    pending_cleanup_work_items: self
+                        .transport_concurrency
+                        .pending_work_item_count(),
+                    pending_deferred_retry_work_items: self
+                        .transport_concurrency
+                        .pending_deferred_retry_work_count(),
+                    recovery_overlap_session_count: self
+                        .transport_concurrency
+                        .recovery_overlap_session_count(),
+                },
             ));
             return Err(RuntimeError::new(
                 RuntimeErrorKind::InvalidRequest,

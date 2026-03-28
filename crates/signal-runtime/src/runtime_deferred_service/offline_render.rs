@@ -49,19 +49,20 @@ impl SignalRuntime {
                 queue_count,
             )
         };
-        deferred_service_receipt(
-            RuntimeDeferredServiceClass::OfflineRenderQueue,
+        deferred_service_receipt(RuntimeDeferredServiceReceiptInput {
+            work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
             decision,
             reason,
-            queue_count,
+            queued_work_item_count: queue_count,
             admitted_work_item_count,
-            self.control.running,
-            self.safe_mode_enabled,
+            runtime_running: self.control.running,
+            safe_mode_enabled: self.safe_mode_enabled,
             readiness_degraded,
-            transport_concurrency.pending_cleanup_work_items,
-            transport_concurrency.pending_deferred_retry_work_items,
-            transport_concurrency.current_recovery_overlap_sessions,
-        )
+            pending_cleanup_work_items: transport_concurrency.pending_cleanup_work_items,
+            pending_deferred_retry_work_items: transport_concurrency
+                .pending_deferred_retry_work_items,
+            recovery_overlap_session_count: transport_concurrency.current_recovery_overlap_sessions,
+        })
     }
 
     pub(crate) fn offline_render_purge_receipt(&self) -> RuntimeDeferredServiceReceipt {
@@ -95,18 +96,19 @@ impl SignalRuntime {
                 1,
             )
         };
-        deferred_service_receipt(
-            RuntimeDeferredServiceClass::OfflineRenderPurge,
+        deferred_service_receipt(RuntimeDeferredServiceReceiptInput {
+            work_class: RuntimeDeferredServiceClass::OfflineRenderPurge,
             decision,
             reason,
-            1,
+            queued_work_item_count: 1,
             admitted_work_item_count,
-            self.control.running,
-            self.safe_mode_enabled,
+            runtime_running: self.control.running,
+            safe_mode_enabled: self.safe_mode_enabled,
             readiness_degraded,
-            transport_concurrency.pending_cleanup_work_items,
-            transport_concurrency.pending_deferred_retry_work_items,
-            transport_concurrency.current_recovery_overlap_sessions,
-        )
+            pending_cleanup_work_items: transport_concurrency.pending_cleanup_work_items,
+            pending_deferred_retry_work_items: transport_concurrency
+                .pending_deferred_retry_work_items,
+            recovery_overlap_session_count: transport_concurrency.current_recovery_overlap_sessions,
+        })
     }
 }

@@ -21,76 +21,98 @@ pub(crate) struct RuntimeObservationCompactSections {
 pub(crate) fn build_runtime_observation_report_compact_sections(
     report: &RuntimeObservationReport,
 ) -> RuntimeObservationCompactSections {
-    let tempo_map = (report.tempo_map_snapshot.segment_count > 0)
-        .then(|| format_runtime_tempo_map_snapshot_compact(&report.tempo_map_snapshot))
-        .unwrap_or_default();
-    let warp = (report.warp_pipeline_snapshot.clip_count > 0)
-        .then(|| format_runtime_warp_pipeline_snapshot_compact(&report.warp_pipeline_snapshot))
-        .unwrap_or_default();
-    let clip_processing = (report.clip_processing_pipeline_snapshot.clip_count > 0)
-        .then(|| {
-            format_runtime_clip_processing_pipeline_snapshot_compact(
-                &report.clip_processing_pipeline_snapshot,
-            )
-        })
-        .unwrap_or_default();
-    let stretch_engine = (report.stretch_engine_snapshot.clip_count > 0)
-        .then(|| format_runtime_stretch_engine_snapshot_compact(&report.stretch_engine_snapshot))
-        .unwrap_or_default();
-    let marker_analysis = (report.marker_analysis_snapshot.clip_count > 0)
-        .then(|| format_runtime_marker_analysis_snapshot_compact(&report.marker_analysis_snapshot))
-        .unwrap_or_default();
-    let transform_artifact = (report.transform_artifact_snapshot.clip_count > 0)
-        .then(|| {
-            format_runtime_transform_artifact_snapshot_compact(&report.transform_artifact_snapshot)
-        })
-        .unwrap_or_default();
-    let media_pipeline = (report.media_pipeline_snapshot.asset_count > 0)
-        .then(|| format_runtime_media_pipeline_snapshot_compact(&report.media_pipeline_snapshot))
-        .unwrap_or_default();
-    let media_service = (report.media_service_snapshot.indexed_asset_count > 0
+    let tempo_map = if report.tempo_map_snapshot.segment_count > 0 {
+        format_runtime_tempo_map_snapshot_compact(&report.tempo_map_snapshot)
+    } else {
+        String::new()
+    };
+    let warp = if report.warp_pipeline_snapshot.clip_count > 0 {
+        format_runtime_warp_pipeline_snapshot_compact(&report.warp_pipeline_snapshot)
+    } else {
+        String::new()
+    };
+    let clip_processing = if report.clip_processing_pipeline_snapshot.clip_count > 0 {
+        format_runtime_clip_processing_pipeline_snapshot_compact(
+            &report.clip_processing_pipeline_snapshot,
+        )
+    } else {
+        String::new()
+    };
+    let stretch_engine = if report.stretch_engine_snapshot.clip_count > 0 {
+        format_runtime_stretch_engine_snapshot_compact(&report.stretch_engine_snapshot)
+    } else {
+        String::new()
+    };
+    let marker_analysis = if report.marker_analysis_snapshot.clip_count > 0 {
+        format_runtime_marker_analysis_snapshot_compact(&report.marker_analysis_snapshot)
+    } else {
+        String::new()
+    };
+    let transform_artifact = if report.transform_artifact_snapshot.clip_count > 0 {
+        format_runtime_transform_artifact_snapshot_compact(&report.transform_artifact_snapshot)
+    } else {
+        String::new()
+    };
+    let media_pipeline = if report.media_pipeline_snapshot.asset_count > 0 {
+        format_runtime_media_pipeline_snapshot_compact(&report.media_pipeline_snapshot)
+    } else {
+        String::new()
+    };
+    let media_service = if report.media_service_snapshot.indexed_asset_count > 0
         || report.media_service_snapshot.invalidation_active
         || matches!(
             report.media_service_snapshot.preview_state,
             RuntimeMediaPreviewState::Previewing | RuntimeMediaPreviewState::Invalidated
-        ))
-    .then(|| format_runtime_media_service_snapshot_compact(&report.media_service_snapshot))
-    .unwrap_or_default();
-    let media_library = (report.media_library_snapshot.indexed_asset_count > 0)
-        .then(|| {
-            format_runtime_media_library_service_snapshot_compact(&report.media_library_snapshot)
-        })
-        .unwrap_or_default();
-    let plugin_discovery = (report.plugin_discovery_snapshot.scan_count > 0)
-        .then(|| {
-            format_runtime_plugin_discovery_snapshot_compact(&report.plugin_discovery_snapshot)
-        })
-        .unwrap_or_default();
-    let plugin_lifecycle = (report.plugin_lifecycle_snapshot.sandbox_count > 0)
-        .then(|| {
-            format_runtime_plugin_lifecycle_snapshot_compact(&report.plugin_lifecycle_snapshot)
-        })
-        .unwrap_or_default();
-    let lv2_extension = (report.lv2_extension_snapshot.plugin_type_count > 0)
-        .then(|| format_runtime_lv2_extension_snapshot_compact(&report.lv2_extension_snapshot))
-        .unwrap_or_default();
-    let plugin_pin_matrix = (report.plugin_pin_matrix_snapshot.plugin_type_count > 0)
-        .then(|| {
-            format_runtime_plugin_pin_matrix_snapshot_compact(&report.plugin_pin_matrix_snapshot)
-        })
-        .unwrap_or_default();
-    let plugin_chain = (report.plugin_chain_snapshot.chain_count > 0)
-        .then(|| format_runtime_plugin_chain_snapshot_compact(&report.plugin_chain_snapshot))
-        .unwrap_or_default();
-    let automation = (report.automation_snapshot.parameter_id != 0
+        ) {
+        format_runtime_media_service_snapshot_compact(&report.media_service_snapshot)
+    } else {
+        String::new()
+    };
+    let media_library = if report.media_library_snapshot.indexed_asset_count > 0 {
+        format_runtime_media_library_service_snapshot_compact(&report.media_library_snapshot)
+    } else {
+        String::new()
+    };
+    let plugin_discovery = if report.plugin_discovery_snapshot.scan_count > 0 {
+        format_runtime_plugin_discovery_snapshot_compact(&report.plugin_discovery_snapshot)
+    } else {
+        String::new()
+    };
+    let plugin_lifecycle = if report.plugin_lifecycle_snapshot.sandbox_count > 0 {
+        format_runtime_plugin_lifecycle_snapshot_compact(&report.plugin_lifecycle_snapshot)
+    } else {
+        String::new()
+    };
+    let lv2_extension = if report.lv2_extension_snapshot.plugin_type_count > 0 {
+        format_runtime_lv2_extension_snapshot_compact(&report.lv2_extension_snapshot)
+    } else {
+        String::new()
+    };
+    let plugin_pin_matrix = if report.plugin_pin_matrix_snapshot.plugin_type_count > 0 {
+        format_runtime_plugin_pin_matrix_snapshot_compact(&report.plugin_pin_matrix_snapshot)
+    } else {
+        String::new()
+    };
+    let plugin_chain = if report.plugin_chain_snapshot.chain_count > 0 {
+        format_runtime_plugin_chain_snapshot_compact(&report.plugin_chain_snapshot)
+    } else {
+        String::new()
+    };
+    let automation = if report.automation_snapshot.parameter_id != 0
         || report.automation_snapshot.lane_count > 0
-        || report.automation_snapshot.last_batch_epoch.is_some())
-    .then(|| format_runtime_automation_snapshot_compact(&report.automation_snapshot))
-    .unwrap_or_default();
-    let plugin_events = (report.plugin_event_snapshot.total_events > 0
-        || report.plugin_event_snapshot.last_processing_epoch.is_some())
-    .then(|| format_runtime_plugin_event_snapshot_compact(&report.plugin_event_snapshot))
-    .unwrap_or_default();
+        || report.automation_snapshot.last_batch_epoch.is_some()
+    {
+        format_runtime_automation_snapshot_compact(&report.automation_snapshot)
+    } else {
+        String::new()
+    };
+    let plugin_events = if report.plugin_event_snapshot.total_events > 0
+        || report.plugin_event_snapshot.last_processing_epoch.is_some()
+    {
+        format_runtime_plugin_event_snapshot_compact(&report.plugin_event_snapshot)
+    } else {
+        String::new()
+    };
     let transport_timeline = format_runtime_transport_timeline_compact(&report.timeline_snapshot);
     let scheduler_snapshot = format_runtime_scheduler_snapshot_compact(&report.scheduler_snapshot);
     let scheduler_summary = format_runtime_scheduler_summary_compact(&report.scheduler_summary);
@@ -159,7 +181,7 @@ pub(crate) fn build_runtime_observation_report_compact_sections(
         transform_artifact,
         media_pipeline,
         media_service,
-        offline_render_session: (report.offline_render_session_snapshot.active_session_count > 0
+        offline_render_session: if report.offline_render_session_snapshot.active_session_count > 0
             || report
                 .offline_render_session_snapshot
                 .last_session
@@ -168,13 +190,14 @@ pub(crate) fn build_runtime_observation_report_compact_sections(
                 .offline_render_session_snapshot
                 .last_cancellation
                 .is_some()
-            || report.offline_render_session_snapshot.last_purge.is_some())
-        .then(|| {
+            || report.offline_render_session_snapshot.last_purge.is_some()
+        {
             format_runtime_offline_render_session_snapshot_compact(
                 &report.offline_render_session_snapshot,
             )
-        })
-        .unwrap_or_default(),
+        } else {
+            String::new()
+        },
         deferred_service: report
             .last_deferred_service_receipt
             .as_ref()

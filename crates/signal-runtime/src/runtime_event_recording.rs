@@ -97,24 +97,15 @@ impl SignalRuntime {
         });
     }
 
-    pub fn record_block_dispatch(
-        &mut self,
-        sandbox_id: impl Into<String>,
-        lease_id: impl Into<String>,
-        processing_epoch: u64,
-        block_sequence: u64,
-        frame_count: u32,
-        stage: BlockDispatchStage,
-        completion_state: Option<CompletionState>,
-    ) {
+    pub fn record_block_dispatch(&mut self, record: crate::BlockDispatchRecord) {
         self.emit(RuntimeEvent::BlockDispatch {
-            sandbox_id: sandbox_id.into(),
-            lease_id: lease_id.into(),
-            processing_epoch,
-            block_sequence,
-            frame_count,
-            stage,
-            completion_state,
+            sandbox_id: record.sandbox_id,
+            lease_id: record.lease_id,
+            processing_epoch: record.processing_epoch,
+            block_sequence: record.block_sequence,
+            frame_count: record.frame_count,
+            stage: record.stage,
+            completion_state: record.completion_state,
         });
     }
 
@@ -175,22 +166,16 @@ impl SignalRuntime {
 
     pub fn record_sandbox_operation_failure(
         &mut self,
-        sandbox_id: impl Into<String>,
-        lease_id: Option<String>,
-        processing_epoch: Option<u64>,
-        operation: impl Into<String>,
-        error_kind: impl Into<String>,
-        stage: SandboxOperationFailureStage,
-        detail: impl Into<String>,
+        record: crate::SandboxOperationFailureRecord,
     ) {
         self.emit(RuntimeEvent::SandboxOperationFailure {
-            sandbox_id: sandbox_id.into(),
-            lease_id,
-            processing_epoch,
-            operation: operation.into(),
-            error_kind: error_kind.into(),
-            stage,
-            detail: detail.into(),
+            sandbox_id: record.sandbox_id,
+            lease_id: record.lease_id,
+            processing_epoch: record.processing_epoch,
+            operation: record.operation,
+            error_kind: record.error_kind,
+            stage: record.stage,
+            detail: record.detail,
         });
     }
 }

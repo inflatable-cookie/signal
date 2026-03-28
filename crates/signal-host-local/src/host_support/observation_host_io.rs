@@ -88,26 +88,35 @@ impl LocalRuntimeHost {
         );
         let linux_clocking_parity =
             signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
-                linux_backend_identity,
-                backend_diagnostics.health,
-                audio_pump.stream_state.into(),
-                clock_domain,
-                fallback_state,
-                transition_state,
-                drift_state,
-                discontinuity_state,
+                signal_runtime::RuntimeLinuxHostIoParityInput {
+                    linux_backend_identity,
+                    backend_health: backend_diagnostics.health,
+                    stream_state: audio_pump.stream_state.into(),
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                },
             );
         let linux_duplex_parity =
             signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
-                linux_backend_identity,
-                backend_diagnostics.health,
-                audio_pump.stream_state.into(),
-                clock_domain,
-                fallback_state,
-                transition_state,
-                duplex_mismatch_state,
-                endpoint_topology,
-                partial_availability,
+                signal_runtime::RuntimeLinuxHostIoParityInput {
+                    linux_backend_identity,
+                    backend_health: backend_diagnostics.health,
+                    stream_state: audio_pump.stream_state.into(),
+                    clock_domain,
+                    fallback_state,
+                    transition_state,
+                    drift_state,
+                    discontinuity_state,
+                    duplex_mismatch_state,
+                    endpoint_topology,
+                    partial_availability,
+                },
             );
         let linux_endpoint_topology_parity =
             signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(

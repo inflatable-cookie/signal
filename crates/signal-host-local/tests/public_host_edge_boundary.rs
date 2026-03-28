@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -7,40 +9,22 @@ use signal_graph::{
     GraphStageSpec,
 };
 use signal_host_local::LocalRuntimeHost;
-use signal_plugin::{EventPacketSummary, PluginFeature, PluginFormat, PluginIoLayout};
-use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, FrameCount, SampleRate};
+use signal_plugin::{PluginFeature, PluginFormat, PluginIoLayout};
+use signal_primitives::{ChannelCount, ChannelLayout, FrameCount, SampleRate};
 use signal_runtime::{
     GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeContractProjection,
     GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection, PluginBackedNodeBinding,
-    PluginBackedNodeBindingProjection, PluginFaultKind, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RuntimeAuxiliaryPathKind,
-    RuntimeBlockDeadlinePressure, RuntimeBusIntent, RuntimeBusRole, RuntimeCanonicalChannelLayout,
-    RuntimeConfig, RuntimeConfigRequest, RuntimeDeferredServiceBackpressureSource,
-    RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
-    RuntimeDeferredServiceReason, RuntimeDeploymentClass, RuntimeDeviceFaultBoundaryState,
-    RuntimeDeviceRestartState, RuntimeDeviceSupervisionState, RuntimeError, RuntimeErrorKind,
-    RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState, RuntimeExternalIoMonitoringState,
-    RuntimeExternalIoMonitoringTapPoint, RuntimeExternalIoPrimaryRole, RuntimeFoldDownPolicy,
-    RuntimeHostClockDiscontinuityState, RuntimeHostClockDriftState, RuntimeHostDuplexMismatchState,
-    RuntimeHostEndpointTopology, RuntimeImmersiveExportAuthority, RuntimeImmersiveExportClass,
-    RuntimeImmersiveExportOutcome, RuntimeImmersiveObjectRenderingPosture,
-    RuntimeImmersiveRoomOutcome, RuntimeInterruptionClass, RuntimeJackClientRole,
-    RuntimeJackGraphCoordinationState, RuntimeJackGuardedCoordinationState,
-    RuntimeJackTransportPosture, RuntimeLifecycleApi, RuntimeMonitoringOutcome,
-    RuntimeMonitoringSceneAuthority, RuntimeMonitoringSceneClass, RuntimeObservationApi,
-    RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot, RuntimePluginAraDocumentContext,
-    RuntimePluginAraRegionContext, RuntimePluginAraSourceContext, RuntimePluginBusCapableFxClass,
-    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginParityBand, RuntimePluginPlacementPolicy,
-    RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher, RuntimePluginPresetDescriptor,
-    RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass, RuntimeProjectionApi,
-    RuntimeRecordingCaptureKind, RuntimeRecordingCaptureStartRequest, RuntimeRecoveryState,
-    RuntimeRendererCapabilityAuthority, RuntimeRendererCapabilityNegotiationPosture,
-    RuntimeRoomPolicyAuthority, RuntimeRoomPolicyClass, RuntimeSecondaryInputAttachmentPolicy,
+    PluginBackedNodeBindingProjection, PluginSandboxLifecycleStage, PluginSandboxSpec,
+    PluginSandboxTransportStage, PluginScanRequest, RuntimeBlockDeadlinePressure, RuntimeConfig,
+    RuntimeConfigRequest, RuntimeDeferredServiceBackpressureSource, RuntimeDeferredServiceDecision,
+    RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason, RuntimeInterruptionClass,
+    RuntimeLifecycleApi, RuntimeOfflineRenderRequest, RuntimePluginAraContextSnapshot,
+    RuntimePluginAraDocumentContext, RuntimePluginAraRegionContext, RuntimePluginAraSourceContext,
+    RuntimePluginComplexIoSummary, RuntimePluginDiscoveredTypeRecord,
+    RuntimePluginPresetDescriptor, RuntimePluginPresetOrigin, RuntimePluginRecallPortabilityClass,
+    RuntimeProjectionApi, RuntimeRecoveryState, RuntimeSecondaryInputAttachmentPolicy,
     RuntimeSecondaryInputContractProjection, RuntimeSecondaryInputFallbackOutcome,
-    RuntimeSecondaryInputTargetKind, RuntimeSpatialBedClass, RuntimeSpatialExecutionMode,
-    RuntimeSpatialExpandedFallbackOutcome, RuntimeSpatialFallbackOutcome, RuntimeSpatialMixPolicy,
-    RuntimeSupervisorApi, SafeModeRequest, SignalRuntime,
+    RuntimeSecondaryInputTargetKind, RuntimeSupervisorApi, SafeModeRequest, SignalRuntime,
 };
 
 fn apply_public_capture_graph(runtime: &mut SignalRuntime, graph_id: &str) {
@@ -909,8 +893,8 @@ fn record_public_plugin_sandbox_ready(
     );
     runtime.record_plugin_sandbox_transport(
         sandbox_id,
-        &format!("lease-{sandbox_id}"),
-        &format!("region-{sandbox_id}"),
+        format!("lease-{sandbox_id}"),
+        format!("region-{sandbox_id}"),
         PluginSandboxTransportStage::Attached,
         Some(epoch),
         None,

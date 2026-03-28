@@ -1,7 +1,9 @@
 #[path = "support/public_contract_boundary_host_io_linux.rs"]
 mod public_contract_boundary_host_io_linux_support;
 
-use public_contract_boundary_host_io_linux_support::sample_public_linux_backend_host_io;
+use public_contract_boundary_host_io_linux_support::{
+    sample_public_linux_backend_host_io, PublicLinuxBackendHostIoConfig,
+};
 use signal_hardware::{BackendHealth, HardwareBackendIdentity, LinuxAudioBackendKind};
 use signal_runtime::{
     HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
@@ -33,39 +35,39 @@ fn public_runtime_linux_audio_backend_boundary_reports_runtime_owned_backend_ide
         signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
     );
 
-    let alsa = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
-        "alsa",
-        "alsa:default-output",
-        "ALSA Default Output",
-        false,
-        BackendHealth::Healthy,
-        0,
-        0,
-        0,
-    );
-    let jack = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
-        "jack",
-        "jack:graph-main",
-        "JACK Graph Main",
-        true,
-        BackendHealth::Recovering,
-        1,
-        1,
-        0,
-    );
-    let pipewire = sample_public_linux_backend_host_io(
-        HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
-        "pipewire",
-        "pipewire:default-graph",
-        "PipeWire Default Graph",
-        false,
-        BackendHealth::Degraded,
-        0,
-        1,
-        1,
-    );
+    let alsa = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa),
+        backend_name: "alsa",
+        device_id: "alsa:default-output",
+        device_name: "ALSA Default Output",
+        simulated: false,
+        backend_health: BackendHealth::Healthy,
+        device_loss_count: 0,
+        restart_attempt_count: 0,
+        restart_failure_count: 0,
+    });
+    let jack = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+        backend_name: "jack",
+        device_id: "jack:graph-main",
+        device_name: "JACK Graph Main",
+        simulated: true,
+        backend_health: BackendHealth::Recovering,
+        device_loss_count: 1,
+        restart_attempt_count: 1,
+        restart_failure_count: 0,
+    });
+    let pipewire = sample_public_linux_backend_host_io(PublicLinuxBackendHostIoConfig {
+        backend_identity: HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire),
+        backend_name: "pipewire",
+        device_id: "pipewire:default-graph",
+        device_name: "PipeWire Default Graph",
+        simulated: false,
+        backend_health: BackendHealth::Degraded,
+        device_loss_count: 0,
+        restart_attempt_count: 1,
+        restart_failure_count: 1,
+    });
 
     let alsa_observation = baseline.clone().with_host_external_io(&alsa);
     let jack_observation = baseline.clone().with_host_external_io(&jack);

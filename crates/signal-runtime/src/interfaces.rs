@@ -404,19 +404,14 @@ pub struct RuntimePluginDispatchState {
     pub parameter_batch: Option<ParameterBatch>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimePreworkCacheState {
+    #[default]
     Disabled,
     Empty,
     Admitted,
     Consumed,
     Invalidated,
-}
-
-impl Default for RuntimePreworkCacheState {
-    fn default() -> Self {
-        Self::Disabled
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -463,8 +458,9 @@ pub enum RuntimePreworkRetirementReason {
     QueueCapacityExceeded,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimePreworkFreshnessState {
+    #[default]
     Disabled,
     Empty,
     Fresh,
@@ -473,14 +469,9 @@ pub enum RuntimePreworkFreshnessState {
     Invalidated,
 }
 
-impl Default for RuntimePreworkFreshnessState {
-    fn default() -> Self {
-        Self::Disabled
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimePreworkServiceState {
+    #[default]
     Disabled,
     Idle,
     Pending,
@@ -490,36 +481,20 @@ pub enum RuntimePreworkServiceState {
     Starved,
 }
 
-impl Default for RuntimePreworkServiceState {
-    fn default() -> Self {
-        Self::Disabled
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimePreworkServicePressure {
+    #[default]
     Normal,
     Elevated,
     Critical,
 }
 
-impl Default for RuntimePreworkServicePressure {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimePreworkServiceSemanticPolicy {
+    #[default]
     Balanced,
     LatencyFocused,
     PluginConstrained,
-}
-
-impl Default for RuntimePreworkServiceSemanticPolicy {
-    fn default() -> Self {
-        Self::Balanced
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -581,17 +556,12 @@ pub enum RuntimeTransportTransitionKind {
     LoopWrapped,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RuntimePreworkBacklogClass {
+    #[default]
     Immediate,
     NearTerm,
     Deferred,
-}
-
-impl Default for RuntimePreworkBacklogClass {
-    fn default() -> Self {
-        Self::Immediate
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -1330,7 +1300,7 @@ fn runtime_spatial_render_scope_for_summary(
     }
 }
 
-fn runtime_immersive_room_policy_summary_for_spatial(
+struct RuntimeSpatialRoomPolicyInput {
     adapter_class: RuntimeSpatialAdapterClass,
     execution_mode: RuntimeSpatialExecutionMode,
     target_environment: RuntimeSpatialTargetEnvironment,
@@ -1340,15 +1310,19 @@ fn runtime_immersive_room_policy_summary_for_spatial(
     object_count: usize,
     render_scope: RuntimeSpatialRenderScope,
     expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
+}
+
+fn runtime_immersive_room_policy_summary_for_spatial(
+    spatial: RuntimeSpatialRoomPolicyInput,
 ) -> Option<RuntimeImmersiveRoomPolicySummary> {
-    let immersive_candidate = bed_class != RuntimeSpatialBedClass::StereoBed
-        || object_count > 0
-        || object_role.is_some()
-        || adapter_class == RuntimeSpatialAdapterClass::Renderer
-        || execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
-        || target_environment != RuntimeSpatialTargetEnvironment::SourceLayout
+    let immersive_candidate = spatial.bed_class != RuntimeSpatialBedClass::StereoBed
+        || spatial.object_count > 0
+        || spatial.object_role.is_some()
+        || spatial.adapter_class == RuntimeSpatialAdapterClass::Renderer
+        || spatial.execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+        || spatial.target_environment != RuntimeSpatialTargetEnvironment::SourceLayout
         || matches!(
-            render_scope,
+            spatial.render_scope,
             RuntimeSpatialRenderScope::BedAndObjectRender
                 | RuntimeSpatialRenderScope::BedFoldDownRender
                 | RuntimeSpatialRenderScope::ObjectMetadataOnly
@@ -1357,13 +1331,13 @@ fn runtime_immersive_room_policy_summary_for_spatial(
         return None;
     }
 
-    let room_policy_class = if execution_mode == RuntimeSpatialExecutionMode::Bypassed
-        || fallback_outcome.is_some()
-        || expanded_fallback_outcome.is_some()
+    let room_policy_class = if spatial.execution_mode == RuntimeSpatialExecutionMode::Bypassed
+        || spatial.fallback_outcome.is_some()
+        || spatial.expanded_fallback_outcome.is_some()
     {
         RuntimeRoomPolicyClass::FallbackRoom
     } else {
-        match target_environment {
+        match spatial.target_environment {
             RuntimeSpatialTargetEnvironment::SourceLayout
             | RuntimeSpatialTargetEnvironment::CanonicalLayout => {
                 RuntimeRoomPolicyClass::ReferenceRoom
@@ -1377,22 +1351,22 @@ fn runtime_immersive_room_policy_summary_for_spatial(
 
     let room_policy_authority = if room_policy_class == RuntimeRoomPolicyClass::FallbackRoom {
         RuntimeRoomPolicyAuthority::RuntimeDefault
-    } else if execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
-        || adapter_class == RuntimeSpatialAdapterClass::Renderer
+    } else if spatial.execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
+        || spatial.adapter_class == RuntimeSpatialAdapterClass::Renderer
     {
         RuntimeRoomPolicyAuthority::RendererAdvisory
     } else {
         RuntimeRoomPolicyAuthority::RuntimeDeclared
     };
 
-    let object_rendering_posture = if object_count == 0 && object_role.is_none() {
+    let object_rendering_posture = if spatial.object_count == 0 && spatial.object_role.is_none() {
         RuntimeImmersiveObjectRenderingPosture::NotRequested
-    } else if render_scope == RuntimeSpatialRenderScope::ObjectMetadataOnly {
+    } else if spatial.render_scope == RuntimeSpatialRenderScope::ObjectMetadataOnly {
         RuntimeImmersiveObjectRenderingPosture::MetadataOnly
-    } else if execution_mode == RuntimeSpatialExecutionMode::Bypassed
-        || fallback_outcome.is_some()
+    } else if spatial.execution_mode == RuntimeSpatialExecutionMode::Bypassed
+        || spatial.fallback_outcome.is_some()
         || matches!(
-            expanded_fallback_outcome,
+            spatial.expanded_fallback_outcome,
             Some(
                 RuntimeSpatialExpandedFallbackOutcome::CollapseObjectsIntoBed
                     | RuntimeSpatialExpandedFallbackOutcome::CollapseToCanonicalBed
@@ -1409,9 +1383,9 @@ fn runtime_immersive_room_policy_summary_for_spatial(
     };
 
     let room_outcome = if matches!(
-        expanded_fallback_outcome,
+        spatial.expanded_fallback_outcome,
         Some(RuntimeSpatialExpandedFallbackOutcome::TerminalExpandedSpatialFailure)
-    ) || fallback_outcome
+    ) || spatial.fallback_outcome
         == Some(RuntimeSpatialFallbackOutcome::TerminalSpatialFailure)
     {
         RuntimeImmersiveRoomOutcome::TerminalImmersiveFailure
@@ -1578,7 +1552,7 @@ fn runtime_deployment_monitoring_summary_for_spatial(
 fn runtime_renderer_immersive_export_summary_for_spatial(
     adapter_class: RuntimeSpatialAdapterClass,
     execution_mode: RuntimeSpatialExecutionMode,
-    target_environment: RuntimeSpatialTargetEnvironment,
+    _target_environment: RuntimeSpatialTargetEnvironment,
     fallback_outcome: Option<RuntimeSpatialFallbackOutcome>,
     expanded_fallback_outcome: Option<RuntimeSpatialExpandedFallbackOutcome>,
     immersive_room_policy: Option<&RuntimeImmersiveRoomPolicySummary>,
@@ -1599,8 +1573,6 @@ fn runtime_renderer_immersive_export_summary_for_spatial(
         || execution_mode == RuntimeSpatialExecutionMode::RenderToEnvironment
     {
         RuntimeRendererCapabilityNegotiationPosture::NegotiatedCompatible
-    } else if target_environment != RuntimeSpatialTargetEnvironment::SourceLayout {
-        RuntimeRendererCapabilityNegotiationPosture::DeclaredCompatible
     } else {
         RuntimeRendererCapabilityNegotiationPosture::DeclaredCompatible
     };
@@ -1726,17 +1698,18 @@ pub(crate) fn runtime_spatial_execution_summary_for_stages(
                 runtime_spatial_render_scope_for_summary(object_count, expanded_fallback_outcome);
             let balance = format!("{balance:.3}");
             let target_environment = runtime_spatial_target_environment_for_layout(output_layout);
-            let immersive_room_policy = runtime_immersive_room_policy_summary_for_spatial(
-                RuntimeSpatialAdapterClass::Balance,
-                execution_mode,
-                target_environment,
-                fallback_outcome,
-                bed_class,
-                None,
-                object_count,
-                render_scope,
-                expanded_fallback_outcome,
-            );
+            let immersive_room_policy =
+                runtime_immersive_room_policy_summary_for_spatial(RuntimeSpatialRoomPolicyInput {
+                    adapter_class: RuntimeSpatialAdapterClass::Balance,
+                    execution_mode,
+                    target_environment,
+                    fallback_outcome,
+                    bed_class,
+                    object_role: None,
+                    object_count,
+                    render_scope,
+                    expanded_fallback_outcome,
+                });
             let deployment_monitoring = runtime_deployment_monitoring_summary_for_spatial(
                 target_environment,
                 bed_class,
@@ -4571,6 +4544,21 @@ pub struct RuntimeHostIoSummary {
     pub runtime_graph_id_matches_pump: bool,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RuntimeLinuxHostIoParityInput {
+    pub linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
+    pub backend_health: BackendHealth,
+    pub stream_state: RuntimeHostAudioStreamState,
+    pub clock_domain: RuntimeHostClockDomain,
+    pub fallback_state: RuntimeHostClockFallbackState,
+    pub transition_state: RuntimeHostClockTransitionState,
+    pub drift_state: RuntimeHostClockDriftState,
+    pub discontinuity_state: RuntimeHostClockDiscontinuityState,
+    pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+    pub endpoint_topology: RuntimeHostEndpointTopology,
+    pub partial_availability: bool,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeExternalMidiDiscoveryState {
     Unavailable,
@@ -6754,7 +6742,8 @@ impl RuntimeJackCoordinationSnapshot {
 }
 
 impl RuntimeHostIoSummary {
-    pub fn classify_linux_clocking_parity(
+    #[allow(clippy::too_many_arguments)]
+    pub fn linux_parity_input(
         linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
         backend_health: BackendHealth,
         stream_state: RuntimeHostAudioStreamState,
@@ -6763,18 +6752,39 @@ impl RuntimeHostIoSummary {
         transition_state: RuntimeHostClockTransitionState,
         drift_state: RuntimeHostClockDriftState,
         discontinuity_state: RuntimeHostClockDiscontinuityState,
+        duplex_mismatch_state: RuntimeHostDuplexMismatchState,
+        endpoint_topology: RuntimeHostEndpointTopology,
+        partial_availability: bool,
+    ) -> RuntimeLinuxHostIoParityInput {
+        RuntimeLinuxHostIoParityInput {
+            linux_backend_identity,
+            backend_health,
+            stream_state,
+            clock_domain,
+            fallback_state,
+            transition_state,
+            drift_state,
+            discontinuity_state,
+            duplex_mismatch_state,
+            endpoint_topology,
+            partial_availability,
+        }
+    }
+
+    pub fn classify_linux_clocking_parity(
+        parity: RuntimeLinuxHostIoParityInput,
     ) -> RuntimeLinuxAudioBackendClockingParityBand {
-        match linux_backend_identity {
+        match parity.linux_backend_identity {
             RuntimeLinuxAudioBackendIdentity::Alsa
             | RuntimeLinuxAudioBackendIdentity::Jack
             | RuntimeLinuxAudioBackendIdentity::PipeWire => {
-                if !matches!(backend_health, BackendHealth::Healthy)
-                    || stream_state == RuntimeHostAudioStreamState::Faulted
-                    || clock_domain != RuntimeHostClockDomain::SameClock
-                    || fallback_state != RuntimeHostClockFallbackState::Direct
-                    || transition_state != RuntimeHostClockTransitionState::Stable
-                    || drift_state != RuntimeHostClockDriftState::Stable
-                    || discontinuity_state != RuntimeHostClockDiscontinuityState::Continuous
+                if !matches!(parity.backend_health, BackendHealth::Healthy)
+                    || parity.stream_state == RuntimeHostAudioStreamState::Faulted
+                    || parity.clock_domain != RuntimeHostClockDomain::SameClock
+                    || parity.fallback_state != RuntimeHostClockFallbackState::Direct
+                    || parity.transition_state != RuntimeHostClockTransitionState::Stable
+                    || parity.drift_state != RuntimeHostClockDriftState::Stable
+                    || parity.discontinuity_state != RuntimeHostClockDiscontinuityState::Continuous
                 {
                     RuntimeLinuxAudioBackendClockingParityBand::Guarded
                 } else {
@@ -6790,41 +6800,36 @@ impl RuntimeHostIoSummary {
     }
 
     pub fn classify_linux_duplex_parity(
-        linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
-        backend_health: BackendHealth,
-        stream_state: RuntimeHostAudioStreamState,
-        clock_domain: RuntimeHostClockDomain,
-        fallback_state: RuntimeHostClockFallbackState,
-        transition_state: RuntimeHostClockTransitionState,
-        duplex_mismatch_state: RuntimeHostDuplexMismatchState,
-        endpoint_topology: RuntimeHostEndpointTopology,
-        partial_availability: bool,
+        parity: RuntimeLinuxHostIoParityInput,
     ) -> RuntimeLinuxAudioBackendDuplexParityState {
-        match linux_backend_identity {
+        match parity.linux_backend_identity {
             RuntimeLinuxAudioBackendIdentity::Alsa
             | RuntimeLinuxAudioBackendIdentity::Jack
             | RuntimeLinuxAudioBackendIdentity::PipeWire => {
-                if matches!(endpoint_topology, RuntimeHostEndpointTopology::Unconfigured) {
+                if matches!(
+                    parity.endpoint_topology,
+                    RuntimeHostEndpointTopology::Unconfigured
+                ) {
                     RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-                } else if partial_availability
+                } else if parity.partial_availability
                     || matches!(
-                        endpoint_topology,
+                        parity.endpoint_topology,
                         RuntimeHostEndpointTopology::OutputOnly
                             | RuntimeHostEndpointTopology::InputOnly
                     )
                 {
                     RuntimeLinuxAudioBackendDuplexParityState::Partial
-                } else if !matches!(backend_health, BackendHealth::Healthy)
-                    || stream_state == RuntimeHostAudioStreamState::Faulted
-                    || clock_domain != RuntimeHostClockDomain::SameClock
-                    || fallback_state != RuntimeHostClockFallbackState::Direct
-                    || transition_state != RuntimeHostClockTransitionState::Stable
+                } else if !matches!(parity.backend_health, BackendHealth::Healthy)
+                    || parity.stream_state == RuntimeHostAudioStreamState::Faulted
+                    || parity.clock_domain != RuntimeHostClockDomain::SameClock
+                    || parity.fallback_state != RuntimeHostClockFallbackState::Direct
+                    || parity.transition_state != RuntimeHostClockTransitionState::Stable
                     || !matches!(
-                        duplex_mismatch_state,
+                        parity.duplex_mismatch_state,
                         RuntimeHostDuplexMismatchState::NotApplicable
                             | RuntimeHostDuplexMismatchState::Aligned
                     )
-                    || endpoint_topology == RuntimeHostEndpointTopology::Aggregate
+                    || parity.endpoint_topology == RuntimeHostEndpointTopology::Aggregate
                 {
                     RuntimeLinuxAudioBackendDuplexParityState::Guarded
                 } else {
@@ -6947,7 +6952,7 @@ pub struct RuntimeExecutionLaneSummary {
     pub send_return_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimeRoutedPluginChainSummary {
     pub chain_count: usize,
     pub stage_count: usize,
@@ -6964,28 +6969,6 @@ pub struct RuntimeRoutedPluginChainSummary {
     pub node_ids: Vec<String>,
     pub sandbox_ids: Vec<String>,
     pub chains: Vec<RuntimePluginExecutionChainSummary>,
-}
-
-impl Default for RuntimeRoutedPluginChainSummary {
-    fn default() -> Self {
-        Self {
-            chain_count: 0,
-            stage_count: 0,
-            pending_render_stage_count: 0,
-            settling_stage_count: 0,
-            compensated_stage_count: 0,
-            degraded_stage_count: 0,
-            bypassed_stage_count: 0,
-            missing_binding_stage_count: 0,
-            total_planned_latency_samples: 0,
-            total_realized_latency_samples: 0,
-            total_tail_samples: 0,
-            chain_ids: Vec::new(),
-            node_ids: Vec::new(),
-            sandbox_ids: Vec::new(),
-            chains: Vec::new(),
-        }
-    }
 }
 
 impl RuntimeRoutedPluginChainSummary {
@@ -7246,11 +7229,7 @@ fn derive_runtime_bus_connections(
             send_return_id: node.send_return_id.as_deref(),
         };
         for source in producers {
-            let auxiliary_path = runtime_auxiliary_path_for_connection(source, &target).map(
-                |(path_kind, auxiliary_path_id, bus_role, material_bus_intent)| {
-                    (path_kind, auxiliary_path_id, bus_role, material_bus_intent)
-                },
-            );
+            let auxiliary_path = runtime_auxiliary_path_for_connection(source, &target);
             let source_bus_role =
                 runtime_bus_role_for_endpoint(source.topology_role, source.output_bus_intent);
             let target_bus_role =
@@ -9375,17 +9354,17 @@ impl RuntimeObservationReport {
         let scheduler_summary =
             RuntimeSchedulerExportSummary::from_snapshot(&engine_block_snapshot);
         let block_summary = RuntimeBlockExecutionSummary::from_snapshot(&engine_block_snapshot);
-        let fault_status = RuntimeFaultStatusSnapshot::capture(
-            readiness.clone(),
-            &control_snapshot,
-            &diagnostics_snapshot,
-            &supervision_snapshot,
-            &engine_block_snapshot,
-            &transport_concurrency_snapshot,
-            &plugin_lifecycle_snapshot,
-            false,
-            0,
-        );
+        let fault_status = RuntimeFaultStatusSnapshot::capture(RuntimeFaultStatusCaptureInput {
+            readiness: readiness.clone(),
+            control_snapshot: &control_snapshot,
+            diagnostics_snapshot: &diagnostics_snapshot,
+            supervision_snapshot: &supervision_snapshot,
+            engine_block_snapshot: &engine_block_snapshot,
+            transport_concurrency_snapshot: &transport_concurrency_snapshot,
+            plugin_lifecycle_snapshot: &plugin_lifecycle_snapshot,
+            device_loss_active: false,
+            device_loss_count: 0,
+        });
         let degradation_summary = RuntimeDegradationSummary::capture(
             &readiness,
             diagnostics_snapshot,
@@ -9638,121 +9617,125 @@ impl RuntimeSupervisorReport {
     }
 
     pub fn render_multiline(&self) -> String {
-        let tempo_map = (self.observation.tempo_map_snapshot.segment_count > 0)
-            .then(|| {
-                format_runtime_tempo_map_snapshot_multiline(&self.observation.tempo_map_snapshot)
-            })
-            .unwrap_or_default();
-        let warp = (self.observation.warp_pipeline_snapshot.clip_count > 0)
-            .then(|| {
-                format_runtime_warp_pipeline_snapshot_multiline(
-                    &self.observation.warp_pipeline_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let clip_processing = (self
+        let tempo_map = if self.observation.tempo_map_snapshot.segment_count > 0 {
+            format_runtime_tempo_map_snapshot_multiline(&self.observation.tempo_map_snapshot)
+        } else {
+            String::new()
+        };
+        let warp = if self.observation.warp_pipeline_snapshot.clip_count > 0 {
+            format_runtime_warp_pipeline_snapshot_multiline(
+                &self.observation.warp_pipeline_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let clip_processing = if self
             .observation
             .clip_processing_pipeline_snapshot
             .clip_count
-            > 0)
-        .then(|| {
+            > 0
+        {
             format_runtime_clip_processing_pipeline_snapshot_multiline(
                 &self.observation.clip_processing_pipeline_snapshot,
             )
-        })
-        .unwrap_or_default();
-        let stretch_engine = (self.observation.stretch_engine_snapshot.clip_count > 0)
-            .then(|| {
-                format_runtime_stretch_engine_snapshot_multiline(
-                    &self.observation.stretch_engine_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let marker_analysis = (self.observation.marker_analysis_snapshot.clip_count > 0)
-            .then(|| {
-                format_runtime_marker_analysis_snapshot_multiline(
-                    &self.observation.marker_analysis_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let transform_artifact = (self.observation.transform_artifact_snapshot.clip_count > 0)
-            .then(|| {
-                format_runtime_transform_artifact_snapshot_multiline(
-                    &self.observation.transform_artifact_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let media_pipeline = (self.observation.media_pipeline_snapshot.asset_count > 0)
-            .then(|| {
-                format_runtime_media_pipeline_snapshot_multiline(
-                    &self.observation.media_pipeline_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let media_service = (self.observation.media_service_snapshot.indexed_asset_count > 0
+        } else {
+            String::new()
+        };
+        let stretch_engine = if self.observation.stretch_engine_snapshot.clip_count > 0 {
+            format_runtime_stretch_engine_snapshot_multiline(
+                &self.observation.stretch_engine_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let marker_analysis = if self.observation.marker_analysis_snapshot.clip_count > 0 {
+            format_runtime_marker_analysis_snapshot_multiline(
+                &self.observation.marker_analysis_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let transform_artifact = if self.observation.transform_artifact_snapshot.clip_count > 0 {
+            format_runtime_transform_artifact_snapshot_multiline(
+                &self.observation.transform_artifact_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let media_pipeline = if self.observation.media_pipeline_snapshot.asset_count > 0 {
+            format_runtime_media_pipeline_snapshot_multiline(
+                &self.observation.media_pipeline_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let media_service = if self.observation.media_service_snapshot.indexed_asset_count > 0
             || self.observation.media_service_snapshot.invalidation_active
             || matches!(
                 self.observation.media_service_snapshot.preview_state,
                 RuntimeMediaPreviewState::Previewing | RuntimeMediaPreviewState::Invalidated
-            ))
-        .then(|| {
+            ) {
             format_runtime_media_service_snapshot_multiline(
                 &self.observation.media_service_snapshot,
             )
-        })
-        .unwrap_or_default();
-        let media_library = (self.observation.media_library_snapshot.indexed_asset_count > 0)
-            .then(|| {
-                format_runtime_media_library_service_snapshot_multiline(
-                    &self.observation.media_library_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let plugin_discovery = (self.observation.plugin_discovery_snapshot.scan_count > 0)
-            .then(|| {
-                format_runtime_plugin_discovery_snapshot_multiline(
-                    &self.observation.plugin_discovery_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let plugin_lifecycle = (self.observation.plugin_lifecycle_snapshot.sandbox_count > 0)
-            .then(|| {
-                format_runtime_plugin_lifecycle_snapshot_multiline(
-                    &self.observation.plugin_lifecycle_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let lv2_extension = (self.observation.lv2_extension_snapshot.plugin_type_count > 0)
-            .then(|| {
-                format_runtime_lv2_extension_snapshot_multiline(
-                    &self.observation.lv2_extension_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let plugin_pin_matrix = (self
+        } else {
+            String::new()
+        };
+        let media_library = if self.observation.media_library_snapshot.indexed_asset_count > 0 {
+            format_runtime_media_library_service_snapshot_multiline(
+                &self.observation.media_library_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let plugin_discovery = if self.observation.plugin_discovery_snapshot.scan_count > 0 {
+            format_runtime_plugin_discovery_snapshot_multiline(
+                &self.observation.plugin_discovery_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let plugin_lifecycle = if self.observation.plugin_lifecycle_snapshot.sandbox_count > 0 {
+            format_runtime_plugin_lifecycle_snapshot_multiline(
+                &self.observation.plugin_lifecycle_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let lv2_extension = if self.observation.lv2_extension_snapshot.plugin_type_count > 0 {
+            format_runtime_lv2_extension_snapshot_multiline(
+                &self.observation.lv2_extension_snapshot,
+            )
+        } else {
+            String::new()
+        };
+        let plugin_pin_matrix = if self
             .observation
             .plugin_pin_matrix_snapshot
             .plugin_type_count
-            > 0)
-        .then(|| {
+            > 0
+        {
             format_runtime_plugin_pin_matrix_snapshot_multiline(
                 &self.observation.plugin_pin_matrix_snapshot,
             )
-        })
-        .unwrap_or_default();
-        let plugin_chain = (self.observation.plugin_chain_snapshot.chain_count > 0)
-            .then(|| {
-                format_runtime_plugin_chain_snapshot_multiline(
-                    &self.observation.plugin_chain_snapshot,
-                )
-            })
-            .unwrap_or_default();
-        let _automation = (self.observation.automation_snapshot.parameter_id != 0
+        } else {
+            String::new()
+        };
+        let plugin_chain = if self.observation.plugin_chain_snapshot.chain_count > 0 {
+            format_runtime_plugin_chain_snapshot_multiline(&self.observation.plugin_chain_snapshot)
+        } else {
+            String::new()
+        };
+        let _automation = if self.observation.automation_snapshot.parameter_id != 0
             || self.observation.automation_snapshot.lane_count > 0
-            || self.observation.automation_snapshot.last_batch_epoch.is_some())
-            .then(|| {
-                let snapshot = &self.observation.automation_snapshot;
-                format!(
+            || self
+                .observation
+                .automation_snapshot
+                .last_batch_epoch
+                .is_some()
+        {
+            let snapshot = &self.observation.automation_snapshot;
+            format!(
                     "\nautomation_param={}\nautomation_lane_count={}\nautomation_point_count={}\nautomation_projected_segment_count={}\nautomation_mapped_lanes={}\nautomation_unmapped_lanes={}\nautomation_hold_lanes={}\nautomation_linear_lanes={}\nautomation_last_batch_epoch={:?}\nautomation_last_batch_event_count={}\nautomation_last_batch_ignored_event_count={}\nautomation_last_batch_sub_block_count={}\nautomation_last_batch_coalesced_event_count={}\nautomation_last_batch_strategy_max_sub_blocks={}\nautomation_last_batch_min_ramp_step_samples={:?}\nautomation_last_batch_max_sample_offset={:?}\nautomation_last_block_sequence={:?}\nautomation_last_timeline_position_samples={:?}\nautomation_transport_playing={:?}\nautomation_value_events={}\nautomation_modulation_events={}\nautomation_gesture_begin_events={}\nautomation_gesture_end_events={}\nautomation_first_value={:?}\nautomation_last_value={:?}\nautomation_last_modulation={:?}\nautomation_first_epoch={:?}\nautomation_last_epoch={:?}\nautomation_segments={}\nautomation_segment_epochs={:?}\nautomation_lease_rollovers={}",
                     snapshot.parameter_id,
                     snapshot.lane_count,
@@ -9786,8 +9769,9 @@ impl RuntimeSupervisorReport {
                     snapshot.segment_epochs,
                     snapshot.lease_rollovers,
                 )
-            })
-            .unwrap_or_default();
+        } else {
+            String::new()
+        };
         let _transport_timeline = format!(
             "\ntransport_epoch={}\ntransport_transition={:?}\ntransport_transition_epoch={:?}\ntransport_transition_block={:?}\ntransport_playing={:?}\ntransport_tempo_bpm={:?}\ntransport_timeline_position_samples={:?}\ntransport_loop_start_samples={:?}\ntransport_loop_end_samples={:?}\ntransport_last_block_start_samples={:?}\ntransport_last_block_end_samples={:?}\ntransport_loop_wrap_count={}",
             self.observation.timeline_snapshot.transport_epoch,

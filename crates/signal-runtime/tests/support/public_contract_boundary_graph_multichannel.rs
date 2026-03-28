@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use signal_graph::{GraphNodeExecutionClass, GraphNodeTopologyRole, GraphStageSpec};
 use signal_primitives::{ChannelCount, ChannelLayout};
 use signal_runtime::{

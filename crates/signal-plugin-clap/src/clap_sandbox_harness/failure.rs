@@ -4,27 +4,21 @@ use signal_ipc::{
 };
 use signal_plugin::{PluginFault, PluginFaultKind, PluginFaultSeverity, PluginLifecycleState};
 
-pub fn sandbox_failure_event(
-    sandbox_id: &str,
-    instance_id: Option<String>,
-    stage: impl Into<String>,
-    error_kind: impl Into<String>,
-    detail: impl Into<String>,
-    processing_epoch: Option<u64>,
-    shared_memory_lease_id: Option<String>,
-    correlation_id: Option<CorrelationId>,
-) -> PluginMessageEnvelope {
-    failure_event_with_state(
-        sandbox_id,
-        instance_id,
-        stage,
-        error_kind,
-        detail,
-        processing_epoch,
-        shared_memory_lease_id,
-        correlation_id,
-        None,
-    )
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClapSandboxFailureInput {
+    pub sandbox_id: String,
+    pub instance_id: Option<String>,
+    pub stage: String,
+    pub error_kind: String,
+    pub detail: String,
+    pub processing_epoch: Option<u64>,
+    pub shared_memory_lease_id: Option<String>,
+    pub correlation_id: Option<CorrelationId>,
+    pub instance_state: Option<PluginInstanceStatePayload>,
+}
+
+pub fn sandbox_failure_event(input: ClapSandboxFailureInput) -> PluginMessageEnvelope {
+    failure_event(input)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -165,17 +159,8 @@ fn stage_string(stage: ClapSandboxFailureStage, payload: &PluginMessagePayload) 
     }
 }
 
-pub(super) fn failure_event(
-    sandbox_id: &str,
-    instance_id: Option<String>,
-    stage: impl Into<String>,
-    error_kind: impl Into<String>,
-    detail: impl Into<String>,
-    processing_epoch: Option<u64>,
-    shared_memory_lease_id: Option<String>,
-    correlation_id: Option<CorrelationId>,
-) -> PluginMessageEnvelope {
-    failure_event_with_state(
+pub(super) fn failure_event(input: ClapSandboxFailureInput) -> PluginMessageEnvelope {
+    let ClapSandboxFailureInput {
         sandbox_id,
         instance_id,
         stage,
@@ -184,30 +169,14 @@ pub(super) fn failure_event(
         processing_epoch,
         shared_memory_lease_id,
         correlation_id,
-        None,
-    )
-}
-
-pub(super) fn failure_event_with_state(
-    sandbox_id: &str,
-    instance_id: Option<String>,
-    stage: impl Into<String>,
-    error_kind: impl Into<String>,
-    detail: impl Into<String>,
-    processing_epoch: Option<u64>,
-    shared_memory_lease_id: Option<String>,
-    correlation_id: Option<CorrelationId>,
-    instance_state: Option<PluginInstanceStatePayload>,
-) -> PluginMessageEnvelope {
-    let stage = stage.into();
-    let error_kind = error_kind.into();
-    let detail = detail.into();
+        instance_state,
+    } = input;
     let fault = plugin_fault_for_error_kind(&error_kind, &detail);
     PluginMessageEnvelope::event(
         PluginMessageName::SandboxFailure,
         correlation_id,
         PluginMessagePayload::SandboxFailure {
-            sandbox_id: sandbox_id.into(),
+            sandbox_id,
             instance_id,
             stage,
             error_kind,

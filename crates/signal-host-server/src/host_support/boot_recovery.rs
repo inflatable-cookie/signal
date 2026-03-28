@@ -7,8 +7,8 @@ use super::super::{
     WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 use super::{
-    build_fault_envelope, record_runtime_fault, LifecycleRunSummary,
-    ServerDemoPluginSandboxAssembly,
+    build_fault_envelope, record_runtime_fault, LifecycleRunSummary, RepeatedWatchdogRecoveryPlan,
+    ServerDemoPluginSandboxAssembly, TimeoutRecoveryRetryPlan,
 };
 
 impl ServerRuntimeHost {
@@ -141,9 +141,11 @@ impl ServerRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    &[RecoveryFailureInjection::DeferredOldTransportTeardown],
-                    "expected deferred teardown recovery failure",
-                    true,
+                    TimeoutRecoveryRetryPlan {
+                        failures: &[RecoveryFailureInjection::DeferredOldTransportTeardown],
+                        terminal_detail: "expected deferred teardown recovery failure",
+                        recover_after_failures: true,
+                    },
                 )?;
             }
             FaultInjection::RecoveryDeferredTeardownCleanupRetry => {
@@ -152,12 +154,14 @@ impl ServerRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    &[
-                        RecoveryFailureInjection::DeferredOldTransportTeardown,
-                        RecoveryFailureInjection::LingeringCleanupTeardown,
-                    ],
-                    "expected lingering cleanup retry failure",
-                    true,
+                    TimeoutRecoveryRetryPlan {
+                        failures: &[
+                            RecoveryFailureInjection::DeferredOldTransportTeardown,
+                            RecoveryFailureInjection::LingeringCleanupTeardown,
+                        ],
+                        terminal_detail: "expected lingering cleanup retry failure",
+                        recover_after_failures: true,
+                    },
                 )?;
             }
             FaultInjection::RecoveryRestartFailure => {
@@ -189,8 +193,10 @@ impl ServerRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    restart_episodes,
-                    false,
+                    RepeatedWatchdogRecoveryPlan {
+                        restart_episodes,
+                        mixed_faults: false,
+                    },
                 )?;
             }
             FaultInjection::MixedWatchdogEpisodes { restart_episodes } => {
@@ -199,8 +205,10 @@ impl ServerRuntimeHost {
                     sandbox,
                     run,
                     lifecycle,
-                    restart_episodes,
-                    true,
+                    RepeatedWatchdogRecoveryPlan {
+                        restart_episodes,
+                        mixed_faults: true,
+                    },
                 )?;
             }
         }

@@ -93,8 +93,13 @@ pub(crate) fn refine_beat(onset_envelope: &[f32], center: isize, tolerance_frame
     let mut best_index = center.clamp(0, onset_envelope.len().saturating_sub(1) as isize) as usize;
     let mut best_value = onset_envelope[best_index];
 
-    for index in start..=end {
-        let value = onset_envelope[index];
+    for (index, value) in onset_envelope
+        .iter()
+        .copied()
+        .enumerate()
+        .skip(start)
+        .take(end - start + 1)
+    {
         if value > best_value {
             best_value = value;
             best_index = index;

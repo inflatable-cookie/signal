@@ -4,8 +4,9 @@ use signal_ipc::{
 };
 use signal_plugin::{PluginLifecycleState, SandboxStateMachine, SharedMemoryLease};
 
-use super::failure::failure_event;
+use super::failure::{failure_event, ClapSandboxFailureInput};
 use super::state::ClapSandboxLifecycleHarness;
+use crate::ClapHarnessResult;
 
 impl ClapSandboxLifecycleHarness {
     #[allow(clippy::too_many_arguments)]
@@ -21,60 +22,65 @@ impl ClapSandboxLifecycleHarness {
         max_block_frames: u32,
         io_layout: PluginIoLayoutPayload,
         shared_memory: SharedMemoryLayoutPayload,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "prepareInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "prepareInstance", Some(correlation.clone()))?;
         let instance = self.active_instance.as_ref().expect("validated instance");
         if !instance.lifecycle_contract.supports_prepare {
-            return Err(failure_event(
-                &sandbox_id,
-                Some(instance_id.clone()),
-                "prepareInstance",
-                "unsupported",
-                "loaded CLAP instance does not support prepare",
-                Some(processing_epoch),
-                Some(shared_memory_lease_id.clone()),
-                Some(correlation),
-            ));
+            return Err(Box::new(failure_event(ClapSandboxFailureInput {
+                sandbox_id,
+                instance_id: Some(instance_id.clone()),
+                stage: "prepareInstance".to_string(),
+                error_kind: "unsupported".to_string(),
+                detail: "loaded CLAP instance does not support prepare".to_string(),
+                processing_epoch: Some(processing_epoch),
+                shared_memory_lease_id: Some(shared_memory_lease_id.clone()),
+                correlation_id: Some(correlation),
+                instance_state: None,
+            })));
         }
         if max_block_frames > instance.processing_contract.max_block_frames {
-            return Err(failure_event(
-                &sandbox_id,
-                Some(instance_id.clone()),
-                "prepareInstance",
-                "resourceUnavailable",
-                "requested block size exceeds discovered CLAP processing contract",
-                Some(processing_epoch),
-                Some(shared_memory_lease_id.clone()),
-                Some(correlation),
-            ));
+            return Err(Box::new(failure_event(ClapSandboxFailureInput {
+                sandbox_id,
+                instance_id: Some(instance_id.clone()),
+                stage: "prepareInstance".to_string(),
+                error_kind: "resourceUnavailable".to_string(),
+                detail: "requested block size exceeds discovered CLAP processing contract"
+                    .to_string(),
+                processing_epoch: Some(processing_epoch),
+                shared_memory_lease_id: Some(shared_memory_lease_id.clone()),
+                correlation_id: Some(correlation),
+                instance_state: None,
+            })));
         }
         let attached = self
             .broker
             .attach_region(&shared_memory_transport)
             .map_err(|error| {
-                failure_event(
-                    &sandbox_id,
-                    Some(instance_id.clone()),
-                    "prepareInstance",
-                    "resourceUnavailable",
-                    format!("failed to attach shared-memory region: {error}"),
-                    Some(processing_epoch),
-                    Some(shared_memory_lease_id.clone()),
-                    Some(correlation.clone()),
-                )
+                Box::new(failure_event(ClapSandboxFailureInput {
+                    sandbox_id: sandbox_id.clone(),
+                    instance_id: Some(instance_id.clone()),
+                    stage: "prepareInstance".to_string(),
+                    error_kind: "resourceUnavailable".to_string(),
+                    detail: format!("failed to attach shared-memory region: {error}"),
+                    processing_epoch: Some(processing_epoch),
+                    shared_memory_lease_id: Some(shared_memory_lease_id.clone()),
+                    correlation_id: Some(correlation.clone()),
+                    instance_state: None,
+                }))
             })?;
         if attached.total_bytes() != shared_memory.total_bytes() {
-            return Err(failure_event(
-                &sandbox_id,
-                Some(instance_id),
-                "prepareInstance",
-                "protocolViolation",
-                "shared-memory transport size does not match negotiated layout",
-                Some(processing_epoch),
-                Some(shared_memory_lease_id),
-                Some(correlation),
-            ));
+            return Err(Box::new(failure_event(ClapSandboxFailureInput {
+                sandbox_id,
+                instance_id: Some(instance_id),
+                stage: "prepareInstance".to_string(),
+                error_kind: "protocolViolation".to_string(),
+                detail: "shared-memory transport size does not match negotiated layout".to_string(),
+                processing_epoch: Some(processing_epoch),
+                shared_memory_lease_id: Some(shared_memory_lease_id),
+                correlation_id: Some(correlation),
+                instance_state: None,
+            })));
         }
         self.prepared_epoch = Some(processing_epoch);
         self.prepared_sample_rate_hz = Some(sample_rate_hz);
@@ -113,7 +119,7 @@ impl ClapSandboxLifecycleHarness {
         sandbox_id: String,
         instance_id: String,
         processing_epoch: u64,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "activateInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "activateInstance", Some(correlation.clone()))?;
         if !self
@@ -123,16 +129,14 @@ impl ClapSandboxLifecycleHarness {
             .lifecycle_contract
             .supports_activate
         {
-            return Err(failure_event(
-                &sandbox_id,
+            return Err(self.failure_error_for_instance(
                 Some(instance_id),
-                "activateInstance",
-                "unsupported",
-                "loaded CLAP instance does not support activate",
-                Some(processing_epoch),
                 self.active_lease
                     .as_ref()
                     .map(|lease| lease.lease_id.clone()),
+                "activateInstance",
+                "unsupported",
+                "loaded CLAP instance does not support activate",
                 Some(correlation),
             ));
         }
@@ -140,16 +144,14 @@ impl ClapSandboxLifecycleHarness {
             if let Some(lease) = &mut self.active_lease {
                 lease.invalidate_epoch(processing_epoch);
             }
-            return Err(failure_event(
-                &sandbox_id,
+            return Err(self.failure_error_for_instance(
                 Some(instance_id),
-                "activateInstance",
-                "protocolViolation",
-                "activate requested with epoch that is not prepared",
-                Some(processing_epoch),
                 self.active_lease
                     .as_ref()
                     .map(|lease| lease.lease_id.clone()),
+                "activateInstance",
+                "protocolViolation",
+                "activate requested with epoch that is not prepared",
                 Some(correlation),
             ));
         }
@@ -174,7 +176,7 @@ impl ClapSandboxLifecycleHarness {
         sandbox_id: String,
         instance_id: Option<String>,
         processing_epoch: Option<u64>,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "heartbeat", Some(correlation.clone()))?;
         if let Some(instance_id) = instance_id.as_deref() {
             self.require_instance(instance_id, "heartbeat", Some(correlation.clone()))?;

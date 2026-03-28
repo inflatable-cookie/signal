@@ -5,16 +5,29 @@ use super::super::{
 use signal_plugin::LoopRange;
 use signal_runtime::RuntimeSupervisorReport;
 
+pub(crate) struct RuntimeAutomationExpectations {
+    pub(crate) value_events: usize,
+    pub(crate) modulation_events: usize,
+    pub(crate) gesture_begin_events: usize,
+    pub(crate) gesture_end_events: usize,
+    pub(crate) first_value: f32,
+    pub(crate) last_value: f32,
+    pub(crate) last_modulation: f32,
+}
+
 pub(crate) fn assert_runtime_automation_values(
     supervisor: &RuntimeSupervisorReport,
-    value_events: usize,
-    modulation_events: usize,
-    gesture_begin_events: usize,
-    gesture_end_events: usize,
-    first_value: f32,
-    last_value: f32,
-    last_modulation: f32,
+    expectations: RuntimeAutomationExpectations,
 ) {
+    let RuntimeAutomationExpectations {
+        value_events,
+        modulation_events,
+        gesture_begin_events,
+        gesture_end_events,
+        first_value,
+        last_value,
+        last_modulation,
+    } = expectations;
     let snapshot = &supervisor.observation.automation_snapshot;
     assert_eq!(snapshot.parameter_id, 4096);
     assert_eq!(snapshot.value_events, value_events);

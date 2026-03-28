@@ -10,6 +10,17 @@ use super::demo::LocalDemoPluginSandboxAssembly;
 use super::lifecycle_run::LifecycleRunSummary;
 use super::{build_fault_envelope, record_runtime_fault};
 
+pub(crate) struct TimeoutRecoveryRetryPlan<'a> {
+    pub(crate) failures: &'a [RecoveryFailureInjection],
+    pub(crate) terminal_detail: &'a str,
+    pub(crate) recover_after_failures: bool,
+}
+
+pub(crate) struct RepeatedWatchdogRecoveryPlan {
+    pub(crate) restart_episodes: u32,
+    pub(crate) mixed_faults: bool,
+}
+
 impl LocalRuntimeHost {
     pub(super) fn apply_timeout_recovery_failure(
         &mut self,
@@ -43,10 +54,13 @@ impl LocalRuntimeHost {
         sandbox: &LocalDemoPluginSandboxAssembly,
         run: &mut LifecycleRunSummary,
         lifecycle: &mut ClapSandboxLifecycleHarness,
-        failures: &[RecoveryFailureInjection],
-        terminal_detail: &str,
-        recover_after_failures: bool,
+        plan: TimeoutRecoveryRetryPlan<'_>,
     ) -> Result<(), RuntimeError> {
+        let TimeoutRecoveryRetryPlan {
+            failures,
+            terminal_detail,
+            recover_after_failures,
+        } = plan;
         self.walk_timeout_watchdog(protocol, sandbox, run, lifecycle, |this, run, lifecycle| {
             for (index, failure) in failures.iter().copied().enumerate() {
                 let result = this.handle_watchdog_recovery(
@@ -124,9 +138,12 @@ impl LocalRuntimeHost {
         sandbox: &LocalDemoPluginSandboxAssembly,
         run: &mut LifecycleRunSummary,
         lifecycle: &mut ClapSandboxLifecycleHarness,
-        restart_episodes: u32,
-        mixed_faults: bool,
+        plan: RepeatedWatchdogRecoveryPlan,
     ) -> Result<(), RuntimeError> {
+        let RepeatedWatchdogRecoveryPlan {
+            restart_episodes,
+            mixed_faults,
+        } = plan;
         for restart_episode in 0..restart_episodes {
             let episode_fault = if mixed_faults && restart_episode % 2 == 1 {
                 FaultInjection::Timeout

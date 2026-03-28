@@ -1,4 +1,5 @@
 // Tests for signal-analysis-embed
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::*;
     use signal_analysis::{

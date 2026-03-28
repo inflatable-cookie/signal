@@ -37,32 +37,39 @@ pub struct RuntimeFaultStatusSnapshot {
     pub summary: String,
 }
 
+#[derive(Clone, Debug)]
+pub struct RuntimeFaultStatusCaptureInput<'a> {
+    pub readiness: RuntimeReadiness,
+    pub control_snapshot: &'a RuntimeControlSnapshot,
+    pub diagnostics_snapshot: &'a RuntimeDiagnosticsSnapshot,
+    pub supervision_snapshot: &'a RuntimeSupervisionSnapshot,
+    pub engine_block_snapshot: &'a RuntimeEngineBlockSnapshot,
+    pub transport_concurrency_snapshot: &'a RuntimeTransportConcurrencySnapshot,
+    pub plugin_lifecycle_snapshot: &'a RuntimePluginLifecycleSnapshot,
+    pub device_loss_active: bool,
+    pub device_loss_count: u64,
+}
+
 impl RuntimeFaultStatusSnapshot {
-    pub fn capture(
-        readiness: RuntimeReadiness,
-        control_snapshot: &RuntimeControlSnapshot,
-        diagnostics_snapshot: &RuntimeDiagnosticsSnapshot,
-        supervision_snapshot: &RuntimeSupervisionSnapshot,
-        engine_block_snapshot: &RuntimeEngineBlockSnapshot,
-        transport_concurrency_snapshot: &RuntimeTransportConcurrencySnapshot,
-        plugin_lifecycle_snapshot: &RuntimePluginLifecycleSnapshot,
-        device_loss_active: bool,
-        device_loss_count: u64,
-    ) -> Self {
-        let xrun_overload_active = supervision_snapshot.xrun_overload_active;
-        let plugin_fault_count = plugin_lifecycle_snapshot
+    pub fn capture(input: RuntimeFaultStatusCaptureInput<'_>) -> Self {
+        let xrun_overload_active = input.supervision_snapshot.xrun_overload_active;
+        let plugin_fault_count = input
+            .plugin_lifecycle_snapshot
             .faulted_sandbox_count
-            .saturating_add(plugin_lifecycle_snapshot.quarantined_sandbox_count);
+            .saturating_add(input.plugin_lifecycle_snapshot.quarantined_sandbox_count);
         let plugin_fault_active = plugin_fault_count > 0;
-        let watchdog_active = supervision_snapshot.safe_mode_enabled
-            && supervision_snapshot.watchdog_restart_count > 0;
-        let transport_faulted_session_count =
-            transport_concurrency_snapshot.current_detach_faulted_sessions;
+        let watchdog_active = input.supervision_snapshot.safe_mode_enabled
+            && input.supervision_snapshot.watchdog_restart_count > 0;
+        let transport_faulted_session_count = input
+            .transport_concurrency_snapshot
+            .current_detach_faulted_sessions;
         let transport_fault_active = transport_faulted_session_count > 0;
-        let missing_plugin_binding_active =
-            engine_block_snapshot.prework_service_missing_bound_plugin_sandboxes > 0;
-        let runtime_error_active = matches!(readiness, RuntimeReadiness::Failed { .. });
-        let primary_fault_cause = if device_loss_active {
+        let missing_plugin_binding_active = input
+            .engine_block_snapshot
+            .prework_service_missing_bound_plugin_sandboxes
+            > 0;
+        let runtime_error_active = matches!(input.readiness, RuntimeReadiness::Failed { .. });
+        let primary_fault_cause = if input.device_loss_active {
             Some(RuntimeFaultCause::DeviceLoss)
         } else if watchdog_active {
             Some(RuntimeFaultCause::WatchdogRestart)
@@ -82,7 +89,7 @@ impl RuntimeFaultStatusSnapshot {
         let mut active_fault_count = usize::from(xrun_overload_active)
             + usize::from(plugin_fault_active)
             + usize::from(watchdog_active)
-            + usize::from(device_loss_active)
+            + usize::from(input.device_loss_active)
             + usize::from(transport_fault_active)
             + usize::from(missing_plugin_binding_active);
         if runtime_error_active && primary_fault_cause == Some(RuntimeFaultCause::RuntimeError) {
@@ -90,13 +97,13 @@ impl RuntimeFaultStatusSnapshot {
         }
         let recovery_state = if runtime_error_active {
             RuntimeRecoveryState::Faulted
-        } else if supervision_snapshot.safe_mode_enabled
+        } else if input.supervision_snapshot.safe_mode_enabled
             || xrun_overload_active
-            || device_loss_active
+            || input.device_loss_active
             || watchdog_active
             || transport_fault_active
-            || plugin_lifecycle_snapshot.restarting_sandbox_count > 0
-            || control_snapshot.restart_count > 0
+            || input.plugin_lifecycle_snapshot.restarting_sandbox_count > 0
+            || input.control_snapshot.restart_count > 0
         {
             RuntimeRecoveryState::Recovering
         } else {
@@ -109,15 +116,15 @@ impl RuntimeFaultStatusSnapshot {
             xrun_overload_active,
             plugin_fault_active,
             watchdog_active,
-            device_loss_active,
+            device_loss_active: input.device_loss_active,
             transport_fault_active,
             missing_plugin_binding_active,
-            safe_mode_enabled: supervision_snapshot.safe_mode_enabled,
-            restart_count: control_snapshot.restart_count,
-            watchdog_restart_count: supervision_snapshot.watchdog_restart_count,
+            safe_mode_enabled: input.supervision_snapshot.safe_mode_enabled,
+            restart_count: input.control_snapshot.restart_count,
+            watchdog_restart_count: input.supervision_snapshot.watchdog_restart_count,
             plugin_fault_count,
             transport_faulted_session_count,
-            device_loss_count,
+            device_loss_count: input.device_loss_count,
             summary: String::new(),
         };
         snapshot.summary = format!(
@@ -125,7 +132,7 @@ impl RuntimeFaultStatusSnapshot {
             snapshot.recovery_state,
             snapshot.primary_fault_cause,
             snapshot.active_fault_count,
-            diagnostics_snapshot.xruns,
+            input.diagnostics_snapshot.xruns,
             snapshot.plugin_fault_count,
             snapshot.watchdog_restart_count,
             snapshot.device_loss_count,

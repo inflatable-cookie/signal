@@ -1,4 +1,5 @@
 // Tests for signal-analysis-loudness
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{
         LoudnessAnalysisResult, LoudnessChannelWeightSource, LoudnessMeter, LoudnessMeterConfig,
@@ -266,8 +267,10 @@ mod tests {
     #[test]
     fn non_48k_analysis_rate_reports_unweighted_fallback() {
         let audio = sine(44_100, 1_000.0, 0.2, 4.0);
-        let mut config = LoudnessMeterConfig::default();
-        config.analysis_sample_rate = SampleRate(44_100);
+        let config = LoudnessMeterConfig {
+            analysis_sample_rate: SampleRate(44_100),
+            ..LoudnessMeterConfig::default()
+        };
         let mut fallback_meter = LoudnessMeter::new(config);
         let mut default_meter = LoudnessMeter::new(LoudnessMeterConfig::default());
 

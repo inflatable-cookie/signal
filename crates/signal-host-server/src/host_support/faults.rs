@@ -1,11 +1,13 @@
 use signal_ipc::{PluginMessageEnvelope, PluginMessagePayload, SharedMemoryTransportPayload};
 use signal_plugin::WatchdogTriggerReason;
 use signal_plugin_clap::{
-    classify_sandbox_failure, sandbox_failure_event, ClapSandboxFailureStage,
+    classify_sandbox_failure, sandbox_failure_event, ClapSandboxFailureInput,
+    ClapSandboxFailureStage,
 };
 use signal_runtime::{
     BrokerFailureStage, PluginFaultKind, RuntimeError, RuntimeWatchdogTrigger,
-    SandboxOperationFailureStage, SignalRuntime, TransportAttachIntent,
+    SandboxOperationFailureRecord, SandboxOperationFailureStage, SignalRuntime,
+    TransportAttachIntent,
 };
 
 use super::super::FaultInjection;
@@ -83,15 +85,15 @@ pub(crate) fn record_runtime_fault(runtime: &mut SignalRuntime, failure: &Plugin
             ));
         }
         if let Some(classification) = classify_sandbox_failure(failure) {
-            runtime.record_sandbox_operation_failure(
-                classification.sandbox_id,
-                classification.lease_id,
-                classification.processing_epoch,
-                classification.operation,
-                classification.error_kind,
-                map_clap_sandbox_failure_stage(classification.stage),
-                classification.detail,
-            );
+            runtime.record_sandbox_operation_failure(SandboxOperationFailureRecord {
+                sandbox_id: classification.sandbox_id,
+                lease_id: classification.lease_id,
+                processing_epoch: classification.processing_epoch,
+                operation: classification.operation,
+                error_kind: classification.error_kind,
+                stage: map_clap_sandbox_failure_stage(classification.stage),
+                detail: classification.detail,
+            });
         }
     }
 }
@@ -143,16 +145,17 @@ pub(crate) fn build_fault_envelope(
             restart_episodes: _,
         } => ("timeout", "sandbox heartbeat watchdog threshold exceeded"),
     };
-    sandbox_failure_event(
-        sandbox_id,
-        Some(instance_id.into()),
-        "processBlock",
-        error_kind,
-        detail,
-        Some(processing_epoch),
-        Some(lease_id.into()),
-        None,
-    )
+    sandbox_failure_event(ClapSandboxFailureInput {
+        sandbox_id: sandbox_id.to_string(),
+        instance_id: Some(instance_id.into()),
+        stage: "processBlock".to_string(),
+        error_kind: error_kind.to_string(),
+        detail: detail.to_string(),
+        processing_epoch: Some(processing_epoch),
+        shared_memory_lease_id: Some(lease_id.into()),
+        correlation_id: None,
+        instance_state: None,
+    })
 }
 
 pub(crate) fn extract_prepare_metadata(

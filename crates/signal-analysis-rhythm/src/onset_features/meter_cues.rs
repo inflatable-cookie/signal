@@ -21,8 +21,8 @@ pub(crate) fn low_band_flux(spectrogram: &Spectrogram, max_frequency_hz: f32) ->
         .clamp(1, bin_count - 1);
     let mut envelope = vec![0.0; spectrogram.frames.len()];
 
-    for frame_index in 1..spectrogram.frames.len() {
-        let current = &spectrogram.frames[frame_index].magnitudes[..=max_bin];
+    for (frame_index, frame) in spectrogram.frames.iter().enumerate().skip(1) {
+        let current = &frame.magnitudes[..=max_bin];
         let previous = &spectrogram.frames[frame_index - 1].magnitudes[..=max_bin];
         envelope[frame_index] = current
             .iter()
@@ -49,7 +49,7 @@ pub(crate) fn band_profile_change(spectrogram: &Spectrogram, bands: usize) -> Ve
         return vec![0.0; spectrogram.frames.len()];
     }
 
-    let band_width = ((bin_count - 1) + bands - 1) / bands;
+    let band_width = (bin_count - 1).div_ceil(bands);
     let mut profiles = Vec::with_capacity(spectrogram.frames.len());
 
     for frame in &spectrogram.frames {

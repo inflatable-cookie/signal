@@ -542,9 +542,10 @@ fn compute_spectral_profile_pack(spectrogram: &Spectrogram) -> SpectralProfileDe
     }
 
     let nyquist_hz = spectrogram.sample_rate.0 as f32 * 0.5;
-    let high_frequency_hz = nyquist_hz
-        .min(MEL_PROFILE_HIGH_FREQUENCY_HZ)
-        .max(MEL_PROFILE_LOW_FREQUENCY_HZ + 1.0);
+    let high_frequency_hz = nyquist_hz.clamp(
+        MEL_PROFILE_LOW_FREQUENCY_HZ + 1.0,
+        MEL_PROFILE_HIGH_FREQUENCY_HZ,
+    );
     let mel = spectrogram.to_mel_spectrogram(&MelSpectrogramConfig {
         filterbank: MelFilterbankConfig {
             mel_bin_count: MEL_PROFILE_BAND_COUNT,
@@ -929,9 +930,15 @@ fn smooth_series(values: &[f32], radius: usize) -> Vec<f32> {
 fn local_argmax_index(values: &[f32], start: usize, end: usize) -> usize {
     let mut best_index = start.min(values.len().saturating_sub(1));
     let mut best_value = values.get(best_index).copied().unwrap_or(0.0);
-    for index in start..=end.min(values.len().saturating_sub(1)) {
-        if values[index] > best_value {
-            best_value = values[index];
+    for (index, value) in values
+        .iter()
+        .copied()
+        .enumerate()
+        .skip(start)
+        .take(end.min(values.len().saturating_sub(1)) - start + 1)
+    {
+        if value > best_value {
+            best_value = value;
             best_index = index;
         }
     }
@@ -941,9 +948,15 @@ fn local_argmax_index(values: &[f32], start: usize, end: usize) -> usize {
 fn local_argmin_index(values: &[f32], start: usize, end: usize) -> usize {
     let mut best_index = start.min(values.len().saturating_sub(1));
     let mut best_value = values.get(best_index).copied().unwrap_or(0.0);
-    for index in start..=end.min(values.len().saturating_sub(1)) {
-        if values[index] < best_value {
-            best_value = values[index];
+    for (index, value) in values
+        .iter()
+        .copied()
+        .enumerate()
+        .skip(start)
+        .take(end.min(values.len().saturating_sub(1)) - start + 1)
+    {
+        if value < best_value {
+            best_value = value;
             best_index = index;
         }
     }
@@ -962,8 +975,14 @@ fn find_last_index_at_or_below(values: &[f32], start: usize, end: usize, thresho
 
 fn find_first_index_at_or_above(values: &[f32], start: usize, end: usize, threshold: f32) -> usize {
     let bounded_end = end.min(values.len().saturating_sub(1));
-    for index in start.min(bounded_end)..=bounded_end {
-        if values[index] >= threshold {
+    for (index, value) in values
+        .iter()
+        .copied()
+        .enumerate()
+        .skip(start.min(bounded_end))
+        .take(bounded_end - start.min(bounded_end) + 1)
+    {
+        if value >= threshold {
             return index;
         }
     }
@@ -972,8 +991,14 @@ fn find_first_index_at_or_above(values: &[f32], start: usize, end: usize, thresh
 
 fn find_first_index_at_or_below(values: &[f32], start: usize, end: usize, threshold: f32) -> usize {
     let bounded_end = end.min(values.len().saturating_sub(1));
-    for index in start.min(bounded_end)..=bounded_end {
-        if values[index] <= threshold {
+    for (index, value) in values
+        .iter()
+        .copied()
+        .enumerate()
+        .skip(start.min(bounded_end))
+        .take(bounded_end - start.min(bounded_end) + 1)
+    {
+        if value <= threshold {
             return index;
         }
     }

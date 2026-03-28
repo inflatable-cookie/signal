@@ -1,7 +1,8 @@
 use std::io;
 
 use signal_ipc::{
-    PluginInstanceStatePayload, PluginProcessConfigurationPayload, SharedMemoryBroker,
+    CorrelationId, PluginInstanceStatePayload, PluginProcessConfigurationPayload,
+    SharedMemoryBroker,
 };
 use signal_plugin::{
     PluginFault, PluginIoLayout, PluginLifecycleState, PluginReadiness, SandboxStateMachine,
@@ -10,7 +11,10 @@ use signal_plugin::{
 
 use crate::{ClapDiscoveredPluginType, ClapInstanceControlSurface, ClapPluginHostAdapter};
 
-use super::failure::{failure_event, lifecycle_state_string, plugin_fault_payload};
+use super::failure::{
+    failure_event, lifecycle_state_string, plugin_fault_payload, ClapSandboxFailureInput,
+};
+use super::{ClapHarnessError, ClapHarnessResult};
 
 #[derive(Debug)]
 pub struct ClapSandboxLifecycleHarness {
@@ -52,6 +56,82 @@ impl Default for ClapSandboxLifecycleHarness {
 }
 
 impl ClapSandboxLifecycleHarness {
+    pub(super) fn failure_input(
+        &self,
+        stage: &str,
+        error_kind: &str,
+        detail: impl Into<String>,
+        correlation: Option<CorrelationId>,
+    ) -> ClapSandboxFailureInput {
+        ClapSandboxFailureInput {
+            sandbox_id: self
+                .sandbox_id
+                .clone()
+                .unwrap_or_else(|| "unknown".to_string()),
+            instance_id: self.current_instance_id(),
+            stage: stage.to_string(),
+            error_kind: error_kind.to_string(),
+            detail: detail.into(),
+            processing_epoch: self.prepared_epoch,
+            shared_memory_lease_id: self
+                .active_lease
+                .as_ref()
+                .map(|lease| lease.lease_id.clone()),
+            correlation_id: correlation,
+            instance_state: None,
+        }
+    }
+
+    pub(super) fn failure_input_for_instance(
+        &self,
+        instance_id: Option<String>,
+        lease_id: Option<String>,
+        stage: &str,
+        error_kind: &str,
+        detail: impl Into<String>,
+        correlation: Option<CorrelationId>,
+    ) -> ClapSandboxFailureInput {
+        ClapSandboxFailureInput {
+            instance_id,
+            shared_memory_lease_id: lease_id,
+            ..self.failure_input(stage, error_kind, detail, correlation)
+        }
+    }
+
+    pub(super) fn failure_error(
+        &self,
+        stage: &str,
+        error_kind: &str,
+        detail: impl Into<String>,
+        correlation: Option<CorrelationId>,
+    ) -> ClapHarnessError {
+        Box::new(failure_event(self.failure_input(
+            stage,
+            error_kind,
+            detail,
+            correlation,
+        )))
+    }
+
+    pub(super) fn failure_error_for_instance(
+        &self,
+        instance_id: Option<String>,
+        lease_id: Option<String>,
+        stage: &str,
+        error_kind: &str,
+        detail: impl Into<String>,
+        correlation: Option<CorrelationId>,
+    ) -> ClapHarnessError {
+        Box::new(failure_event(self.failure_input_for_instance(
+            instance_id,
+            lease_id,
+            stage,
+            error_kind,
+            detail,
+            correlation,
+        )))
+    }
+
     pub(super) fn current_instance_id(&self) -> Option<String> {
         self.active_instance
             .as_ref()
@@ -169,22 +249,24 @@ impl ClapSandboxLifecycleHarness {
         sandbox_id: &str,
         stage: &str,
         correlation: Option<signal_ipc::CorrelationId>,
-    ) -> Result<(), signal_ipc::PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<()> {
         if self.sandbox_id.as_deref() == Some(sandbox_id) {
             return Ok(());
         }
-        Err(failure_event(
-            sandbox_id,
-            self.current_instance_id(),
-            stage,
-            "invalidState",
-            "sandbox id does not match established handshake",
-            self.prepared_epoch,
-            self.active_lease
+        Err(Box::new(failure_event(ClapSandboxFailureInput {
+            sandbox_id: sandbox_id.to_string(),
+            instance_id: self.current_instance_id(),
+            stage: stage.to_string(),
+            error_kind: "invalidState".to_string(),
+            detail: "sandbox id does not match established handshake".to_string(),
+            processing_epoch: self.prepared_epoch,
+            shared_memory_lease_id: self
+                .active_lease
                 .as_ref()
                 .map(|lease| lease.lease_id.clone()),
-            correlation,
-        ))
+            correlation_id: correlation,
+            instance_state: None,
+        })))
     }
 
     pub(super) fn require_instance(
@@ -192,7 +274,7 @@ impl ClapSandboxLifecycleHarness {
         instance_id: &str,
         stage: &str,
         correlation: Option<signal_ipc::CorrelationId>,
-    ) -> Result<(), signal_ipc::PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<()> {
         if self
             .active_instance
             .as_ref()
@@ -201,16 +283,14 @@ impl ClapSandboxLifecycleHarness {
         {
             return Ok(());
         }
-        Err(failure_event(
-            self.sandbox_id.as_deref().unwrap_or("unknown"),
+        Err(self.failure_error_for_instance(
             Some(instance_id.to_string()),
-            stage,
-            "invalidState",
-            "instance id does not match created CLAP instance",
-            self.prepared_epoch,
             self.active_lease
                 .as_ref()
                 .map(|lease| lease.lease_id.clone()),
+            stage,
+            "invalidState",
+            "instance id does not match created CLAP instance",
             correlation,
         ))
     }

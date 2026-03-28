@@ -4,8 +4,9 @@ use signal_ipc::{
 };
 use signal_plugin::{PluginLifecycleState, SandboxStateMachine};
 
-use super::failure::{failure_event, lifecycle_state_string};
+use super::failure::lifecycle_state_string;
 use super::state::ClapSandboxLifecycleHarness;
+use crate::ClapHarnessResult;
 
 impl ClapSandboxLifecycleHarness {
     pub(super) fn handle_deactivate_instance(
@@ -13,7 +14,7 @@ impl ClapSandboxLifecycleHarness {
         correlation: CorrelationId,
         sandbox_id: String,
         instance_id: String,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "deactivateInstance", Some(correlation.clone()))?;
         self.require_instance(
             &instance_id,
@@ -40,7 +41,7 @@ impl ClapSandboxLifecycleHarness {
         sandbox_id: String,
         instance_id: String,
         processing_epoch: u64,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "resetInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "resetInstance", Some(correlation.clone()))?;
         if self.active
@@ -51,16 +52,14 @@ impl ClapSandboxLifecycleHarness {
                 .lifecycle_contract
                 .supports_reset_while_active
         {
-            return Err(failure_event(
-                &sandbox_id,
+            return Err(self.failure_error_for_instance(
                 Some(instance_id),
-                "resetInstance",
-                "invalidState",
-                "loaded CLAP instance does not support reset while active",
-                Some(processing_epoch),
                 self.active_lease
                     .as_ref()
                     .map(|lease| lease.lease_id.clone()),
+                "resetInstance",
+                "invalidState",
+                "loaded CLAP instance does not support reset while active",
                 Some(correlation),
             ));
         }
@@ -92,7 +91,7 @@ impl ClapSandboxLifecycleHarness {
         correlation: CorrelationId,
         sandbox_id: String,
         instance_id: String,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "destroyInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "destroyInstance", Some(correlation.clone()))?;
         self.active = false;
@@ -130,19 +129,17 @@ impl ClapSandboxLifecycleHarness {
     pub(super) fn handle_sandbox_failure_request(
         &mut self,
         correlation: CorrelationId,
-    ) -> Result<PluginMessageEnvelope, PluginMessageEnvelope> {
-        Err(failure_event(
-            self.sandbox_id.as_deref().unwrap_or("unknown"),
+    ) -> ClapHarnessResult<PluginMessageEnvelope> {
+        Err(self.failure_error_for_instance(
             self.active_instance
                 .as_ref()
                 .map(|instance| instance.instance_id.0.clone()),
-            "failure",
-            "protocolViolation",
-            "sandbox received sandbox.failure as a request",
-            self.prepared_epoch,
             self.active_lease
                 .as_ref()
                 .map(|lease| lease.lease_id.clone()),
+            "failure",
+            "protocolViolation",
+            "sandbox received sandbox.failure as a request",
             Some(correlation),
         ))
     }

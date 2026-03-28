@@ -42,6 +42,42 @@ struct RuntimeTransportConcurrencySession {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct RuntimeTransportSessionKey {
+    sandbox_id: String,
+    lease_id: String,
+    region_id: String,
+}
+
+impl RuntimeTransportSessionKey {
+    pub(super) fn from_parts(sandbox_id: &str, lease_id: &str, region_id: &str) -> Self {
+        Self {
+            sandbox_id: sandbox_id.to_string(),
+            lease_id: lease_id.to_string(),
+            region_id: region_id.to_string(),
+        }
+    }
+
+    pub(super) fn as_map_key(&self) -> (String, String, String) {
+        (
+            self.sandbox_id.clone(),
+            self.lease_id.clone(),
+            self.region_id.clone(),
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct RuntimeLingeringCleanupEnqueueRequest {
+    pub(super) sandbox_id: String,
+    pub(super) mode: LingeringCleanupMode,
+    pub(super) trigger: LingeringCleanupTrigger,
+    pub(super) retry_count: u32,
+    pub(super) processing_epoch: u64,
+    pub(super) cleanup_wave: Option<u64>,
+    pub(super) exclude_session: Option<RuntimeTransportSessionKey>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct RuntimeLingeringCleanupWorkItem {
     work_id: u64,
     cleanup_epoch: u64,

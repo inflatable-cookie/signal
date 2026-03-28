@@ -7,8 +7,8 @@ use signal_plugin::PluginFormat;
 use signal_primitives::{FrameCount, SampleRate};
 use signal_runtime::{
     HandshakeRequest, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
-    RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder, RuntimeInterruptionClass,
-    RuntimeLifecycleApi, RuntimeObservationReport, RuntimeSecondaryInputAttachmentPolicy,
+    RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder, RuntimeLifecycleApi,
+    RuntimeObservationReport, RuntimeSecondaryInputAttachmentPolicy,
     RuntimeSecondaryInputFallbackOutcome, RuntimeSecondaryInputTargetKind, SignalRuntime,
 };
 

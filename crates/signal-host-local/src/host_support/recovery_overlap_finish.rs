@@ -10,17 +10,29 @@ use super::{
     runtime_error_from_io, LifecycleRunSummary,
 };
 
+pub(crate) struct RecoveryOverlapTransition<'a> {
+    pub(crate) sandbox_id: &'a str,
+    pub(crate) lifecycle: &'a mut ClapSandboxLifecycleHarness,
+    pub(crate) run: &'a LifecycleRunSummary,
+    pub(crate) failure: Option<RecoveryFailureInjection>,
+    pub(crate) replacement_lifecycle: &'a mut ClapSandboxLifecycleHarness,
+    pub(crate) replacement_run: &'a LifecycleRunSummary,
+}
+
 impl LocalRuntimeHost {
     pub(crate) fn finish_recovery_overlap_transition(
         &mut self,
         protocol: &ClapBlockProtocol,
-        sandbox_id: &str,
-        lifecycle: &mut ClapSandboxLifecycleHarness,
-        run: &LifecycleRunSummary,
-        failure: Option<RecoveryFailureInjection>,
-        replacement_lifecycle: &mut ClapSandboxLifecycleHarness,
-        replacement_run: &LifecycleRunSummary,
+        transition: RecoveryOverlapTransition<'_>,
     ) -> Result<(), RuntimeError> {
+        let RecoveryOverlapTransition {
+            sandbox_id,
+            lifecycle,
+            run,
+            failure,
+            replacement_lifecycle,
+            replacement_run,
+        } = transition;
         let current_transport = run.transport.as_ref().ok_or_else(|| {
             RuntimeError::new(
                 signal_runtime::RuntimeErrorKind::ResourceUnavailable,

@@ -64,7 +64,7 @@ impl SignalRuntime {
         let stride = total_block_count
             .div_ceil(OFFLINE_RENDER_PROGRESS_CHECKPOINT_TARGET_COUNT)
             .max(1);
-        rendered_block_count % stride == 0
+        rendered_block_count.is_multiple_of(stride)
     }
 
     pub(super) fn offline_render_checkpoint_count(total_block_count: usize) -> usize {

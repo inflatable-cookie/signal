@@ -55,7 +55,7 @@ pub struct GraphParameterEvent {
     pub value: f32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct GraphParameterBatch {
     /// Runtime remains authoritative for `epoch` assignment and for deciding
     /// which block the batch belongs to. Graph interprets `events` only as
@@ -63,16 +63,6 @@ pub struct GraphParameterBatch {
     pub epoch: u64,
     pub strategy: GraphParameterApplicationStrategy,
     pub events: Vec<GraphParameterEvent>,
-}
-
-impl Default for GraphParameterBatch {
-    fn default() -> Self {
-        Self {
-            epoch: 0,
-            strategy: GraphParameterApplicationStrategy::default(),
-            events: Vec::new(),
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -126,16 +116,11 @@ pub enum GraphNodeTopologyRole {
     ConsoleNode,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GraphDynamicStageStateModel {
+    #[default]
     RebuiltPerBlock,
     RetainedAcrossBlocks,
-}
-
-impl Default for GraphDynamicStageStateModel {
-    fn default() -> Self {
-        Self::RebuiltPerBlock
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -400,6 +385,20 @@ pub struct GraphPreparedBus {
     pub buffer: AudioBuffer,
     pub latency_samples: u32,
     pub tail_samples: u32,
+}
+
+#[derive(Clone, Debug)]
+pub struct GraphRealtimeExecutionRequest<'a> {
+    pub input: &'a AudioBuffer,
+    pub input_peak: f32,
+    pub prepared: Option<GraphPreparedDispatch>,
+    pub context: GraphExecutionContext,
+    pub parameter_batch: Option<&'a GraphParameterBatch>,
+    pub planning: &'a GraphPlanningSummary,
+    pub contract: &'a GraphContractSummary,
+    pub routing: &'a GraphRoutingSummary,
+    pub node_render_overrides: &'a [GraphNodeRenderOverride],
+    pub captured_bus_ids: &'a [String],
 }
 
 #[derive(Clone, Debug, PartialEq)]

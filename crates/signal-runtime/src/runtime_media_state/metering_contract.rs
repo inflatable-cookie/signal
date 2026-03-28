@@ -5,28 +5,21 @@ impl RuntimeMeteringStateModel {
     pub(crate) fn meter_contract_metadata(
         contract: &signal_graph::GraphContractSummary,
         bus_id: &str,
-    ) -> (
-        RuntimeMeterSourceRole,
-        Option<String>,
-        Option<String>,
-        Option<String>,
-        Option<String>,
-        Vec<String>,
-    ) {
+    ) -> RuntimeMeterContractMetadata {
         let matching = contract
             .node_contracts
             .iter()
             .filter(|node| node.output_bus_id == bus_id)
             .collect::<Vec<_>>();
         if matching.is_empty() {
-            return (
-                RuntimeMeterSourceRole::Utility,
-                None,
-                None,
-                None,
-                None,
-                Vec::new(),
-            );
+            return RuntimeMeterContractMetadata {
+                topology_role: RuntimeMeterSourceRole::Utility,
+                track_lane_id: None,
+                bus_group_id: None,
+                console_group_id: None,
+                send_return_id: None,
+                producer_node_ids: Vec::new(),
+            };
         }
 
         let producer_node_ids = matching
@@ -61,13 +54,13 @@ impl RuntimeMeteringStateModel {
                 .iter()
                 .filter_map(|node| node.send_return_id.as_ref()),
         );
-        (
+        RuntimeMeterContractMetadata {
             topology_role,
             track_lane_id,
             bus_group_id,
             console_group_id,
             send_return_id,
             producer_node_ids,
-        )
+        }
     }
 }

@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{
         cents_offset_from_standard, reference_hz_from_cents, HarmonicChangeKind, KeyDetector,

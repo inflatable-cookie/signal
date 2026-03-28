@@ -1,4 +1,5 @@
 // Tests for signal-plugin
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{
         AudioBlock, AutomationContinuityReport, BlockDispatch, BlockPayload, BlockProcessResult,

@@ -1,3 +1,4 @@
+#[allow(clippy::too_many_arguments)]
 fn synthetic_tempo_diagnostics(
     core_window_bpm: f32,
     boundary_bias_bpm: f32,
@@ -68,6 +69,7 @@ fn synthetic_tempo_diagnostics(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn synthetic_tempo_diagnostics_with_counts(
     core_window_bpm: f32,
     boundary_bias_bpm: f32,
@@ -154,6 +156,7 @@ fn synthetic_tempo_diagnostics_with_counts(
     diagnostics
 }
 
+#[allow(clippy::too_many_arguments)]
 fn synthetic_tempo_interpretation(
     recommendation: super::TempoRecommendation,
     trust: super::TempoTrustLevel,
@@ -216,4 +219,3 @@ fn synthetic_tempo_structure_result(
     result.tempo_ambiguity = tempo_ambiguity;
     result
 }
-

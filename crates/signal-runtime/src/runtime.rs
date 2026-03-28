@@ -71,10 +71,10 @@ use std::{
 };
 
 use crate::interfaces::{
-    BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-    DegradedReason, EffectiveRuntimeConfig, GraphContractProjection, GraphProjection,
-    HandshakeRequest, HandshakeResponse, HeartbeatCycleStage, LeaseRolloverRecord,
-    LingeringCleanupMode, LingeringCleanupQueueReceipt, LingeringCleanupTrigger, ParameterBatch,
+    BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage, DegradedReason,
+    EffectiveRuntimeConfig, GraphContractProjection, GraphProjection, HandshakeRequest,
+    HandshakeResponse, HeartbeatCycleStage, LeaseRolloverRecord, LingeringCleanupMode,
+    LingeringCleanupQueueReceipt, LingeringCleanupTrigger, ParameterBatch,
     PluginBackedNodeBindingProjection, PluginFaultKind, PluginNodeRenderBatch,
     PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
     PluginSandboxTransportStage, PluginScanRequest, ProjectionReceipt, RecoveryRestartIntent,
@@ -149,9 +149,9 @@ use crate::interfaces::{
     RuntimeTransportConcurrencySnapshot, RuntimeTransportObservationSnapshot,
     RuntimeTransportTransitionKind, RuntimeWarpClipRegistration, RuntimeWarpClipSnapshot,
     RuntimeWarpMode, RuntimeWarpPipelineSnapshot, RuntimeWarpReadiness, RuntimeWatchdogTrigger,
-    SafeModeRequest, SandboxOperationFailureStage, ScanHandle, ScheduleProjection, StopReason,
-    SubscriptionHandle, TransportAttachIntent, TransportProjection, TransportSessionProvenance,
-    TransportSessionState, WatchdogRestartRecord,
+    SafeModeRequest, ScanHandle, ScheduleProjection, StopReason, SubscriptionHandle,
+    TransportAttachIntent, TransportProjection, TransportSessionProvenance, TransportSessionState,
+    WatchdogRestartRecord,
 };
 use offline_render_delivery::{materialize_offline_render_delivery, offline_render_manifest};
 use offline_render_maintenance::{
@@ -160,7 +160,7 @@ use offline_render_maintenance::{
 use runtime_audio_file_io::write_audio_buffer_wav;
 use runtime_automation_state::{
     graph_parameter_target_from_runtime_target, graph_stage_parameter_sort_key,
-    RuntimeAutomationBatchMetrics, RuntimeAutomationState,
+    RuntimeAutomationBatchMetrics, RuntimeAutomationExecutionRecord, RuntimeAutomationState,
 };
 pub(crate) use runtime_engine_state::{
     RuntimeEngineState, RuntimePluginBackedBindingSummary, RuntimePluginRenderedNodeState,
@@ -173,7 +173,7 @@ use runtime_media_processing::{
 };
 pub(crate) use runtime_media_state::{
     RuntimeClipProcessingPipelineStateModel, RuntimeMediaPipelineStateModel,
-    RuntimeMeteringStateModel,
+    RuntimeMeterContractMetadata, RuntimeMeteringStateModel,
 };
 use runtime_offline_render_session::RuntimeOfflineRenderExecutionSession;
 use runtime_plugin_event_state::RuntimePluginEventState;
@@ -202,9 +202,8 @@ use signal_graph::{
 };
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
-    AutomationContinuityReport, BlockSequenceContinuityReport, CompletionState,
-    EventPacketContinuityReport, EventPacketSummary, ParameterAutomationSummary, PluginFeature,
-    PluginFormat,
+    AutomationContinuityReport, BlockSequenceContinuityReport, EventPacketContinuityReport,
+    EventPacketSummary, ParameterAutomationSummary, PluginFeature, PluginFormat,
 };
 use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 
@@ -305,7 +304,7 @@ impl Default for RuntimeSupervisionPolicy {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 struct RuntimeSupervisionState {
     policy: RuntimeSupervisionPolicy,
     watchdog_restart_count: u32,
@@ -347,19 +346,6 @@ impl RuntimeSupervisionState {
 
     fn clear_xrun_overload_recovery(&mut self) {
         self.xrun_overload_active = false;
-    }
-}
-
-impl Default for RuntimeSupervisionState {
-    fn default() -> Self {
-        Self {
-            policy: RuntimeSupervisionPolicy::default(),
-            watchdog_restart_count: 0,
-            xrun_overload_active: false,
-            last_watchdog_trigger: None,
-            last_sandbox_id: None,
-            last_processing_epoch: None,
-        }
     }
 }
 

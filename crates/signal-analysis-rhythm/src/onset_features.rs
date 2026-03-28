@@ -55,11 +55,11 @@ fn bandwise_spectral_flux(spectrogram: &Spectrogram, bands: usize) -> Vec<f32> {
         return vec![0.0; spectrogram.frames.len()];
     }
 
-    let band_width = ((bin_count - 1) + bands - 1) / bands;
+    let band_width = (bin_count - 1).div_ceil(bands);
     let mut envelope = vec![0.0; spectrogram.frames.len()];
 
-    for frame_index in 1..spectrogram.frames.len() {
-        let current = spectrogram.frames[frame_index].magnitudes.as_slice();
+    for (frame_index, frame) in spectrogram.frames.iter().enumerate().skip(1) {
+        let current = frame.magnitudes.as_slice();
         let previous = spectrogram.frames[frame_index - 1].magnitudes.as_slice();
 
         let mut score = 0.0;
@@ -98,8 +98,7 @@ fn complex_domain_difference(spectrogram: &Spectrogram) -> Vec<f32> {
 
     let mut envelope = vec![0.0; spectrogram.frames.len()];
 
-    for frame_index in 1..spectrogram.frames.len() {
-        let current = &spectrogram.frames[frame_index];
+    for (frame_index, current) in spectrogram.frames.iter().enumerate().skip(1) {
         let previous = &spectrogram.frames[frame_index - 1];
         let older = frame_index
             .checked_sub(2)
@@ -194,11 +193,11 @@ pub(crate) fn multifeature_onset_envelope(
 
         let len = flux.len().max(band_flux.len()).max(energy.len());
         let mut combined = vec![0.0; len];
-        for index in 0..len {
+        for (index, value) in combined.iter_mut().enumerate().take(len) {
             let flux_value = flux.get(index).copied().unwrap_or(0.0);
             let band_flux_value = band_flux.get(index).copied().unwrap_or(0.0);
             let energy_value = energy.get(index).copied().unwrap_or(0.0);
-            combined[index] = 0.48 * flux_value + 0.38 * band_flux_value + 0.14 * energy_value;
+            *value = 0.48 * flux_value + 0.38 * band_flux_value + 0.14 * energy_value;
         }
 
         sharpen_onset_envelope(&mut combined);
@@ -230,13 +229,13 @@ pub(crate) fn multifeature_onset_envelope(
         .max(energy.len());
 
     let mut combined = vec![0.0; len];
-    for index in 0..len {
+    for (index, value) in combined.iter_mut().enumerate().take(len) {
         let flux_value = flux.get(index).copied().unwrap_or(0.0);
         let band_flux_value = band_flux.get(index).copied().unwrap_or(0.0);
         let complex_value = complex.get(index).copied().unwrap_or(0.0);
         let hfc_value = hfc.get(index).copied().unwrap_or(0.0);
         let energy_value = energy.get(index).copied().unwrap_or(0.0);
-        combined[index] = 0.28 * flux_value
+        *value = 0.28 * flux_value
             + 0.22 * band_flux_value
             + 0.30 * complex_value
             + 0.12 * hfc_value

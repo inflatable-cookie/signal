@@ -192,106 +192,109 @@ fn linux_live_acceptance_validation_steps() -> &'static [IntegratedAcceptanceVal
 }
 
 pub(crate) fn render_g07_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "g07_acceptance_lane",
-        G07_ACCEPTANCE_LANE,
-        G07_ACCEPTANCE_CONTRACT_PATH,
-        G07_ACCEPTANCE_TASK,
-        G07_ACCEPTANCE_REQUIRED_TASKS,
-        G07_ACCEPTANCE_ADVISORY_TASKS,
-        g07_acceptance_families(),
-        g07_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "g07_acceptance_lane",
+        lane: G07_ACCEPTANCE_LANE,
+        contract_path: G07_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: G07_ACCEPTANCE_TASK,
+        required_tasks: G07_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: G07_ACCEPTANCE_ADVISORY_TASKS,
+        families: g07_acceptance_families(),
+        validation_steps: g07_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane now groups required routing, Linux, controller, and stretch acceptance tasks and includes one repo-owned cross-family supervisor export proof",
             "broader repeated-run confidence passes, richer local or server permutations, and exhaustive environment matrices remain advisory or deferred instead of silently entering the required lane",
             "the Loophole-facing closeout and promotion verdict remains outside this lane and still belongs to g07.020",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_g07_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        G07_ACCEPTANCE_LANE,
-        G07_ACCEPTANCE_CONTRACT_PATH,
-        G07_ACCEPTANCE_TASK,
-        G07_ACCEPTANCE_REQUIRED_TASKS,
-        G07_ACCEPTANCE_ADVISORY_TASKS,
-        g07_acceptance_families(),
-        g07_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "g07_acceptance_lane",
+        lane: G07_ACCEPTANCE_LANE,
+        contract_path: G07_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: G07_ACCEPTANCE_TASK,
+        required_tasks: G07_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: G07_ACCEPTANCE_ADVISORY_TASKS,
+        families: g07_acceptance_families(),
+        validation_steps: g07_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane now groups required routing, Linux, controller, and stretch acceptance tasks and includes one repo-owned cross-family supervisor export proof",
             "broader repeated-run confidence passes, richer local or server permutations, and exhaustive environment matrices remain advisory or deferred instead of silently entering the required lane",
             "the Loophole-facing closeout and promotion verdict remains outside this lane and still belongs to g07.020",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_device_workflow_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "device_workflow_acceptance_lane",
-        DEVICE_WORKFLOW_ACCEPTANCE_LANE,
-        DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
-        DEVICE_WORKFLOW_ACCEPTANCE_TASK,
-        DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
-        DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
-        device_workflow_acceptance_families(),
-        device_workflow_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "device_workflow_acceptance_lane",
+        lane: DEVICE_WORKFLOW_ACCEPTANCE_LANE,
+        contract_path: DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: DEVICE_WORKFLOW_ACCEPTANCE_TASK,
+        required_tasks: DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
+        families: device_workflow_acceptance_families(),
+        validation_steps: device_workflow_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required external MIDI, controller-expression, control-surface, and advanced-hardware acceptance tasks without claiming exhaustive backend certification",
             "backend-native patchbay, reservation, session-manager, and richer repeated-run device matrices remain advisory or deferred instead of silently entering the required lane",
             "broader Linux failure-injection, immersive, preview, and generation-level integrated acceptance still belong to later g08 milestones",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_device_workflow_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        DEVICE_WORKFLOW_ACCEPTANCE_LANE,
-        DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
-        DEVICE_WORKFLOW_ACCEPTANCE_TASK,
-        DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
-        DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
-        device_workflow_acceptance_families(),
-        device_workflow_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "device_workflow_acceptance_lane",
+        lane: DEVICE_WORKFLOW_ACCEPTANCE_LANE,
+        contract_path: DEVICE_WORKFLOW_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: DEVICE_WORKFLOW_ACCEPTANCE_TASK,
+        required_tasks: DEVICE_WORKFLOW_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: DEVICE_WORKFLOW_ACCEPTANCE_ADVISORY_TASKS,
+        families: device_workflow_acceptance_families(),
+        validation_steps: device_workflow_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required external MIDI, controller-expression, control-surface, and advanced-hardware acceptance tasks without claiming exhaustive backend certification",
             "backend-native patchbay, reservation, session-manager, and richer repeated-run device matrices remain advisory or deferred instead of silently entering the required lane",
             "broader Linux failure-injection, immersive, preview, and generation-level integrated acceptance still belong to later g08 milestones",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_linux_live_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "linux_live_acceptance_lane",
-        LINUX_LIVE_ACCEPTANCE_LANE,
-        LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH,
-        LINUX_LIVE_ACCEPTANCE_TASK,
-        LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS,
-        LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS,
-        linux_live_acceptance_families(),
-        linux_live_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "linux_live_acceptance_lane",
+        lane: LINUX_LIVE_ACCEPTANCE_LANE,
+        contract_path: LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: LINUX_LIVE_ACCEPTANCE_TASK,
+        required_tasks: LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS,
+        families: linux_live_acceptance_families(),
+        validation_steps: linux_live_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required Linux live ownership, JACK coordination, PipeWire/ALSA parity, and clock-topology acceptance tasks without claiming exhaustive distro or daemon certification",
             "backend-native daemon policy, session-manager glue, and richer repeated-run Linux recovery matrices remain advisory or deferred instead of silently entering the required lane",
             "broader immersive, preview, device-workflow, and generation-level integrated acceptance still belong to later g08 milestones",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_linux_live_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        LINUX_LIVE_ACCEPTANCE_LANE,
-        LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH,
-        LINUX_LIVE_ACCEPTANCE_TASK,
-        LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS,
-        LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS,
-        linux_live_acceptance_families(),
-        linux_live_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "linux_live_acceptance_lane",
+        lane: LINUX_LIVE_ACCEPTANCE_LANE,
+        contract_path: LINUX_LIVE_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: LINUX_LIVE_ACCEPTANCE_TASK,
+        required_tasks: LINUX_LIVE_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: LINUX_LIVE_ACCEPTANCE_ADVISORY_TASKS,
+        families: linux_live_acceptance_families(),
+        validation_steps: linux_live_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane groups required Linux live ownership, JACK coordination, PipeWire/ALSA parity, and clock-topology acceptance tasks without claiming exhaustive distro or daemon certification",
             "backend-native daemon policy, session-manager glue, and richer repeated-run Linux recovery matrices remain advisory or deferred instead of silently entering the required lane",
             "broader immersive, preview, device-workflow, and generation-level integrated acceptance still belong to later g08 milestones",
         ],
-    )
+    })
 }

@@ -78,36 +78,37 @@ fn integrated_acceptance_validation_steps() -> &'static [IntegratedAcceptanceVal
 }
 
 pub(crate) fn render_integrated_acceptance_lane_text() -> String {
-    render_acceptance_lane_text(
-        "integrated_acceptance_lane",
-        INTEGRATED_ACCEPTANCE_LANE,
-        INTEGRATED_ACCEPTANCE_CONTRACT_PATH,
-        INTEGRATED_ACCEPTANCE_TASK,
-        INTEGRATED_ACCEPTANCE_REQUIRED_TASKS,
-        INTEGRATED_ACCEPTANCE_ADVISORY_TASKS,
-        integrated_acceptance_families(),
-        integrated_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_text(&AcceptanceLaneRender {
+        lane_label: "integrated_acceptance_lane",
+        lane: INTEGRATED_ACCEPTANCE_LANE,
+        contract_path: INTEGRATED_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: INTEGRATED_ACCEPTANCE_TASK,
+        required_tasks: INTEGRATED_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: INTEGRATED_ACCEPTANCE_ADVISORY_TASKS,
+        families: integrated_acceptance_families(),
+        validation_steps: integrated_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane now groups one required cross-family acceptance path, but long-session soak thresholds and promotion policy still belong to g06.020",
             "unstable broader server-host recovery-overlap scenarios remain explicitly deferred until the integrated lane is real and bounded",
             "product-local QA dashboards, browser workflows, and exhaustive environment certification remain outside the shared Signal acceptance lane",
         ],
-    )
+    })
 }
 
 pub(crate) fn render_integrated_acceptance_lane_json() -> String {
-    render_acceptance_lane_json(
-        INTEGRATED_ACCEPTANCE_LANE,
-        INTEGRATED_ACCEPTANCE_CONTRACT_PATH,
-        INTEGRATED_ACCEPTANCE_TASK,
-        INTEGRATED_ACCEPTANCE_REQUIRED_TASKS,
-        INTEGRATED_ACCEPTANCE_ADVISORY_TASKS,
-        integrated_acceptance_families(),
-        integrated_acceptance_validation_steps(),
-        &[
+    render_acceptance_lane_json(&AcceptanceLaneRender {
+        lane_label: "integrated_acceptance_lane",
+        lane: INTEGRATED_ACCEPTANCE_LANE,
+        contract_path: INTEGRATED_ACCEPTANCE_CONTRACT_PATH,
+        acceptance_task: INTEGRATED_ACCEPTANCE_TASK,
+        required_tasks: INTEGRATED_ACCEPTANCE_REQUIRED_TASKS,
+        advisory_tasks: INTEGRATED_ACCEPTANCE_ADVISORY_TASKS,
+        families: integrated_acceptance_families(),
+        validation_steps: integrated_acceptance_validation_steps(),
+        deferred_scope: &[
             "the bounded lane now groups one required cross-family acceptance path, but long-session soak thresholds and promotion policy still belong to g06.020",
             "unstable broader server-host recovery-overlap scenarios remain explicitly deferred until the integrated lane is real and bounded",
             "product-local QA dashboards, browser workflows, and exhaustive environment certification remain outside the shared Signal acceptance lane",
         ],
-    )
+    })
 }

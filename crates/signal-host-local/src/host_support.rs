@@ -68,6 +68,7 @@ mod summary_types;
 mod transfer;
 
 pub(crate) use audio_pump::LocalAudioPumpState;
+pub(crate) use boot_recovery_helpers::{RepeatedWatchdogRecoveryPlan, TimeoutRecoveryRetryPlan};
 pub(crate) use broker::{record_broker_failure_and_convert, runtime_error_from_io};
 pub(crate) use clocking::{
     host_clock_discontinuity_state, host_clock_domain, host_clock_drift_state,
@@ -84,17 +85,20 @@ pub(crate) use faults::{
     record_runtime_fault, runtime_error_from_failure,
 };
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
+pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;
 pub(crate) use lifecycle_run::{LifecycleRunSummary, RecoveryHistory};
 pub(crate) use metadata::{
     runtime_au_discovered_type_record, runtime_plugin_discovered_type_record,
     runtime_plugin_format_platform_coverage, runtime_vst3_discovered_type_record,
 };
+pub(crate) use recovery_overlap_finish::RecoveryOverlapTransition;
+pub(crate) use recovery_runtime::LingeringSessionRecovery;
 pub(crate) use sandbox_sessions::{ensure_au_sandbox_session, ensure_vst3_sandbox_session};
 pub use summary_types::{
     LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy, LocalExecutionSummary,
     LocalFaultSummary, LocalHardwareSummary, LocalPayloadSummary, LocalPluginDispatchSummary,
     LocalRuntimeHostSummary, LocalTransportSummary,
 };
-pub(crate) use transfer::{
-    transfer_runtime_output_to_host_buffer, LocalAudioTransferOutcome, LocalAudioTransferResult,
-};
+pub(crate) use transfer::transfer_runtime_output_to_host_buffer;
+#[cfg(test)]
+pub(crate) use transfer::LocalAudioTransferOutcome;

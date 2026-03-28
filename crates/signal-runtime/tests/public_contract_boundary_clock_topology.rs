@@ -1,7 +1,9 @@
 #[path = "support/public_contract_boundary_host_io_clock.rs"]
 mod public_contract_boundary_host_io_clock_support;
 
-use public_contract_boundary_host_io_clock_support::sample_public_clock_topology_host_io;
+use public_contract_boundary_host_io_clock_support::{
+    sample_public_clock_topology_host_io, PublicClockTopologyHostIoConfig,
+};
 use signal_runtime::{
     RuntimeConfig, RuntimeEventRecorder, RuntimeHostClockDiscontinuityState,
     RuntimeHostClockDomain, RuntimeHostClockDriftState, RuntimeHostClockFallbackState,
@@ -26,16 +28,17 @@ fn public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_rece
     let recorder = RuntimeEventRecorder::default();
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let cross_clock_duplex = sample_public_clock_topology_host_io(
-        RuntimeHostClockDomain::CrossClock,
-        RuntimeHostClockFallbackState::RuntimeResampled,
-        RuntimeHostClockTransitionState::EnteredCrossClockFallback,
-        RuntimeHostClockDriftState::CrossClockManaged,
-        RuntimeHostClockDiscontinuityState::Reconfigured,
-        RuntimeHostDuplexMismatchState::CrossClockDiverged,
-        RuntimeHostEndpointTopology::Duplex,
-        false,
-    );
+    let cross_clock_duplex =
+        sample_public_clock_topology_host_io(PublicClockTopologyHostIoConfig {
+            clock_domain: RuntimeHostClockDomain::CrossClock,
+            fallback_state: RuntimeHostClockFallbackState::RuntimeResampled,
+            transition_state: RuntimeHostClockTransitionState::EnteredCrossClockFallback,
+            drift_state: RuntimeHostClockDriftState::CrossClockManaged,
+            discontinuity_state: RuntimeHostClockDiscontinuityState::Reconfigured,
+            duplex_mismatch_state: RuntimeHostDuplexMismatchState::CrossClockDiverged,
+            endpoint_topology: RuntimeHostEndpointTopology::Duplex,
+            partial_availability: false,
+        });
     let host_observation = RuntimeHostObservationReport::new(
         observation
             .clone()
@@ -61,16 +64,16 @@ fn public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_rece
     );
     assert!(!host_observation.host_io.clocking.partial_availability);
 
-    let partial_duplex = sample_public_clock_topology_host_io(
-        RuntimeHostClockDomain::SameClock,
-        RuntimeHostClockFallbackState::Direct,
-        RuntimeHostClockTransitionState::Stable,
-        RuntimeHostClockDriftState::Stable,
-        RuntimeHostClockDiscontinuityState::Continuous,
-        RuntimeHostDuplexMismatchState::PartialAvailability,
-        RuntimeHostEndpointTopology::Duplex,
-        true,
-    );
+    let partial_duplex = sample_public_clock_topology_host_io(PublicClockTopologyHostIoConfig {
+        clock_domain: RuntimeHostClockDomain::SameClock,
+        fallback_state: RuntimeHostClockFallbackState::Direct,
+        transition_state: RuntimeHostClockTransitionState::Stable,
+        drift_state: RuntimeHostClockDriftState::Stable,
+        discontinuity_state: RuntimeHostClockDiscontinuityState::Continuous,
+        duplex_mismatch_state: RuntimeHostDuplexMismatchState::PartialAvailability,
+        endpoint_topology: RuntimeHostEndpointTopology::Duplex,
+        partial_availability: true,
+    });
     let mut supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     supervisor.observation = supervisor
         .observation

@@ -35,7 +35,9 @@ fn public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts() {
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     let performance = observation.performance_snapshot();
-    let trace = RuntimeObservationReport::build_performance_trace_receipt(&[observation.clone()]);
+    let trace = RuntimeObservationReport::build_performance_trace_receipt(std::slice::from_ref(
+        &observation,
+    ));
 
     assert!(performance.hot_latency_node_id.is_some());
     assert!(performance.hot_latency_group_node_count > 0);

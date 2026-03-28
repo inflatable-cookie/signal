@@ -75,12 +75,14 @@ impl LocalRuntimeHost {
         {
             return self.recover_from_lingering_session(
                 protocol,
-                sandbox_id,
-                lifecycle,
-                run,
-                prior_history,
-                next_epoch,
-                failure,
+                super::LingeringSessionRecovery {
+                    sandbox_id,
+                    lifecycle,
+                    run,
+                    prior_history,
+                    next_epoch,
+                    failure,
+                },
             );
         }
         self.cleanup_orphan_lingering_sessions_for_sandbox(
@@ -114,12 +116,14 @@ impl LocalRuntimeHost {
         };
         self.finish_recovery_overlap_transition(
             protocol,
-            sandbox_id,
-            lifecycle,
-            run,
-            failure,
-            &mut replacement_lifecycle,
-            &replacement_run,
+            super::RecoveryOverlapTransition {
+                sandbox_id,
+                lifecycle,
+                run,
+                failure,
+                replacement_lifecycle: &mut replacement_lifecycle,
+                replacement_run: &replacement_run,
+            },
         )?;
         self.reconcile_late_lingering_sessions_after_start(sandbox_id, &replacement_run);
         *lifecycle = replacement_lifecycle;

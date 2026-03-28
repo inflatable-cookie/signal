@@ -76,10 +76,8 @@ impl LocalRuntimeHost {
                 shared_memory_bytes: header.layout.total_bytes(),
             },
             topology: observation.execution_topology_summary.clone(),
-            plugin_dispatch: run
-                .last_plugin_render_context
-                .clone()
-                .map(|render_context| LocalPluginDispatchSummary {
+            plugin_dispatch: run.last_plugin_render_context.map(|render_context| {
+                LocalPluginDispatchSummary {
                     processing_epoch: run.processing_epoch,
                     block_sequence: run.last_block_sequence,
                     render_context,
@@ -88,7 +86,8 @@ impl LocalRuntimeHost {
                     last_render_bypassed: run.last_plugin_render_bypassed,
                     last_render_latency_samples: run.last_plugin_render_latency_samples,
                     last_render_tail_samples: run.last_plugin_render_tail_samples,
-                }),
+                }
+            }),
             last_payload: LocalPayloadSummary {
                 event_count: run.last_output_event_count,
                 parameter_event_count: run.last_parameter_event_count,

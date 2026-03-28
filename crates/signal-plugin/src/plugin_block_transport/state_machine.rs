@@ -55,3 +55,9 @@ impl SandboxStateMachine {
         };
     }
 }
+
+impl Default for SandboxStateMachine {
+    fn default() -> Self {
+        Self::new()
+    }
+}

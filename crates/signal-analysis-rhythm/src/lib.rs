@@ -26,15 +26,15 @@ mod onset_features;
 mod rhythm_policy;
 mod tempo_interpretation_runtime;
 mod tempo_policy;
+mod tempo_state;
 mod tempo_state_continuity_basics;
 mod tempo_state_continuity_refresh;
 mod tempo_state_continuity_transition;
-mod tempo_state;
 pub use tempo_state::tempo_state_recommendation_with_scope;
 
 use beat_tempo_core::{
-    beat_frames_to_seconds, beat_frames_to_seconds_refined, combined_confidence, estimate_tempo,
-    refine_beat_frames, refine_bpm_from_beats, track_beats,
+    beat_frames_to_seconds_refined, combined_confidence, estimate_tempo, refine_beat_frames,
+    refine_bpm_from_beats, track_beats,
 };
 pub use beat_utils::normalize;
 #[allow(unused_imports)]
@@ -43,13 +43,8 @@ use meter_state::{
     infer_meter, meter_state_recommendation, MeterDecision, MeterSuppressionProfile,
 };
 use onset_features::{band_profile_change, low_band_flux, multifeature_onset_envelope};
+use rhythm_policy::MeterHypothesis;
 pub use rhythm_policy::*;
-use rhythm_policy::{
-    meter_confidence_breakdown, meter_hypotheses, meter_hypothesis_confidence,
-    meter_recommendation, meter_recovery_context, meter_support_profile, meter_trust_level,
-    rhythm_structure_ambiguity_summary, select_segment_meter_candidate,
-    trailing_meter_window_candidate, MeterHypothesis,
-};
 use signal_analysis::{
     prepare_audio_analysis, prepare_mono_analysis, AnalysisInputConfig, AnalysisMode,
     AnalysisStage, Confidence,
@@ -379,10 +374,10 @@ fn combine_meter_cues(low_band_cue: &[f32], profile_change_cue: &[f32]) -> Vec<f
     let len = low_band_cue.len().max(profile_change_cue.len());
     let mut combined = vec![0.0; len];
 
-    for index in 0..len {
+    for (index, value) in combined.iter_mut().enumerate().take(len) {
         let low = low_band_cue.get(index).copied().unwrap_or(0.0);
         let profile = profile_change_cue.get(index).copied().unwrap_or(0.0);
-        combined[index] = 0.55 * low + 0.45 * profile;
+        *value = 0.55 * low + 0.45 * profile;
     }
 
     normalize(&mut combined);

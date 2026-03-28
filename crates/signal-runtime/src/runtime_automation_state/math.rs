@@ -110,9 +110,7 @@ pub(super) fn automation_sample_offset_for_block(
         return usize::try_from(point_time_samples.saturating_sub(block_start_samples)).ok();
     }
 
-    let Some(loop_state) = loop_state else {
-        return None;
-    };
+    let loop_state = loop_state?;
     if loop_state.end_samples <= loop_state.start_samples
         || block_end_samples <= loop_state.end_samples
     {
