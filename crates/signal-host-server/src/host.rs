@@ -1,29 +1,26 @@
 use signal_hardware::BackendPolicyTier;
 use signal_ipc::SharedMemoryBroker;
 use signal_plugin::PluginFormat;
-use signal_plugin_au::{AuHostAdapter, AuHostPlatform};
-use signal_plugin_clap::ClapPluginHostAdapter;
-use signal_plugin_lv2::{Lv2HostAdapter, Lv2HostPlatform};
-use signal_plugin_vst3::{Vst3HostAdapter, Vst3HostPlatform};
+use signal_plugin_au::AuHostAdapter;
+use signal_plugin_lv2::Lv2HostAdapter;
+use signal_plugin_vst3::Vst3HostAdapter;
 use signal_runtime::{
-    BackendPolicyOverride, PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
-    RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
-    RuntimeMediaAssetRegistration, RuntimeObservationApi,
+    BackendPolicyOverride, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest,
+    RecoveryRestartIntent, RuntimeClipProcessingRegistration, RuntimeError,
+    RuntimeEventRecorder, RuntimeMediaAssetRegistration, RuntimeObservationApi,
     RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
     RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
     RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
-    RuntimeOfflineRenderResult, RuntimePluginDiscoveredTypeRecord,
-    RuntimeRecordingCaptureCommitReceipt, RuntimeRecordingCaptureStartRequest,
-    RuntimeSupervisorApi, RuntimeWarpClipRegistration, SignalRuntime, StopReason,
+    RuntimeOfflineRenderResult, RuntimeRecordingCaptureCommitReceipt,
+    RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeWarpClipRegistration,
+    SignalRuntime, StopReason,
 };
 
 #[path = "host_support.rs"]
 mod host_support;
 use host_support::{
-    runtime_au_discovered_type_record, runtime_lv2_discovered_type_record,
-    runtime_plugin_discovered_type_record, runtime_plugin_format_platform_coverage,
-    runtime_vst3_discovered_type_record,
+    discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_lv2_sandbox_session,
+    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage,
 };
 pub use host_support::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,
@@ -110,268 +107,6 @@ impl ServerRuntimeHost {
         }
     }
 
-    fn discovered_plugins_for_scan(
-        &self,
-        request: &PluginScanRequest,
-    ) -> Vec<RuntimePluginDiscoveredTypeRecord> {
-        let mut discovered = Vec::new();
-        let include_clap =
-            request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap);
-        if include_clap {
-            let clap = ClapPluginHostAdapter::default();
-            discovered.extend(
-                ["plugin:clap:server", "plugin:clap:sandbox"]
-                    .into_iter()
-                    .filter_map(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
-                    .map(runtime_plugin_discovered_type_record),
-            );
-        }
-
-        let include_vst3 =
-            request.formats.is_empty() || request.formats.contains(&PluginFormat::Vst3);
-        if include_vst3 {
-            discovered.extend(
-                self.vst3
-                    .discover_plugins_for_roots(Vst3HostPlatform::Linux, &request.roots)
-                    .into_iter()
-                    .map(runtime_vst3_discovered_type_record),
-            );
-        }
-
-        let include_lv2 =
-            request.formats.is_empty() || request.formats.contains(&PluginFormat::Lv2);
-        if include_lv2 {
-            discovered.extend(
-                self.lv2
-                    .discover_plugins_for_roots(Lv2HostPlatform::Linux, &request.roots)
-                    .into_iter()
-                    .map(runtime_lv2_discovered_type_record),
-            );
-        }
-
-        let include_au = request.formats.is_empty() || request.formats.contains(&PluginFormat::Au);
-        if include_au {
-            discovered.extend(
-                self.au
-                    .discover_plugins_for_roots(AuHostPlatform::MacOs, &request.roots)
-                    .into_iter()
-                    .map(runtime_au_discovered_type_record),
-            );
-        }
-
-        discovered
-    }
-
-    fn ensure_au_sandbox_session(&mut self, request: &PluginSandboxSpec) {
-        let Some(plugin_type_id) = request.plugin_type_id.as_deref() else {
-            return;
-        };
-        let Some(discovered) = self.au.discover_plugin_type(plugin_type_id) else {
-            return;
-        };
-        let instance = self.au.instantiate_plugin(
-            &discovered,
-            &format!("instance:server:au:{}", request.sandbox_id),
-        );
-        let session = self.au.prepare_session(
-            &instance,
-            self.runtime.config().sample_rate.0,
-            self.runtime.config().graph.block_size as u32,
-        );
-
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::SandboxHandshaken,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::PluginTypeLoaded,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::InstanceCreated,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::InstancePrepared,
-            None,
-        );
-        self.runtime
-            .record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
-                sandbox_id: request.sandbox_id.clone(),
-                plugin_type_id: instance.plugin_type_id.0.clone(),
-                instance_id: instance.instance_id.0.clone(),
-                lifecycle_state: "Prepared".into(),
-                readiness_state: "Ready".into(),
-                degraded_reasons: Vec::new(),
-                active: true,
-                processing_epoch: None,
-                processing_sample_rate_hz: Some(session.sample_rate_hz),
-                processing_max_block_frames: Some(session.max_block_frames),
-                audio_inputs: Some(session.io_layout.audio_inputs),
-                audio_outputs: Some(session.io_layout.audio_outputs),
-                midi_inputs: Some(session.io_layout.midi_inputs),
-                midi_outputs: Some(session.io_layout.midi_outputs),
-                last_fault: None,
-            });
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::TransportAttached,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_transport(
-            request.sandbox_id.as_str(),
-            format!("lease:{}", request.sandbox_id),
-            format!("region:{}", request.sandbox_id),
-            PluginSandboxTransportStage::Attached,
-            None,
-            Some(session.summary),
-        );
-    }
-
-    fn ensure_lv2_sandbox_session(&mut self, request: &PluginSandboxSpec) {
-        let Some(plugin_type_id) = request.plugin_type_id.as_deref() else {
-            return;
-        };
-        let Some(discovered) = self.lv2.discover_plugin_type(plugin_type_id) else {
-            return;
-        };
-        let instance = self.lv2.instantiate_plugin(
-            &discovered,
-            &format!("instance:server:lv2:{}", request.sandbox_id),
-        );
-        let session = self.lv2.prepare_session(
-            &instance,
-            self.runtime.config().sample_rate.0,
-            self.runtime.config().graph.block_size as u32,
-        );
-
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::SandboxHandshaken,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::PluginTypeLoaded,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::InstanceCreated,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::InstancePrepared,
-            None,
-        );
-        self.runtime
-            .record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
-                sandbox_id: request.sandbox_id.clone(),
-                plugin_type_id: instance.plugin_type_id.0.clone(),
-                instance_id: instance.instance_id.0.clone(),
-                lifecycle_state: "Prepared".into(),
-                readiness_state: "Ready".into(),
-                degraded_reasons: Vec::new(),
-                active: true,
-                processing_epoch: None,
-                processing_sample_rate_hz: Some(session.sample_rate_hz),
-                processing_max_block_frames: Some(session.max_block_frames),
-                audio_inputs: Some(session.io_layout.audio_inputs),
-                audio_outputs: Some(session.io_layout.audio_outputs),
-                midi_inputs: Some(session.io_layout.midi_inputs),
-                midi_outputs: Some(session.io_layout.midi_outputs),
-                last_fault: None,
-            });
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::TransportAttached,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_transport(
-            request.sandbox_id.as_str(),
-            format!("lease:{}", request.sandbox_id),
-            format!("region:{}", request.sandbox_id),
-            PluginSandboxTransportStage::Attached,
-            None,
-            Some(session.summary),
-        );
-    }
-
-    fn ensure_vst3_sandbox_session(&mut self, request: &PluginSandboxSpec) {
-        let Some(plugin_type_id) = request.plugin_type_id.as_deref() else {
-            return;
-        };
-        let Some(discovered) = self.vst3.discover_plugin_type(plugin_type_id) else {
-            return;
-        };
-        let instance = self.vst3.instantiate_plugin(
-            &discovered,
-            &format!("instance:server:vst3:{}", request.sandbox_id),
-        );
-        let session = self.vst3.prepare_session(
-            &instance,
-            self.runtime.config().sample_rate.0,
-            self.runtime.config().graph.block_size as u32,
-        );
-
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::SandboxHandshaken,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::PluginTypeLoaded,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::InstanceCreated,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::InstancePrepared,
-            None,
-        );
-        self.runtime
-            .record_plugin_sandbox_instance_state(PluginSandboxInstanceStateRecord {
-                sandbox_id: request.sandbox_id.clone(),
-                plugin_type_id: instance.plugin_type_id.0.clone(),
-                instance_id: instance.instance_id.0.clone(),
-                lifecycle_state: "Prepared".into(),
-                readiness_state: "Ready".into(),
-                degraded_reasons: Vec::new(),
-                active: true,
-                processing_epoch: None,
-                processing_sample_rate_hz: Some(session.sample_rate_hz),
-                processing_max_block_frames: Some(session.max_block_frames),
-                audio_inputs: Some(session.io_layout.audio_inputs),
-                audio_outputs: Some(session.io_layout.audio_outputs),
-                midi_inputs: Some(session.io_layout.midi_inputs),
-                midi_outputs: Some(session.io_layout.midi_outputs),
-                last_fault: None,
-            });
-        self.runtime.record_plugin_sandbox_lifecycle(
-            request.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::TransportAttached,
-            None,
-        );
-        self.runtime.record_plugin_sandbox_transport(
-            request.sandbox_id.as_str(),
-            format!("lease:{}", request.sandbox_id),
-            format!("region:{}", request.sandbox_id),
-            PluginSandboxTransportStage::Attached,
-            None,
-            Some(session.summary),
-        );
-    }
-
     pub fn runtime(&self) -> &SignalRuntime {
         &self.runtime
     }
@@ -383,7 +118,8 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         request: PluginScanRequest,
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
         let handle = self.runtime.record_plugin_scan_request(&request);
-        let discovered_types = self.discovered_plugins_for_scan(&request);
+        let discovered_types =
+            discovered_plugins_for_scan(&self.au, &self.lv2, &self.vst3, &request);
         self.runtime
             .record_plugin_scan_results(handle, discovered_types);
         self.supervisor.scans_started = handle.0;
@@ -403,13 +139,13 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             None,
         );
         if request.plugin_format == PluginFormat::Au {
-            self.ensure_au_sandbox_session(&request);
+            ensure_au_sandbox_session(&mut self.runtime, &self.au, &request);
         }
         if request.plugin_format == PluginFormat::Lv2 {
-            self.ensure_lv2_sandbox_session(&request);
+            ensure_lv2_sandbox_session(&mut self.runtime, &self.lv2, &request);
         }
         if request.plugin_format == PluginFormat::Vst3 {
-            self.ensure_vst3_sandbox_session(&request);
+            ensure_vst3_sandbox_session(&mut self.runtime, &self.vst3, &request);
         }
         self.supervisor.last_sandbox_id = Some(request.sandbox_id);
         Ok(signal_runtime::SandboxHandle(self.supervisor.sandboxes))

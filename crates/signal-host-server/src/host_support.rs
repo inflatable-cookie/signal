@@ -10,6 +10,8 @@ mod boot_summary;
 mod demo;
 #[path = "host_support/demo_graph.rs"]
 mod demo_graph;
+#[path = "host_support/discovery.rs"]
+mod discovery;
 #[path = "host_support/faults.rs"]
 mod faults;
 #[path = "host_support/instance_state.rs"]
@@ -44,11 +46,14 @@ mod recovery_teardown;
 mod runtime_block;
 #[path = "host_support/runtime_cycle.rs"]
 mod runtime_cycle;
+#[path = "host_support/sandbox_sessions.rs"]
+mod sandbox_sessions;
 #[path = "host_support/summary_types.rs"]
 mod summary_types;
 
 pub(crate) use boot_recovery_helpers::{RepeatedWatchdogRecoveryPlan, TimeoutRecoveryRetryPlan};
 pub(crate) use demo::{server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly};
+pub(crate) use discovery::discovered_plugins_for_scan;
 pub(crate) use faults::{
     build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
     record_broker_failure_and_convert, record_runtime_fault, runtime_error_from_failure,
@@ -58,13 +63,14 @@ pub(crate) use instance_state::plugin_instance_state_record_from_response;
 pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;
 pub(crate) use lifecycle_run::{LifecycleRunSummary, RecoveryHistory};
 pub(crate) use metadata::{
-    runtime_au_discovered_type_record, runtime_host_clock_source, runtime_host_lifecycle_ownership,
-    runtime_host_restart_policy, runtime_lv2_discovered_type_record,
-    runtime_plugin_discovered_type_record, runtime_plugin_format_platform_coverage,
-    runtime_vst3_discovered_type_record,
+    runtime_host_clock_source, runtime_host_lifecycle_ownership, runtime_host_restart_policy,
+    runtime_plugin_format_platform_coverage,
 };
 pub(crate) use recovery_overlap_finish::RecoveryOverlapTransition;
 pub(crate) use recovery_runtime::LingeringSessionRecovery;
+pub(crate) use sandbox_sessions::{
+    ensure_au_sandbox_session, ensure_lv2_sandbox_session, ensure_vst3_sandbox_session,
+};
 pub use summary_types::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,
     ServerTransportSummary,

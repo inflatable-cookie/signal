@@ -1,4 +1,5 @@
 use crate::*;
+use signal_ipc::{PluginIoLayoutPayload, SharedMemoryLayoutPayload, SharedMemoryRegionPayload};
 use signal_plugin::{
     EventPacket, MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
     ParameterGestureEvent, ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent,

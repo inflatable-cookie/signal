@@ -20,6 +20,8 @@ mod demo_graph;
 mod discovery;
 #[path = "host_support/faults.rs"]
 mod faults;
+#[path = "host_support/host_types.rs"]
+mod host_types;
 #[path = "host_support/instance_state.rs"]
 mod instance_state;
 #[path = "host_support/lifecycle_admission.rs"]
@@ -83,6 +85,13 @@ pub(crate) use discovery::discovered_plugins_for_scan;
 pub(crate) use faults::{
     build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
     record_runtime_fault, runtime_error_from_failure,
+};
+pub(crate) use host_types::{
+    FaultInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
+    LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID,
+    LOCAL_DEMO_PLUGIN_TAIL_SAMPLES, LocalClockTransitionMemory, LocalSupervisorState,
+    RecoveryFailureInjection, SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS,
+    WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
 pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;

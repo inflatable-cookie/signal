@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use signal_hardware::{BackendPolicyTier, HardwareStreamConfig};
+use signal_hardware::HardwareStreamConfig;
 use signal_hardware_coreaudio::CoreAudioBackend;
 use signal_ipc::SharedMemoryBroker;
 use signal_plugin::PluginFormat;
@@ -10,16 +10,15 @@ use signal_plugin_vst3::Vst3HostAdapter;
 use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, FrameCount};
 use signal_runtime::{
     BackendPolicyOverride, HandshakeRequest, PluginSandboxLifecycleStage, PluginSandboxSpec,
-    PluginScanRequest, RecoveryRestartIntent, RuntimeClipProcessingRegistration,
-    RuntimeConfigRequest, RuntimeError, RuntimeEventRecorder, RuntimeHostClockDomain,
-    RuntimeHostClockFallbackState, RuntimeHostObservationReport, RuntimeHostSupervisorReport,
+    PluginScanRequest, RuntimeClipProcessingRegistration, RuntimeConfigRequest, RuntimeError,
+    RuntimeEventRecorder, RuntimeHostObservationReport, RuntimeHostSupervisorReport,
     RuntimeLifecycleApi, RuntimeMediaAssetRegistration, RuntimeObservationApi,
     RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
     RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
     RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
     RuntimeOfflineRenderResult, RuntimeProjectionApi, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeWarpClipRegistration,
-    SignalRuntime, StopReason,
+    SignalRuntime,
 };
 
 #[path = "host_support.rs"]
@@ -27,81 +26,19 @@ mod host_support;
 use host_support::{
     discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_vst3_sandbox_session,
     local_demo_runtime_assembly, runtime_plugin_format_platform_coverage, LifecycleRunSummary,
-    LocalAudioPumpState,
+    LocalAudioPumpState, LocalClockTransitionMemory, LocalSupervisorState, STEADY_STATE_BLOCKS,
 };
 pub use host_support::{
     LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy, LocalExecutionSummary,
     LocalFaultSummary, LocalHardwareSummary, LocalPayloadSummary, LocalPluginDispatchSummary,
     LocalRuntimeHostSummary, LocalTransportSummary,
 };
-
-const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
-const STEADY_STATE_BLOCKS: u64 = 8;
-const SOAK_RESTART_EPISODES: u32 = 3;
-const INTER_EPISODE_CONTINUITY_BLOCKS: u64 = 2;
-const LOCAL_DEMO_GRAPH_ID: &str = "signal.host.local.demo";
-const LOCAL_DEMO_PLUGIN_NODE_ID: &str = "plugin-insert";
-const LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES: u32 = 24;
-const LOCAL_DEMO_PLUGIN_TAIL_SAMPLES: u32 = 48;
-#[derive(Clone, Debug, Default)]
-struct LocalSupervisorState {
-    scans_started: u64,
-    sandboxes: u64,
-    restarts: u64,
-    teardowns: u64,
-    backend_policy: Option<BackendPolicyTier>,
-    last_scan_roots: Vec<String>,
-    last_sandbox_id: Option<String>,
-    last_recovery_intent: Option<RecoveryRestartIntent>,
-    last_stop_reason: Option<StopReason>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct LocalClockTransitionMemory {
-    configured_stream: bool,
-    domain: RuntimeHostClockDomain,
-    fallback_state: RuntimeHostClockFallbackState,
-    initialized: bool,
-}
-
-impl Default for LocalClockTransitionMemory {
-    fn default() -> Self {
-        Self {
-            configured_stream: false,
-            domain: RuntimeHostClockDomain::SameClock,
-            fallback_state: RuntimeHostClockFallbackState::Unconfigured,
-            initialized: false,
-        }
-    }
-}
-
-#[cfg_attr(not(test), allow(dead_code))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum FaultInjection {
-    Timeout,
-    Crash,
-    HeartbeatMiss,
-    DeviceLoss,
-    DeviceLossRestartFailure,
-    RecoveryDeferredTeardownFailure,
-    RecoveryDeferredTeardownThenCleanup,
-    RecoveryDeferredTeardownCleanupRetry,
-    RecoveryTeardownFailure,
-    RecoveryRestartFailure,
-    RecoveryOverlapContention,
-    RecoveryInterleavedFailures,
-    EscalatingHeartbeatMisses { restart_episodes: u32 },
-    MixedWatchdogEpisodes { restart_episodes: u32 },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum RecoveryFailureInjection {
-    OldTransportTeardown,
-    DeferredOldTransportTeardown,
-    LingeringCleanupTeardown,
-    ReplacementStart,
-    CompetingOverlapAttach,
-}
+pub(crate) use host_support::{
+    FaultInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
+    LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID,
+    LOCAL_DEMO_PLUGIN_TAIL_SAMPLES, RecoveryFailureInjection, SOAK_RESTART_EPISODES,
+    WATCHDOG_TRIGGER_WINDOW_BLOCKS,
+};
 
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
