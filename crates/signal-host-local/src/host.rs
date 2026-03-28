@@ -28,16 +28,15 @@ use host_support::{
     local_demo_runtime_assembly, runtime_plugin_format_platform_coverage, LifecycleRunSummary,
     LocalAudioPumpState, LocalClockTransitionMemory, LocalSupervisorState, STEADY_STATE_BLOCKS,
 };
+pub(crate) use host_support::{
+    FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
+    LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES,
+    SOAK_RESTART_EPISODES, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
+};
 pub use host_support::{
     LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy, LocalExecutionSummary,
     LocalFaultSummary, LocalHardwareSummary, LocalPayloadSummary, LocalPluginDispatchSummary,
     LocalRuntimeHostSummary, LocalTransportSummary,
-};
-pub(crate) use host_support::{
-    FaultInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
-    LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID,
-    LOCAL_DEMO_PLUGIN_TAIL_SAMPLES, RecoveryFailureInjection, SOAK_RESTART_EPISODES,
-    WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 
 pub struct LocalRuntimeHost {

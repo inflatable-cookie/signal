@@ -91,7 +91,9 @@ fn block_payload_round_trips_through_audio_and_event_regions() {
     dispatch
         .write_input_payload(&mut bytes, &payload)
         .expect("write input payload");
-    let decoded_input = dispatch.read_input_payload(&bytes).expect("decode input payload");
+    let decoded_input = dispatch
+        .read_input_payload(&bytes)
+        .expect("decode input payload");
     assert_eq!(decoded_input, payload);
 
     dispatch

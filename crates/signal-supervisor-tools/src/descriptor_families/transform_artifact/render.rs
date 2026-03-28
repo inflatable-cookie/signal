@@ -1,7 +1,7 @@
+use super::super::*;
 use super::data::{
     transform_artifact_boundary_surfaces, transform_artifact_boundary_validation_steps,
 };
-use super::super::*;
 
 pub(crate) fn render_transform_artifact_boundary_text() -> String {
     let mut rendered = format!(

@@ -31,7 +31,13 @@ fn pulse_audio_prefers_pulse_driven_or_dynamic_punch() {
         top_label(&result),
         SemanticTagLabel::PulseDriven | SemanticTagLabel::DynamicPunch
     ));
-    assert!(result.source_descriptors.temporal_shape.peak_transient_strength > 0.9);
+    assert!(
+        result
+            .source_descriptors
+            .temporal_shape
+            .peak_transient_strength
+            > 0.9
+    );
     assert!(result.diagnostics.top_tag_margin >= 0.0);
 }
 
@@ -120,7 +126,10 @@ fn semantic_examples_remain_interpretable_for_closeout() {
         SemanticTagLabel::PulseDriven | SemanticTagLabel::DynamicPunch
     ));
     assert!(fallback_result.diagnostics.fallback_used);
-    assert_eq!(fallback_result.embedding.model_id, BUILTIN_DESCRIPTOR_MODEL_ID);
+    assert_eq!(
+        fallback_result.embedding.model_id,
+        BUILTIN_DESCRIPTOR_MODEL_ID
+    );
     assert!(tone_result.diagnostics.semantic_confidence.0 > 0.0);
     assert!(noise_result.diagnostics.semantic_confidence.0 > 0.0);
     assert!(pulse_result.diagnostics.semantic_confidence.0 > 0.0);

@@ -1,6 +1,5 @@
 use signal_dsp_spectral::{
-    LogCompression, MelFilterNorm, MelFilterbankConfig, MelScale, MelSpectrogramConfig,
-    Spectrogram,
+    LogCompression, MelFilterNorm, MelFilterbankConfig, MelScale, MelSpectrogramConfig, Spectrogram,
 };
 
 use crate::stats::{normalize_slice, percentile_value, reduce_median, sort_f32};
@@ -23,7 +22,9 @@ struct FrameSpectralShape {
     flatness: f32,
 }
 
-pub(crate) fn compute_spectral_shape_pack(spectrogram: &Spectrogram) -> SpectralShapeDescriptorPack {
+pub(crate) fn compute_spectral_shape_pack(
+    spectrogram: &Spectrogram,
+) -> SpectralShapeDescriptorPack {
     let mut centroids = Vec::new();
     let mut spreads = Vec::new();
     let mut rolloff_85 = Vec::new();

@@ -5,7 +5,8 @@ fn harness_character_descriptor_cases_meet_frozen_acceptance_thresholds() {
     let cases = character_acceptance_cases();
     let mut analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::medium());
 
-    let report = run_audio_acceptance_harness(&cases, |audio| analyzer.analyze(audio), character_metrics);
+    let report =
+        run_audio_acceptance_harness(&cases, |audio| analyzer.analyze(audio), character_metrics);
 
     assert_eq!(report.status, AcceptanceStatus::Pass);
     assert!(report
@@ -19,7 +20,8 @@ fn frozen_character_acceptance_report_remains_interpretable_for_closeout() {
     let cases = character_acceptance_cases();
     let mut analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::medium());
 
-    let report = run_audio_acceptance_harness(&cases, |audio| analyzer.analyze(audio), character_metrics);
+    let report =
+        run_audio_acceptance_harness(&cases, |audio| analyzer.analyze(audio), character_metrics);
 
     println!("character_acceptance_report={:#?}", report);
 

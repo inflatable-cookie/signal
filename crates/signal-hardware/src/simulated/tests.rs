@@ -51,12 +51,14 @@ fn simulated_backend_negotiates_default_output_stream_and_runtime_request() {
     assert_eq!(stream.latency, HardwareLatencyProfile::output_only(256));
     assert!(stream.simulated);
 
-    let runtime_request =
-        HardwareConfigRequest::from_stream(&stream, backend.policy_record().tier);
+    let runtime_request = HardwareConfigRequest::from_stream(&stream, backend.policy_record().tier);
     assert_eq!(runtime_request.sample_rate, SampleRate(48_000));
     assert_eq!(runtime_request.buffer_size, 256);
     assert_eq!(runtime_request.output_channels, 2);
-    assert_eq!(runtime_request.backend_policy, BackendPolicyTier::Tier0InHost);
+    assert_eq!(
+        runtime_request.backend_policy,
+        BackendPolicyTier::Tier0InHost
+    );
     assert_eq!(
         backend.policy_record().backend_identity,
         HardwareBackendIdentity::Unsupported
@@ -123,7 +125,10 @@ fn simulated_linux_backend_baselines_surface_typed_identity_and_contracts() {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa)
     );
     assert_eq!(alsa_stream.clock_source, HardwareClockSource::Internal);
-    assert_eq!(alsa_stream.clock_topology, HardwareClockTopology::SingleEndpoint);
+    assert_eq!(
+        alsa_stream.clock_topology,
+        HardwareClockTopology::SingleEndpoint
+    );
     assert_eq!(
         alsa_stream.lifecycle,
         HardwareLifecycleContract {
@@ -143,7 +148,10 @@ fn simulated_linux_backend_baselines_surface_typed_identity_and_contracts() {
         jack_stream.device.backend_identity,
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack)
     );
-    assert_eq!(jack_stream.clock_source, HardwareClockSource::ExternalWordClock);
+    assert_eq!(
+        jack_stream.clock_source,
+        HardwareClockSource::ExternalWordClock
+    );
     assert_eq!(jack_stream.clock_topology, HardwareClockTopology::Aggregate);
     assert_eq!(
         jack_stream.lifecycle,
@@ -165,7 +173,10 @@ fn simulated_linux_backend_baselines_surface_typed_identity_and_contracts() {
         HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire)
     );
     assert_eq!(pipewire_stream.clock_source, HardwareClockSource::Virtual);
-    assert_eq!(pipewire_stream.clock_topology, HardwareClockTopology::Aggregate);
+    assert_eq!(
+        pipewire_stream.clock_topology,
+        HardwareClockTopology::Aggregate
+    );
     assert_eq!(
         pipewire_stream.lifecycle,
         HardwareLifecycleContract {

@@ -1,8 +1,8 @@
 use signal_analysis::Confidence;
 
 use crate::{
-    KeyDetectorConfig, LocalTonalTrackingSummary, TonalAmbiguityKind,
-    TonalSegmentAmbiguitySummary, TonalSegmentSummary,
+    KeyDetectorConfig, LocalTonalTrackingSummary, TonalAmbiguityKind, TonalSegmentAmbiguitySummary,
+    TonalSegmentSummary,
 };
 
 mod change_detection;

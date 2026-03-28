@@ -1,7 +1,5 @@
-use super::data::{
-    host_edge_surface_records, host_edge_validation_steps, HostEdgeStabilityTier,
-};
 use super::super::*;
+use super::data::{host_edge_surface_records, host_edge_validation_steps, HostEdgeStabilityTier};
 
 pub(crate) fn render_host_edge_boundary_text() -> String {
     let mut rendered = format!(

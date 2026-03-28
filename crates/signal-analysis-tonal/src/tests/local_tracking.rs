@@ -4,7 +4,10 @@ use super::*;
 fn detector_exposes_stable_local_key_tracking_for_c_major_sections() {
     let audio = tonal_sequence_mix(
         48_000,
-        &[(&[261.63, 329.63, 392.0], 6.0), (&[261.63, 329.63, 392.0], 6.0)],
+        &[
+            (&[261.63, 329.63, 392.0], 6.0),
+            (&[261.63, 329.63, 392.0], 6.0),
+        ],
     );
     let mut detector = KeyDetector::new(KeyDetectorConfig::medium());
     let result = detector.analyze(&audio);
@@ -31,7 +34,10 @@ fn detector_exposes_stable_local_key_tracking_for_c_major_sections() {
 fn detector_exposes_local_key_shift_and_harmonic_change_for_modulation() {
     let audio = tonal_sequence_mix(
         48_000,
-        &[(&[261.63, 329.63, 392.0], 6.0), (&[196.0, 246.94, 293.66], 6.0)],
+        &[
+            (&[261.63, 329.63, 392.0], 6.0),
+            (&[196.0, 246.94, 293.66], 6.0),
+        ],
     );
     let mut detector = KeyDetector::new(KeyDetectorConfig::medium());
     let result = detector.analyze(&audio);
@@ -186,7 +192,8 @@ fn harness_tonal_cases_meet_frozen_acceptance_thresholds() {
     let cases = tonal_acceptance_cases();
     let mut detector = KeyDetector::new(KeyDetectorConfig::medium());
 
-    let report = run_audio_acceptance_harness(&cases, |audio| detector.analyze(audio), tonal_metrics);
+    let report =
+        run_audio_acceptance_harness(&cases, |audio| detector.analyze(audio), tonal_metrics);
 
     assert_eq!(report.status, AcceptanceStatus::Pass);
     assert!(report
@@ -200,7 +207,8 @@ fn frozen_tonal_acceptance_report_remains_interpretable_for_closeout() {
     let cases = tonal_acceptance_cases();
     let mut detector = KeyDetector::new(KeyDetectorConfig::medium());
 
-    let report = run_audio_acceptance_harness(&cases, |audio| detector.analyze(audio), tonal_metrics);
+    let report =
+        run_audio_acceptance_harness(&cases, |audio| detector.analyze(audio), tonal_metrics);
 
     println!("tonal_acceptance_report={:#?}", report);
 

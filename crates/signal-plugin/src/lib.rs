@@ -3,9 +3,9 @@
 mod blocks;
 mod event_codec;
 mod events;
-mod plugin_model;
 mod plugin_block_transport;
 mod plugin_event_reports;
+mod plugin_model;
 mod render_context_codec;
 mod sandbox_protocol;
 
@@ -37,10 +37,9 @@ pub use plugin_model::{
 };
 pub use sandbox_protocol::{
     LoopRange, PluginRenderContext, PluginSandboxCapabilities, PluginSandboxError,
-    PluginSandboxErrorKind, PluginSandboxRequest, RestartEscalationPolicy,
-    RestartEscalationState, SandboxControlCommand, SandboxControlRequest,
-    SandboxControlResponse, SandboxTransport, SandboxWatchdogPolicy, SandboxWatchdogState,
-    WatchdogOutcome, WatchdogTriggerReason,
+    PluginSandboxErrorKind, PluginSandboxRequest, RestartEscalationPolicy, RestartEscalationState,
+    SandboxControlCommand, SandboxControlRequest, SandboxControlResponse, SandboxTransport,
+    SandboxWatchdogPolicy, SandboxWatchdogState, WatchdogOutcome, WatchdogTriggerReason,
 };
 
 #[cfg(test)]

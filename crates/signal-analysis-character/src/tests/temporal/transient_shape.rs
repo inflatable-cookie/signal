@@ -103,9 +103,12 @@ fn non_native_input_rate_preserves_descriptor_shape_under_frozen_analysis_rate()
         native_result.spectral_shape.centroid_hz,
         non_native_result.spectral_shape.centroid_hz,
     );
-    assert!((native_result.dynamics.rms_energy - non_native_result.dynamics.rms_energy).abs() < 0.05);
     assert!(
-        (native_result.temporal.zero_crossing_rate_hz - non_native_result.temporal.zero_crossing_rate_hz)
+        (native_result.dynamics.rms_energy - non_native_result.dynamics.rms_energy).abs() < 0.05
+    );
+    assert!(
+        (native_result.temporal.zero_crossing_rate_hz
+            - non_native_result.temporal.zero_crossing_rate_hz)
             .abs()
             < 25.0
     );

@@ -87,11 +87,10 @@ pub(crate) use faults::{
     record_runtime_fault, runtime_error_from_failure,
 };
 pub(crate) use host_types::{
-    FaultInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
-    LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID,
-    LOCAL_DEMO_PLUGIN_TAIL_SAMPLES, LocalClockTransitionMemory, LocalSupervisorState,
-    RecoveryFailureInjection, SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS,
-    WATCHDOG_TRIGGER_WINDOW_BLOCKS,
+    FaultInjection, LocalClockTransitionMemory, LocalSupervisorState, RecoveryFailureInjection,
+    INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES,
+    LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES, SOAK_RESTART_EPISODES,
+    STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
 pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;

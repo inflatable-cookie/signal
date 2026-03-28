@@ -1,7 +1,8 @@
 use signal_ipc::CorrelationId;
 
 use crate::{
-    PluginDescriptor, PluginFormat, PluginInstanceId, PluginIoLayout, PluginTypeId, SharedMemoryLayout,
+    PluginDescriptor, PluginFormat, PluginInstanceId, PluginIoLayout, PluginTypeId,
+    SharedMemoryLayout,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]

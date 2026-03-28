@@ -9,7 +9,10 @@ const STANDARD_TUNING_HZ: f32 = 440.0;
 const MAX_TUNING_DEVIATION_CENTS: f32 = 50.0;
 const SEMITONE_WIDTH_RATIO: f32 = 0.057_762_265;
 
-pub(crate) fn estimate_tuning(spectrogram: &Spectrogram, config: KeyDetectorConfig) -> TuningEstimate {
+pub(crate) fn estimate_tuning(
+    spectrogram: &Spectrogram,
+    config: KeyDetectorConfig,
+) -> TuningEstimate {
     match config.tuning_reference {
         TuningReferenceMode::StandardA440 => TuningEstimate {
             source: TuningReferenceSource::StandardA440,

@@ -22,8 +22,7 @@
 //! ```
 
 use signal_analysis::{
-    prepare_audio_analysis, prepare_mono_analysis, AnalysisInputConfig, AnalysisMode,
-    AnalysisStage,
+    prepare_audio_analysis, prepare_mono_analysis, AnalysisInputConfig, AnalysisMode, AnalysisStage,
 };
 use signal_dsp_spectral::Stft;
 use signal_primitives::{AudioBuffer, Sample, SampleRate, Seconds};
@@ -33,16 +32,16 @@ mod stats;
 mod temporal;
 mod types;
 
+use temporal::{
+    character_confidence, compute_dynamics_pack, compute_event_density, compute_sustain_ratio,
+    compute_temporal_shape_pack, compute_transient_density, compute_zcr, detect_peak_indices,
+    frame_rms_envelope, spectral_flux_envelope,
+};
 pub use types::{
     CharacterAnalysisResult, CharacterAnalyzerConfig, CharacterDescriptorReductionPolicy,
     DescriptorReduction, DynamicsDescriptorPack, SpectralContrastDescriptorPack,
     SpectralProfileDescriptorPack, SpectralShapeDescriptorPack, TemporalDescriptorPack,
     TemporalShapeDescriptorPack,
-};
-use temporal::{
-    character_confidence, compute_dynamics_pack, compute_event_density, compute_sustain_ratio,
-    compute_temporal_shape_pack, compute_transient_density, compute_zcr, detect_peak_indices,
-    frame_rms_envelope, spectral_flux_envelope,
 };
 
 /// Offline character analyzer.

@@ -125,15 +125,18 @@ fn clap_harness_round_trips_multi_block_payload_sequence() {
             protocol.translate_output_events(&protocol.translate_input_events(&payload.events));
         assert_eq!(outcome.output.audio, outcome.input.audio);
         assert_eq!(outcome.output.events, expected_output_events);
-        assert_eq!(outcome.output.audio.first_sample(), Some(block_sequence as f32));
+        assert_eq!(
+            outcome.output.audio.first_sample(),
+            Some(block_sequence as f32)
+        );
         assert_eq!(outcome.output.events.event_count(), 11);
         aggregated_output_events
             .events
             .extend(outcome.output.events.events.iter().copied());
     }
 
-    let automation = aggregated_output_events
-        .parameter_automation_summary(protocol.automation_parameter_id());
+    let automation =
+        aggregated_output_events.parameter_automation_summary(protocol.automation_parameter_id());
     assert_eq!(automation.value_events, 4);
     assert_eq!(automation.modulation_events, 4);
     assert_eq!(automation.gesture_begin_events, 1);

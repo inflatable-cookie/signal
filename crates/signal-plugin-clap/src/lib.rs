@@ -22,8 +22,8 @@ pub use event_translation::{
 };
 pub use events::{
     ClapEvent, ClapEventPacket, ClapMidiEvent, ClapNoteEvent, ClapNoteEventKind,
-    ClapNoteExpressionEvent, ClapNoteExpressionKind, ClapParamGestureEvent,
-    ClapParamGesturePhase, ClapParamModEvent, ClapParamValueEvent,
+    ClapNoteExpressionEvent, ClapNoteExpressionKind, ClapParamGestureEvent, ClapParamGesturePhase,
+    ClapParamModEvent, ClapParamValueEvent,
 };
 pub use protocol::ClapBlockProtocol;
 

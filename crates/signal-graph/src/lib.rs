@@ -35,9 +35,9 @@ mod parameter_events;
 mod stage_processor;
 mod types;
 
-pub use types::*;
 pub use execution_support::GraphBlockReport;
 pub(crate) use execution_support::{build_block_report, GraphBusState};
+pub use types::*;
 
 pub use parameter_events::GraphStageParameterExt;
 use parameter_events::{parameter_application_report, stage_parameter_events_for_node};

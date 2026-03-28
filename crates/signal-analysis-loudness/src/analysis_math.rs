@@ -1,16 +1,13 @@
 use signal_primitives::{ChannelCount, ChannelLayout, SampleRate};
 
-use crate::types::{
-    LoudnessChannelWeightSource, LoudnessSampleRateSupport,
-};
+use crate::types::{LoudnessChannelWeightSource, LoudnessSampleRateSupport};
 
 mod aggregation;
 mod trace_support;
 
 pub(crate) use aggregation::{
     aggregate_weighted_energies, deinterleave_channels, empty_loudness_result,
-    gated_integrated_loudness, loudness_confidence, loudness_range_from_energies,
-    true_peak_dbtp,
+    gated_integrated_loudness, loudness_confidence, loudness_range_from_energies, true_peak_dbtp,
 };
 pub(crate) use trace_support::{
     dynamics_summary, loudness_trace_from_energies, trace_latest_loudness, trace_tail,

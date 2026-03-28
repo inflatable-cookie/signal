@@ -1,9 +1,7 @@
 use std::io;
 
 use signal_ipc::CorrelationId;
-use signal_plugin::{
-    PluginFault, PluginIoLayout, SandboxStateMachine, SharedMemoryLease,
-};
+use signal_plugin::{PluginFault, PluginIoLayout, SandboxStateMachine, SharedMemoryLease};
 
 use crate::{ClapDiscoveredPluginType, ClapInstanceControlSurface, ClapPluginHostAdapter};
 

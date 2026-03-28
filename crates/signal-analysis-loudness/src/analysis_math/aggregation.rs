@@ -34,12 +34,14 @@ pub(crate) fn gated_integrated_loudness(block_energies: &[f32]) -> f32 {
         return f32::NEG_INFINITY;
     }
 
-    let integrated_mean =
-        relative_gated.iter().copied().sum::<f32>() / relative_gated.len() as f32;
+    let integrated_mean = relative_gated.iter().copied().sum::<f32>() / relative_gated.len() as f32;
     lufs_from_mean_square(integrated_mean)
 }
 
-pub(crate) fn aggregate_weighted_energies(channel_energies: &[Vec<f32>], weights: &[f32]) -> Vec<f32> {
+pub(crate) fn aggregate_weighted_energies(
+    channel_energies: &[Vec<f32>],
+    weights: &[f32],
+) -> Vec<f32> {
     let max_len = channel_energies.iter().map(Vec::len).max().unwrap_or(0);
     let mut aggregated = vec![0.0; max_len];
 
@@ -134,7 +136,9 @@ pub(crate) fn deinterleave_channels(audio: &AudioBuffer) -> Vec<Vec<Sample>> {
     channels
 }
 
-pub(crate) fn empty_loudness_result(aggregation: LoudnessAggregationSummary) -> LoudnessAnalysisResult {
+pub(crate) fn empty_loudness_result(
+    aggregation: LoudnessAggregationSummary,
+) -> LoudnessAnalysisResult {
     LoudnessAnalysisResult {
         integrated_lufs: f32::NEG_INFINITY,
         loudness_range_lu: 0.0,

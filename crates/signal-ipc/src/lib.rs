@@ -8,8 +8,8 @@ mod shared_memory;
 mod tests;
 
 pub use plugin_protocol::{
-    PluginDescriptorPayload, PluginFaultPayload, PluginInstanceStatePayload,
-    PluginIoLayoutPayload, PluginMessageEnvelope, PluginMessageName, PluginMessagePayload,
+    PluginDescriptorPayload, PluginFaultPayload, PluginInstanceStatePayload, PluginIoLayoutPayload,
+    PluginMessageEnvelope, PluginMessageName, PluginMessagePayload,
     PluginProcessConfigurationPayload, SharedMemoryLayoutPayload, SharedMemoryRegionPayload,
     SharedMemoryTransportKind, SharedMemoryTransportPayload,
 };

@@ -1,8 +1,6 @@
 use signal_dsp_spectral::{bin_frequency, Spectrogram};
 
-use crate::{
-    profile_scoring::score_chroma, KeyDetectorConfig, TonalSegmentSummary,
-};
+use crate::{profile_scoring::score_chroma, KeyDetectorConfig, TonalSegmentSummary};
 
 const SEMITONE_WIDTH_RATIO: f32 = 0.057_762_265;
 

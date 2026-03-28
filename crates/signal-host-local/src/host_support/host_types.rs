@@ -1,5 +1,7 @@
 use signal_hardware::BackendPolicyTier;
-use signal_runtime::{RecoveryRestartIntent, RuntimeHostClockDomain, RuntimeHostClockFallbackState, StopReason};
+use signal_runtime::{
+    RecoveryRestartIntent, RuntimeHostClockDomain, RuntimeHostClockFallbackState, StopReason,
+};
 
 pub(crate) const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
 pub(crate) const STEADY_STATE_BLOCKS: u64 = 8;

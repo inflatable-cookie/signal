@@ -170,7 +170,9 @@ pub(crate) fn build_block_report(
             .collect(),
         prepared_dispatch_count,
         realtime_dispatch_count,
-        dispatch_handoff_count: usize::from(prepared_dispatch_count > 0 && realtime_dispatch_count > 0),
+        dispatch_handoff_count: usize::from(
+            prepared_dispatch_count > 0 && realtime_dispatch_count > 0,
+        ),
         stage_count: graph.stage_count(),
         dynamic_kernel_stage_count: graph.dynamic_kernel_stage_count(),
         dynamic_stage_state_model: graph.dynamic_stage_state_model(),

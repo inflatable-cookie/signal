@@ -29,11 +29,11 @@ mod analysis_math;
 mod types;
 
 use analysis_math::{
-    aggregate_weighted_energies, apply_loudness_weighting, deinterleave_channels,
-    dynamics_summary, empty_loudness_result, gated_integrated_loudness,
-    loudness_channel_weights, loudness_confidence, loudness_range_from_energies,
-    loudness_sample_rate_support, loudness_trace_from_energies, seconds_to_frames, trace_latest_loudness,
-    trace_tail, true_peak_dbtp, true_peak_oversample_factor, window_mean_square,
+    aggregate_weighted_energies, apply_loudness_weighting, deinterleave_channels, dynamics_summary,
+    empty_loudness_result, gated_integrated_loudness, loudness_channel_weights,
+    loudness_confidence, loudness_range_from_energies, loudness_sample_rate_support,
+    loudness_trace_from_energies, seconds_to_frames, trace_latest_loudness, trace_tail,
+    true_peak_dbtp, true_peak_oversample_factor, window_mean_square,
 };
 pub use types::{
     LoudnessAggregationSummary, LoudnessAnalysisResult, LoudnessChannelSummary,

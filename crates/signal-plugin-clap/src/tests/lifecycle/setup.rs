@@ -98,7 +98,10 @@ fn clap_lifecycle_harness_accepts_full_control_sequence() {
             .len(),
         0
     );
-    assert!(harness.lease().and_then(|lease| lease.transport()).is_some());
+    assert!(harness
+        .lease()
+        .and_then(|lease| lease.transport())
+        .is_some());
     harness
         .teardown_active_transport()
         .expect("teardown transport");

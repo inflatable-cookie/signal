@@ -117,11 +117,8 @@ impl BuiltInDescriptorSemanticModel {
         let embedding_values = self.embedding_from_descriptors(&descriptors);
         let semantic_tags = self.semantic_tags_from_descriptors(&descriptors, max_tag_count);
         let descriptor_confidence = descriptors.confidence;
-        let semantic_confidence = self.semantic_confidence(
-            &semantic_tags,
-            descriptor_confidence,
-            &embedding_values,
-        );
+        let semantic_confidence =
+            self.semantic_confidence(&semantic_tags, descriptor_confidence, &embedding_values);
         let embedding_l2_norm = embedding_values
             .iter()
             .copied()

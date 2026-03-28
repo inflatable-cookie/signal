@@ -6,9 +6,9 @@ use signal_plugin::{
 };
 
 use crate::adapter::ClapSharedMemoryHeader;
-use crate::events::ClapEventPacket;
-use crate::event_translation::{translate_input_events, translate_output_events};
 use crate::clap_sandbox_harness;
+use crate::event_translation::{translate_input_events, translate_output_events};
+use crate::events::ClapEventPacket;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClapBlockProtocol {

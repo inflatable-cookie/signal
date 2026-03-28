@@ -39,8 +39,14 @@ fn clap_event_translation_upgrades_note_and_modulation_semantics() {
     assert!(matches!(clap_events.events[1], ClapEvent::ParamGesture(_)));
     assert!(matches!(clap_events.events[2], ClapEvent::ParamValue(_)));
     assert!(matches!(clap_events.events[3], ClapEvent::ParamValue(_)));
-    assert!(matches!(clap_events.events[4], ClapEvent::ParamModulation(_)));
-    assert!(matches!(clap_events.events[5], ClapEvent::ParamModulation(_)));
+    assert!(matches!(
+        clap_events.events[4],
+        ClapEvent::ParamModulation(_)
+    ));
+    assert!(matches!(
+        clap_events.events[5],
+        ClapEvent::ParamModulation(_)
+    ));
     assert!(matches!(clap_events.events[6], ClapEvent::Note(_)));
     assert!(matches!(
         clap_events.events[7],
@@ -80,8 +86,7 @@ fn clap_event_translation_upgrades_note_and_modulation_semantics() {
     assert_eq!(summary.note_events, 1);
     assert_eq!(summary.note_expression_events, 3);
     assert_eq!(summary.midi_events, 1);
-    let automation =
-        round_tripped.parameter_automation_summary(protocol.automation_parameter_id());
+    let automation = round_tripped.parameter_automation_summary(protocol.automation_parameter_id());
     assert_eq!(automation.value_events, 1);
     assert_eq!(automation.modulation_events, 1);
     assert_eq!(automation.gesture_begin_events, 0);

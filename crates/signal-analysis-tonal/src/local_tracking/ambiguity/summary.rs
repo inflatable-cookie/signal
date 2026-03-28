@@ -1,8 +1,8 @@
 use signal_analysis::Confidence;
 
 use crate::{
-    HarmonicChangeKind, HarmonicChangeSummary, Key, LocalTonalAmbiguitySummary,
-    TonalAmbiguityKind, TonalSegmentAmbiguitySummary, TonalSegmentSummary,
+    HarmonicChangeKind, HarmonicChangeSummary, Key, LocalTonalAmbiguitySummary, TonalAmbiguityKind,
+    TonalSegmentAmbiguitySummary, TonalSegmentSummary,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]

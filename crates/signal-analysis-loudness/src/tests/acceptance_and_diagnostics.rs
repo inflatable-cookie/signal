@@ -6,7 +6,8 @@ fn harness_loudness_cases_meet_frozen_acceptance_thresholds() {
     let cases = loudness_acceptance_cases();
     let mut meter = LoudnessMeter::new(LoudnessMeterConfig::default());
 
-    let report = run_audio_acceptance_harness(&cases, |audio| meter.analyze(audio), loudness_metrics);
+    let report =
+        run_audio_acceptance_harness(&cases, |audio| meter.analyze(audio), loudness_metrics);
 
     assert_eq!(report.status, AcceptanceStatus::Pass);
     assert!(report
@@ -20,7 +21,8 @@ fn frozen_loudness_acceptance_report_remains_interpretable_for_closeout() {
     let cases = loudness_acceptance_cases();
     let mut meter = LoudnessMeter::new(LoudnessMeterConfig::default());
 
-    let report = run_audio_acceptance_harness(&cases, |audio| meter.analyze(audio), loudness_metrics);
+    let report =
+        run_audio_acceptance_harness(&cases, |audio| meter.analyze(audio), loudness_metrics);
 
     println!("loudness_acceptance_report={:#?}", report);
 
@@ -88,7 +90,16 @@ fn runtime_diagnostics_summary_uses_bounded_recent_trace_tails() {
     );
     assert_eq!(diagnostics.integrated_lufs, result.integrated_lufs);
     assert_eq!(diagnostics.true_peak_dbtp, result.true_peak_dbtp);
-    assert_eq!(diagnostics.target_offset_lu, result.dynamics.target_offset_lu);
-    assert_eq!(diagnostics.momentary_max_lufs, result.dynamics.momentary_max_lufs);
-    assert_eq!(diagnostics.short_term_max_lufs, result.dynamics.short_term_max_lufs);
+    assert_eq!(
+        diagnostics.target_offset_lu,
+        result.dynamics.target_offset_lu
+    );
+    assert_eq!(
+        diagnostics.momentary_max_lufs,
+        result.dynamics.momentary_max_lufs
+    );
+    assert_eq!(
+        diagnostics.short_term_max_lufs,
+        result.dynamics.short_term_max_lufs
+    );
 }

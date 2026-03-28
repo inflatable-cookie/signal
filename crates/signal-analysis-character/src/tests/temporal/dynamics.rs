@@ -15,17 +15,20 @@ fn rms_energy_near_expected_for_full_scale_sine() {
 
 #[test]
 fn silence_produces_zero_results() {
-    let audio = AudioBuffer::from_interleaved(
-        SampleRate(48_000),
-        ChannelLayout::Mono,
-        vec![0.0; 48_000],
-    );
+    let audio =
+        AudioBuffer::from_interleaved(SampleRate(48_000), ChannelLayout::Mono, vec![0.0; 48_000]);
     let mut analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::default());
     let result = analyzer.analyze(&audio);
 
     assert_eq!(result.spectral_shape, SpectralShapeDescriptorPack::zero());
-    assert_eq!(result.spectral_contrast, SpectralContrastDescriptorPack::zero());
-    assert_eq!(result.spectral_profile, SpectralProfileDescriptorPack::zero());
+    assert_eq!(
+        result.spectral_contrast,
+        SpectralContrastDescriptorPack::zero()
+    );
+    assert_eq!(
+        result.spectral_profile,
+        SpectralProfileDescriptorPack::zero()
+    );
     assert_eq!(result.temporal, TemporalDescriptorPack::zero());
     assert_eq!(result.temporal_shape, TemporalShapeDescriptorPack::zero());
     assert_eq!(result.dynamics, DynamicsDescriptorPack::zero());
@@ -69,8 +72,10 @@ fn onset_density_is_finite() {
 fn analysis_stage_trait_works() {
     let audio = sine_audio(440.0, 1.0, 48_000, 1.0);
     let mut analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::default());
-    let result =
-        <CharacterAnalyzer as AnalysisStage<CharacterAnalysisResult>>::analyze(&mut analyzer, &audio);
+    let result = <CharacterAnalyzer as AnalysisStage<CharacterAnalysisResult>>::analyze(
+        &mut analyzer,
+        &audio,
+    );
 
     assert!(result.dynamics.rms_energy > 0.0);
     assert_eq!(analyzer.mode(), signal_analysis::AnalysisMode::Offline);
@@ -174,7 +179,8 @@ fn transient_density_increases_with_sharp_edges() {
         }
     }
 
-    let audio = AudioBuffer::from_interleaved(SampleRate(sample_rate_hz), ChannelLayout::Mono, data);
+    let audio =
+        AudioBuffer::from_interleaved(SampleRate(sample_rate_hz), ChannelLayout::Mono, data);
     let mut analyzer = CharacterAnalyzer::new(CharacterAnalyzerConfig::default());
     let result = analyzer.analyze(&audio);
 

@@ -1,6 +1,4 @@
-use crate::{
-    CompletionState, PluginFault, PluginFaultKind, PluginFaultSeverity,
-};
+use crate::{CompletionState, PluginFault, PluginFaultKind, PluginFaultSeverity};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PluginSandboxErrorKind {

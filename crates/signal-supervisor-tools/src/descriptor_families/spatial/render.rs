@@ -1,5 +1,5 @@
-use super::data::{spatial_boundary_surfaces, spatial_boundary_validation_steps};
 use super::super::*;
+use super::data::{spatial_boundary_surfaces, spatial_boundary_validation_steps};
 
 pub(crate) fn render_spatial_boundary_text() -> String {
     let mut rendered = format!(

@@ -1,8 +1,8 @@
 use crate::{
     build_block_report, bus, planning_group_for_node, stage_parameter_events_for_node,
     stage_processor::apply_stage, AudioBuffer, ExecutableGraph, GraphBlockReport, GraphBusState,
-    GraphCapturedBusOutput, GraphExecutionLane, GraphNodeRenderOverride,
-    GraphNodeSilencePolicy, GraphParameterBatch, GraphRealtimeExecutionRequest,
+    GraphCapturedBusOutput, GraphExecutionLane, GraphNodeRenderOverride, GraphNodeSilencePolicy,
+    GraphParameterBatch, GraphRealtimeExecutionRequest,
 };
 
 impl ExecutableGraph {
@@ -45,7 +45,10 @@ impl ExecutableGraph {
             .filter(|dispatch| dispatch.lane == GraphExecutionLane::Realtime)
             .collect::<Vec<_>>();
 
-        let prework_output_peak = request.prepared.as_ref().map(|prepared| prepared.output_peak);
+        let prework_output_peak = request
+            .prepared
+            .as_ref()
+            .map(|prepared| prepared.output_peak);
         let mut realtime_input_peak = prework_output_peak;
         let mut working_state = request
             .prepared
@@ -90,7 +93,10 @@ impl ExecutableGraph {
                 self,
                 &request,
                 request.parameter_batch,
-                request.prepared.as_ref().map_or(0, |prepared| prepared.dispatch_count),
+                request
+                    .prepared
+                    .as_ref()
+                    .map_or(0, |prepared| prepared.dispatch_count),
                 realtime_dispatches.len(),
                 prework_output_peak,
                 realtime_input_peak,
@@ -112,11 +118,10 @@ impl ExecutableGraph {
         let node_render_overrides = bus::node_render_override_map(node_render_overrides);
         for dispatch in dispatches {
             for phase in &dispatch.phase_order {
-                for node in self
-                    .plan
-                    .nodes
-                    .iter()
-                    .filter(|node| planning_group_for_node(node, anticipative_enabled) == *phase)
+                for node in
+                    self.plan.nodes.iter().filter(|node| {
+                        planning_group_for_node(node, anticipative_enabled) == *phase
+                    })
                 {
                     let mut working = bus::source_buffer_for_node(state, node);
                     let input_latency = state

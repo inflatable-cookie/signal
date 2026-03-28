@@ -3,10 +3,10 @@ use signal_ipc::{CorrelationId, PluginInstanceStatePayload};
 mod classification;
 mod payloads;
 
+pub(crate) use classification::failure_event;
 pub use classification::{
     classify_sandbox_failure, ClapSandboxFailureClassification, ClapSandboxFailureStage,
 };
-pub(crate) use classification::failure_event;
 pub(crate) use payloads::{lifecycle_state_string, plugin_fault_payload};
 
 #[derive(Clone, Debug, PartialEq, Eq)]

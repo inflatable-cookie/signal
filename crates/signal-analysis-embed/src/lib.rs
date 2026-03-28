@@ -78,11 +78,8 @@ impl SemanticEmbedder {
         &self,
         descriptors: CharacterAnalysisResult,
     ) -> SemanticAnalysisResult {
-        self.model.build_analysis_result(
-            descriptors,
-            self.config.max_tag_count,
-            self.fallback_used,
-        )
+        self.model
+            .build_analysis_result(descriptors, self.config.max_tag_count, self.fallback_used)
     }
 }
 

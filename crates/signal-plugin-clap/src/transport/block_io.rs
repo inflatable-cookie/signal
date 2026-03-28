@@ -1,9 +1,7 @@
 use std::io;
 
 use signal_ipc::{SharedMemoryBroker, SharedMemoryTransportPayload};
-use signal_plugin::{
-    AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, EventPacket,
-};
+use signal_plugin::{AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, EventPacket};
 
 use crate::adapter::BrokeredBlockOutcome;
 use crate::protocol::ClapBlockProtocol;

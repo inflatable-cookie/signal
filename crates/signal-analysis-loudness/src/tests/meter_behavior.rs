@@ -89,11 +89,8 @@ fn stereo_inputs_use_explicit_equal_weight_aggregation() {
         .iter()
         .flat_map(|sample| [*sample, *sample])
         .collect();
-    let stereo = AudioBuffer::from_interleaved(
-        SampleRate(48_000),
-        ChannelLayout::Stereo,
-        stereo_samples,
-    );
+    let stereo =
+        AudioBuffer::from_interleaved(SampleRate(48_000), ChannelLayout::Stereo, stereo_samples);
     let mut meter = LoudnessMeter::new(LoudnessMeterConfig::default());
 
     let mono_result = meter.analyze(&mono);

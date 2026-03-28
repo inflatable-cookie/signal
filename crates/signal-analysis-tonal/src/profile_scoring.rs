@@ -1,8 +1,8 @@
 use signal_analysis::Confidence;
 
 use crate::{
-    Key, KeyMode, KeyProfile, LocalTonalTrackingSummary, Tonic, TonalAnalysisResult,
-    TonalProfileCandidate, TonalScoringSummary, TuningEstimate, TuningReferenceSource,
+    Key, KeyMode, KeyProfile, LocalTonalTrackingSummary, TonalAnalysisResult,
+    TonalProfileCandidate, TonalScoringSummary, Tonic, TuningEstimate, TuningReferenceSource,
 };
 
 const STANDARD_TUNING_HZ: f32 = 440.0;

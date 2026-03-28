@@ -34,7 +34,10 @@ fn low_profile_still_detects_key() {
 
     assert_eq!(result.key.unwrap().tonic, Tonic::C);
     assert_eq!(result.key.unwrap().mode, KeyMode::Major);
-    assert_eq!(detector.config().tuning_reference, TuningReferenceMode::Estimate);
+    assert_eq!(
+        detector.config().tuning_reference,
+        TuningReferenceMode::Estimate
+    );
     assert_eq!(detector.config().tuning_step_cents, 10);
 }
 
