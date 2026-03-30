@@ -1,5 +1,5 @@
-use super::spatial_execution_policy::*;
 use super::super::*;
+use super::spatial_execution_policy::*;
 
 fn runtime_spatial_target_environment_for_layout(
     layout: &RuntimeMultichannelLayoutSummary,

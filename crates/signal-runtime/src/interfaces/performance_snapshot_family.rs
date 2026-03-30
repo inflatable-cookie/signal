@@ -389,5 +389,4 @@ impl RuntimePerformanceSnapshot {
         );
         snapshot
     }
-
 }
