@@ -19,6 +19,7 @@ use crate::{downbeat_frames_for_hypothesis, neighborhood_peak};
 use signal_analysis::Confidence;
 use signal_primitives::SampleRate;
 
+mod meter_state_continuity_types;
 mod meter_state_continuity_helpers;
 use meter_state_continuity_helpers::*;
 mod meter_state_continuity_arc;
