@@ -56,9 +56,7 @@ pub fn arc_decision_fields(
             TempoContinuityArcAction::PreservePriorTempo
         }
         TempoContinuityArcAction::PreservePriorTempo
-        | TempoContinuityArcAction::ReacquireCurrentTempo => {
-            TempoContinuityArcAction::ClearTempo
-        }
+        | TempoContinuityArcAction::ReacquireCurrentTempo => TempoContinuityArcAction::ClearTempo,
         TempoContinuityArcAction::ClearTempo => TempoContinuityArcAction::ClearTempo,
     };
     let action_provenance = match action {
@@ -67,17 +65,13 @@ pub fn arc_decision_fields(
         TempoContinuityArcAction::PreferCoreWindowTempo => {
             TempoContinuityProvenance::CoreWindowEstimate
         }
-        TempoContinuityArcAction::PreservePriorTempo => {
-            TempoContinuityProvenance::PriorTempoCarry
-        }
+        TempoContinuityArcAction::PreservePriorTempo => TempoContinuityProvenance::PriorTempoCarry,
         TempoContinuityArcAction::ClearTempo => TempoContinuityProvenance::NoTempo,
     };
     let downgrade_support = TempoContinuityArcDowngradeSupport {
         stability_window_pressure: Confidence::new(
             if matches!(trigger, TempoContinuityTrigger::StableRevalidation) {
-                (0.55
-                    + 0.25 * support.refresh_strength.0
-                    + 0.20 * (1.0 - support.drift_pressure.0))
+                (0.55 + 0.25 * support.refresh_strength.0 + 0.20 * (1.0 - support.drift_pressure.0))
                     .clamp(0.0, 1.0)
             } else {
                 0.0
@@ -281,9 +275,7 @@ pub fn arc_decision_fields(
         let after_beats = match stage {
             TempoContinuityArcDowngradeInflectionStage::FlatWindow => 0,
             TempoContinuityArcDowngradeInflectionStage::NextStage => next_stage_after_beats,
-            TempoContinuityArcDowngradeInflectionStage::TerminalClear => {
-                final_decay.after_beats
-            }
+            TempoContinuityArcDowngradeInflectionStage::TerminalClear => final_decay.after_beats,
         };
         let primary_delta = match stage {
             TempoContinuityArcDowngradeInflectionStage::FlatWindow => Confidence::new(0.0),
@@ -301,8 +293,7 @@ pub fn arc_decision_fields(
                 )
             }
             TempoContinuityArcDowngradeInflectionStage::TerminalClear
-                if next_stage_delta.0 >= 0.06
-                    && next_stage_delta.0 >= (primary_delta.0 * 0.55) =>
+                if next_stage_delta.0 >= 0.06 && next_stage_delta.0 >= (primary_delta.0 * 0.55) =>
             {
                 (
                     Some(TempoContinuityArcDowngradeInflectionStage::NextStage),
@@ -375,8 +366,12 @@ pub fn arc_decision_fields(
             rationale_balance,
         }
     };
-    let expiry =
-        compute_action_expiry(action, inputs.expiry, inputs.trusted_beats, inputs.revalidate_after_beats);
+    let expiry = compute_action_expiry(
+        action,
+        inputs.expiry,
+        inputs.trusted_beats,
+        inputs.revalidate_after_beats,
+    );
 
     (
         action_severity,

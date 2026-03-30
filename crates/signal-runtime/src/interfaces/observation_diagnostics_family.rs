@@ -243,5 +243,4 @@ impl RuntimeObservationDiagnostics {
     pub fn last_sandbox_operation_failure_event(&self) -> Option<&SandboxOperationFailureRecord> {
         self.sandbox_operation_failure_events.last()
     }
-
 }

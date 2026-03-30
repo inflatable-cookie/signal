@@ -8,8 +8,8 @@ mod tempo_state_continuity_helpers;
 use tempo_state_continuity_helpers::*;
 mod tempo_state_continuity_arc;
 use tempo_state_continuity_arc::*;
-mod tempo_state_arc_decision_fields;
 mod tempo_state_arc_decision;
+mod tempo_state_arc_decision_fields;
 
 pub fn tempo_state_recommendation_with_scope(
     interpretation: TempoInterpretation,
