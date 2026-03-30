@@ -181,7 +181,6 @@ pub(crate) use plugin_pin_matrix_family::runtime_bus_intents_for_topology_role;
 pub(crate) use plugin_pin_matrix_family::runtime_bus_role_for_endpoint;
 pub use plugin_pin_matrix_family::*;
 
-
 mod fault_supervision_family;
 pub use fault_supervision_family::*;
 
@@ -221,7 +220,6 @@ pub use observation_report_family::*;
 
 mod supervisor_report_family;
 pub use supervisor_report_family::*;
-
 
 fn runtime_plugin_lifecycle_state_severity(state: RuntimePluginLifecycleState) -> u8 {
     match state {

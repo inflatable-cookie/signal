@@ -265,7 +265,6 @@ impl RuntimeObservationReport {
     }
 }
 
-
 impl RuntimeObservationReport {
     pub fn render_json(&self) -> String {
         RuntimeSupervisorReport {
