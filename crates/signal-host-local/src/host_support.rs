@@ -6,6 +6,8 @@ mod boot_entrypoints;
 mod boot_recovery;
 #[path = "host_support/boot_recovery_helpers.rs"]
 mod boot_recovery_helpers;
+#[path = "host_support/boot_setup.rs"]
+mod boot_setup;
 #[path = "host_support/boot_summary.rs"]
 mod boot_summary;
 #[path = "host_support/broker.rs"]
@@ -40,6 +42,8 @@ mod observation_clock_transition;
 mod observation_host_io;
 #[path = "host_support/offline_render.rs"]
 mod offline_render;
+#[path = "host_support/output_pump.rs"]
+mod output_pump;
 #[path = "host_support/recovery_cleanup.rs"]
 mod recovery_cleanup;
 #[path = "host_support/recovery_cleanup_transport.rs"]

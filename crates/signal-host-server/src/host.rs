@@ -1,4 +1,3 @@
-use signal_hardware::BackendPolicyTier;
 use signal_ipc::SharedMemoryBroker;
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
@@ -6,78 +5,30 @@ use signal_plugin_lv2::Lv2HostAdapter;
 use signal_plugin_vst3::Vst3HostAdapter;
 use signal_runtime::{
     BackendPolicyOverride, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest,
-    RecoveryRestartIntent, RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
+    RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
     RuntimeMediaAssetRegistration, RuntimeObservationApi,
     RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeOfflineRenderExecutionProgressReceipt,
     RuntimeOfflineRenderExecutionReceipt, RuntimeOfflineRenderPurgeReceipt,
     RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderQueueResult, RuntimeOfflineRenderRequest,
     RuntimeOfflineRenderResult, RuntimeRecordingCaptureCommitReceipt,
     RuntimeRecordingCaptureStartRequest, RuntimeSupervisorApi, RuntimeWarpClipRegistration,
-    SignalRuntime, StopReason,
+    SignalRuntime,
 };
 
 #[path = "host_support.rs"]
 mod host_support;
 use host_support::{
     discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_lv2_sandbox_session,
-    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage,
+    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage, ServerSupervisorState,
+};
+pub(crate) use host_support::{
+    samples_to_ms, FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS,
+    SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 pub use host_support::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,
     ServerTransportSummary,
 };
-
-const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
-const STEADY_STATE_BLOCKS: u64 = 8;
-const SOAK_RESTART_EPISODES: u32 = 3;
-const INTER_EPISODE_CONTINUITY_BLOCKS: u64 = 2;
-
-fn samples_to_ms(samples: u32, sample_rate_hz: u32) -> f32 {
-    if sample_rate_hz == 0 {
-        0.0
-    } else {
-        samples as f32 * 1_000.0 / sample_rate_hz as f32
-    }
-}
-
-#[derive(Clone, Debug, Default)]
-struct ServerSupervisorState {
-    scans_started: u64,
-    sandboxes: u64,
-    restarts: u64,
-    teardowns: u64,
-    backend_policy: Option<BackendPolicyTier>,
-    last_scan_roots: Vec<String>,
-    last_sandbox_id: Option<String>,
-    last_recovery_intent: Option<RecoveryRestartIntent>,
-    last_stop_reason: Option<StopReason>,
-}
-
-#[cfg_attr(not(test), allow(dead_code))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum FaultInjection {
-    Timeout,
-    Crash,
-    HeartbeatMiss,
-    RecoveryDeferredTeardownFailure,
-    RecoveryDeferredTeardownThenCleanup,
-    RecoveryDeferredTeardownCleanupRetry,
-    RecoveryTeardownFailure,
-    RecoveryRestartFailure,
-    RecoveryOverlapContention,
-    RecoveryInterleavedFailures,
-    EscalatingHeartbeatMisses { restart_episodes: u32 },
-    MixedWatchdogEpisodes { restart_episodes: u32 },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum RecoveryFailureInjection {
-    OldTransportTeardown,
-    DeferredOldTransportTeardown,
-    LingeringCleanupTeardown,
-    ReplacementStart,
-    CompetingOverlapAttach,
-}
 
 pub struct ServerRuntimeHost {
     runtime: SignalRuntime,

@@ -14,6 +14,8 @@ mod demo_graph;
 mod discovery;
 #[path = "host_support/faults.rs"]
 mod faults;
+#[path = "host_support/host_types.rs"]
+mod host_types;
 #[path = "host_support/instance_state.rs"]
 mod instance_state;
 #[path = "host_support/lifecycle_admission.rs"]
@@ -58,6 +60,11 @@ pub(crate) use faults::{
     build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
     record_broker_failure_and_convert, record_runtime_fault, runtime_error_from_failure,
     runtime_error_from_io, runtime_watchdog_trigger, transport_attach_intent,
+};
+pub(crate) use host_types::{
+    samples_to_ms, FaultInjection, RecoveryFailureInjection, ServerSupervisorState,
+    INTER_EPISODE_CONTINUITY_BLOCKS, SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS,
+    WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
 pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;

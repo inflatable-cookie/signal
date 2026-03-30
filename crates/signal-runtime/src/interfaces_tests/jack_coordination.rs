@@ -1,0 +1,138 @@
+use super::*;
+
+#[test]
+fn runtime_jack_coordination_snapshot_derives_from_linux_session_and_transport_baselines() {
+    let not_jack = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+        &linux_host_io_summary(
+            HardwareBackendIdentity::CoreAudio,
+            RuntimeHostLifecycleOwnership::HostDrivenCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        ),
+        &transport_session_summary(
+            TransportSessionState::Detached,
+            false,
+            TransportHeartbeatFreshness::Unknown,
+            TransportDispatchState::Idle,
+            0,
+            0,
+            0,
+        ),
+    );
+    assert_eq!(
+        not_jack.transport_posture,
+        RuntimeJackTransportPosture::NotJack
+    );
+    assert_eq!(
+        not_jack.graph_state,
+        RuntimeJackGraphCoordinationState::NotJack
+    );
+    assert_eq!(not_jack.client_role, RuntimeJackClientRole::NotJack);
+    assert_eq!(
+        not_jack.guarded_state,
+        RuntimeJackGuardedCoordinationState::NotJack
+    );
+
+    let detached = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+        &linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        ),
+        &transport_session_summary(
+            TransportSessionState::Detached,
+            false,
+            TransportHeartbeatFreshness::Unknown,
+            TransportDispatchState::Idle,
+            0,
+            0,
+            0,
+        ),
+    );
+    assert_eq!(
+        detached.transport_posture,
+        RuntimeJackTransportPosture::Detached
+    );
+    assert_eq!(
+        detached.graph_state,
+        RuntimeJackGraphCoordinationState::AttachedGuarded
+    );
+    assert_eq!(detached.client_role, RuntimeJackClientRole::PrimaryAudioIo);
+    assert_eq!(
+        detached.guarded_state,
+        RuntimeJackGuardedCoordinationState::GraphGuarded
+    );
+
+    let following = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+        &linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Running,
+            BackendHealth::Healthy,
+            0,
+            0,
+            0,
+        ),
+        &transport_session_summary(
+            TransportSessionState::AttachActive,
+            true,
+            TransportHeartbeatFreshness::Fresh,
+            TransportDispatchState::Completed,
+            1,
+            0,
+            0,
+        ),
+    );
+    assert_eq!(
+        following.transport_posture,
+        RuntimeJackTransportPosture::FollowingExternal
+    );
+    assert_eq!(
+        following.client_role,
+        RuntimeJackClientRole::TransportFollower
+    );
+    assert_eq!(
+        following.guarded_state,
+        RuntimeJackGuardedCoordinationState::TransportGuarded
+    );
+
+    let recovering = RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
+        &linux_host_io_summary(
+            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack),
+            RuntimeHostLifecycleOwnership::BackendManagedCallback,
+            RuntimeHostAudioStreamState::Faulted,
+            BackendHealth::Recovering,
+            1,
+            1,
+            0,
+        ),
+        &transport_session_summary(
+            TransportSessionState::DetachFaulted,
+            true,
+            TransportHeartbeatFreshness::Missed,
+            TransportDispatchState::TimedOut,
+            2,
+            1,
+            1,
+        ),
+    );
+    assert_eq!(
+        recovering.transport_posture,
+        RuntimeJackTransportPosture::Guarded
+    );
+    assert_eq!(
+        recovering.graph_state,
+        RuntimeJackGraphCoordinationState::Recovering
+    );
+    assert_eq!(
+        recovering.guarded_state,
+        RuntimeJackGuardedCoordinationState::Recovering
+    );
+}
