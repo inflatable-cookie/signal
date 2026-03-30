@@ -21,6 +21,7 @@ use signal_primitives::SampleRate;
 
 mod meter_state_continuity_helpers;
 use meter_state_continuity_helpers::*;
+mod meter_state_continuity_arc;
 mod meter_state_continuity_core;
 use meter_state_continuity_core::*;
 
