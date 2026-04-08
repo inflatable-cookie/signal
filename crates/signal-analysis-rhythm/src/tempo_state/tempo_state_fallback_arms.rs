@@ -116,9 +116,8 @@ pub fn use_refined_guarded_arm(ctx: TempoStateScopeContext) -> TempoStateRecomme
 }
 
 pub fn defer_arm(ctx: TempoStateScopeContext, base_instability: f32) -> TempoStateRecommendation {
-    let state_confidence = Confidence::new(
-        (0.55 * base_instability + 0.45 * ctx.tempo_ambiguity.0).clamp(0.0, 1.0),
-    );
+    let state_confidence =
+        Confidence::new((0.55 * base_instability + 0.45 * ctx.tempo_ambiguity.0).clamp(0.0, 1.0));
     TempoStateRecommendation {
         action: TempoStateAction::Defer,
         reason: TempoStateReason::TempoDeferred,

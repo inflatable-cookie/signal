@@ -1,10 +1,10 @@
 use crate::tempo_policy::*;
 use signal_analysis::Confidence;
 
-mod tempo_state_continuity_helpers;
-mod tempo_state_continuity_arc;
 mod tempo_state_arc_decision;
 mod tempo_state_arc_decision_fields;
+mod tempo_state_continuity_arc;
+mod tempo_state_continuity_helpers;
 mod tempo_state_scope_context;
 use tempo_state_scope_context::TempoStateScopeContext;
 mod tempo_state_snap_integer_arm;
