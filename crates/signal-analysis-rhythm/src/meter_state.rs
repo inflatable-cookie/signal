@@ -23,6 +23,10 @@ mod meter_state_continuity_helpers;
 mod meter_state_continuity_types;
 use meter_state_continuity_helpers::*;
 mod meter_state_continuity_arc;
+mod meter_state_continuity_context;
+mod meter_state_continuity_lock_arms;
+mod meter_state_continuity_hold_arms;
+mod meter_state_continuity_watch_clear_arms;
 mod meter_state_continuity_core;
 use meter_state_continuity_core::*;
 
