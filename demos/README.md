@@ -87,8 +87,11 @@ commands into inspectable proof instead of loose examples.
   - `cargo-bin`
 - a later demo batch should promote active demos from cargo-owned launch
   commands to Effigy-owned launch tasks as the substrate matures
-- the first official live demo surface is
-  `signal.demo.plugin.sandbox-lifecycle`
+- the first official live demo surfaces are:
+  - `signal.demo.plugin.sandbox-lifecycle`
+  - `signal.demo.runtime.recovery-inspector`
+  - `signal.demo.host.local-server-compare`
+  - `signal.demo.hardware.topology-diagnostics`
 
 ## Current Boundary
 
@@ -99,6 +102,6 @@ commands into inspectable proof instead of loose examples.
 
 ## Next Task
 
-Continue expanding official live demo coverage from the active strict lane,
-starting with the next bounded `g09.012` domain seam after sandbox lifecycle
-bootstrap.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.012` seam is plugin capability browsing, another bounded
+host/runtime/hardware live-demo batch, or a continued planning pause.

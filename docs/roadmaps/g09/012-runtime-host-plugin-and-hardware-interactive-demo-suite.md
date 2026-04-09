@@ -39,7 +39,7 @@ interactive suite that proves those claims live.
 
 - [x] add a runtime execution and recovery demo that shows scheduler, recovery,
       and receipt surfaces live
-- [ ] add a local-versus-server host comparison scenario where shared recovery
+- [x] add a local-versus-server host comparison scenario where shared recovery
       semantics can be inspected
 - [ ] expose degraded cases or unsupported-path notes explicitly in manifests
 
@@ -73,12 +73,43 @@ Batch 12.2 Tranche 5 outcome:
 - the next honest seam is again the deferred host comparison wrapper from card
   `025`
 
+Batch 12.2 Tranche 6 outcome:
+
+- the newly unblocked local and server host binaries are now wrapped by one
+  repo-owned comparison manifest, launch task, operator notes file, and
+  machine-readable receipt
+- `signal-host-local` and `signal-host-server` are now live-covered in the demo
+  coverage matrix
+- the remaining `g09.012` plugin capability browsing and hardware topology
+  seams still need fresh planning judgment rather than another automatic ready
+  card
+
+Batch 12.2 planning result after host comparison:
+
+- plugin capability browsing is still not the next honest seam because the demo
+  posture for owned scan roots and scan-result browsing remains underplanned
+- hardware diagnostics is now the clearer bounded next batch because the host
+  binaries already export native CoreAudio and simulated Linux backend/device
+  truth through existing summary surfaces
+
 ### Batch 12.3 - Hardware Demo Paths
 
-- [ ] add a hardware topology and diagnostics scenario for simulated and native
+- [x] add a hardware topology and diagnostics scenario for simulated and native
       backends
 - [ ] add a macOS-specific AU/CoreAudio scenario once `g09.004` lands
 - [ ] add Linux-native backend and LV2 coverage once `g09.005` lands
+
+Batch 12.3 Tranche 1 outcome:
+
+- the existing `signal-host-local` and `signal-host-server` binaries are now
+  wrapped by one repo-owned hardware diagnostics manifest, launch task,
+  operator notes file, and machine-readable receipt
+- `signal-hardware` and `signal-hardware-coreaudio` are now live-covered in the
+  demo coverage matrix because the hardware diagnostics surface is real
+- the hardware receipt keeps native CoreAudio and simulated Linux backend
+  posture explicit and does not claim native Linux device ownership
+- plugin capability browsing remains explicitly deferred after this tranche
+  because demo-owned scan-root posture still wants fresh planning judgment
 
 ## Acceptance Criteria
 
@@ -105,5 +136,6 @@ Batch 12.2 Tranche 5 outcome:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.012` seam is plugin capability browsing, another bounded
+host/runtime/hardware live-demo batch, or a continued planning pause.

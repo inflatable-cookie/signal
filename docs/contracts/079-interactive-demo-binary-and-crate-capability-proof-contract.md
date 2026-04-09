@@ -50,5 +50,5 @@ UI shells.
 ## Next Task
 
 Use this contract with the active `g09.012` strict lane while
-`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
+`docs/specs/batch-cards/027-g09-012-hardware-topology-diagnostics-bootstrap.md`
 governs the active batch.

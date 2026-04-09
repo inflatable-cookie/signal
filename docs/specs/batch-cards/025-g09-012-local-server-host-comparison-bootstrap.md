@@ -1,6 +1,6 @@
 # 025 - g09.012 Local Server Host Comparison Bootstrap
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Master spec refs: docs/specs/001-g09-lane-first-strict-adoption.md
@@ -75,4 +75,6 @@ comparison wrapper no longer sits on top of a known deferred capability gap.
 
 ## Next Task
 
-Implement this bounded local-versus-server host comparison bootstrap batch.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.012` seam is plugin capability browsing, hardware diagnostics, or a
+continued planning pause.

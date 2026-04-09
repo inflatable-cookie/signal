@@ -33,8 +33,7 @@ Use this section for:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
+- current ready card: none
 
 ## Recent active-lane evidence
 
@@ -74,8 +73,11 @@ Use this section for:
 - `2026-04/09-344500-g09-012-host-comparison-bootstrap-ready-handoff.md`
 - `2026-04/09-350500-g09-012-clap-host-fix-ready-correction.md`
 - `2026-04/09-360500-g09-012-clap-host-fix-closeout-and-host-comparison-reactivation.md`
+- `2026-04/09-370500-g09-012-host-comparison-bootstrap-closeout-and-planning-pause.md`
+- `2026-04/09-374500-g09-012-hardware-diagnostics-ready-handoff.md`
+- `2026-04/09-380500-g09-012-hardware-diagnostics-bootstrap-closeout.md`
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.
+Re-enter planning for the active strict `g09` lane before promoting another
+`g09.012` batch card.

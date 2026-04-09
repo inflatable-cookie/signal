@@ -4,7 +4,9 @@
   "active_workspace_crate_count": 24,
   "live_demo_manifests": [
     "signal.demo.plugin.sandbox-lifecycle",
-    "signal.demo.runtime.recovery-inspector"
+    "signal.demo.runtime.recovery-inspector",
+    "signal.demo.host.local-server-compare",
+    "signal.demo.hardware.topology-diagnostics"
   ],
   "notes": [
     "g09.011 freezes the first workspace coverage matrix but does not yet claim full domain demo implementation.",
@@ -28,32 +30,26 @@
     },
     {
       "crate": "signal-host-local",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.host.local-server-compare",
-      "planned_milestone": "g09.012",
-      "notes": "Default host binary bootstrap now routes through a supported demo VST3 path, but the comparison manifest is still deferred.",
+      "status": "active",
+      "manifest_id": "signal.demo.host.local-server-compare",
       "domain": "host"
     },
     {
       "crate": "signal-host-server",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.host.local-server-compare",
-      "planned_milestone": "g09.012",
-      "notes": "Default host binary bootstrap now routes through a supported demo VST3 path, but the comparison manifest is still deferred.",
+      "status": "active",
+      "manifest_id": "signal.demo.host.local-server-compare",
       "domain": "host"
     },
     {
       "crate": "signal-hardware",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.hardware.topology-diagnostics",
-      "planned_milestone": "g09.012",
+      "status": "active",
+      "manifest_id": "signal.demo.hardware.topology-diagnostics",
       "domain": "hardware"
     },
     {
       "crate": "signal-hardware-coreaudio",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.hardware.topology-diagnostics",
-      "planned_milestone": "g09.012",
+      "status": "active",
+      "manifest_id": "signal.demo.hardware.topology-diagnostics",
       "domain": "hardware"
     },
     {

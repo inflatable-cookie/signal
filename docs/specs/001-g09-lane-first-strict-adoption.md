@@ -78,5 +78,5 @@ bounded strict surface on the live `g09` queue:
 
 ## Next Task
 
-Continue the active strict lane from
-`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.
+Re-enter planning for the active strict `g09` lane before promoting another
+`g09.012` batch card.

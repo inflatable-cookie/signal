@@ -120,8 +120,7 @@ queue:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
+- current ready card: none
 
 ## Working Rule
 
@@ -131,5 +130,5 @@ queue:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.
+Re-enter planning for the active strict `g09` lane before promoting another
+`g09.012` batch card.

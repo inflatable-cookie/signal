@@ -1,0 +1,42 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.host.local-server-compare",
+  "title": "Signal Local Server Host Comparison Demo",
+  "domain": "host",
+  "kind": "shared-domain-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:local-server-host-comparison",
+    "owner_surface": "effigy-task",
+    "notes": "Runs the existing signal-host-local and signal-host-server binaries and records one bounded comparison receipt."
+  },
+  "covered_crates": [
+    "signal-host-local",
+    "signal-host-server"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.host.local-server-compare.default",
+      "title": "Local Versus Server Bootstrap Comparison",
+      "summary": "Compares the existing local and server host bootstrap surfaces through their current summary lines, without redesigning either binary output.",
+      "notes_path": "demos/scenarios/local-server-host-comparison.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/local-server-host-comparison.receipt.json",
+    "operator_notes_path": "demos/scenarios/local-server-host-comparison.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This comparison surface wraps the current host binaries and captures their shared runtime and recovery posture without widening into plugin browsing or a host UI shell."
+  },
+  "known_exclusions": [
+    "Plugin capability browsing remains deferred to a later g09.012 planning decision.",
+    "Hardware topology and diagnostics demos remain deferred.",
+    "This demo compares the existing host summary outputs and does not redesign those outputs."
+  ],
+  "expected_checks": [
+    "Both host binaries boot successfully on their real CLAP path.",
+    "Both hosts report ready and running posture with one active sandbox.",
+    "Both hosts report completed bounded execution with processed blocks and heartbeat responses.",
+    "The receipt keeps local-versus-server differences explicit instead of flattening them."
+  ]
+}

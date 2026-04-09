@@ -49,6 +49,18 @@ qa = [
   { run = "python3 demos/scripts/run_runtime_recovery_inspector_demo.py" },
   { run = "python3 -m json.tool demos/receipts/runtime-recovery-inspector.receipt.json > /dev/null" },
 ]
+"demo:local-server-host-comparison" = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/local-server-host-comparison.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_local_server_host_comparison_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/local-server-host-comparison.receipt.json > /dev/null" },
+]
+"demo:hardware-topology-diagnostics" = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/hardware-topology-diagnostics.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_hardware_topology_diagnostics_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/hardware-topology-diagnostics.receipt.json > /dev/null" },
+]
 "qa:docs" = [
   { task = "qa:docs:links" },
   { task = "qa:docs:agent-defaults" },
