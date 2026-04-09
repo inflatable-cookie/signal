@@ -1,6 +1,6 @@
 # 079 Interactive Demo Binary And Crate-Capability Proof Contract
 
-Status: draft
+Status: active
 Owner: core-product
 Updated: 2026-04-08
 Related contracts: `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`, `docs/contracts/071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md`
@@ -49,5 +49,6 @@ UI shells.
 
 ## Next Task
 
-Use this contract for the `g09` demo-substrate and demo-binary milestones so
-the demo program stays repo-owned and coverage-driven.
+Use this contract with the active `g09.011` strict lane while
+`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md` governs the active
+batch.

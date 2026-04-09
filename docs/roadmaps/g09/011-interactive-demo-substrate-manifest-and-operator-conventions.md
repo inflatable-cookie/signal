@@ -1,6 +1,6 @@
 # 011 - Interactive Demo Substrate, Manifest, And Operator Conventions
 
-Status: draft
+Status: active
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
@@ -14,7 +14,7 @@ interactive proof paths, launch commands, receipts, and known exclusions.
 
 ## Goals
 
-- [ ] define one shared demo substrate and manifest format
+- [x] define one shared demo substrate and manifest format
 - [ ] make demos launchable through repo-owned commands
 - [ ] record crate-to-demo coverage explicitly
 
@@ -27,10 +27,10 @@ interactive proof paths, launch commands, receipts, and known exclusions.
 
 ### Batch 11.1 - Demo Program Shape
 
-- [ ] define where demo binaries live and how they declare scenarios
-- [ ] choose the machine-readable manifest schema for crate coverage, exclusions,
+- [x] define where demo binaries live and how they declare scenarios
+- [x] choose the machine-readable manifest schema for crate coverage, exclusions,
       commands, and expected manual checks
-- [ ] decide which crates need dedicated demos versus domain-shared scenarios
+- [x] decide which crates need dedicated demos versus domain-shared scenarios
 
 ### Batch 11.2 - Launch And Evidence Conventions
 
@@ -68,5 +68,5 @@ interactive proof paths, launch commands, receipts, and known exclusions.
 
 ## Next Task
 
-Continue with `g09.012` and build the first domain demos around runtime, host,
-plugin, and hardware ownership.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.

@@ -37,5 +37,5 @@ panic-sensitive state logic into a resilient, inspectable policy system.
 
 ## Next Task
 
-Use this contract for the active strict `g09.010` lane while it awaits the
-next bounded planning decision.
+Use this contract as the closed rhythm authority carried forward from the
+completed `g09.010` lane.

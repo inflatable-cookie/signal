@@ -52,9 +52,9 @@ proof:
   - low-level correctness, safety, and protocol hardening
 - `g09.009` `complete`
   - DSP fidelity and semantic-analysis realism uplift
-- `g09.010` `active`
+- `g09.010` `complete`
   - rhythm-engine resilience and policy normalization
-- `g09.011` `draft`
+- `g09.011` `active`
   - interactive demo substrate, manifest, and operator conventions
 - `g09.012` `draft`
   - host/runtime/plugin/hardware interactive demo suite
@@ -96,7 +96,8 @@ with proof instead of prose.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card:
+  `docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`
 
 ## Working rules for this thread
 
@@ -110,6 +111,5 @@ with proof instead of prose.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
-batch before creating another ready card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.

@@ -33,7 +33,8 @@ Use this section for:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card:
+  `docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`
 
 ## Recent active-lane evidence
 
@@ -60,9 +61,11 @@ Use this section for:
 - `2026-04/09-261500-g09-010-meter-plan-shell-closeout-and-trigger-ready.md`
 - `2026-04/09-271000-g09-010-trigger-cause-normalization-closeout-and-context-ready.md`
 - `2026-04/09-280000-g09-010-stage-plan-context-closeout-and-planning-pause.md`
+- `2026-04/09-283500-g09-010-regression-corpus-ready-handoff.md`
+- `2026-04/09-290500-g09-010-regression-closeout-and-g09-011-handoff.md`
+- `2026-04/09-300500-g09-011-demo-program-shape-closeout-and-launch-ready.md`
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
-batch before creating another ready card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.

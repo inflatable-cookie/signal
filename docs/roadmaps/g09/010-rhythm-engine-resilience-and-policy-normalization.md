@@ -1,6 +1,6 @@
 # 010 - Rhythm Engine Resilience And Policy Normalization
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
@@ -51,18 +51,20 @@ to trust and hard to evolve.
       scorecards, or staged evaluators
 - [ ] keep recommendation provenance explicit so tuning stays inspectable
 
-### Batch 10.3 - Corpus Proof And Demo
+### Batch 10.3 - Corpus Proof And Demo Handoff
 
-- [ ] rerun rhythm corpus comparisons across old and new policy surfaces
-- [ ] document any intentional breaking recommendation shifts
-- [ ] add an interactive rhythm continuity demo scenario under the demo
-      substrate
+- [x] rerun focused rhythm regression comparisons across the normalized tempo
+      and meter policy surfaces
+- [x] document preserved posture and explicit deferred demo work in the strict
+      evidence layer
+- [x] hand the interactive rhythm continuity demo scenario forward to the demo
+      substrate milestones
 
 ## Acceptance Criteria
 
 - [x] worker failure no longer crashes the rhythm path
-- [ ] tempo and meter continuity policy is materially less duplicated
-- [ ] recommendation changes are corpus-backed and inspectable
+- [x] tempo and meter continuity policy is materially less duplicated
+- [x] recommendation changes are corpus-backed and inspectable
 
 ## Risks And Mitigations
 
@@ -82,6 +84,5 @@ to trust and hard to evolve.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
-batch before creating another ready card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/019-g09-011-demo-program-shape.md`.

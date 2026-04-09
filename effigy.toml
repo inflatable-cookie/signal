@@ -25,6 +25,10 @@ qa = [
   { task = "qa:docs:index:vision" },
   { task = "qa:docs:next-action:vision" },
 ]
+"demo:program-shape" = [
+  { run = "python3 -m json.tool demos/manifest.schema.json > /dev/null" },
+  { run = "python3 -m json.tool demos/templates/demo-manifest.example.json > /dev/null" },
+]
 "qa:docs" = [
   { task = "qa:docs:links" },
   { task = "qa:docs:agent-defaults" },

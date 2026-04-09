@@ -1,0 +1,30 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.shared.program-shape",
+  "title": "Signal Demo Program Shape Example",
+  "domain": "shared",
+  "kind": "shared-domain-demo",
+  "status": "planned",
+  "launch": {
+    "command": "cargo run -p signal-runtime --example supervisor_report_demo",
+    "owner_surface": "cargo-example",
+    "notes": "Example launch command only; this template does not claim live demo coverage yet."
+  },
+  "covered_crates": [
+    "signal-runtime"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.shared.program-shape.default",
+      "title": "Default Program Shape Example",
+      "summary": "Shows the minimum manifest entry shape for a future official demo surface."
+    }
+  ],
+  "known_exclusions": [
+    "This template is not itself a live demo or coverage claim."
+  ],
+  "expected_checks": [
+    "Manifest validates against demos/manifest.schema.json.",
+    "Launch command points at a repo-owned executable surface."
+  ]
+}

@@ -147,6 +147,9 @@ mod meter_public_categories;
 #[path = "rhythm_tests/meter_structure_fallback.rs"]
 mod meter_structure_fallback;
 #[cfg(test)]
+#[path = "rhythm_tests/rhythm_regression_corpus.rs"]
+mod rhythm_regression_corpus;
+#[cfg(test)]
 #[path = "rhythm_tests/stability_scope.rs"]
 mod stability_scope;
 #[cfg(test)]

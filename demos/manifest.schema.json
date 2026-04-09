@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "signal.demo.manifest.schema.v1",
+  "title": "Signal Demo Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "id",
+    "title",
+    "domain",
+    "kind",
+    "status",
+    "launch",
+    "covered_crates",
+    "scenarios",
+    "known_exclusions",
+    "expected_checks"
+  ],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "const": "signal.demo.manifest.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^signal\\.demo\\.[a-z0-9.-]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "runtime",
+        "host",
+        "plugin",
+        "hardware",
+        "dsp",
+        "graph",
+        "analysis",
+        "shared"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "shared-domain-demo",
+        "dedicated-demo"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "active",
+        "deferred"
+      ]
+    },
+    "launch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "owner_surface"
+      ],
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_surface": {
+          "type": "string",
+          "enum": [
+            "cargo-example",
+            "cargo-bin",
+            "effigy-task"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "covered_crates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^signal-[a-z0-9-]+$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "summary"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^signal\\.demo\\.[a-z0-9.-]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes_path": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "known_exclusions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "expected_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    }
+  }
+}
