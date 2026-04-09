@@ -48,7 +48,6 @@ proof:
   - shared host/runtime execution and recovery unification
 - `g09.007` `complete`
   - runtime interface decomposition and test-surface normalization
-- `g09.008` `active`
 - `g09.008` `complete`
   - low-level correctness, safety, and protocol hardening
 - `g09.009` `complete`
@@ -97,8 +96,7 @@ with proof instead of prose.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+- current ready card: none
 
 ## Working rules for this thread
 
@@ -112,5 +110,6 @@ with proof instead of prose.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
+batch before creating another ready card.

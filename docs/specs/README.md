@@ -38,9 +38,10 @@ strict surface attached to the active `g09` work.
 
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
-- `batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+- no current ready batch card
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
+batch before creating another ready card.

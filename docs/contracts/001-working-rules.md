@@ -99,6 +99,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ## Next Task
 
-Use this contract with the active `g09.009` strict lane while
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
-governs the active batch.
+Use this contract with the active `g09.010` strict lane while it awaits its
+next bounded planning decision.

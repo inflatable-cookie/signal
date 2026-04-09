@@ -6,7 +6,7 @@ Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `RHYTHM`, `ANALYSIS`, `RESILIENCE`
 Contract refs: `047`, `078`
-Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`
 
 ## Problem
 
@@ -31,16 +31,24 @@ to trust and hard to evolve.
 ### Batch 10.1 - Failure Containment
 
 - [x] freeze the first worker-failure containment seam as the next ready batch
-- [ ] remove `join().unwrap()` style worker joins from production rhythm paths
-- [ ] define typed degraded and failed analysis receipts for worker-loss cases
-- [ ] add targeted failure-injection tests around worker panics and partial
+- [x] remove `join().unwrap()` style worker joins from production rhythm paths
+- [x] define typed degraded and failed analysis receipts for worker-loss cases
+- [x] add targeted failure-injection tests around worker panics and partial
       feature availability
 
 ### Batch 10.2 - Policy Normalization
 
-- [ ] inventory duplicated tempo and meter recommendation arms
-- [ ] replace near-copy branch families with policy tables, scorecards, or
-      staged evaluators
+- [x] inventory duplicated tempo and meter recommendation arms
+- [x] replace the first near-copy tempo-state branch family with a staged
+      policy helper
+- [x] replace the first repeated meter continuity plan shell with a staged
+      builder
+- [x] replace the spread-out meter continuity trigger, reason, and cause
+      derivation with an explicit shared rule surface
+- [x] replace the duplicated meter continuity stage-versus-plan assembly shell
+      with one explicit context assembler
+- [ ] replace the remaining near-copy branch families with policy tables,
+      scorecards, or staged evaluators
 - [ ] keep recommendation provenance explicit so tuning stays inspectable
 
 ### Batch 10.3 - Corpus Proof And Demo
@@ -52,7 +60,7 @@ to trust and hard to evolve.
 
 ## Acceptance Criteria
 
-- [ ] worker failure no longer crashes the rhythm path
+- [x] worker failure no longer crashes the rhythm path
 - [ ] tempo and meter continuity policy is materially less duplicated
 - [ ] recommendation changes are corpus-backed and inspectable
 
@@ -74,5 +82,6 @@ to trust and hard to evolve.
 
 ## Next Task
 
-Continue the active strict lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
+batch before creating another ready card.

@@ -3,6 +3,7 @@ use signal_analysis::Confidence;
 
 pub use super::meter_state_continuity_cause_stack::cause_stack;
 pub use super::meter_state_continuity_cause_stack::has_cause;
+use super::meter_state_continuity_rule_surface::{reason_for_stage, trigger_for_reason};
 pub use super::meter_state_continuity_types::*;
 
 pub fn continuity_history(context: MeterContinuityStageContext) -> MeterContinuityHistory {
@@ -63,26 +64,7 @@ pub fn continuity_trigger(
     source: MeterContinuitySource,
     reason: MeterContinuityReason,
 ) -> MeterContinuityTrigger {
-    match reason {
-        MeterContinuityReason::StableEvidence => MeterContinuityTrigger::StableRevalidation,
-        MeterContinuityReason::TentativeEvidence => MeterContinuityTrigger::TentativeCarry,
-        MeterContinuityReason::PriorStateCarry => MeterContinuityTrigger::PriorStateDrift,
-        MeterContinuityReason::RecoveryWindowSupport => MeterContinuityTrigger::RecoveryWindowDrift,
-        MeterContinuityReason::PhaseDisplacement => MeterContinuityTrigger::PhaseRecovery,
-        MeterContinuityReason::RevalidationDecay => match source {
-            MeterContinuitySource::PriorMeter => MeterContinuityTrigger::PriorStateDrift,
-            MeterContinuitySource::RecoveryWindow => MeterContinuityTrigger::RecoveryWindowDrift,
-            MeterContinuitySource::CurrentMeter => match action {
-                MeterContinuityAction::Retain | MeterContinuityAction::Reacquire => {
-                    MeterContinuityTrigger::TentativeCarry
-                }
-                MeterContinuityAction::Lock => MeterContinuityTrigger::StableRevalidation,
-                MeterContinuityAction::Clear => MeterContinuityTrigger::EvidenceLoss,
-            },
-            MeterContinuitySource::Cleared => MeterContinuityTrigger::EvidenceLoss,
-        },
-        MeterContinuityReason::InsufficientEvidence => MeterContinuityTrigger::EvidenceLoss,
-    }
+    trigger_for_reason(action, source, reason)
 }
 
 pub fn unresolved_span(
@@ -128,32 +110,7 @@ pub fn continuity_reason(
     phase_displaced: bool,
     is_decay: bool,
 ) -> MeterContinuityReason {
-    if matches!(action, MeterContinuityAction::Clear)
-        || matches!(source, MeterContinuitySource::Cleared)
-    {
-        return MeterContinuityReason::InsufficientEvidence;
-    }
-
-    if phase_displaced && matches!(action, MeterContinuityAction::Reacquire) {
-        return MeterContinuityReason::PhaseDisplacement;
-    }
-
-    if is_decay {
-        return MeterContinuityReason::RevalidationDecay;
-    }
-
-    match source {
-        MeterContinuitySource::CurrentMeter => match action {
-            MeterContinuityAction::Lock => MeterContinuityReason::StableEvidence,
-            MeterContinuityAction::Retain | MeterContinuityAction::Reacquire => {
-                MeterContinuityReason::TentativeEvidence
-            }
-            MeterContinuityAction::Clear => MeterContinuityReason::InsufficientEvidence,
-        },
-        MeterContinuitySource::PriorMeter => MeterContinuityReason::PriorStateCarry,
-        MeterContinuitySource::RecoveryWindow => MeterContinuityReason::RecoveryWindowSupport,
-        MeterContinuitySource::Cleared => MeterContinuityReason::InsufficientEvidence,
-    }
+    reason_for_stage(action, source, phase_displaced, is_decay)
 }
 
 pub fn continuity_severity(

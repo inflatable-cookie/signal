@@ -1,4 +1,5 @@
 use super::meter_state_continuity_context::MeterStagePlanContext;
+use super::meter_state_continuity_plan_shell::{build_recommendation, plan, stage};
 use crate::rhythm_policy::*;
 
 pub fn lock_arms(
@@ -8,28 +9,29 @@ pub fn lock_arms(
 ) -> MeterContinuityRecommendation {
     let _ = retained_beats;
     if pickup_like_phase {
-        MeterContinuityRecommendation {
-            bar_length: ctx.plan(
+        build_recommendation(
+            ctx,
+            plan(
                 MeterContinuityAction::Lock,
                 MeterContinuitySource::CurrentMeter,
                 MeterContinuityReason::StableEvidence,
                 16,
                 16,
-                ctx.stage(
+                stage(
                     16,
                     MeterContinuityAction::Lock,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::StableEvidence,
                     0,
                 ),
-                ctx.stage(
+                stage(
                     24,
                     MeterContinuityAction::Retain,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::RevalidationDecay,
                     1,
                 ),
-                ctx.stage(
+                stage(
                     32,
                     MeterContinuityAction::Clear,
                     MeterContinuitySource::Cleared,
@@ -37,27 +39,27 @@ pub fn lock_arms(
                     2,
                 ),
             ),
-            downbeat_phase: ctx.plan(
+            plan(
                 MeterContinuityAction::Reacquire,
                 MeterContinuitySource::CurrentMeter,
                 MeterContinuityReason::PhaseDisplacement,
                 0,
                 2,
-                ctx.stage(
+                stage(
                     2,
                     MeterContinuityAction::Lock,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::StableEvidence,
                     0,
                 ),
-                ctx.stage(
+                stage(
                     4,
                     MeterContinuityAction::Reacquire,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::PhaseDisplacement,
                     1,
                 ),
-                ctx.stage(
+                stage(
                     8,
                     MeterContinuityAction::Clear,
                     MeterContinuitySource::Cleared,
@@ -65,30 +67,31 @@ pub fn lock_arms(
                     2,
                 ),
             ),
-        }
+        )
     } else {
-        MeterContinuityRecommendation {
-            bar_length: ctx.plan(
+        build_recommendation(
+            ctx,
+            plan(
                 MeterContinuityAction::Lock,
                 MeterContinuitySource::CurrentMeter,
                 MeterContinuityReason::StableEvidence,
                 16,
                 16,
-                ctx.stage(
+                stage(
                     16,
                     MeterContinuityAction::Lock,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::StableEvidence,
                     0,
                 ),
-                ctx.stage(
+                stage(
                     24,
                     MeterContinuityAction::Retain,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::RevalidationDecay,
                     1,
                 ),
-                ctx.stage(
+                stage(
                     32,
                     MeterContinuityAction::Clear,
                     MeterContinuitySource::Cleared,
@@ -96,27 +99,27 @@ pub fn lock_arms(
                     2,
                 ),
             ),
-            downbeat_phase: ctx.plan(
+            plan(
                 MeterContinuityAction::Lock,
                 MeterContinuitySource::CurrentMeter,
                 MeterContinuityReason::StableEvidence,
                 16,
                 16,
-                ctx.stage(
+                stage(
                     16,
                     MeterContinuityAction::Lock,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::StableEvidence,
                     0,
                 ),
-                ctx.stage(
+                stage(
                     24,
                     MeterContinuityAction::Retain,
                     MeterContinuitySource::CurrentMeter,
                     MeterContinuityReason::RevalidationDecay,
                     1,
                 ),
-                ctx.stage(
+                stage(
                     32,
                     MeterContinuityAction::Clear,
                     MeterContinuitySource::Cleared,
@@ -124,6 +127,6 @@ pub fn lock_arms(
                     2,
                 ),
             ),
-        }
+        )
     }
 }

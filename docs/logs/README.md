@@ -33,8 +33,7 @@ Use this section for:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+- current ready card: none
 
 ## Recent active-lane evidence
 
@@ -56,8 +55,14 @@ Use this section for:
 - `2026-04/09-233500-g09-009-resampler-proof-and-semantic-handoff-tranche.md`
 - `2026-04/09-240500-g09-009-semantic-calibration-baseline-tranche.md`
 - `2026-04/09-241500-g09-009-confidence-closeout-and-g09-010-handoff.md`
+- `2026-04/09-250500-g09-010-worker-containment-closeout-and-policy-ready.md`
+- `2026-04/09-254500-g09-010-tempo-state-unification-closeout-and-meter-ready.md`
+- `2026-04/09-261500-g09-010-meter-plan-shell-closeout-and-trigger-ready.md`
+- `2026-04/09-271000-g09-010-trigger-cause-normalization-closeout-and-context-ready.md`
+- `2026-04/09-280000-g09-010-stage-plan-context-closeout-and-planning-pause.md`
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
+batch before creating another ready card.

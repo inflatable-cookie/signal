@@ -121,7 +121,7 @@ queue:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+  none
 
 ## Working Rule
 
@@ -131,5 +131,6 @@ queue:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.010` closes here or promotes a new bounded corpus-proof or demo-adjacent
+batch before creating another ready card.

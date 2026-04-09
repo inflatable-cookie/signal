@@ -37,5 +37,5 @@ panic-sensitive state logic into a resilient, inspectable policy system.
 
 ## Next Task
 
-Use this contract for the active strict `g09.010` lane, starting with
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+Use this contract for the active strict `g09.010` lane while it awaits the
+next bounded planning decision.

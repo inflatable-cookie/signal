@@ -1,6 +1,6 @@
 # 013 - g09.010 Rhythm Worker Failure Containment
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Master spec refs: docs/specs/001-g09-lane-first-strict-adoption.md
@@ -53,6 +53,5 @@ feature availability that preserves deterministic output shape.
 
 ## Next Task
 
-Implement this rhythm worker failure-containment batch, then reassess whether
-`g09.010` should continue with deeper worker-failure proof or switch to policy
-normalization.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/014-g09-010-tempo-state-arm-unification.md`.

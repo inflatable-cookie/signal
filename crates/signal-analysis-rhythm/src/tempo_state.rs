@@ -8,6 +8,7 @@ mod tempo_state_continuity_helpers;
 mod tempo_state_scope_context;
 use tempo_state_scope_context::TempoStateScopeContext;
 mod tempo_state_snap_integer_arm;
+mod tempo_state_stable_policy;
 use tempo_state_snap_integer_arm::snap_integer_arm;
 mod tempo_state_use_refined_stable_arm;
 use tempo_state_use_refined_stable_arm::use_refined_stable_arm;

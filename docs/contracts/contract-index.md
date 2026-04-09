@@ -17,8 +17,8 @@ memory alone.
 - `g09.010` is the current strict-execution milestone
 - `docs/specs/001-g09-lane-first-strict-adoption.md` is the active strict-lane
   spec
-- `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
-  is the current ready card
+- there is no current ready card until the next `g09.010` planning decision is
+  made
 
 ## Strict Lane Working Rule
 
@@ -141,6 +141,4 @@ frozen elsewhere in this index.
 ## Next Task
 
 Use this index as the contract-selection front door for the active strict
-`g09` lane while
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
-governs the active batch.
+`g09` lane while `g09.010` awaits its next bounded planning decision.

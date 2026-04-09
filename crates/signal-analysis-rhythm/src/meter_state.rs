@@ -25,6 +25,8 @@ mod meter_state_continuity_context;
 mod meter_state_continuity_core;
 mod meter_state_continuity_hold_arms;
 mod meter_state_continuity_lock_arms;
+mod meter_state_continuity_plan_shell;
+mod meter_state_continuity_rule_surface;
 mod meter_state_continuity_watch_clear_arms;
 use meter_state_continuity_core::*;
 mod meter_state_infer;

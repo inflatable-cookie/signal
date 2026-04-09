@@ -171,6 +171,9 @@ mod tempo_state_deferred;
 #[path = "rhythm_tests/tempo_state_guarded_refined.rs"]
 mod tempo_state_guarded_refined;
 #[cfg(test)]
+#[path = "rhythm_tests/tempo_state_policy_unification.rs"]
+mod tempo_state_policy_unification;
+#[cfg(test)]
 #[path = "rhythm_tests/tempo_state_scope_edges.rs"]
 mod tempo_state_scope_edges;
 #[cfg(test)]

@@ -1,3 +1,6 @@
+use super::meter_state_continuity_rule_surface::{
+    primary_cause_for_reason, primary_cause_for_trigger,
+};
 use super::meter_state_continuity_types::*;
 use crate::rhythm_policy::*;
 
@@ -15,81 +18,11 @@ pub fn cause_stack(inputs: MeterContinuityCauseInputs) -> MeterContinuityCauseSt
     let mut causes = [None; 3];
     let mut count = 0usize;
 
-    match reason {
-        MeterContinuityReason::StableEvidence => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::StableMeterEvidence,
-            );
-        }
-        MeterContinuityReason::PriorStateCarry => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::PriorContinuityCarry,
-            );
-        }
-        MeterContinuityReason::RecoveryWindowSupport => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::RecoveryWindowInstability,
-            );
-        }
-        MeterContinuityReason::PhaseDisplacement => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::PhaseDisplacement,
-            );
-        }
-        MeterContinuityReason::InsufficientEvidence => {
-            push_cause(&mut causes, &mut count, MeterContinuityCause::EvidenceLoss);
-        }
-        MeterContinuityReason::TentativeEvidence | MeterContinuityReason::RevalidationDecay => {}
+    if let Some(cause) = primary_cause_for_reason(reason) {
+        push_cause(&mut causes, &mut count, cause);
     }
 
-    match trigger {
-        MeterContinuityTrigger::StableRevalidation => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::StableMeterEvidence,
-            );
-        }
-        MeterContinuityTrigger::TentativeCarry => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::SparseMeterSupport,
-            );
-        }
-        MeterContinuityTrigger::PhaseRecovery => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::PhaseDisplacement,
-            );
-        }
-        MeterContinuityTrigger::PriorStateDrift => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::PriorContinuityCarry,
-            );
-        }
-        MeterContinuityTrigger::RecoveryWindowDrift => {
-            push_cause(
-                &mut causes,
-                &mut count,
-                MeterContinuityCause::RecoveryWindowInstability,
-            );
-        }
-        MeterContinuityTrigger::EvidenceLoss => {
-            push_cause(&mut causes, &mut count, MeterContinuityCause::EvidenceLoss);
-        }
-    }
+    push_cause(&mut causes, &mut count, primary_cause_for_trigger(trigger));
 
     if phase_displaced {
         push_cause(
