@@ -37,4 +37,4 @@ beyond bounded placeholder fidelity in resampling and semantic-tag projection.
 ## Next Task
 
 Use this contract for the active strict `g09.009` lane, starting with
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.

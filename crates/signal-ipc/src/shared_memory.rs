@@ -304,17 +304,19 @@ impl SharedMemoryBroker {
                     Some(error),
                 )
             })?;
-        let file_len = file.metadata().map_err(|error| {
-            lifecycle_error(
-                SharedMemoryRegionOperation::Attach,
-                SharedMemoryRegionLifecycleErrorKind::IoFailure,
-                &transport.region_id,
-                transport.backing_path.clone(),
-                "failed to stat shared-memory backing file",
-                Some(error),
-            )
-        })?
-        .len();
+        let file_len = file
+            .metadata()
+            .map_err(|error| {
+                lifecycle_error(
+                    SharedMemoryRegionOperation::Attach,
+                    SharedMemoryRegionLifecycleErrorKind::IoFailure,
+                    &transport.region_id,
+                    transport.backing_path.clone(),
+                    "failed to stat shared-memory backing file",
+                    Some(error),
+                )
+            })?
+            .len();
         if file_len != transport.total_bytes as u64 {
             return Err(lifecycle_error(
                 SharedMemoryRegionOperation::Attach,

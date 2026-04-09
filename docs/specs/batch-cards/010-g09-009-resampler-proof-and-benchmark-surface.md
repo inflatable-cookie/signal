@@ -1,6 +1,6 @@
 # 010 - g09.009 Resampler Proof And Benchmark Surface
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Master spec refs: docs/specs/001-g09-lane-first-strict-adoption.md
@@ -57,5 +57,22 @@ not overclaim fidelity through enum names alone.
 
 ## Next Task
 
-Implement this resampler proof batch, then reassess whether `g09.009` should
-stay in resampler fidelity evidence or switch to the semantic calibration seam.
+Continue the active strict lane from
+`docs/specs/batch-cards/011-g09-009-semantic-calibration-baseline.md`.
+
+## Outcome
+
+`signal-dsp-resample` now has a stable machine-readable comparison surface for
+its quality tiers. The crate exposes `ResampleQualityComparisonReport` and
+artifact metrics that compare `Nearest`, `Linear`, and `BandLimited` output
+against one frozen input/rate conversion pair, and the focused proof tests show
+that the `BandLimited` mode materially reduces alias-prone output while
+preserving deterministic chunked/offline behavior.
+
+## Validation Run
+
+- `cargo test -p signal-dsp-resample`
+- `cargo check -p signal-analysis-embed`
+- `effigy health`
+- `effigy qa:docs`
+- `effigy qa:northstar`

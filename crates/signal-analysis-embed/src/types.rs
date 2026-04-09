@@ -74,12 +74,23 @@ pub enum SemanticTagLabel {
     DynamicPunch,
 }
 
+/// Explainable evidence carried with each emitted semantic tag.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SemanticTagEvidence {
+    pub primary_driver: &'static str,
+    pub primary_value: f32,
+    pub supporting_driver: &'static str,
+    pub supporting_value: f32,
+    pub evidence_strength: f32,
+}
+
 /// Ranked semantic tag with score and confidence.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SemanticTag {
     pub label: SemanticTagLabel,
     pub score: f32,
     pub confidence: Confidence,
+    pub evidence: SemanticTagEvidence,
 }
 
 /// Deterministic embedding projected from the descriptor packs.
@@ -96,9 +107,28 @@ pub struct SemanticAnalysisDiagnostics {
     pub descriptor_confidence: Confidence,
     pub semantic_confidence: Confidence,
     pub top_tag_margin: f32,
+    pub top_tag_label: Option<SemanticTagLabel>,
     pub embedding_l2_norm: f32,
     pub active_embedding_dimensions: usize,
     pub fallback_used: bool,
+}
+
+/// Stable calibration evidence for one frozen semantic corpus case.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SemanticCalibrationCaseReport {
+    pub case_id: &'static str,
+    pub top_tag: SemanticTagLabel,
+    pub top_score: f32,
+    pub top_confidence: Confidence,
+    pub primary_driver: &'static str,
+    pub supporting_driver: &'static str,
+    pub top_tag_margin: f32,
+}
+
+/// Machine-readable frozen semantic calibration surface.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SemanticCalibrationReport {
+    pub case_reports: Vec<SemanticCalibrationCaseReport>,
 }
 
 /// Semantic inference result built on top of shared character descriptors.

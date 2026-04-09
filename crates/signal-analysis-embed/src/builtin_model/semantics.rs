@@ -3,7 +3,7 @@ use signal_analysis_character::CharacterAnalysisResult;
 
 use crate::types::{
     DescriptorEmbedding, SemanticAnalysisDiagnostics, SemanticAnalysisResult, SemanticTag,
-    SemanticTagLabel,
+    SemanticTagEvidence, SemanticTagLabel,
 };
 
 use super::{normalize_unit, BuiltInDescriptorSemanticModel, BUILTIN_DESCRIPTOR_MODEL_ID};
@@ -35,6 +35,12 @@ impl BuiltInDescriptorSemanticModel {
                         + (1.0 - spectral_complexity) * 0.15,
                 ),
                 confidence: descriptor_scaled_confidence(descriptor_confidence, harmonic_focus),
+                evidence: tag_evidence(
+                    "harmonic_focus",
+                    harmonic_focus,
+                    "spectral_contrast",
+                    contrast_norm,
+                ),
             },
             SemanticTag {
                 label: SemanticTagLabel::TexturalNoise,
@@ -46,6 +52,12 @@ impl BuiltInDescriptorSemanticModel {
                 confidence: descriptor_scaled_confidence(
                     descriptor_confidence,
                     normalize_unit((spectral_complexity + (1.0 - contrast_norm)) * 0.5),
+                ),
+                evidence: tag_evidence(
+                    "spectral_complexity",
+                    spectral_complexity,
+                    "inverse_spectral_contrast",
+                    1.0 - contrast_norm,
                 ),
             },
             SemanticTag {
@@ -59,6 +71,12 @@ impl BuiltInDescriptorSemanticModel {
                     descriptor_confidence,
                     normalize_unit((rhythmic_activity + dynamic_punch) * 0.5),
                 ),
+                evidence: tag_evidence(
+                    "rhythmic_activity",
+                    rhythmic_activity,
+                    "peak_transient_strength",
+                    descriptors.temporal_shape.peak_transient_strength,
+                ),
             },
             SemanticTag {
                 label: SemanticTagLabel::SustainedBody,
@@ -68,6 +86,12 @@ impl BuiltInDescriptorSemanticModel {
                         + (1.0 - rhythmic_activity) * 0.20,
                 ),
                 confidence: descriptor_scaled_confidence(descriptor_confidence, sustain_body),
+                evidence: tag_evidence(
+                    "sustain_body",
+                    sustain_body,
+                    "decay_time",
+                    normalize_unit(descriptors.temporal_shape.decay_time_ms / 300.0),
+                ),
             },
             SemanticTag {
                 label: SemanticTagLabel::DynamicPunch,
@@ -77,6 +101,12 @@ impl BuiltInDescriptorSemanticModel {
                         + normalize_unit(descriptors.dynamics.dynamic_range / 0.7) * 0.25,
                 ),
                 confidence: descriptor_scaled_confidence(descriptor_confidence, dynamic_punch),
+                evidence: tag_evidence(
+                    "dynamic_punch",
+                    dynamic_punch,
+                    "peak_transient_strength",
+                    descriptors.temporal_shape.peak_transient_strength,
+                ),
             },
         ];
 
@@ -130,6 +160,7 @@ impl BuiltInDescriptorSemanticModel {
         } else {
             semantic_tags.first().map(|tag| tag.score).unwrap_or(0.0)
         };
+        let top_tag_label = semantic_tags.first().map(|tag| tag.label);
         let active_embedding_dimensions = embedding_values
             .iter()
             .filter(|value| value.abs() > 1e-6)
@@ -147,11 +178,27 @@ impl BuiltInDescriptorSemanticModel {
                 descriptor_confidence,
                 semantic_confidence,
                 top_tag_margin,
+                top_tag_label,
                 embedding_l2_norm,
                 active_embedding_dimensions,
                 fallback_used,
             },
         }
+    }
+}
+
+fn tag_evidence(
+    primary_driver: &'static str,
+    primary_value: f32,
+    supporting_driver: &'static str,
+    supporting_value: f32,
+) -> SemanticTagEvidence {
+    SemanticTagEvidence {
+        primary_driver,
+        primary_value,
+        supporting_driver,
+        supporting_value,
+        evidence_strength: normalize_unit((primary_value + supporting_value) * 0.5),
     }
 }
 

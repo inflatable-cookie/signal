@@ -38,9 +38,9 @@ strict surface attached to the active `g09` work.
 
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
-- `batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
+- `batch-cards/012-g09-009-semantic-confidence-calibration.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`batch-cards/012-g09-009-semantic-confidence-calibration.md`.

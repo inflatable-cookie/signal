@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
+  `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
 
 ## Recent active-lane evidence
 
@@ -53,8 +53,10 @@ Use this section for:
 - `2026-04/09-221500-g09-008-shared-memory-lifecycle-hardening-tranche.md`
 - `2026-04/09-223500-g09-008-closeout-and-g09-009-strict-handoff.md`
 - `2026-04/09-230500-g09-009-resampler-quality-tier-foundation-tranche.md`
+- `2026-04/09-233500-g09-009-resampler-proof-and-semantic-handoff-tranche.md`
+- `2026-04/09-240500-g09-009-semantic-calibration-baseline-tranche.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.

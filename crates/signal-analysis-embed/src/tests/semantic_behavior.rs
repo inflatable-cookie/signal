@@ -1,4 +1,5 @@
 use super::*;
+use crate::builtin_model::EMBEDDING_DIMENSIONS;
 
 #[test]
 fn tonal_audio_prefers_tonal_focus() {
@@ -7,8 +8,13 @@ fn tonal_audio_prefers_tonal_focus() {
     let result = embedder.analyze(&audio);
 
     assert_eq!(top_label(&result), SemanticTagLabel::TonalFocus);
+    assert_eq!(result.diagnostics.top_tag_label, Some(SemanticTagLabel::TonalFocus));
     assert_eq!(result.embedding.values.len(), EMBEDDING_DIMENSIONS);
     assert!(result.source_descriptors.spectral_shape.flatness < 1e-4);
+    assert_eq!(
+        result.semantic_tags[0].evidence.primary_driver,
+        "harmonic_focus"
+    );
 }
 
 #[test]
@@ -18,7 +24,15 @@ fn noisy_audio_prefers_textural_noise() {
     let result = embedder.analyze(&audio);
 
     assert_eq!(top_label(&result), SemanticTagLabel::TexturalNoise);
+    assert_eq!(
+        result.diagnostics.top_tag_label,
+        Some(SemanticTagLabel::TexturalNoise)
+    );
     assert!(result.source_descriptors.spectral_shape.spread_hz > 1_000.0);
+    assert_eq!(
+        result.semantic_tags[0].evidence.primary_driver,
+        "spectral_complexity"
+    );
 }
 
 #[test]
@@ -39,6 +53,7 @@ fn pulse_audio_prefers_pulse_driven_or_dynamic_punch() {
             > 0.9
     );
     assert!(result.diagnostics.top_tag_margin >= 0.0);
+    assert!(result.semantic_tags[0].evidence.evidence_strength > 0.0);
 }
 
 #[test]
@@ -64,6 +79,43 @@ fn semantic_diagnostics_are_bounded() {
     assert!(result.diagnostics.active_embedding_dimensions > 0);
     assert!(result.diagnostics.semantic_confidence.0 >= 0.0);
     assert!(result.diagnostics.semantic_confidence.0 <= 1.0);
+}
+
+#[test]
+fn frozen_semantic_calibration_report_has_expected_top_tag_and_confidence_posture() {
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let report = semantic_calibration_report(&mut embedder);
+
+    println!("semantic_calibration_report={report:#?}");
+
+    assert_eq!(report.case_reports.len(), 3);
+
+    let tone = &report.case_reports[0];
+    assert_eq!(tone.case_id, "semantic:tone:sine440");
+    assert_eq!(tone.top_tag, SemanticTagLabel::TonalFocus);
+    assert_eq!(tone.primary_driver, "harmonic_focus");
+    assert!(tone.top_confidence.0 >= 0.15);
+    assert!(tone.top_tag_margin >= 0.05);
+
+    let noise = &report.case_reports[1];
+    assert_eq!(noise.case_id, "semantic:noise:deterministic");
+    assert_eq!(noise.top_tag, SemanticTagLabel::TexturalNoise);
+    assert_eq!(noise.primary_driver, "spectral_complexity");
+    assert!(noise.top_confidence.0 >= 0.08);
+    assert!(noise.top_tag_margin >= 0.02);
+
+    let pulse = &report.case_reports[2];
+    assert_eq!(pulse.case_id, "semantic:pulse:adsr");
+    assert!(matches!(
+        pulse.top_tag,
+        SemanticTagLabel::PulseDriven | SemanticTagLabel::DynamicPunch
+    ));
+    assert!(matches!(
+        pulse.primary_driver,
+        "rhythmic_activity" | "dynamic_punch"
+    ));
+    assert!(pulse.top_confidence.0 >= 0.08);
+    assert!(pulse.top_tag_margin >= 0.0);
 }
 
 #[test]
@@ -129,6 +181,11 @@ fn semantic_examples_remain_interpretable_for_closeout() {
     assert_eq!(
         fallback_result.embedding.model_id,
         BUILTIN_DESCRIPTOR_MODEL_ID
+    );
+    assert_eq!(tone_result.semantic_tags[0].evidence.primary_driver, "harmonic_focus");
+    assert_eq!(
+        noise_result.semantic_tags[0].evidence.primary_driver,
+        "spectral_complexity"
     );
     assert!(tone_result.diagnostics.semantic_confidence.0 > 0.0);
     assert!(noise_result.diagnostics.semantic_confidence.0 > 0.0);

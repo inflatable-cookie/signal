@@ -6,7 +6,7 @@ Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `DSP`, `ANALYSIS`, `FIDELITY`
 Contract refs: `046`, `047`, `077`
-Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
 
 ## Problem
 
@@ -36,15 +36,18 @@ without calibration or explicit quality posture.
 - [x] define quality modes and their expected anti-aliasing or band-limited
       behavior
 - [x] keep existing fast paths explicit as low-quality or control-safe modes
-- [ ] build benchmark and artifact-comparison harnesses for quality evaluation
+- [x] build benchmark and artifact-comparison harnesses for quality evaluation
 
 ### Batch 9.2 - Semantic Calibration Surface
 
-- [ ] define corpus, expected tags, and confidence calibration policy for the
+- [x] freeze the first semantic-calibration seam as the next ready batch
+- [x] define corpus and expected top-tag posture for the
+      semantic embedding path
+- [ ] define confidence calibration policy for the
       semantic embedding path
 - [ ] separate descriptor projection from scoring and confidence calibration
       where needed
-- [ ] add explainable evidence for why tags and confidences were emitted
+- [x] add explainable evidence for why tags and confidences were emitted
 
 ### Batch 9.3 - Proof And Demo
 
@@ -55,7 +58,8 @@ without calibration or explicit quality posture.
 ## Acceptance Criteria
 
 - [x] Signal exposes clear low/high-quality resampling posture
-- [ ] semantic tagging has corpus-backed calibration and explainable evidence
+- [ ] semantic tagging has corpus-backed confidence calibration and explainable
+      evidence
 - [ ] the crates no longer overclaim capability relative to their actual output
 
 ## Risks And Mitigations
@@ -71,8 +75,8 @@ without calibration or explicit quality posture.
 
 - [ ] log each DSP and semantic tranche
 - [x] run `cargo check -p signal-dsp-resample`
-- [ ] run `cargo check -p signal-analysis-embed`
-- [ ] run `effigy health`
+- [x] run `cargo check -p signal-analysis-embed`
+- [x] run `effigy health`
 
 ## Batch 9.1 Tranche 1 Outcome
 
@@ -89,7 +93,38 @@ What remains unproven is the quality posture itself: the roadmap still wants a
 benchmark or artifact-comparison surface before semantic calibration becomes
 the active seam.
 
+## Batch 9.1 Tranche 2 Outcome
+
+The resampler proof surface is now explicit and reusable. The crate publishes a
+machine-readable quality comparison report covering `Nearest`, `Linear`, and
+`BandLimited`, and the frozen proof tests show that the high-quality path is
+not just differently named: it materially attenuates alias-prone content while
+keeping deterministic chunked/offline equivalence.
+
+## Final Reassessment Outcome
+
+The next honest `g09.009` seam is semantic calibration. Resampler quality
+posture is now explicit enough that further resampler-only work would be churn;
+the remaining fidelity gap is the heuristic semantic-tagging path and its lack
+of frozen corpus-backed calibration evidence.
+
+## Batch 9.2 Tranche 1 Outcome
+
+The semantic calibration baseline is now explicit. The built-in semantic model
+publishes explainable per-tag evidence, diagnostics record the emitted top
+label, and the frozen tone/noise/pulse corpus now has a machine-readable
+calibration report that fixes expected top-tag and confidence posture instead
+of relying only on threshold checks and debug output.
+
+## Updated Semantic Reassessment Outcome
+
+There is still one honest `g09.009` seam left before handing off to
+`g09.010`: confidence calibration policy. The corpus and explainable evidence
+are now frozen, but confidence is still a lightweight heuristic blend over
+margin and embedding activity, so the next batch should make that posture more
+explicit rather than broadening into rhythm work early.
+
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.

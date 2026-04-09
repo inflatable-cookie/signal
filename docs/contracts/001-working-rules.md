@@ -100,5 +100,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ## Next Task
 
 Use this contract with the active `g09.009` strict lane while
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
+`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
 governs the active batch.

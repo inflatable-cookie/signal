@@ -211,6 +211,36 @@ mod tests {
         ]
     }
 
+    fn semantic_calibration_report(embedder: &mut SemanticEmbedder) -> SemanticCalibrationReport {
+        let tone = embedder.analyze(&sine_audio(440.0, 2.0, 48_000, 1.0));
+        let noise = embedder.analyze(&noise_audio(2.0, 48_000, 0.5));
+        let pulse = embedder.analyze(&adsr_pulse_audio(5, 140, 120, 500, 6, 48_000, 0.9));
+
+        SemanticCalibrationReport {
+            case_reports: vec![
+                calibration_case_report("semantic:tone:sine440", &tone),
+                calibration_case_report("semantic:noise:deterministic", &noise),
+                calibration_case_report("semantic:pulse:adsr", &pulse),
+            ],
+        }
+    }
+
+    fn calibration_case_report(
+        case_id: &'static str,
+        result: &SemanticAnalysisResult,
+    ) -> SemanticCalibrationCaseReport {
+        let top_tag = result.semantic_tags.first().expect("top semantic tag");
+        SemanticCalibrationCaseReport {
+            case_id,
+            top_tag: top_tag.label,
+            top_score: top_tag.score,
+            top_confidence: top_tag.confidence,
+            primary_driver: top_tag.evidence.primary_driver,
+            supporting_driver: top_tag.evidence.supporting_driver,
+            top_tag_margin: result.diagnostics.top_tag_margin,
+        }
+    }
+
     mod model_contract;
     mod semantic_behavior;
 }

@@ -79,4 +79,4 @@ bounded strict surface on the live `g09` queue:
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.

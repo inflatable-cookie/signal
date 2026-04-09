@@ -1,4 +1,5 @@
 use super::*;
+use crate::builtin_model::EMBEDDING_DIMENSIONS;
 
 #[test]
 fn built_in_model_spec_is_explicit() {

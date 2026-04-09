@@ -1,8 +1,8 @@
 use crate::{
     PluginInstanceStatePayload, PluginIoLayoutPayload, PluginMessageEnvelope, PluginMessageName,
     PluginMessagePayload, PluginProcessConfigurationPayload, RuntimeDomain, SharedMemoryBroker,
-    SharedMemoryLayoutPayload, SharedMemoryRegionPayload, SharedMemoryTransportKind,
-    SharedMemoryTransportPayload, SharedMemoryRegionLifecycleErrorKind,
+    SharedMemoryLayoutPayload, SharedMemoryRegionLifecycleErrorKind, SharedMemoryRegionPayload,
+    SharedMemoryTransportKind, SharedMemoryTransportPayload,
 };
 use std::{
     fs,
