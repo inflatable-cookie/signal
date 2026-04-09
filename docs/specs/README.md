@@ -38,10 +38,9 @@ strict surface attached to the active `g09` work.
 
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
-- no current ready batch card; `g09.008` is awaiting planning handoff
+- `batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.008` closes here or hands off into `g09.009` before creating another
-ready batch card.
+Continue the active strict `g09` lane from
+`batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

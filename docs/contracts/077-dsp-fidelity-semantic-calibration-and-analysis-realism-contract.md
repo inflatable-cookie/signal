@@ -1,8 +1,8 @@
 # 077 DSP Fidelity, Semantic Calibration, And Analysis Realism Contract
 
-Status: draft
+Status: active
 Owner: core-product
-Updated: 2026-04-08
+Updated: 2026-04-09
 Related contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`, `docs/contracts/047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md`
 Related architecture: `docs/architecture/dsp-analysis-feature-reference.md`
 
@@ -36,5 +36,5 @@ beyond bounded placeholder fidelity in resampling and semantic-tag projection.
 
 ## Next Task
 
-Use this contract for the `g09` DSP/analysis fidelity roadmap covering
-`signal-dsp-resample` and `signal-analysis-embed`.
+Use this contract for the active strict `g09.009` lane, starting with
+`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

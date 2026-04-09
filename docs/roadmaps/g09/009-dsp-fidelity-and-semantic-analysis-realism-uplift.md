@@ -1,11 +1,12 @@
 # 009 - DSP Fidelity And Semantic-Analysis Realism Uplift
 
-Status: draft
+Status: active
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `DSP`, `ANALYSIS`, `FIDELITY`
 Contract refs: `046`, `047`, `077`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`
 
 ## Problem
 
@@ -31,9 +32,10 @@ without calibration or explicit quality posture.
 
 ### Batch 9.1 - Resampler Quality Architecture
 
-- [ ] define quality modes and their expected anti-aliasing or band-limited
+- [x] freeze the first resampler-quality seam as the next ready batch
+- [x] define quality modes and their expected anti-aliasing or band-limited
       behavior
-- [ ] keep existing fast paths explicit as low-quality or control-safe modes
+- [x] keep existing fast paths explicit as low-quality or control-safe modes
 - [ ] build benchmark and artifact-comparison harnesses for quality evaluation
 
 ### Batch 9.2 - Semantic Calibration Surface
@@ -52,7 +54,7 @@ without calibration or explicit quality posture.
 
 ## Acceptance Criteria
 
-- [ ] Signal exposes clear low/high-quality resampling posture
+- [x] Signal exposes clear low/high-quality resampling posture
 - [ ] semantic tagging has corpus-backed calibration and explainable evidence
 - [ ] the crates no longer overclaim capability relative to their actual output
 
@@ -68,11 +70,26 @@ without calibration or explicit quality posture.
 ## Evidence Requirements
 
 - [ ] log each DSP and semantic tranche
-- [ ] run `cargo check -p signal-dsp-resample`
+- [x] run `cargo check -p signal-dsp-resample`
 - [ ] run `cargo check -p signal-analysis-embed`
 - [ ] run `effigy health`
 
+## Batch 9.1 Tranche 1 Outcome
+
+The resampler now has an honest quality-tier foundation. `Nearest` and
+`Linear` remain explicit fast deterministic modes, while `BandLimited` adds a
+windowed-sinc path that performs low-pass smoothing instead of interpolation
+alone. Focused tests prove chunked and offline outputs still match and that the
+new high-quality path materially attenuates alias-prone downsampling input.
+
+## Updated Reassessment Outcome
+
+The next honest `g09.009` seam is still inside resampling, not semantics yet.
+What remains unproven is the quality posture itself: the roadmap still wants a
+benchmark or artifact-comparison surface before semantic calibration becomes
+the active seam.
+
 ## Next Task
 
-Continue with `g09.010` and apply the same explicitness to the rhythm engine's
-failure containment and policy logic.
+Continue the active strict lane from
+`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

@@ -1,6 +1,6 @@
 # 008 - Low-Level Correctness, Safety, And Protocol Hardening
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
@@ -130,6 +130,5 @@ before inventing another ready card.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.008` closes here or hands off into `g09.009` before creating another
-ready batch card.
+Continue the active strict lane from
+`docs/specs/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`.

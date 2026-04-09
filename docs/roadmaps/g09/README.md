@@ -49,8 +49,9 @@ proof:
 - `g09.007` `complete`
   - runtime interface decomposition and test-surface normalization
 - `g09.008` `active`
+- `g09.008` `complete`
   - low-level correctness, safety, and protocol hardening
-- `g09.009` `draft`
+- `g09.009` `active`
   - DSP fidelity and semantic-analysis realism uplift
 - `g09.010` `draft`
   - rhythm-engine resilience and policy normalization
@@ -97,7 +98,7 @@ with proof instead of prose.
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  none; `g09.008` is awaiting planning handoff
+  `docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
 
 ## Working rules for this thread
 
@@ -111,6 +112,5 @@ with proof instead of prose.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.008` closes here or hands off into `g09.009` before creating another
-ready batch card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

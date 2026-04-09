@@ -121,7 +121,7 @@ queue:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  none; `g09.008` is awaiting planning handoff
+  `docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
 
 ## Working Rule
 
@@ -131,6 +131,5 @@ queue:
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.008` closes here or hands off into `g09.009` before creating another
-ready batch card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

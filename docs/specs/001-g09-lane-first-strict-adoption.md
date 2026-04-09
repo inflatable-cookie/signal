@@ -5,7 +5,7 @@ Owner: core-product
 Updated: 2026-04-09
 Vision refs: docs/vision/001-signal-vision.md
 Promotion targets: docs/architecture/product-guardrails.md, docs/contracts/001-working-rules.md
-Roadmap refs: g09.008
+Roadmap refs: g09.009
 
 ## Problem
 
@@ -27,8 +27,8 @@ bounded strict surface on the live `g09` queue:
 
 - current phase: `lane-first stricter adoption`
 - scope: active `g09` lane only
-- active milestone: `g09.008`
-- immediate follow-on boundary: `g09.009`
+- active milestone: `g09.009`
+- immediate follow-on boundary: `g09.010`
 
 ## Goals
 
@@ -51,8 +51,8 @@ bounded strict surface on the live `g09` queue:
 
 ### Phase 2
 
-- bind the active `g09.008` batch to one ready card
-- leave the immediate next boundary into `g09.009` explicit
+- bind the active `g09.009` batch to one ready card
+- leave the immediate next boundary into `g09.010` explicit
 
 ## Open Questions
 
@@ -78,6 +78,5 @@ bounded strict surface on the live `g09` queue:
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether
-`g09.008` closes here or hands off into `g09.009` before creating another
-ready batch card.
+Continue the active strict lane from
+`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

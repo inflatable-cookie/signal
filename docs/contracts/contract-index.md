@@ -14,10 +14,11 @@ memory alone.
 
 - Signal is in lane-first stricter adoption for the active `g09` queue
 - `001-working-rules` governs the strict-lane execution posture
-- `g09.008` is the current strict-execution milestone
+- `g09.009` is the current strict-execution milestone
 - `docs/specs/001-g09-lane-first-strict-adoption.md` is the active strict-lane
   spec
-- there is no current ready card; `g09.008` is awaiting planning handoff
+- `docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
+  is the current ready card
 
 ## Strict Lane Working Rule
 
@@ -140,5 +141,6 @@ frozen elsewhere in this index.
 ## Next Task
 
 Use this index as the contract-selection front door for the active strict
-`g09` lane, and if there is no current ready card re-enter planning before
-continuing implementation.
+`g09` lane while
+`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`
+governs the active batch.
