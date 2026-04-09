@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use signal_ipc::SharedMemoryBroker;
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
+use signal_plugin_clap::ClapPluginHostAdapter;
 use signal_plugin_lv2::Lv2HostAdapter;
 use signal_plugin_vst3::Vst3HostAdapter;
 use signal_runtime::{
@@ -20,17 +21,18 @@ use signal_runtime::{
 #[path = "host_support.rs"]
 mod host_support;
 use host_support::{
-    discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_lv2_sandbox_session,
-    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage,
-    teardown_broker_sandbox_session, SandboxBrokerSession, ServerSupervisorState,
+    discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_clap_sandbox_session,
+    ensure_lv2_sandbox_session, ensure_vst3_sandbox_session,
+    runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session, SandboxBrokerSession,
+    ServerSupervisorState,
+};
+pub use host_support::{
+    ensure_default_demo_plugin_override, ServerExecutionSummary, ServerFaultSummary,
+    ServerPayloadSummary, ServerRuntimeHostSummary, ServerTransportSummary,
 };
 pub(crate) use host_support::{
     samples_to_ms, FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS,
     SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
-};
-pub use host_support::{
-    ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,
-    ServerTransportSummary,
 };
 
 pub struct ServerRuntimeHost {
@@ -130,7 +132,30 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             PluginSandboxLifecycleStage::SandboxEnsured,
             None,
         );
-        if request.plugin_format == PluginFormat::Au {
+        if request.plugin_format == PluginFormat::Clap {
+            let clap = ClapPluginHostAdapter::default();
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+            {
+                if let Some(session) = ensure_clap_sandbox_session(
+                    &mut self.runtime,
+                    &self.broker,
+                    &clap,
+                    &discovered,
+                    &request,
+                )? {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server CLAP scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Au {
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()
@@ -346,7 +371,30 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         let Some(request) = self.active_sandbox_specs.get(sandbox_id).cloned() else {
             return Ok(());
         };
-        if request.plugin_format == PluginFormat::Au {
+        if request.plugin_format == PluginFormat::Clap {
+            let clap = ClapPluginHostAdapter::default();
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+            {
+                if let Some(session) = ensure_clap_sandbox_session(
+                    &mut self.runtime,
+                    &self.broker,
+                    &clap,
+                    &discovered,
+                    &request,
+                )? {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server CLAP scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Au {
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()

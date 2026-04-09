@@ -1,0 +1,63 @@
+{
+  "receipt_version": "signal.demo.receipt.v1",
+  "manifest_id": "signal.demo.plugin.sandbox-lifecycle",
+  "scenario_id": "signal.demo.plugin.sandbox-lifecycle.default",
+  "status": "passed",
+  "launch_command": "cargo run -q -p signal-plugin-sandbox",
+  "artifacts": [
+    {
+      "kind": "broker-transcript-lines",
+      "line_count": 19,
+      "observed_states": [
+        "attached",
+        "ready",
+        "running",
+        "shutdown",
+        "starting",
+        "teardown_complete",
+        "timed_out"
+      ],
+      "runs": [
+        {
+          "run_id": "attach_status_teardown",
+          "line_count": 7
+        },
+        {
+          "run_id": "healthy_run",
+          "line_count": 6
+        },
+        {
+          "run_id": "timeout_run",
+          "line_count": 6
+        }
+      ]
+    }
+  ],
+  "operator_checks": [
+    {
+      "id": "operator.sandbox-lifecycle.ready-state",
+      "status": "passed",
+      "summary": "Broker reported the ready state before live lifecycle commands."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.attach-and-teardown",
+      "status": "passed",
+      "summary": "Explicit attach/status/teardown path remained inspectable."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.run-path",
+      "status": "passed",
+      "summary": "Healthy demo run reached running and clean teardown states."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.timeout-path",
+      "status": "passed",
+      "summary": "Timeout demo run remained bounded and reported cleanup after interruption."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.shutdown",
+      "status": "passed",
+      "summary": "Broker exited through the explicit shutdown receipt."
+    }
+  ]
+}

@@ -14,6 +14,7 @@
     "launch",
     "covered_crates",
     "scenarios",
+    "evidence",
     "known_exclusions",
     "expected_checks"
   ],
@@ -119,6 +120,34 @@
           "notes_path": {
             "type": "string"
           }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_path",
+        "operator_notes_path",
+        "capture"
+      ],
+      "properties": {
+        "receipt_path": {
+          "type": "string",
+          "pattern": "^demos/(manifests|scenarios|receipts|templates)/.+$"
+        },
+        "operator_notes_path": {
+          "type": "string",
+          "pattern": "^demos/(scenarios|templates)/.+$"
+        },
+        "capture": {
+          "type": "string",
+          "enum": [
+            "json-receipt-and-operator-notes"
+          ]
+        },
+        "notes": {
+          "type": "string"
         }
       }
     },

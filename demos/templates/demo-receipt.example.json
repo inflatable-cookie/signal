@@ -1,0 +1,15 @@
+{
+  "receipt_version": "signal.demo.receipt.v1",
+  "manifest_id": "signal.demo.shared.program-shape",
+  "scenario_id": "signal.demo.shared.program-shape.default",
+  "status": "planned",
+  "launch_command": "cargo run -p signal-runtime --example supervisor_report_demo",
+  "artifacts": [],
+  "operator_checks": [
+    {
+      "id": "operator.default-shape-check",
+      "status": "not-run",
+      "summary": "Operator checks are recorded here after a real demo run."
+    }
+  ]
+}

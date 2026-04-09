@@ -53,6 +53,7 @@ mod sandbox_sessions;
 #[path = "host_support/summary_types.rs"]
 mod summary_types;
 
+pub use demo::ensure_default_demo_plugin_override;
 pub(crate) use demo::{server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly};
 pub(crate) use discovery::discovered_plugins_for_scan;
 pub(crate) use faults::{
@@ -78,8 +79,8 @@ pub(crate) type TimeoutRecoveryRetryPlan<'a> =
 pub(crate) use recovery_overlap_finish::RecoveryOverlapTransition;
 pub(crate) use recovery_runtime::LingeringSessionRecovery;
 pub(crate) use sandbox_sessions::{
-    ensure_au_sandbox_session, ensure_lv2_sandbox_session, ensure_vst3_sandbox_session,
-    teardown_broker_sandbox_session, SandboxBrokerSession,
+    ensure_au_sandbox_session, ensure_clap_sandbox_session, ensure_lv2_sandbox_session,
+    ensure_vst3_sandbox_session, teardown_broker_sandbox_session, SandboxBrokerSession,
 };
 pub use summary_types::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,

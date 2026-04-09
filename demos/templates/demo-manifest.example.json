@@ -17,9 +17,16 @@
     {
       "id": "signal.demo.shared.program-shape.default",
       "title": "Default Program Shape Example",
-      "summary": "Shows the minimum manifest entry shape for a future official demo surface."
+      "summary": "Shows the minimum manifest entry shape for a future official demo surface.",
+      "notes_path": "demos/templates/operator-notes.example.md"
     }
   ],
+  "evidence": {
+    "receipt_path": "demos/templates/demo-receipt.example.json",
+    "operator_notes_path": "demos/templates/operator-notes.example.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "Official demos should emit a machine-readable receipt and keep human checks in a colocated notes file."
+  },
   "known_exclusions": [
     "This template is not itself a live demo or coverage claim."
   ],

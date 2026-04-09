@@ -1,10 +1,10 @@
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests {
+    use crate::tuning::{cents_offset_from_standard, reference_hz_from_cents};
     use crate::{
-        cents_offset_from_standard, reference_hz_from_cents, HarmonicChangeKind, KeyDetector,
-        KeyDetectorConfig, KeyMode, KeyProfile, TonalAmbiguityKind, Tonic, TuningReferenceMode,
-        TuningReferenceSource,
+        HarmonicChangeKind, KeyDetector, KeyDetectorConfig, KeyMode, KeyProfile,
+        TonalAmbiguityKind, Tonic, TuningReferenceMode, TuningReferenceSource,
     };
     use signal_analysis::{
         run_audio_acceptance_harness, AcceptanceSeverity, AcceptanceStatus, AnalysisCorpusCase,

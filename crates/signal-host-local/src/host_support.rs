@@ -80,6 +80,7 @@ pub(crate) use clocking::{
     host_clock_fallback_state, host_duplex_mismatch_state, host_endpoint_topology,
     host_partial_availability, samples_to_ms,
 };
+pub use demo::ensure_default_demo_plugin_override;
 pub(crate) use demo::{
     local_demo_runtime_assembly, payload_automation_value,
     plugin_automation_value_from_runtime_batch, runtime_watchdog_trigger, transport_attach_intent,
@@ -108,8 +109,8 @@ pub(crate) use metadata::{
 pub(crate) use recovery_overlap_finish::RecoveryOverlapTransition;
 pub(crate) use recovery_runtime::LingeringSessionRecovery;
 pub(crate) use sandbox_sessions::{
-    ensure_au_sandbox_session, ensure_vst3_sandbox_session, teardown_broker_sandbox_session,
-    SandboxBrokerSession,
+    ensure_au_sandbox_session, ensure_clap_sandbox_session, ensure_vst3_sandbox_session,
+    teardown_broker_sandbox_session, SandboxBrokerSession,
 };
 pub use summary_types::{
     LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy, LocalExecutionSummary,

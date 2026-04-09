@@ -5,7 +5,7 @@ Owner: core-product
 Updated: 2026-04-09
 Vision refs: docs/vision/001-signal-vision.md
 Promotion targets: docs/architecture/product-guardrails.md, docs/contracts/001-working-rules.md
-Roadmap refs: g09.011
+Roadmap refs: g09.012
 
 ## Problem
 
@@ -27,14 +27,14 @@ bounded strict surface on the live `g09` queue:
 
 - current phase: `lane-first stricter adoption`
 - scope: active `g09` lane only
-- active milestone: `g09.011`
-- immediate follow-on boundary: `g09.012`
+- active milestone: `g09.012`
+- immediate follow-on boundary: `g09.013`
 
 ## Goals
 
 - install the minimum strict docs pack around the live `g09` lane
 - bind each current active `g09` batch to one explicit ready card
-- keep the next boundary into `g09.011` explicit instead of implied
+- keep the next boundary into `g09.012` explicit instead of implied
 
 ## Non-Goals
 
@@ -51,8 +51,8 @@ bounded strict surface on the live `g09` queue:
 
 ### Phase 2
 
-- bind the active `g09.011` batch to one ready card
-- leave the immediate next boundary into `g09.012` explicit
+- bind the active `g09.012` batch to one ready card
+- leave the immediate next boundary into `g09.013` explicit
 
 ## Open Questions
 
@@ -79,4 +79,4 @@ bounded strict surface on the live `g09` queue:
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.

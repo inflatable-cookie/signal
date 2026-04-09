@@ -1,7 +1,7 @@
 pub mod host;
 
 pub use host::{
-    LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy, LocalRuntimeHost,
-    LocalRuntimeHostSummary,
+    ensure_default_demo_plugin_override, LocalAudioPumpSummary, LocalAudioStreamState,
+    LocalAudioTransferPolicy, LocalRuntimeHost, LocalRuntimeHostSummary,
 };
 pub use signal_runtime::RecoveryRestartIntent;

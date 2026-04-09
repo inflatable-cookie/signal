@@ -1,0 +1,43 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.plugin.sandbox-lifecycle",
+  "title": "Signal Sandbox Lifecycle Demo",
+  "domain": "plugin",
+  "kind": "dedicated-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:sandbox-lifecycle",
+    "owner_surface": "effigy-task",
+    "notes": "Bootstraps the existing signal-plugin-sandbox broker binary and records a machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-plugin-sandbox",
+    "signal-ipc"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.plugin.sandbox-lifecycle.default",
+      "title": "Sandbox Lifecycle Bootstrap",
+      "summary": "Exercises ready, explicit attach/status/teardown, healthy run, timeout run, and broker shutdown through the existing sandbox broker binary.",
+      "notes_path": "demos/scenarios/plugin-sandbox-lifecycle.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/plugin-sandbox-lifecycle.receipt.json",
+    "operator_notes_path": "demos/scenarios/plugin-sandbox-lifecycle.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface proves the sandbox broker lifecycle without widening into plugin capability browsing or host/runtime demo coverage."
+  },
+  "known_exclusions": [
+    "Plugin capability browsing remains deferred to later g09.012 batches.",
+    "Host, runtime, and hardware demo surfaces remain deferred.",
+    "Format-specific AU, VST3, and LV2 live demo coverage is not claimed by this bootstrap manifest."
+  ],
+  "expected_checks": [
+    "The broker reports ready before lifecycle commands run.",
+    "The explicit attach/status/teardown path is inspectable.",
+    "The healthy demo run reaches running and teardown_complete states.",
+    "The timeout demo run reports timed_out and cleanup-after-timeout states.",
+    "The final receipt records a clean shutdown."
+  ]
+}

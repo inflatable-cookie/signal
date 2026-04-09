@@ -1,6 +1,6 @@
 # 011 - Interactive Demo Substrate, Manifest, And Operator Conventions
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
@@ -15,8 +15,8 @@ interactive proof paths, launch commands, receipts, and known exclusions.
 ## Goals
 
 - [x] define one shared demo substrate and manifest format
-- [ ] make demos launchable through repo-owned commands
-- [ ] record crate-to-demo coverage explicitly
+- [x] make demos launchable through repo-owned commands
+- [x] record crate-to-demo coverage explicitly
 
 ## Non-Goals
 
@@ -34,22 +34,22 @@ interactive proof paths, launch commands, receipts, and known exclusions.
 
 ### Batch 11.2 - Launch And Evidence Conventions
 
-- [ ] add repo-owned launch tasks or commands for demo binaries
-- [ ] define receipt/log capture conventions for demos
-- [ ] document required operator notes, sample assets, and sunset rules for
+- [x] add repo-owned launch tasks or commands for demo binaries
+- [x] define receipt/log capture conventions for demos
+- [x] document required operator notes, sample assets, and sunset rules for
       temporary fixtures
 
 ### Batch 11.3 - Coverage Matrix
 
-- [ ] produce a crate-to-demo coverage matrix for the active workspace
-- [ ] flag unsupported or deferred crates explicitly
-- [ ] make the matrix part of the generation closeout evidence
+- [x] produce a crate-to-demo coverage matrix for the active workspace
+- [x] flag unsupported or deferred crates explicitly
+- [x] make the matrix part of the generation closeout evidence
 
 ## Acceptance Criteria
 
-- [ ] every active crate maps to a demo or an explicit deferred status
-- [ ] demos are runnable through repo-owned commands
-- [ ] manifests and receipts make demo coverage inspectable
+- [x] every active crate maps to a demo or an explicit deferred status
+- [x] demos are runnable through repo-owned commands
+- [x] manifests and receipts make demo coverage inspectable
 
 ## Risks And Mitigations
 
@@ -61,12 +61,12 @@ interactive proof paths, launch commands, receipts, and known exclusions.
 
 ## Evidence Requirements
 
-- [ ] log the substrate and manifest decisions
-- [ ] run `effigy qa:docs`
+- [x] log the substrate and manifest decisions
+- [x] run `effigy qa:docs`
 - [ ] run `effigy validate`
-- [ ] record the first domain demo milestone unlocked
+- [x] record the first domain demo milestone unlocked
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`docs/specs/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`.

@@ -43,7 +43,29 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
             PluginSandboxLifecycleStage::SandboxEnsured,
             None,
         );
-        if request.plugin_format == PluginFormat::Au {
+        if request.plugin_format == PluginFormat::Clap {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+            {
+                if let Some(session) = ensure_clap_sandbox_session(
+                    &mut self.runtime,
+                    &self.broker,
+                    &self.clap,
+                    &discovered,
+                    &request,
+                )? {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last local CLAP scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Au {
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()
@@ -240,7 +262,29 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
         let Some(request) = self.active_sandbox_specs.get(sandbox_id).cloned() else {
             return Ok(());
         };
-        if request.plugin_format == PluginFormat::Au {
+        if request.plugin_format == PluginFormat::Clap {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+            {
+                if let Some(session) = ensure_clap_sandbox_session(
+                    &mut self.runtime,
+                    &self.broker,
+                    &self.clap,
+                    &discovered,
+                    &request,
+                )? {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last local CLAP scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Au {
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()

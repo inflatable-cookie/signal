@@ -1,0 +1,42 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.runtime.recovery-inspector",
+  "title": "Signal Runtime Recovery Inspector Demo",
+  "domain": "runtime",
+  "kind": "dedicated-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:runtime-recovery-inspector",
+    "owner_surface": "effigy-task",
+    "notes": "Bootstraps the existing signal-runtime supervisor report example and records a machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-runtime"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.runtime.recovery-inspector.default",
+      "title": "Runtime Recovery Inspector Bootstrap",
+      "summary": "Exercises the runtime supervisor report example and captures watchdog, plugin-fault, and degraded-surface truth through one repo-owned demo surface.",
+      "notes_path": "demos/scenarios/runtime-recovery-inspector.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/runtime-recovery-inspector.receipt.json",
+    "operator_notes_path": "demos/scenarios/runtime-recovery-inspector.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface proves runtime recovery inspection without widening into host comparison or plugin browsing."
+  },
+  "known_exclusions": [
+    "Host comparison remains deferred to later g09.012 batches.",
+    "Plugin capability browsing remains deferred to later g09.012 batches.",
+    "Hardware live demos remain deferred.",
+    "This bootstrap manifest does not yet claim signal-supervisor-tools live coverage."
+  ],
+  "expected_checks": [
+    "The runtime report records handshaken, configured, and running state.",
+    "The runtime report records the watchdog trigger snapshot.",
+    "The runtime report records plugin timeout fault history.",
+    "The runtime report keeps safe-mode and degraded external-surface posture explicit."
+  ]
+}

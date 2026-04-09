@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`
+  `docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
 
 ## Recent active-lane evidence
 
@@ -64,8 +64,18 @@ Use this section for:
 - `2026-04/09-283500-g09-010-regression-corpus-ready-handoff.md`
 - `2026-04/09-290500-g09-010-regression-closeout-and-g09-011-handoff.md`
 - `2026-04/09-300500-g09-011-demo-program-shape-closeout-and-launch-ready.md`
+- `2026-04/09-303500-g09-011-demo-launch-evidence-closeout-and-matrix-ready.md`
+- `2026-04/09-311500-g09-011-coverage-matrix-closeout-and-g09-012-handoff.md`
+- `2026-04/09-320500-g09-012-sandbox-lifecycle-demo-bootstrap-closeout.md`
+- `2026-04/09-323500-g09-012-runtime-inspector-ready-handoff.md`
+- `2026-04/09-330500-g09-012-runtime-inspector-closeout-and-planning-pause.md`
+- `2026-04/09-333500-g09-012-host-bootstrap-fix-ready-handoff.md`
+- `2026-04/09-341500-g09-012-host-bootstrap-fix-closeout-and-planning-pause.md`
+- `2026-04/09-344500-g09-012-host-comparison-bootstrap-ready-handoff.md`
+- `2026-04/09-350500-g09-012-clap-host-fix-ready-correction.md`
+- `2026-04/09-360500-g09-012-clap-host-fix-closeout-and-host-comparison-reactivation.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.

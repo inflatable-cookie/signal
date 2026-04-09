@@ -121,7 +121,7 @@ queue:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`
+  `docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
 
 ## Working Rule
 
@@ -132,4 +132,4 @@ queue:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.

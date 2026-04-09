@@ -24,19 +24,21 @@ mod host_api;
 #[path = "host_support.rs"]
 mod host_support;
 use host_support::{
-    discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_vst3_sandbox_session,
-    runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session, LifecycleRunSummary,
-    LocalAudioPumpState, LocalClockTransitionMemory, LocalSupervisorState, SandboxBrokerSession,
+    discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_clap_sandbox_session,
+    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage,
+    teardown_broker_sandbox_session, LifecycleRunSummary, LocalAudioPumpState,
+    LocalClockTransitionMemory, LocalSupervisorState, SandboxBrokerSession,
+};
+pub use host_support::{
+    ensure_default_demo_plugin_override, LocalAudioPumpSummary, LocalAudioStreamState,
+    LocalAudioTransferPolicy, LocalExecutionSummary, LocalFaultSummary, LocalHardwareSummary,
+    LocalPayloadSummary, LocalPluginDispatchSummary, LocalRuntimeHostSummary,
+    LocalTransportSummary,
 };
 pub(crate) use host_support::{
     FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
     LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES,
     SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
-};
-pub use host_support::{
-    LocalAudioPumpSummary, LocalAudioStreamState, LocalAudioTransferPolicy, LocalExecutionSummary,
-    LocalFaultSummary, LocalHardwareSummary, LocalPayloadSummary, LocalPluginDispatchSummary,
-    LocalRuntimeHostSummary, LocalTransportSummary,
 };
 
 pub struct LocalRuntimeHost {

@@ -1,6 +1,6 @@
 # 020 - g09.011 Demo Launch And Evidence Conventions
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Master spec refs: docs/specs/001-g09-lane-first-strict-adoption.md
@@ -59,5 +59,5 @@ full domain demo breadth or coverage-matrix backfill.
 
 ## Next Task
 
-Implement this demo launch-and-evidence batch, then continue `g09.011`
-through the coverage-matrix seam if the shared substrate is truly settled.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/021-g09-011-demo-coverage-matrix.md`.

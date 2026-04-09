@@ -38,9 +38,9 @@ strict surface attached to the active `g09` work.
 
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
-- `batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`
+- `batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.

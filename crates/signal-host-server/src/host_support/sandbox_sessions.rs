@@ -1,4 +1,8 @@
+use signal_ipc::{PluginMessagePayload, SharedMemoryBroker};
 use signal_plugin_au::{AuDiscoveredPluginType, AuHostAdapter};
+use signal_plugin_clap::{
+    ClapDiscoveredPluginType, ClapPluginHostAdapter, ClapSandboxLifecycleHarness,
+};
 use signal_plugin_lv2::{
     Lv2DiscoveredPluginType, Lv2ExtensionNegotiationState, Lv2HostAdapter, Lv2PatchExchangePosture,
     Lv2PreparationFaultMode, Lv2UridNegotiationPosture, Lv2WorkerNegotiationPosture,
@@ -19,6 +23,181 @@ use signal_runtime::{
 use super::record_broker_failure_and_convert;
 
 pub(crate) use signal_runtime::{teardown_broker_sandbox_session, SandboxBrokerSession};
+
+pub(crate) fn ensure_clap_sandbox_session(
+    runtime: &mut SignalRuntime,
+    broker: &SharedMemoryBroker,
+    clap: &ClapPluginHostAdapter,
+    discovered: &ClapDiscoveredPluginType,
+    request: &PluginSandboxSpec,
+) -> Result<Option<SandboxBrokerSession>, RuntimeError> {
+    let instance_id = format!("instance:server:clap:{}", request.sandbox_id);
+    let protocol = signal_plugin_clap::ClapBlockProtocol::new(
+        discovered.plugin_type_id.0.clone(),
+        instance_id.clone(),
+        discovered.default_io_layout,
+        2048,
+    );
+    let mut harness = ClapSandboxLifecycleHarness::default();
+    let messages = protocol
+        .lifecycle_sequence(
+            broker,
+            request.sandbox_id.as_str(),
+            runtime.config().sample_rate.0,
+            runtime.config().graph.block_size as u32,
+            1,
+        )
+        .map_err(|error| {
+            record_clap_prepare_failure(
+                runtime,
+                request,
+                discovered,
+                &instance_id,
+                None,
+                format!("clap_lifecycle_sequence:{error}"),
+            )
+        })?;
+
+    let mut shared_memory_lease_id = None;
+    let mut region_id = None;
+    let mut processing_epoch = None;
+
+    for message in messages {
+        let response = harness.handle(message).map_err(|error| {
+            record_clap_prepare_failure(
+                runtime,
+                request,
+                discovered,
+                &instance_id,
+                None,
+                format!("clap_prepare:{error:?}"),
+            )
+        })?;
+
+        if let Some(stage) = clap_lifecycle_stage_for_response(&response.payload) {
+            runtime.record_plugin_sandbox_lifecycle(request.sandbox_id.as_str(), stage, None);
+        }
+
+        if let Some(state) = super::plugin_instance_state_record_from_response(
+            request.sandbox_id.as_str(),
+            None,
+            &response,
+        ) {
+            runtime.record_plugin_sandbox_instance_state(state);
+        }
+
+        if let PluginMessagePayload::PrepareInstanceResponse {
+            processing_epoch: response_epoch,
+            shared_memory_lease_id: lease_id,
+            shared_memory_transport,
+            ..
+        } = &response.payload
+        {
+            processing_epoch = Some(*response_epoch);
+            shared_memory_lease_id = Some(lease_id.clone());
+            region_id = Some(shared_memory_transport.region_id.clone());
+        }
+    }
+
+    let heartbeat = harness
+        .handle(protocol.heartbeat_request(request.sandbox_id.as_str(), processing_epoch))
+        .map_err(|error| {
+            record_clap_prepare_failure(
+                runtime,
+                request,
+                discovered,
+                &instance_id,
+                Some(PluginSandboxLifecycleStage::InstancePrepared),
+                format!("clap_heartbeat:{error:?}"),
+            )
+        })?;
+    if let Some(state) = super::plugin_instance_state_record_from_response(
+        request.sandbox_id.as_str(),
+        processing_epoch,
+        &heartbeat,
+    ) {
+        runtime.record_plugin_sandbox_instance_state(state);
+    }
+
+    harness.teardown_active_transport().map_err(|error| {
+        record_clap_prepare_failure(
+            runtime,
+            request,
+            discovered,
+            &instance_id,
+            Some(PluginSandboxLifecycleStage::TransportAttached),
+            format!("clap_transport_cleanup:{error}"),
+        )
+    })?;
+
+    signal_runtime::record_broker_sandbox_prepared(
+        runtime,
+        request,
+        PreparedSandboxSessionRecord {
+            plugin_type_id: discovered.plugin_type_id.0.clone(),
+            instance_id,
+            sample_rate_hz: runtime.config().sample_rate.0,
+            max_block_frames: runtime.config().graph.block_size as u32,
+            audio_inputs: discovered.default_io_layout.audio_inputs,
+            audio_outputs: discovered.default_io_layout.audio_outputs,
+            midi_inputs: discovered.default_io_layout.midi_inputs,
+            midi_outputs: discovered.default_io_layout.midi_outputs,
+            processing_epoch,
+            lease_id: shared_memory_lease_id
+                .unwrap_or_else(|| format!("lease:{}", request.sandbox_id)),
+            region_id: region_id.unwrap_or_else(|| format!("region:{}", request.sandbox_id)),
+            lv2_prepared_negotiation: None,
+            summary: Some(format!(
+                "clap:prepared plugin_type={} io={:?}",
+                discovered.plugin_type_id.0, discovered.default_io_layout
+            )),
+        },
+    );
+    let _ = clap;
+    Ok(None)
+}
+
+fn record_clap_prepare_failure(
+    runtime: &mut SignalRuntime,
+    request: &PluginSandboxSpec,
+    discovered: &ClapDiscoveredPluginType,
+    instance_id: &str,
+    lifecycle_stage: Option<PluginSandboxLifecycleStage>,
+    detail: String,
+) -> RuntimeError {
+    record_protocol_violation_prepare_failure(
+        runtime,
+        request,
+        discovered.plugin_type_id.0.clone(),
+        instance_id.to_string(),
+        discovered.default_io_layout,
+        lifecycle_stage,
+        detail,
+    )
+}
+
+fn clap_lifecycle_stage_for_response(
+    payload: &PluginMessagePayload,
+) -> Option<PluginSandboxLifecycleStage> {
+    match payload {
+        PluginMessagePayload::SandboxHandshakeResponse { .. } => {
+            Some(PluginSandboxLifecycleStage::SandboxHandshaken)
+        }
+        PluginMessagePayload::LoadPluginTypeResponse { .. } => {
+            Some(PluginSandboxLifecycleStage::PluginTypeLoaded)
+        }
+        PluginMessagePayload::CreateInstanceResponse { .. } => {
+            Some(PluginSandboxLifecycleStage::InstanceCreated)
+        }
+        PluginMessagePayload::PrepareInstanceResponse { .. } => {
+            Some(PluginSandboxLifecycleStage::InstancePrepared)
+        }
+        PluginMessagePayload::ActivateInstanceResponse { .. } => {
+            Some(PluginSandboxLifecycleStage::TransportAttached)
+        }
+        _ => None,
+    }
+}
 
 pub(crate) fn ensure_au_sandbox_session(
     runtime: &mut SignalRuntime,

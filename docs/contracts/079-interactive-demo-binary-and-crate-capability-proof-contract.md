@@ -49,6 +49,6 @@ UI shells.
 
 ## Next Task
 
-Use this contract with the active `g09.011` strict lane while
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md` governs the active
-batch.
+Use this contract with the active `g09.012` strict lane while
+`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
+governs the active batch.

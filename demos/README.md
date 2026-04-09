@@ -17,8 +17,13 @@ commands into inspectable proof instead of loose examples.
 - `templates/`
   - manifest examples and starter shapes for new demo surfaces
 - `manifests/`
-  - future machine-readable manifests for concrete demo binaries or scenario
-    bundles
+  - machine-readable manifests for official demo binaries or scenario bundles
+- `coverage-matrix.json`
+  - machine-readable crate-to-demo coverage inventory for the active workspace
+- `coverage-matrix.md`
+  - human-readable view of the same coverage inventory
+- `receipts/`
+  - machine-readable run receipts for official demos
 - `scenarios/`
   - future operator-facing notes for shared scenario bundles when human checks
     matter
@@ -35,6 +40,11 @@ commands into inspectable proof instead of loose examples.
   claims them
 - scenario identity belongs in the manifest, not only in code comments or
   operator memory
+- official active demos should prefer an `effigy-task` launch owner surface once
+  they are promoted beyond placeholder or template status
+- cargo example or cargo bin launch commands are acceptable for planned
+  substrate and bootstrap stages while the later launch posture is still being
+  installed
 
 ## Naming Rules
 
@@ -52,12 +62,43 @@ commands into inspectable proof instead of loose examples.
 - use a dedicated demo only when a crate has a distinct operator workflow,
   unique external prerequisites, or would be hidden by a shared surface
 
+## Evidence Convention
+
+- every official demo manifest must name:
+  - a machine-readable receipt path
+  - an operator-notes path
+  - a shared capture mode
+- receipts belong in `demos/receipts/` for live demos or `demos/templates/`
+  for substrate examples
+- operator notes belong in `demos/scenarios/` for live demos or
+  `demos/templates/` for substrate examples
+- receipts should capture the launched command, scenario identity, run status,
+  and explicit operator-check outcomes
+- operator notes should capture the human checks that are meaningful but not
+  machine-readable
+
+## Launch Convention
+
+- official demo launches must be repo-owned and explicit in the manifest
+- preferred launch owner surface:
+  - `effigy-task`
+- temporary bootstrap owner surfaces:
+  - `cargo-example`
+  - `cargo-bin`
+- a later demo batch should promote active demos from cargo-owned launch
+  commands to Effigy-owned launch tasks as the substrate matures
+- the first official live demo surface is
+  `signal.demo.plugin.sandbox-lifecycle`
+
 ## Current Boundary
 
-- this substrate pack freezes the program shape only
-- domain demos and coverage matrices remain deferred to `g09.012+`
+- this substrate pack freezes the program shape, launch/evidence conventions,
+  coverage matrix, and first official live demo manifest
+- broader plugin, host, runtime, hardware, DSP, graph, and analysis demo
+  breadth remains deferred to later `g09.012+` and `g09.013+` batches
 
 ## Next Task
 
-Implement the first concrete manifests and launch/evidence conventions on top
-of this substrate.
+Continue expanding official live demo coverage from the active strict lane,
+starting with the next bounded `g09.012` domain seam after sandbox lifecycle
+bootstrap.

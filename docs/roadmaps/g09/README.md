@@ -54,9 +54,9 @@ proof:
   - DSP fidelity and semantic-analysis realism uplift
 - `g09.010` `complete`
   - rhythm-engine resilience and policy normalization
-- `g09.011` `active`
+- `g09.011` `complete`
   - interactive demo substrate, manifest, and operator conventions
-- `g09.012` `draft`
+- `g09.012` `active`
   - host/runtime/plugin/hardware interactive demo suite
 - `g09.013` `draft`
   - DSP/graph/analysis interactive demo suite and audit closeout proof
@@ -97,7 +97,7 @@ with proof instead of prose.
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`
+  `docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
 
 ## Working rules for this thread
 
@@ -112,4 +112,4 @@ with proof instead of prose.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`.

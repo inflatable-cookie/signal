@@ -29,6 +29,26 @@ qa = [
   { run = "python3 -m json.tool demos/manifest.schema.json > /dev/null" },
   { run = "python3 -m json.tool demos/templates/demo-manifest.example.json > /dev/null" },
 ]
+"demo:conventions" = [
+  { task = "demo:program-shape" },
+  { run = "python3 -m json.tool demos/templates/demo-receipt.example.json > /dev/null" },
+]
+"demo:coverage-matrix" = [
+  { task = "demo:conventions" },
+  { run = "python3 -m json.tool demos/coverage-matrix.json > /dev/null" },
+]
+"demo:sandbox-lifecycle" = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/plugin-sandbox-lifecycle.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_sandbox_lifecycle_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/plugin-sandbox-lifecycle.receipt.json > /dev/null" },
+]
+"demo:runtime-recovery-inspector" = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/runtime-recovery-inspector.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_runtime_recovery_inspector_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/runtime-recovery-inspector.receipt.json > /dev/null" },
+]
 "qa:docs" = [
   { task = "qa:docs:links" },
   { task = "qa:docs:agent-defaults" },

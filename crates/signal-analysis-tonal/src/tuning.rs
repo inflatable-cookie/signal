@@ -122,10 +122,10 @@ fn tuning_alignment_score(spectrogram: &Spectrogram, reference_hz: f32) -> f32 {
     score
 }
 
-fn reference_hz_from_cents(cents_offset: f32) -> f32 {
+pub(crate) fn reference_hz_from_cents(cents_offset: f32) -> f32 {
     STANDARD_TUNING_HZ * 2.0_f32.powf(cents_offset / 1200.0)
 }
 
-fn cents_offset_from_standard(reference_hz: f32) -> f32 {
+pub(crate) fn cents_offset_from_standard(reference_hz: f32) -> f32 {
     1200.0 * (reference_hz / STANDARD_TUNING_HZ).log2()
 }

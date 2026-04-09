@@ -7,8 +7,8 @@ use public_host_edge_plugins_support::{
 use signal_host_local::LocalRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
-    PluginSandboxSpec, PluginScanRequest, RuntimeConfig, RuntimePluginHostPlatform,
-    RuntimePluginLifecycleState, RuntimePluginParityBand, RuntimeSupervisorApi, SignalRuntime,
+    PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest, RuntimeConfig,
+    RuntimePluginHostPlatform, RuntimePluginParityBand, RuntimeSupervisorApi, SignalRuntime,
 };
 
 #[test]
@@ -107,7 +107,7 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
 }
 
 #[test]
-fn local_shared_host_edge_reports_clap_sandbox_gap_explicitly() {
+fn local_shared_host_edge_exports_bounded_clap_sandbox_lifecycle_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
 
@@ -115,19 +115,13 @@ fn local_shared_host_edge_reports_clap_sandbox_gap_explicitly() {
         roots: vec!["scan:clap:local-gap".into()],
         formats: vec![PluginFormat::Clap],
     })
-    .expect("public local clap gap scan should succeed");
-    let error = host
-        .ensure_plugin_sandbox(PluginSandboxSpec {
-            sandbox_id: "public-host-edge-local-clap-gap".into(),
-            plugin_format: PluginFormat::Clap,
-            plugin_type_id: Some("plugin:clap:default".into()),
-        })
-        .expect_err("public local clap sandbox gap should be explicit");
-
-    assert_eq!(error.kind, signal_runtime::RuntimeErrorKind::InvalidRequest);
-    assert!(error
-        .message
-        .contains("plugin format Clap is not supported here yet on the local host sandbox path"));
+    .expect("public local clap scan should succeed");
+    host.ensure_plugin_sandbox(PluginSandboxSpec {
+        sandbox_id: "public-host-edge-local-clap-gap".into(),
+        plugin_format: PluginFormat::Clap,
+        plugin_type_id: Some("plugin:clap:default".into()),
+    })
+    .expect("public local clap sandbox ensure should succeed");
 
     let report = host.supervisor_report();
     assert_eq!(
@@ -153,20 +147,26 @@ fn local_shared_host_edge_reports_clap_sandbox_gap_explicitly() {
         .sandboxes
         .iter()
         .find(|sandbox| sandbox.sandbox_id == "public-host-edge-local-clap-gap")
-        .expect("public local clap gap sandbox should be exported");
+        .expect("public local clap sandbox should be exported");
     assert_eq!(sandbox.plugin_format, Some(PluginFormat::Clap));
-    assert_eq!(sandbox.state, RuntimePluginLifecycleState::Faulted);
     assert_eq!(
-        sandbox.last_fault_kind,
-        Some(signal_runtime::PluginFaultKind::ProtocolViolation)
+        sandbox.lifecycle_stage,
+        Some(PluginSandboxLifecycleStage::TransportAttached)
     );
-    assert!(sandbox
-        .last_fault_detail
-        .as_deref()
-        .is_some_and(|detail| detail.contains("not supported here yet")));
+    assert_eq!(
+        sandbox.state,
+        signal_runtime::RuntimePluginLifecycleState::Ready
+    );
+    assert!(sandbox.active_transport);
+    assert!(sandbox.active);
+    assert!(sandbox.last_fault_kind.is_none());
+    assert!(sandbox.last_fault_detail.is_none());
+    assert!(sandbox.active_lease_id.is_some());
+    assert!(sandbox.active_region_id.is_some());
 
     let rendered = report.render_json();
     assert!(rendered.contains("\"formats\":[\"Clap\"]"));
     assert!(rendered.contains("\"plugin_type_id\":\"plugin:clap:default\""));
-    assert!(rendered.contains("not supported here yet on the local host sandbox path"));
+    assert!(rendered.contains("\"lifecycle_stage\":\"TransportAttached\""));
+    assert!(rendered.contains("\"active_transport\":true"));
 }

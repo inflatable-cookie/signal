@@ -1,0 +1,46 @@
+{
+  "receipt_version": "signal.demo.receipt.v1",
+  "manifest_id": "signal.demo.runtime.recovery-inspector",
+  "scenario_id": "signal.demo.runtime.recovery-inspector.default",
+  "status": "passed",
+  "launch_command": "cargo run -q -p signal-runtime --example supervisor_report_demo",
+  "artifacts": [
+    {
+      "kind": "runtime-supervisor-report-lines",
+      "line_count": 574,
+      "highlights": {
+        "readiness": "Ready",
+        "watchdog": "HeartbeatMisses",
+        "plugin_fault_count": 2,
+        "event_count": 3
+      }
+    }
+  ],
+  "operator_checks": [
+    {
+      "id": "operator.runtime-recovery.handshake-and-start",
+      "status": "passed",
+      "summary": "Runtime example completed handshake, configuration, and start."
+    },
+    {
+      "id": "operator.runtime-recovery.watchdog-snapshot",
+      "status": "passed",
+      "summary": "Supervisor output exposed the watchdog-trigger snapshot."
+    },
+    {
+      "id": "operator.runtime-recovery.plugin-faults",
+      "status": "passed",
+      "summary": "Runtime example exported the injected plugin timeout faults."
+    },
+    {
+      "id": "operator.runtime-recovery-safe-mode-posture",
+      "status": "passed",
+      "summary": "Runtime report kept explicit safe-mode posture in the steady-state surface."
+    },
+    {
+      "id": "operator.runtime-recovery.external-surface",
+      "status": "passed",
+      "summary": "Runtime report preserved degraded hardware/backend surfaces explicitly."
+    }
+  ]
+}

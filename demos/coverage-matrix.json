@@ -1,0 +1,184 @@
+{
+  "coverage_version": "signal.demo.coverage.v1",
+  "updated": "2026-04-09",
+  "active_workspace_crate_count": 24,
+  "live_demo_manifests": [
+    "signal.demo.plugin.sandbox-lifecycle",
+    "signal.demo.runtime.recovery-inspector"
+  ],
+  "notes": [
+    "g09.011 freezes the first workspace coverage matrix but does not yet claim full domain demo implementation.",
+    "Every active crate is mapped either to a deferred planned demo surface or an explicit live manifest list.",
+    "The first live demo surfaces are deferred to g09.012 and g09.013."
+  ],
+  "crate_matrix": [
+    {
+      "crate": "signal-runtime",
+      "status": "active",
+      "manifest_id": "signal.demo.runtime.recovery-inspector",
+      "domain": "runtime"
+    },
+    {
+      "crate": "signal-supervisor-tools",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.runtime.recovery-inspector",
+      "planned_milestone": "g09.012",
+      "notes": "Still deferred until a live supervisor-tools-owned or shared host/runtime inspector surface exists.",
+      "domain": "runtime"
+    },
+    {
+      "crate": "signal-host-local",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.host.local-server-compare",
+      "planned_milestone": "g09.012",
+      "notes": "Default host binary bootstrap now routes through a supported demo VST3 path, but the comparison manifest is still deferred.",
+      "domain": "host"
+    },
+    {
+      "crate": "signal-host-server",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.host.local-server-compare",
+      "planned_milestone": "g09.012",
+      "notes": "Default host binary bootstrap now routes through a supported demo VST3 path, but the comparison manifest is still deferred.",
+      "domain": "host"
+    },
+    {
+      "crate": "signal-hardware",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.hardware.topology-diagnostics",
+      "planned_milestone": "g09.012",
+      "domain": "hardware"
+    },
+    {
+      "crate": "signal-hardware-coreaudio",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.hardware.topology-diagnostics",
+      "planned_milestone": "g09.012",
+      "domain": "hardware"
+    },
+    {
+      "crate": "signal-plugin",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.plugin.capability-browser",
+      "planned_milestone": "g09.012",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-plugin-vst3",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.plugin.capability-browser",
+      "planned_milestone": "g09.012",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-plugin-au",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.plugin.capability-browser",
+      "planned_milestone": "g09.012",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-plugin-lv2",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.plugin.capability-browser",
+      "planned_milestone": "g09.012",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-plugin-clap",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.plugin.capability-browser",
+      "planned_milestone": "g09.012",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-plugin-sandbox",
+      "status": "active",
+      "manifest_id": "signal.demo.plugin.sandbox-lifecycle",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-ipc",
+      "status": "active",
+      "manifest_id": "signal.demo.plugin.sandbox-lifecycle",
+      "domain": "plugin"
+    },
+    {
+      "crate": "signal-primitives",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.graph.execution-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "graph"
+    },
+    {
+      "crate": "signal-graph",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.graph.execution-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "graph"
+    },
+    {
+      "crate": "signal-dsp",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.dsp.processing-lab",
+      "planned_milestone": "g09.013",
+      "domain": "dsp"
+    },
+    {
+      "crate": "signal-dsp-resample",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.dsp.processing-lab",
+      "planned_milestone": "g09.013",
+      "domain": "dsp"
+    },
+    {
+      "crate": "signal-dsp-spectral",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.dsp.processing-lab",
+      "planned_milestone": "g09.013",
+      "domain": "dsp"
+    },
+    {
+      "crate": "signal-analysis",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.analysis.feature-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "analysis"
+    },
+    {
+      "crate": "signal-analysis-character",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.analysis.feature-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "analysis"
+    },
+    {
+      "crate": "signal-analysis-embed",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.analysis.feature-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "analysis"
+    },
+    {
+      "crate": "signal-analysis-loudness",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.analysis.feature-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "analysis"
+    },
+    {
+      "crate": "signal-analysis-rhythm",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.analysis.feature-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "analysis"
+    },
+    {
+      "crate": "signal-analysis-tonal",
+      "status": "deferred",
+      "planned_surface_id": "signal.demo.analysis.feature-inspector",
+      "planned_milestone": "g09.013",
+      "domain": "analysis"
+    }
+  ]
+}
