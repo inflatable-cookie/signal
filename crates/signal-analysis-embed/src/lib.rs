@@ -34,8 +34,9 @@ mod types;
 pub use types::{
     DescriptorEmbedding, ModelFallbackBehavior, ModelLoadError, SemanticAnalysisDiagnostics,
     SemanticAnalysisResult, SemanticCalibrationCaseReport, SemanticCalibrationReport,
-    SemanticEmbedderConfig, SemanticModelResourceProfile, SemanticModelSource, SemanticModelSpec,
-    SemanticModelVersion, SemanticTag, SemanticTagEvidence, SemanticTagLabel,
+    SemanticConfidenceDiagnostics, SemanticEmbedderConfig, SemanticModelResourceProfile,
+    SemanticModelSource, SemanticModelSpec, SemanticModelVersion, SemanticTag, SemanticTagEvidence,
+    SemanticTagLabel,
 };
 
 use builtin_model::{BuiltInDescriptorSemanticModel, BUILTIN_DESCRIPTOR_MODEL_ID};

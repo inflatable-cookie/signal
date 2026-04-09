@@ -103,11 +103,20 @@ pub struct DescriptorEmbedding {
 
 /// Diagnostics for the current semantic inference run.
 #[derive(Clone, Debug, PartialEq)]
+pub struct SemanticConfidenceDiagnostics {
+    pub top_margin_component: f32,
+    pub embedding_activity_component: f32,
+    pub descriptor_confidence_component: f32,
+}
+
+/// Diagnostics for the current semantic inference run.
+#[derive(Clone, Debug, PartialEq)]
 pub struct SemanticAnalysisDiagnostics {
     pub descriptor_confidence: Confidence,
     pub semantic_confidence: Confidence,
     pub top_tag_margin: f32,
     pub top_tag_label: Option<SemanticTagLabel>,
+    pub confidence_components: SemanticConfidenceDiagnostics,
     pub embedding_l2_norm: f32,
     pub active_embedding_dimensions: usize,
     pub fallback_used: bool,

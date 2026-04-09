@@ -1,8 +1,8 @@
 # 078 Rhythm Continuity, Failure Containment, And Policy Normalization Contract
 
-Status: draft
+Status: active
 Owner: core-product
-Updated: 2026-04-08
+Updated: 2026-04-09
 Related contracts: `docs/contracts/047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md`
 Related architecture: `docs/architecture/dsp-analysis-feature-reference.md`
 
@@ -37,5 +37,5 @@ panic-sensitive state logic into a resilient, inspectable policy system.
 
 ## Next Task
 
-Use this contract for the `g09` rhythm-engine remediation roadmap over
-`signal-analysis-rhythm`.
+Use this contract for the active strict `g09.010` lane, starting with
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

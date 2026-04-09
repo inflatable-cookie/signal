@@ -2,8 +2,8 @@ use signal_analysis::Confidence;
 use signal_analysis_character::CharacterAnalysisResult;
 
 use crate::types::{
-    DescriptorEmbedding, SemanticAnalysisDiagnostics, SemanticAnalysisResult, SemanticTag,
-    SemanticTagEvidence, SemanticTagLabel,
+    DescriptorEmbedding, SemanticAnalysisDiagnostics, SemanticAnalysisResult,
+    SemanticConfidenceDiagnostics, SemanticTag, SemanticTagEvidence, SemanticTagLabel,
 };
 
 use super::{normalize_unit, BuiltInDescriptorSemanticModel, BUILTIN_DESCRIPTOR_MODEL_ID};
@@ -125,7 +125,7 @@ impl BuiltInDescriptorSemanticModel {
         semantic_tags: &[SemanticTag],
         descriptor_confidence: Confidence,
         embedding_values: &[f32],
-    ) -> Confidence {
+    ) -> (Confidence, SemanticConfidenceDiagnostics) {
         let top_margin = if semantic_tags.len() >= 2 {
             (semantic_tags[0].score - semantic_tags[1].score).max(0.0)
         } else {
@@ -133,9 +133,13 @@ impl BuiltInDescriptorSemanticModel {
         };
         let embedding_activity =
             embedding_values.iter().copied().sum::<f32>() / embedding_values.len().max(1) as f32;
-        Confidence::new(
-            descriptor_confidence.0 * normalize_unit(0.55 * top_margin + 0.45 * embedding_activity),
-        )
+        let confidence_components = SemanticConfidenceDiagnostics {
+            top_margin_component: normalize_unit(top_margin),
+            embedding_activity_component: normalize_unit(embedding_activity),
+            descriptor_confidence_component: descriptor_confidence.0,
+        };
+        let calibrated = calibrate_semantic_confidence(confidence_components.clone());
+        (Confidence::new(calibrated), confidence_components)
     }
 
     pub(crate) fn build_analysis_result(
@@ -147,7 +151,7 @@ impl BuiltInDescriptorSemanticModel {
         let embedding_values = self.embedding_from_descriptors(&descriptors);
         let semantic_tags = self.semantic_tags_from_descriptors(&descriptors, max_tag_count);
         let descriptor_confidence = descriptors.confidence;
-        let semantic_confidence =
+        let (semantic_confidence, confidence_components) =
             self.semantic_confidence(&semantic_tags, descriptor_confidence, &embedding_values);
         let embedding_l2_norm = embedding_values
             .iter()
@@ -179,6 +183,7 @@ impl BuiltInDescriptorSemanticModel {
                 semantic_confidence,
                 top_tag_margin,
                 top_tag_label,
+                confidence_components,
                 embedding_l2_norm,
                 active_embedding_dimensions,
                 fallback_used,
@@ -204,4 +209,12 @@ fn tag_evidence(
 
 fn descriptor_scaled_confidence(base: Confidence, evidence_strength: f32) -> Confidence {
     Confidence::new(base.0 * (0.45 + 0.55 * normalize_unit(evidence_strength)))
+}
+
+fn calibrate_semantic_confidence(components: SemanticConfidenceDiagnostics) -> f32 {
+    let margin = components.top_margin_component;
+    let activity = components.embedding_activity_component;
+    let descriptor = components.descriptor_confidence_component;
+    let calibrated_signal = normalize_unit(0.60 * margin + 0.40 * activity);
+    descriptor * calibrated_signal
 }

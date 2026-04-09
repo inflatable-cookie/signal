@@ -1,6 +1,6 @@
 # 012 - g09.009 Semantic Confidence Calibration
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Master spec refs: docs/specs/001-g09-lane-first-strict-adoption.md
@@ -55,5 +55,21 @@ opaque heuristic blend over margin and embedding activity.
 
 ## Next Task
 
-Implement this semantic confidence calibration batch, then reassess whether
-`g09.009` is ready to hand off toward `g09.010`.
+Continue the active strict lane from
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+
+## Outcome
+
+Semantic confidence is no longer an opaque inline blend. The built-in semantic
+model now records explicit confidence components for top-tag margin, embedding
+activity, and descriptor confidence, and the frozen tone/noise/pulse corpus
+asserts interpretable confidence ordering on top of the already-frozen tag and
+evidence posture.
+
+## Validation Run
+
+- `cargo test -p signal-analysis-embed`
+- `cargo check -p signal-dsp-resample`
+- `effigy health`
+- `effigy qa:docs`
+- `effigy qa:northstar`

@@ -1,6 +1,6 @@
 # 077 DSP Fidelity, Semantic Calibration, And Analysis Realism Contract
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Related contracts: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`, `docs/contracts/047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md`
@@ -36,5 +36,5 @@ beyond bounded placeholder fidelity in resampling and semantic-tag projection.
 
 ## Next Task
 
-Use this contract for the active strict `g09.009` lane, starting with
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+Use this contract as the completed fidelity baseline that hands the strict lane
+forward from `g09.009` into rhythm resilience work under contract `078`.

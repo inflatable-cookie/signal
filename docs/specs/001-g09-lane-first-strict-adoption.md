@@ -5,7 +5,7 @@ Owner: core-product
 Updated: 2026-04-09
 Vision refs: docs/vision/001-signal-vision.md
 Promotion targets: docs/architecture/product-guardrails.md, docs/contracts/001-working-rules.md
-Roadmap refs: g09.009
+Roadmap refs: g09.010
 
 ## Problem
 
@@ -27,14 +27,14 @@ bounded strict surface on the live `g09` queue:
 
 - current phase: `lane-first stricter adoption`
 - scope: active `g09` lane only
-- active milestone: `g09.009`
-- immediate follow-on boundary: `g09.010`
+- active milestone: `g09.010`
+- immediate follow-on boundary: `g09.011`
 
 ## Goals
 
 - install the minimum strict docs pack around the live `g09` lane
 - bind each current active `g09` batch to one explicit ready card
-- keep the next boundary into `g09.009` explicit instead of implied
+- keep the next boundary into `g09.011` explicit instead of implied
 
 ## Non-Goals
 
@@ -51,8 +51,8 @@ bounded strict surface on the live `g09` queue:
 
 ### Phase 2
 
-- bind the active `g09.009` batch to one ready card
-- leave the immediate next boundary into `g09.010` explicit
+- bind the active `g09.010` batch to one ready card
+- leave the immediate next boundary into `g09.011` explicit
 
 ## Open Questions
 
@@ -79,4 +79,4 @@ bounded strict surface on the live `g09` queue:
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

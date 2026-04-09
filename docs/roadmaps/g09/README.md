@@ -51,9 +51,9 @@ proof:
 - `g09.008` `active`
 - `g09.008` `complete`
   - low-level correctness, safety, and protocol hardening
-- `g09.009` `active`
+- `g09.009` `complete`
   - DSP fidelity and semantic-analysis realism uplift
-- `g09.010` `draft`
+- `g09.010` `active`
   - rhythm-engine resilience and policy normalization
 - `g09.011` `draft`
   - interactive demo substrate, manifest, and operator conventions
@@ -98,7 +98,7 @@ with proof instead of prose.
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Working rules for this thread
 
@@ -113,4 +113,4 @@ with proof instead of prose.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

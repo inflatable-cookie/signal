@@ -1,11 +1,12 @@
 # 010 - Rhythm Engine Resilience And Policy Normalization
 
-Status: draft
+Status: active
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `RHYTHM`, `ANALYSIS`, `RESILIENCE`
 Contract refs: `047`, `078`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Problem
 
@@ -29,6 +30,7 @@ to trust and hard to evolve.
 
 ### Batch 10.1 - Failure Containment
 
+- [x] freeze the first worker-failure containment seam as the next ready batch
 - [ ] remove `join().unwrap()` style worker joins from production rhythm paths
 - [ ] define typed degraded and failed analysis receipts for worker-loss cases
 - [ ] add targeted failure-injection tests around worker panics and partial
@@ -72,5 +74,5 @@ to trust and hard to evolve.
 
 ## Next Task
 
-Switch into executable proof with `g09.011`, so the new capability claims are
-demonstrable through repo-owned demos rather than roadmap prose alone.
+Continue the active strict lane from
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

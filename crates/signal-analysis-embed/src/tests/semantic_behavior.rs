@@ -8,7 +8,10 @@ fn tonal_audio_prefers_tonal_focus() {
     let result = embedder.analyze(&audio);
 
     assert_eq!(top_label(&result), SemanticTagLabel::TonalFocus);
-    assert_eq!(result.diagnostics.top_tag_label, Some(SemanticTagLabel::TonalFocus));
+    assert_eq!(
+        result.diagnostics.top_tag_label,
+        Some(SemanticTagLabel::TonalFocus)
+    );
     assert_eq!(result.embedding.values.len(), EMBEDDING_DIMENSIONS);
     assert!(result.source_descriptors.spectral_shape.flatness < 1e-4);
     assert_eq!(
@@ -79,6 +82,48 @@ fn semantic_diagnostics_are_bounded() {
     assert!(result.diagnostics.active_embedding_dimensions > 0);
     assert!(result.diagnostics.semantic_confidence.0 >= 0.0);
     assert!(result.diagnostics.semantic_confidence.0 <= 1.0);
+    assert!(
+        result
+            .diagnostics
+            .confidence_components
+            .top_margin_component
+            >= 0.0
+    );
+    assert!(
+        result
+            .diagnostics
+            .confidence_components
+            .top_margin_component
+            <= 1.0
+    );
+    assert!(
+        result
+            .diagnostics
+            .confidence_components
+            .embedding_activity_component
+            >= 0.0
+    );
+    assert!(
+        result
+            .diagnostics
+            .confidence_components
+            .embedding_activity_component
+            <= 1.0
+    );
+    assert!(
+        result
+            .diagnostics
+            .confidence_components
+            .descriptor_confidence_component
+            >= 0.0
+    );
+    assert!(
+        result
+            .diagnostics
+            .confidence_components
+            .descriptor_confidence_component
+            <= 1.0
+    );
 }
 
 #[test]
@@ -116,6 +161,37 @@ fn frozen_semantic_calibration_report_has_expected_top_tag_and_confidence_postur
     ));
     assert!(pulse.top_confidence.0 >= 0.08);
     assert!(pulse.top_tag_margin >= 0.0);
+}
+
+#[test]
+fn frozen_semantic_cases_have_explicit_confidence_ordering() {
+    let tone = sine_audio(440.0, 2.0, 48_000, 1.0);
+    let noise = noise_audio(2.0, 48_000, 0.5);
+    let pulse = adsr_pulse_audio(5, 140, 120, 500, 6, 48_000, 0.9);
+
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let tone_result = embedder.analyze(&tone);
+    let noise_result = embedder.analyze(&noise);
+    let pulse_result = embedder.analyze(&pulse);
+
+    assert!(
+        tone_result.diagnostics.semantic_confidence.0
+            >= noise_result.diagnostics.semantic_confidence.0
+    );
+    assert!(
+        pulse_result.diagnostics.semantic_confidence.0
+            >= noise_result.diagnostics.semantic_confidence.0 * 0.8
+    );
+    assert!(
+        tone_result
+            .diagnostics
+            .confidence_components
+            .top_margin_component
+            >= noise_result
+                .diagnostics
+                .confidence_components
+                .top_margin_component
+    );
 }
 
 #[test]
@@ -182,10 +258,21 @@ fn semantic_examples_remain_interpretable_for_closeout() {
         fallback_result.embedding.model_id,
         BUILTIN_DESCRIPTOR_MODEL_ID
     );
-    assert_eq!(tone_result.semantic_tags[0].evidence.primary_driver, "harmonic_focus");
+    assert_eq!(
+        tone_result.semantic_tags[0].evidence.primary_driver,
+        "harmonic_focus"
+    );
     assert_eq!(
         noise_result.semantic_tags[0].evidence.primary_driver,
         "spectral_complexity"
+    );
+    assert_eq!(
+        tone_result.diagnostics.top_tag_label,
+        Some(SemanticTagLabel::TonalFocus)
+    );
+    assert_eq!(
+        noise_result.diagnostics.top_tag_label,
+        Some(SemanticTagLabel::TexturalNoise)
     );
     assert!(tone_result.diagnostics.semantic_confidence.0 > 0.0);
     assert!(noise_result.diagnostics.semantic_confidence.0 > 0.0);

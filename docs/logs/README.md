@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Recent active-lane evidence
 
@@ -55,8 +55,9 @@ Use this section for:
 - `2026-04/09-230500-g09-009-resampler-quality-tier-foundation-tranche.md`
 - `2026-04/09-233500-g09-009-resampler-proof-and-semantic-handoff-tranche.md`
 - `2026-04/09-240500-g09-009-semantic-calibration-baseline-tranche.md`
+- `2026-04/09-241500-g09-009-confidence-closeout-and-g09-010-handoff.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

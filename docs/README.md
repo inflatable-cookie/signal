@@ -31,7 +31,7 @@ queue now has a lane-first strict surface under `docs/specs/`.
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Active strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card: [specs/batch-cards/012-g09-009-semantic-confidence-calibration.md](./specs/batch-cards/012-g09-009-semantic-confidence-calibration.md)
+- Active strict-lane card: [specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md](./specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md)
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -56,4 +56,4 @@ queue now has a lane-first strict surface under `docs/specs/`.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

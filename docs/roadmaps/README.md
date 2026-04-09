@@ -121,7 +121,7 @@ queue:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Working Rule
 
@@ -132,4 +132,4 @@ queue:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

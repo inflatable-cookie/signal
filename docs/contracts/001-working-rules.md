@@ -30,8 +30,8 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ### Lane-first strict posture
 
 - The first strict lane is attached to the live `g09` queue.
-- `g09.009` is the current strict-execution milestone.
-- The immediate follow-on boundary is `g09.010`.
+- `g09.010` is the current strict-execution milestone.
+- The immediate follow-on boundary is `g09.011`.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
 
@@ -100,5 +100,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ## Next Task
 
 Use this contract with the active `g09.009` strict lane while
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 governs the active batch.

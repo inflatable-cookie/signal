@@ -14,10 +14,10 @@ memory alone.
 
 - Signal is in lane-first stricter adoption for the active `g09` queue
 - `001-working-rules` governs the strict-lane execution posture
-- `g09.009` is the current strict-execution milestone
+- `g09.010` is the current strict-execution milestone
 - `docs/specs/001-g09-lane-first-strict-adoption.md` is the active strict-lane
   spec
-- `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+- `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
   is the current ready card
 
 ## Strict Lane Working Rule
@@ -142,5 +142,5 @@ frozen elsewhere in this index.
 
 Use this index as the contract-selection front door for the active strict
 `g09` lane while
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 governs the active batch.

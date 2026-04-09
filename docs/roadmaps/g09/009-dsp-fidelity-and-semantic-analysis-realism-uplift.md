@@ -1,12 +1,12 @@
 # 009 - DSP Fidelity And Semantic-Analysis Realism Uplift
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `DSP`, `ANALYSIS`, `FIDELITY`
 Contract refs: `046`, `047`, `077`
-Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Problem
 
@@ -43,9 +43,9 @@ without calibration or explicit quality posture.
 - [x] freeze the first semantic-calibration seam as the next ready batch
 - [x] define corpus and expected top-tag posture for the
       semantic embedding path
-- [ ] define confidence calibration policy for the
+- [x] define confidence calibration policy for the
       semantic embedding path
-- [ ] separate descriptor projection from scoring and confidence calibration
+- [x] separate descriptor projection from scoring and confidence calibration
       where needed
 - [x] add explainable evidence for why tags and confidences were emitted
 
@@ -58,9 +58,9 @@ without calibration or explicit quality posture.
 ## Acceptance Criteria
 
 - [x] Signal exposes clear low/high-quality resampling posture
-- [ ] semantic tagging has corpus-backed confidence calibration and explainable
+- [x] semantic tagging has corpus-backed confidence calibration and explainable
       evidence
-- [ ] the crates no longer overclaim capability relative to their actual output
+- [x] the crates no longer overclaim capability relative to their actual output
 
 ## Risks And Mitigations
 
@@ -124,7 +124,21 @@ are now frozen, but confidence is still a lightweight heuristic blend over
 margin and embedding activity, so the next batch should make that posture more
 explicit rather than broadening into rhythm work early.
 
+## Batch 9.2 Tranche 2 Outcome
+
+The semantic confidence posture is now explicit and testable. Confidence
+calibration records named components in diagnostics, the frozen semantic corpus
+asserts confidence-ordering expectations in addition to tag/evidence posture,
+and the semantic lane now has enough corpus-backed explainability to stop
+claiming quality through heuristics alone.
+
+## Final Reassessment Outcome
+
+`g09.009` is complete. The next honest strict seam is `g09.010` Batch 10.1:
+worker failure containment in `signal-analysis-rhythm`, starting with the
+production `join().unwrap()` path in onset feature extraction.
+
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
