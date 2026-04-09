@@ -8,8 +8,8 @@ fn local_host_boot_summary_exposes_negotiated_hardware_contract() {
     let supervisor = host.supervisor_report();
 
     assert_eq!(summary.backend_name, "coreaudio");
-    assert_eq!(summary.hardware.device_id, "coreaudio:default-output");
-    assert_eq!(summary.hardware.device_name, "CoreAudio Default Output");
+    assert!(summary.hardware.device_id.starts_with("coreaudio:"));
+    assert!(!summary.hardware.device_name.is_empty());
     assert_eq!(summary.hardware.sample_rate, 48_000);
     assert_eq!(summary.hardware.buffer_size, 512);
     assert_eq!(summary.hardware.input_channels, 0);
@@ -29,7 +29,7 @@ fn local_host_boot_summary_exposes_negotiated_hardware_contract() {
             .effective_config
             .active_output_device
             .as_deref(),
-        Some("coreaudio:default-output")
+        Some(summary.hardware.device_id.as_str())
     );
     assert_eq!(summary.hardware.backend_diagnostics.xrun_count, 0);
     assert_eq!(summary.hardware.backend_diagnostics.device_loss_count, 0);

@@ -36,11 +36,9 @@ impl RuntimeExecutionTopologySummary {
             fallback_spatial_node_count: nodes_result.fallback_spatial_node_count,
             surround_bed_spatial_node_count: nodes_result.surround_bed_spatial_node_count,
             object_aware_spatial_node_count: nodes_result.object_aware_spatial_node_count,
-            expanded_fallback_spatial_node_count: nodes_result
-                .expanded_fallback_spatial_node_count,
+            expanded_fallback_spatial_node_count: nodes_result.expanded_fallback_spatial_node_count,
             immersive_spatial_node_count: nodes_result.immersive_spatial_node_count,
-            room_policy_aware_spatial_node_count: nodes_result
-                .room_policy_aware_spatial_node_count,
+            room_policy_aware_spatial_node_count: nodes_result.room_policy_aware_spatial_node_count,
             fallback_room_policy_spatial_node_count: nodes_result
                 .fallback_room_policy_spatial_node_count,
             deployment_spatial_node_count: nodes_result.deployment_spatial_node_count,

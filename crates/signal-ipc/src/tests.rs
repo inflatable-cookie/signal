@@ -2,7 +2,7 @@ use crate::{
     PluginInstanceStatePayload, PluginIoLayoutPayload, PluginMessageEnvelope, PluginMessageName,
     PluginMessagePayload, PluginProcessConfigurationPayload, RuntimeDomain, SharedMemoryBroker,
     SharedMemoryLayoutPayload, SharedMemoryRegionPayload, SharedMemoryTransportKind,
-    SharedMemoryTransportPayload,
+    SharedMemoryTransportPayload, SharedMemoryRegionLifecycleErrorKind,
 };
 use std::{
     fs,
@@ -128,6 +128,84 @@ fn shared_memory_broker_round_trips_bytes_across_attachment() {
 
     broker.destroy_region(&transport).expect("destroy region");
     assert!(!std::path::Path::new(&transport.backing_path).exists());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shared_memory_broker_rejects_missing_metadata_sidecar_on_attach() {
+    let root = test_broker_root("missing-metadata");
+    let broker = SharedMemoryBroker::new(&root);
+    let region = broker
+        .create_region("lease-metadata-missing", 256)
+        .expect("create brokered region");
+    let transport = region.metadata().clone();
+    let metadata_path = PathBuf::from(format!("{}.meta", transport.backing_path));
+
+    fs::remove_file(&metadata_path).expect("remove metadata sidecar");
+    let error = broker
+        .attach_region(&transport)
+        .expect_err("missing metadata must fail attach");
+    assert_eq!(
+        error.kind(),
+        SharedMemoryRegionLifecycleErrorKind::MissingMetadata
+    );
+
+    let _ = fs::remove_file(&transport.backing_path);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shared_memory_broker_rejects_size_mismatch_on_attach() {
+    let root = test_broker_root("size-mismatch");
+    let broker = SharedMemoryBroker::new(&root);
+    let region = broker
+        .create_region("lease-size-mismatch", 256)
+        .expect("create brokered region");
+    let transport = region.metadata().clone();
+
+    fs::write(
+        format!("{}.meta", transport.backing_path),
+        format!(
+            "region_id={}\nlease_id=lease-size-mismatch\ntotal_bytes={}\nowner_pid={}\n",
+            transport.region_id,
+            128,
+            process::id()
+        ),
+    )
+    .expect("rewrite metadata sidecar");
+
+    let error = broker
+        .attach_region(&transport)
+        .expect_err("mismatched metadata size must fail attach");
+    assert_eq!(
+        error.kind(),
+        SharedMemoryRegionLifecycleErrorKind::SizeMismatch
+    );
+
+    let _ = fs::remove_file(&transport.backing_path);
+    let _ = fs::remove_file(format!("{}.meta", transport.backing_path));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shared_memory_broker_rejects_missing_backing_file_on_destroy() {
+    let root = test_broker_root("missing-backing-destroy");
+    let broker = SharedMemoryBroker::new(&root);
+    let region = broker
+        .create_region("lease-destroy-missing-backing", 256)
+        .expect("create brokered region");
+    let transport = region.metadata().clone();
+
+    fs::remove_file(&transport.backing_path).expect("remove backing file");
+    let error = broker
+        .destroy_region(&transport)
+        .expect_err("missing backing file must fail destroy");
+    assert_eq!(
+        error.kind(),
+        SharedMemoryRegionLifecycleErrorKind::MissingBackingFile
+    );
+
+    let _ = fs::remove_file(format!("{}.meta", transport.backing_path));
     let _ = fs::remove_dir_all(root);
 }
 

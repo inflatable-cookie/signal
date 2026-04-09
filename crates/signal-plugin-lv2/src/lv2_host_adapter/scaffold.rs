@@ -4,9 +4,9 @@ use signal_plugin::{
     PluginProcessingContract, PluginStateContract, PluginTypeId,
 };
 
-use crate::Lv2DiscoveredPluginType;
+use super::Lv2DiscoveredPluginType;
 
-pub(crate) fn lv2_fixture_bundle_name(plugin_type_id: &str) -> &'static str {
+pub(crate) fn lv2_scaffold_bundle_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:lv2:linux-synth" => "Signal Linux Synth.lv2",
         "plugin:lv2:multiout-instrument" => "Signal Multi Output Instrument.lv2",
@@ -51,7 +51,7 @@ fn lv2_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
     }
 }
 
-fn lv2_fixture_name(plugin_type_id: &str) -> &'static str {
+fn lv2_scaffold_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:lv2:linux-synth" => "Signal Linux Synth LV2 Plugin",
         "plugin:lv2:multiout-instrument" => "Signal Multi Output Instrument LV2 Plugin",
@@ -61,7 +61,7 @@ fn lv2_fixture_name(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn lv2_fixture_uri(plugin_type_id: &str) -> &'static str {
+fn lv2_scaffold_uri(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:lv2:linux-synth" => "https://signal.dev/plugins/lv2/linux-synth",
         "plugin:lv2:multiout-instrument" => "https://signal.dev/plugins/lv2/multiout-instrument",
@@ -71,7 +71,7 @@ fn lv2_fixture_uri(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn lv2_fixture_required_features(plugin_type_id: &str) -> Vec<String> {
+fn lv2_scaffold_required_features(plugin_type_id: &str) -> Vec<String> {
     match plugin_type_id {
         "plugin:lv2:linux-synth" | "plugin:lv2:multiout-instrument" => vec![
             "http://lv2plug.in/ns/ext/urid#map".into(),
@@ -83,7 +83,7 @@ fn lv2_fixture_required_features(plugin_type_id: &str) -> Vec<String> {
     }
 }
 
-fn lv2_fixture_supported_extensions(plugin_type_id: &str) -> Vec<String> {
+fn lv2_scaffold_supported_extensions(plugin_type_id: &str) -> Vec<String> {
     match plugin_type_id {
         "plugin:lv2:linux-synth" | "plugin:lv2:multiout-instrument" => vec![
             "http://lv2plug.in/ns/ext/patch#Message".into(),
@@ -95,7 +95,7 @@ fn lv2_fixture_supported_extensions(plugin_type_id: &str) -> Vec<String> {
     }
 }
 
-fn lv2_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
+fn lv2_scaffold_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     match plugin_type_id {
         "plugin:lv2:linux-synth" | "plugin:lv2:multiout-instrument" => {
             vec![PluginFeature::Instrument, PluginFeature::Analyzer]
@@ -106,11 +106,11 @@ fn lv2_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     }
 }
 
-fn lv2_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> PluginDescriptor {
+fn lv2_scaffold_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> PluginDescriptor {
     let mut descriptor = PluginDescriptor::new(
         plugin_type_id.to_string(),
         "Signal",
-        lv2_fixture_name(plugin_type_id),
+        lv2_scaffold_name(plugin_type_id),
         PluginFormat::Lv2,
     )
     .with_version("0.1.0")
@@ -159,13 +159,15 @@ fn lv2_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> Pl
         supports_activate: true,
         supports_reset_while_active: false,
     });
-    for feature in lv2_fixture_features(plugin_type_id) {
+    for feature in lv2_scaffold_features(plugin_type_id) {
         descriptor = descriptor.with_feature(feature);
     }
     descriptor
 }
 
-pub(crate) fn lv2_discovered_plugin_type(plugin_type_id: &str) -> Option<Lv2DiscoveredPluginType> {
+pub(crate) fn lv2_scaffold_discovered_plugin_type(
+    plugin_type_id: &str,
+) -> Option<Lv2DiscoveredPluginType> {
     match plugin_type_id {
         "plugin:lv2:linux-synth"
         | "plugin:lv2:multiout-instrument"
@@ -174,15 +176,16 @@ pub(crate) fn lv2_discovered_plugin_type(plugin_type_id: &str) -> Option<Lv2Disc
             let default_io_layout = lv2_default_io_layout(plugin_type_id);
             Some(Lv2DiscoveredPluginType {
                 plugin_type_id: PluginTypeId(plugin_type_id.to_string()),
-                plugin_uri: lv2_fixture_uri(plugin_type_id).into(),
-                bundle_root: format!("fixture://{}", lv2_fixture_bundle_name(plugin_type_id)),
+                plugin_uri: lv2_scaffold_uri(plugin_type_id).into(),
+                bundle_root: format!("scaffold://{}", lv2_scaffold_bundle_name(plugin_type_id)),
                 manifest_path: format!(
-                    "fixture://{}/manifest.ttl",
-                    lv2_fixture_bundle_name(plugin_type_id)
+                    "scaffold://{}/manifest.ttl",
+                    lv2_scaffold_bundle_name(plugin_type_id)
                 ),
-                required_features: lv2_fixture_required_features(plugin_type_id),
-                supported_extensions: lv2_fixture_supported_extensions(plugin_type_id),
-                descriptor: lv2_fixture_descriptor(plugin_type_id, default_io_layout),
+                required_features: lv2_scaffold_required_features(plugin_type_id),
+                supported_extensions: lv2_scaffold_supported_extensions(plugin_type_id),
+                prepare_fault: None,
+                descriptor: lv2_scaffold_descriptor(plugin_type_id, default_io_layout),
                 default_io_layout,
             })
         }

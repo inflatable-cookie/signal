@@ -82,6 +82,11 @@ fn json_runtime_plugin_sandbox_snapshot(snapshot: &RuntimePluginSandboxSnapshot)
     let last_stop_reason = snapshot
         .last_stop_reason
         .map(|reason| format!("{reason:?}"));
+    let lv2_prepared_negotiation = snapshot
+        .lv2_prepared_negotiation
+        .as_ref()
+        .map(json_runtime_lv2_prepared_negotiation_record)
+        .unwrap_or_else(|| "null".into());
     format!(
         concat!(
             "{{",
@@ -114,6 +119,7 @@ fn json_runtime_plugin_sandbox_snapshot(snapshot: &RuntimePluginSandboxSnapshot)
             "\"degraded_reasons\":{},",
             "\"active_lease_id\":{},",
             "\"active_region_id\":{},",
+            "\"lv2_prepared_negotiation\":{},",
             "\"summary\":{}",
             "}}"
         ),
@@ -152,7 +158,29 @@ fn json_runtime_plugin_sandbox_snapshot(snapshot: &RuntimePluginSandboxSnapshot)
         json_string_vec(&snapshot.degraded_reasons),
         json_option_string(snapshot.active_lease_id.as_deref()),
         json_option_string(snapshot.active_region_id.as_deref()),
+        lv2_prepared_negotiation,
         json_option_string(Some(snapshot.summary.as_str())),
+    )
+}
+
+fn json_runtime_lv2_prepared_negotiation_record(
+    record: &RuntimeLv2PreparedNegotiationRecord,
+) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"worker_posture\":{},",
+            "\"urid_negotiation_posture\":{},",
+            "\"patch_exchange_posture\":{},",
+            "\"extension_negotiation_state\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_string(&format!("{:?}", record.worker_posture)),
+        json_string(&format!("{:?}", record.urid_negotiation_posture)),
+        json_string(&format!("{:?}", record.patch_exchange_posture)),
+        json_string(&format!("{:?}", record.extension_negotiation_state)),
+        json_option_string(Some(record.summary.as_str())),
     )
 }
 

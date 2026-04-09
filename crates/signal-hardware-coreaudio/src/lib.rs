@@ -1,28 +1,33 @@
-//! CoreAudio backend shell for Signal.
+//! CoreAudio backend realization for Signal.
 
+use serde_json::Value;
 use signal_hardware::{
     AudioDeviceDescriptor, BackendHealth, BackendPolicyRecord, BackendPolicyTier, HardwareBackend,
     HardwareBackendIdentity, HardwareClockSource, HardwareClockTopology, HardwareConfigRequest,
     HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
     HardwareDiagnosticsSnapshot, HardwareLatencyProfile, HardwareLifecycleContract,
-    HardwareLifecycleOwnership, HardwareNegotiationError, HardwareRestartPolicy,
-    HardwareStreamConfig, HardwareStreamRequest, SampleRate,
+    HardwareLifecycleOwnership, HardwareNegotiationError, HardwareNegotiationErrorKind,
+    HardwareRestartPolicy, HardwareStreamConfig, HardwareStreamRequest, SampleRate,
 };
+use std::{collections::HashMap, env, process::Command};
 
-const DEFAULT_OUTPUT_DEVICE_ID: &str = "coreaudio:default-output";
-const DEFAULT_OUTPUT_DEVICE_NAME: &str = "CoreAudio Default Output";
+const COREAUDIO_FIXTURE_ENV: &str = "SIGNAL_COREAUDIO_SPAUDIO_JSON";
+const COREAUDIO_SYSTEM_PROFILER_DATASET: &str = "SPAudioDataType";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoreAudioBackend {
     policy_tier: BackendPolicyTier,
+    devices: Vec<AudioDeviceDescriptor>,
     diagnostics: HardwareDiagnosticsSnapshot,
 }
 
 impl Default for CoreAudioBackend {
     fn default() -> Self {
+        let inventory = discover_inventory();
         Self {
             policy_tier: BackendPolicyTier::Tier0InHost,
-            diagnostics: HardwareDiagnosticsSnapshot::healthy(),
+            devices: inventory.devices,
+            diagnostics: inventory.diagnostics,
         }
     }
 }
@@ -32,28 +37,19 @@ impl CoreAudioBackend {
         self.policy_tier
     }
 
-    fn default_output_descriptor(&self) -> AudioDeviceDescriptor {
-        AudioDeviceDescriptor {
-            backend_identity: self.backend_identity(),
-            backend_name: self.backend_name(),
-            device_id: DEFAULT_OUTPUT_DEVICE_ID.into(),
-            name: DEFAULT_OUTPUT_DEVICE_NAME.into(),
-            default_input: false,
-            default_output: true,
-            max_input_channels: 0,
-            max_output_channels: 2,
-            nominal_sample_rate: SampleRate(48_000),
-            preferred_buffer_sizes: vec![128, 256, 512],
-        }
-    }
-
     pub fn default_output_stream(
         &self,
         sample_rate: u32,
         buffer_size: usize,
     ) -> Result<HardwareStreamConfig, HardwareNegotiationError> {
+        let device = self.default_output_device().ok_or_else(|| {
+            HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::DeviceUnavailable,
+                "no CoreAudio default output device is currently available",
+            )
+        })?;
         let request =
-            HardwareStreamRequest::new_output(DEFAULT_OUTPUT_DEVICE_ID, sample_rate, buffer_size);
+            HardwareStreamRequest::new_output(device.device_id.clone(), sample_rate, buffer_size);
         self.negotiate_stream(&request)
     }
 
@@ -69,46 +65,53 @@ impl CoreAudioBackend {
     }
 
     pub fn reset_diagnostics(&mut self) {
-        self.diagnostics = HardwareDiagnosticsSnapshot::healthy();
+        self.diagnostics = baseline_diagnostics(&self.devices);
     }
 
     pub fn mark_recovered(&mut self) {
-        self.diagnostics.health = BackendHealth::Healthy;
+        self.diagnostics.health = if self.default_output_device().is_some() {
+            BackendHealth::Healthy
+        } else {
+            BackendHealth::Degraded
+        };
     }
 
     pub fn simulate_device_loss(&mut self, detail: impl Into<String>) {
+        let device_id = self.default_output_device().map(|device| device.device_id);
         self.diagnostics.health = BackendHealth::Degraded;
         self.diagnostics.device_loss_count = self.diagnostics.device_loss_count.saturating_add(1);
         self.diagnostics.last_event = Some(HardwareDiagnosticEvent {
             kind: HardwareDiagnosticKind::DeviceDisconnected,
             severity: HardwareDiagnosticSeverity::Critical,
-            device_id: Some(DEFAULT_OUTPUT_DEVICE_ID.into()),
+            device_id,
             callback_index: None,
             detail: detail.into(),
         });
     }
 
     pub fn simulate_restart_attempt(&mut self, detail: impl Into<String>) {
+        let device_id = self.default_output_device().map(|device| device.device_id);
         self.diagnostics.health = BackendHealth::Recovering;
         self.diagnostics.restart_attempt_count =
             self.diagnostics.restart_attempt_count.saturating_add(1);
         self.diagnostics.last_event = Some(HardwareDiagnosticEvent {
             kind: HardwareDiagnosticKind::RestartAttempted,
             severity: HardwareDiagnosticSeverity::Info,
-            device_id: Some(DEFAULT_OUTPUT_DEVICE_ID.into()),
+            device_id,
             callback_index: None,
             detail: detail.into(),
         });
     }
 
     pub fn simulate_restart_failure(&mut self, detail: impl Into<String>) {
+        let device_id = self.default_output_device().map(|device| device.device_id);
         self.diagnostics.health = BackendHealth::Degraded;
         self.diagnostics.restart_failure_count =
             self.diagnostics.restart_failure_count.saturating_add(1);
         self.diagnostics.last_event = Some(HardwareDiagnosticEvent {
             kind: HardwareDiagnosticKind::RestartFailed,
             severity: HardwareDiagnosticSeverity::Critical,
-            device_id: Some(DEFAULT_OUTPUT_DEVICE_ID.into()),
+            device_id,
             callback_index: None,
             detail: detail.into(),
         });
@@ -137,11 +140,20 @@ impl HardwareBackend for CoreAudioBackend {
     }
 
     fn enumerate_devices(&self) -> Vec<AudioDeviceDescriptor> {
-        vec![self.default_output_descriptor()]
+        self.devices.clone()
     }
 
     fn default_output_device(&self) -> Option<AudioDeviceDescriptor> {
-        Some(self.default_output_descriptor())
+        self.devices
+            .iter()
+            .find(|device| device.default_output)
+            .cloned()
+            .or_else(|| {
+                self.devices
+                    .iter()
+                    .find(|device| device.max_output_channels > 0)
+                    .cloned()
+            })
     }
 
     fn negotiate_stream(
@@ -149,36 +161,37 @@ impl HardwareBackend for CoreAudioBackend {
         request: &HardwareStreamRequest,
     ) -> Result<HardwareStreamConfig, HardwareNegotiationError> {
         let device = self
-            .enumerate_devices()
-            .into_iter()
+            .devices
+            .iter()
             .find(|device| device.device_id == request.device_id)
+            .cloned()
             .ok_or_else(|| {
-                signal_hardware::HardwareNegotiationError::new(
-                    signal_hardware::HardwareNegotiationErrorKind::DeviceUnavailable,
+                HardwareNegotiationError::new(
+                    HardwareNegotiationErrorKind::DeviceUnavailable,
                     format!("unknown CoreAudio device {}", request.device_id),
                 )
             })?;
 
         if request.buffer_size == 0 || request.sample_rate.0 == 0 {
-            return Err(signal_hardware::HardwareNegotiationError::new(
-                signal_hardware::HardwareNegotiationErrorKind::UnsupportedConfiguration,
+            return Err(HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::UnsupportedConfiguration,
                 "sample_rate and buffer_size must be non-zero",
             ));
         }
         if request.output_channels == 0 || request.output_channels > device.max_output_channels {
-            return Err(signal_hardware::HardwareNegotiationError::new(
-                signal_hardware::HardwareNegotiationErrorKind::UnsupportedConfiguration,
+            return Err(HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::UnsupportedConfiguration,
                 format!(
-                    "requested {} output channels exceeds CoreAudio shell capacity",
+                    "requested {} output channels exceeds CoreAudio device capacity",
                     request.output_channels
                 ),
             ));
         }
         if request.input_channels > device.max_input_channels {
-            return Err(signal_hardware::HardwareNegotiationError::new(
-                signal_hardware::HardwareNegotiationErrorKind::UnsupportedConfiguration,
+            return Err(HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::UnsupportedConfiguration,
                 format!(
-                    "requested {} input channels exceeds CoreAudio shell capacity",
+                    "requested {} input channels exceeds CoreAudio device capacity",
                     request.input_channels
                 ),
             ));
@@ -209,61 +222,336 @@ impl HardwareBackend for CoreAudioBackend {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct CoreAudioInventory {
+    devices: Vec<AudioDeviceDescriptor>,
+    diagnostics: HardwareDiagnosticsSnapshot,
+}
+
+fn discover_inventory() -> CoreAudioInventory {
+    match read_inventory_json().and_then(|json| parse_inventory(&json)) {
+        Ok(devices) => {
+            let diagnostics = baseline_diagnostics(&devices);
+            CoreAudioInventory {
+                devices,
+                diagnostics,
+            }
+        }
+        Err(error) => CoreAudioInventory {
+            devices: Vec::new(),
+            diagnostics: HardwareDiagnosticsSnapshot {
+                health: BackendHealth::Degraded,
+                xrun_count: 0,
+                callback_overrun_count: 0,
+                device_loss_count: 0,
+                restart_attempt_count: 0,
+                restart_failure_count: 0,
+                last_event: Some(HardwareDiagnosticEvent {
+                    kind: HardwareDiagnosticKind::DeviceDisconnected,
+                    severity: HardwareDiagnosticSeverity::Critical,
+                    device_id: None,
+                    callback_index: None,
+                    detail: format!("CoreAudio inventory unavailable: {error}"),
+                }),
+            },
+        },
+    }
+}
+
+fn baseline_diagnostics(devices: &[AudioDeviceDescriptor]) -> HardwareDiagnosticsSnapshot {
+    if devices.iter().any(|device| device.default_output) {
+        HardwareDiagnosticsSnapshot::healthy()
+    } else {
+        HardwareDiagnosticsSnapshot {
+            health: BackendHealth::Degraded,
+            xrun_count: 0,
+            callback_overrun_count: 0,
+            device_loss_count: 0,
+            restart_attempt_count: 0,
+            restart_failure_count: 0,
+            last_event: Some(HardwareDiagnosticEvent {
+                kind: HardwareDiagnosticKind::DeviceDisconnected,
+                severity: HardwareDiagnosticSeverity::Warning,
+                device_id: None,
+                callback_index: None,
+                detail: "CoreAudio reported no default output device".into(),
+            }),
+        }
+    }
+}
+
+fn read_inventory_json() -> Result<String, String> {
+    if let Ok(fixture) = env::var(COREAUDIO_FIXTURE_ENV) {
+        return Ok(fixture);
+    }
+
+    let output = Command::new("system_profiler")
+        .args([COREAUDIO_SYSTEM_PROFILER_DATASET, "-json"])
+        .output()
+        .map_err(|error| format!("failed to launch system_profiler: {error}"))?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "system_profiler exited with status {}",
+            output.status
+        ));
+    }
+
+    String::from_utf8(output.stdout)
+        .map_err(|error| format!("invalid UTF-8 from system_profiler: {error}"))
+}
+
+fn parse_inventory(json: &str) -> Result<Vec<AudioDeviceDescriptor>, String> {
+    let root: Value =
+        serde_json::from_str(json).map_err(|error| format!("invalid CoreAudio JSON: {error}"))?;
+    let items = root
+        .get(COREAUDIO_SYSTEM_PROFILER_DATASET)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .find_map(|entry| entry.get("_items").and_then(Value::as_array))
+        .ok_or_else(|| "missing SPAudioDataType._items".to_string())?;
+
+    let mut slug_counts: HashMap<String, usize> = HashMap::new();
+    let mut devices = Vec::new();
+    for item in items {
+        let Some(name) = json_string(item, "_name") else {
+            continue;
+        };
+        let input_channels = json_u16(item, "coreaudio_device_input").unwrap_or(0);
+        let output_channels = json_u16(item, "coreaudio_device_output").unwrap_or(0);
+        if input_channels == 0 && output_channels == 0 {
+            continue;
+        }
+        let base_id = normalize_device_id(name);
+        let sequence = slug_counts.entry(base_id.clone()).or_insert(0);
+        *sequence += 1;
+        let device_id = if *sequence == 1 {
+            base_id
+        } else {
+            format!("{base_id}-{}", sequence)
+        };
+        devices.push(AudioDeviceDescriptor {
+            backend_identity: HardwareBackendIdentity::CoreAudio,
+            backend_name: "coreaudio",
+            device_id,
+            name: name.to_string(),
+            default_input: json_yes(item, "coreaudio_default_audio_input_device"),
+            default_output: json_yes(item, "coreaudio_default_audio_output_device")
+                || json_yes(item, "coreaudio_default_audio_system_device"),
+            max_input_channels: input_channels,
+            max_output_channels: output_channels,
+            nominal_sample_rate: SampleRate(
+                json_u32(item, "coreaudio_device_srate").unwrap_or(48_000),
+            ),
+            preferred_buffer_sizes: vec![128, 256, 512],
+        });
+    }
+
+    Ok(devices)
+}
+
+fn json_string<'a>(value: &'a Value, key: &str) -> Option<&'a str> {
+    value.get(key).and_then(Value::as_str)
+}
+
+fn json_yes(value: &Value, key: &str) -> bool {
+    matches!(json_string(value, key), Some("spaudio_yes"))
+}
+
+fn json_u16(value: &Value, key: &str) -> Option<u16> {
+    value
+        .get(key)
+        .and_then(Value::as_u64)
+        .and_then(|value| u16::try_from(value).ok())
+}
+
+fn json_u32(value: &Value, key: &str) -> Option<u32> {
+    value
+        .get(key)
+        .and_then(Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+}
+
+fn normalize_device_id(name: &str) -> String {
+    let mut slug = String::from("coreaudio:");
+    let mut prior_dash = false;
+    for ch in name.chars() {
+        let lowercase = ch.to_ascii_lowercase();
+        if lowercase.is_ascii_alphanumeric() {
+            slug.push(lowercase);
+            prior_dash = false;
+        } else if !prior_dash {
+            slug.push('-');
+            prior_dash = true;
+        }
+    }
+    while slug.ends_with('-') {
+        slug.pop();
+    }
+    if slug == "coreaudio:" {
+        "coreaudio:device".into()
+    } else {
+        slug
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use signal_hardware::{AudioSampleFormat, AudioStreamDirection};
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    fn with_inventory_fixture<T>(fixture: &str, f: impl FnOnce() -> T) -> T {
+        let _guard = env_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let prior = env::var(COREAUDIO_FIXTURE_ENV).ok();
+        env::set_var(COREAUDIO_FIXTURE_ENV, fixture);
+        let result = f();
+        if let Some(prior) = prior {
+            env::set_var(COREAUDIO_FIXTURE_ENV, prior);
+        } else {
+            env::remove_var(COREAUDIO_FIXTURE_ENV);
+        }
+        result
+    }
+
+    const HEALTHY_FIXTURE: &str = r#"{
+  "SPAudioDataType": [
+    {
+      "_items": [
+        {
+          "_name": "Signal Built-In Microphone",
+          "coreaudio_default_audio_input_device": "spaudio_yes",
+          "coreaudio_device_input": 2,
+          "coreaudio_device_srate": 48000
+        },
+        {
+          "_name": "Signal Built-In Speakers",
+          "coreaudio_default_audio_output_device": "spaudio_yes",
+          "coreaudio_default_audio_system_device": "spaudio_yes",
+          "coreaudio_device_output": 2,
+          "coreaudio_device_srate": 48000
+        },
+        {
+          "_name": "Signal Aggregate Interface",
+          "coreaudio_device_input": 4,
+          "coreaudio_device_output": 4,
+          "coreaudio_device_srate": 96000
+        }
+      ]
+    }
+  ]
+}"#;
+
+    const DEGRADED_FIXTURE: &str = r#"{
+  "SPAudioDataType": [
+    {
+      "_items": [
+        {
+          "_name": "Signal Input Only Interface",
+          "coreaudio_default_audio_input_device": "spaudio_yes",
+          "coreaudio_device_input": 2,
+          "coreaudio_device_srate": 48000
+        }
+      ]
+    }
+  ]
+}"#;
 
     #[test]
-    fn coreaudio_backend_exposes_default_output_device_and_stream_contract() {
-        let backend = CoreAudioBackend::default();
+    fn coreaudio_backend_enumerates_real_devices_from_inventory_fixture() {
+        with_inventory_fixture(HEALTHY_FIXTURE, || {
+            let backend = CoreAudioBackend::default();
 
-        let device = backend
-            .default_output_device()
-            .expect("coreaudio default output device");
-        assert_eq!(device.device_id, DEFAULT_OUTPUT_DEVICE_ID);
-        assert!(device.default_output);
+            let devices = backend.enumerate_devices();
+            assert_eq!(devices.len(), 3);
+            assert!(devices.iter().any(|device| device.device_id
+                == "coreaudio:signal-built-in-speakers"
+                && device.default_output
+                && device.max_output_channels == 2));
+            assert!(devices.iter().any(|device| device.device_id
+                == "coreaudio:signal-aggregate-interface"
+                && device.max_input_channels == 4
+                && device.max_output_channels == 4
+                && device.nominal_sample_rate == SampleRate(96_000)));
 
-        let stream = backend
-            .default_output_stream(48_000, 256)
-            .expect("coreaudio default output stream");
-        assert_eq!(stream.device.device_id, DEFAULT_OUTPUT_DEVICE_ID);
-        assert_eq!(stream.direction, AudioStreamDirection::Output);
-        assert_eq!(stream.sample_rate, SampleRate(48_000));
-        assert_eq!(stream.buffer_size, 256);
-        assert_eq!(stream.output_channels, 2);
-        assert_eq!(stream.sample_format, AudioSampleFormat::F32);
-        assert_eq!(stream.clock_source, HardwareClockSource::Internal);
-        assert_eq!(stream.clock_topology, HardwareClockTopology::SingleEndpoint);
-        assert_eq!(stream.latency, HardwareLatencyProfile::output_only(256));
-        assert_eq!(
-            stream.lifecycle,
-            HardwareLifecycleContract {
-                ownership: HardwareLifecycleOwnership::HostDrivenCallback,
-                restart_policy: HardwareRestartPolicy::HostMustRestart,
-            }
-        );
-        assert!(!stream.simulated);
+            let device = backend
+                .default_output_device()
+                .expect("coreaudio default output device");
+            assert_eq!(device.device_id, "coreaudio:signal-built-in-speakers");
+            assert_eq!(device.name, "Signal Built-In Speakers");
+            assert_eq!(backend.diagnostics().health, BackendHealth::Healthy);
+
+            let stream = backend
+                .default_output_stream(48_000, 256)
+                .expect("coreaudio default output stream");
+            assert_eq!(
+                stream.device.device_id,
+                "coreaudio:signal-built-in-speakers"
+            );
+            assert_eq!(stream.direction, AudioStreamDirection::Output);
+            assert_eq!(stream.sample_rate, SampleRate(48_000));
+            assert_eq!(stream.buffer_size, 256);
+            assert_eq!(stream.output_channels, 2);
+            assert_eq!(stream.sample_format, AudioSampleFormat::F32);
+            assert_eq!(stream.clock_source, HardwareClockSource::Internal);
+            assert_eq!(stream.clock_topology, HardwareClockTopology::SingleEndpoint);
+            assert_eq!(stream.latency, HardwareLatencyProfile::output_only(256));
+            assert_eq!(
+                stream.lifecycle,
+                HardwareLifecycleContract {
+                    ownership: HardwareLifecycleOwnership::HostDrivenCallback,
+                    restart_policy: HardwareRestartPolicy::HostMustRestart,
+                }
+            );
+            assert!(!stream.simulated);
+        });
     }
 
     #[test]
-    fn coreaudio_backend_tracks_simulated_device_loss_and_restart_diagnostics() {
-        let mut backend = CoreAudioBackend::default();
+    fn coreaudio_backend_reports_degraded_inventory_without_default_output() {
+        with_inventory_fixture(DEGRADED_FIXTURE, || {
+            let backend = CoreAudioBackend::default();
 
-        backend.simulate_device_loss("simulated device disconnect");
-        backend.simulate_restart_attempt("simulated restart attempt");
-        backend.simulate_restart_failure("simulated restart failure");
+            assert_eq!(backend.health(), BackendHealth::Degraded);
+            assert!(backend.default_output_device().is_none());
+            let diagnostics = backend.diagnostics();
+            assert_eq!(diagnostics.health, BackendHealth::Degraded);
+            assert_eq!(
+                diagnostics.last_event.as_ref().map(|event| event.kind),
+                Some(HardwareDiagnosticKind::DeviceDisconnected)
+            );
+        });
+    }
 
-        let diagnostics = backend.diagnostics();
-        assert_eq!(diagnostics.device_loss_count, 1);
-        assert_eq!(diagnostics.restart_attempt_count, 1);
-        assert_eq!(diagnostics.restart_failure_count, 1);
-        assert_eq!(diagnostics.health, BackendHealth::Degraded);
-        assert!(diagnostics
-            .last_event
-            .is_some_and(|event| event.kind == HardwareDiagnosticKind::RestartFailed));
+    #[test]
+    fn coreaudio_backend_tracks_device_loss_and_restart_diagnostics_against_real_device_ids() {
+        with_inventory_fixture(HEALTHY_FIXTURE, || {
+            let mut backend = CoreAudioBackend::default();
 
-        backend.mark_recovered();
-        assert_eq!(backend.health(), BackendHealth::Healthy);
+            backend.simulate_device_loss("simulated device disconnect");
+            backend.simulate_restart_attempt("simulated restart attempt");
+            backend.simulate_restart_failure("simulated restart failure");
+
+            let diagnostics = backend.diagnostics();
+            assert_eq!(diagnostics.device_loss_count, 1);
+            assert_eq!(diagnostics.restart_attempt_count, 1);
+            assert_eq!(diagnostics.restart_failure_count, 1);
+            assert_eq!(
+                diagnostics
+                    .last_event
+                    .as_ref()
+                    .and_then(|event| event.device_id.as_deref()),
+                Some("coreaudio:signal-built-in-speakers")
+            );
+            assert_eq!(diagnostics.health, BackendHealth::Degraded);
+        });
     }
 }

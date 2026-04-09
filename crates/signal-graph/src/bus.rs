@@ -9,8 +9,23 @@ use crate::{
     GraphChannelAdaptationResult, GraphNodeRenderOverride, GraphNodeSilencePolicy, GraphNodeSpec,
     GraphPreparedDispatch,
 };
-use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
+use signal_primitives::{
+    AudioBuffer, AudioBufferConstructionError, ChannelLayout, FrameCount, SampleRate,
+};
 use std::collections::BTreeMap;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GraphChannelAdaptationFailure {
+    InvalidTargetLayout {
+        layout: ChannelLayout,
+        source: AudioBufferConstructionError,
+    },
+    Unsupported {
+        input: ChannelLayout,
+        output: ChannelLayout,
+        mode: GraphChannelAdaptationMode,
+    },
+}
 
 /// Initialize a bus state from an input buffer.
 pub fn seeded_bus_state(input: &AudioBuffer) -> GraphBusState {
@@ -25,6 +40,7 @@ pub fn seeded_bus_state(input: &AudioBuffer) -> GraphBusState {
         latencies,
         tails,
         silent_source_bus_count: 0,
+        failed_channel_adaptation_count: 0,
     }
 }
 
@@ -43,6 +59,7 @@ pub fn prepared_bus_state(prepared: &GraphPreparedDispatch) -> GraphBusState {
         latencies,
         tails,
         silent_source_bus_count: 0,
+        failed_channel_adaptation_count: 0,
     }
 }
 
@@ -81,7 +98,10 @@ pub fn node_render_override_map(
 }
 
 /// Get the source buffer for a node from the bus state.
-pub fn source_buffer_for_node(state: &GraphBusState, node: &GraphNodeSpec) -> AudioBuffer {
+pub fn source_buffer_for_node(
+    state: &GraphBusState,
+    node: &GraphNodeSpec,
+) -> Result<AudioBuffer, GraphChannelAdaptationFailure> {
     let source = state
         .buses
         .get(&node.buffer_contract.input.bus_id)
@@ -91,7 +111,7 @@ pub fn source_buffer_for_node(state: &GraphBusState, node: &GraphNodeSpec) -> Au
                 .buses
                 .get("main:in")
                 .or_else(|| state.buses.values().next());
-            AudioBuffer::new(
+            AudioBuffer::try_new(
                 fallback
                     .map(|buffer| buffer.sample_rate())
                     .unwrap_or(SampleRate(48_000)),
@@ -100,8 +120,9 @@ pub fn source_buffer_for_node(state: &GraphBusState, node: &GraphNodeSpec) -> Au
                     .map(|buffer| buffer.frames())
                     .unwrap_or(FrameCount(0)),
             )
+            .expect("graph source fallback should use a valid node input layout")
         });
-    adapt_buffer_to_layout(
+    try_adapt_buffer_to_layout(
         &source,
         node.buffer_contract.input.channels,
         node.buffer_contract.channel_adaptation,
@@ -109,13 +130,13 @@ pub fn source_buffer_for_node(state: &GraphBusState, node: &GraphNodeSpec) -> Au
 }
 
 /// Adapt a buffer to a target channel layout.
-pub fn adapt_buffer_to_layout(
+pub fn try_adapt_buffer_to_layout(
     input: &AudioBuffer,
     target_layout: ChannelLayout,
     mode: GraphChannelAdaptationMode,
-) -> AudioBuffer {
+) -> Result<AudioBuffer, GraphChannelAdaptationFailure> {
     if input.channels() == target_layout {
-        return input.clone();
+        return Ok(input.clone());
     }
 
     match classify_channel_adaptation(input.channels(), target_layout, mode) {
@@ -126,13 +147,29 @@ pub fn adapt_buffer_to_layout(
                 samples.push(*sample);
                 samples.push(*sample);
             }
-            AudioBuffer::from_interleaved(input.sample_rate(), target_layout, samples)
+            AudioBuffer::try_from_interleaved(input.sample_rate(), target_layout, samples).map_err(
+                |source| GraphChannelAdaptationFailure::InvalidTargetLayout {
+                    layout: target_layout,
+                    source,
+                },
+            )
         }
         GraphChannelAdaptationResult::StereoToMono => {
-            AudioBuffer::from_interleaved(input.sample_rate(), target_layout, input.to_mono())
+            AudioBuffer::try_from_interleaved(input.sample_rate(), target_layout, input.to_mono())
+                .map_err(
+                    |source| GraphChannelAdaptationFailure::InvalidTargetLayout {
+                        layout: target_layout,
+                        source,
+                    },
+                )
         }
-        GraphChannelAdaptationResult::Exact | GraphChannelAdaptationResult::Unsupported => {
-            AudioBuffer::new(input.sample_rate(), target_layout, input.frames())
+        GraphChannelAdaptationResult::Exact => Ok(input.clone()),
+        GraphChannelAdaptationResult::Unsupported => {
+            Err(GraphChannelAdaptationFailure::Unsupported {
+                input: input.channels(),
+                output: target_layout,
+                mode,
+            })
         }
     }
 }
@@ -144,14 +181,14 @@ pub fn mix_buffer_into_bus(
     mut buffer: AudioBuffer,
     latency: u32,
     tail: u32,
-) {
+) -> Result<(), GraphChannelAdaptationFailure> {
     if let Some(existing) = state.buses.get_mut(bus_id) {
         if existing.channels() != buffer.channels() {
-            buffer = adapt_buffer_to_layout(
+            buffer = try_adapt_buffer_to_layout(
                 &buffer,
                 existing.channels(),
                 GraphChannelAdaptationMode::AdaptiveMonoStereo,
-            );
+            )?;
         }
         for (dst, src) in existing.samples_mut().iter_mut().zip(buffer.samples()) {
             *dst += *src;
@@ -162,12 +199,13 @@ pub fn mix_buffer_into_bus(
         if let Some(existing_tail) = state.tails.get_mut(bus_id) {
             *existing_tail = (*existing_tail).max(tail);
         }
-        return;
+        return Ok(());
     }
 
     state.buses.insert(bus_id.to_string(), buffer);
     state.latencies.insert(bus_id.to_string(), latency);
     state.tails.insert(bus_id.to_string(), tail);
+    Ok(())
 }
 
 /// Apply a node's silence contract to a buffer.

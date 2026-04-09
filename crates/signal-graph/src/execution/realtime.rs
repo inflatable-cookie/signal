@@ -123,7 +123,13 @@ impl ExecutableGraph {
                         planning_group_for_node(node, anticipative_enabled) == *phase
                     })
                 {
-                    let mut working = bus::source_buffer_for_node(state, node);
+                    let mut working = match bus::source_buffer_for_node(state, node) {
+                        Ok(buffer) => buffer,
+                        Err(_) => {
+                            state.failed_channel_adaptation_count += 1;
+                            continue;
+                        }
+                    };
                     let input_latency = state
                         .latencies
                         .get(&node.buffer_contract.input.bus_id)
@@ -142,38 +148,53 @@ impl ExecutableGraph {
                         node_render_overrides.get(node.node_id.as_str())
                     {
                         let output = if node_render_override.bypassed {
-                            bus::adapt_buffer_to_layout(
+                            bus::try_adapt_buffer_to_layout(
                                 &working,
                                 node.buffer_contract.output.channels,
                                 node.buffer_contract.channel_adaptation,
                             )
                         } else {
-                            bus::adapt_buffer_to_layout(
+                            bus::try_adapt_buffer_to_layout(
                                 &node_render_override.buffer,
                                 node.buffer_contract.output.channels,
                                 node.buffer_contract.channel_adaptation,
                             )
                         };
-                        bus::mix_buffer_into_bus(
+                        let output = match output {
+                            Ok(output) => output,
+                            Err(_) => {
+                                state.failed_channel_adaptation_count += 1;
+                                continue;
+                            }
+                        };
+                        if bus::mix_buffer_into_bus(
                             state,
                             node.buffer_contract.output.bus_id.as_str(),
                             output,
                             input_latency.saturating_add(node_render_override.latency_samples),
                             input_tail.saturating_add(node_render_override.tail_samples),
-                        );
+                        )
+                        .is_err()
+                        {
+                            state.failed_channel_adaptation_count += 1;
+                        }
                         continue;
                     }
                     if !bus::apply_node_contract(&mut working, node) {
                         if node.buffer_contract.silence_policy
                             == GraphNodeSilencePolicy::ClearOutput
                         {
-                            bus::mix_buffer_into_bus(
+                            if bus::mix_buffer_into_bus(
                                 state,
                                 node.buffer_contract.output.bus_id.as_str(),
                                 working,
                                 input_latency.saturating_add(node.latency_samples),
                                 input_tail.saturating_add(node.tail_samples),
-                            );
+                            )
+                            .is_err()
+                            {
+                                state.failed_channel_adaptation_count += 1;
+                            }
                         }
                         continue;
                     }
@@ -193,18 +214,28 @@ impl ExecutableGraph {
                             parameter_batch.map(|batch| batch.strategy),
                         );
                     }
-                    let output = bus::adapt_buffer_to_layout(
+                    let output = match bus::try_adapt_buffer_to_layout(
                         &working,
                         node.buffer_contract.output.channels,
                         node.buffer_contract.channel_adaptation,
-                    );
-                    bus::mix_buffer_into_bus(
+                    ) {
+                        Ok(output) => output,
+                        Err(_) => {
+                            state.failed_channel_adaptation_count += 1;
+                            continue;
+                        }
+                    };
+                    if bus::mix_buffer_into_bus(
                         state,
                         node.buffer_contract.output.bus_id.as_str(),
                         output,
                         input_latency.saturating_add(node.latency_samples),
                         input_tail.saturating_add(node.tail_samples),
-                    );
+                    )
+                    .is_err()
+                    {
+                        state.failed_channel_adaptation_count += 1;
+                    }
                 }
             }
         }

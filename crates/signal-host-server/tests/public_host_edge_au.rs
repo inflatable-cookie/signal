@@ -1,3 +1,10 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+#[path = "support/public_host_edge_sandbox_broker.rs"]
+mod public_host_edge_sandbox_broker_support;
+
+use public_host_edge_plugins_support::temp_public_server_au_scan_root;
+use public_host_edge_sandbox_broker_support::SandboxBrokerEnvGuard;
 use signal_host_server::ServerRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
@@ -9,9 +16,15 @@ use signal_runtime::{
 fn server_shared_host_edge_exports_runtime_au_baseline_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     let mut host = ServerRuntimeHost::new(runtime);
+    let scan_root = temp_public_server_au_scan_root();
+    let _broker_guard = SandboxBrokerEnvGuard::enable_for_workspace_demo_plugin(
+        "au",
+        &scan_root.root(),
+        "plugin:au:instrument",
+    );
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/Library/Audio/Plug-Ins/Components".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Au],
     })
     .expect("public server au scan should succeed");
@@ -67,4 +80,10 @@ fn server_shared_host_edge_exports_runtime_au_baseline_truth() {
     let rendered = report.render_json();
     assert!(rendered.contains("\"plugin_type_id\":\"plugin:au:instrument\""));
     assert!(rendered.contains("\"formats\":[\"Au\"]"));
+    assert!(rendered.contains("broker:lease_attached|au:instance="));
+    assert!(rendered.contains("state_stored=1"));
+    assert!(rendered.contains("activation=ready"));
+    assert!(rendered.contains("component_type=aumu"));
+    assert!(rendered.contains("component_subtype=sigi"));
+    assert!(rendered.contains("manufacturer=sigl"));
 }

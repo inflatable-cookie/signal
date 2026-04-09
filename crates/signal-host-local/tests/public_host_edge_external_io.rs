@@ -1,3 +1,7 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+
+use public_host_edge_plugins_support::{temp_public_local_au_scan_root, DemoPluginEnvGuard};
 use signal_host_local::LocalRuntimeHost;
 use signal_runtime::{
     RuntimeConfig, RuntimeErrorKind, RuntimeExternalIoHealthState, RuntimeExternalIoLoopbackState,
@@ -8,6 +12,8 @@ use signal_runtime::{
 
 #[test]
 fn local_shared_host_edge_exports_runtime_clock_topology_truth() {
+    let scan_root = temp_public_local_au_scan_root();
+    let _guard = DemoPluginEnvGuard::enable_au(&scan_root, "plugin:au:instrument");
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut steady_host = LocalRuntimeHost::new(runtime);
     steady_host
@@ -67,6 +73,8 @@ fn local_shared_host_edge_exports_runtime_clock_topology_truth() {
 
 #[test]
 fn local_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth() {
+    let scan_root = temp_public_local_au_scan_root();
+    let _guard = DemoPluginEnvGuard::enable_au(&scan_root, "plugin:au:instrument");
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     host.boot_default()
@@ -111,6 +119,8 @@ fn local_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth() {
 
 #[test]
 fn local_shared_host_edge_exports_runtime_external_io_truth() {
+    let scan_root = temp_public_local_au_scan_root();
+    let _guard = DemoPluginEnvGuard::enable_au(&scan_root, "plugin:au:instrument");
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut direct_host = LocalRuntimeHost::new(runtime);
     direct_host

@@ -31,6 +31,10 @@ impl RuntimeLv2ExtensionSnapshot {
                         && sandbox.plugin_type_id.as_deref() == Some(record.plugin_type_id.as_str())
                 })
                 .collect::<Vec<_>>();
+            let prepared_negotiation = sandboxes
+                .iter()
+                .filter_map(|sandbox| sandbox.lv2_prepared_negotiation.as_ref())
+                .next();
             let active_sandbox_count = sandboxes
                 .iter()
                 .filter(|sandbox| sandbox.active || sandbox.active_transport)
@@ -65,76 +69,97 @@ impl RuntimeLv2ExtensionSnapshot {
                     )
                 });
 
-            let worker_posture = match capabilities.worker_capability {
-                RuntimeLv2WorkerCapability::Absent => RuntimeLv2WorkerPosture::WorkerAbsent,
-                RuntimeLv2WorkerCapability::Supported => {
-                    if unavailable_lifecycle {
-                        RuntimeLv2WorkerPosture::WorkerUnavailable
-                    } else if guarded_lifecycle {
-                        RuntimeLv2WorkerPosture::WorkerGuarded
-                    } else {
-                        RuntimeLv2WorkerPosture::WorkerAvailable
-                    }
-                }
-                RuntimeLv2WorkerCapability::Required => {
-                    if unavailable_lifecycle {
-                        RuntimeLv2WorkerPosture::WorkerUnavailable
-                    } else if guarded_lifecycle {
-                        RuntimeLv2WorkerPosture::WorkerGuarded
-                    } else {
-                        RuntimeLv2WorkerPosture::WorkerRequiredAvailable
-                    }
-                }
-            };
-            let urid_negotiation_posture = match capabilities.urid_capability {
-                RuntimeLv2UridCapability::NotRequired => {
-                    RuntimeLv2UridNegotiationPosture::NotRequired
-                }
-                RuntimeLv2UridCapability::Supported | RuntimeLv2UridCapability::Required => {
-                    if unavailable_lifecycle {
-                        RuntimeLv2UridNegotiationPosture::Unavailable
-                    } else if guarded_lifecycle {
-                        RuntimeLv2UridNegotiationPosture::Guarded
-                    } else {
-                        RuntimeLv2UridNegotiationPosture::Negotiated
-                    }
-                }
-            };
-            let patch_exchange_posture = match capabilities.patch_capability {
-                RuntimeLv2PatchCapability::Absent => RuntimeLv2PatchExchangePosture::Absent,
-                RuntimeLv2PatchCapability::Supported => {
-                    if unavailable_lifecycle {
-                        RuntimeLv2PatchExchangePosture::Unavailable
-                    } else if guarded_lifecycle {
-                        RuntimeLv2PatchExchangePosture::Guarded
-                    } else {
-                        RuntimeLv2PatchExchangePosture::Supported
-                    }
-                }
-            };
-            let extension_needed = capabilities.negotiated_extension_count > 0
-                || capabilities.worker_capability != RuntimeLv2WorkerCapability::Absent
-                || capabilities.urid_capability != RuntimeLv2UridCapability::NotRequired
-                || capabilities.patch_capability != RuntimeLv2PatchCapability::Absent;
-            let extension_negotiation_state = if !extension_needed {
-                RuntimeLv2ExtensionNegotiationState::NotRequired
-            } else if unavailable_lifecycle {
-                RuntimeLv2ExtensionNegotiationState::Unavailable
-            } else if matches!(
+            let (
                 worker_posture,
-                RuntimeLv2WorkerPosture::WorkerGuarded | RuntimeLv2WorkerPosture::WorkerUnavailable
-            ) || matches!(
                 urid_negotiation_posture,
-                RuntimeLv2UridNegotiationPosture::Guarded
-                    | RuntimeLv2UridNegotiationPosture::Unavailable
-            ) || matches!(
                 patch_exchange_posture,
-                RuntimeLv2PatchExchangePosture::Guarded
-                    | RuntimeLv2PatchExchangePosture::Unavailable
-            ) {
-                RuntimeLv2ExtensionNegotiationState::PartiallySatisfied
+                extension_negotiation_state,
+            ) = if let Some(prepared_negotiation) = prepared_negotiation {
+                (
+                    prepared_negotiation.worker_posture,
+                    prepared_negotiation.urid_negotiation_posture,
+                    prepared_negotiation.patch_exchange_posture,
+                    prepared_negotiation.extension_negotiation_state,
+                )
             } else {
-                RuntimeLv2ExtensionNegotiationState::Negotiated
+                let worker_posture = match capabilities.worker_capability {
+                    RuntimeLv2WorkerCapability::Absent => RuntimeLv2WorkerPosture::WorkerAbsent,
+                    RuntimeLv2WorkerCapability::Supported => {
+                        if unavailable_lifecycle {
+                            RuntimeLv2WorkerPosture::WorkerUnavailable
+                        } else if guarded_lifecycle {
+                            RuntimeLv2WorkerPosture::WorkerGuarded
+                        } else {
+                            RuntimeLv2WorkerPosture::WorkerAvailable
+                        }
+                    }
+                    RuntimeLv2WorkerCapability::Required => {
+                        if unavailable_lifecycle {
+                            RuntimeLv2WorkerPosture::WorkerUnavailable
+                        } else if guarded_lifecycle {
+                            RuntimeLv2WorkerPosture::WorkerGuarded
+                        } else {
+                            RuntimeLv2WorkerPosture::WorkerRequiredAvailable
+                        }
+                    }
+                };
+                let urid_negotiation_posture = match capabilities.urid_capability {
+                    RuntimeLv2UridCapability::NotRequired => {
+                        RuntimeLv2UridNegotiationPosture::NotRequired
+                    }
+                    RuntimeLv2UridCapability::Supported | RuntimeLv2UridCapability::Required => {
+                        if unavailable_lifecycle {
+                            RuntimeLv2UridNegotiationPosture::Unavailable
+                        } else if guarded_lifecycle {
+                            RuntimeLv2UridNegotiationPosture::Guarded
+                        } else {
+                            RuntimeLv2UridNegotiationPosture::Negotiated
+                        }
+                    }
+                };
+                let patch_exchange_posture = match capabilities.patch_capability {
+                    RuntimeLv2PatchCapability::Absent => RuntimeLv2PatchExchangePosture::Absent,
+                    RuntimeLv2PatchCapability::Supported => {
+                        if unavailable_lifecycle {
+                            RuntimeLv2PatchExchangePosture::Unavailable
+                        } else if guarded_lifecycle {
+                            RuntimeLv2PatchExchangePosture::Guarded
+                        } else {
+                            RuntimeLv2PatchExchangePosture::Supported
+                        }
+                    }
+                };
+                let extension_needed = capabilities.negotiated_extension_count > 0
+                    || capabilities.worker_capability != RuntimeLv2WorkerCapability::Absent
+                    || capabilities.urid_capability != RuntimeLv2UridCapability::NotRequired
+                    || capabilities.patch_capability != RuntimeLv2PatchCapability::Absent;
+                let extension_negotiation_state = if !extension_needed {
+                    RuntimeLv2ExtensionNegotiationState::NotRequired
+                } else if unavailable_lifecycle {
+                    RuntimeLv2ExtensionNegotiationState::Unavailable
+                } else if matches!(
+                    worker_posture,
+                    RuntimeLv2WorkerPosture::WorkerGuarded
+                        | RuntimeLv2WorkerPosture::WorkerUnavailable
+                ) || matches!(
+                    urid_negotiation_posture,
+                    RuntimeLv2UridNegotiationPosture::Guarded
+                        | RuntimeLv2UridNegotiationPosture::Unavailable
+                ) || matches!(
+                    patch_exchange_posture,
+                    RuntimeLv2PatchExchangePosture::Guarded
+                        | RuntimeLv2PatchExchangePosture::Unavailable
+                ) {
+                    RuntimeLv2ExtensionNegotiationState::PartiallySatisfied
+                } else {
+                    RuntimeLv2ExtensionNegotiationState::Negotiated
+                };
+                (
+                    worker_posture,
+                    urid_negotiation_posture,
+                    patch_exchange_posture,
+                    extension_negotiation_state,
+                )
             };
 
             if capabilities.worker_capability == RuntimeLv2WorkerCapability::Required {

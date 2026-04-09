@@ -7,6 +7,10 @@ fn parse_args_supports_plugin_and_linux_boundary_modes() {
     assert_supports_describe("--describe-au-boundary", CliMode::DescribeAuBoundary);
     assert_supports_describe("--describe-lv2-boundary", CliMode::DescribeLv2Boundary);
     assert_supports_describe(
+        "--describe-linux-lv2-execution-boundary",
+        CliMode::DescribeLinuxLv2ExecutionBoundary,
+    );
+    assert_supports_describe(
         "--describe-cross-adapter-parity-boundary",
         CliMode::DescribeCrossAdapterParityBoundary,
     );
@@ -41,6 +45,7 @@ fn parse_args_rejects_positionals_with_plugin_and_linux_boundary_modes() {
     assert_rejects_positionals("--describe-vst3-boundary");
     assert_rejects_positionals("--describe-au-boundary");
     assert_rejects_positionals("--describe-lv2-boundary");
+    assert_rejects_positionals("--describe-linux-lv2-execution-boundary");
     assert_rejects_positionals("--describe-cross-adapter-parity-boundary");
     assert_rejects_positionals("--describe-linux-plugin-parity-boundary");
     assert_rejects_positionals("--describe-linux-audio-backend-boundary");

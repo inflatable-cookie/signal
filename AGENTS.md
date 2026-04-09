@@ -24,6 +24,21 @@ Scope: `signal/`.
 - `effigy qa:docs` when docs or planning surfaces change
 - `effigy test --plan` before test-focused work
 
+## Strict-Lane Continuation
+
+When Signal is operating inside a strict Northstar lane, a bare `continue`
+should be enough.
+
+Treat it as:
+
+- resume from the previous closeout's `Next Task`
+- re-anchor on the current ready batch card or explicit stop/reassessment step
+- stay inside that bounded lane unless the file state itself requires a stop
+
+If the previous `Next Task` does not point at a real ready card or explicit
+reassessment step, do not infer the next move from memory. Re-enter planning
+from the active docs surfaces first.
+
 ## References
 
 - `../chorus/specs/guidelines/agents-operating-guardrails.md`

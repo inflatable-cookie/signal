@@ -1,13 +1,13 @@
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{
-    BrokerFailureStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage, RuntimeError,
-    RuntimeSupervisorApi,
+    handle_recovery_overlap_old_transport_teardown, RecoveryOverlapOldTransportTeardownOutcome,
+    RuntimeError, RuntimeSupervisorApi,
 };
 
 use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
 use super::{
     lifecycle_stage_for_request, record_runtime_fault, runtime_error_from_failure,
-    runtime_error_from_io, LifecycleRunSummary,
+    LifecycleRunSummary,
 };
 
 pub(crate) struct RecoveryOverlapTransition<'a> {
@@ -75,162 +75,63 @@ impl ServerRuntimeHost {
             self.runtime.set_active_plugin_sandboxes(0);
             return Err(error);
         }
-        self.runtime.record_plugin_sandbox_transport(
-            sandbox_id,
-            run.shared_memory_lease_id.as_str(),
-            current_transport.region_id.as_str(),
-            PluginSandboxTransportStage::DetachRequested,
-            Some(run.processing_epoch),
-            None,
-        );
-        if matches!(
+        let deferred_teardown_failure = matches!(
             failure,
             Some(RecoveryFailureInjection::DeferredOldTransportTeardown)
-        ) {
-            let error =
-                std::io::Error::other("deferred old transport teardown during recovery retry");
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-            self.rollback_replacement_recovery_session(
-                protocol,
-                sandbox_id,
-                replacement_lifecycle,
-                replacement_run,
-            );
-            self.runtime.set_active_plugin_sandboxes(1);
-            return Err(runtime_error_from_io(error));
-        }
-        if let Err(error) = self.broker.destroy_region(current_transport) {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportDestroy,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-            self.runtime.end_transport_session(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-            );
-            self.rollback_replacement_recovery_session(
-                protocol,
-                sandbox_id,
-                replacement_lifecycle,
-                replacement_run,
-            );
-            self.runtime.set_active_plugin_sandboxes(0);
-            return Err(runtime_error_from_io(error));
-        }
-        if matches!(
+        );
+        let destroy_result = if deferred_teardown_failure {
+            Ok(())
+        } else {
+            self.broker
+                .destroy_region(current_transport)
+                .map_err(|error| error.to_string())
+        };
+        let injected_old_transport_teardown_failure = matches!(
             failure,
             Some(RecoveryFailureInjection::OldTransportTeardown)
+        );
+        let transport_teardown_result =
+            if deferred_teardown_failure || injected_old_transport_teardown_failure {
+                Ok(())
+            } else {
+                lifecycle
+                    .teardown_active_transport()
+                    .map_err(|error| error.to_string())
+            };
+        match handle_recovery_overlap_old_transport_teardown(
+            &mut self.runtime,
+            sandbox_id,
+            run.shared_memory_lease_id.as_str(),
+            current_transport.region_id.as_str(),
+            run.processing_epoch,
+            run.last_block_sequence,
+            deferred_teardown_failure,
+            destroy_result,
+            injected_old_transport_teardown_failure,
+            transport_teardown_result,
         ) {
-            let error = std::io::Error::other(
-                "injected old transport teardown failure during overlap recovery",
-            );
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-            self.runtime.end_transport_session(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-            );
-            self.rollback_replacement_recovery_session(
-                protocol,
-                sandbox_id,
-                replacement_lifecycle,
-                replacement_run,
-            );
-            self.runtime.set_active_plugin_sandboxes(0);
-            return Err(runtime_error_from_io(error));
+            RecoveryOverlapOldTransportTeardownOutcome::Continue => {}
+            RecoveryOverlapOldTransportTeardownOutcome::RollbackKeepReplacement(error) => {
+                self.rollback_replacement_recovery_session(
+                    protocol,
+                    sandbox_id,
+                    replacement_lifecycle,
+                    replacement_run,
+                );
+                self.runtime.set_active_plugin_sandboxes(1);
+                return Err(error);
+            }
+            RecoveryOverlapOldTransportTeardownOutcome::RollbackClearOverlap(error) => {
+                self.rollback_replacement_recovery_session(
+                    protocol,
+                    sandbox_id,
+                    replacement_lifecycle,
+                    replacement_run,
+                );
+                self.runtime.set_active_plugin_sandboxes(0);
+                return Err(error);
+            }
         }
-        if let Err(error) = lifecycle.teardown_active_transport() {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-            self.runtime.end_transport_session(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-            );
-            self.rollback_replacement_recovery_session(
-                protocol,
-                sandbox_id,
-                replacement_lifecycle,
-                replacement_run,
-            );
-            self.runtime.set_active_plugin_sandboxes(0);
-            return Err(runtime_error_from_io(error));
-        }
-        self.runtime.record_plugin_sandbox_transport(
-            sandbox_id,
-            run.shared_memory_lease_id.as_str(),
-            current_transport.region_id.as_str(),
-            PluginSandboxTransportStage::Detached,
-            Some(run.processing_epoch),
-            None,
-        );
-        self.runtime.end_transport_session(
-            sandbox_id,
-            run.shared_memory_lease_id.as_str(),
-            current_transport.region_id.as_str(),
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            sandbox_id,
-            PluginSandboxLifecycleStage::TransportTornDown,
-            Some(run.processing_epoch),
-        );
         self.complete_recovery_overlap_restart(
             protocol,
             sandbox_id,

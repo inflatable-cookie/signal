@@ -1,3 +1,7 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+
+use public_host_edge_plugins_support::temp_public_server_vst3_scan_root;
 use signal_host_server::ServerRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
@@ -9,9 +13,10 @@ use signal_runtime::{
 fn server_shared_host_edge_exports_runtime_vst3_baseline_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     let mut host = ServerRuntimeHost::new(runtime);
+    let scan_root = temp_public_server_vst3_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/.vst3".into(), "/usr/lib/vst3".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Vst3],
     })
     .expect("public server vst3 scan should succeed");

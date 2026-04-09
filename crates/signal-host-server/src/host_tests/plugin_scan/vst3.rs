@@ -1,4 +1,5 @@
 use super::super::super::ServerRuntimeHost;
+use crate::host::host_test_support::temp_server_vst3_scan_root;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
     PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
@@ -10,9 +11,10 @@ use signal_runtime::{
 fn server_host_vst3_scan_and_sandbox_surface_linux_runtime_owned_receipts() {
     let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     let mut host = ServerRuntimeHost::new(runtime);
+    let scan_root = temp_server_vst3_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/.vst3".into(), "/usr/lib/vst3".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Vst3],
     })
     .expect("server vst3 plugin scan");

@@ -53,7 +53,6 @@ mod sandbox_sessions;
 #[path = "host_support/summary_types.rs"]
 mod summary_types;
 
-pub(crate) use boot_recovery_helpers::{RepeatedWatchdogRecoveryPlan, TimeoutRecoveryRetryPlan};
 pub(crate) use demo::{server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly};
 pub(crate) use discovery::discovered_plugins_for_scan;
 pub(crate) use faults::{
@@ -73,10 +72,14 @@ pub(crate) use metadata::{
     runtime_host_clock_source, runtime_host_lifecycle_ownership, runtime_host_restart_policy,
     runtime_plugin_format_platform_coverage,
 };
+pub(crate) use signal_runtime::RepeatedWatchdogRecoveryPlan;
+pub(crate) type TimeoutRecoveryRetryPlan<'a> =
+    signal_runtime::TimeoutRecoveryRetryPlan<'a, RecoveryFailureInjection>;
 pub(crate) use recovery_overlap_finish::RecoveryOverlapTransition;
 pub(crate) use recovery_runtime::LingeringSessionRecovery;
 pub(crate) use sandbox_sessions::{
     ensure_au_sandbox_session, ensure_lv2_sandbox_session, ensure_vst3_sandbox_session,
+    teardown_broker_sandbox_session, SandboxBrokerSession,
 };
 pub use summary_types::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHostSummary,

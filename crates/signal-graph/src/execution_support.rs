@@ -36,6 +36,7 @@ pub struct GraphBlockReport {
     pub fan_out_bus_count: usize,
     pub mixed_bus_count: usize,
     pub silent_source_bus_count: usize,
+    pub failed_channel_adaptation_count: usize,
     pub phase_count: usize,
     pub anticipative_phase_count: usize,
     pub phase_order: Vec<crate::GraphNodePlanningGroup>,
@@ -83,6 +84,7 @@ pub(crate) struct GraphBusState {
     pub(crate) latencies: BTreeMap<String, u32>,
     pub(crate) tails: BTreeMap<String, u32>,
     pub(crate) silent_source_bus_count: usize,
+    pub(crate) failed_channel_adaptation_count: usize,
 }
 
 pub(crate) fn build_block_report(
@@ -154,6 +156,7 @@ pub(crate) fn build_block_report(
         fan_out_bus_count: request.routing.fan_out_bus_count,
         mixed_bus_count: request.routing.mixed_bus_count,
         silent_source_bus_count: working_state.silent_source_bus_count,
+        failed_channel_adaptation_count: working_state.failed_channel_adaptation_count,
         phase_count: request.planning.phase_count,
         anticipative_phase_count: request.planning.anticipative_phase_count,
         phase_order: request.planning.phase_order.clone(),

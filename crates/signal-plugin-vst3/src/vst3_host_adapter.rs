@@ -3,13 +3,18 @@ use signal_plugin::{
     PluginProcessingContract, PluginSandboxCapabilities, PluginTypeId, SandboxTransport,
 };
 
-use crate::fixtures::{vst3_discovered_plugin_type, vst3_fixture_bundle_name};
-
 mod discovery;
+mod introspection;
 mod model;
+#[cfg(test)]
+mod scaffold;
 mod session;
 
 pub use model::*;
+#[cfg(test)]
+pub(crate) use scaffold::vst3_scaffold_factory_metadata_contents;
+#[cfg(test)]
+pub(crate) use scaffold::vst3_scaffold_module_metadata_contents;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Vst3HostAdapter {

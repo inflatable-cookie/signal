@@ -9,6 +9,7 @@ mod jack_coordination;
 mod linux_audio_backend;
 mod linux_backend_clock_topology;
 mod linux_live_ownership;
+mod macos_au_coreaudio;
 mod marker_analysis;
 mod packaging;
 mod pipewire_alsa;
@@ -56,6 +57,9 @@ pub(crate) use linux_backend_clock_topology::{
 pub(crate) use linux_live_ownership::{
     render_linux_live_ownership_boundary_json, render_linux_live_ownership_boundary_text,
 };
+pub(crate) use macos_au_coreaudio::{
+    render_macos_au_coreaudio_boundary_json, render_macos_au_coreaudio_boundary_text,
+};
 pub(crate) use marker_analysis::{
     render_marker_analysis_boundary_json, render_marker_analysis_boundary_text,
 };
@@ -64,7 +68,10 @@ pub(crate) use pipewire_alsa::{
     render_pipewire_alsa_parity_boundary_json, render_pipewire_alsa_parity_boundary_text,
 };
 pub(crate) use plugin_au::{render_au_boundary_json, render_au_boundary_text};
-pub(crate) use plugin_lv2::{render_lv2_boundary_json, render_lv2_boundary_text};
+pub(crate) use plugin_lv2::{
+    render_linux_lv2_execution_boundary_json, render_linux_lv2_execution_boundary_text,
+    render_lv2_boundary_json, render_lv2_boundary_text,
+};
 pub(crate) use plugin_parity::{
     render_cross_adapter_parity_boundary_json, render_cross_adapter_parity_boundary_text,
     render_linux_plugin_parity_boundary_json, render_linux_plugin_parity_boundary_text,

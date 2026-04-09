@@ -20,7 +20,7 @@ fn local_host_shared_report_surfaces_topology_aware_host_io() {
         report.observation.host_io.hardware.linux_backend_portability,
         signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
     );
-    assert_eq!(report.observation.host_io.hardware.device_id, "coreaudio:default-output");
+    assert!(report.observation.host_io.hardware.device_id.starts_with("coreaudio:"));
     assert_eq!(report.observation.host_io.hardware.sample_rate, 48_000);
     assert_eq!(report.observation.host_io.hardware.buffer_size, 512);
     assert_eq!(report.observation.host_io.hardware.input_channels, 0);

@@ -52,6 +52,8 @@ fn json_runtime_plugin_scan_receipt(receipt: &RuntimePluginScanReceipt) -> Strin
             "\"targeted_format_count\":{},",
             "\"discovered_type_count\":{},",
             "\"discovered_format_count\":{},",
+            "\"discovery_diagnostic_count\":{},",
+            "\"discovery_diagnostics\":{},",
             "\"format_coverage\":{},",
             "\"parity_coverage\":{},",
             "\"capability_coverage\":{},",
@@ -64,10 +66,50 @@ fn json_runtime_plugin_scan_receipt(receipt: &RuntimePluginScanReceipt) -> Strin
         receipt.targeted_format_count,
         receipt.discovered_type_count,
         receipt.discovered_format_count,
+        receipt.discovery_diagnostic_count,
+        json_runtime_plugin_scan_diagnostic_vec(&receipt.discovery_diagnostics),
         json_runtime_plugin_format_coverage_vec(&receipt.format_coverage),
         json_runtime_plugin_parity_coverage_vec(&receipt.parity_coverage),
         json_runtime_plugin_capability_coverage_summary(&receipt.capability_coverage),
         json_option_string(Some(receipt.summary.as_str())),
+    )
+}
+
+fn json_runtime_plugin_scan_diagnostic_vec(
+    diagnostics: &[RuntimePluginScanDiagnosticRecord],
+) -> String {
+    format!(
+        "[{}]",
+        diagnostics
+            .iter()
+            .map(json_runtime_plugin_scan_diagnostic)
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+fn json_runtime_plugin_scan_diagnostic(diagnostic: &RuntimePluginScanDiagnosticRecord) -> String {
+    format!(
+        concat!(
+            "{{",
+            "\"format\":{},",
+            "\"root\":{},",
+            "\"bundle_root\":{},",
+            "\"manifest_path\":{},",
+            "\"plugin_type_id\":{},",
+            "\"kind\":{},",
+            "\"detail\":{},",
+            "\"summary\":{}",
+            "}}"
+        ),
+        json_escape_string(&format!("{:?}", diagnostic.format)),
+        json_escape_string(&diagnostic.root),
+        json_escape_string(&diagnostic.bundle_root),
+        json_option_string(diagnostic.manifest_path.as_deref()),
+        json_option_string(diagnostic.plugin_type_id.as_deref()),
+        json_escape_string(&format!("{:?}", diagnostic.kind)),
+        json_escape_string(&diagnostic.detail),
+        json_option_string(Some(diagnostic.summary.as_str())),
     )
 }
 

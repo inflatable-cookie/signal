@@ -10,8 +10,10 @@ use crate::{
     render_jack_coordination_boundary_text, render_linux_audio_backend_boundary_json,
     render_linux_audio_backend_boundary_text, render_linux_backend_clock_topology_boundary_json,
     render_linux_backend_clock_topology_boundary_text, render_linux_live_ownership_boundary_json,
-    render_linux_live_ownership_boundary_text, render_linux_plugin_parity_boundary_json,
+    render_linux_live_ownership_boundary_text, render_linux_lv2_execution_boundary_json,
+    render_linux_lv2_execution_boundary_text, render_linux_plugin_parity_boundary_json,
     render_linux_plugin_parity_boundary_text, render_lv2_boundary_json, render_lv2_boundary_text,
+    render_macos_au_coreaudio_boundary_json, render_macos_au_coreaudio_boundary_text,
     render_offline_render_continuity_boundary_json, render_offline_render_continuity_boundary_text,
     render_plugin_continuity_boundary_json, render_plugin_continuity_boundary_text,
     render_recording_continuity_boundary_json, render_recording_continuity_boundary_text,
@@ -94,8 +96,24 @@ pub(super) fn print_runtime_core_boundary_mode(mode: &CliMode, format: OutputFor
             print_surface(format, render_au_boundary_text, render_au_boundary_json);
             true
         }
+        CliMode::DescribeMacosAuCoreaudioBoundary => {
+            print_surface(
+                format,
+                render_macos_au_coreaudio_boundary_text,
+                render_macos_au_coreaudio_boundary_json,
+            );
+            true
+        }
         CliMode::DescribeLv2Boundary => {
             print_surface(format, render_lv2_boundary_text, render_lv2_boundary_json);
+            true
+        }
+        CliMode::DescribeLinuxLv2ExecutionBoundary => {
+            print_surface(
+                format,
+                render_linux_lv2_execution_boundary_text,
+                render_linux_lv2_execution_boundary_json,
+            );
             true
         }
         CliMode::DescribeCrossAdapterParityBoundary => {

@@ -1,12 +1,14 @@
 use super::super::super::super::*;
+use crate::host::host_test_support::{temp_local_au_scan_root, temp_local_vst3_scan_root};
 
 #[test]
 fn local_host_vst3_scan_and_sandbox_surface_runtime_owned_receipts() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
+    let scan_root = temp_local_vst3_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/Library/Audio/Plug-Ins/VST3".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Vst3],
     })
     .expect("vst3 plugin scan");
@@ -111,9 +113,10 @@ fn local_host_vst3_scan_and_sandbox_surface_runtime_owned_receipts() {
 fn local_host_au_scan_and_sandbox_surface_runtime_owned_receipts() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
+    let scan_root = temp_local_au_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/Library/Audio/Plug-Ins/Components".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Au],
     })
     .expect("au plugin scan");

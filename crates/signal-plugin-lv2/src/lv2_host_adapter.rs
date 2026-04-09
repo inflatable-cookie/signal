@@ -3,10 +3,10 @@ use signal_plugin::{
     PluginProcessingContract, PluginSandboxCapabilities, PluginTypeId, SandboxTransport,
 };
 
-use crate::fixtures::{lv2_discovered_plugin_type, lv2_fixture_bundle_name};
-
 mod discovery;
+mod introspection;
 mod model;
+mod scaffold;
 mod session;
 
 pub use model::*;

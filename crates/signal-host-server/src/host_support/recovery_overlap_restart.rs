@@ -1,5 +1,8 @@
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
-use signal_runtime::{RuntimeError, RuntimeLifecycleApi, RuntimeSupervisorApi};
+use signal_runtime::{
+    complete_recovery_overlap_restart, complete_recovery_overlap_restart_or_rollback,
+    rollback_recovery_overlap, RuntimeError, RuntimeLifecycleApi, RuntimeSupervisorApi,
+};
 
 use super::super::{RecoveryFailureInjection, ServerRuntimeHost};
 use super::LifecycleRunSummary;
@@ -13,40 +16,43 @@ impl ServerRuntimeHost {
         replacement_lifecycle: &mut ClapSandboxLifecycleHarness,
         replacement_run: &LifecycleRunSummary,
     ) -> Result<(), RuntimeError> {
-        if let Err(error) = self.restart_plugin_sandbox(sandbox_id) {
+        let restart_result = self.restart_plugin_sandbox(sandbox_id);
+        if restart_result.is_ok() {
+            complete_recovery_overlap_restart(&mut self.runtime, sandbox_id, None, None);
+        }
+        let inject_replacement_start_failure =
+            matches!(failure, Some(RecoveryFailureInjection::ReplacementStart));
+        let start_result = if restart_result.is_ok() && !inject_replacement_start_failure {
+            Some(self.runtime.start())
+        } else {
+            None
+        };
+        if let Err(error) = complete_recovery_overlap_restart_or_rollback(
+            restart_result,
+            inject_replacement_start_failure,
+            start_result,
+        ) {
             self.rollback_replacement_recovery_session(
                 protocol,
                 sandbox_id,
                 replacement_lifecycle,
                 replacement_run,
             );
-            self.runtime.set_active_plugin_sandboxes(0);
+            rollback_recovery_overlap(&mut self.runtime);
             return Err(error);
         }
-        self.runtime.set_active_plugin_sandboxes(1);
-        if matches!(failure, Some(RecoveryFailureInjection::ReplacementStart)) {
-            self.rollback_replacement_recovery_session(
-                protocol,
-                sandbox_id,
-                replacement_lifecycle,
-                replacement_run,
-            );
-            self.runtime.set_active_plugin_sandboxes(0);
-            return Err(RuntimeError::new(
-                signal_runtime::RuntimeErrorKind::ResourceUnavailable,
-                "injected replacement start failure during overlap recovery",
-            ));
-        }
-        if let Err(error) = self.runtime.start() {
-            self.rollback_replacement_recovery_session(
-                protocol,
-                sandbox_id,
-                replacement_lifecycle,
-                replacement_run,
-            );
-            self.runtime.set_active_plugin_sandboxes(0);
-            return Err(error);
-        }
+        complete_recovery_overlap_restart(
+            &mut self.runtime,
+            sandbox_id,
+            replacement_run
+                .transport
+                .as_ref()
+                .map(|_| replacement_run.shared_memory_lease_id.as_str()),
+            replacement_run
+                .transport
+                .as_ref()
+                .map(|transport| transport.region_id.as_str()),
+        );
         Ok(())
     }
 }

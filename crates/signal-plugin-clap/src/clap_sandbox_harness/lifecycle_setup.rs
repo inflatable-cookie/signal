@@ -138,14 +138,19 @@ impl ClapSandboxLifecycleHarness {
                 .instantiate_plugin(loaded_plugin, instance_id.as_str()),
         );
         self.last_fault = None;
+        let instance_state = self.required_instance_state_payload(
+            &sandbox_id,
+            &instance_id,
+            PluginLifecycleState::InstanceCreated,
+            "createInstance",
+            Some(correlation.clone()),
+        )?;
         Ok(PluginMessageEnvelope::response(
             PluginMessageName::SandboxCreateInstance,
             correlation,
             PluginMessagePayload::CreateInstanceResponse {
                 instance_id: instance_id.clone(),
-                instance_state: self
-                    .instance_state_payload(&instance_id, PluginLifecycleState::InstanceCreated)
-                    .expect("instance state after create"),
+                instance_state,
             },
         ))
     }

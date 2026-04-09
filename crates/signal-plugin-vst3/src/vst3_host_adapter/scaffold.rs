@@ -1,0 +1,160 @@
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Vst3ScaffoldModuleMetadata {
+    pub(crate) plugin_type_id: &'static str,
+    pub(crate) class_id: &'static str,
+    pub(crate) controller_class_id: Option<&'static str>,
+    pub(crate) category: &'static str,
+    pub(crate) vendor: &'static str,
+    pub(crate) name: &'static str,
+    pub(crate) version: &'static str,
+    pub(crate) audio_inputs: u32,
+    pub(crate) audio_outputs: u32,
+    pub(crate) midi_inputs: u32,
+    pub(crate) midi_outputs: u32,
+    pub(crate) features: &'static [&'static str],
+}
+
+pub(crate) fn vst3_scaffold_module_metadata(
+    plugin_type_id: &str,
+) -> Option<Vst3ScaffoldModuleMetadata> {
+    let (
+        class_id,
+        controller_class_id,
+        category,
+        vendor,
+        name,
+        version,
+        audio_inputs,
+        audio_outputs,
+        midi_inputs,
+        midi_outputs,
+        features,
+    ) = match plugin_type_id {
+        "plugin:vst3:instrument" => (
+            "7E1D8F8A4D874D56A2C44DE250100001",
+            Some("7E1D8F8A4D874D56A2C44DE250100002"),
+            "Instrument",
+            "Signal",
+            "Signal Instrument VST3 Plugin",
+            "0.1.0",
+            0,
+            2,
+            1,
+            0,
+            &["Instrument", "Analyzer"][..],
+        ),
+        "plugin:vst3:multiout-instrument" => (
+            "7E1D8F8A4D874D56A2C44DE250100011",
+            Some("7E1D8F8A4D874D56A2C44DE250100012"),
+            "Instrument",
+            "Signal",
+            "Signal Multi Output Instrument VST3 Plugin",
+            "0.1.0",
+            0,
+            6,
+            1,
+            0,
+            &["Instrument", "Analyzer"][..],
+        ),
+        "plugin:vst3:linux-synth" => (
+            "7E1D8F8A4D874D56A2C44DE250100101",
+            Some("7E1D8F8A4D874D56A2C44DE250100102"),
+            "Instrument",
+            "Signal",
+            "Signal Linux Synth VST3 Plugin",
+            "0.1.0",
+            0,
+            2,
+            1,
+            0,
+            &["Instrument", "Analyzer"][..],
+        ),
+        "plugin:vst3:utility" => (
+            "7E1D8F8A4D874D56A2C44DE250100201",
+            Some("7E1D8F8A4D874D56A2C44DE250100202"),
+            "Fx",
+            "Signal",
+            "Signal Utility VST3 Plugin",
+            "0.1.0",
+            2,
+            2,
+            0,
+            0,
+            &["AudioEffect", "Utility"][..],
+        ),
+        "plugin:vst3:bus-fx" => (
+            "7E1D8F8A4D874D56A2C44DE250100211",
+            Some("7E1D8F8A4D874D56A2C44DE250100212"),
+            "Fx",
+            "Signal",
+            "Signal Bus FX VST3 Plugin",
+            "0.1.0",
+            4,
+            4,
+            0,
+            0,
+            &["AudioEffect", "Utility"][..],
+        ),
+        _ => return None,
+    };
+    Some(Vst3ScaffoldModuleMetadata {
+        plugin_type_id: match plugin_type_id {
+            "plugin:vst3:instrument" => "plugin:vst3:instrument",
+            "plugin:vst3:multiout-instrument" => "plugin:vst3:multiout-instrument",
+            "plugin:vst3:linux-synth" => "plugin:vst3:linux-synth",
+            "plugin:vst3:utility" => "plugin:vst3:utility",
+            "plugin:vst3:bus-fx" => "plugin:vst3:bus-fx",
+            _ => unreachable!(),
+        },
+        class_id,
+        controller_class_id,
+        category,
+        vendor,
+        name,
+        version,
+        audio_inputs,
+        audio_outputs,
+        midi_inputs,
+        midi_outputs,
+        features,
+    })
+}
+
+#[cfg(test)]
+pub(crate) fn vst3_scaffold_module_metadata_contents(plugin_type_id: &str) -> Option<String> {
+    let metadata = vst3_scaffold_module_metadata(plugin_type_id)?;
+    Some(format!(
+        "plugin_type_id={}\nclass_id={}\ncontroller_class_id={}\ncategory={}\nvendor={}\nname={}\nversion={}\naudio_inputs={}\naudio_outputs={}\nmidi_inputs={}\nmidi_outputs={}\nfeatures={}\n",
+        metadata.plugin_type_id,
+        metadata.class_id,
+        metadata.controller_class_id.unwrap_or("none"),
+        metadata.category,
+        metadata.vendor,
+        metadata.name,
+        metadata.version,
+        metadata.audio_inputs,
+        metadata.audio_outputs,
+        metadata.midi_inputs,
+        metadata.midi_outputs,
+        metadata.features.join(","),
+    ))
+}
+
+#[cfg(test)]
+pub(crate) fn vst3_scaffold_factory_metadata_contents(plugin_type_id: &str) -> Option<String> {
+    let metadata = vst3_scaffold_module_metadata(plugin_type_id)?;
+    let mut contents = format!(
+        "component={}|{}|{}\n",
+        metadata.class_id, metadata.category, metadata.name
+    );
+    if let Some(controller_class_id) = metadata.controller_class_id {
+        contents.push_str(
+            format!(
+                "controller={}|Controller|{}\n",
+                controller_class_id, metadata.name
+            )
+            .as_str(),
+        );
+    }
+    Some(contents)
+}

@@ -1,5 +1,8 @@
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
-use signal_runtime::RuntimeError;
+use signal_runtime::{
+    begin_recovery_overlap, handle_overlap_prepare_contention, rollback_recovery_overlap,
+    RuntimeError,
+};
 
 use super::super::{LocalRuntimeHost, RecoveryFailureInjection};
 use super::LifecycleRunSummary;
@@ -17,13 +20,14 @@ impl LocalRuntimeHost {
         let mut replacement_run =
             self.run_lifecycle(protocol, sandbox_id, next_epoch, replacement_lifecycle)?;
         replacement_run.apply_recovery_history(run.recovery_history());
-        self.runtime.set_active_plugin_sandboxes(2);
-        if matches!(
+        begin_recovery_overlap(&mut self.runtime);
+        let contention_requested = matches!(
             failure,
             Some(RecoveryFailureInjection::CompetingOverlapAttach)
-        ) {
+        );
+        let competing_attach_result = if contention_requested {
             let mut competing_lifecycle = ClapSandboxLifecycleHarness::default();
-            let contention_error = match self.run_lifecycle(
+            match self.run_lifecycle(
                 protocol,
                 sandbox_id,
                 next_epoch.saturating_add(1),
@@ -36,20 +40,24 @@ impl LocalRuntimeHost {
                         &mut competing_lifecycle,
                         &competing_run,
                     );
-                    RuntimeError::new(
-                        signal_runtime::RuntimeErrorKind::ResourceUnavailable,
-                        "expected overlapping replacement attach contention",
-                    )
+                    Ok(())
                 }
-                Err(error) => error,
-            };
+                Err(error) => Err(error),
+            }
+        } else {
+            Ok(())
+        };
+        if let Err(error) =
+            handle_overlap_prepare_contention(contention_requested, competing_attach_result)
+        {
             self.rollback_replacement_recovery_session(
                 protocol,
                 sandbox_id,
                 replacement_lifecycle,
                 &replacement_run,
             );
-            return Err(contention_error);
+            rollback_recovery_overlap(&mut self.runtime);
+            return Err(error);
         }
         Ok(replacement_run)
     }

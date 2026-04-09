@@ -52,6 +52,35 @@ pub(crate) fn assert_au_boundary_json(rendered: &str) {
     }
 }
 
+pub(crate) fn assert_macos_au_coreaudio_boundary_text(rendered: &str) {
+    for expected in [
+        "macos_au_coreaudio_boundary: signal.runtime.macos-au-coreaudio-boundary",
+        "acceptance_task: effigy acceptance:macos-au-coreaudio-boundary",
+        "surface: enumerate_devices() -> Vec<AudioDeviceDescriptor>",
+        "surface: RuntimeObservationReport::plugin_lifecycle_snapshot and RuntimeHostObservationReport::host_io",
+        "surface: host_supervisor_report() -> RuntimeHostSupervisorReport",
+        "cargo test -p signal-hardware-coreaudio",
+        "cargo test -p signal-host-local --test public_host_edge_au -- --nocapture --test-threads=1",
+        "cargo run -p signal-supervisor-tools -- --describe-macos-au-coreaudio-boundary --format=json",
+    ] {
+        assert!(rendered.contains(expected), "missing {expected}");
+    }
+}
+
+pub(crate) fn assert_macos_au_coreaudio_boundary_json(rendered: &str) {
+    for expected in [
+        "\"boundary\":\"signal.runtime.macos-au-coreaudio-boundary\"",
+        "\"contract_path\":\"docs/contracts/073-native-backend-device-truth-and-coreaudio-implementation-contract.md\"",
+        "\"acceptance_task\":\"effigy acceptance:macos-au-coreaudio-boundary\"",
+        "\"id\":\"coreaudio-device-enumeration\"",
+        "\"id\":\"runtime-au-lifecycle-and-fault-report\"",
+        "\"id\":\"local-host-au-coreaudio-supervisor-report\"",
+        "\"id\":\"local-host-supervision-proof\"",
+    ] {
+        assert!(rendered.contains(expected), "missing {expected}");
+    }
+}
+
 pub(crate) fn assert_lv2_boundary_text(rendered: &str) {
     for expected in [
         "lv2_boundary: signal.runtime.lv2-boundary",
@@ -80,6 +109,35 @@ pub(crate) fn assert_lv2_boundary_json(rendered: &str) {
         "\"id\":\"server-host-lv2-supervisor-report\"",
         "\"id\":\"local-host-lv2-proof\"",
         "\"id\":\"server-host-lv2-proof\"",
+    ] {
+        assert!(rendered.contains(expected), "missing {expected}");
+    }
+}
+
+pub(crate) fn assert_linux_lv2_execution_boundary_text(rendered: &str) {
+    for expected in [
+        "linux_lv2_execution_boundary: signal.runtime.linux-lv2-execution-boundary",
+        "acceptance_task: effigy acceptance:linux-lv2-execution-boundary",
+        "surface: RuntimeObservationReport::plugin_discovery_snapshot and RuntimeSupervisorReport::observation.plugin_discovery_snapshot",
+        "surface: RuntimeObservationReport::plugin_lifecycle_snapshot and RuntimeSupervisorReport::observation.plugin_lifecycle_snapshot",
+        "surface: supervisor_report() -> RuntimeSupervisorReport",
+        "cargo test -p signal-host-server --test public_host_edge_sandbox_broker server_public_host_edge_can_route_lv2_sandbox_through_broker_process -- --exact --nocapture --test-threads=1",
+        "cargo test -p signal-host-server --test public_host_edge_sandbox_broker server_public_host_edge_can_drive_broker_backed_lv2_crash_recovery -- --exact --nocapture --test-threads=1",
+        "cargo run -p signal-supervisor-tools -- --describe-linux-lv2-execution-boundary --format=json",
+    ] {
+        assert!(rendered.contains(expected), "missing {expected}");
+    }
+}
+
+pub(crate) fn assert_linux_lv2_execution_boundary_json(rendered: &str) {
+    for expected in [
+        "\"boundary\":\"signal.runtime.linux-lv2-execution-boundary\"",
+        "\"contract_path\":\"docs/contracts/055-lv2-worker-urid-patch-and-extension-negotiation-contract.md\"",
+        "\"acceptance_task\":\"effigy acceptance:linux-lv2-execution-boundary\"",
+        "\"id\":\"runtime-lv2-discovery-report\"",
+        "\"id\":\"runtime-lv2-broker-lifecycle-report\"",
+        "\"id\":\"server-host-lv2-broker-supervisor-report\"",
+        "\"id\":\"server-host-lv2-broker-recovery-proof\"",
     ] {
         assert!(rendered.contains(expected), "missing {expected}");
     }

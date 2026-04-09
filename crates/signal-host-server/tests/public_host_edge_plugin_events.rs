@@ -1,3 +1,7 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+
+use public_host_edge_plugins_support::temp_public_server_vst3_scan_root;
 use signal_host_server::ServerRuntimeHost;
 use signal_plugin::{EventPacketSummary, PluginFormat};
 use signal_runtime::{RuntimeConfig, RuntimeSupervisorApi, SignalRuntime};
@@ -24,9 +28,10 @@ fn server_shared_host_edge_exports_runtime_generic_event_truth() {
         },
     );
     let mut host = ServerRuntimeHost::new(runtime);
+    let vst3_root = temp_public_server_vst3_scan_root();
 
     host.start_plugin_scan(signal_runtime::PluginScanRequest {
-        roots: vec!["~/.clap".into(), "/usr/lib/vst3".into()],
+        roots: vec!["scan:clap:server-events".into(), vst3_root.root()],
         formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
     })
     .expect("public server generic event scan should succeed");
@@ -77,9 +82,13 @@ fn server_shared_host_edge_exports_runtime_controller_expression_truth() {
         },
     );
     let mut host = ServerRuntimeHost::new(runtime);
+    let vst3_root = temp_public_server_vst3_scan_root();
 
     host.start_plugin_scan(signal_runtime::PluginScanRequest {
-        roots: vec!["~/.clap".into(), "/usr/lib/vst3".into()],
+        roots: vec![
+            "scan:clap:server-controller-expression".into(),
+            vst3_root.root(),
+        ],
         formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
     })
     .expect("public server controller-expression scan should succeed");

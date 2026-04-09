@@ -18,6 +18,17 @@
 
 pub type Sample = f32;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum AudioBufferConstructionError {
+    InvalidChannelLayout {
+        channel_count: usize,
+    },
+    LossyInterleavedSampleCount {
+        channel_count: usize,
+        sample_count: usize,
+    },
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SampleRate(pub u32);
 
@@ -148,6 +159,23 @@ impl ChannelLayout {
             Self::Count(count) => count,
         }
     }
+
+    pub fn normalized(self) -> Self {
+        match self.channels().0 {
+            1 => Self::Mono,
+            2 => Self::Stereo,
+            _ => self,
+        }
+    }
+
+    pub fn validate(self) -> Result<Self, AudioBufferConstructionError> {
+        let normalized = self.normalized();
+        let channel_count = normalized.channels().0;
+        if channel_count == 0 {
+            return Err(AudioBufferConstructionError::InvalidChannelLayout { channel_count });
+        }
+        Ok(normalized)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -160,13 +188,23 @@ pub struct AudioBuffer {
 
 impl AudioBuffer {
     pub fn new(sample_rate: SampleRate, channels: ChannelLayout, frames: FrameCount) -> Self {
+        Self::try_new(sample_rate, channels, frames)
+            .expect("audio buffer construction should use a non-zero channel layout")
+    }
+
+    pub fn try_new(
+        sample_rate: SampleRate,
+        channels: ChannelLayout,
+        frames: FrameCount,
+    ) -> Result<Self, AudioBufferConstructionError> {
+        let channels = channels.validate()?;
         let len = channels.channels().0.saturating_mul(frames.0);
-        Self {
+        Ok(Self {
             sample_rate,
             channels,
             frames,
             data: vec![0.0; len],
-        }
+        })
     }
 
     pub fn from_interleaved(
@@ -174,19 +212,32 @@ impl AudioBuffer {
         channels: ChannelLayout,
         data: Vec<Sample>,
     ) -> Self {
-        let channel_count = channels.channels().0;
-        let frames = if channel_count == 0 {
-            0
-        } else {
-            data.len() / channel_count
-        };
+        Self::try_from_interleaved(sample_rate, channels, data).expect(
+            "interleaved audio buffer construction should use a non-zero channel layout and an exact frame multiple",
+        )
+    }
 
-        Self {
+    pub fn try_from_interleaved(
+        sample_rate: SampleRate,
+        channels: ChannelLayout,
+        data: Vec<Sample>,
+    ) -> Result<Self, AudioBufferConstructionError> {
+        let channels = channels.validate()?;
+        let channel_count = channels.channels().0;
+        if data.len() % channel_count != 0 {
+            return Err(AudioBufferConstructionError::LossyInterleavedSampleCount {
+                channel_count,
+                sample_count: data.len(),
+            });
+        }
+        let frames = data.len() / channel_count;
+
+        Ok(Self {
             sample_rate,
             channels,
             frames: FrameCount(frames),
             data,
-        }
+        })
     }
 
     pub fn sample_rate(&self) -> SampleRate {
@@ -248,7 +299,10 @@ impl AudioBuffer {
 
 #[cfg(test)]
 mod tests {
-    use super::{AudioBuffer, ChannelLayout, FrequencyHz, SampleRate, Seconds, StepSegment};
+    use super::{
+        AudioBuffer, AudioBufferConstructionError, ChannelCount, ChannelLayout, FrequencyHz,
+        SampleRate, Seconds, StepSegment,
+    };
 
     #[test]
     fn mono_mixdown_averages_channels() {
@@ -288,5 +342,38 @@ mod tests {
 
         assert_eq!(FrequencyHz(12_000.0).normalized(sample_rate), 0.25);
         assert_eq!(FrequencyHz(96_000.0).normalized(sample_rate), 0.5);
+    }
+
+    #[test]
+    fn try_new_rejects_zero_channel_layout() {
+        let error = AudioBuffer::try_new(
+            SampleRate(48_000),
+            ChannelLayout::Count(ChannelCount(0)),
+            super::FrameCount(16),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            AudioBufferConstructionError::InvalidChannelLayout { channel_count: 0 }
+        );
+    }
+
+    #[test]
+    fn try_from_interleaved_rejects_lossy_sample_count() {
+        let error = AudioBuffer::try_from_interleaved(
+            SampleRate(48_000),
+            ChannelLayout::Stereo,
+            vec![0.0, 1.0, 2.0],
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            error,
+            AudioBufferConstructionError::LossyInterleavedSampleCount {
+                channel_count: 2,
+                sample_count: 3,
+            }
+        );
     }
 }

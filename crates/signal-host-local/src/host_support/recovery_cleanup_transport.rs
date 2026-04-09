@@ -1,7 +1,8 @@
 use signal_ipc::SharedMemoryTransportPayload;
 use signal_plugin_clap::ClapSandboxLifecycleHarness;
 use signal_runtime::{
-    BrokerFailureStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage, RuntimeError,
+    complete_broker_transport_detach, record_broker_transport_detach_failure,
+    record_broker_transport_detach_requested, RuntimeError,
 };
 
 use super::super::{LocalRuntimeHost, RecoveryFailureInjection};
@@ -18,21 +19,15 @@ impl LocalRuntimeHost {
                 signal_runtime::RuntimeErrorKind::ResourceUnavailable,
                 "orphan lingering transport is missing backing_path metadata",
             );
-            self.runtime.record_broker_failure(
-                session.sandbox_id.as_str(),
-                Some(session.lease_id.clone()),
-                Some(processing_epoch),
-                None,
-                BrokerFailureStage::TransportTeardown,
-                error.message.clone(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
+            record_broker_transport_detach_failure(
+                &mut self.runtime,
                 session.sandbox_id.as_str(),
                 session.lease_id.as_str(),
                 session.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(processing_epoch),
-                Some(error.message.clone()),
+                processing_epoch,
+                None,
+                signal_runtime::BrokerFailureStage::TransportTeardown,
+                error.message.clone(),
             );
             return Err(error);
         };
@@ -41,21 +36,15 @@ impl LocalRuntimeHost {
                 signal_runtime::RuntimeErrorKind::ResourceUnavailable,
                 "orphan lingering transport is missing total_bytes metadata",
             );
-            self.runtime.record_broker_failure(
-                session.sandbox_id.as_str(),
-                Some(session.lease_id.clone()),
-                Some(processing_epoch),
-                None,
-                BrokerFailureStage::TransportTeardown,
-                error.message.clone(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
+            record_broker_transport_detach_failure(
+                &mut self.runtime,
                 session.sandbox_id.as_str(),
                 session.lease_id.as_str(),
                 session.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(processing_epoch),
-                Some(error.message.clone()),
+                processing_epoch,
+                None,
+                signal_runtime::BrokerFailureStage::TransportTeardown,
+                error.message.clone(),
             );
             return Err(error);
         };
@@ -67,52 +56,42 @@ impl LocalRuntimeHost {
             total_bytes,
         };
 
-        self.runtime.record_plugin_sandbox_transport(
+        record_broker_transport_detach_requested(
+            &mut self.runtime,
             session.sandbox_id.as_str(),
             session.lease_id.as_str(),
             session.region_id.as_str(),
-            PluginSandboxTransportStage::DetachRequested,
-            Some(processing_epoch),
-            Some("orphan lingering cleanup".into()),
+            processing_epoch,
+            "orphan lingering cleanup",
         );
 
         if let Err(error) = self.broker.destroy_region(&transport) {
-            self.runtime.record_broker_failure(
-                session.sandbox_id.as_str(),
-                Some(session.lease_id.clone()),
-                Some(processing_epoch),
-                None,
-                BrokerFailureStage::TransportDestroy,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
+            record_broker_transport_detach_failure(
+                &mut self.runtime,
                 session.sandbox_id.as_str(),
                 session.lease_id.as_str(),
                 session.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(processing_epoch),
-                Some(error.to_string()),
+                processing_epoch,
+                None,
+                signal_runtime::BrokerFailureStage::TransportDestroy,
+                error.to_string(),
             );
-            return Err(runtime_error_from_io(error));
+            return Err(runtime_error_from_io(error.into()));
         }
 
-        self.runtime.record_plugin_sandbox_transport(
+        complete_broker_transport_detach(
+            &mut self.runtime,
             session.sandbox_id.as_str(),
             session.lease_id.as_str(),
             session.region_id.as_str(),
-            PluginSandboxTransportStage::Detached,
-            Some(processing_epoch),
-            Some("orphan lingering cleanup".into()),
+            processing_epoch,
+            "orphan lingering cleanup",
+            false,
         );
         self.runtime.complete_lingering_cleanup_success(
             session.sandbox_id.as_str(),
             session.lease_id.as_str(),
             session.region_id.as_str(),
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            session.sandbox_id.as_str(),
-            PluginSandboxLifecycleStage::TransportTornDown,
-            Some(processing_epoch),
         );
         Ok(())
     }
@@ -128,13 +107,13 @@ impl LocalRuntimeHost {
             return Ok(());
         };
 
-        self.runtime.record_plugin_sandbox_transport(
+        record_broker_transport_detach_requested(
+            &mut self.runtime,
             sandbox_id,
             run.shared_memory_lease_id.as_str(),
             current_transport.region_id.as_str(),
-            PluginSandboxTransportStage::DetachRequested,
-            Some(run.processing_epoch),
-            Some("lingering cleanup retry".into()),
+            run.processing_epoch,
+            "lingering cleanup retry",
         );
 
         if matches!(
@@ -142,82 +121,55 @@ impl LocalRuntimeHost {
             Some(RecoveryFailureInjection::LingeringCleanupTeardown)
         ) {
             let error = std::io::Error::other("injected lingering cleanup retry failure");
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
+            record_broker_transport_detach_failure(
+                &mut self.runtime,
                 sandbox_id,
                 run.shared_memory_lease_id.as_str(),
                 current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
+                run.processing_epoch,
+                Some(run.last_block_sequence),
+                signal_runtime::BrokerFailureStage::TransportTeardown,
+                error.to_string(),
             );
-            return Err(runtime_error_from_io(error));
+            return Err(runtime_error_from_io(error.into()));
         }
 
         if let Err(error) = self.broker.destroy_region(current_transport) {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportDestroy,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
+            record_broker_transport_detach_failure(
+                &mut self.runtime,
                 sandbox_id,
                 run.shared_memory_lease_id.as_str(),
                 current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
+                run.processing_epoch,
+                Some(run.last_block_sequence),
+                signal_runtime::BrokerFailureStage::TransportDestroy,
+                error.to_string(),
             );
-            return Err(runtime_error_from_io(error));
+            return Err(runtime_error_from_io(error.into()));
         }
 
         if let Err(error) = lifecycle.teardown_active_transport() {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
+            record_broker_transport_detach_failure(
+                &mut self.runtime,
                 sandbox_id,
                 run.shared_memory_lease_id.as_str(),
                 current_transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
+                run.processing_epoch,
+                Some(run.last_block_sequence),
+                signal_runtime::BrokerFailureStage::TransportTeardown,
+                error.to_string(),
             );
             return Err(runtime_error_from_io(error));
         }
 
-        self.runtime.record_plugin_sandbox_transport(
+        complete_broker_transport_detach(
+            &mut self.runtime,
             sandbox_id,
             run.shared_memory_lease_id.as_str(),
             current_transport.region_id.as_str(),
-            PluginSandboxTransportStage::Detached,
-            Some(run.processing_epoch),
-            Some("lingering cleanup retry".into()),
-        );
-        self.runtime.end_transport_session(
-            sandbox_id,
-            run.shared_memory_lease_id.as_str(),
-            current_transport.region_id.as_str(),
-        );
-        self.runtime.record_plugin_sandbox_lifecycle(
-            sandbox_id,
-            PluginSandboxLifecycleStage::TransportTornDown,
-            Some(run.processing_epoch),
+            run.processing_epoch,
+            "lingering cleanup retry",
+            false,
         );
         Ok(())
     }

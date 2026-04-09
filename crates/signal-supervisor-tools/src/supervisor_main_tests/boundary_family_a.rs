@@ -9,8 +9,10 @@ use crate::{
     render_jack_coordination_boundary_text, render_linux_audio_backend_boundary_json,
     render_linux_audio_backend_boundary_text, render_linux_backend_clock_topology_boundary_json,
     render_linux_backend_clock_topology_boundary_text, render_linux_live_ownership_boundary_json,
-    render_linux_live_ownership_boundary_text, render_linux_plugin_parity_boundary_json,
+    render_linux_live_ownership_boundary_text, render_linux_lv2_execution_boundary_json,
+    render_linux_lv2_execution_boundary_text, render_linux_plugin_parity_boundary_json,
     render_linux_plugin_parity_boundary_text, render_lv2_boundary_json, render_lv2_boundary_text,
+    render_macos_au_coreaudio_boundary_json, render_macos_au_coreaudio_boundary_text,
     render_offline_render_continuity_boundary_json, render_offline_render_continuity_boundary_text,
     render_pipewire_alsa_parity_boundary_json, render_pipewire_alsa_parity_boundary_text,
     render_plugin_continuity_boundary_json, render_plugin_continuity_boundary_text,
@@ -123,6 +125,16 @@ fn au_boundary_json_reports_runtime_and_host_edge_proofs() {
 }
 
 #[test]
+fn macos_au_coreaudio_boundary_text_reports_runtime_and_host_edge_proofs() {
+    assert_macos_au_coreaudio_boundary_text(&render_macos_au_coreaudio_boundary_text());
+}
+
+#[test]
+fn macos_au_coreaudio_boundary_json_reports_runtime_and_host_edge_proofs() {
+    assert_macos_au_coreaudio_boundary_json(&render_macos_au_coreaudio_boundary_json());
+}
+
+#[test]
 fn lv2_boundary_text_reports_runtime_and_host_edge_proofs() {
     assert_lv2_boundary_text(&render_lv2_boundary_text());
 }
@@ -130,6 +142,16 @@ fn lv2_boundary_text_reports_runtime_and_host_edge_proofs() {
 #[test]
 fn lv2_boundary_json_reports_runtime_and_host_edge_proofs() {
     assert_lv2_boundary_json(&render_lv2_boundary_json());
+}
+
+#[test]
+fn linux_lv2_execution_boundary_text_reports_runtime_and_host_edge_proofs() {
+    assert_linux_lv2_execution_boundary_text(&render_linux_lv2_execution_boundary_text());
+}
+
+#[test]
+fn linux_lv2_execution_boundary_json_reports_runtime_and_host_edge_proofs() {
+    assert_linux_lv2_execution_boundary_json(&render_linux_lv2_execution_boundary_json());
 }
 
 #[test]

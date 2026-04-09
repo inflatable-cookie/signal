@@ -1,7 +1,7 @@
 # Contracts
 
 Status: active
-Updated: 2026-03-22
+Updated: 2026-04-08
 
 ## Why this section matters now
 
@@ -18,6 +18,7 @@ Use this section for:
 
 ## Current Baseline
 
+- `001-working-rules.md` for the active lane-first strict `g09` surface
 - `001-shared-dsp-and-host-boundary.md`
 - `002-supervisor-export-schema-and-report-boundary.md`
 - `003-crate-maturity-and-public-runtime-boundary-baseline.md`
@@ -89,6 +90,14 @@ Use this section for:
 - `069-control-surface-and-preview-workflow-acceptance-contract.md`
 - `070-integrated-live-ownership-and-workflow-acceptance-contract.md`
 - `071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md`
+- `072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md`
+- `073-native-backend-device-truth-and-coreaudio-implementation-contract.md`
+- `074-shared-host-runtime-execution-and-recovery-unification-contract.md`
+- `075-runtime-public-interface-decomposition-and-internal-assembly-boundary-contract.md`
+- `076-low-level-correctness-safety-and-protocol-hardening-contract.md`
+- `077-dsp-fidelity-semantic-calibration-and-analysis-realism-contract.md`
+- `078-rhythm-continuity-failure-containment-and-policy-normalization-contract.md`
+- `079-interactive-demo-binary-and-crate-capability-proof-contract.md`
 
 ## Rule
 
@@ -97,6 +106,6 @@ Add a new contract only when the boundary needs stronger guarantees than
 
 ## Next Task
 
-COMPLETE. `g08` is closed. Promote
-`docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
-only when maintainers choose to open the post-`g08` generation.
+Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the front
+doors for the active strict `g09` lane, then keep the broader contract
+baseline aligned as post-audit contracts are refined or closed.

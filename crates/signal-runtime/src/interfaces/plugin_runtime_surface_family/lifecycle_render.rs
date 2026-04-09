@@ -59,7 +59,7 @@ pub(crate) fn format_runtime_plugin_lifecycle_snapshot_multiline(
         .enumerate()
         .map(|(index, sandbox)| {
             format!(
-                "\nplugin_sandbox_{}={}/group={}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/state={:?}/lifecycle={:?}/transport={:?}/preset={:?}/ara={}/ready={:?}/restarts={}/recoveries={}/faults={}/active={}/transport_active={}/degraded={:?}",
+                "\nplugin_sandbox_{}={}/group={}/placement={:?}/rule={:?}/members={}/continuity={:?}/rebindable={}/state={:?}/lifecycle={:?}/transport={:?}/preset={:?}/ara={}/ready={:?}/restarts={}/recoveries={}/faults={}/active={}/transport_active={}/degraded={:?}/lv2={}",
                 index,
                 sandbox.sandbox_id,
                 sandbox.sandbox_group_key,
@@ -83,6 +83,11 @@ pub(crate) fn format_runtime_plugin_lifecycle_snapshot_multiline(
                 sandbox.active,
                 sandbox.active_transport,
                 sandbox.degraded_reasons,
+                sandbox
+                    .lv2_prepared_negotiation
+                    .as_ref()
+                    .map(|record| record.summary.as_str())
+                    .unwrap_or("none"),
             )
         })
         .collect::<String>();

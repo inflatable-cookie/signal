@@ -5,9 +5,12 @@
 //! graph processing: graph projection, transport and parameter application,
 //! anticipative prework policy, and supervisor-facing runtime snapshots.
 
+mod host_unification_support;
 mod interfaces;
 mod runtime;
+mod sandbox_broker_support;
 
+pub use host_unification_support::{RepeatedWatchdogRecoveryPlan, TimeoutRecoveryRetryPlan};
 pub use interfaces::{
     ActiveTransportConcurrencySession, BackendPolicyOverride, BlockDispatchRecord,
     BlockDispatchStage, BrokerFailureRecord, BrokerFailureStage, BrokerInvalidationRecord,
@@ -85,15 +88,15 @@ pub use interfaces::{
     RuntimeLinuxHostIoParityInput, RuntimeLowLatencyDevicePolicyClass,
     RuntimeLowLatencyDevicePolicyOutcome, RuntimeLv2ExtensionCapabilitySummary,
     RuntimeLv2ExtensionNegotiationState, RuntimeLv2ExtensionRecord, RuntimeLv2ExtensionSnapshot,
-    RuntimeLv2PatchCapability, RuntimeLv2PatchExchangePosture, RuntimeLv2UridCapability,
-    RuntimeLv2UridNegotiationPosture, RuntimeLv2WorkerCapability, RuntimeLv2WorkerPosture,
-    RuntimeMarkerAnalysisClipSnapshot, RuntimeMarkerAnalysisInvalidationState,
-    RuntimeMarkerAnalysisReadiness, RuntimeMarkerAnalysisSnapshot,
-    RuntimeMediaAnalysisDescriptorState, RuntimeMediaAnalysisFamilyState,
-    RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot, RuntimeMediaAssetState,
-    RuntimeMediaAuditionContinuityOutcome, RuntimeMediaAuditionOrchestrationAuthority,
-    RuntimeMediaAuditionOrchestrationPosture, RuntimeMediaCharacterDescriptor,
-    RuntimeMediaIndexingState, RuntimeMediaLibraryAssetDescriptor,
+    RuntimeLv2PatchCapability, RuntimeLv2PatchExchangePosture, RuntimeLv2PreparedNegotiationRecord,
+    RuntimeLv2UridCapability, RuntimeLv2UridNegotiationPosture, RuntimeLv2WorkerCapability,
+    RuntimeLv2WorkerPosture, RuntimeMarkerAnalysisClipSnapshot,
+    RuntimeMarkerAnalysisInvalidationState, RuntimeMarkerAnalysisReadiness,
+    RuntimeMarkerAnalysisSnapshot, RuntimeMediaAnalysisDescriptorState,
+    RuntimeMediaAnalysisFamilyState, RuntimeMediaAssetRegistration, RuntimeMediaAssetSnapshot,
+    RuntimeMediaAssetState, RuntimeMediaAuditionContinuityOutcome,
+    RuntimeMediaAuditionOrchestrationAuthority, RuntimeMediaAuditionOrchestrationPosture,
+    RuntimeMediaCharacterDescriptor, RuntimeMediaIndexingState, RuntimeMediaLibraryAssetDescriptor,
     RuntimeMediaLibraryServiceSnapshot, RuntimeMediaLoudnessDescriptor,
     RuntimeMediaPipelineSnapshot, RuntimeMediaPreviewState, RuntimeMediaServiceSnapshot,
     RuntimeMeterSourceRole, RuntimeMeterSourceSnapshot, RuntimeMeteringSnapshot,
@@ -143,17 +146,18 @@ pub use interfaces::{
     RuntimePluginRecallHandoffSnapshot, RuntimePluginRecallHandoffStage,
     RuntimePluginRecallHandoffStageId, RuntimePluginRecallPayload,
     RuntimePluginRecallPortabilityClass, RuntimePluginRecallSnapshot, RuntimePluginRecallState,
-    RuntimePluginSandboxSnapshot, RuntimePluginScanReceipt, RuntimePluginTopologyAttachmentPolicy,
-    RuntimePluginTopologyFallbackOutcome, RuntimePreviewBrowserQueueClass,
-    RuntimePreviewBrowserQueueOutcome, RuntimePreviewBrowserQueuePosture,
-    RuntimePreviewDevicePolicySummary, RuntimePreviewOutputRoutingPosture,
-    RuntimePreviewTransformClipSnapshot, RuntimePreviewTransformDegradedState,
-    RuntimePreviewTransformFallbackKind, RuntimePreviewTransformReadiness,
-    RuntimePreviewTransformSchedulingAuthority, RuntimePreviewTransformSchedulingOutcome,
-    RuntimePreviewTransformSchedulingPosture, RuntimePreviewTransformServiceClass,
-    RuntimePreviewTransformServiceSnapshot, RuntimePreviewWorkflowSummary,
-    RuntimePreworkBacklogClass, RuntimePreworkCacheState, RuntimePreworkForecastMode,
-    RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
+    RuntimePluginSandboxSnapshot, RuntimePluginScanDiagnosticKind,
+    RuntimePluginScanDiagnosticRecord, RuntimePluginScanReceipt,
+    RuntimePluginTopologyAttachmentPolicy, RuntimePluginTopologyFallbackOutcome,
+    RuntimePreviewBrowserQueueClass, RuntimePreviewBrowserQueueOutcome,
+    RuntimePreviewBrowserQueuePosture, RuntimePreviewDevicePolicySummary,
+    RuntimePreviewOutputRoutingPosture, RuntimePreviewTransformClipSnapshot,
+    RuntimePreviewTransformDegradedState, RuntimePreviewTransformFallbackKind,
+    RuntimePreviewTransformReadiness, RuntimePreviewTransformSchedulingAuthority,
+    RuntimePreviewTransformSchedulingOutcome, RuntimePreviewTransformSchedulingPosture,
+    RuntimePreviewTransformServiceClass, RuntimePreviewTransformServiceSnapshot,
+    RuntimePreviewWorkflowSummary, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
+    RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
     RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
     RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
     RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
@@ -199,3 +203,18 @@ pub use interfaces::{
     WatchdogRestartRecord,
 };
 pub use runtime::{RuntimeConfig, RuntimeProfile, SignalRuntime};
+pub use sandbox_broker_support::{
+    begin_brokered_recovery_cycle, begin_recovery_overlap, complete_broker_transport_detach,
+    complete_lingering_recovery_restart_or_rollback, complete_recovery_overlap_restart,
+    complete_recovery_overlap_restart_or_rollback, ensure_broker_sandbox_session,
+    ensure_prepared_sandbox_session, finalize_brokered_recovery_transport_detach,
+    handle_overlap_prepare_contention, handle_recovery_overlap_old_transport_teardown,
+    record_broker_attached_execution_summary, record_broker_sandbox_detached,
+    record_broker_sandbox_prepared, record_broker_transport_detach_failure,
+    record_broker_transport_detach_fault, record_broker_transport_detach_requested,
+    record_protocol_violation_prepare_failure, rollback_recovery_overlap,
+    run_vst3_broker_execution_sequence, teardown_broker_sandbox_session, PreparedBrokerSandboxSpec,
+    PreparedSandboxSessionRecord, RecoveryOverlapOldTransportTeardownOutcome,
+    SandboxBrokerAttachedSession, SandboxBrokerClientSession, SandboxBrokerFlavor,
+    SandboxBrokerSession, SandboxBrokerSpawnConfig,
+};

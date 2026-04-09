@@ -1,91 +1,5 @@
 // Tests for signal-runtime
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-    sync::atomic::{AtomicU64, Ordering},
-    time::{SystemTime, UNIX_EPOCH},
-};
-
-use super::{RuntimeConfig, RuntimeMeteringStateModel, RuntimeProfile, SignalRuntime};
-use crate::interfaces::{
-    BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-    GraphContractProjection, GraphNodeBufferContractProjection, GraphNodeBusEndpointProjection,
-    GraphNodeContractProjection, GraphNodeProjection, GraphNodeTopologyProjection, GraphProjection,
-    HandshakeRequest, HeartbeatCycleStage, LingeringCleanupMode, LingeringCleanupTrigger,
-    ParameterBatch, ParameterEvent, PluginBackedNodeBinding, PluginBackedNodeBindingProjection,
-    PluginFaultKind, PluginNodeRender, PluginNodeRenderBatch, PluginSandboxLifecycleStage,
-    PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest, RecoveryRestartIntent,
-    RestartRequest, RuntimeAuditionSinkAuthority, RuntimeAuditionSinkClass,
-    RuntimeAutomationInterpolation, RuntimeAutomationLaneProjection,
-    RuntimeAutomationPointProjection, RuntimeAutomationProjection, RuntimeAutomationResolution,
-    RuntimeAutomationTargetProjection, RuntimeBlockDeadlinePressure, RuntimeClipFadeEnvelope,
-    RuntimeClipFadeShape, RuntimeClipGainEnvelope, RuntimeClipGainShape,
-    RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration, RuntimeClipProcessingStage,
-    RuntimeClipRenderInputStage, RuntimeClipRenderRequest, RuntimeConfigRequest,
-    RuntimeControllerExpressionMidi2Posture, RuntimeControllerExpressionMpePosture,
-    RuntimeDeferredServiceBackpressureSource, RuntimeDeferredServiceCancellationCause,
-    RuntimeDeferredServiceClass, RuntimeDeferredServiceDecision,
-    RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason, RuntimeError,
-    RuntimeErrorKind, RuntimeEvent, RuntimeEventRecorder, RuntimeEventSink, RuntimeExecutionPhase,
-    RuntimeFaultCause, RuntimeFaultStatusSnapshot, RuntimeInterruptionClass, RuntimeLifecycleApi,
-    RuntimeLowLatencyDevicePolicyClass, RuntimeLowLatencyDevicePolicyOutcome,
-    RuntimeMarkerAnalysisReadiness, RuntimeMediaAssetRegistration, RuntimeMediaAssetState,
-    RuntimeMediaAuditionContinuityOutcome, RuntimeMediaAuditionOrchestrationAuthority,
-    RuntimeMediaAuditionOrchestrationPosture, RuntimeMediaPreviewState, RuntimeMeterSourceRole,
-    RuntimeMeterSourceSnapshot, RuntimeObservationApi, RuntimeObservationReport,
-    RuntimeOfflineFreezeArtifactRequest, RuntimeOfflinePluginDelegatedExecutionMerge,
-    RuntimeOfflinePluginDelegatedExecutionOutcome, RuntimeOfflinePluginDelegatedExecutionReceipt,
-    RuntimeOfflinePluginDelegatedExecutionStageReceipt,
-    RuntimeOfflinePluginDelegatedExecutionStatus,
-    RuntimeOfflinePluginDelegatedFreezeArtifactOutput, RuntimeOfflinePluginDelegatedStemOutput,
-    RuntimeOfflinePluginExecutionBoundary, RuntimeOfflinePluginExecutionOwner,
-    RuntimeOfflinePluginExecutionStageBoundary, RuntimeOfflinePluginOverrideState,
-    RuntimeOfflineRenderArtifactKind, RuntimeOfflineRenderCheckpointStage,
-    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderExecutionState,
-    RuntimeOfflineRenderPurgeRequest, RuntimeOfflineRenderRequest, RuntimeOfflineRenderStemTarget,
-    RuntimeOfflineRenderTargetKind, RuntimePluginBusCapableFxClass, RuntimePluginCompensationState,
-    RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
-    RuntimePluginIsolationOutcome, RuntimePluginLifecycleState, RuntimePluginParityBand,
-    RuntimePluginPlacementPolicy, RuntimePluginPlacementRule, RuntimePluginPlacementRuleMatcher,
-    RuntimePluginRecallHandoffSelection, RuntimePluginRecallHandoffStageId,
-    RuntimePluginRecallPayload, RuntimePluginRecallState, RuntimePreviewBrowserQueueClass,
-    RuntimePreviewBrowserQueueOutcome, RuntimePreviewBrowserQueuePosture,
-    RuntimePreviewOutputRoutingPosture, RuntimePreviewTransformFallbackKind,
-    RuntimePreviewTransformReadiness, RuntimePreviewTransformSchedulingAuthority,
-    RuntimePreviewTransformSchedulingOutcome, RuntimePreviewTransformSchedulingPosture,
-    RuntimePreviewTransformServiceClass, RuntimePreworkBacklogClass, RuntimePreworkCacheState,
-    RuntimePreworkForecastMode, RuntimePreworkForecastPolicy, RuntimePreworkForecastProfile,
-    RuntimePreworkForecastProfileSelection, RuntimePreworkForecastProfileSource,
-    RuntimePreworkFreshnessState, RuntimePreworkInvalidationReason, RuntimePreworkRetirementReason,
-    RuntimePreworkServicePressure, RuntimePreworkServiceSemanticPolicy, RuntimePreworkServiceState,
-    RuntimePreworkWindowTarget, RuntimeProjectionApi, RuntimeReadiness,
-    RuntimeRecordingCaptureCheckpointClass, RuntimeRecordingCaptureKind,
-    RuntimeRecordingCaptureStartRequest, RuntimeRecordingCaptureState, RuntimeRecoveryState,
-    RuntimeSchedulerState, RuntimeSchedulerTopologyIssue, RuntimeSecondaryInputContractProjection,
-    RuntimeSecondaryInputTargetKind, RuntimeStretchEngineClass, RuntimeStretchFallbackKind,
-    RuntimeStretchReadiness, RuntimeSupervisorReport, RuntimeTempoAssistHintSource,
-    RuntimeTempoAssistPosture, RuntimeTempoMapInterpolation, RuntimeTempoMapProjection,
-    RuntimeTempoSource, RuntimeTransformArtifactReadiness, RuntimeTransformArtifactReuseState,
-    RuntimeTransformCachePlacementAuthority, RuntimeTransformCachePlacementOutcome,
-    RuntimeTransformCachePlacementPosture, RuntimeTransformPersistencePosture,
-    RuntimeTransformRetentionAuthority, RuntimeTransformRetentionOutcome,
-    RuntimeTransformRetentionPolicyClass, RuntimeWarpClipRegistration, RuntimeWarpMode,
-    RuntimeWarpReadiness, RuntimeWatchdogTrigger, SafeModeRequest, SandboxOperationFailureStage,
-    ScheduleProjection, StopReason, TransportAttachIntent, TransportProjection,
-    TransportSessionProvenance, WatchdogRestartRecord,
-};
-use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
-use signal_graph::{
-    synthetic_stereo_block, ExecutableGraph, GraphExecutionLane, GraphNodeBufferContract,
-    GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeSpec,
-    GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec,
-};
-use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
-use signal_plugin::{
-    CompletionState, EventPacketSummary, ParameterAutomationSummary, PluginFeature, PluginFormat,
-    PluginIoLayout, PluginLifecycleContract, PluginProcessingContract, PluginStateContract,
-};
-use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
+use crate::interfaces::{RuntimeEvent, RuntimeEventSink};
 
 #[derive(Default)]
 struct TestSink {
@@ -100,7 +14,9 @@ impl RuntimeEventSink for TestSink {
 
 #[path = "tests/fixtures.rs"]
 mod fixtures;
-use fixtures::*;
+#[path = "tests/support.rs"]
+mod support;
+use support::*;
 #[path = "tests/clip_processing.rs"]
 mod clip_processing;
 #[path = "tests/core_runtime.rs"]

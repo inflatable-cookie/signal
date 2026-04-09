@@ -1,6 +1,6 @@
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{
-    BrokerInvalidationStage, CompletionSlotStage, RecoveryRestartIntent, RuntimeError, StopReason,
+    begin_brokered_recovery_cycle, RecoveryRestartIntent, RuntimeError, StopReason,
 };
 
 use super::super::{LocalRuntimeHost, RecoveryFailureInjection};
@@ -27,45 +27,15 @@ impl LocalRuntimeHost {
         self.stop_runtime_for_recovery()?;
         self.supervisor.last_recovery_intent = Some(intent);
         self.supervisor.last_stop_reason = Some(StopReason::DegradedModeRecovery);
-        self.runtime.record_recovery_cycle(
+        begin_brokered_recovery_cycle(
+            &mut self.runtime,
             sandbox_id,
+            run.shared_memory_lease_id.as_str(),
+            run.processing_epoch,
+            run.last_block_sequence,
             intent,
-            StopReason::DegradedModeRecovery,
-            Some(run.processing_epoch),
+            |epoch| lifecycle.invalidate_active_epoch(epoch),
         );
-        let (completion_invalidated, lease_invalidated) =
-            lifecycle.invalidate_active_epoch(run.processing_epoch);
-        let recovery_reason = match intent {
-            RecoveryRestartIntent::CrashRecovery => "crash recovery teardown",
-            RecoveryRestartIntent::WatchdogRecovery => "watchdog recovery teardown",
-        };
-        if completion_invalidated {
-            self.runtime.record_completion_slot_transition(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                run.processing_epoch,
-                run.last_block_sequence,
-                CompletionSlotStage::Invalidated,
-            );
-            self.runtime.record_broker_invalidation(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                run.processing_epoch,
-                Some(run.last_block_sequence),
-                BrokerInvalidationStage::CompletionRegionInvalidated,
-                recovery_reason,
-            );
-        }
-        if lease_invalidated {
-            self.runtime.record_broker_invalidation(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                run.processing_epoch,
-                Some(run.last_block_sequence),
-                BrokerInvalidationStage::LeaseEpochInvalidated,
-                recovery_reason,
-            );
-        }
         if failure != Some(RecoveryFailureInjection::CompetingOverlapAttach)
             && self.session_is_lingering(
                 sandbox_id,

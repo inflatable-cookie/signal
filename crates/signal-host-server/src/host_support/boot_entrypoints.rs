@@ -1,5 +1,4 @@
 use signal_hardware::HardwareConfigRequest;
-use signal_plugin::PluginFormat;
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{
     BackendPolicyOverride, HandshakeRequest, PluginScanRequest, RuntimeConfigRequest, RuntimeError,
@@ -139,8 +138,8 @@ impl ServerRuntimeHost {
             .set_backend_policy_tier(hardware_request.backend_policy);
 
         self.start_plugin_scan(PluginScanRequest {
-            roots: vec!["/srv/plugins/clap".into()],
-            formats: vec![PluginFormat::Clap],
+            roots: assembly.scan_roots.clone(),
+            formats: assembly.scan_formats.clone(),
         })?;
 
         for sandbox in &assembly.plugin_sandboxes {

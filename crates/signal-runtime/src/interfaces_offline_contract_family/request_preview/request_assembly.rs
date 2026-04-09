@@ -1,4 +1,7 @@
 use super::super::*;
+use super::freeze_artifacts::build_offline_freeze_artifact_previews;
+use super::stem_targets::build_offline_render_stem_targets;
+use super::validation::validate_offline_preview_request;
 
 impl RuntimeOfflineRenderContractPreview {
     pub fn from_runtime_state(
@@ -10,99 +13,10 @@ impl RuntimeOfflineRenderContractPreview {
         marker_analysis: &RuntimeMarkerAnalysisSnapshot,
         recall_handoff: &RuntimePluginRecallHandoffSnapshot,
     ) -> Result<Self, RuntimeError> {
-        if request.request_id.trim().is_empty() {
-            return Err(RuntimeError::new(
-                RuntimeErrorKind::InvalidRequest,
-                "offline render requests require a non-empty request id",
-            ));
-        }
-        if request.duration_samples == 0 {
-            return Err(RuntimeError::new(
-                RuntimeErrorKind::InvalidRequest,
-                "offline render requests require a non-zero duration",
-            ));
-        }
-        if request.export_sample_rate_hz == 0 {
-            return Err(RuntimeError::new(
-                RuntimeErrorKind::InvalidRequest,
-                "offline render requests require a positive export sample rate",
-            ));
-        }
-
-        let mut seen_stem_ids = std::collections::BTreeSet::new();
-        let mut stem_targets = Vec::with_capacity(request.stem_targets.len());
-        for stem in &request.stem_targets {
-            if stem.stem_id.trim().is_empty() {
-                return Err(RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    "offline render stem targets require a non-empty stem id",
-                ));
-            }
-            if !seen_stem_ids.insert(stem.stem_id.clone()) {
-                return Err(RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!("offline render stem id `{}` is duplicated", stem.stem_id),
-                ));
-            }
-            stem_targets.push(resolve_offline_render_stem_target(stem, topology)?);
-        }
-
-        let mut freeze_artifacts = Vec::with_capacity(request.freeze_artifacts.len());
-        for artifact in &request.freeze_artifacts {
-            if artifact.artifact_id.trim().is_empty() {
-                return Err(RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    "offline freeze artifacts require a non-empty artifact id",
-                ));
-            }
-            if !request.include_main_mix
-                && !stem_targets
-                    .iter()
-                    .any(|stem| stem.stem_id == artifact.source_stem_id)
-            {
-                return Err(RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!(
-                        "offline freeze artifact `{}` references unknown stem `{}`",
-                        artifact.artifact_id, artifact.source_stem_id
-                    ),
-                ));
-            }
-            let resolved_selection = recall_handoff
-                .resolve_selection(&artifact.recall_selection)
-                .ok_or_else(|| {
-                    RuntimeError::new(
-                        RuntimeErrorKind::InvalidRequest,
-                        format!(
-                            "offline freeze artifact `{}` references an unknown recall handoff stage",
-                            artifact.artifact_id
-                        ),
-                    )
-                })?;
-            freeze_artifacts.push(RuntimeOfflineFreezeArtifactPreview {
-                artifact_id: artifact.artifact_id.clone(),
-                source_stem_id: artifact.source_stem_id.clone(),
-                recall_stage_count: resolved_selection.len(),
-                recall_stage_ids: resolved_selection
-                    .iter()
-                    .map(|stage| stage.stage_id.clone())
-                    .collect(),
-                recall_states: resolved_selection
-                    .iter()
-                    .map(|stage| stage.recall_state)
-                    .collect(),
-                summary: format!(
-                    "artifact={} source_stem={} recall_stages={} recall_states={:?}",
-                    artifact.artifact_id,
-                    artifact.source_stem_id,
-                    resolved_selection.len(),
-                    resolved_selection
-                        .iter()
-                        .map(|stage| stage.recall_state)
-                        .collect::<Vec<_>>(),
-                ),
-            });
-        }
+        validate_offline_preview_request(request)?;
+        let stem_targets = build_offline_render_stem_targets(request, topology)?;
+        let freeze_artifacts =
+            build_offline_freeze_artifact_previews(request, &stem_targets, recall_handoff)?;
 
         let timeline_end_samples = request
             .timeline_start_samples
@@ -152,6 +66,7 @@ impl RuntimeOfflineRenderContractPreview {
                 marker_analysis,
                 &transform_artifact_snapshot,
             );
+
         let mut preview = Self {
             request_id: request.request_id.clone(),
             timeline_start_samples: request.timeline_start_samples,
@@ -197,161 +112,4 @@ impl RuntimeOfflineRenderContractPreview {
         );
         Ok(preview)
     }
-}
-
-fn resolve_offline_render_stem_target(
-    stem: &RuntimeOfflineRenderStemTarget,
-    topology: &RuntimeExecutionTopologySummary,
-) -> Result<RuntimeOfflineRenderStemPreview, RuntimeError> {
-    let (target_id, resolved_node_ids, resolved_output_bus_ids) = match stem.target_kind {
-        RuntimeOfflineRenderTargetKind::MainMix => (
-            None,
-            topology
-                .nodes
-                .iter()
-                .map(|node| node.node_id.clone())
-                .collect::<Vec<_>>(),
-            topology
-                .nodes
-                .iter()
-                .map(|node| node.output_bus_id.clone())
-                .collect::<Vec<_>>(),
-        ),
-        RuntimeOfflineRenderTargetKind::TrackLane => {
-            let target_id = stem.target_id.as_deref().ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!(
-                        "offline render stem `{}` requires a track lane id",
-                        stem.stem_id
-                    ),
-                )
-            })?;
-            let summary = topology
-                .track_lanes
-                .iter()
-                .find(|summary| summary.track_lane_id == target_id)
-                .ok_or_else(|| {
-                    RuntimeError::new(
-                        RuntimeErrorKind::InvalidRequest,
-                        format!(
-                            "offline render stem `{}` references unknown track lane `{}`",
-                            stem.stem_id, target_id
-                        ),
-                    )
-                })?;
-            (
-                Some(target_id.to_string()),
-                summary.node_ids.clone(),
-                summary.output_bus_ids.clone(),
-            )
-        }
-        RuntimeOfflineRenderTargetKind::BusGroup => {
-            let target_id = stem.target_id.as_deref().ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!(
-                        "offline render stem `{}` requires a bus group id",
-                        stem.stem_id
-                    ),
-                )
-            })?;
-            let summary = topology
-                .bus_groups
-                .iter()
-                .find(|summary| summary.bus_group_id == target_id)
-                .ok_or_else(|| {
-                    RuntimeError::new(
-                        RuntimeErrorKind::InvalidRequest,
-                        format!(
-                            "offline render stem `{}` references unknown bus group `{}`",
-                            stem.stem_id, target_id
-                        ),
-                    )
-                })?;
-            (
-                Some(target_id.to_string()),
-                summary.node_ids.clone(),
-                summary.output_bus_ids.clone(),
-            )
-        }
-        RuntimeOfflineRenderTargetKind::ConsoleGroup => {
-            let target_id = stem.target_id.as_deref().ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!(
-                        "offline render stem `{}` requires a console group id",
-                        stem.stem_id
-                    ),
-                )
-            })?;
-            let summary = topology
-                .console_groups
-                .iter()
-                .find(|summary| summary.console_group_id == target_id)
-                .ok_or_else(|| {
-                    RuntimeError::new(
-                        RuntimeErrorKind::InvalidRequest,
-                        format!(
-                            "offline render stem `{}` references unknown console group `{}`",
-                            stem.stem_id, target_id
-                        ),
-                    )
-                })?;
-            (
-                Some(target_id.to_string()),
-                summary.node_ids.clone(),
-                summary.output_bus_ids.clone(),
-            )
-        }
-        RuntimeOfflineRenderTargetKind::SendReturn => {
-            let target_id = stem.target_id.as_deref().ok_or_else(|| {
-                RuntimeError::new(
-                    RuntimeErrorKind::InvalidRequest,
-                    format!(
-                        "offline render stem `{}` requires a send/return id",
-                        stem.stem_id
-                    ),
-                )
-            })?;
-            let summary = topology
-                .send_returns
-                .iter()
-                .find(|summary| summary.send_return_id == target_id)
-                .ok_or_else(|| {
-                    RuntimeError::new(
-                        RuntimeErrorKind::InvalidRequest,
-                        format!(
-                            "offline render stem `{}` references unknown send/return `{}`",
-                            stem.stem_id, target_id
-                        ),
-                    )
-                })?;
-            let mut node_ids = summary.send_node_ids.clone();
-            node_ids.extend(summary.return_node_ids.clone());
-            (
-                Some(target_id.to_string()),
-                node_ids,
-                summary.output_bus_ids.clone(),
-            )
-        }
-    };
-
-    let resolved_node_count = resolved_node_ids.len();
-    let resolved_output_bus_count = resolved_output_bus_ids.len();
-    Ok(RuntimeOfflineRenderStemPreview {
-        stem_id: stem.stem_id.clone(),
-        target_kind: stem.target_kind,
-        target_id,
-        resolved_node_ids,
-        resolved_output_bus_ids,
-        summary: format!(
-            "stem={} target={:?}/{:?} nodes={} output_buses={}",
-            stem.stem_id,
-            stem.target_kind,
-            stem.target_id,
-            resolved_node_count,
-            resolved_output_bus_count,
-        ),
-    })
 }

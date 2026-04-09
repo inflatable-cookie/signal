@@ -1,4 +1,3 @@
-use signal_plugin::PluginFormat;
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{
     HandshakeRequest, PluginScanRequest, RuntimeConfigRequest, RuntimeError, RuntimeLifecycleApi,
@@ -32,8 +31,8 @@ impl LocalRuntimeHost {
         let hardware_stream = self.prepare_default_output_hardware()?;
 
         self.start_plugin_scan(PluginScanRequest {
-            roots: vec!["~/Library/Audio/Plug-Ins/CLAP".into()],
-            formats: vec![PluginFormat::Clap],
+            roots: assembly.scan_roots.clone(),
+            formats: assembly.scan_formats.clone(),
         })?;
 
         for sandbox in &assembly.plugin_sandboxes {

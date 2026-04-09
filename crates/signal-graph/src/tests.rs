@@ -4,6 +4,7 @@ use super::{
     GraphNodeBufferContract, GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodePlanningGroup,
     GraphNodeSpec, GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec, SampleRate,
 };
+use signal_primitives::ChannelCount;
 
 fn test_node(
     node_id: &str,
@@ -139,6 +140,7 @@ fn executable_graph_processes_buffer_and_reports_metrics() {
     assert_eq!(report.latency_node_count, 1);
     assert_eq!(report.contract_issue_count, 0);
     assert_eq!(report.silence_clear_node_count, 0);
+    assert_eq!(report.failed_channel_adaptation_count, 0);
     assert_eq!(report.adaptive_channel_node_count, 0);
     assert_eq!(report.resettable_node_count, 0);
     assert_eq!(report.scratch_buffer_count, 0);
@@ -212,6 +214,37 @@ fn stereo_balance_stage_scales_channels_as_expected() {
     assert_eq!(report.realtime_dispatch_count, 1);
     assert_eq!(report.dispatch_handoff_count, 0);
     assert_eq!(report.stage_count, 1);
+}
+
+#[test]
+fn unsupported_channel_adaptation_is_reported_as_failed_degraded_execution() {
+    let original = synthetic_stereo_block(SampleRate(48_000), FrameCount(4), 9);
+    let mut buffer = original.clone();
+    let graph = ExecutableGraph::new(
+        "graph:unsupported-adaptation",
+        vec![GraphNodeSpec {
+            buffer_contract: GraphNodeBufferContract {
+                input: GraphNodeBusEndpoint::new("main:in", ChannelLayout::Stereo),
+                output: GraphNodeBusEndpoint::new(
+                    "main:out",
+                    ChannelLayout::Count(ChannelCount(3)),
+                ),
+                ..GraphNodeBufferContract::default()
+            },
+            ..test_node(
+                "fanout",
+                GraphNodeExecutionClass::PureTransform,
+                0,
+                vec![GraphStageSpec::Gain { linear: 0.5 }],
+            )
+        }],
+    );
+
+    let report = graph.process(&mut buffer);
+
+    assert_eq!(report.contract_issue_count, 1);
+    assert_eq!(report.failed_channel_adaptation_count, 1);
+    assert_eq!(buffer, original);
 }
 
 #[test]

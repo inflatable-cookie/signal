@@ -14,19 +14,24 @@ planning surface.
 ## Optional Sections In Use
 
 - `research/`
+- `specs/` for the active lane-first strict `g09` surface
 
-Signal does not need top-level `schemas/`, `diagrams/`, or `specs/` right now,
-so they are intentionally absent.
+Signal is still using a baseline Northstar spine overall, but the active `g09`
+queue now has a lane-first strict surface under `docs/specs/`.
 
 ## Current Entry Points
 
 - Vision: [vision/001-signal-vision.md](./vision/001-signal-vision.md)
 - Architecture: [architecture/system-architecture.md](./architecture/system-architecture.md)
+- Product guardrails: [architecture/product-guardrails.md](./architecture/product-guardrails.md)
 - Package map: [architecture/package-map.md](./architecture/package-map.md)
 - DSP and analysis feature reference: [architecture/dsp-analysis-feature-reference.md](./architecture/dsp-analysis-feature-reference.md)
 - Graph and runtime feature reference: [architecture/graph-runtime-feature-reference.md](./architecture/graph-runtime-feature-reference.md)
+- Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
+- Active strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
+- Active strict-lane card: none; `g09.008` is awaiting planning handoff
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -42,8 +47,14 @@ so they are intentionally absent.
   reusable library boundary
 - keep section indexes aligned to Northstar conventions
 - treat `legacy/cpp/` as reference surface, not primary implementation surface
+- treat the active `g09` queue as a lane-first strict Northstar surface under
+  `docs/specs/`
+- in the strict lane, treat a bare `continue` as "follow the previous closeout's
+  `Next Task`" rather than as permission to infer a new batch
+- if there is no current ready card, re-enter planning instead of improvising
 
 ## Next Task
 
-Reorient the remaining Signal docs around the generic library posture and move
-legacy C++ implementation material behind a clear reference boundary.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.008` closes here or hands off into `g09.009` before creating another
+ready batch card.

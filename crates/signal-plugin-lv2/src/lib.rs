@@ -1,14 +1,60 @@
 //! LV2 plugin adapter surfaces for Signal.
-
-mod fixtures;
 mod lv2_host_adapter;
 
 pub use lv2_host_adapter::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{Lv2HostAdapter, Lv2HostPlatform};
+    use super::{Lv2DiscoveryDiagnosticKind, Lv2HostAdapter, Lv2HostPlatform};
     use signal_plugin::PluginFormat;
+    use std::{
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    fn temp_plugin_root(label: &str) -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("signal-lv2-{label}-{unique}"));
+        fs::create_dir_all(&root).expect("temp lv2 root should be created");
+        root
+    }
+
+    fn write_lv2_bundle(root: &std::path::Path, bundle: &str, plugin_type_id: &str) {
+        let bundle_root = root.join(bundle);
+        fs::create_dir_all(&bundle_root).expect("lv2 bundle should be created");
+        fs::write(
+            bundle_root.join("manifest.ttl"),
+            lv2_manifest_contents(plugin_type_id),
+        )
+        .expect("manifest should be written");
+    }
+
+    fn write_manifest_bundle(root: &std::path::Path, bundle: &str, manifest: &str) {
+        let bundle_root = root.join(bundle);
+        fs::create_dir_all(&bundle_root).expect("lv2 bundle should be created");
+        fs::write(bundle_root.join("manifest.ttl"), manifest).expect("manifest should be written");
+    }
+
+    fn lv2_manifest_contents(plugin_type_id: &str) -> &'static str {
+        match plugin_type_id {
+            "plugin:lv2:linux-synth" => {
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:linux-synth\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/linux-synth\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Linux Synth LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"0\" .\nsignal:audio_outputs \"2\" .\nsignal:midi_inputs \"1\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/urid#map\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/worker#schedule\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/patch#Message\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/state#state\" .\nsignal:feature \"Instrument\" .\nsignal:feature \"Analyzer\" .\n"
+            }
+            "plugin:lv2:multiout-instrument" => {
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:multiout-instrument\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/multiout-instrument\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Multi Output Instrument LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"0\" .\nsignal:audio_outputs \"6\" .\nsignal:midi_inputs \"1\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/urid#map\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/worker#schedule\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/patch#Message\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/state#state\" .\nsignal:feature \"Instrument\" .\nsignal:feature \"Analyzer\" .\n"
+            }
+            "plugin:lv2:utility" => {
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:utility\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/utility\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Utility LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"2\" .\nsignal:audio_outputs \"2\" .\nsignal:midi_inputs \"0\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/options#options\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/options#options\" .\nsignal:feature \"AudioEffect\" .\nsignal:feature \"Utility\" .\n"
+            }
+            "plugin:lv2:bus-fx" => {
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:bus-fx\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/bus-fx\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Bus FX LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"4\" .\nsignal:audio_outputs \"4\" .\nsignal:midi_inputs \"0\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/urid#map\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/patch#Message\" .\nsignal:feature \"AudioEffect\" .\nsignal:feature \"Utility\" .\n"
+            }
+            other => panic!("unknown LV2 test plugin type: {other}"),
+        }
+    }
 
     #[test]
     fn lv2_adapter_reports_supported_format_and_capabilities() {
@@ -30,11 +76,17 @@ mod tests {
         assert!(linux_roots.iter().any(|root| root == "~/.lv2"));
         assert!(linux_roots.iter().any(|root| root == "/usr/lib/lv2"));
 
-        let discovered = adapter.discover_plugins_for_roots(
-            Lv2HostPlatform::Linux,
-            &[String::from("~/.lv2"), String::from("/usr/lib/lv2")],
+        let root = temp_plugin_root("discovery");
+        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
+        write_lv2_bundle(
+            &root,
+            "Signal Multi Output Instrument.lv2",
+            "plugin:lv2:multiout-instrument",
         );
-        assert_eq!(discovered.len(), 4);
+        write_lv2_bundle(&root, "Signal Bus FX.lv2", "plugin:lv2:bus-fx");
+        let discovered = adapter
+            .discover_plugins_for_roots(Lv2HostPlatform::Linux, &[root.display().to_string()]);
+        assert_eq!(discovered.len(), 3);
         assert_eq!(discovered[0].descriptor.format, PluginFormat::Lv2);
         assert!(discovered
             .iter()
@@ -47,17 +99,29 @@ mod tests {
             .any(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:bus-fx"));
         assert!(discovered
             .iter()
-            .all(|plugin| plugin.bundle_root.starts_with("~/.lv2/")));
+            .all(|plugin| plugin.bundle_root.starts_with(&root.display().to_string())));
         assert!(discovered
             .iter()
             .all(|plugin| plugin.manifest_path.ends_with("/manifest.ttl")));
+        assert!(discovered
+            .iter()
+            .all(|plugin| plugin.prepare_fault.is_none()));
+        assert!(discovered.iter().any(|plugin| {
+            plugin.plugin_type_id.0 == "plugin:lv2:linux-synth"
+                && plugin.plugin_uri == "https://signal.dev/plugins/lv2/linux-synth"
+        }));
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]
     fn lv2_session_plan_preserves_uri_manifest_and_transport() {
         let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("session");
+        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
         let discovered = adapter
-            .discover_plugin_type("plugin:lv2:linux-synth")
+            .discover_plugins_for_roots(Lv2HostPlatform::Linux, &[root.display().to_string()])
+            .into_iter()
+            .find(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:linux-synth")
             .expect("discovered lv2 synth");
         let instance = adapter.instantiate_plugin(&discovered, "instance:lv2:test");
         let session = adapter.prepare_session(&instance, 48_000, 512);
@@ -72,6 +136,103 @@ mod tests {
             session.transport,
             signal_plugin::SandboxTransport::SharedMemory
         );
+        assert_eq!(
+            session.extension_preparation.worker_posture,
+            super::Lv2WorkerNegotiationPosture::WorkerRequiredAvailable
+        );
+        assert_eq!(
+            session.extension_preparation.urid_negotiation_posture,
+            super::Lv2UridNegotiationPosture::Negotiated
+        );
+        assert_eq!(
+            session.extension_preparation.patch_exchange_posture,
+            super::Lv2PatchExchangePosture::Supported
+        );
         assert!(session.summary.contains("manifest.ttl"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn lv2_teardown_record_preserves_prepared_negotiation_summary() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("teardown");
+        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
+        let discovered = adapter
+            .discover_plugins_for_roots(Lv2HostPlatform::Linux, &[root.display().to_string()])
+            .into_iter()
+            .find(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:linux-synth")
+            .expect("discovered lv2 synth");
+        let instance = adapter.instantiate_plugin(&discovered, "instance:lv2:teardown");
+        let session = adapter.prepare_session(&instance, 48_000, 512);
+        let teardown = adapter.teardown_instance(&instance, &session);
+
+        assert!(teardown.summary.contains("instance:lv2:teardown"));
+        assert!(teardown
+            .summary
+            .contains("teardown=prepared_negotiation_flushed"));
+        assert!(teardown.summary.contains("worker=WorkerRequiredAvailable"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn lv2_execute_block_reports_bounded_execution_truth() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("execute");
+        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
+        let discovered = adapter
+            .discover_plugins_for_roots(Lv2HostPlatform::Linux, &[root.display().to_string()])
+            .into_iter()
+            .find(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:linux-synth")
+            .expect("discovered lv2 synth");
+        let instance = adapter.instantiate_plugin(&discovered, "instance:lv2:execute");
+        let session = adapter.prepare_session(&instance, 48_000, 512);
+        let record = adapter.execute_block(&instance, &session, 0, 256, 2, 1);
+
+        assert_eq!(record.block_sequence, 0);
+        assert_eq!(record.block_frames, 256);
+        assert_eq!(record.audio_output_channels, 2);
+        assert_eq!(record.patch_message_count, 2);
+        assert_eq!(record.midi_event_count, 1);
+        assert_eq!(record.completion_status, "Applied");
+        assert!(record.summary.contains("worker=WorkerRequiredAvailable"));
+        assert!(record.summary.contains("patch_messages=2"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn lv2_adapter_reports_malformed_and_unsupported_required_feature_diagnostics() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("diagnostics");
+        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
+        write_manifest_bundle(
+            &root,
+            "Broken Manifest.lv2",
+            "@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:broken\"\n",
+        );
+        write_manifest_bundle(
+            &root,
+            "Unsupported Feature.lv2",
+            "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:unsupported-feature\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/unsupported-feature\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Unsupported Feature LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"2\" .\nsignal:audio_outputs \"2\" .\nsignal:midi_inputs \"0\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/atom#sequence\" .\nsignal:feature \"AudioEffect\" .\n",
+        );
+
+        let batch = adapter.discover_plugins_for_roots_with_diagnostics(
+            Lv2HostPlatform::Linux,
+            &[root.display().to_string()],
+        );
+
+        assert_eq!(batch.discovered.len(), 1);
+        assert_eq!(batch.diagnostics.len(), 2);
+        assert!(batch.diagnostics.iter().any(|diagnostic| {
+            diagnostic.kind == Lv2DiscoveryDiagnosticKind::MalformedManifest
+                && diagnostic.bundle_root.ends_with("Broken Manifest.lv2")
+        }));
+        assert!(batch.diagnostics.iter().any(|diagnostic| {
+            diagnostic.kind == Lv2DiscoveryDiagnosticKind::UnsupportedRequiredFeature
+                && diagnostic.plugin_type_id.as_deref() == Some("plugin:lv2:unsupported-feature")
+                && diagnostic
+                    .detail
+                    .contains("http://lv2plug.in/ns/ext/atom#sequence")
+        }));
+        let _ = fs::remove_dir_all(root);
     }
 }

@@ -200,3 +200,106 @@ fn clap_lifecycle_harness_emits_failure_and_invalidates_epoch() {
         .expect("teardown transport");
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn clap_lifecycle_harness_reports_protocol_violation_when_prepare_state_projection_is_missing() {
+    let root = test_broker_root("prepare-drift");
+    let broker = SharedMemoryBroker::new(&root);
+    let protocol = ClapBlockProtocol::new(
+        "plugin:clap:test",
+        "instance-prepare-drift",
+        PluginIoLayout {
+            audio_inputs: 2,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        },
+        1024,
+    );
+    let mut harness = ClapSandboxLifecycleHarness::default();
+    let mut messages = protocol
+        .lifecycle_sequence(&broker, "sandbox-prepare-drift", 48_000, 512, 1)
+        .expect("build lifecycle sequence")
+        .into_iter();
+
+    harness
+        .handle(messages.next().expect("handshake"))
+        .expect("handshake");
+    harness
+        .handle(messages.next().expect("load"))
+        .expect("load");
+    harness
+        .handle(messages.next().expect("create"))
+        .expect("create");
+    harness.clear_loaded_plugin_for_test();
+
+    match harness.handle(messages.next().expect("prepare")) {
+        Ok(_) => panic!("expected prepare protocol failure"),
+        Err(failure) => match failure.payload {
+            PluginMessagePayload::SandboxFailure {
+                error_kind,
+                detail,
+                fault,
+                ..
+            } => {
+                assert_eq!(error_kind, "protocolViolation");
+                assert!(detail.contains("could not be projected into instance state"));
+                assert_eq!(fault.kind, "protocolViolation");
+            }
+            other => panic!("expected sandbox failure, got {other:?}"),
+        },
+    }
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn clap_lifecycle_harness_reports_protocol_violation_when_instance_projection_is_missing_during_reset(
+) {
+    let root = test_broker_root("reset-projection-drift");
+    let broker = SharedMemoryBroker::new(&root);
+    let protocol = ClapBlockProtocol::new(
+        "plugin:clap:test",
+        "instance-reset-drift",
+        PluginIoLayout {
+            audio_inputs: 2,
+            audio_outputs: 2,
+            midi_inputs: 1,
+            midi_outputs: 0,
+        },
+        1024,
+    );
+    let mut harness = ClapSandboxLifecycleHarness::default();
+    let messages = protocol
+        .lifecycle_sequence(&broker, "sandbox-reset-drift", 48_000, 512, 1)
+        .expect("build lifecycle sequence");
+
+    for message in messages {
+        harness.handle(message).expect("accepted request");
+    }
+
+    harness.clear_loaded_plugin_for_test();
+
+    match harness.handle(
+        protocol
+            .teardown_sequence("sandbox-reset-drift", 2)
+            .remove(1),
+    ) {
+        Ok(_) => panic!("expected reset protocol failure"),
+        Err(failure) => match failure.payload {
+            PluginMessagePayload::SandboxFailure {
+                error_kind,
+                detail,
+                fault,
+                ..
+            } => {
+                assert_eq!(error_kind, "protocolViolation");
+                assert!(detail.contains("could not be projected into instance state"));
+                assert_eq!(fault.kind, "protocolViolation");
+            }
+            other => panic!("expected sandbox failure, got {other:?}"),
+        },
+    }
+
+    let _ = fs::remove_dir_all(root);
+}

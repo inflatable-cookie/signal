@@ -25,7 +25,12 @@ impl ClapSandboxLifecycleHarness {
     ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "prepareInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "prepareInstance", Some(correlation.clone()))?;
-        let instance = self.active_instance.as_ref().expect("validated instance");
+        let instance = self.required_instance(
+            &sandbox_id,
+            &instance_id,
+            "prepareInstance",
+            Some(correlation.clone()),
+        )?;
         if !instance.lifecycle_contract.supports_prepare {
             return Err(Box::new(failure_event(ClapSandboxFailureInput {
                 sandbox_id,
@@ -97,6 +102,13 @@ impl ClapSandboxLifecycleHarness {
             )
             .with_transport(shared_memory_transport.clone()),
         );
+        let instance_state = self.required_instance_state_payload(
+            &sandbox_id,
+            &instance_id,
+            PluginLifecycleState::Prepared,
+            "prepareInstance",
+            Some(correlation.clone()),
+        )?;
         Ok(PluginMessageEnvelope::response(
             PluginMessageName::SandboxPrepareInstance,
             correlation,
@@ -106,9 +118,7 @@ impl ClapSandboxLifecycleHarness {
                 shared_memory_lease_id,
                 shared_memory_transport,
                 shared_memory_bytes: shared_memory.total_bytes(),
-                instance_state: self
-                    .instance_state_payload(&instance_id, PluginLifecycleState::Prepared)
-                    .expect("instance state after prepare"),
+                instance_state,
             },
         ))
     }
@@ -122,13 +132,13 @@ impl ClapSandboxLifecycleHarness {
     ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "activateInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "activateInstance", Some(correlation.clone()))?;
-        if !self
-            .active_instance
-            .as_ref()
-            .expect("validated instance")
-            .lifecycle_contract
-            .supports_activate
-        {
+        let instance = self.required_instance(
+            &sandbox_id,
+            &instance_id,
+            "activateInstance",
+            Some(correlation.clone()),
+        )?;
+        if !instance.lifecycle_contract.supports_activate {
             return Err(self.failure_error_for_instance(
                 Some(instance_id),
                 self.active_lease
@@ -144,28 +154,37 @@ impl ClapSandboxLifecycleHarness {
             if let Some(lease) = &mut self.active_lease {
                 lease.invalidate_epoch(processing_epoch);
             }
-            return Err(self.failure_error_for_instance(
-                Some(instance_id),
-                self.active_lease
+            return Err(Box::new(failure_event(ClapSandboxFailureInput {
+                sandbox_id,
+                instance_id: Some(instance_id),
+                stage: "activateInstance".to_string(),
+                error_kind: "protocolViolation".to_string(),
+                detail: "activate requested with epoch that is not prepared".to_string(),
+                processing_epoch: Some(processing_epoch),
+                shared_memory_lease_id: self
+                    .active_lease
                     .as_ref()
                     .map(|lease| lease.lease_id.clone()),
-                "activateInstance",
-                "protocolViolation",
-                "activate requested with epoch that is not prepared",
-                Some(correlation),
-            ));
+                correlation_id: Some(correlation),
+                instance_state: None,
+            })));
         }
         self.active = true;
         self.last_fault = None;
+        let instance_state = self.required_instance_state_payload(
+            &sandbox_id,
+            &instance_id,
+            PluginLifecycleState::Active,
+            "activateInstance",
+            Some(correlation.clone()),
+        )?;
         Ok(PluginMessageEnvelope::response(
             PluginMessageName::SandboxActivateInstance,
             correlation,
             PluginMessagePayload::ActivateInstanceResponse {
                 instance_id: instance_id.clone(),
                 processing_epoch,
-                instance_state: self
-                    .instance_state_payload(&instance_id, PluginLifecycleState::Active)
-                    .expect("instance state after activate"),
+                instance_state,
             },
         ))
     }

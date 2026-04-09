@@ -1,4 +1,5 @@
 use super::*;
+use crate::interfaces::RuntimePluginScanDiagnosticRecord;
 
 impl SignalRuntime {
     pub fn record_plugin_scan_request(&mut self, request: &PluginScanRequest) -> ScanHandle {
@@ -17,6 +18,15 @@ impl SignalRuntime {
         scan_handle: ScanHandle,
         discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
     ) {
+        self.record_plugin_scan_results_with_diagnostics(scan_handle, discovered_types, Vec::new());
+    }
+
+    pub fn record_plugin_scan_results_with_diagnostics(
+        &mut self,
+        scan_handle: ScanHandle,
+        discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+        discovery_diagnostics: Vec<RuntimePluginScanDiagnosticRecord>,
+    ) {
         let lifecycle = self.plugin_lifecycle_snapshot();
         let parity_coverage = runtime_plugin_parity_coverage(
             &discovered_types,
@@ -24,7 +34,11 @@ impl SignalRuntime {
             &self.plugin_placement_policy,
             &self.plugin_discovery.platform_coverage,
         );
-        self.plugin_discovery
-            .record_scan_results(scan_handle, discovered_types, parity_coverage);
+        self.plugin_discovery.record_scan_results(
+            scan_handle,
+            discovered_types,
+            discovery_diagnostics,
+            parity_coverage,
+        );
     }
 }

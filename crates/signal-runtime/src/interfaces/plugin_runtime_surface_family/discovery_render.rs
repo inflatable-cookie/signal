@@ -27,14 +27,36 @@ pub(crate) fn format_runtime_plugin_discovery_snapshot_multiline(
         .as_ref()
         .map(|scan| {
             format!(
-                "\nplugin_last_scan_handle={}\nplugin_last_scan_roots={:?}\nplugin_last_scan_formats={:?}\nplugin_last_scan_targeted_format_count={}\nplugin_last_scan_discovered_type_count={}\nplugin_last_scan_summary={}",
+                "\nplugin_last_scan_handle={}\nplugin_last_scan_roots={:?}\nplugin_last_scan_formats={:?}\nplugin_last_scan_targeted_format_count={}\nplugin_last_scan_discovered_type_count={}\nplugin_last_scan_discovery_diagnostic_count={}\nplugin_last_scan_summary={}",
                 scan.scan_handle.0,
                 scan.roots,
                 scan.formats,
                 scan.targeted_format_count,
                 scan.discovered_type_count,
+                scan.discovery_diagnostic_count,
                 scan.summary,
             )
+        })
+        .unwrap_or_default();
+    let diagnostic_lines = snapshot
+        .last_scan
+        .as_ref()
+        .map(|scan| {
+            scan.discovery_diagnostics
+                .iter()
+                .enumerate()
+                .map(|(index, diagnostic)| {
+                    format!(
+                        "\nplugin_last_scan_diagnostic_{}={:?}/root={}/bundle={}/plugin_type={:?}/detail={}",
+                        index,
+                        diagnostic.kind,
+                        diagnostic.root,
+                        diagnostic.bundle_root,
+                        diagnostic.plugin_type_id,
+                        diagnostic.detail,
+                    )
+                })
+                .collect::<String>()
         })
         .unwrap_or_default();
     let format_coverage_lines = snapshot
@@ -125,7 +147,7 @@ pub(crate) fn format_runtime_plugin_discovery_snapshot_multiline(
         })
         .collect::<String>();
     format!(
-        "\nplugin_scan_count={}\nplugin_format_filtered_scan_count={}\nplugin_discovered_type_count={}\nplugin_discovered_format_count={}\nplugin_capability_coverage_summary={}\nplugin_capability_coverage_multi_format_catalog={}\nplugin_capability_coverage_max_audio_bus_count={}\nplugin_capability_coverage_max_parameter_count={}{}{}{}{}",
+        "\nplugin_scan_count={}\nplugin_format_filtered_scan_count={}\nplugin_discovered_type_count={}\nplugin_discovered_format_count={}\nplugin_capability_coverage_summary={}\nplugin_capability_coverage_multi_format_catalog={}\nplugin_capability_coverage_max_audio_bus_count={}\nplugin_capability_coverage_max_parameter_count={}{}{}{}{}{}",
         snapshot.scan_count,
         snapshot.format_filtered_scan_count,
         snapshot.discovered_type_count,
@@ -135,6 +157,7 @@ pub(crate) fn format_runtime_plugin_discovery_snapshot_multiline(
         snapshot.capability_coverage.max_audio_bus_count,
         snapshot.capability_coverage.max_parameter_count,
         last_scan,
+        diagnostic_lines,
         format_coverage_lines,
         parity_coverage_lines,
         discovered_type_lines,

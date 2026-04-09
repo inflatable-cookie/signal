@@ -1,4 +1,5 @@
 use super::super::super::ServerRuntimeHost;
+use crate::host::host_test_support::temp_server_au_scan_root;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
     PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
@@ -10,9 +11,10 @@ use signal_runtime::{
 fn server_host_au_scan_and_sandbox_surface_runtime_owned_receipts() {
     let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     let mut host = ServerRuntimeHost::new(runtime);
+    let scan_root = temp_server_au_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/Library/Audio/Plug-Ins/Components".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Au],
     })
     .expect("server au plugin scan");

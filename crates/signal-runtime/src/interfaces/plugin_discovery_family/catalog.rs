@@ -19,9 +19,29 @@ pub struct RuntimePluginScanReceipt {
     pub targeted_format_count: usize,
     pub discovered_type_count: usize,
     pub discovered_format_count: usize,
+    pub discovery_diagnostic_count: usize,
+    pub discovery_diagnostics: Vec<RuntimePluginScanDiagnosticRecord>,
     pub format_coverage: Vec<RuntimePluginFormatCoverageRecord>,
     pub parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
+    pub summary: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RuntimePluginScanDiagnosticKind {
+    MalformedManifest,
+    UnsupportedRequiredFeature,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimePluginScanDiagnosticRecord {
+    pub format: PluginFormat,
+    pub root: String,
+    pub bundle_root: String,
+    pub manifest_path: Option<String>,
+    pub plugin_type_id: Option<String>,
+    pub kind: RuntimePluginScanDiagnosticKind,
+    pub detail: String,
     pub summary: String,
 }
 

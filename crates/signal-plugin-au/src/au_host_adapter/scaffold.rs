@@ -1,12 +1,14 @@
+#![allow(dead_code)]
+
 use signal_plugin::{
     PluginDescriptor, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
     PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags,
     PluginProcessingContract, PluginStateContract, PluginTypeId,
 };
 
-use crate::AuDiscoveredPluginType;
+use super::{AuDiscoveredPluginType, AuFailureContract};
 
-pub(crate) fn au_fixture_bundle_name(plugin_type_id: &str) -> &'static str {
+pub(crate) fn au_scaffold_bundle_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:au:instrument" => "Signal Instrument.component",
         "plugin:au:multiout-instrument" => "Signal Multi Output Instrument.component",
@@ -14,6 +16,75 @@ pub(crate) fn au_fixture_bundle_name(plugin_type_id: &str) -> &'static str {
         "plugin:au:bus-fx" => "Signal Bus FX.component",
         _ => "Signal Unknown.component",
     }
+}
+
+#[cfg(test)]
+pub(crate) fn au_scaffold_component_metadata_contents(plugin_type_id: &str) -> Option<String> {
+    let (component_type, component_subtype, manufacturer_code) = match plugin_type_id {
+        "plugin:au:instrument" => ("aumu", "sigi", "sigl"),
+        "plugin:au:multiout-instrument" => ("aumu", "sigm", "sigl"),
+        "plugin:au:utility" => ("aufx", "sigu", "sigl"),
+        "plugin:au:bus-fx" => ("aufx", "sigb", "sigl"),
+        _ => return None,
+    };
+    let metadata = match plugin_type_id {
+        "plugin:au:instrument" => (
+            "Signal",
+            "Signal Instrument AU Plugin",
+            "0.1.0",
+            0,
+            2,
+            1,
+            0,
+            "Instrument,Analyzer",
+        ),
+        "plugin:au:multiout-instrument" => (
+            "Signal",
+            "Signal Multi Output Instrument AU Plugin",
+            "0.1.0",
+            0,
+            6,
+            1,
+            0,
+            "Instrument,Analyzer",
+        ),
+        "plugin:au:utility" => (
+            "Signal",
+            "Signal Utility AU Plugin",
+            "0.1.0",
+            2,
+            2,
+            0,
+            0,
+            "AudioEffect,Utility",
+        ),
+        "plugin:au:bus-fx" => (
+            "Signal",
+            "Signal Bus FX AU Plugin",
+            "0.1.0",
+            4,
+            4,
+            0,
+            0,
+            "AudioEffect,Utility",
+        ),
+        _ => unreachable!(),
+    };
+    Some(format!(
+        "plugin_type_id={}\ncomponent_type={}\ncomponent_subtype={}\nmanufacturer_code={}\nvendor={}\nname={}\nversion={}\naudio_inputs={}\naudio_outputs={}\nmidi_inputs={}\nmidi_outputs={}\nfeatures={}\n",
+        plugin_type_id,
+        component_type,
+        component_subtype,
+        manufacturer_code,
+        metadata.0,
+        metadata.1,
+        metadata.2,
+        metadata.3,
+        metadata.4,
+        metadata.5,
+        metadata.6,
+        metadata.7,
+    ))
 }
 
 fn au_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
@@ -51,7 +122,7 @@ fn au_default_io_layout(plugin_type_id: &str) -> PluginIoLayout {
     }
 }
 
-fn au_fixture_name(plugin_type_id: &str) -> &'static str {
+fn au_scaffold_name(plugin_type_id: &str) -> &'static str {
     match plugin_type_id {
         "plugin:au:instrument" => "Signal Instrument AU Plugin",
         "plugin:au:multiout-instrument" => "Signal Multi Output Instrument AU Plugin",
@@ -61,7 +132,7 @@ fn au_fixture_name(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn au_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
+fn au_scaffold_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     match plugin_type_id {
         "plugin:au:instrument" | "plugin:au:multiout-instrument" => {
             vec![PluginFeature::Instrument, PluginFeature::Analyzer]
@@ -72,11 +143,11 @@ fn au_fixture_features(plugin_type_id: &str) -> Vec<PluginFeature> {
     }
 }
 
-fn au_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> PluginDescriptor {
+fn au_scaffold_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> PluginDescriptor {
     let mut descriptor = PluginDescriptor::new(
         plugin_type_id.to_string(),
         "Signal",
-        au_fixture_name(plugin_type_id),
+        au_scaffold_name(plugin_type_id),
         PluginFormat::Au,
     )
     .with_version("0.1.0")
@@ -125,13 +196,15 @@ fn au_fixture_descriptor(plugin_type_id: &str, io_layout: PluginIoLayout) -> Plu
         supports_activate: true,
         supports_reset_while_active: false,
     });
-    for feature in au_fixture_features(plugin_type_id) {
+    for feature in au_scaffold_features(plugin_type_id) {
         descriptor = descriptor.with_feature(feature);
     }
     descriptor
 }
 
-pub(crate) fn au_discovered_plugin_type(plugin_type_id: &str) -> Option<AuDiscoveredPluginType> {
+pub(crate) fn au_scaffold_discovered_plugin_type(
+    plugin_type_id: &str,
+) -> Option<AuDiscoveredPluginType> {
     let (component_type, component_subtype, manufacturer_code) = match plugin_type_id {
         "plugin:au:instrument" => ("aumu", "sigi", "sigl"),
         "plugin:au:multiout-instrument" => ("aumu", "sigm", "sigl"),
@@ -145,8 +218,9 @@ pub(crate) fn au_discovered_plugin_type(plugin_type_id: &str) -> Option<AuDiscov
         component_type: component_type.into(),
         component_subtype: component_subtype.into(),
         manufacturer_code: manufacturer_code.into(),
-        bundle_root: format!("fixture://{}", au_fixture_bundle_name(plugin_type_id)),
-        descriptor: au_fixture_descriptor(plugin_type_id, default_io_layout),
+        bundle_root: format!("scaffold://{}", au_scaffold_bundle_name(plugin_type_id)),
+        descriptor: au_scaffold_descriptor(plugin_type_id, default_io_layout),
         default_io_layout,
+        failure_contract: AuFailureContract::default(),
     })
 }

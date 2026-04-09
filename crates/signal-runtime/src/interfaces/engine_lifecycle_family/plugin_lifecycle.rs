@@ -1,5 +1,14 @@
 use super::*;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RuntimeLv2PreparedNegotiationRecord {
+    pub worker_posture: RuntimeLv2WorkerPosture,
+    pub urid_negotiation_posture: RuntimeLv2UridNegotiationPosture,
+    pub patch_exchange_posture: RuntimeLv2PatchExchangePosture,
+    pub extension_negotiation_state: RuntimeLv2ExtensionNegotiationState,
+    pub summary: String,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimePluginLifecycleState {
     Booting,
@@ -43,6 +52,7 @@ pub struct RuntimePluginSandboxSnapshot {
     pub degraded_reasons: Vec<String>,
     pub active_lease_id: Option<String>,
     pub active_region_id: Option<String>,
+    pub lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
     pub summary: String,
 }
 

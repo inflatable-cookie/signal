@@ -1,7 +1,10 @@
 use std::io;
 
 use signal_ipc::CorrelationId;
-use signal_plugin::{PluginFault, PluginIoLayout, SandboxStateMachine, SharedMemoryLease};
+use signal_ipc::PluginInstanceStatePayload;
+use signal_plugin::{
+    PluginFault, PluginIoLayout, PluginLifecycleState, SandboxStateMachine, SharedMemoryLease,
+};
 
 use crate::{ClapDiscoveredPluginType, ClapInstanceControlSurface, ClapPluginHostAdapter};
 
@@ -213,5 +216,65 @@ impl ClapSandboxLifecycleHarness {
             "instance id does not match created CLAP instance",
             correlation,
         ))
+    }
+
+    pub(super) fn required_instance<'a>(
+        &'a self,
+        sandbox_id: &str,
+        instance_id: &str,
+        stage: &str,
+        correlation: Option<CorrelationId>,
+    ) -> ClapHarnessResult<&'a ClapInstanceControlSurface> {
+        self.active_instance.as_ref().ok_or_else(|| {
+            Box::new(failure_event(ClapSandboxFailureInput {
+                sandbox_id: sandbox_id.to_string(),
+                instance_id: Some(instance_id.to_string()),
+                stage: stage.to_string(),
+                error_kind: "protocolViolation".to_string(),
+                detail: "validated CLAP instance was not available during request handling"
+                    .to_string(),
+                processing_epoch: self.prepared_epoch,
+                shared_memory_lease_id: self
+                    .active_lease
+                    .as_ref()
+                    .map(|lease| lease.lease_id.clone()),
+                correlation_id: correlation,
+                instance_state: None,
+            }))
+        })
+    }
+
+    pub(super) fn required_instance_state_payload(
+        &self,
+        sandbox_id: &str,
+        instance_id: &str,
+        lifecycle_state: PluginLifecycleState,
+        stage: &str,
+        correlation: Option<CorrelationId>,
+    ) -> ClapHarnessResult<PluginInstanceStatePayload> {
+        self.instance_state_payload(instance_id, lifecycle_state)
+            .ok_or_else(|| {
+                Box::new(failure_event(ClapSandboxFailureInput {
+                    sandbox_id: sandbox_id.to_string(),
+                    instance_id: Some(instance_id.to_string()),
+                    stage: stage.to_string(),
+                    error_kind: "protocolViolation".to_string(),
+                    detail:
+                        "validated CLAP lifecycle state could not be projected into instance state"
+                            .to_string(),
+                    processing_epoch: self.prepared_epoch,
+                    shared_memory_lease_id: self
+                        .active_lease
+                        .as_ref()
+                        .map(|lease| lease.lease_id.clone()),
+                    correlation_id: correlation,
+                    instance_state: None,
+                }))
+            })
+    }
+
+    #[cfg(test)]
+    pub(crate) fn clear_loaded_plugin_for_test(&mut self) {
+        self.loaded_plugin = None;
     }
 }

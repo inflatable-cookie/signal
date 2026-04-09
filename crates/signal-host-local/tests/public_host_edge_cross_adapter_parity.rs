@@ -1,20 +1,28 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+
+use public_host_edge_plugins_support::{
+    temp_public_local_au_scan_root, temp_public_local_vst3_scan_root,
+};
 use signal_host_local::LocalRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
     PluginSandboxSpec, PluginScanRequest, RuntimeConfig, RuntimePluginHostPlatform,
-    RuntimePluginParityBand, RuntimeSupervisorApi, SignalRuntime,
+    RuntimePluginLifecycleState, RuntimePluginParityBand, RuntimeSupervisorApi, SignalRuntime,
 };
 
 #[test]
 fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
+    let vst3_root = temp_public_local_vst3_scan_root();
+    let au_root = temp_public_local_au_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
         roots: vec![
-            "~/.clap".into(),
-            "~/.vst3".into(),
-            "~/Library/Audio/Plug-Ins/Components".into(),
+            "scan:clap:local-parity".into(),
+            vst3_root.root(),
+            au_root.root(),
         ],
         formats: vec![PluginFormat::Clap, PluginFormat::Vst3, PluginFormat::Au],
     })
@@ -96,4 +104,69 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     assert!(rendered.contains("\"parity_band\":\"Portable\""));
     assert!(rendered.contains("\"parity_band\":\"Guarded\""));
     assert!(rendered.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
+}
+
+#[test]
+fn local_shared_host_edge_reports_clap_sandbox_gap_explicitly() {
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let mut host = LocalRuntimeHost::new(runtime);
+
+    host.start_plugin_scan(PluginScanRequest {
+        roots: vec!["scan:clap:local-gap".into()],
+        formats: vec![PluginFormat::Clap],
+    })
+    .expect("public local clap gap scan should succeed");
+    let error = host
+        .ensure_plugin_sandbox(PluginSandboxSpec {
+            sandbox_id: "public-host-edge-local-clap-gap".into(),
+            plugin_format: PluginFormat::Clap,
+            plugin_type_id: Some("plugin:clap:default".into()),
+        })
+        .expect_err("public local clap sandbox gap should be explicit");
+
+    assert_eq!(error.kind, signal_runtime::RuntimeErrorKind::InvalidRequest);
+    assert!(error
+        .message
+        .contains("plugin format Clap is not supported here yet on the local host sandbox path"));
+
+    let report = host.supervisor_report();
+    assert_eq!(
+        report
+            .observation
+            .plugin_discovery_snapshot
+            .last_scan
+            .as_ref()
+            .map(|scan| scan.formats.clone()),
+        Some(vec![PluginFormat::Clap])
+    );
+    assert!(report
+        .observation
+        .plugin_discovery_snapshot
+        .discovered_types
+        .iter()
+        .any(|plugin| plugin.plugin_type_id == "plugin:clap:default"
+            && plugin.format == PluginFormat::Clap));
+
+    let sandbox = report
+        .observation
+        .plugin_lifecycle_snapshot
+        .sandboxes
+        .iter()
+        .find(|sandbox| sandbox.sandbox_id == "public-host-edge-local-clap-gap")
+        .expect("public local clap gap sandbox should be exported");
+    assert_eq!(sandbox.plugin_format, Some(PluginFormat::Clap));
+    assert_eq!(sandbox.state, RuntimePluginLifecycleState::Faulted);
+    assert_eq!(
+        sandbox.last_fault_kind,
+        Some(signal_runtime::PluginFaultKind::ProtocolViolation)
+    );
+    assert!(sandbox
+        .last_fault_detail
+        .as_deref()
+        .is_some_and(|detail| detail.contains("not supported here yet")));
+
+    let rendered = report.render_json();
+    assert!(rendered.contains("\"formats\":[\"Clap\"]"));
+    assert!(rendered.contains("\"plugin_type_id\":\"plugin:clap:default\""));
+    assert!(rendered.contains("not supported here yet on the local host sandbox path"));
 }

@@ -1,19 +1,18 @@
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
-use signal_runtime::{
-    BrokerFailureStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-    RuntimeSupervisorApi,
-};
+use signal_runtime::{finalize_brokered_recovery_transport_detach, RuntimeSupervisorApi};
 
 use super::super::ServerRuntimeHost;
 use super::{lifecycle_stage_for_request, record_runtime_fault, LifecycleRunSummary};
 
 impl ServerRuntimeHost {
-    pub(crate) fn abort_origin_recovery_session(
+    fn teardown_recovery_session(
         &mut self,
         protocol: &ClapBlockProtocol,
         sandbox_id: &str,
         lifecycle: &mut ClapSandboxLifecycleHarness,
         run: &LifecycleRunSummary,
+        detail: &str,
+        teardown_plugin_sandbox: bool,
     ) {
         for request in protocol.teardown_sequence(sandbox_id, run.processing_epoch) {
             match lifecycle.handle(request.clone()) {
@@ -34,76 +33,49 @@ impl ServerRuntimeHost {
             return;
         };
 
-        let _ = self.teardown_plugin_sandbox(sandbox_id);
-        self.runtime.record_plugin_sandbox_transport(
+        if teardown_plugin_sandbox {
+            let _ = self.teardown_plugin_sandbox(sandbox_id);
+        }
+
+        let destroy_error = self
+            .broker
+            .destroy_region(transport)
+            .err()
+            .map(|error| error.to_string());
+        let teardown_error = lifecycle
+            .teardown_active_transport()
+            .err()
+            .map(|error| error.to_string());
+
+        finalize_brokered_recovery_transport_detach(
+            &mut self.runtime,
             sandbox_id,
             run.shared_memory_lease_id.as_str(),
             transport.region_id.as_str(),
-            PluginSandboxTransportStage::DetachRequested,
-            Some(run.processing_epoch),
-            Some("origin recovery abort".into()),
+            run.processing_epoch,
+            run.last_block_sequence,
+            detail,
+            false,
+            destroy_error,
+            teardown_error,
         );
+    }
 
-        let destroy_error = self.broker.destroy_region(transport).err();
-        if let Some(error) = destroy_error.as_ref() {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportDestroy,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-        }
-
-        let teardown_error = lifecycle.teardown_active_transport().err();
-        if let Some(error) = teardown_error.as_ref() {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-        }
-
-        if destroy_error.is_none() && teardown_error.is_none() {
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-                PluginSandboxTransportStage::Detached,
-                Some(run.processing_epoch),
-                Some("origin recovery abort".into()),
-            );
-            self.runtime.record_plugin_sandbox_lifecycle(
-                sandbox_id,
-                PluginSandboxLifecycleStage::TransportTornDown,
-                Some(run.processing_epoch),
-            );
-            self.runtime.end_transport_session(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-            );
-        }
+    pub(crate) fn abort_origin_recovery_session(
+        &mut self,
+        protocol: &ClapBlockProtocol,
+        sandbox_id: &str,
+        lifecycle: &mut ClapSandboxLifecycleHarness,
+        run: &LifecycleRunSummary,
+    ) {
+        self.teardown_recovery_session(
+            protocol,
+            sandbox_id,
+            lifecycle,
+            run,
+            "origin recovery abort",
+            true,
+        );
     }
 
     pub(crate) fn rollback_replacement_recovery_session(
@@ -113,93 +85,13 @@ impl ServerRuntimeHost {
         lifecycle: &mut ClapSandboxLifecycleHarness,
         run: &LifecycleRunSummary,
     ) {
-        for request in protocol.teardown_sequence(sandbox_id, run.processing_epoch) {
-            match lifecycle.handle(request.clone()) {
-                Ok(_) => {
-                    if let Some(stage) = lifecycle_stage_for_request(&request.payload) {
-                        self.runtime.record_plugin_sandbox_lifecycle(
-                            sandbox_id,
-                            stage,
-                            Some(run.processing_epoch),
-                        );
-                    }
-                }
-                Err(failure) => record_runtime_fault(&mut self.runtime, &failure),
-            }
-        }
-
-        let Some(transport) = run.transport.as_ref() else {
-            return;
-        };
-
-        self.runtime.record_plugin_sandbox_transport(
+        self.teardown_recovery_session(
+            protocol,
             sandbox_id,
-            run.shared_memory_lease_id.as_str(),
-            transport.region_id.as_str(),
-            PluginSandboxTransportStage::DetachRequested,
-            Some(run.processing_epoch),
-            Some("replacement rollback".into()),
+            lifecycle,
+            run,
+            "replacement rollback",
+            false,
         );
-
-        let destroy_error = self.broker.destroy_region(transport).err();
-        if let Some(error) = destroy_error.as_ref() {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportDestroy,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-        }
-
-        let teardown_error = lifecycle.teardown_active_transport().err();
-        if let Some(error) = teardown_error.as_ref() {
-            self.runtime.record_broker_failure(
-                sandbox_id,
-                Some(run.shared_memory_lease_id.clone()),
-                Some(run.processing_epoch),
-                Some(run.last_block_sequence),
-                BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-                PluginSandboxTransportStage::DetachFault,
-                Some(run.processing_epoch),
-                Some(error.to_string()),
-            );
-        }
-
-        if destroy_error.is_none() && teardown_error.is_none() {
-            self.runtime.record_plugin_sandbox_transport(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-                PluginSandboxTransportStage::Detached,
-                Some(run.processing_epoch),
-                Some("replacement rollback".into()),
-            );
-            self.runtime.record_plugin_sandbox_lifecycle(
-                sandbox_id,
-                PluginSandboxLifecycleStage::TransportTornDown,
-                Some(run.processing_epoch),
-            );
-            self.runtime.end_transport_session(
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                transport.region_id.as_str(),
-            );
-        }
     }
 }

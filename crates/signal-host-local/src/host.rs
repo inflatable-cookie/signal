@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, collections::HashMap};
 
 use signal_hardware::HardwareStreamConfig;
 use signal_hardware_coreaudio::CoreAudioBackend;
@@ -25,8 +25,8 @@ mod host_api;
 mod host_support;
 use host_support::{
     discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_vst3_sandbox_session,
-    runtime_plugin_format_platform_coverage, LifecycleRunSummary, LocalAudioPumpState,
-    LocalClockTransitionMemory, LocalSupervisorState,
+    runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session, LifecycleRunSummary,
+    LocalAudioPumpState, LocalClockTransitionMemory, LocalSupervisorState, SandboxBrokerSession,
 };
 pub(crate) use host_support::{
     FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
@@ -45,6 +45,10 @@ pub struct LocalRuntimeHost {
     clap: ClapPluginHostAdapter,
     au: AuHostAdapter,
     vst3: Vst3HostAdapter,
+    discovered_au_types: HashMap<String, signal_plugin_au::AuDiscoveredPluginType>,
+    discovered_vst3_types: HashMap<String, signal_plugin_vst3::Vst3DiscoveredPluginType>,
+    active_sandbox_specs: HashMap<String, PluginSandboxSpec>,
+    sandbox_broker_sessions: HashMap<String, SandboxBrokerSession>,
     broker: SharedMemoryBroker,
     active_output_stream: Option<HardwareStreamConfig>,
     clock_transition_memory: RefCell<LocalClockTransitionMemory>,
@@ -66,6 +70,10 @@ impl LocalRuntimeHost {
             clap: ClapPluginHostAdapter::default(),
             au: AuHostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
+            discovered_au_types: HashMap::new(),
+            discovered_vst3_types: HashMap::new(),
+            active_sandbox_specs: HashMap::new(),
+            sandbox_broker_sessions: HashMap::new(),
             broker: SharedMemoryBroker::default(),
             active_output_stream: None,
             clock_transition_memory: RefCell::new(LocalClockTransitionMemory::default()),

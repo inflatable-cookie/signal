@@ -56,8 +56,16 @@ pub(crate) const DESCRIBE_FLAG_SPECS: &[DescribeFlagSpec] = &[
         mode: CliMode::DescribeAuBoundary,
     },
     DescribeFlagSpec {
+        flag: "--describe-macos-au-coreaudio-boundary",
+        mode: CliMode::DescribeMacosAuCoreaudioBoundary,
+    },
+    DescribeFlagSpec {
         flag: "--describe-lv2-boundary",
         mode: CliMode::DescribeLv2Boundary,
+    },
+    DescribeFlagSpec {
+        flag: "--describe-linux-lv2-execution-boundary",
+        mode: CliMode::DescribeLinuxLv2ExecutionBoundary,
     },
     DescribeFlagSpec {
         flag: "--describe-cross-adapter-parity-boundary",

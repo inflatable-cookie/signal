@@ -1,16 +1,18 @@
 # Roadmap Generation Index
 
 Status: active
-Updated: 2026-03-22
+Updated: 2026-04-08
 
 ## Active generation
 
-- none
-- `g08` closed on 2026-03-22 after live Linux backend ownership, richer plugin
-  and device protocol depth, immersive routing breadth, preview-workflow
-  services, grouped acceptance lanes, integrated acceptance, and a final
-  generation closeout gate landed
-- the next likely queue is recorded in
+- `g09`
+- opened on 2026-04-08 to turn the post-`g08` audit into a contract-backed
+  remediation and proof queue
+- focuses on real plugin-hosting and native-backend realization, runtime and
+  host structural repair, low-level correctness hardening, fidelity uplift, and
+  interactive demo proof
+- the active strict-lane surface currently attaches to `g09.006`
+- the earlier post-`g08` backlog item remains informative context in
   `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
 
 ## Generation log
@@ -25,6 +27,7 @@ Updated: 2026-03-22
 | `g06` | 2026-03-13 | Continue beyond reusable-boundary closeout with runtime recovery depth, instrumentation, feature breadth, and Loophole-facing runtime evidence | Closed on 2026-03-16 after recovery/resumability, profiling, VST3/AU, MIDI/event depth, hardware/external-I/O, media services, integrated acceptance, bounded soak, and generation-closeout promotion work landed |
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
+| `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Active. Focused on real plugin hosting, native backend truth, runtime and host structural repair, low-level correctness, fidelity uplift, rhythm resilience, and demo coverage |
 
 ## Rollover policy
 
@@ -34,6 +37,5 @@ Create a new generation when:
 
 ## Next task
 
-COMPLETE. There is no active generation. Promote
-`docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
-only when maintainers choose to open the post-`g08` generation.
+Re-enter planning for the active strict `g09` lane before creating another
+ready batch card.

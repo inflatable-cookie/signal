@@ -14,6 +14,7 @@ use super::demo_graph::{local_demo_graph_contract_projection, local_demo_graph_p
 pub(crate) struct LocalDemoPluginSandboxAssembly {
     pub(crate) request: PluginSandboxRequest,
     pub(crate) plugin_format: PluginFormat,
+    pub(crate) plugin_type_id: Option<String>,
     pub(crate) bound_node_ids: Vec<&'static str>,
 }
 
@@ -22,7 +23,7 @@ impl LocalDemoPluginSandboxAssembly {
         PluginSandboxSpec {
             sandbox_id: self.request.sandbox_id.clone(),
             plugin_format: self.plugin_format,
-            plugin_type_id: None,
+            plugin_type_id: self.plugin_type_id.clone(),
         }
     }
 }
@@ -31,6 +32,8 @@ impl LocalDemoPluginSandboxAssembly {
 pub(crate) struct LocalDemoRuntimeAssembly {
     pub(crate) graph: signal_runtime::GraphProjection,
     pub(crate) graph_contracts: signal_runtime::GraphContractProjection,
+    pub(crate) scan_roots: Vec<String>,
+    pub(crate) scan_formats: Vec<PluginFormat>,
     pub(crate) plugin_sandboxes: Vec<LocalDemoPluginSandboxAssembly>,
 }
 
@@ -66,19 +69,67 @@ impl LocalDemoRuntimeAssembly {
 }
 
 pub(crate) fn local_demo_runtime_assembly() -> LocalDemoRuntimeAssembly {
+    let broker_override = broker_demo_plugin_override();
     let graph = local_demo_graph_projection();
     LocalDemoRuntimeAssembly {
         graph_contracts: local_demo_graph_contract_projection(&graph.graph_id),
         graph,
+        scan_roots: broker_override
+            .as_ref()
+            .map(|override_spec| vec![override_spec.scan_root.clone()])
+            .unwrap_or_else(|| vec!["~/Library/Audio/Plug-Ins/CLAP".into()]),
+        scan_formats: vec![broker_override
+            .as_ref()
+            .map(|override_spec| override_spec.plugin_format)
+            .unwrap_or(PluginFormat::Clap)],
         plugin_sandboxes: vec![LocalDemoPluginSandboxAssembly {
             request: PluginSandboxRequest::new(
                 "local-default-sandbox",
-                PluginFormat::Clap,
+                broker_override
+                    .as_ref()
+                    .map(|override_spec| override_spec.plugin_format)
+                    .unwrap_or(PluginFormat::Clap),
                 SandboxPolicy::Strict,
             ),
-            plugin_format: PluginFormat::Clap,
+            plugin_format: broker_override
+                .as_ref()
+                .map(|override_spec| override_spec.plugin_format)
+                .unwrap_or(PluginFormat::Clap),
+            plugin_type_id: broker_override
+                .as_ref()
+                .map(|override_spec| override_spec.plugin_type_id.clone()),
             bound_node_ids: vec![LOCAL_DEMO_PLUGIN_NODE_ID],
         }],
+    }
+}
+
+#[derive(Clone, Debug)]
+struct BrokerDemoPluginOverride {
+    plugin_format: PluginFormat,
+    plugin_type_id: String,
+    scan_root: String,
+}
+
+fn broker_demo_plugin_override() -> Option<BrokerDemoPluginOverride> {
+    let plugin_format = std::env::var("SIGNAL_HOST_DEMO_PLUGIN_FORMAT")
+        .ok()
+        .and_then(|value| parse_demo_plugin_format(&value))?;
+    let plugin_type_id = std::env::var("SIGNAL_HOST_DEMO_PLUGIN_TYPE_ID").ok()?;
+    let scan_root = std::env::var("SIGNAL_HOST_DEMO_PLUGIN_ROOT").ok()?;
+    Some(BrokerDemoPluginOverride {
+        plugin_format,
+        plugin_type_id,
+        scan_root,
+    })
+}
+
+fn parse_demo_plugin_format(value: &str) -> Option<PluginFormat> {
+    match value {
+        "clap" => Some(PluginFormat::Clap),
+        "vst3" => Some(PluginFormat::Vst3),
+        "au" => Some(PluginFormat::Au),
+        "lv2" => Some(PluginFormat::Lv2),
+        _ => None,
     }
 }
 

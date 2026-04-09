@@ -1,4 +1,5 @@
 use super::*;
+use crate::interfaces::RuntimePluginScanDiagnosticRecord;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct RuntimeSupervisionPolicy {
@@ -96,6 +97,8 @@ impl RuntimePluginDiscoveryStateModel {
             targeted_format_count: request.formats.len(),
             discovered_type_count: 0,
             discovered_format_count: 0,
+            discovery_diagnostic_count: 0,
+            discovery_diagnostics: Vec::new(),
             format_coverage: Vec::new(),
             parity_coverage: Vec::new(),
             capability_coverage: RuntimePluginCapabilityCoverageSummary {
@@ -103,7 +106,7 @@ impl RuntimePluginDiscoveryStateModel {
                 ..RuntimePluginCapabilityCoverageSummary::default()
             },
             summary: format!(
-                "scan={} roots={} formats={:?} discovered_types=0 discovered_formats=0",
+                "scan={} roots={} formats={:?} discovered_types=0 discovered_formats=0 discovery_diagnostics=0",
                 scan_handle.0,
                 request.roots.len(),
                 request.formats,
@@ -116,6 +119,7 @@ impl RuntimePluginDiscoveryStateModel {
         &mut self,
         scan_handle: ScanHandle,
         discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
+        discovery_diagnostics: Vec<RuntimePluginScanDiagnosticRecord>,
         parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     ) {
         let format_coverage = runtime_plugin_format_coverage(&discovered_types);
@@ -124,16 +128,19 @@ impl RuntimePluginDiscoveryStateModel {
             if last_scan.scan_handle == scan_handle {
                 last_scan.discovered_type_count = discovered_types.len();
                 last_scan.discovered_format_count = format_coverage.len();
+                last_scan.discovery_diagnostic_count = discovery_diagnostics.len();
+                last_scan.discovery_diagnostics = discovery_diagnostics;
                 last_scan.format_coverage = format_coverage;
                 last_scan.parity_coverage = parity_coverage;
                 last_scan.capability_coverage = capability_coverage;
                 last_scan.summary = format!(
-                    "scan={} roots={} formats={:?} discovered_types={} discovered_formats={}",
+                    "scan={} roots={} formats={:?} discovered_types={} discovered_formats={} discovery_diagnostics={}",
                     last_scan.scan_handle.0,
                     last_scan.roots.len(),
                     last_scan.formats,
                     last_scan.discovered_type_count,
                     last_scan.discovered_format_count,
+                    last_scan.discovery_diagnostic_count,
                 );
                 self.discovered_types = discovered_types;
             }

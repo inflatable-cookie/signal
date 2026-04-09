@@ -9,3 +9,4 @@ description = "CoreAudio backend shell for Signal."
 
 [dependencies]
 signal-hardware = { path = "../signal-hardware" }
+serde_json = "1"

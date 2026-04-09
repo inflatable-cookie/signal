@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use signal_ipc::SharedMemoryBroker;
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
@@ -19,7 +21,8 @@ use signal_runtime::{
 mod host_support;
 use host_support::{
     discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_lv2_sandbox_session,
-    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage, ServerSupervisorState,
+    ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage,
+    teardown_broker_sandbox_session, SandboxBrokerSession, ServerSupervisorState,
 };
 pub(crate) use host_support::{
     samples_to_ms, FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS,
@@ -36,6 +39,11 @@ pub struct ServerRuntimeHost {
     au: AuHostAdapter,
     lv2: Lv2HostAdapter,
     vst3: Vst3HostAdapter,
+    discovered_au_types: HashMap<String, signal_plugin_au::AuDiscoveredPluginType>,
+    discovered_lv2_types: HashMap<String, signal_plugin_lv2::Lv2DiscoveredPluginType>,
+    discovered_vst3_types: HashMap<String, signal_plugin_vst3::Vst3DiscoveredPluginType>,
+    active_sandbox_specs: HashMap<String, PluginSandboxSpec>,
+    sandbox_broker_sessions: HashMap<String, SandboxBrokerSession>,
     supervisor: ServerSupervisorState,
     events: RuntimeEventRecorder,
 }
@@ -53,6 +61,11 @@ impl ServerRuntimeHost {
             au: AuHostAdapter::default(),
             lv2: Lv2HostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
+            discovered_au_types: HashMap::new(),
+            discovered_lv2_types: HashMap::new(),
+            discovered_vst3_types: HashMap::new(),
+            active_sandbox_specs: HashMap::new(),
+            sandbox_broker_sessions: HashMap::new(),
             supervisor: ServerSupervisorState::default(),
             events,
         }
@@ -69,10 +82,36 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         request: PluginScanRequest,
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
         let handle = self.runtime.record_plugin_scan_request(&request);
-        let discovered_types =
-            discovered_plugins_for_scan(&self.au, &self.lv2, &self.vst3, &request);
-        self.runtime
-            .record_plugin_scan_results(handle, discovered_types);
+        let discoveries = discovered_plugins_for_scan(&self.au, &self.lv2, &self.vst3, &request);
+        if request.formats.is_empty() || request.formats.contains(&PluginFormat::Au) {
+            self.discovered_au_types = discoveries
+                .au
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
+                .collect();
+        }
+        if request.formats.is_empty() || request.formats.contains(&PluginFormat::Lv2) {
+            self.discovered_lv2_types = discoveries
+                .lv2
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
+                .collect();
+        }
+        if request.formats.is_empty() || request.formats.contains(&PluginFormat::Vst3) {
+            self.discovered_vst3_types = discoveries
+                .vst3
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
+                .collect();
+        }
+        self.runtime.record_plugin_scan_results_with_diagnostics(
+            handle,
+            discoveries.runtime_records,
+            discoveries.runtime_diagnostics,
+        );
         self.supervisor.scans_started = handle.0;
         self.supervisor.last_scan_roots = request.roots;
         Ok(handle)
@@ -84,19 +123,81 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
     ) -> Result<signal_runtime::SandboxHandle, RuntimeError> {
         self.supervisor.sandboxes = self.supervisor.sandboxes.saturating_add(1);
         self.runtime.record_plugin_sandbox_spec(&request);
+        self.active_sandbox_specs
+            .insert(request.sandbox_id.clone(), request.clone());
         self.runtime.record_plugin_sandbox_lifecycle(
             request.sandbox_id.as_str(),
             PluginSandboxLifecycleStage::SandboxEnsured,
             None,
         );
         if request.plugin_format == PluginFormat::Au {
-            ensure_au_sandbox_session(&mut self.runtime, &self.au, &request);
-        }
-        if request.plugin_format == PluginFormat::Lv2 {
-            ensure_lv2_sandbox_session(&mut self.runtime, &self.lv2, &request);
-        }
-        if request.plugin_format == PluginFormat::Vst3 {
-            ensure_vst3_sandbox_session(&mut self.runtime, &self.vst3, &request);
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.discovered_au_types.get(plugin_type_id))
+                .cloned()
+            {
+                if let Some(session) =
+                    ensure_au_sandbox_session(&mut self.runtime, &self.au, &discovered, &request)?
+                {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server AU scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Lv2 {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.discovered_lv2_types.get(plugin_type_id))
+                .cloned()
+            {
+                if let Some(session) =
+                    ensure_lv2_sandbox_session(&mut self.runtime, &self.lv2, &discovered, &request)?
+                {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server LV2 scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Vst3 {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.discovered_vst3_types.get(plugin_type_id))
+                .cloned()
+            {
+                if let Some(session) = ensure_vst3_sandbox_session(
+                    &mut self.runtime,
+                    &self.vst3,
+                    &discovered,
+                    &request,
+                )? {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server VST3 scan",
+                ));
+            }
+        } else {
+            return Err(self.unsupported_or_missing_sandbox_error(
+                &request,
+                &format!(
+                    "plugin format {:?} is not supported here yet on the server host sandbox path",
+                    request.plugin_format
+                ),
+            ));
         }
         self.supervisor.last_sandbox_id = Some(request.sandbox_id);
         Ok(signal_runtime::SandboxHandle(self.supervisor.sandboxes))
@@ -228,6 +329,9 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             PluginSandboxLifecycleStage::SandboxTeardown,
             None,
         );
+        if let Some(session) = self.sandbox_broker_sessions.remove(sandbox_id) {
+            teardown_broker_sandbox_session(&mut self.runtime, sandbox_id, session)?;
+        }
         Ok(())
     }
 
@@ -239,12 +343,100 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             PluginSandboxLifecycleStage::SandboxRestarted,
             None,
         );
+        let Some(request) = self.active_sandbox_specs.get(sandbox_id).cloned() else {
+            return Ok(());
+        };
+        if request.plugin_format == PluginFormat::Au {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.discovered_au_types.get(plugin_type_id))
+                .cloned()
+            {
+                if let Some(session) =
+                    ensure_au_sandbox_session(&mut self.runtime, &self.au, &discovered, &request)?
+                {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server AU scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Lv2 {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.discovered_lv2_types.get(plugin_type_id))
+                .cloned()
+            {
+                if let Some(session) =
+                    ensure_lv2_sandbox_session(&mut self.runtime, &self.lv2, &discovered, &request)?
+                {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server LV2 scan",
+                ));
+            }
+        } else if request.plugin_format == PluginFormat::Vst3 {
+            if let Some(discovered) = request
+                .plugin_type_id
+                .as_deref()
+                .and_then(|plugin_type_id| self.discovered_vst3_types.get(plugin_type_id))
+                .cloned()
+            {
+                if let Some(session) = ensure_vst3_sandbox_session(
+                    &mut self.runtime,
+                    &self.vst3,
+                    &discovered,
+                    &request,
+                )? {
+                    self.sandbox_broker_sessions
+                        .insert(request.sandbox_id.clone(), session);
+                }
+            } else {
+                return Err(self.unsupported_or_missing_sandbox_error(
+                    &request,
+                    "plugin type was not discovered in the last server VST3 scan",
+                ));
+            }
+        } else {
+            return Err(self.unsupported_or_missing_sandbox_error(
+                &request,
+                &format!(
+                    "plugin format {:?} is not supported here yet on the server host sandbox path",
+                    request.plugin_format
+                ),
+            ));
+        }
         Ok(())
     }
 
     fn set_backend_policy(&mut self, request: BackendPolicyOverride) -> Result<(), RuntimeError> {
         self.supervisor.backend_policy = Some(request.tier);
         Ok(())
+    }
+}
+
+impl ServerRuntimeHost {
+    fn unsupported_or_missing_sandbox_error(
+        &mut self,
+        request: &PluginSandboxSpec,
+        detail: &str,
+    ) -> RuntimeError {
+        self.runtime.record_plugin_sandbox_fault(
+            request.sandbox_id.as_str(),
+            signal_runtime::PluginFaultKind::ProtocolViolation,
+            detail,
+            None,
+        );
+        RuntimeError::new(signal_runtime::RuntimeErrorKind::InvalidRequest, detail)
     }
 }
 

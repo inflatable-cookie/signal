@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-03-22
+Updated: 2026-04-08
 
 ## Why this section matters now
 
@@ -24,8 +24,11 @@ Use this section for:
 
 ## Current posture
 
-`g06`, `g07`, and `g08` are now complete. There is no active generation at the
-moment; the next likely queue is recorded in
+`g06`, `g07`, and `g08` are now complete. `g09` is now active as the
+post-audit remediation generation covering real plugin-hosting and native-
+backend realization, runtime and host structural repair, low-level hardening,
+fidelity uplift, rhythm resilience, and interactive demo proof. The earlier
+post-`g08` backlog note remains in
 `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`.
 `g01` established the Rust workspace, engine, host/device
 path, and plugin/runtime baseline; `g02` completed the first reusable DSP and
@@ -110,6 +113,16 @@ The deferred continuation scope after `g08` is:
 - product-local controller, browser, immersive-console, certification, and
   downstream launch workflows
 
+## Strict lane
+
+Signal is now using a lane-first strict Northstar surface on the active `g09`
+queue:
+
+- strict-lane spec:
+  `docs/specs/001-g09-lane-first-strict-adoption.md`
+- current ready card:
+  none; `g09.008` is awaiting planning handoff
+
 ## Working Rule
 
 - keep one active queue
@@ -118,6 +131,6 @@ The deferred continuation scope after `g08` is:
 
 ## Next Task
 
-COMPLETE. `g08` is closed. Promote
-`docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
-only when maintainers choose to open the post-`g08` generation.
+Re-enter planning for the active strict `g09` lane and decide whether
+`g09.008` closes here or hands off into `g09.009` before creating another
+ready batch card.

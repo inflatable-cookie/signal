@@ -38,6 +38,7 @@ pub(crate) struct RuntimePluginSandboxStateModel {
     pub(super) degraded_reasons: Vec<String>,
     pub(super) active_lease_id: Option<String>,
     pub(super) active_region_id: Option<String>,
+    pub(super) lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
 }
 
 impl RuntimePluginSandboxStateModel {
@@ -66,6 +67,7 @@ impl RuntimePluginSandboxStateModel {
             degraded_reasons: Vec::new(),
             active_lease_id: None,
             active_region_id: None,
+            lv2_prepared_negotiation: None,
         }
     }
 
@@ -100,8 +102,9 @@ impl RuntimePluginSandboxStateModel {
             degraded_reasons: self.degraded_reasons.clone(),
             active_lease_id: self.active_lease_id.clone(),
             active_region_id: self.active_region_id.clone(),
+            lv2_prepared_negotiation: self.lv2_prepared_negotiation.clone(),
             summary: format!(
-                "state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} preset={} ara_region={} fault={}",
+                "state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} preset={} ara_region={} lv2={} fault={}",
                 self.state,
                 self.plugin_format,
                 self.lifecycle_stage,
@@ -120,6 +123,10 @@ impl RuntimePluginSandboxStateModel {
                     .as_ref()
                     .and_then(|context| context.region_context.as_ref())
                     .map(|region| region.region_id.as_str())
+                    .unwrap_or("none"),
+                self.lv2_prepared_negotiation
+                    .as_ref()
+                    .map(|record| record.summary.as_str())
                     .unwrap_or("none"),
                 self.last_fault_detail.as_deref().unwrap_or("none"),
             ),

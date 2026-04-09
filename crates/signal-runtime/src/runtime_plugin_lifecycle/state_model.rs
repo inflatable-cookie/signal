@@ -50,4 +50,12 @@ impl RuntimePluginLifecycleStateModel {
     pub(crate) fn set_active_sandbox_count(&mut self, count: u32) {
         self.active_sandbox_count = count;
     }
+
+    pub(crate) fn record_lv2_prepared_negotiation(
+        &mut self,
+        sandbox_id: &str,
+        negotiation: RuntimeLv2PreparedNegotiationRecord,
+    ) {
+        self.sandbox_mut(sandbox_id).lv2_prepared_negotiation = Some(negotiation);
+    }
 }

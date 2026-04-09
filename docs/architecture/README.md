@@ -22,6 +22,7 @@ Keep milestone sequencing in `roadmaps/`.
 ## Active Entry Points
 
 - `system-architecture.md`
+- `product-guardrails.md`
 - `package-map.md`
 - `dsp-analysis-feature-reference.md`
 - `graph-runtime-feature-reference.md`
@@ -29,6 +30,6 @@ Keep milestone sequencing in `roadmaps/`.
 
 ## Next Task
 
-Keep the current-state architecture references aligned with the implemented
-graph/runtime and DSP/analysis surfaces as the Rust workspace grows, instead of
-letting those details drift back into roadmap-only prose.
+Keep the current-state architecture references and product guardrails aligned
+with the live runtime and host work instead of letting those details drift back
+into roadmap-only prose.

@@ -52,10 +52,20 @@ pub(crate) const AU_BOUNDARY: &str = "signal.runtime.au-boundary";
 pub(crate) const AU_CONTRACT_PATH: &str =
     "docs/contracts/021-au-adapter-baseline-and-runtime-owned-lifecycle-contract.md";
 pub(crate) const AU_ACCEPTANCE_TASK: &str = "effigy acceptance:au-boundary";
+pub(crate) const MACOS_AU_COREAUDIO_BOUNDARY: &str = "signal.runtime.macos-au-coreaudio-boundary";
+pub(crate) const MACOS_AU_COREAUDIO_CONTRACT_PATH: &str =
+    "docs/contracts/073-native-backend-device-truth-and-coreaudio-implementation-contract.md";
+pub(crate) const MACOS_AU_COREAUDIO_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:macos-au-coreaudio-boundary";
 pub(crate) const LV2_BOUNDARY: &str = "signal.runtime.lv2-boundary";
 pub(crate) const LV2_CONTRACT_PATH: &str =
     "docs/contracts/055-lv2-worker-urid-patch-and-extension-negotiation-contract.md";
 pub(crate) const LV2_ACCEPTANCE_TASK: &str = "effigy acceptance:lv2-boundary";
+pub(crate) const LINUX_LV2_EXECUTION_BOUNDARY: &str = "signal.runtime.linux-lv2-execution-boundary";
+pub(crate) const LINUX_LV2_EXECUTION_CONTRACT_PATH: &str =
+    "docs/contracts/055-lv2-worker-urid-patch-and-extension-negotiation-contract.md";
+pub(crate) const LINUX_LV2_EXECUTION_ACCEPTANCE_TASK: &str =
+    "effigy acceptance:linux-lv2-execution-boundary";
 pub(crate) const CROSS_ADAPTER_PARITY_BOUNDARY: &str =
     "signal.runtime.cross-adapter-parity-boundary";
 pub(crate) const CROSS_ADAPTER_PARITY_CONTRACT_PATH: &str =

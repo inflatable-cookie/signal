@@ -1,3 +1,7 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+
+use public_host_edge_plugins_support::{temp_public_local_au_scan_root, DemoPluginEnvGuard};
 use signal_host_local::LocalRuntimeHost;
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeDeviceFaultBoundaryState,
@@ -7,6 +11,8 @@ use signal_runtime::{
 
 #[test]
 fn local_shared_host_edge_exports_runtime_device_supervision_truth() {
+    let scan_root = temp_public_local_au_scan_root();
+    let _guard = DemoPluginEnvGuard::enable_au(&scan_root, "plugin:au:instrument");
     let recovering_runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut recovering_host = LocalRuntimeHost::new(recovering_runtime);
     recovering_host

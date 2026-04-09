@@ -14,4 +14,7 @@ pub use plugin_protocol::{
     SharedMemoryTransportKind, SharedMemoryTransportPayload,
 };
 pub use runtime_message::{CorrelationId, MessageKind, RuntimeDomain, RuntimeMessage};
-pub use shared_memory::{MappedSharedMemoryRegion, SharedMemoryBroker};
+pub use shared_memory::{
+    MappedSharedMemoryRegion, SharedMemoryBroker, SharedMemoryRegionLifecycleError,
+    SharedMemoryRegionLifecycleErrorKind, SharedMemoryRegionOperation,
+};

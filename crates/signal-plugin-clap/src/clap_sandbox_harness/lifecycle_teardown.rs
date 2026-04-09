@@ -23,14 +23,19 @@ impl ClapSandboxLifecycleHarness {
         )?;
         self.active = false;
         self.last_fault = None;
+        let instance_state = self.required_instance_state_payload(
+            &sandbox_id,
+            &instance_id,
+            PluginLifecycleState::Inactive,
+            "deactivateInstance",
+            Some(correlation.clone()),
+        )?;
         Ok(PluginMessageEnvelope::response(
             PluginMessageName::SandboxDeactivateInstance,
             correlation,
             PluginMessagePayload::DeactivateInstanceResponse {
                 instance_id: instance_id.clone(),
-                instance_state: self
-                    .instance_state_payload(&instance_id, PluginLifecycleState::Inactive)
-                    .expect("instance state after deactivate"),
+                instance_state,
             },
         ))
     }
@@ -44,14 +49,13 @@ impl ClapSandboxLifecycleHarness {
     ) -> ClapHarnessResult<PluginMessageEnvelope> {
         self.require_sandbox(&sandbox_id, "resetInstance", Some(correlation.clone()))?;
         self.require_instance(&instance_id, "resetInstance", Some(correlation.clone()))?;
-        if self.active
-            && !self
-                .active_instance
-                .as_ref()
-                .expect("validated instance")
-                .lifecycle_contract
-                .supports_reset_while_active
-        {
+        let instance = self.required_instance(
+            &sandbox_id,
+            &instance_id,
+            "resetInstance",
+            Some(correlation.clone()),
+        )?;
+        if self.active && !instance.lifecycle_contract.supports_reset_while_active {
             return Err(self.failure_error_for_instance(
                 Some(instance_id),
                 self.active_lease
@@ -73,15 +77,20 @@ impl ClapSandboxLifecycleHarness {
         self.active = false;
         self.last_fault = None;
         self.block_machine = SandboxStateMachine::new();
+        let instance_state = self.required_instance_state_payload(
+            &sandbox_id,
+            &instance_id,
+            PluginLifecycleState::Prepared,
+            "resetInstance",
+            Some(correlation.clone()),
+        )?;
         Ok(PluginMessageEnvelope::response(
             PluginMessageName::SandboxResetInstance,
             correlation,
             PluginMessagePayload::ResetInstanceResponse {
                 instance_id: instance_id.clone(),
                 processing_epoch,
-                instance_state: self
-                    .instance_state_payload(&instance_id, PluginLifecycleState::Prepared)
-                    .expect("instance state after reset"),
+                instance_state,
             },
         ))
     }

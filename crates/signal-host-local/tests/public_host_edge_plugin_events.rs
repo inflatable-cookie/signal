@@ -1,3 +1,7 @@
+#[path = "support/public_host_edge_plugins.rs"]
+mod public_host_edge_plugins_support;
+
+use public_host_edge_plugins_support::temp_public_local_vst3_scan_root;
 use signal_host_local::LocalRuntimeHost;
 use signal_plugin::{EventPacketSummary, PluginFormat};
 use signal_runtime::{RuntimeConfig, RuntimeSupervisorApi, SignalRuntime};
@@ -24,9 +28,10 @@ fn local_shared_host_edge_exports_runtime_generic_event_truth() {
         },
     );
     let mut host = LocalRuntimeHost::new(runtime);
+    let vst3_root = temp_public_local_vst3_scan_root();
 
     host.start_plugin_scan(signal_runtime::PluginScanRequest {
-        roots: vec!["~/.clap".into(), "~/.vst3".into()],
+        roots: vec!["scan:clap:local-events".into(), vst3_root.root()],
         formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
     })
     .expect("public local generic event scan should succeed");
@@ -46,7 +51,7 @@ fn local_shared_host_edge_exports_runtime_generic_event_truth() {
             .plugin_discovery_snapshot
             .capability_coverage
             .supports_note_expression_count,
-        2
+        4
     );
 
     let rendered = report.render_json();
@@ -77,9 +82,13 @@ fn local_shared_host_edge_exports_runtime_controller_expression_truth() {
         },
     );
     let mut host = LocalRuntimeHost::new(runtime);
+    let vst3_root = temp_public_local_vst3_scan_root();
 
     host.start_plugin_scan(signal_runtime::PluginScanRequest {
-        roots: vec!["~/.clap".into(), "~/.vst3".into()],
+        roots: vec![
+            "scan:clap:local-controller-expression".into(),
+            vst3_root.root(),
+        ],
         formats: vec![PluginFormat::Clap, PluginFormat::Vst3],
     })
     .expect("public local controller-expression scan should succeed");

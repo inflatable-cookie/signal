@@ -1,4 +1,5 @@
 use super::super::super::ServerRuntimeHost;
+use crate::host::host_test_support::temp_server_lv2_scan_root;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
     PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage,
@@ -11,9 +12,10 @@ use signal_runtime::{
 fn server_host_lv2_scan_and_sandbox_surface_linux_runtime_owned_receipts() {
     let runtime = SignalRuntime::new(RuntimeConfig::server(48_000, 512));
     let mut host = ServerRuntimeHost::new(runtime);
+    let scan_root = temp_server_lv2_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["~/.lv2".into(), "/usr/lib/lv2".into()],
+        roots: vec![scan_root.root()],
         formats: vec![PluginFormat::Lv2],
     })
     .expect("server lv2 plugin scan");

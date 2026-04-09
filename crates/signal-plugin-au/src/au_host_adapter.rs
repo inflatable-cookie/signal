@@ -3,11 +3,15 @@ use signal_plugin::{
     PluginProcessingContract, PluginSandboxCapabilities, PluginTypeId, SandboxTransport,
 };
 
-use crate::fixtures::{au_discovered_plugin_type, au_fixture_bundle_name};
-
 mod discovery;
+mod introspection;
 mod model;
+#[cfg(test)]
+mod scaffold;
 mod session;
+
+#[cfg(test)]
+pub(crate) use scaffold::au_scaffold_component_metadata_contents;
 
 pub use model::*;
 

@@ -82,6 +82,15 @@ impl SignalRuntime {
         self.emit(RuntimeEvent::PluginSandboxInstanceState { state });
     }
 
+    pub fn record_plugin_sandbox_lv2_prepared_negotiation(
+        &mut self,
+        sandbox_id: &str,
+        negotiation: RuntimeLv2PreparedNegotiationRecord,
+    ) {
+        self.plugin_lifecycle
+            .record_lv2_prepared_negotiation(sandbox_id, negotiation);
+    }
+
     pub fn record_heartbeat_cycle(
         &mut self,
         sandbox_id: impl Into<String>,
