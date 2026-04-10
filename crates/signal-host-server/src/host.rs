@@ -38,9 +38,11 @@ pub(crate) use host_support::{
 pub struct ServerRuntimeHost {
     runtime: SignalRuntime,
     broker: SharedMemoryBroker,
+    clap: ClapPluginHostAdapter,
     au: AuHostAdapter,
     lv2: Lv2HostAdapter,
     vst3: Vst3HostAdapter,
+    discovered_clap_types: HashMap<String, signal_plugin_clap::ClapDiscoveredPluginType>,
     discovered_au_types: HashMap<String, signal_plugin_au::AuDiscoveredPluginType>,
     discovered_lv2_types: HashMap<String, signal_plugin_lv2::Lv2DiscoveredPluginType>,
     discovered_vst3_types: HashMap<String, signal_plugin_vst3::Vst3DiscoveredPluginType>,
@@ -60,9 +62,11 @@ impl ServerRuntimeHost {
         Self {
             runtime,
             broker: SharedMemoryBroker::default(),
+            clap: ClapPluginHostAdapter::default(),
             au: AuHostAdapter::default(),
             lv2: Lv2HostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
+            discovered_clap_types: HashMap::new(),
             discovered_au_types: HashMap::new(),
             discovered_lv2_types: HashMap::new(),
             discovered_vst3_types: HashMap::new(),
@@ -84,7 +88,16 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
         request: PluginScanRequest,
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
         let handle = self.runtime.record_plugin_scan_request(&request);
-        let discoveries = discovered_plugins_for_scan(&self.au, &self.lv2, &self.vst3, &request);
+        let discoveries =
+            discovered_plugins_for_scan(&self.clap, &self.au, &self.lv2, &self.vst3, &request);
+        if request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap) {
+            self.discovered_clap_types = discoveries
+                .clap
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
+                .collect();
+        }
         if request.formats.is_empty() || request.formats.contains(&PluginFormat::Au) {
             self.discovered_au_types = discoveries
                 .au
@@ -133,16 +146,22 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             None,
         );
         if request.plugin_format == PluginFormat::Clap {
-            let clap = ClapPluginHostAdapter::default();
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()
-                .and_then(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+                .and_then(|plugin_type_id| self.discovered_clap_types.get(plugin_type_id))
+                .cloned()
+                .or_else(|| {
+                    request
+                        .plugin_type_id
+                        .as_deref()
+                        .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+                })
             {
                 if let Some(session) = ensure_clap_sandbox_session(
                     &mut self.runtime,
                     &self.broker,
-                    &clap,
+                    &self.clap,
                     &discovered,
                     &request,
                 )? {
@@ -372,16 +391,22 @@ impl RuntimeSupervisorApi for ServerRuntimeHost {
             return Ok(());
         };
         if request.plugin_format == PluginFormat::Clap {
-            let clap = ClapPluginHostAdapter::default();
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()
-                .and_then(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+                .and_then(|plugin_type_id| self.discovered_clap_types.get(plugin_type_id))
+                .cloned()
+                .or_else(|| {
+                    request
+                        .plugin_type_id
+                        .as_deref()
+                        .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+                })
             {
                 if let Some(session) = ensure_clap_sandbox_session(
                     &mut self.runtime,
                     &self.broker,
-                    &clap,
+                    &self.clap,
                     &discovered,
                     &request,
                 )? {

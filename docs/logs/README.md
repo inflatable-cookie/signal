@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  none; `g09` is closed and awaiting next-generation planning
+  `docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`
 
 ## Recent active-lane evidence
 
@@ -99,8 +99,11 @@ Use this section for:
 - `2026-04/10-210500-g09-014-runtime-host-hardware-broker-operational-verdict.md`
 - `2026-04/10-220500-g09-014-sandbox-broker-operational-verdict.md`
 - `2026-04/10-230500-g09-014-final-release-gate-closeout.md`
+- `2026-04/10-240500-g09-015-interactive-demo-strategy-and-gap-inventory.md`
+- `2026-04/10-243500-g09-015-plugin-discovery-reality-correction.md`
+- `2026-04/10-250500-g09-015-real-clap-discovery-and-vst3-au-ready.md`
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.

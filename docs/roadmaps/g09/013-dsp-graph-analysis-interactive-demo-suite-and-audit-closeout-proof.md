@@ -161,5 +161,5 @@ through tests and benchmarks.
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.

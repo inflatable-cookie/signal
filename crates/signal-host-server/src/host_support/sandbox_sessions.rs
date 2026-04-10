@@ -38,7 +38,7 @@ pub(crate) fn ensure_clap_sandbox_session(
         discovered.default_io_layout,
         2048,
     );
-    let mut harness = ClapSandboxLifecycleHarness::default();
+    let mut harness = ClapSandboxLifecycleHarness::with_adapter(clap.clone());
     let messages = protocol
         .lifecycle_sequence(
             broker,

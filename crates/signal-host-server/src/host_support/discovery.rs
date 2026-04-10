@@ -16,12 +16,14 @@ use super::metadata::{
 pub(crate) struct ServerScanDiscoveries {
     pub(crate) runtime_records: Vec<RuntimePluginDiscoveredTypeRecord>,
     pub(crate) runtime_diagnostics: Vec<RuntimePluginScanDiagnosticRecord>,
+    pub(crate) clap: Vec<signal_plugin_clap::ClapDiscoveredPluginType>,
     pub(crate) au: Vec<AuDiscoveredPluginType>,
     pub(crate) lv2: Vec<Lv2DiscoveredPluginType>,
     pub(crate) vst3: Vec<Vst3DiscoveredPluginType>,
 }
 
 pub(crate) fn discovered_plugins_for_scan(
+    clap: &ClapPluginHostAdapter,
     au: &AuHostAdapter,
     lv2: &Lv2HostAdapter,
     vst3: &Vst3HostAdapter,
@@ -29,16 +31,17 @@ pub(crate) fn discovered_plugins_for_scan(
 ) -> ServerScanDiscoveries {
     let mut runtime_records = Vec::new();
     let mut runtime_diagnostics = Vec::new();
+    let mut clap_discoveries = Vec::new();
     let mut au_discoveries = Vec::new();
     let mut lv2_discoveries = Vec::new();
     let mut vst3_discoveries = Vec::new();
     let include_clap = request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap);
     if include_clap {
-        let clap = ClapPluginHostAdapter::default();
+        clap_discoveries = clap.discover_plugins_for_roots(&request.roots);
         runtime_records.extend(
-            ["plugin:clap:server", "plugin:clap:sandbox"]
-                .into_iter()
-                .filter_map(|plugin_type_id| clap.discover_plugin_type(plugin_type_id))
+            clap_discoveries
+                .iter()
+                .cloned()
                 .map(runtime_plugin_discovered_type_record),
         );
     }
@@ -100,6 +103,7 @@ pub(crate) fn discovered_plugins_for_scan(
     ServerScanDiscoveries {
         runtime_records,
         runtime_diagnostics,
+        clap: clap_discoveries,
         au: au_discoveries,
         lv2: lv2_discoveries,
         vst3: vst3_discoveries,

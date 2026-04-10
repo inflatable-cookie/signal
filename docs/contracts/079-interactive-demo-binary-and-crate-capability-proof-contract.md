@@ -50,4 +50,4 @@ UI shells.
 ## Next Task
 
 Use this contract while executing
-Next-generation planning. `g09` is closed.
+`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.

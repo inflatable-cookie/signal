@@ -18,7 +18,7 @@
     "g09.011 freezes the first workspace coverage matrix but does not yet claim full domain demo implementation.",
     "Every active crate is mapped either to a deferred planned demo surface or an explicit live manifest list.",
     "The first live demo surfaces are deferred to g09.012 and g09.013.",
-    "Plugin capability browsing remains explicitly deferred beyond g09 because its demo-owned browse posture still wants fresh planning."
+    "g09.015 reopens the demo stream for operator-visible interactive proof, starting with the plugin capability browser."
   ],
   "crate_matrix": [
     {
@@ -59,16 +59,18 @@
     },
     {
       "crate": "signal-plugin",
-      "status": "deferred",
+      "status": "planned",
       "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "post-g09",
+      "planned_milestone": "g09.015",
+      "blocker": "real plugin discovery burn-down",
       "domain": "plugin"
     },
     {
       "crate": "signal-plugin-vst3",
-      "status": "deferred",
+      "status": "planned",
       "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "post-g09",
+      "planned_milestone": "g09.015",
+      "blocker": "real plugin discovery burn-down",
       "domain": "plugin"
     },
     {
@@ -85,9 +87,10 @@
     },
     {
       "crate": "signal-plugin-clap",
-      "status": "deferred",
+      "status": "planned",
       "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "post-g09",
+      "planned_milestone": "g09.015",
+      "blocker": "real plugin discovery burn-down",
       "domain": "plugin"
     },
     {

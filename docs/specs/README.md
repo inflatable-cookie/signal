@@ -3,8 +3,8 @@
 Status: active
 Updated: 2026-04-10
 
-Signal used a lane-first strict Northstar surface for `g09`. That generation
-is now closed.
+Signal is using a lane-first strict Northstar surface for the reopened `g09`
+interactive-demo stream.
 
 ## Purpose
 
@@ -34,15 +34,16 @@ strict surface that can be attached to one active generation at a time.
 - if no current ready card exists, do not infer the next code task from memory;
   re-enter planning first
 
-## Entry Points
+## Active Entry Points
 
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
 
-There is currently no ready batch card. `g09` is closed and awaiting
-next-generation planning.
+The current ready batch card is:
+
+- `batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.

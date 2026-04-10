@@ -7,6 +7,14 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
     ) -> Result<signal_runtime::ScanHandle, RuntimeError> {
         let handle = self.runtime.record_plugin_scan_request(&request);
         let discoveries = discovered_plugins_for_scan(&self.clap, &self.au, &self.vst3, &request);
+        if request.formats.is_empty() || request.formats.contains(&PluginFormat::Clap) {
+            self.discovered_clap_types = discoveries
+                .clap
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin))
+                .collect();
+        }
         if request.formats.is_empty() || request.formats.contains(&PluginFormat::Au) {
             self.discovered_au_types = discoveries
                 .au
@@ -47,7 +55,14 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()
-                .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+                .and_then(|plugin_type_id| self.discovered_clap_types.get(plugin_type_id))
+                .cloned()
+                .or_else(|| {
+                    request
+                        .plugin_type_id
+                        .as_deref()
+                        .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+                })
             {
                 if let Some(session) = ensure_clap_sandbox_session(
                     &mut self.runtime,
@@ -266,7 +281,14 @@ impl RuntimeSupervisorApi for LocalRuntimeHost {
             if let Some(discovered) = request
                 .plugin_type_id
                 .as_deref()
-                .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+                .and_then(|plugin_type_id| self.discovered_clap_types.get(plugin_type_id))
+                .cloned()
+                .or_else(|| {
+                    request
+                        .plugin_type_id
+                        .as_deref()
+                        .and_then(|plugin_type_id| self.clap.discover_plugin_type(plugin_type_id))
+                })
             {
                 if let Some(session) = ensure_clap_sandbox_session(
                     &mut self.runtime,

@@ -1,3 +1,8 @@
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use signal_plugin::{
     BlockDispatch, BlockProcessResult, BlockProcessingHeader, PluginDescriptor, PluginFormat,
     PluginInstanceId, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,
@@ -5,7 +10,7 @@ use signal_plugin::{
     SharedMemoryLease,
 };
 
-use crate::clap_sandbox_harness;
+use crate::{clap_sandbox_harness, discovery::discover_clap_plugins_for_roots};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClapHostExtension {
@@ -37,15 +42,17 @@ const MINIMUM_CLAP_EXTENSIONS: [ClapHostExtension; 4] = [
     ClapHostExtension::State,
 ];
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct ClapPluginHostAdapter {
     strict_sandbox_default: bool,
+    discovery_catalog: Arc<Mutex<HashMap<String, ClapDiscoveredPluginType>>>,
 }
 
 impl Default for ClapPluginHostAdapter {
     fn default() -> Self {
         Self {
             strict_sandbox_default: true,
+            discovery_catalog: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -73,7 +80,32 @@ impl ClapPluginHostAdapter {
     }
 
     pub fn discover_plugin_type(&self, plugin_type_id: &str) -> Option<ClapDiscoveredPluginType> {
+        if let Some(discovered) = self
+            .discovery_catalog
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(plugin_type_id)
+            .cloned()
+        {
+            return Some(discovered);
+        }
         clap_sandbox_harness::clap_discovered_plugin_type(plugin_type_id)
+    }
+
+    pub fn discover_plugins_for_roots(&self, roots: &[String]) -> Vec<ClapDiscoveredPluginType> {
+        let discovered = discover_clap_plugins_for_roots(roots);
+        let mut catalog = self
+            .discovery_catalog
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        catalog.clear();
+        catalog.extend(
+            discovered
+                .iter()
+                .cloned()
+                .map(|plugin| (plugin.plugin_type_id.0.clone(), plugin)),
+        );
+        discovered
     }
 
     pub fn instantiate_plugin(

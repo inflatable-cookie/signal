@@ -115,13 +115,13 @@ The deferred continuation scope after `g08` is:
 
 ## Strict lane
 
-Signal used a lane-first strict Northstar surface on `g09`, which is now
-closed:
+Signal is using a lane-first strict Northstar surface on the reopened `g09`
+interactive-demo stream:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  none; `g09` is closed and awaiting next-generation planning
+  `docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`
 
 ## Working Rule
 
@@ -131,5 +131,5 @@ closed:
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.

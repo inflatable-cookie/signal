@@ -63,20 +63,17 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Planned surfaces
 
-### `g09.012` runtime, host, plugin, and hardware suite
+### `g09.015` operator-visible interactive demos
 
 - `signal.demo.plugin.capability-browser`
   - crates: `signal-plugin`, `signal-plugin-vst3`, `signal-plugin-au`,
     `signal-plugin-clap`
+  - current blocker: real CLAP discovery and removal of VST3/AU metadata-file
+    discovery shims
 
 ## Deferred After g09
 
-- `signal.demo.plugin.capability-browser`
-  - deferred beyond `g09`
-  - remaining crates: `signal-plugin`, `signal-plugin-vst3`,
-    `signal-plugin-clap`
-  - rationale: demo-owned scan-root and browse-posture design still wants
-    fresh planning and is not part of the honest `g09` proof bundle
+- none at the current demo-planning layer
 
 ## Working rule
 
@@ -88,5 +85,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.

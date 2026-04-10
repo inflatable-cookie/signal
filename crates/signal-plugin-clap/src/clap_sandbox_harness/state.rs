@@ -53,6 +53,13 @@ impl Default for ClapSandboxLifecycleHarness {
 }
 
 impl ClapSandboxLifecycleHarness {
+    pub fn with_adapter(adapter: ClapPluginHostAdapter) -> Self {
+        Self {
+            adapter,
+            ..Self::default()
+        }
+    }
+
     pub(super) fn failure_input(
         &self,
         stage: &str,

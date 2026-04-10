@@ -28,6 +28,34 @@ fn clap_adapter_discovers_concrete_plugin_type_metadata() {
 }
 
 #[test]
+fn clap_adapter_scans_real_clap_libraries_from_roots() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.real-scan-fixture",
+        "Signal Real Scan Fixture",
+        1,
+    );
+
+    let discovered = adapter.discover_plugins_for_roots(&[scan_root.root()]);
+
+    assert_eq!(discovered.len(), 1);
+    let discovered = &discovered[0];
+    assert_eq!(discovered.plugin_type_id.0, "com.signal.real-scan-fixture");
+    assert_eq!(discovered.descriptor.plugin_id, "com.signal.real-scan-fixture");
+    assert_eq!(discovered.descriptor.name, "Signal Real Scan Fixture");
+    assert_eq!(discovered.descriptor.vendor, "Signal");
+    assert_eq!(discovered.default_io_layout.audio_inputs, 2);
+    assert_eq!(discovered.default_io_layout.audio_outputs, 2);
+    assert_eq!(discovered.default_io_layout.midi_inputs, 1);
+    assert_eq!(discovered.default_io_layout.midi_outputs, 1);
+    assert_eq!(discovered.descriptor.audio_buses.len(), 2);
+    assert_eq!(discovered.descriptor.parameters.len(), 2);
+    assert!(discovered.descriptor.state_contract.supports_snapshot);
+    assert!(discovered.descriptor.state_contract.exposes_latency);
+    assert!(discovered.descriptor.state_contract.exposes_tail);
+}
+
+#[test]
 fn clap_protocol_descriptor_projects_plugin_neutral_contract_surface() {
     let protocol = ClapBlockProtocol::new(
         "plugin:clap:test",

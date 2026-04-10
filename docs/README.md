@@ -17,8 +17,8 @@ planning surface.
 - `specs/` for the active lane-first strict `g09` surface
 
 Signal is still using a baseline Northstar spine overall. The `g09` generation
-used a reopened lane-first strict surface under `docs/specs/` and is now
-closed again.
+uses a reopened lane-first strict surface under `docs/specs/` for the current
+interactive-demo stream.
 
 ## Current Entry Points
 
@@ -32,7 +32,8 @@ closed again.
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card: none; `g09` is closed and awaiting next-generation planning
+- Active strict-lane card:
+  [specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md](./specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md)
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -56,5 +57,5 @@ closed again.
 
 ## Next Task
 
-Re-enter planning at the next-generation boundary before promoting another
-strict execution lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.

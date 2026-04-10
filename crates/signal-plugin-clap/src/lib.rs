@@ -2,6 +2,7 @@
 
 mod adapter;
 mod clap_sandbox_harness;
+mod discovery;
 mod event_translation;
 mod events;
 mod protocol;

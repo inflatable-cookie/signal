@@ -2,7 +2,8 @@
 mod public_host_edge_plugins_support;
 
 use public_host_edge_plugins_support::{
-    temp_public_local_au_scan_root, temp_public_local_vst3_scan_root,
+    temp_public_local_au_scan_root, temp_public_local_clap_scan_root,
+    temp_public_local_vst3_scan_root,
 };
 use signal_host_local::LocalRuntimeHost;
 use signal_plugin::PluginFormat;
@@ -15,12 +16,13 @@ use signal_runtime::{
 fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
+    let clap_root = temp_public_local_clap_scan_root();
     let vst3_root = temp_public_local_vst3_scan_root();
     let au_root = temp_public_local_au_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
         roots: vec![
-            "scan:clap:local-parity".into(),
+            clap_root.root(),
             vst3_root.root(),
             au_root.root(),
         ],
@@ -110,9 +112,10 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
 fn local_shared_host_edge_exports_bounded_clap_sandbox_lifecycle_truth() {
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
+    let clap_root = temp_public_local_clap_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec!["scan:clap:local-gap".into()],
+        roots: vec![clap_root.root()],
         formats: vec![PluginFormat::Clap],
     })
     .expect("public local clap scan should succeed");

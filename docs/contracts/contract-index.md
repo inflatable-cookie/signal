@@ -12,13 +12,14 @@ memory alone.
 
 ## Current Lane
 
-- Signal completed lane-first stricter adoption for the reopened `g09` queue
+- Signal is in lane-first stricter adoption for the reopened `g09`
+  interactive-demo queue
 - `001-working-rules` governs the strict-lane execution posture
-- `g09` is currently closed at the end of `g09.014`
+- `g09.015` is the current strict-execution milestone
 - `docs/specs/001-g09-lane-first-strict-adoption.md` records the completed
   strict-lane model
-- there is no current ready card; the repo is awaiting next-generation
-  planning
+- the current ready card is
+  `docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`
 
 ## Strict Lane Working Rule
 
@@ -132,6 +133,7 @@ memory alone.
 - `078` rhythm continuity, failure containment, and policy normalization
 - `079` interactive demo binary and crate-capability proof
 - `080` production readiness grade and generation release gate
+- `081` operator-visible interactive demo and low-dependency UI
 
 ## Working Rule
 
@@ -141,5 +143,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door while planning the next
-strict execution lane.
+Use this index as the contract-selection front door while executing
+`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
