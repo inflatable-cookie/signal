@@ -214,5 +214,5 @@ or explicitly re-scoped.
 
 ## Next Task
 
-Use this contract while executing
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Use this contract when reopening or auditing a future readiness gate after
+next-generation planning.

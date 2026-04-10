@@ -1,6 +1,6 @@
 # 039 - g09.014 Runtime Host Hardware Broker Operational Verdict
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Parent roadmap: `docs/roadmaps/g09/014-production-readiness-grade-and-generation-release-gate.md`
@@ -58,7 +58,18 @@ the still-blocked `signal-plugin-sandbox`.
 - one of the remaining crates needs substantial new implementation rather than
   a readiness verdict
 
+## Outcome
+
+- promoted `signal-runtime`, `signal-host-local`, `signal-host-server`,
+  `signal-hardware`, `signal-hardware-coreaudio`, and
+  `signal-supervisor-tools` to `production-ready for role`
+- kept `signal-plugin-sandbox` blocked as the final remaining crate-level gap
+  in reopened `g09`
+- narrowed that blocker to one explicit seam: a repo-owned long-lived broker
+  operational verdict is still missing beyond the bounded lifecycle, receipt,
+  and demo surfaces already in place
+
 ## Next Task
 
-Implement this card by classifying the remaining runtime, host, hardware,
-supervisor, and broker-operational family against the repaired `g09` gate.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/040-g09-014-sandbox-broker-operational-verdict.md`.

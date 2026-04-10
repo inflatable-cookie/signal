@@ -12,14 +12,13 @@ memory alone.
 
 ## Current Lane
 
-- Signal is in lane-first stricter adoption for the active reopened `g09`
-  queue
+- Signal completed lane-first stricter adoption for the reopened `g09` queue
 - `001-working-rules` governs the strict-lane execution posture
-- `g09.014` is the current strict-execution milestone
-- `docs/specs/001-g09-lane-first-strict-adoption.md` is the active strict-lane
-  spec
-- the current ready card is
-  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
+- `g09` is currently closed at the end of `g09.014`
+- `docs/specs/001-g09-lane-first-strict-adoption.md` records the completed
+  strict-lane model
+- there is no current ready card; the repo is awaiting next-generation
+  planning
 
 ## Strict Lane Working Rule
 
@@ -142,5 +141,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door while executing
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Use this index as the contract-selection front door while planning the next
+strict execution lane.

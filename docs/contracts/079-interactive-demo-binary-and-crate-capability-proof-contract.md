@@ -50,4 +50,4 @@ UI shells.
 ## Next Task
 
 Use this contract while executing
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Next-generation planning. `g09` is closed.

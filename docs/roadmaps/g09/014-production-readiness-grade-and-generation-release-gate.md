@@ -1,6 +1,6 @@
 # 014 - Production Readiness Grade And Generation Release Gate
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-10
 Depends on: g09.013
@@ -123,11 +123,67 @@ what remains intentionally deferred.
 - that should expose whether one final burn-down seam remains after the
   runtime/host/hardware/broker family is judged against the repaired gate
 
+#### Batch 14.2 Tranche 4 Outcome
+
+- promoted the remaining runtime, host, hardware, and supervisor family to
+  `production-ready for role`:
+  - `signal-runtime`
+  - `signal-host-local`
+  - `signal-host-server`
+  - `signal-hardware`
+  - `signal-hardware-coreaudio`
+  - `signal-supervisor-tools`
+- kept `signal-plugin-sandbox` blocked as the only remaining crate-level gap in
+  reopened `g09`
+- narrowed the remaining blocker to one explicit seam: a long-lived
+  broker-operational verdict beyond the bounded lifecycle, receipt, and demo
+  surfaces already in place
+
+#### Batch 14.2 Tranche 5 Ready Posture
+
+- the next highest-leverage seam is the final `signal-plugin-sandbox`
+  operational verdict
+- that batch will decide whether the existing broker-backed recovery and
+  lifecycle proof bundle is already enough for promotion or whether one final
+  burn-down seam still remains after the verdict attempt
+
+#### Batch 14.2 Tranche 5 Outcome
+
+- promoted `signal-plugin-sandbox` to `production-ready for role`
+- froze one explicit runnable broker-operational proof bundle across broker
+  internals plus local/server recovery, deferred-teardown, and cleanup-retry
+  host-edge surfaces
+- removed the final crate-level blocker from reopened `g09`
+- narrowed the remaining work to final release-gate closeout only
+
 ### Batch 14.3 - Final Release Gate
 
 - [ ] define the repo-owned `g09` production-readiness gate
 - [ ] record the final generation verdict and any truly deferred post-`g09`
       scope explicitly
+
+#### Batch 14.3 Ready Posture
+
+- the final release-gate closeout is now the only remaining seam in reopened
+  `g09`
+- that batch will rerun the complete gate, freeze the final per-crate verdict,
+  and close the generation with any genuinely deferred post-`g09` scope stated
+  explicitly
+
+#### Batch 14.3 Outcome
+
+- reran the reopened `g09` release gate cleanly:
+  - `effigy health`
+  - `effigy validate`
+  - `effigy demo:coverage-matrix`
+  - `effigy qa:docs`
+  - `effigy qa:northstar`
+- froze the final repo-owned generation verdict: every existing Signal
+  workspace crate is `production-ready for role`
+- kept the remaining deferred scope explicit and non-blocking for the existing
+  crate set:
+  - `signal.demo.plugin.capability-browser`
+- closed `g09.014` and returned the lane to next-generation planning
 
 ## Acceptance Criteria
 
@@ -178,35 +234,23 @@ first per-crate verdict inventory.
 - `signal-analysis-character`
 - `signal-analysis-embed`
 - `signal-graph`
+- `signal-runtime`
+- `signal-supervisor-tools`
+- `signal-host-local`
+- `signal-host-server`
+- `signal-hardware`
+- `signal-hardware-coreaudio`
 - `signal-ipc`
 - `signal-plugin`
 - `signal-plugin-clap`
 - `signal-plugin-vst3`
 - `signal-plugin-au`
 - `signal-plugin-lv2`
+- `signal-plugin-sandbox`
 
 #### Production-capable but blocked
 
-- `signal-runtime`
-  - blocked on the missing repo-owned production-readiness gate and release
-    verdict for its public/runtime role
-- `signal-supervisor-tools`
-  - blocked on the same missing release/readiness gate surface it must help
-    describe
-- `signal-host-local`
-  - blocked on release-grade gate and required validation posture, not on the
-    old CLAP bootstrap gap
-- `signal-host-server`
-  - blocked on release-grade gate and required validation posture
-- `signal-hardware`
-  - blocked on explicit role-correct production verdict for backend-neutral
-    hardware posture
-- `signal-hardware-coreaudio`
-  - blocked on production-grade backend gate depth beyond the bounded macOS
-    proof lane
-- `signal-plugin-sandbox`
-  - blocked on an explicit long-lived broker production verdict rather than the
-    bounded lifecycle, receipt, and demo posture alone
+- none after Batch 14.2 Tranche 5
 
 #### Explicitly deferred or not ready
 
@@ -235,5 +279,5 @@ first per-crate verdict inventory.
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

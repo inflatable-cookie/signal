@@ -1,6 +1,6 @@
 # 001 - g09 Lane-First Strict Adoption
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Vision refs: docs/vision/001-signal-vision.md
@@ -25,16 +25,17 @@ bounded strict surface on the live `g09` queue:
 
 ## Current Posture
 
-- current phase: `lane-first stricter adoption`
-- scope: active reopened `g09` lane
-- active milestone: `g09.014`
-- immediate follow-on boundary: next `post-g09` planning boundary
+- current phase: `lane-first stricter adoption complete`
+- scope: closed `g09` lane
+- active milestone: none; `g09` is closed at the end of `g09.014`
+- immediate follow-on boundary: next-generation planning boundary
 
 ## Goals
 
 - install the minimum strict docs pack around the live `g09` lane
-- bind each current active `g09` batch to one explicit ready card
-- keep the next boundary into `g09.012` explicit instead of implied
+- bind each active `g09` batch to one explicit ready card while the generation
+  is open
+- return the lane to explicit next-generation planning once `g09` closes
 
 ## Non-Goals
 
@@ -51,7 +52,7 @@ bounded strict surface on the live `g09` queue:
 
 ### Phase 2
 
-- bind the active `g09.014` batch to one ready card
+- bind the reopened `g09.014` batch to one ready card
 - keep the reopened production-readiness gate explicit until the generation can
   close honestly
 
@@ -79,5 +80,5 @@ bounded strict surface on the live `g09` queue:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

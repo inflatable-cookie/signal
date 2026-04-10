@@ -115,13 +115,13 @@ The deferred continuation scope after `g08` is:
 
 ## Strict lane
 
-Signal is now using a lane-first strict Northstar surface on the active `g09`
-queue:
+Signal used a lane-first strict Northstar surface on `g09`, which is now
+closed:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
+  none; `g09` is closed and awaiting next-generation planning
 
 ## Working Rule
 
@@ -131,5 +131,5 @@ queue:
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

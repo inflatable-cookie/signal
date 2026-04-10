@@ -29,9 +29,10 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ### Lane-first strict posture
 
-- The first strict lane is attached to the live `g09` queue.
-- `g09.014` is the current strict-execution milestone.
-- The immediate follow-on boundary is `g09.014`.
+- The first strict lane was attached to the `g09` queue.
+- `g09` is currently closed at the end of `g09.014`.
+- The immediate follow-on boundary is next-generation planning, not another
+  active `g09` execution card.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
 
@@ -99,5 +100,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ## Next Task
 
-Use this contract while executing
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Use this contract when reopening strict execution after next-generation
+planning.

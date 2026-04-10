@@ -16,8 +16,9 @@ planning surface.
 - `research/`
 - `specs/` for the active lane-first strict `g09` surface
 
-Signal is still using a baseline Northstar spine overall, but the active `g09`
-queue now has a reopened lane-first strict surface under `docs/specs/`.
+Signal is still using a baseline Northstar spine overall. The `g09` generation
+used a reopened lane-first strict surface under `docs/specs/` and is now
+closed again.
 
 ## Current Entry Points
 
@@ -30,9 +31,8 @@ queue now has a reopened lane-first strict surface under `docs/specs/`.
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
-- Active strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card:
-  [specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md](./specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md)
+- Strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
+- Active strict-lane card: none; `g09` is closed and awaiting next-generation planning
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -48,13 +48,13 @@ queue now has a reopened lane-first strict surface under `docs/specs/`.
   reusable library boundary
 - keep section indexes aligned to Northstar conventions
 - treat `legacy/cpp/` as reference surface, not primary implementation surface
-- treat the active `g09` queue as a lane-first strict Northstar surface under
-  `docs/specs/`
+- treat the active generation as a lane-first strict Northstar surface under
+  `docs/specs/` only while that generation is explicitly open
 - in the strict lane, treat a bare `continue` as "follow the previous closeout's
   `Next Task`" rather than as permission to infer a new batch
 - if there is no current ready card, re-enter planning instead of improvising
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

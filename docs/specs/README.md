@@ -3,20 +3,20 @@
 Status: active
 Updated: 2026-04-10
 
-Signal is now using a lane-first strict Northstar surface for the active `g09`
-queue.
+Signal used a lane-first strict Northstar surface for `g09`. That generation
+is now closed.
 
 ## Purpose
 
 Use this folder for the active strict lane only:
 
-- one live spec that binds the stricter execution model to the current `g09`
-  work
+- one live spec that binds the stricter execution model to the active
+  generation while it is open
 - bounded batch cards that let the active thread continue without fresh
   planning decisions
 
 Signal is not yet using specs as a repo-wide default. This is a lane-first
-strict surface attached to the active `g09` work.
+strict surface that can be attached to one active generation at a time.
 
 ## Rules
 
@@ -34,16 +34,15 @@ strict surface attached to the active `g09` work.
 - if no current ready card exists, do not infer the next code task from memory;
   re-enter planning first
 
-## Active Entry Points
+## Entry Points
 
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
 
-The current ready batch card is:
-
-- `batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
+There is currently no ready batch card. `g09` is closed and awaiting
+next-generation planning.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

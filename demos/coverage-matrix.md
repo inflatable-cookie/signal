@@ -88,5 +88,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

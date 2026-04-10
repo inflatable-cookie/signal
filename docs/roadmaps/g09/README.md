@@ -1,6 +1,6 @@
 # g09 Milestones
 
-Status: active
+Status: complete
 Updated: 2026-04-10
 
 ## Why this generation matters now
@@ -60,7 +60,7 @@ proof:
   - host/runtime/plugin/hardware interactive demo suite
 - `g09.013` `complete`
   - DSP/graph/analysis interactive demo suite and audit closeout proof
-- `g09.014` `active`
+- `g09.014` `complete`
   - production readiness grade and generation release gate
 
 ## Lane structure
@@ -94,13 +94,13 @@ with proof instead of prose.
 
 ## Strict lane attachment
 
-`g09` is carrying a lane-first strict Northstar surface through the reopened
-production-readiness gate.
+`g09` carried a lane-first strict Northstar surface through the reopened
+production-readiness gate and is now closed again.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
+  - none; `g09` is closed and awaiting next-generation planning
 
 ## Working rules for this thread
 
@@ -114,5 +114,5 @@ production-readiness gate.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

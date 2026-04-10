@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
+  none; `g09` is closed and awaiting next-generation planning
 
 ## Recent active-lane evidence
 
@@ -96,8 +96,11 @@ Use this section for:
 - `2026-04/10-180500-g09-014-release-gate-baseline.md`
 - `2026-04/10-190500-g09-014-workspace-validate-surface-repair.md`
 - `2026-04/10-200500-g09-014-plugin-broker-readiness-verdict.md`
+- `2026-04/10-210500-g09-014-runtime-host-hardware-broker-operational-verdict.md`
+- `2026-04/10-220500-g09-014-sandbox-broker-operational-verdict.md`
+- `2026-04/10-230500-g09-014-final-release-gate-closeout.md`
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.
