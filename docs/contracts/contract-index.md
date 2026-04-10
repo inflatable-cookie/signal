@@ -12,13 +12,11 @@ memory alone.
 
 ## Current Lane
 
-- Signal is in lane-first stricter adoption for the active `g09` queue
+- Signal completed lane-first stricter adoption for the `g09` queue
 - `001-working-rules` governs the strict-lane execution posture
-- `g09.013` is the current strict-execution milestone
-- `docs/specs/001-g09-lane-first-strict-adoption.md` is the active strict-lane
-  spec
-- the current ready card is
-  `docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
+- `docs/specs/001-g09-lane-first-strict-adoption.md` records the closed strict
+  lane for `g09`
+- there is currently no ready card for a next-generation strict lane
 
 ## Strict Lane Working Rule
 
@@ -140,5 +138,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door while executing
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+Use this index as the contract-selection front door while planning the
+next-generation boundary after `g09` closeout.

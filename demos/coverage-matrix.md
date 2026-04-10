@@ -69,6 +69,15 @@ workspace without overclaiming live demo coverage before `g09.012` and
   - crates: `signal-plugin`, `signal-plugin-vst3`, `signal-plugin-au`,
     `signal-plugin-clap`
 
+## Deferred After g09
+
+- `signal.demo.plugin.capability-browser`
+  - deferred beyond `g09`
+  - remaining crates: `signal-plugin`, `signal-plugin-vst3`,
+    `signal-plugin-clap`
+  - rationale: demo-owned scan-root and browse-posture design still wants
+    fresh planning and is not part of the honest `g09` proof bundle
+
 ## Working rule
 
 - do not mark a crate as live-covered until a manifest in `demos/manifests/`
@@ -79,5 +88,6 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: the `g09` demo coverage matrix is closed through the active proof
+bundle. Re-enter planning at the next-generation boundary before promoting more
+demo surfaces.

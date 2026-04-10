@@ -39,11 +39,11 @@ strict surface attached to the active `g09` work.
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
 
-The current ready batch card is:
-
-- `batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
+There is currently no ready batch card. The active strict lane is back in
+planning because the `g09` strict lane is closed and the next-generation
+boundary is not promoted yet.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: the active `g09` strict lane is closed. Re-enter planning at the
+next-generation boundary before promoting another ready card.

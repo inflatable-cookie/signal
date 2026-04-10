@@ -30,8 +30,9 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ### Lane-first strict posture
 
 - The first strict lane is attached to the live `g09` queue.
-- `g09.013` is the current strict-execution milestone.
-- The immediate follow-on boundary is `g09.013`.
+- `g09` is now closed.
+- There is no current strict-execution milestone until the next generation is
+  promoted.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
 
@@ -99,5 +100,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ## Next Task
 
-Use this contract while executing
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+Use this contract while planning the next-generation boundary after `g09`
+closeout.

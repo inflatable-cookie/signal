@@ -1,6 +1,6 @@
 # 001 - g09 Lane-First Strict Adoption
 
-Status: active
+Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Vision refs: docs/vision/001-signal-vision.md
@@ -25,9 +25,9 @@ bounded strict surface on the live `g09` queue:
 
 ## Current Posture
 
-- current phase: `lane-first stricter adoption`
-- scope: active `g09` lane only
-- active milestone: `g09.013`
+- current phase: `lane-first stricter adoption complete for g09`
+- scope: closed `g09` lane
+- active milestone: none
 - immediate follow-on boundary: next `g10` planning boundary
 
 ## Goals
@@ -78,5 +78,5 @@ bounded strict surface on the live `g09` queue:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: the lane-first strict `g09` surface is closed. Re-enter planning at
+the next-generation boundary before promoting another strict execution lane.

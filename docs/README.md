@@ -16,8 +16,9 @@ planning surface.
 - `research/`
 - `specs/` for the active lane-first strict `g09` surface
 
-Signal is still using a baseline Northstar spine overall, but the active `g09`
-queue now has a lane-first strict surface under `docs/specs/`.
+Signal is still using a baseline Northstar spine overall, but the `g09` queue
+carried a lane-first strict surface under `docs/specs/`, which is now closed
+at the next-generation planning boundary.
 
 ## Current Entry Points
 
@@ -31,8 +32,8 @@ queue now has a lane-first strict surface under `docs/specs/`.
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Active strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card:
-  [specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md](./specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md)
+- Active strict-lane card: none; `g09` is closed and the next-generation
+  boundary is not promoted yet
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -56,5 +57,5 @@ queue now has a lane-first strict surface under `docs/specs/`.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: the active `g09` strict lane is closed. Re-enter planning at the
+next-generation boundary before promoting another ready card.

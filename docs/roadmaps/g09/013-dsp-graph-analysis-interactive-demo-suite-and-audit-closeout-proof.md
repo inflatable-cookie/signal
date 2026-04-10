@@ -99,6 +99,28 @@ through tests and benchmarks.
 - it must stay additive over the existing manifests, receipts, Effigy tasks,
   and coverage matrix instead of reopening implementation work
 
+#### Batch 13.3 Tranche 1 Outcome
+
+- compiled the final `g09` demo proof bundle around the existing repo-owned
+  manifests, receipts, coverage matrix, and Effigy demo tasks
+- recorded the remaining deferred demo scope explicitly: plugin capability
+  browsing for `signal-plugin`, `signal-plugin-vst3`, and `signal-plugin-clap`
+  remains outside `g09`
+- the final live proof bundle is now explicit:
+  - `effigy demo:coverage-matrix`
+  - `effigy demo:sandbox-lifecycle`
+  - `effigy demo:runtime-recovery-inspector`
+  - `effigy demo:supervisor-runtime-boundary-companion`
+  - `effigy demo:local-server-host-comparison`
+  - `effigy demo:hardware-topology-diagnostics`
+  - `effigy demo:macos-au-coreaudio-boundary`
+  - `effigy demo:linux-lv2-and-backend-boundary`
+  - `effigy demo:graph-execution-inspector`
+  - `effigy demo:dsp-processing-lab`
+  - `effigy demo:analysis-feature-inspector`
+- `g09.013` now closes with an explicit next-generation planning boundary
+  instead of an implied continuation
+
 ### Batch 13.2 - Analysis Demo Paths
 
 - [ ] add rhythm, tonal, loudness, character, and semantic-analysis scenarios
@@ -109,15 +131,15 @@ through tests and benchmarks.
 
 ### Batch 13.3 - Audit Closeout Proof
 
-- [ ] compile a crate-coverage matrix across all demo binaries and scenarios
-- [ ] record unresolved deferred scope after `g09`
-- [ ] define the final remediation proof bundle and the next generation handoff
+- [x] compile a crate-coverage matrix across all demo binaries and scenarios
+- [x] record unresolved deferred scope after `g09`
+- [x] define the final remediation proof bundle and the next generation handoff
 
 ## Acceptance Criteria
 
-- [ ] DSP, graph, and analysis crates have repo-owned interactive proof paths
-- [ ] demo coverage and deferred scope are explicit at generation closeout
-- [ ] `g09` can close with evidence about what Signal really does today
+- [x] DSP, graph, and analysis crates have repo-owned interactive proof paths
+- [x] demo coverage and deferred scope are explicit at generation closeout
+- [x] `g09` can close with evidence about what Signal really does today
 
 ## Risks And Mitigations
 
@@ -131,13 +153,13 @@ through tests and benchmarks.
 
 ## Evidence Requirements
 
-- [ ] log each DSP/graph/analysis demo tranche
-- [ ] run the domain demo launch tasks and record manifest output
-- [ ] run `effigy health`
-- [ ] run `effigy qa:docs`
-- [ ] capture the final `g09` deferred-scope record
+- [x] log each DSP/graph/analysis demo tranche
+- [x] run the domain demo launch tasks and record manifest output
+- [x] run `effigy health`
+- [x] run `effigy qa:docs`
+- [x] capture the final `g09` deferred-scope record
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: `g09.013` is closed. Re-enter planning at the next-generation
+boundary instead of continuing the `g09` strict lane.

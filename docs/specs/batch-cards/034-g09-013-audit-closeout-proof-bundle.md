@@ -1,6 +1,6 @@
 # 034 - g09.013 Audit Closeout Proof Bundle
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Parent roadmap: `docs/roadmaps/g09/013-dsp-graph-analysis-interactive-demo-suite-and-audit-closeout-proof.md`
@@ -66,6 +66,5 @@ handoff inspectable without inventing another product or runtime surface.
 
 ## Next Task
 
-Implement this card by compiling the final `g09` demo coverage and deferred
-scope record, then close `g09.013` with an explicit audit-remediation proof
-bundle and next-generation handoff posture.
+COMPLETED: `g09.013` is closed. Re-enter planning at the next-generation
+boundary instead of continuing the `g09` strict lane.

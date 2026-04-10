@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
+  none
 
 ## Recent active-lane evidence
 
@@ -90,8 +90,9 @@ Use this section for:
 - `2026-04/10-131500-g09-013-analysis-feature-inspector-ready-handoff.md`
 - `2026-04/10-140500-g09-013-analysis-feature-inspector-closeout.md`
 - `2026-04/10-143500-g09-013-audit-closeout-ready-handoff.md`
+- `2026-04/10-151500-g09-013-audit-closeout-and-generation-complete.md`
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: the active `g09` strict lane is closed. Re-enter planning at the
+next-generation boundary before promoting another ready card.

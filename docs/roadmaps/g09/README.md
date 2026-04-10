@@ -1,6 +1,6 @@
 # g09 Milestones
 
-Status: active
+Status: complete
 Updated: 2026-04-09
 
 ## Why this generation matters now
@@ -58,7 +58,7 @@ proof:
   - interactive demo substrate, manifest, and operator conventions
 - `g09.012` `complete`
   - host/runtime/plugin/hardware interactive demo suite
-- `g09.013` `active`
+- `g09.013` `complete`
   - DSP/graph/analysis interactive demo suite and audit closeout proof
 
 ## Lane structure
@@ -92,12 +92,12 @@ with proof instead of prose.
 
 ## Strict lane attachment
 
-`g09` is now carrying a lane-first strict Northstar surface.
+`g09` carried a lane-first strict Northstar surface through generation closeout.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
+  none
 
 ## Working rules for this thread
 
@@ -111,5 +111,5 @@ with proof instead of prose.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
+before promoting a new strict lane card.

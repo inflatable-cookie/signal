@@ -49,5 +49,5 @@ UI shells.
 
 ## Next Task
 
-Use this contract while executing
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+Use this contract while planning the next-generation boundary after `g09`
+closeout.
