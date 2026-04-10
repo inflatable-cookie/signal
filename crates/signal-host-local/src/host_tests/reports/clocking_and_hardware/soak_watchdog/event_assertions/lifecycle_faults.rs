@@ -1,8 +1,10 @@
 use super::super::super::super::super::*;
+use crate::LocalRuntimeHostSummary;
+use signal_runtime::RuntimeSupervisorReport;
 
 pub(super) fn assert_mixed_watchdog_lifecycle_faults(
     _summary: &LocalRuntimeHostSummary,
-    supervisor: &RuntimeHostSupervisorReport,
+    supervisor: &RuntimeSupervisorReport,
 ) {
     assert_eq!(supervisor.recovery_event_count(), 3);
     assert_eq!(

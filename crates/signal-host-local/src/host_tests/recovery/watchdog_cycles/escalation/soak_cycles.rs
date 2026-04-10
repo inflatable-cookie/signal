@@ -1,4 +1,6 @@
+#[path = "soak_cycles/event_accounting.rs"]
 mod event_accounting;
+#[path = "soak_cycles/summary_assertions.rs"]
 mod summary_assertions;
 
 use super::super::super::*;

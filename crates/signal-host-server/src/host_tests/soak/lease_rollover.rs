@@ -1,4 +1,6 @@
+#[path = "lease_rollover/event_accounting.rs"]
 mod event_accounting;
+#[path = "lease_rollover/summary_assertions.rs"]
 mod summary_assertions;
 
 use super::*;

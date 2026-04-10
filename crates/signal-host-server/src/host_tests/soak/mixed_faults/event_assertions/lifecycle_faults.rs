@@ -1,10 +1,10 @@
 use signal_runtime::{
     HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-    RecoveryRestartIntent, RuntimeEvent, RuntimeHostSupervisorReport, StopReason,
+    RecoveryRestartIntent, RuntimeEvent, RuntimeSupervisorReport, StopReason,
 };
 
 pub(super) fn assert_mixed_watchdog_lifecycle_faults(
-    supervisor: &RuntimeHostSupervisorReport,
+    supervisor: &RuntimeSupervisorReport,
 ) {
     assert_eq!(supervisor.recovery_event_count(), 3);
     assert_eq!(

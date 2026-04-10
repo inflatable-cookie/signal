@@ -1,4 +1,6 @@
+#[path = "timeout_recovery/continuity_assertions.rs"]
 mod continuity_assertions;
+#[path = "timeout_recovery/execution_assertions.rs"]
 mod execution_assertions;
 
 use super::super::host_test_support::{

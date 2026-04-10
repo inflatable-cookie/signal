@@ -1,4 +1,6 @@
+#[path = "timeout_prework/engine_snapshot.rs"]
 mod engine_snapshot;
+#[path = "timeout_prework/transport_continuity.rs"]
 mod transport_continuity;
 
 use super::super::*;

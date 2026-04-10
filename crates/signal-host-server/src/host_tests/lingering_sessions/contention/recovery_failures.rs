@@ -1,5 +1,5 @@
-use super::super::super::host_test_support::prepare_server_host_without_lifecycle;
-use super::super::super::ServerRuntimeHost;
+use crate::host::host_test_support::prepare_server_host_without_lifecycle;
+use crate::ServerRuntimeHost;
 use signal_runtime::{
     BrokerFailureStage, RuntimeConfig, RuntimeErrorKind, RuntimeReadiness, SignalRuntime,
     StopReason,

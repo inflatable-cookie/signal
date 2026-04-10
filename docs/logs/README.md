@@ -1,7 +1,7 @@
 # Logs
 
 Status: active
-Updated: 2026-04-09
+Updated: 2026-04-10
 
 ## Why this section matters now
 
@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  none
+  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
 
 ## Recent active-lane evidence
 
@@ -91,8 +91,13 @@ Use this section for:
 - `2026-04/10-140500-g09-013-analysis-feature-inspector-closeout.md`
 - `2026-04/10-143500-g09-013-audit-closeout-ready-handoff.md`
 - `2026-04/10-151500-g09-013-audit-closeout-and-generation-complete.md`
+- `2026-04/10-160500-g09-reopened-for-production-readiness-recovery.md`
+- `2026-04/10-170500-g09-014-readiness-rubric-and-gap-inventory.md`
+- `2026-04/10-180500-g09-014-release-gate-baseline.md`
+- `2026-04/10-190500-g09-014-workspace-validate-surface-repair.md`
+- `2026-04/10-200500-g09-014-plugin-broker-readiness-verdict.md`
 
 ## Next Task
 
-COMPLETED: the active `g09` strict lane is closed. Re-enter planning at the
-next-generation boundary before promoting another ready card.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

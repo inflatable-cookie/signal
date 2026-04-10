@@ -1,7 +1,7 @@
 # Specs
 
 Status: active
-Updated: 2026-04-09
+Updated: 2026-04-10
 
 Signal is now using a lane-first strict Northstar surface for the active `g09`
 queue.
@@ -39,11 +39,11 @@ strict surface attached to the active `g09` work.
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
 
-There is currently no ready batch card. The active strict lane is back in
-planning because the `g09` strict lane is closed and the next-generation
-boundary is not promoted yet.
+The current ready batch card is:
+
+- `batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
 
 ## Next Task
 
-COMPLETED: the active `g09` strict lane is closed. Re-enter planning at the
-next-generation boundary before promoting another ready card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

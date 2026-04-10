@@ -1,8 +1,10 @@
 use super::super::super::super::super::*;
+use crate::LocalRuntimeHostSummary;
+use signal_runtime::RuntimeSupervisorReport;
 
 pub(super) fn assert_mixed_watchdog_dispatch_accounting(
     _summary: &LocalRuntimeHostSummary,
-    supervisor: &RuntimeHostSupervisorReport,
+    supervisor: &RuntimeSupervisorReport,
 ) {
     assert_eq!(supervisor.block_dispatch_event_count(), 28);
     assert_eq!(supervisor.lease_rollover_event_count(), 2);

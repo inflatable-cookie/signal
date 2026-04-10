@@ -1,6 +1,6 @@
-use super::super::super::host_test_support::assert_runtime_automation_continuity;
-use super::super::super::host_test_support::assert_runtime_sequence_continuity;
-use super::super::super::ServerRuntimeHost;
+use crate::host::host_test_support::assert_runtime_automation_continuity;
+use crate::host::host_test_support::assert_runtime_sequence_continuity;
+use crate::ServerRuntimeHost;
 use signal_runtime::{
     RuntimeConfig, RuntimeErrorKind, RuntimeReadiness, SignalRuntime, StopReason,
 };

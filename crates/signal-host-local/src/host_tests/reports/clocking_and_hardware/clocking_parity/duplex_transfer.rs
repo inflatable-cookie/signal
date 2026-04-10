@@ -1,4 +1,5 @@
 use super::super::super::super::*;
+use crate::host::host_support;
 
 #[test]
 fn local_host_shared_report_surfaces_duplex_cross_clock_mismatch() {
@@ -192,7 +193,7 @@ fn host_audio_transfer_bounds_channels_and_zero_fills_unwritten_output() {
         zero_fill_unwritten_output: true,
     };
 
-    let transfer = super::super::super::super::host_support::transfer_runtime_output_to_host_buffer(
+    let transfer = host_support::transfer_runtime_output_to_host_buffer(
         &runtime_output,
         &stream,
         policy.into(),
@@ -200,7 +201,7 @@ fn host_audio_transfer_bounds_channels_and_zero_fills_unwritten_output() {
 
     assert_eq!(
         transfer.outcome,
-        super::super::super::super::host_support::LocalAudioTransferOutcome {
+        host_support::LocalAudioTransferOutcome {
             copied_samples: 6,
             zero_filled_samples: 2,
             dropped_samples: 6,

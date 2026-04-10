@@ -5,13 +5,13 @@ use super::super::super::super::host_test_support::{
 use super::super::super::super::host_support::ServerRuntimeHostSummary;
 use super::super::super::super::ServerRuntimeHost;
 use signal_runtime::{
-    RecoveryRestartIntent, RuntimeHostSupervisorReport, RuntimeObservationApi, StopReason,
+    RecoveryRestartIntent, RuntimeObservationApi, RuntimeSupervisorReport, StopReason,
 };
 
 pub(super) fn assert_mixed_watchdog_summary(
     host: &ServerRuntimeHost,
     summary: &ServerRuntimeHostSummary,
-    supervisor: &RuntimeHostSupervisorReport,
+    supervisor: &RuntimeSupervisorReport,
 ) {
     assert_eq!(summary.execution.processing_epoch, 4);
     assert_eq!(summary.execution.restart_count, 3);

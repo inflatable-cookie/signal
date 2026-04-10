@@ -1,4 +1,5 @@
 use super::super::super::*;
+use std::path::Path;
 
 #[test]
 fn local_host_sweeps_prior_late_lingering_before_next_overlap_recovery() {

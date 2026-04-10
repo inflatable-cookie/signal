@@ -1,4 +1,5 @@
 use super::super::*;
+use std::path::Path;
 
 #[test]
 fn local_host_sweeps_orphan_lingering_sessions_before_overlap_recovery() {

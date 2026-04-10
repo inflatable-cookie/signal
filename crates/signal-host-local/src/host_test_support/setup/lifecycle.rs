@@ -1,4 +1,4 @@
-use super::super::super::{local_demo_runtime_assembly, LifecycleRunSummary, LocalRuntimeHost};
+use super::super::super::{host_support::local_demo_runtime_assembly, LifecycleRunSummary, LocalRuntimeHost};
 use signal_plugin::PluginFormat;
 use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{

@@ -1,4 +1,5 @@
 use super::super::*;
+use std::fs;
 
 #[test]
 fn local_host_round_trips_delegated_offline_execution_through_runtime_finalization() {

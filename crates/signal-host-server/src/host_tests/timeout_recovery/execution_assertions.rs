@@ -3,7 +3,7 @@ use signal_runtime::{
     RuntimePreworkServiceSemanticPolicy, RuntimeSupervisorReport,
 };
 
-use crate::host_support::ServerRuntimeHostSummary;
+use crate::host::host_support::ServerRuntimeHostSummary;
 
 pub(super) fn assert_timeout_recovery_execution(
     summary: &ServerRuntimeHostSummary,

@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-08
+Updated: 2026-04-10
 Related contracts: `docs/contracts/011-shared-downstream-conformance-and-release-acceptance-automation-contract.md`, `docs/contracts/071-generation-closeout-and-downstream-workflow-readiness-gate-contract.md`
 Related architecture: `docs/architecture/system-architecture.md`, `docs/architecture/system-inventory.md`
 
@@ -49,5 +49,5 @@ UI shells.
 
 ## Next Task
 
-Use this contract while planning the next-generation boundary after `g09`
-closeout.
+Use this contract while executing
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

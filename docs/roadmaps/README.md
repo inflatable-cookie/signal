@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-04-08
+Updated: 2026-04-10
 
 ## Why this section matters now
 
@@ -25,9 +25,9 @@ Use this section for:
 ## Current posture
 
 `g06`, `g07`, and `g08` are now complete. `g09` is now active as the
-post-audit remediation generation covering real plugin-hosting and native-
-backend realization, runtime and host structural repair, low-level hardening,
-fidelity uplift, rhythm resilience, and interactive demo proof. The earlier
+reopened production-readiness generation covering the prior post-audit
+remediation runway plus the final role-correct release gate for the existing
+crate set. The earlier
 post-`g08` backlog note remains in
 `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`.
 `g01` established the Rust workspace, engine, host/device
@@ -120,7 +120,8 @@ queue:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card:
+  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
 
 ## Working Rule
 
@@ -130,5 +131,5 @@ queue:
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane before promoting another
-`g09.012` batch card.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

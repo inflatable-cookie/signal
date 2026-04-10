@@ -1,4 +1,5 @@
 use super::super::super::super::*;
+use std::fs;
 
 #[test]
 fn local_host_shared_report_surfaces_runtime_media_service_baseline() {

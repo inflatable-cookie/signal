@@ -1,4 +1,6 @@
+#[path = "mixed_faults/event_assertions.rs"]
 mod event_assertions;
+#[path = "mixed_faults/summary_assertions.rs"]
 mod summary_assertions;
 
 use super::*;

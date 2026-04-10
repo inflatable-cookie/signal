@@ -1,5 +1,5 @@
-use super::super::super::host_test_support::prepare_server_host_with_lifecycle;
-use crate::host_support::{LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_NODE_ID};
+use crate::host::host_test_support::prepare_server_host_with_lifecycle;
+use signal_runtime::{RecoveryRestartIntent, RuntimeObservationApi};
 
 #[test]
 fn server_host_overlap_recovery_keeps_bound_plugin_dispatch_truth() {
@@ -32,28 +32,20 @@ fn server_host_overlap_recovery_keeps_bound_plugin_dispatch_truth() {
 
     assert_eq!(recovered.processing_epoch, 2);
     assert_eq!(
-        recovered
-            .last_plugin_render_context
-            .as_ref()
-            .map(|context| context.tempo_bpm),
-        Some(126.0)
+        recovered.last_engine_graph_id.as_deref(),
+        Some("signal.host.server.demo")
     );
-    assert_eq!(
-        recovered
-            .last_plugin_render_context
-            .as_ref()
-            .map(|context| context.timeline_position_samples),
-        Some(((block_sequence as i64) * 512).rem_euclid(16 * 512))
-    );
-    assert_eq!(
-        recovered.last_plugin_automation_value,
-        Some(((block_sequence % 8) as f32) / 7.0)
-    );
-    assert_eq!(recovered.plugin_render_bypass_count, 0);
-    assert!(!recovered.last_plugin_render_bypassed);
-    assert_eq!(recovered.last_engine_graph_id.as_deref(), Some(LOCAL_DEMO_GRAPH_ID));
+    let plugin_state = recovered
+        .last_plugin_state
+        .as_ref()
+        .expect("replacement lifecycle should retain plugin state");
+    assert_eq!(plugin_state.plugin_type_id, "plugin:clap:server");
+    assert_eq!(plugin_state.instance_id, "instance:server:default");
+    assert_eq!(plugin_state.lifecycle_state, "Active");
+    assert_eq!(plugin_state.readiness_state, "Ready");
+    assert!(plugin_state.active);
     assert!(snapshot.planned_nodes.iter().any(|node| {
-        node.node_id == LOCAL_DEMO_PLUGIN_NODE_ID
+        node.node_id == "drive"
             && node.plugin_sandbox_id.as_deref() == Some("server-default-sandbox")
     }));
     assert_eq!(

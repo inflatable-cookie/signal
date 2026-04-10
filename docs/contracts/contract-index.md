@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-09
+Updated: 2026-04-10
 
 ## Purpose
 
@@ -12,11 +12,14 @@ memory alone.
 
 ## Current Lane
 
-- Signal completed lane-first stricter adoption for the `g09` queue
+- Signal is in lane-first stricter adoption for the active reopened `g09`
+  queue
 - `001-working-rules` governs the strict-lane execution posture
-- `docs/specs/001-g09-lane-first-strict-adoption.md` records the closed strict
-  lane for `g09`
-- there is currently no ready card for a next-generation strict lane
+- `g09.014` is the current strict-execution milestone
+- `docs/specs/001-g09-lane-first-strict-adoption.md` is the active strict-lane
+  spec
+- the current ready card is
+  `docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`
 
 ## Strict Lane Working Rule
 
@@ -129,6 +132,7 @@ memory alone.
 - `077` DSP fidelity, semantic calibration, and analysis realism
 - `078` rhythm continuity, failure containment, and policy normalization
 - `079` interactive demo binary and crate-capability proof
+- `080` production readiness grade and generation release gate
 
 ## Working Rule
 
@@ -138,5 +142,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door while planning the
-next-generation boundary after `g09` closeout.
+Use this index as the contract-selection front door while executing
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

@@ -1,4 +1,5 @@
 use super::super::super::*;
+use std::path::Path;
 
 #[test]
 fn local_host_reconciles_late_lingering_completion_without_disturbing_active_replacement() {

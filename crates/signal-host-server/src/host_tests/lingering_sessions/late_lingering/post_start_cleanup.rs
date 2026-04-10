@@ -1,4 +1,4 @@
-use super::super::super::host_test_support::prepare_server_host_without_lifecycle;
+use crate::host::host_test_support::prepare_server_host_without_lifecycle;
 use signal_plugin_clap::ClapSandboxLifecycleHarness;
 use signal_runtime::{
     BrokerFailureStage, PluginSandboxTransportStage, RuntimeReadiness, TransportAttachIntent,

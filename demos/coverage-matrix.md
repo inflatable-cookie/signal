@@ -88,6 +88,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-COMPLETED: the `g09` demo coverage matrix is closed through the active proof
-bundle. Re-enter planning at the next-generation boundary before promoting more
-demo surfaces.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

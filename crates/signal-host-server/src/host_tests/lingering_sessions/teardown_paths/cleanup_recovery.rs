@@ -1,7 +1,7 @@
-use super::super::super::host_test_support::{
+use crate::host::host_test_support::{
     assert_runtime_automation_continuity, assert_runtime_sequence_continuity,
 };
-use super::super::super::ServerRuntimeHost;
+use crate::ServerRuntimeHost;
 use signal_runtime::{
     BrokerFailureStage, RecoveryRestartIntent, RuntimeConfig, RuntimeReadiness, SignalRuntime,
     StopReason,

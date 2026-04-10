@@ -161,5 +161,5 @@ through tests and benchmarks.
 
 ## Next Task
 
-COMPLETED: `g09.013` is closed. Re-enter planning at the next-generation
-boundary instead of continuing the `g09` strict lane.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

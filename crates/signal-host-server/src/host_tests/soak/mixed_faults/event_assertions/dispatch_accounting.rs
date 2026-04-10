@@ -1,10 +1,10 @@
 use signal_runtime::{
     BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-    RuntimeEvent, RuntimeHostSupervisorReport, SandboxOperationFailureStage,
+    RuntimeEvent, RuntimeSupervisorReport, SandboxOperationFailureStage,
 };
 
 pub(super) fn assert_mixed_watchdog_dispatch_accounting(
-    supervisor: &RuntimeHostSupervisorReport,
+    supervisor: &RuntimeSupervisorReport,
 ) {
     assert_eq!(supervisor.block_dispatch_event_count(), 28);
     assert_eq!(supervisor.lease_rollover_event_count(), 2);

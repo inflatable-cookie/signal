@@ -1,9 +1,11 @@
 use super::super::super::super::*;
+use crate::LocalRuntimeHostSummary;
+use signal_runtime::RuntimeSupervisorReport;
 
 pub(super) fn assert_mixed_watchdog_summary(
     host: &LocalRuntimeHost,
     summary: &LocalRuntimeHostSummary,
-    supervisor: &RuntimeHostSupervisorReport,
+    supervisor: &RuntimeSupervisorReport,
 ) {
     assert_eq!(summary.execution.processing_epoch, 4);
     assert_eq!(summary.execution.restart_count, 3);

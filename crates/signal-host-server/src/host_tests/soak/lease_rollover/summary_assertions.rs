@@ -1,4 +1,5 @@
 use super::*;
+use crate::host::host_support::ServerRuntimeHostSummary;
 
 pub(super) fn assert_lease_rollover_summary(
     summary: &ServerRuntimeHostSummary,

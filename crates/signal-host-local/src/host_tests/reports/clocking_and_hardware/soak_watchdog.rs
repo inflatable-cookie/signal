@@ -1,4 +1,6 @@
+#[path = "soak_watchdog/event_assertions.rs"]
 mod event_assertions;
+#[path = "soak_watchdog/summary_assertions.rs"]
 mod summary_assertions;
 
 use super::super::super::*;

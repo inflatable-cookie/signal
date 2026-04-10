@@ -1,7 +1,7 @@
 use signal_plugin::WatchdogTriggerReason;
 use signal_runtime::RuntimeSupervisorReport;
 
-use crate::host_support::ServerRuntimeHostSummary;
+use crate::host::host_support::ServerRuntimeHostSummary;
 
 pub(super) fn assert_timeout_recovery_continuity(
     summary: &ServerRuntimeHostSummary,

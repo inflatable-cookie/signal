@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-09
+Updated: 2026-04-10
 Depends on: docs/architecture/system-architecture.md
 Authority owners: core-product
 Affects: docs, crates
@@ -30,9 +30,8 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ### Lane-first strict posture
 
 - The first strict lane is attached to the live `g09` queue.
-- `g09` is now closed.
-- There is no current strict-execution milestone until the next generation is
-  promoted.
+- `g09.014` is the current strict-execution milestone.
+- The immediate follow-on boundary is `g09.014`.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
 
@@ -100,5 +99,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ## Next Task
 
-Use this contract while planning the next-generation boundary after `g09`
-closeout.
+Use this contract while executing
+`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

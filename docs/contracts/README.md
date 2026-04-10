@@ -98,6 +98,7 @@ Use this section for:
 - `077-dsp-fidelity-semantic-calibration-and-analysis-realism-contract.md`
 - `078-rhythm-continuity-failure-containment-and-policy-normalization-contract.md`
 - `079-interactive-demo-binary-and-crate-capability-proof-contract.md`
+- `080-production-readiness-grade-and-generation-release-gate-contract.md`
 
 ## Rule
 
@@ -107,5 +108,5 @@ Add a new contract only when the boundary needs stronger guarantees than
 ## Next Task
 
 Use `docs/contracts/contract-index.md` and `001-working-rules.md` as the front
-doors for the active strict `g09` lane, then keep the broader contract
-baseline aligned as post-audit contracts are refined or closed.
+doors for the reopened strict `g09` lane, then keep the broader contract
+baseline aligned as the production-readiness gate is refined.
