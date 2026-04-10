@@ -112,14 +112,14 @@ pub(super) fn multi_bus_boundary_validation_steps() -> &'static [MultiBusBoundar
         MultiBusBoundaryValidationStep {
             id: "local-host-multi-bus-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_multi_bus_truth",
+                "cargo test -p signal-host-local --test public_host_edge_multi_bus local_shared_host_edge_exports_runtime_multi_bus_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned multi-bus topology and metering receipts on supervisor export.",
         },
         MultiBusBoundaryValidationStep {
             id: "server-host-multi-bus-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_multi_bus_truth",
+                "cargo test -p signal-host-server --test public_host_edge_multi_bus server_shared_host_edge_exports_runtime_multi_bus_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned multi-bus routing receipts without host-local reinterpretation.",
         },
@@ -186,14 +186,14 @@ pub(super) fn sidechain_boundary_validation_steps() -> &'static [SidechainBounda
         SidechainBoundaryValidationStep {
             id: "local-host-sidechain-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_sidechain_truth",
+                "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_sidechain_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned sidechain topology and plugin-stage receipts on supervisor export.",
         },
         SidechainBoundaryValidationStep {
             id: "server-host-sidechain-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_sidechain_truth",
+                "cargo test -p signal-host-server --test public_host_edge_boundary server_shared_host_edge_exports_runtime_sidechain_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned sidechain receipts without host-local routing reinterpretation.",
         },

@@ -1,6 +1,6 @@
 # 013 - DSP, Graph, Analysis Interactive Demo Suite And Audit Closeout Proof
 
-Status: draft
+Status: active
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.011
@@ -34,6 +34,70 @@ through tests and benchmarks.
 - [ ] cover multichannel, sidechain, bus, and spatial graph meaning where the
       crate claims support
 - [ ] export manifests and sample outputs for each scenario
+
+#### Batch 13.1 Tranche 1 Outcome
+
+- completed the graph-routing slice with the live
+  `signal.demo.graph.execution-inspector` surface
+- wrapped the existing multichannel, sidechain, multi-bus, and spatial
+  descriptor plus acceptance family into one repo-owned demo manifest, script,
+  scenario file, receipt, and Effigy task
+- repaired stale focused acceptance wiring in the graph-routing proof family so
+  the existing boundaries run honestly through the shared demo wrapper
+- left the next tranche unpromoted because DSP processing-lab versus analysis
+  feature-inspector still needs fresh planning judgment
+
+#### Batch 13.1 Tranche 2 Ready Posture
+
+- the next honest seam is the bounded DSP processing-lab bootstrap
+- it will wrap the existing stretch, marker-analysis, and
+  transform-artifact boundary family into one repo-owned DSP demo surface
+- analysis feature-inspector remains deferred until its multi-crate operator
+  posture is planned more explicitly
+
+#### Batch 13.1 Tranche 2 Outcome
+
+- completed the DSP slice with the live `signal.demo.dsp.processing-lab`
+  surface
+- wrapped the existing stretch, marker-analysis, and transform-artifact
+  descriptor plus acceptance family into one repo-owned demo manifest, script,
+  scenario file, receipt, and Effigy task
+- repaired stale focused acceptance wiring in the DSP proof family so the
+  existing boundaries run honestly through the shared demo wrapper
+- left the next tranche unpromoted because analysis feature-inspector still
+  needs a clearer single-surface operator posture before another honest ready
+  card is claimed
+
+#### Batch 13.2 Tranche 1 Ready Posture
+
+- the next honest seam is the bounded analysis feature-inspector bootstrap
+- it will wrap the existing rhythm, tonal, and loudness example binaries into
+  one repo-owned analysis demo family
+- it will add the minimum shared analysis entry point needed to expose
+  character and semantic posture inside that same bounded demo family
+- it must stay offline and synthetic-input oriented rather than widening into
+  plugin browsing or asset-library workflow design
+
+#### Batch 13.2 Tranche 1 Outcome
+
+- completed the analysis slice with the live
+  `signal.demo.analysis.feature-inspector` surface
+- wrapped the existing rhythm, tonal, and loudness example binaries plus one
+  new shared character-and-semantic inspector example into one repo-owned demo
+  manifest, script, scenario file, receipt, and Effigy task
+- promoted the shared analysis crates to live demo coverage in the workspace
+  coverage matrix because the manifest and receipt now exist
+- left the next tranche unpromoted because the remaining `g09.013` audit
+  closeout proof still wants fresh planning judgment rather than another honest
+  auto-ready card
+
+#### Batch 13.3 Tranche 1 Ready Posture
+
+- the next honest seam is the bounded audit closeout proof bundle
+- it will compile the final live demo coverage, explicit deferred demo scope,
+  and the `g09` handoff posture without inventing another demo binary
+- it must stay additive over the existing manifests, receipts, Effigy tasks,
+  and coverage matrix instead of reopening implementation work
 
 ### Batch 13.2 - Analysis Demo Paths
 
@@ -75,6 +139,5 @@ through tests and benchmarks.
 
 ## Next Task
 
-After the preceding milestones are materially complete, close `g09` with an
-explicit remediation verdict and open the next generation only for the still-
-deferred hard tail.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.

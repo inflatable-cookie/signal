@@ -159,15 +159,16 @@ pub(crate) fn apply_public_sidechain_graph(runtime: &mut SignalRuntime, graph_id
                             channels: ChannelLayout::Stereo,
                         },
                         secondary_input: Some(RuntimeSecondaryInputContractProjection {
+                            source_kind:
+                                signal_runtime::RuntimeSecondaryInputSourceKind::NodeOutput,
                             source_id: "kick-sidechain".into(),
                             source_bus_id: Some("bus:sidechain:kick".into()),
-                            target_kind: RuntimeSecondaryInputTargetKind::NodeInput,
-                            target_id: "compressor".into(),
                             target_bus_id: "plugin:compressor:sidechain".into(),
                             attachment_policy: RuntimeSecondaryInputAttachmentPolicy::Required,
                             fallback_outcome:
                                 RuntimeSecondaryInputFallbackOutcome::SafeModeDegradation,
                         }),
+                        ..GraphNodeBufferContractProjection::default()
                     },
                     topology: GraphNodeTopologyProjection {
                         role: Some(GraphNodeTopologyRole::TrackLane),

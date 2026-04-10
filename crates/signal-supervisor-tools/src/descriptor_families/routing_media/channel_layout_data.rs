@@ -79,14 +79,14 @@ pub(super) fn multichannel_boundary_validation_steps(
         MultichannelBoundaryValidationStep {
             id: "local-host-multichannel-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_multichannel_truth",
+                "cargo test -p signal-host-local --test public_host_edge_multichannel local_shared_host_edge_exports_runtime_multichannel_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned multichannel topology and plugin discovery receipts on supervisor export.",
         },
         MultichannelBoundaryValidationStep {
             id: "server-host-multichannel-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_multichannel_truth",
+                "cargo test -p signal-host-server --test public_host_edge_multichannel server_shared_host_edge_exports_runtime_multichannel_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned canonical layout and bus-intent receipts without private host reinterpretation.",
         },

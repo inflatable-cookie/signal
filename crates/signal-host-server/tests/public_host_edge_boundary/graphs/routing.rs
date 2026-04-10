@@ -1,4 +1,6 @@
+#[path = "routing/rich_graphs.rs"]
 mod rich_graphs;
+#[path = "routing/simple_routing.rs"]
 mod simple_routing;
 
 pub(crate) use rich_graphs::{

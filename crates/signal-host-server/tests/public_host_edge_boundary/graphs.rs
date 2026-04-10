@@ -1,4 +1,6 @@
+#[path = "graphs/baseline.rs"]
 mod baseline;
+#[path = "graphs/routing.rs"]
 mod routing;
 
 pub(crate) use baseline::{

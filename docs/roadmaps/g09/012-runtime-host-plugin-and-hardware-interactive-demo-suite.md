@@ -1,6 +1,6 @@
 # 012 - Runtime, Host, Plugin, And Hardware Interactive Demo Suite
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-08
 Depends on: g09.011
@@ -96,8 +96,8 @@ Batch 12.2 planning result after host comparison:
 
 - [x] add a hardware topology and diagnostics scenario for simulated and native
       backends
-- [ ] add a macOS-specific AU/CoreAudio scenario once `g09.004` lands
-- [ ] add Linux-native backend and LV2 coverage once `g09.005` lands
+- [x] add a macOS-specific AU/CoreAudio scenario once `g09.004` lands
+- [x] add Linux-native backend and LV2 coverage once `g09.005` lands
 
 Batch 12.3 Tranche 1 outcome:
 
@@ -110,6 +110,74 @@ Batch 12.3 Tranche 1 outcome:
   posture explicit and does not claim native Linux device ownership
 - plugin capability browsing remains explicitly deferred after this tranche
   because demo-owned scan-root posture still wants fresh planning judgment
+
+Batch 12.2 planning result after hardware diagnostics:
+
+- plugin capability browsing is still not the next honest seam because owned
+  scan-root and browse-posture decisions remain underplanned
+- the cleaner next batch is a `signal-supervisor-tools` companion for the
+  existing runtime inspector family, because the remaining deferred runtime
+  crate already exposes stable machine-readable runtime boundary descriptors
+  through its current CLI
+
+Batch 12.2 Tranche 7 outcome:
+
+- the existing runtime recovery inspector family now has a repo-owned
+  `signal-supervisor-tools` companion surface built from the current
+  machine-readable boundary descriptor commands
+- `signal-supervisor-tools` is now live-covered in the demo coverage matrix
+  through that real companion manifest and receipt
+- plugin capability browsing remains explicitly deferred because owned
+  scan-root and browse-posture decisions still want fresh planning judgment
+
+Batch 12.3 planning result after the supervisor companion:
+
+- plugin capability browsing is still not the next honest seam because owned
+  scan-root and browse-posture decisions remain underplanned
+- the cleaner next batch is the already-frozen macOS AU/CoreAudio boundary,
+  because `g09.004` already landed and the repo now has both a machine-readable
+  descriptor command and a dedicated acceptance lane for that surface
+
+Batch 12.3 Tranche 2 outcome:
+
+- the existing macOS AU/CoreAudio boundary is now wrapped by one repo-owned
+  manifest, launch task, operator notes file, and machine-readable receipt
+- `signal-plugin-au` is now live-covered in the demo coverage matrix through
+  that real macOS-specific surface
+- the receipt captures both the machine-readable boundary descriptor and the
+  existing acceptance lane posture without flattening the AU/CoreAudio seam
+  into a generic plugin demo
+- plugin capability browsing remains explicitly deferred after this tranche
+  because owned scan-root and browse-posture decisions still want fresh
+  planning judgment
+
+Batch 12.3 Tranche 3 outcome:
+
+- the existing `linux-lv2-execution-boundary` and
+  `linux-audio-backend-boundary` descriptor-plus-acceptance surfaces are now
+  wrapped by one repo-owned Linux manifest, launch task, operator notes file,
+  and machine-readable receipt
+- `signal-plugin-lv2` is now live-covered in the demo coverage matrix through
+  that real Linux boundary surface
+- the receipt keeps bounded LV2 broker-execution truth and Linux backend
+  identity truth explicit without flattening them into a generic plugin demo
+- the batch also repaired one stale acceptance-surface command so the Linux
+  audio-backend boundary now points at its real focused server host-edge proof
+  instead of the broken unfocused crate-level test invocation
+- plugin capability browsing remains explicitly deferred after this tranche
+  because owned scan-root and browse-posture decisions still want fresh
+  planning judgment
+
+Batch 12.3 planning result after the macOS AU/CoreAudio demo:
+
+- plugin capability browsing is still not the next honest seam because owned
+  scan-root and browse-posture decisions remain underplanned
+- the cleaner next batch is a Linux-specific boundary companion, because the
+  repo already has both machine-readable descriptor commands and dedicated
+  acceptance lanes for `linux-lv2-execution-boundary` and
+  `linux-audio-backend-boundary`
+- that makes a bounded Linux LV2/backend demo bootstrap more honest than
+  inventing browse posture next
 
 ## Acceptance Criteria
 
@@ -136,6 +204,5 @@ Batch 12.3 Tranche 1 outcome:
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.012` seam is plugin capability browsing, another bounded
-host/runtime/hardware live-demo batch, or a continued planning pause.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/031-g09-013-graph-execution-inspector-bootstrap.md`.

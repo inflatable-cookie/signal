@@ -82,14 +82,14 @@ pub(super) fn transform_artifact_boundary_validation_steps(
         TransformArtifactBoundaryValidationStep {
             id: "local-host-transform-artifact-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_transform_artifact_truth",
+                "cargo test -p signal-host-local --test public_host_edge_transform_artifact local_shared_host_edge_exports_runtime_transform_artifact_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned transform-artifact and transform-persistence receipts instead of rebuilding local preview-cache or persistence posture.",
         },
         TransformArtifactBoundaryValidationStep {
             id: "server-host-transform-artifact-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_transform_artifact_truth",
+                "cargo test -p signal-host-server --test public_host_edge_transform_artifact server_shared_host_edge_exports_runtime_transform_artifact_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned transform-artifact and transform-persistence receipts without server-local cache heuristics.",
         },

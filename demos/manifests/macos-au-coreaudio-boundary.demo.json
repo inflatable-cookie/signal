@@ -1,0 +1,43 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.macos.au-coreaudio-boundary",
+  "title": "Signal macOS AU CoreAudio Boundary Demo",
+  "domain": "hardware",
+  "kind": "dedicated-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:macos-au-coreaudio-boundary",
+    "owner_surface": "effigy-task",
+    "notes": "Runs the existing macOS AU/CoreAudio boundary descriptor and acceptance lane and records one machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-plugin-au",
+    "signal-hardware-coreaudio",
+    "signal-host-local"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.macos.au-coreaudio-boundary.default",
+      "title": "macOS AU CoreAudio Boundary Bootstrap",
+      "summary": "Captures the existing macOS-specific AU lifecycle, CoreAudio device truth, and local-host supervisor proof through one repo-owned live demo surface.",
+      "notes_path": "demos/scenarios/macos-au-coreaudio-boundary.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/macos-au-coreaudio-boundary.receipt.json",
+    "operator_notes_path": "demos/scenarios/macos-au-coreaudio-boundary.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface wraps the existing macOS AU/CoreAudio boundary descriptor and acceptance lane without inventing a generalized plugin browser or new host UI."
+  },
+  "known_exclusions": [
+    "Plugin capability browsing remains deferred to a later g09.012 planning decision.",
+    "This surface is macOS-specific and does not claim Linux-native backend or LV2 demo coverage.",
+    "This demo does not redesign AU/CoreAudio runtime behavior; it wraps existing proof surfaces."
+  ],
+  "expected_checks": [
+    "The receipt captures the machine-readable macOS AU/CoreAudio boundary descriptor.",
+    "The receipt records that the existing acceptance:macos-au-coreaudio-boundary lane completed successfully.",
+    "The receipt keeps AU lifecycle plus CoreAudio device truth explicit and macOS-specific.",
+    "signal-plugin-au only moves to live demo coverage because this manifest and receipt exist."
+  ]
+}

@@ -56,9 +56,9 @@ proof:
   - rhythm-engine resilience and policy normalization
 - `g09.011` `complete`
   - interactive demo substrate, manifest, and operator conventions
-- `g09.012` `active`
+- `g09.012` `complete`
   - host/runtime/plugin/hardware interactive demo suite
-- `g09.013` `draft`
+- `g09.013` `active`
   - DSP/graph/analysis interactive demo suite and audit closeout proof
 
 ## Lane structure
@@ -96,7 +96,8 @@ with proof instead of prose.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card:
+  `docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
 
 ## Working rules for this thread
 
@@ -110,5 +111,5 @@ with proof instead of prose.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane before promoting another
-`g09.012` batch card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.

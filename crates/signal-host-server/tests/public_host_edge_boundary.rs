@@ -46,7 +46,9 @@ use signal_runtime::{
     RuntimeSupervisorApi, RuntimeWatchdogTrigger, SignalRuntime, StopReason, WatchdogRestartRecord,
 };
 
+#[path = "public_host_edge_boundary/fixtures.rs"]
 mod fixtures;
+#[path = "public_host_edge_boundary/graphs.rs"]
 mod graphs;
 
 pub(crate) use fixtures::{
@@ -60,8 +62,13 @@ pub(crate) use graphs::{
     apply_public_render_graph, apply_public_sidechain_graph, apply_public_spatial_graph,
 };
 
+#[path = "public_host_edge_boundary/consumable_surface.rs"]
 mod consumable_surface;
+#[path = "public_host_edge_boundary/deferred_work.rs"]
 mod deferred_work;
+#[path = "public_host_edge_boundary/linux_parity_truth.rs"]
 mod linux_parity_truth;
+#[path = "public_host_edge_boundary/performance_truth.rs"]
 mod performance_truth;
+#[path = "public_host_edge_boundary/sidechain_truth.rs"]
 mod sidechain_truth;

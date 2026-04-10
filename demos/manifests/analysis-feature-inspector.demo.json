@@ -1,0 +1,45 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.analysis.feature-inspector",
+  "title": "Signal Analysis Feature Inspector Demo",
+  "domain": "analysis",
+  "kind": "shared-domain-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:analysis-feature-inspector",
+    "owner_surface": "effigy-task",
+    "notes": "Runs the existing rhythm, tonal, and loudness examples plus one shared character-and-semantic inspection example and records one machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-analysis",
+    "signal-analysis-character",
+    "signal-analysis-embed",
+    "signal-analysis-loudness",
+    "signal-analysis-rhythm",
+    "signal-analysis-tonal"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.analysis.feature-inspector.default",
+      "title": "Analysis Feature Inspector Bootstrap",
+      "summary": "Captures bounded operator-facing analysis posture across rhythm, tonal, loudness, character, and semantic surfaces through one repo-owned offline demo family.",
+      "notes_path": "demos/scenarios/analysis-feature-inspector.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/analysis-feature-inspector.receipt.json",
+    "operator_notes_path": "demos/scenarios/analysis-feature-inspector.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface wraps existing offline analysis examples and one shared character-plus-semantic example without inventing a browser, editor, or asset scan-root workflow."
+  },
+  "known_exclusions": [
+    "This surface stays offline and synthetic-input oriented; it does not browse user assets or scan plugin roots.",
+    "The demo proves bounded analysis posture and does not replace corpus, harness, or metadata-boundary automation.",
+    "This demo does not claim downstream product tagging, recommendation, or library UX breadth."
+  ],
+  "expected_checks": [
+    "The receipt captures runnable rhythm, tonal, loudness, and shared character-plus-semantic inspection outputs.",
+    "The receipt records that the shared analysis inspector keeps character and semantic posture inside the same bounded demo family.",
+    "signal-analysis, signal-analysis-character, signal-analysis-embed, signal-analysis-loudness, signal-analysis-rhythm, and signal-analysis-tonal only move to live demo coverage because this manifest and receipt exist."
+  ]
+}

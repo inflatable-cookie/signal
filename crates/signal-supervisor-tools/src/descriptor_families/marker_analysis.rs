@@ -68,14 +68,14 @@ fn marker_analysis_boundary_validation_steps() -> &'static [MarkerAnalysisBounda
         MarkerAnalysisBoundaryValidationStep {
             id: "local-host-marker-analysis-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_marker_analysis_truth",
+                "cargo test -p signal-host-local --test public_host_edge_marker_analysis local_shared_host_edge_exports_runtime_marker_analysis_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned marker-analysis receipts instead of rebuilding local stretch-analysis posture.",
         },
         MarkerAnalysisBoundaryValidationStep {
             id: "server-host-marker-analysis-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_marker_analysis_truth",
+                "cargo test -p signal-host-server --test public_host_edge_marker_analysis server_shared_host_edge_exports_runtime_marker_analysis_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned marker-analysis receipts without server-local transform-analysis reconstruction.",
         },

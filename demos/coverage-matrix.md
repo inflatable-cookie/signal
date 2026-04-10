@@ -1,7 +1,7 @@
 # Demo Coverage Matrix
 
 Status: active
-Updated: 2026-04-09
+Updated: 2026-04-10
 
 ## Purpose
 
@@ -14,6 +14,14 @@ workspace without overclaiming live demo coverage before `g09.012` and
 - live official demo manifests:
   - `signal.demo.plugin.sandbox-lifecycle`
   - `signal.demo.runtime.recovery-inspector`
+  - `signal.demo.runtime.supervisor-boundary-companion`
+  - `signal.demo.host.local-server-compare`
+  - `signal.demo.hardware.topology-diagnostics`
+  - `signal.demo.macos.au-coreaudio-boundary`
+  - `signal.demo.linux.lv2-backend-boundary`
+  - `signal.demo.graph.execution-inspector`
+  - `signal.demo.dsp.processing-lab`
+  - `signal.demo.analysis.feature-inspector`
 - shared substrate is frozen under `demos/`
 - every active workspace crate is mapped to either a live demo manifest or an
   explicit planned demo surface and milestone
@@ -26,12 +34,32 @@ workspace without overclaiming live demo coverage before `g09.012` and
 - `signal.demo.runtime.recovery-inspector`
   - crates: `signal-runtime`
   - launch: `effigy demo:runtime-recovery-inspector`
+- `signal.demo.runtime.supervisor-boundary-companion`
+  - crates: `signal-supervisor-tools`
+  - launch: `effigy demo:supervisor-runtime-boundary-companion`
 - `signal.demo.host.local-server-compare`
   - crates: `signal-host-local`, `signal-host-server`
   - launch: `effigy demo:local-server-host-comparison`
 - `signal.demo.hardware.topology-diagnostics`
   - crates: `signal-hardware`, `signal-hardware-coreaudio`
   - launch: `effigy demo:hardware-topology-diagnostics`
+- `signal.demo.macos.au-coreaudio-boundary`
+  - crates: `signal-plugin-au`
+  - launch: `effigy demo:macos-au-coreaudio-boundary`
+- `signal.demo.linux.lv2-backend-boundary`
+  - crates: `signal-plugin-lv2`
+  - launch: `effigy demo:linux-lv2-and-backend-boundary`
+- `signal.demo.graph.execution-inspector`
+  - crates: `signal-primitives`, `signal-graph`
+  - launch: `effigy demo:graph-execution-inspector`
+- `signal.demo.dsp.processing-lab`
+  - crates: `signal-dsp`, `signal-dsp-resample`, `signal-dsp-spectral`
+  - launch: `effigy demo:dsp-processing-lab`
+- `signal.demo.analysis.feature-inspector`
+  - crates: `signal-analysis`, `signal-analysis-character`,
+    `signal-analysis-embed`, `signal-analysis-loudness`,
+    `signal-analysis-rhythm`, `signal-analysis-tonal`
+  - launch: `effigy demo:analysis-feature-inspector`
 
 ## Planned surfaces
 
@@ -39,22 +67,7 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 - `signal.demo.plugin.capability-browser`
   - crates: `signal-plugin`, `signal-plugin-vst3`, `signal-plugin-au`,
-    `signal-plugin-lv2`, `signal-plugin-clap`
-- `signal.demo.runtime.recovery-inspector`
-  - remaining deferred crate: `signal-supervisor-tools`
-  - note: still deferred until a live supervisor-tools-owned or shared
-    host/runtime inspector surface exists
-
-### `g09.013` DSP, graph, and analysis suite
-
-- `signal.demo.graph.execution-inspector`
-  - crates: `signal-primitives`, `signal-graph`
-- `signal.demo.dsp.processing-lab`
-  - crates: `signal-dsp`, `signal-dsp-resample`, `signal-dsp-spectral`
-- `signal.demo.analysis.feature-inspector`
-  - crates: `signal-analysis`, `signal-analysis-character`,
-    `signal-analysis-embed`, `signal-analysis-loudness`,
-    `signal-analysis-rhythm`, `signal-analysis-tonal`
+    `signal-plugin-clap`
 
 ## Working rule
 
@@ -66,6 +79,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.012` seam is plugin capability browsing, another bounded
-host/runtime/hardware live-demo batch, or a continued planning pause.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.

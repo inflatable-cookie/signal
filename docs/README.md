@@ -31,7 +31,8 @@ queue now has a lane-first strict surface under `docs/specs/`.
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Active strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card: none; `g09.012` is paused at planning
+- Active strict-lane card:
+  [specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md](./specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md)
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -55,5 +56,5 @@ queue now has a lane-first strict surface under `docs/specs/`.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane before promoting another
-`g09.012` batch card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.

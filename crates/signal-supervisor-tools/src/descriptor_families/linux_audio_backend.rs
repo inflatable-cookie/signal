@@ -69,7 +69,7 @@ fn linux_audio_backend_boundary_validation_steps(
         LinuxAudioBackendBoundaryValidationStep {
             id: "server-host-linux-audio-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_audio_backend_truth",
+                "cargo test -p signal-host-server --test public_host_edge_external_io server_shared_host_edge_exports_runtime_linux_audio_backend_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the runtime-owned unavailable Linux backend fallback state instead of inventing host-local Linux capability matrices.",
         },

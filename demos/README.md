@@ -90,8 +90,11 @@ commands into inspectable proof instead of loose examples.
 - the first official live demo surfaces are:
   - `signal.demo.plugin.sandbox-lifecycle`
   - `signal.demo.runtime.recovery-inspector`
+  - `signal.demo.runtime.supervisor-boundary-companion`
   - `signal.demo.host.local-server-compare`
   - `signal.demo.hardware.topology-diagnostics`
+  - `signal.demo.graph.execution-inspector`
+  - `signal.demo.dsp.processing-lab`
 
 ## Current Boundary
 
@@ -103,5 +106,5 @@ commands into inspectable proof instead of loose examples.
 ## Next Task
 
 Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.012` seam is plugin capability browsing, another bounded
-host/runtime/hardware live-demo batch, or a continued planning pause.
+honest `g09.013` seam is analysis feature-inspector bootstrap or a continued
+planning pause.

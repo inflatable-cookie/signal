@@ -1,12 +1,18 @@
 {
   "coverage_version": "signal.demo.coverage.v1",
-  "updated": "2026-04-09",
+  "updated": "2026-04-10",
   "active_workspace_crate_count": 24,
   "live_demo_manifests": [
     "signal.demo.plugin.sandbox-lifecycle",
     "signal.demo.runtime.recovery-inspector",
+    "signal.demo.runtime.supervisor-boundary-companion",
     "signal.demo.host.local-server-compare",
-    "signal.demo.hardware.topology-diagnostics"
+    "signal.demo.hardware.topology-diagnostics",
+    "signal.demo.macos.au-coreaudio-boundary",
+    "signal.demo.linux.lv2-backend-boundary",
+    "signal.demo.graph.execution-inspector",
+    "signal.demo.dsp.processing-lab",
+    "signal.demo.analysis.feature-inspector"
   ],
   "notes": [
     "g09.011 freezes the first workspace coverage matrix but does not yet claim full domain demo implementation.",
@@ -22,10 +28,8 @@
     },
     {
       "crate": "signal-supervisor-tools",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.runtime.recovery-inspector",
-      "planned_milestone": "g09.012",
-      "notes": "Still deferred until a live supervisor-tools-owned or shared host/runtime inspector surface exists.",
+      "status": "active",
+      "manifest_id": "signal.demo.runtime.supervisor-boundary-companion",
       "domain": "runtime"
     },
     {
@@ -68,16 +72,14 @@
     },
     {
       "crate": "signal-plugin-au",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "g09.012",
+      "status": "active",
+      "manifest_id": "signal.demo.macos.au-coreaudio-boundary",
       "domain": "plugin"
     },
     {
       "crate": "signal-plugin-lv2",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "g09.012",
+      "status": "active",
+      "manifest_id": "signal.demo.linux.lv2-backend-boundary",
       "domain": "plugin"
     },
     {
@@ -101,79 +103,68 @@
     },
     {
       "crate": "signal-primitives",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.graph.execution-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.graph.execution-inspector",
       "domain": "graph"
     },
     {
       "crate": "signal-graph",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.graph.execution-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.graph.execution-inspector",
       "domain": "graph"
     },
     {
       "crate": "signal-dsp",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.dsp.processing-lab",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.dsp.processing-lab",
       "domain": "dsp"
     },
     {
       "crate": "signal-dsp-resample",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.dsp.processing-lab",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.dsp.processing-lab",
       "domain": "dsp"
     },
     {
       "crate": "signal-dsp-spectral",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.dsp.processing-lab",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.dsp.processing-lab",
       "domain": "dsp"
     },
     {
       "crate": "signal-analysis",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.analysis.feature-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.analysis.feature-inspector",
       "domain": "analysis"
     },
     {
       "crate": "signal-analysis-character",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.analysis.feature-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.analysis.feature-inspector",
       "domain": "analysis"
     },
     {
       "crate": "signal-analysis-embed",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.analysis.feature-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.analysis.feature-inspector",
       "domain": "analysis"
     },
     {
       "crate": "signal-analysis-loudness",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.analysis.feature-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.analysis.feature-inspector",
       "domain": "analysis"
     },
     {
       "crate": "signal-analysis-rhythm",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.analysis.feature-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.analysis.feature-inspector",
       "domain": "analysis"
     },
     {
       "crate": "signal-analysis-tonal",
-      "status": "deferred",
-      "planned_surface_id": "signal.demo.analysis.feature-inspector",
-      "planned_milestone": "g09.013",
+      "status": "active",
+      "manifest_id": "signal.demo.analysis.feature-inspector",
       "domain": "analysis"
     }
   ]

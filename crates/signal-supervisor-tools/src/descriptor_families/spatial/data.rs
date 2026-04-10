@@ -90,14 +90,14 @@ pub(super) fn spatial_boundary_validation_steps() -> &'static [SpatialBoundaryVa
         SpatialBoundaryValidationStep {
             id: "local-host-spatial-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_spatial_truth",
+                "cargo test -p signal-host-local --test public_host_edge_spatial local_shared_host_edge_exports_runtime_spatial_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned richer spatial, immersive room-policy, and deployment-monitoring receipts on supervisor export.",
         },
         SpatialBoundaryValidationStep {
             id: "server-host-spatial-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_spatial_truth",
+                "cargo test -p signal-host-server --test public_host_edge_spatial server_shared_host_edge_exports_runtime_spatial_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned richer spatial, deployment, monitoring, and renderer or export receipts without host-local or renderer-local reinterpretation.",
         },

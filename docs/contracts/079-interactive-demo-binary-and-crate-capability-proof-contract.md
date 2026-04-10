@@ -49,6 +49,5 @@ UI shells.
 
 ## Next Task
 
-Use this contract with the active `g09.012` strict lane while
-`docs/specs/batch-cards/027-g09-012-hardware-topology-diagnostics-bootstrap.md`
-governs the active batch.
+Use this contract while executing
+`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.

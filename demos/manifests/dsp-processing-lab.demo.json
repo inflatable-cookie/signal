@@ -1,0 +1,43 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.dsp.processing-lab",
+  "title": "Signal DSP Processing Lab Demo",
+  "domain": "dsp",
+  "kind": "shared-domain-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:dsp-processing-lab",
+    "owner_surface": "effigy-task",
+    "notes": "Runs the existing stretch, marker-analysis, and transform-artifact boundary descriptor and acceptance lanes and records one machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-dsp",
+    "signal-dsp-resample",
+    "signal-dsp-spectral"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.dsp.processing-lab.default",
+      "title": "DSP Processing Lab Bootstrap",
+      "summary": "Captures bounded DSP processing meaning across stretch, marker-analysis, and transform-artifact proof surfaces through one repo-owned inspection surface.",
+      "notes_path": "demos/scenarios/dsp-processing-lab.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/dsp-processing-lab.receipt.json",
+    "operator_notes_path": "demos/scenarios/dsp-processing-lab.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface wraps the existing DSP boundary descriptors and acceptance lanes without inventing an editor shell, waveform browser, or tutorial UI."
+  },
+  "known_exclusions": [
+    "Analysis feature-inspector work remains deferred to later g09.013 planning decisions.",
+    "This surface proves DSP processing meaning through existing boundary families and does not claim editor, browser, or product-shell breadth.",
+    "This demo does not redesign DSP/runtime behavior; it reuses the existing proof surfaces."
+  ],
+  "expected_checks": [
+    "The receipt captures machine-readable stretch, marker-analysis, and transform-artifact boundary descriptors.",
+    "The receipt records that the existing stretch, marker-analysis, and transform-artifact acceptance lanes completed successfully.",
+    "The receipt keeps DSP processing meaning explicit instead of flattening the seam into a generic product demo.",
+    "signal-dsp, signal-dsp-resample, and signal-dsp-spectral only move to live demo coverage because this manifest and receipt exist."
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.graph.execution-inspector",
+  "title": "Signal Graph Execution Inspector Demo",
+  "domain": "graph",
+  "kind": "shared-domain-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:graph-execution-inspector",
+    "owner_surface": "effigy-task",
+    "notes": "Runs the existing multichannel, sidechain, multi-bus, and spatial boundary descriptor and acceptance lanes and records one machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-primitives",
+    "signal-graph"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.graph.execution-inspector.default",
+      "title": "Graph Execution Inspector Bootstrap",
+      "summary": "Captures canonical graph execution meaning across multichannel layout, sidechain routing, multi-bus topology, and spatial execution through one repo-owned inspection surface.",
+      "notes_path": "demos/scenarios/graph-execution-inspector.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/graph-execution-inspector.receipt.json",
+    "operator_notes_path": "demos/scenarios/graph-execution-inspector.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface wraps the existing graph-routing boundary descriptors and acceptance lanes without inventing a DAW shell, visual graph editor, or tutorial UI."
+  },
+  "known_exclusions": [
+    "DSP processing-lab and analysis feature-inspector demos remain deferred to later g09.013 planning decisions.",
+    "This surface proves graph execution meaning through existing boundary families and does not claim media browser or product-shell breadth.",
+    "This demo does not redesign graph/runtime behavior; it reuses the existing proof surfaces."
+  ],
+  "expected_checks": [
+    "The receipt captures machine-readable multichannel, sidechain, multi-bus, and spatial boundary descriptors.",
+    "The receipt records that the existing multichannel, sidechain, multi-bus, and spatial acceptance lanes completed successfully.",
+    "The receipt keeps graph execution meaning explicit instead of flattening the seam into a generic product demo.",
+    "signal-primitives and signal-graph only move to live demo coverage because this manifest and receipt exist."
+  ]
+}

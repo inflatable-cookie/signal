@@ -1,0 +1,43 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.linux.lv2-backend-boundary",
+  "title": "Signal Linux LV2 And Backend Boundary Demo",
+  "domain": "plugin",
+  "kind": "dedicated-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:linux-lv2-and-backend-boundary",
+    "owner_surface": "effigy-task",
+    "notes": "Runs the existing Linux LV2 execution and Linux audio-backend boundary descriptor and acceptance lanes and records one machine-readable receipt."
+  },
+  "covered_crates": [
+    "signal-plugin-lv2",
+    "signal-host-server",
+    "signal-supervisor-tools"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.linux.lv2-backend-boundary.default",
+      "title": "Linux LV2 And Backend Boundary Bootstrap",
+      "summary": "Captures the existing Linux LV2 broker-backed execution boundary and Linux backend identity boundary through one repo-owned live demo surface.",
+      "notes_path": "demos/scenarios/linux-lv2-backend-boundary.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/linux-lv2-backend-boundary.receipt.json",
+    "operator_notes_path": "demos/scenarios/linux-lv2-backend-boundary.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "This bootstrap surface wraps the existing Linux LV2 execution and Linux audio-backend boundary descriptors plus their current acceptance lanes without inventing a plugin browser or new host UI."
+  },
+  "known_exclusions": [
+    "Plugin capability browsing remains deferred to a later g09.012 planning decision.",
+    "This surface is Linux-specific and does not claim macOS AU/CoreAudio breadth or generalized cross-platform plugin browsing.",
+    "This demo does not claim live Linux device ownership, distro-wide certification, or UI/editor hosting breadth."
+  ],
+  "expected_checks": [
+    "The receipt captures the machine-readable Linux LV2 execution boundary descriptor.",
+    "The receipt captures the machine-readable Linux audio-backend boundary descriptor.",
+    "The receipt records that the existing Linux LV2 execution and Linux audio-backend acceptance lanes completed successfully.",
+    "signal-plugin-lv2 only moves to live demo coverage because this manifest and receipt exist."
+  ]
+}

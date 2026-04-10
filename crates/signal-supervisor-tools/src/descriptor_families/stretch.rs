@@ -80,14 +80,14 @@ fn stretch_boundary_validation_steps() -> &'static [StretchBoundaryValidationSte
         StretchBoundaryValidationStep {
             id: "local-host-stretch-proof",
             command:
-                "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_stretch_truth",
+                "cargo test -p signal-host-local --test public_host_edge_stretch local_shared_host_edge_exports_runtime_stretch_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned stretch receipts on supervisor export instead of rebuilding local transform posture.",
         },
         StretchBoundaryValidationStep {
             id: "server-host-stretch-proof",
             command:
-                "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_stretch_truth",
+                "cargo test -p signal-host-server --test public_host_edge_stretch server_shared_host_edge_exports_runtime_stretch_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned stretch receipts without server-local transform reconstruction.",
         },

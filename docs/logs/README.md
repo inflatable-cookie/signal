@@ -33,7 +33,8 @@ Use this section for:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card:
+  `docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
 
 ## Recent active-lane evidence
 
@@ -76,8 +77,21 @@ Use this section for:
 - `2026-04/09-370500-g09-012-host-comparison-bootstrap-closeout-and-planning-pause.md`
 - `2026-04/09-374500-g09-012-hardware-diagnostics-ready-handoff.md`
 - `2026-04/09-380500-g09-012-hardware-diagnostics-bootstrap-closeout.md`
+- `2026-04/09-390500-g09-012-supervisor-runtime-companion-ready-handoff.md`
+- `2026-04/10-090500-g09-012-supervisor-runtime-companion-closeout.md`
+- `2026-04/10-093500-g09-012-macos-au-coreaudio-demo-ready-handoff.md`
+- `2026-04/10-101500-g09-012-macos-au-coreaudio-demo-closeout.md`
+- `2026-04/10-104500-g09-012-linux-lv2-backend-demo-ready-handoff.md`
+- `2026-04/10-111500-g09-012-linux-lv2-backend-demo-closeout.md`
+- `2026-04/10-113500-g09-012-closeout-and-g09-013-graph-ready-handoff.md`
+- `2026-04/10-121500-g09-013-graph-execution-inspector-closeout.md`
+- `2026-04/10-123500-g09-013-dsp-processing-lab-ready-handoff.md`
+- `2026-04/10-110731-g09-013-dsp-processing-lab-closeout.md`
+- `2026-04/10-131500-g09-013-analysis-feature-inspector-ready-handoff.md`
+- `2026-04/10-140500-g09-013-analysis-feature-inspector-closeout.md`
+- `2026-04/10-143500-g09-013-audit-closeout-ready-handoff.md`
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane before promoting another
-`g09.012` batch card.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
