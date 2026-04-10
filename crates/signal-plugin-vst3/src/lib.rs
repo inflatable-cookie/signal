@@ -6,9 +6,7 @@ pub use vst3_host_adapter::*;
 #[cfg(test)]
 mod tests {
     use super::{Vst3HostAdapter, Vst3HostPlatform};
-    use crate::vst3_host_adapter::{
-        vst3_scaffold_factory_metadata_contents, vst3_scaffold_module_metadata_contents,
-    };
+    use crate::vst3_host_adapter::vst3_scaffold_module_metadata_contents;
     use signal_plugin::PluginFormat;
     use std::{
         fs,
@@ -28,28 +26,136 @@ mod tests {
     fn write_vst3_metadata(bundle_root: &std::path::Path, plugin_type_id: &str) {
         let metadata = vst3_scaffold_module_metadata_contents(plugin_type_id)
             .unwrap_or_else(|| panic!("unknown VST3 scaffold metadata request: {plugin_type_id}"));
-        let factory_metadata = vst3_scaffold_factory_metadata_contents(plugin_type_id)
-            .unwrap_or_else(|| {
-                panic!("unknown VST3 scaffold factory metadata request: {plugin_type_id}")
-            });
         fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
             .expect("vst3 metadata resources should be created");
         fs::write(
-            bundle_root
-                .join("Contents")
-                .join("Resources")
-                .join("signal-vst3-module.txt"),
-            metadata,
+            bundle_root.join("Contents").join("Info.plist"),
+            vst3_info_plist_contents(&metadata, bundle_root),
         )
-        .expect("vst3 module metadata should be written");
+        .expect("vst3 info plist should be written");
         fs::write(
             bundle_root
                 .join("Contents")
                 .join("Resources")
-                .join("signal-vst3-factory.txt"),
-            factory_metadata,
+                .join("moduleinfo.json"),
+            vst3_moduleinfo_contents(&metadata),
         )
-        .expect("vst3 factory metadata should be written");
+        .expect("vst3 moduleinfo should be written");
+    }
+
+    fn vst3_info_plist_contents(metadata: &str, bundle_root: &std::path::Path) -> String {
+        let mut plugin_type_id = "";
+        let mut name = "Signal VST3 Plugin";
+        let mut version = "0.1.0";
+        let mut audio_inputs = "2";
+        let mut audio_outputs = "2";
+        let mut midi_inputs = "0";
+        let mut midi_outputs = "0";
+        let mut features = "";
+
+        for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
+            match key.trim() {
+                "plugin_type_id" => plugin_type_id = value.trim(),
+                "name" => name = value.trim(),
+                "version" => version = value.trim(),
+                "audio_inputs" => audio_inputs = value.trim(),
+                "audio_outputs" => audio_outputs = value.trim(),
+                "midi_inputs" => midi_inputs = value.trim(),
+                "midi_outputs" => midi_outputs = value.trim(),
+                "features" => features = value.trim(),
+                _ => {}
+            }
+        }
+
+        let executable_name = bundle_root
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or(name);
+        let feature_array = features
+            .split(',')
+            .map(str::trim)
+            .filter(|feature| !feature.is_empty())
+            .map(|feature| format!("    <string>{feature}</string>"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
+<plist version=\"1.0\">\n\
+<dict>\n\
+  <key>CFBundleExecutable</key>\n\
+  <string>{executable_name}</string>\n\
+  <key>CFBundleIdentifier</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>CFBundleName</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundlePackageType</key>\n\
+  <string>BNDL</string>\n\
+  <key>CFBundleShortVersionString</key>\n\
+  <string>{version}</string>\n\
+  <key>SignalPluginTypeId</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>SignalAudioInputs</key>\n\
+  <integer>{audio_inputs}</integer>\n\
+  <key>SignalAudioOutputs</key>\n\
+  <integer>{audio_outputs}</integer>\n\
+  <key>SignalMidiInputs</key>\n\
+  <integer>{midi_inputs}</integer>\n\
+  <key>SignalMidiOutputs</key>\n\
+  <integer>{midi_outputs}</integer>\n\
+  <key>SignalFeatures</key>\n\
+  <array>\n\
+{feature_array}\n\
+  </array>\n\
+</dict>\n\
+</plist>\n"
+        )
+    }
+
+    fn vst3_moduleinfo_contents(metadata: &str) -> String {
+        let mut class_id = "";
+        let mut controller_class_id = "";
+        let mut category = "Fx";
+        let mut vendor = "Signal";
+        let mut name = "Signal VST3 Plugin";
+        let mut version = "0.1.0";
+
+        for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
+            match key.trim() {
+                "class_id" => class_id = value.trim(),
+                "controller_class_id" => controller_class_id = value.trim(),
+                "category" => category = value.trim(),
+                "vendor" => vendor = value.trim(),
+                "name" => name = value.trim(),
+                "version" => version = value.trim(),
+                _ => {}
+            }
+        }
+
+        let subcategory = if category.eq_ignore_ascii_case("Instrument") {
+            "Instrument"
+        } else {
+            "Fx"
+        };
+        let controller_class = if controller_class_id.is_empty()
+            || controller_class_id.eq_ignore_ascii_case("none")
+        {
+            String::new()
+        } else {
+            format!(
+                ",\n    {{\n      \"CID\": \"{controller_class_id}\",\n      \"Category\": \"Component Controller Class\",\n      \"Name\": \"{name}\",\n      \"Vendor\": \"{vendor}\",\n      \"Version\": \"{version}\",\n      \"Sub Categories\": [\"{subcategory}\"]\n    }}"
+            )
+        };
+
+        format!(
+            "{{\n  \"Name\": \"{name}\",\n  \"Version\": \"{version}\",\n  \"Factory Info\": {{\n    \"Vendor\": \"{vendor}\",\n    \"URL\": \"https://signal.dev\",\n    \"E-Mail\": \"\"\n  }},\n  \"Classes\": [\n    {{\n      \"CID\": \"{class_id}\",\n      \"Category\": \"Audio Module Class\",\n      \"Name\": \"{name}\",\n      \"Vendor\": \"{vendor}\",\n      \"Version\": \"{version}\",\n      \"Sub Categories\": [\"{subcategory}\"]\n    }}{controller_class}\n  ]\n}}\n"
+        )
     }
 
     #[test]

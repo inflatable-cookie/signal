@@ -8,4 +8,5 @@ publish = false
 description = "Audio Unit plugin adapter surfaces for Signal."
 
 [dependencies]
+plist = "1"
 signal-plugin = { path = "../signal-plugin" }

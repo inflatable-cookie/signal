@@ -122,6 +122,7 @@ pub(crate) fn clap_discovered_plugin_type(
     let default_io_layout = clap_default_io_layout(plugin_type_id)?;
     Some(ClapDiscoveredPluginType {
         plugin_type_id: PluginTypeId(plugin_type_id.to_string()),
+        library_path: format!("signal-clap-harness://{plugin_type_id}"),
         descriptor: clap_fixture_descriptor(plugin_type_id, default_io_layout),
         default_io_layout,
     })

@@ -68,6 +68,17 @@ impl ServerDemoRuntimeAssembly {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum DemoInteractionMode {
+    ParameterStep,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct DemoInteractionStep {
+    pub(crate) mode: DemoInteractionMode,
+    pub(crate) value: f32,
+}
+
 pub(crate) fn server_demo_runtime_assembly() -> ServerDemoRuntimeAssembly {
     let broker_override = broker_demo_plugin_override();
     ServerDemoRuntimeAssembly {
@@ -186,6 +197,22 @@ fn parse_demo_plugin_format(value: &str) -> Option<PluginFormat> {
     }
 }
 
+pub(crate) fn demo_interaction_step() -> Option<DemoInteractionStep> {
+    let mode = std::env::var("SIGNAL_HOST_DEMO_INTERACTION_MODE").ok()?;
+    let value = std::env::var("SIGNAL_HOST_DEMO_INTERACTION_VALUE")
+        .ok()
+        .and_then(|value| value.parse::<f32>().ok())
+        .map(|value| value.clamp(0.0, 1.0))
+        .unwrap_or(0.75);
+    match mode.as_str() {
+        "parameter-step" => Some(DemoInteractionStep {
+            mode: DemoInteractionMode::ParameterStep,
+            value,
+        }),
+        _ => None,
+    }
+}
+
 fn temp_demo_scan_root(label: &str) -> PathBuf {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -201,21 +228,18 @@ fn write_demo_vst3_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
     fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
         .expect("demo VST3 resources should be created");
     fs::write(
-        bundle_root
-            .join("Contents")
-            .join("Resources")
-            .join("signal-vst3-module.txt"),
-        demo_vst3_module_metadata(plugin_type_id),
+        bundle_root.join("Contents").join("Info.plist"),
+        demo_vst3_info_plist_contents(demo_vst3_module_metadata(plugin_type_id), &bundle_root),
     )
-    .expect("demo VST3 metadata should be written");
+    .expect("demo VST3 info plist should be written");
     fs::write(
         bundle_root
             .join("Contents")
             .join("Resources")
-            .join("signal-vst3-factory.txt"),
-        demo_vst3_factory_metadata(plugin_type_id),
+            .join("moduleinfo.json"),
+        demo_vst3_moduleinfo_contents(demo_vst3_module_metadata(plugin_type_id)),
     )
-    .expect("demo VST3 factory metadata should be written");
+    .expect("demo VST3 moduleinfo should be written");
 }
 
 fn demo_vst3_module_metadata(plugin_type_id: &str) -> &'static str {
@@ -227,13 +251,119 @@ fn demo_vst3_module_metadata(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn demo_vst3_factory_metadata(plugin_type_id: &str) -> &'static str {
-    match plugin_type_id {
-        "plugin:vst3:instrument" => {
-            "component=7E1D8F8A4D874D56A2C44DE250100001|Instrument|Signal Instrument VST3 Plugin\ncontroller=7E1D8F8A4D874D56A2C44DE250100002|Controller|Signal Instrument VST3 Plugin\n"
+fn demo_vst3_info_plist_contents(metadata: &str, bundle_root: &PathBuf) -> String {
+    let mut plugin_type_id = "";
+    let mut name = "Signal VST3 Plugin";
+    let mut version = "0.1.0";
+    let mut audio_inputs = "2";
+    let mut audio_outputs = "2";
+    let mut midi_inputs = "0";
+    let mut midi_outputs = "0";
+    let mut features = "";
+
+    for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        match key.trim() {
+            "plugin_type_id" => plugin_type_id = value.trim(),
+            "name" => name = value.trim(),
+            "version" => version = value.trim(),
+            "audio_inputs" => audio_inputs = value.trim(),
+            "audio_outputs" => audio_outputs = value.trim(),
+            "midi_inputs" => midi_inputs = value.trim(),
+            "midi_outputs" => midi_outputs = value.trim(),
+            "features" => features = value.trim(),
+            _ => {}
         }
-        other => panic!("unknown server demo VST3 factory type: {other}"),
     }
+
+    let executable_name = bundle_root
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or(name);
+    let feature_array = features
+        .split(',')
+        .map(str::trim)
+        .filter(|feature| !feature.is_empty())
+        .map(|feature| format!("    <string>{feature}</string>"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
+<plist version=\"1.0\">\n\
+<dict>\n\
+  <key>CFBundleExecutable</key>\n\
+  <string>{executable_name}</string>\n\
+  <key>CFBundleIdentifier</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>CFBundleName</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundlePackageType</key>\n\
+  <string>BNDL</string>\n\
+  <key>CFBundleShortVersionString</key>\n\
+  <string>{version}</string>\n\
+  <key>SignalPluginTypeId</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>SignalAudioInputs</key>\n\
+  <integer>{audio_inputs}</integer>\n\
+  <key>SignalAudioOutputs</key>\n\
+  <integer>{audio_outputs}</integer>\n\
+  <key>SignalMidiInputs</key>\n\
+  <integer>{midi_inputs}</integer>\n\
+  <key>SignalMidiOutputs</key>\n\
+  <integer>{midi_outputs}</integer>\n\
+  <key>SignalFeatures</key>\n\
+  <array>\n\
+{feature_array}\n\
+  </array>\n\
+</dict>\n\
+</plist>\n"
+    )
+}
+
+fn demo_vst3_moduleinfo_contents(metadata: &str) -> String {
+    let mut class_id = "";
+    let mut controller_class_id = "";
+    let mut category = "Fx";
+    let mut vendor = "Signal";
+    let mut name = "Signal VST3 Plugin";
+    let mut version = "0.1.0";
+
+    for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        match key.trim() {
+            "class_id" => class_id = value.trim(),
+            "controller_class_id" => controller_class_id = value.trim(),
+            "category" => category = value.trim(),
+            "vendor" => vendor = value.trim(),
+            "name" => name = value.trim(),
+            "version" => version = value.trim(),
+            _ => {}
+        }
+    }
+
+    let subcategory = if category.eq_ignore_ascii_case("Instrument") {
+        "Instrument"
+    } else {
+        "Fx"
+    };
+    let controller_class = if controller_class_id.is_empty()
+        || controller_class_id.eq_ignore_ascii_case("none")
+    {
+        String::new()
+    } else {
+        format!(
+            ",\n    {{\n      \"CID\": \"{controller_class_id}\",\n      \"Category\": \"Component Controller Class\",\n      \"Name\": \"{name}\",\n      \"Vendor\": \"{vendor}\",\n      \"Version\": \"{version}\",\n      \"Sub Categories\": [\"{subcategory}\"]\n    }}"
+        )
+    };
+
+    format!(
+        "{{\n  \"Name\": \"{name}\",\n  \"Version\": \"{version}\",\n  \"Factory Info\": {{\n    \"Vendor\": \"{vendor}\",\n    \"URL\": \"https://signal.dev\",\n    \"E-Mail\": \"\"\n  }},\n  \"Classes\": [\n    {{\n      \"CID\": \"{class_id}\",\n      \"Category\": \"Audio Module Class\",\n      \"Name\": \"{name}\",\n      \"Vendor\": \"{vendor}\",\n      \"Version\": \"{version}\",\n      \"Sub Categories\": [\"{subcategory}\"]\n    }}{controller_class}\n  ]\n}}\n"
+    )
 }
 
 fn restore_demo_env(key: &str, value: Option<&OsString>) {

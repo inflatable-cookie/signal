@@ -2,6 +2,13 @@ use signal_plugin::{CompletionState, WatchdogTriggerReason};
 use signal_runtime::{PluginSandboxInstanceStateRecord, RecoveryRestartIntent, StopReason};
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct ServerPluginDispatchSummary {
+    pub processing_epoch: u64,
+    pub block_sequence: u64,
+    pub automation_value: Option<f32>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct ServerPayloadSummary {
     pub event_count: usize,
     pub parameter_event_count: usize,
@@ -57,6 +64,7 @@ pub struct ServerRuntimeHostSummary {
     pub scan_roots: Vec<String>,
     pub execution: ServerExecutionSummary,
     pub transport: ServerTransportSummary,
+    pub plugin_dispatch: Option<ServerPluginDispatchSummary>,
     pub last_payload: ServerPayloadSummary,
     pub faults: ServerFaultSummary,
 }

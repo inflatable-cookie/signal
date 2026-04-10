@@ -1,0 +1,558 @@
+{
+  "receipt_version": "signal.demo.receipt.v1",
+  "manifest_id": "signal.demo.plugin.capability-browser",
+  "scenario_id": "signal.demo.plugin.capability-browser.default",
+  "status": "passed",
+  "launch_command": "effigy demo:plugin-capability-browser",
+  "artifacts": [
+    {
+      "kind": "plugin-browser-model",
+      "html_path": "demos/receipts/plugin-capability-browser.view.html",
+      "plugin_count": 18,
+      "format_count": 2,
+      "launch_target_count": 23,
+      "fixture_fallback_used": false,
+      "inventory": [
+        {
+          "plugin_type_id": "plugin:au:com.arturia.component.Acid-V:aumu:T303:Artu",
+          "plugin_id": "plugin:au:com.arturia.component.Acid-V:aumu:T303:Artu",
+          "format": "Au",
+          "vendor": "Arturia",
+          "name": "Acid V",
+          "version": "65797",
+          "features": [
+            "Instrument",
+            "Analyzer"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 1,
+          "summary": "Arturia Acid V Au params=2 buses=1 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/Acid V.component",
+              "plugin_type_id": "plugin:au:com.arturia.component.Acid-V:aumu:T303:Artu",
+              "format": "Au"
+            },
+            {
+              "host_surface": "server",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/Acid V.component",
+              "plugin_type_id": "plugin:au:com.arturia.component.Acid-V:aumu:T303:Artu",
+              "format": "Au"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:au:com.BEATSURFING.RNBOAudioPlugin:aumu:7DSN:Druw",
+          "plugin_id": "plugin:au:com.BEATSURFING.RNBOAudioPlugin:aumu:7DSN:Druw",
+          "format": "Au",
+          "vendor": "BEATSURFING",
+          "name": "7DeadlySnares",
+          "version": "1.1.1",
+          "features": [
+            "Instrument",
+            "Analyzer"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 1,
+          "summary": "BEATSURFING 7DeadlySnares Au params=2 buses=1 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/7DeadlySnares.component",
+              "plugin_type_id": "plugin:au:com.BEATSURFING.RNBOAudioPlugin:aumu:7DSN:Druw",
+              "format": "Au"
+            },
+            {
+              "host_surface": "server",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/7DeadlySnares.component",
+              "plugin_type_id": "plugin:au:com.BEATSURFING.RNBOAudioPlugin:aumu:7DSN:Druw",
+              "format": "Au"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:au:com.adptr.MetricAB:aufx:Kfbw:Adpt",
+          "plugin_id": "plugin:au:com.adptr.MetricAB:aufx:Kfbw:Adpt",
+          "format": "Au",
+          "vendor": "Plugin Alliance",
+          "name": "ADPTR MetricAB",
+          "version": "1.4.1",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance ADPTR MetricAB Au params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/ADPTR MetricAB.component",
+              "plugin_type_id": "plugin:au:com.adptr.MetricAB:aufx:Kfbw:Adpt",
+              "format": "Au"
+            },
+            {
+              "host_surface": "server",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/ADPTR MetricAB.component",
+              "plugin_type_id": "plugin:au:com.adptr.MetricAB:aufx:Kfbw:Adpt",
+              "format": "Au"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:au:com.adptraudio.Sculpt:aufx:SCPT:Adpt",
+          "plugin_id": "plugin:au:com.adptraudio.Sculpt:aufx:SCPT:Adpt",
+          "format": "Au",
+          "vendor": "Plugin Alliance",
+          "name": "ADPTR Sculpt",
+          "version": "1.3.0",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance ADPTR Sculpt Au params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/ADPTR Sculpt.component",
+              "plugin_type_id": "plugin:au:com.adptraudio.Sculpt:aufx:SCPT:Adpt",
+              "format": "Au"
+            },
+            {
+              "host_surface": "server",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/ADPTR Sculpt.component",
+              "plugin_type_id": "plugin:au:com.adptraudio.Sculpt:aufx:SCPT:Adpt",
+              "format": "Au"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:au:com.adptr.StreamLiner:aufx:STML:Adpt",
+          "plugin_id": "plugin:au:com.adptr.StreamLiner:aufx:STML:Adpt",
+          "format": "Au",
+          "vendor": "Plugin Alliance",
+          "name": "ADPTR StreamLiner",
+          "version": "1.1.0",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance ADPTR StreamLiner Au params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/ADPTR StreamLiner.component",
+              "plugin_type_id": "plugin:au:com.adptr.StreamLiner:aufx:STML:Adpt",
+              "format": "Au"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:au:com.plugin-alliance.au.amekeq200:aumf:ameq:Brwx",
+          "plugin_id": "plugin:au:com.plugin-alliance.au.amekeq200:aumf:ameq:Brwx",
+          "format": "Au",
+          "vendor": "Plugin Alliance",
+          "name": "AMEK EQ 200",
+          "version": "1.4.1",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance AMEK EQ 200 Au params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/Components/AMEK EQ 200.component",
+              "plugin_type_id": "plugin:au:com.plugin-alliance.au.amekeq200:aumf:ameq:Brwx",
+              "format": "Au"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+          "plugin_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+          "format": "Vst3",
+          "vendor": "Arturia",
+          "name": "ARP 2600 V3",
+          "version": "3.13.4.6366",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Arturia ARP 2600 V3 Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ARP 2600 V3.vst3",
+              "plugin_type_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-arturia-acid-v-vst3:41727475415649535433303350726f63",
+          "plugin_id": "plugin:vst3:com-arturia-acid-v-vst3:41727475415649535433303350726f63",
+          "format": "Vst3",
+          "vendor": "Arturia",
+          "name": "Acid V",
+          "version": "1.1.5.6367",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Arturia Acid V Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/Acid V.vst3",
+              "plugin_type_id": "plugin:vst3:com-arturia-acid-v-vst3:41727475415649535433303350726f63",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-arturia-analog-lab-v-vst3:4172747541564953416c617650726f63",
+          "plugin_id": "plugin:vst3:com-arturia-analog-lab-v-vst3:4172747541564953416c617650726f63",
+          "format": "Vst3",
+          "vendor": "Arturia",
+          "name": "Analog Lab V",
+          "version": "5.12.2.6463",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Arturia Analog Lab V Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/Analog Lab V.vst3",
+              "plugin_type_id": "plugin:vst3:com-arturia-analog-lab-v-vst3:4172747541564953416c617650726f63",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-beatsurfing-rnboaudioplugin:abcdef019182faeb447275773744534e",
+          "plugin_id": "plugin:vst3:com-beatsurfing-rnboaudioplugin:abcdef019182faeb447275773744534e",
+          "format": "Vst3",
+          "vendor": "BEATSURFING",
+          "name": "7DeadlySnares",
+          "version": "1.1.1",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "BEATSURFING 7DeadlySnares Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/7DeadlySnares.vst3",
+              "plugin_type_id": "plugin:vst3:com-beatsurfing-rnboaudioplugin:abcdef019182faeb447275773744534e",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:co-uk-29palms-animate:5653544d61416e616e696d6174650000",
+          "plugin_id": "plugin:vst3:co-uk-29palms-animate:5653544d61416e616e696d6174650000",
+          "format": "Vst3",
+          "vendor": "Mastering the Mix",
+          "name": "ANIMATE",
+          "version": "1.1.9",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Mastering the Mix ANIMATE Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ANIMATE.vst3",
+              "plugin_type_id": "plugin:vst3:co-uk-29palms-animate:5653544d61416e616e696d6174650000",
+              "format": "Vst3"
+            },
+            {
+              "host_surface": "server",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ANIMATE.vst3",
+              "plugin_type_id": "plugin:vst3:co-uk-29palms-animate:5653544d61416e616e696d6174650000",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-output-arcade:56535441524344617263616465000000",
+          "plugin_id": "plugin:vst3:com-output-arcade:56535441524344617263616465000000",
+          "format": "Vst3",
+          "vendor": "Output",
+          "name": "Arcade",
+          "version": "2.11.0",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Output Arcade Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/Arcade.vst3",
+              "plugin_type_id": "plugin:vst3:com-output-arcade:56535441524344617263616465000000",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-adptr-metricab:5653544b6662776164707472206d6574",
+          "plugin_id": "plugin:vst3:com-adptr-metricab:5653544b6662776164707472206d6574",
+          "format": "Vst3",
+          "vendor": "Plugin Alliance",
+          "name": "ADPTR MetricAB",
+          "version": "1.4.1",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance ADPTR MetricAB Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ADPTR MetricAB.vst3",
+              "plugin_type_id": "plugin:vst3:com-adptr-metricab:5653544b6662776164707472206d6574",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-adptraudio-sculpt:abcdef019182faeb4164707453435054",
+          "plugin_id": "plugin:vst3:com-adptraudio-sculpt:abcdef019182faeb4164707453435054",
+          "format": "Vst3",
+          "vendor": "Plugin Alliance",
+          "name": "ADPTR Sculpt",
+          "version": "1.3.0",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance ADPTR Sculpt Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ADPTR Sculpt.vst3",
+              "plugin_type_id": "plugin:vst3:com-adptraudio-sculpt:abcdef019182faeb4164707453435054",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-adptr-streamliner:56535453544d4c616470747220737472",
+          "plugin_id": "plugin:vst3:com-adptr-streamliner:56535453544d4c616470747220737472",
+          "format": "Vst3",
+          "vendor": "Plugin Alliance",
+          "name": "ADPTR StreamLiner",
+          "version": "1.1.0",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance ADPTR StreamLiner Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ADPTR StreamLiner.vst3",
+              "plugin_type_id": "plugin:vst3:com-adptr-streamliner:56535453544d4c616470747220737472",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-plugin-alliance-vst3-amekeq200:565354616d6571616d656b2065712032",
+          "plugin_id": "plugin:vst3:com-plugin-alliance-vst3-amekeq200:565354616d6571616d656b2065712032",
+          "format": "Vst3",
+          "vendor": "Plugin Alliance",
+          "name": "AMEK EQ 200",
+          "version": "1.4.1",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance AMEK EQ 200 Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/AMEK EQ 200.vst3",
+              "plugin_type_id": "plugin:vst3:com-plugin-alliance-vst3-amekeq200:565354616d6571616d656b2065712032",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-plugin-alliance-vst3-amekmasteringcompressor:565354414d436d616d656b206d617374",
+          "plugin_id": "plugin:vst3:com-plugin-alliance-vst3-amekmasteringcompressor:565354414d436d616d656b206d617374",
+          "format": "Vst3",
+          "vendor": "Plugin Alliance",
+          "name": "AMEK Mastering Compressor",
+          "version": "1.1.1",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Plugin Alliance AMEK Mastering Compressor Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/AMEK Mastering Compressor.vst3",
+              "plugin_type_id": "plugin:vst3:com-plugin-alliance-vst3-amekmasteringcompressor:565354414d436d616d656b206d617374",
+              "format": "Vst3"
+            }
+          ]
+        },
+        {
+          "plugin_type_id": "plugin:vst3:com-sonicacademy-ana2:565354414e4132616e61203200000000",
+          "plugin_id": "plugin:vst3:com-sonicacademy-ana2:565354414e4132616e61203200000000",
+          "format": "Vst3",
+          "vendor": "Sonic Academy",
+          "name": "ANA 2",
+          "version": "2.5.6",
+          "features": [
+            "AudioEffect",
+            "Utility"
+          ],
+          "parameter_count": 2,
+          "audio_bus_count": 2,
+          "summary": "Sonic Academy ANA 2 Vst3 params=2 buses=2 features=2",
+          "interaction_posture": "bounded-host-bootstrap",
+          "launch_targets": [
+            {
+              "host_surface": "local",
+              "launch_root": "/Library/Audio/Plug-Ins/VST3/ANA2.vst3",
+              "plugin_type_id": "plugin:vst3:com-sonicacademy-ana2:565354414e4132616e61203200000000",
+              "format": "Vst3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "bounded-plugin-launch",
+      "plugin": {
+        "plugin_type_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+        "plugin_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+        "format": "Vst3",
+        "vendor": "Arturia",
+        "name": "ARP 2600 V3",
+        "version": "3.13.4.6366",
+        "features": [
+          "AudioEffect",
+          "Utility"
+        ],
+        "parameter_count": 2,
+        "audio_bus_count": 2,
+        "summary": "Arturia ARP 2600 V3 Vst3 params=2 buses=2 features=2",
+        "interaction_posture": "bounded-host-bootstrap",
+        "launch_targets": [
+          {
+            "host_surface": "local",
+            "launch_root": "/Library/Audio/Plug-Ins/VST3/ARP 2600 V3.vst3",
+            "plugin_type_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+            "format": "Vst3"
+          }
+        ]
+      },
+      "target": {
+        "host_surface": "local",
+        "launch_root": "/Library/Audio/Plug-Ins/VST3/ARP 2600 V3.vst3",
+        "plugin_type_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+        "format": "Vst3"
+      },
+      "package": "signal-host-local",
+      "plugin_type_id": "plugin:vst3:com-arturia-arp-2600-v3-vst3:41727475415649534152503350726f63",
+      "format": "Vst3",
+      "launch_root": "/Library/Audio/Plug-Ins/VST3/ARP 2600 V3.vst3",
+      "status": "passed",
+      "exit_code": 0,
+      "command": "cargo run -q -p signal-host-local",
+      "summary_line": "signal-host-local profile=Local backend=coreaudio clap_supported=true sandbox=\"local-default-sandbox\" control_requests=14 control_responses=14 heartbeat_responses=9 processed_blocks=8 completion=Completed last_block_sequence=8 interaction_mode=parameter-step automation_value=Some(0.0) parameter_events=2 generated_event_bytes=268 deadline_misses=0 heartbeat_misses=0 watchdog_triggered=false watchdog_reason=None last_control_message=\"sandbox.heartbeat\" epoch=1 lease_id=\"local-default-sandbox:instance:local:default:epoch-1\" region_id=\"region-71734-1775856443423248000-1-1\" shared_memory_bytes=12608 restarts=0 teardowns=0 audio_state=Running audio_callbacks=8 audio_frames=4096 audio_copied_samples=8192 audio_zero_filled_samples=0 audio_dropped_samples=0 audio_peak=Some(0.8) audio_graph=Some(\"signal.host.local.demo\") topology_nodes=4 topology_roles=2/1/1 topology_groups=1/2/1 observation=readiness=Ready sample_rate=48000 block_size=512 handshaken=true configured=true running=true handshakes=1 configures=1 starts=1 stops=0 restarts=0 xruns=0 active_sandboxes=1 safe_mode=false next_block_sequence=0 sequence_segments=1 sequence_first_block=Some(1) sequence_last_block=Some(8) plugin_scans=1 plugin_filtered_scans=1 plugin_discovered_types=1 plugin_discovered_formats=1 plugin_parity_formats=3 plugin_capability_coverage=formats=1 multi_format=false types=1 complex_io=0 multi_output_instruments=0 bus_capable_fx=1 sidechain_capable_fx=0 features=1/0/0/1/0 snapshot=1 reset=1 bypass=1 latency=1 tail=1 sample_accurate=1 midi_in=0 note_in=0 note_expression=0 midi_out=0 silence_aware=1 main_thread_state=0 prepare=1 activate=1 reset_while_active=1 max_complex_io_groups=2 max_audio_buses=2 max_parameters=2 plugin_last_scan=scan=1 roots=1 formats=[Vst3] discovered_types=1 discovered_formats=1 discovery_diagnostics=0 plugin_sandboxes=1/1 plugin_sandbox_placement=0/1 plugin_sandbox_rebindable=0 plugin_sandbox_terminal=0 plugin_parity_formats=3 plugin_chains=1/1 plugin_chain_placement=0/1/0 plugin_chain_pending=0 plugin_chain_settling=0 plugin_chain_compensated=1 plugin_chain_degraded=0 plugin_chain_bypassed=0 plugin_chain_missing=0 plugin_chain_rebindable=0 plugin_chain_terminal=0 plugin_chain_latency=24/0 plugin_chain_tail=48 automation_param=4096 automation_projection=0/0/0 automation_shapes=0/0 automation_batch_policy=0/None automation_segments=1 automation_first_epoch=Some(1) automation_last_epoch=Some(1) automation_lease_rollovers=0 plugin_events_last_batch=11/2/2/2/1/3/1 plugin_events_total=88/16/16/16/8/24/8 plugin_events_expression_last_batch=1/1/1 plugin_events_expression_total=8/8/8 plugin_events_posture=Guarded/Guarded plugin_events_segments=1 plugin_events_first_epoch=Some(1) plugin_events_last_epoch=Some(1) plugin_events_lease_rollovers=0 plugin_events_last_block=Some(8) plugin_events_last_bytes=268 transport_epoch=0 transport_transition=None transport_transition_epoch=None transport_transition_block=None transport_playing=Some(true) transport_tempo_bpm=Some(126.0) transport_timeline_position_samples=Some(4608) transport_loop_start_samples=Some(0) transport_loop_end_samples=Some(8192) transport_last_block_start_samples=Some(4096) transport_last_block_end_samples=Some(4608) transport_loop_wrap_count=0 scheduler_snapshot_state=Anticipative scheduler_snapshot_phase=Realtime scheduler_snapshot_graph_applied=true scheduler_snapshot_schedule_applied=false scheduler_snapshot_transport_projected=true scheduler_snapshot_anticipative_enabled=true scheduler_snapshot_graph_id=Some(\"signal.host.local.demo\") scheduler_snapshot_phase_count=2 scheduler_snapshot_lane_count=2 scheduler_snapshot_dispatch_count=2 scheduler_snapshot_pending_prework_targets=0 scheduler_snapshot_processed_blocks=8 scheduler_summary_phases=2/1 scheduler_summary_lanes=2/1 scheduler_summary_dispatches=2/1/1 scheduler_summary_handoffs=1 scheduler_summary_prework=Idle/Normal/PluginConstrained scheduler_summary_pending=0/0 scheduler_summary_topology=false/true/1 scheduler_summary_lane_order=[Anticipative, Realtime] scheduler_summary_dispatch_order=[Anticipative, Realtime] block_summary_processed=8 block_summary_last=Some(1)/Some(8)/2ch@512 block_summary_timing=Some(507292)/Some(10666666)/Some(4.7558627)/None/Normal/0 block_summary_prework=Admitted/Fresh/Some(InputSignatureChanged) block_summary_latency_tail=24/0/48 block_summary_levels=Some(0.0)/Some(0.8)/Some(0.80000544) block_summary_transport=0/None/false block_summary_context=Some(true)/Some(true)/Some(126.0)/Some(4096) degradation_summary_state=false/false degradation_summary_faults=0/0/0/0 degradation_summary_recovery=0 degradation_summary_sessions=0/0/0/0/0 degradation_summary_gates=false/false degradation_summary_last_watchdog=None fault_status=Steady/safe_mode=false active=0 xrun=false plugin=false watchdog=false device_loss=false transport=false binding=false restarts=0/0 plugin_faults=0 transport_faulted_sessions=0 device_losses=0 fault_diagnostic=None/None/Steady recovery=Steady safe_mode=false rebindable=false contributions=4 interruption=Steady/active=false rebindable=false recovery=Steady primary=None deferred=None/None device_supervision=Stable/Unneeded/Clear recovery=Steady interruption=Steady primary=None safe_mode=false device_loss_active=false device_losses=0 restart_attempts=Some(0) restart_failures=Some(0) watchdog_restarts=0 external_io=Ready/Stable/ProgramOutput/Direct/Unavailable linux_backend=NotLinux/Unsupported/Unsupported/Unsupported/Unsupported backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running endpoint=OutputOnly fallback=false device_losses=0 restart_attempts=0 restart_failures=0 linux_session=NotLinux/NotLinux/NotLinux/NotLinux/NotLinux/NotLinux backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 pipewire_alsa=NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 jack=NotJack/NotJack/NotJack/NotJack backend=coreaudio device=coreaudio:macbook-pro-speakers session=Detached/false heartbeat=Unknown dispatch=Idle simulated=false external_midi=Idle/Empty/NoLiveOwnership/Detached/NotLinux/NotLinux provider=signal-host-local devices=0 endpoints=0/0/0/0 routes=0/0 engine_graph_id=Some(\"signal.host.local.demo\") engine_node_count=4 engine_stateful_nodes=4 engine_latency_nodes=1 engine_plugin_backed_nodes=1 engine_planning_anticipative=true engine_inline_realtime_nodes=0 engine_stateful_realtime_nodes=3 engine_anticipative_eligible_nodes=1 engine_phase_count=2 engine_anticipative_phases=1 engine_phase_order=[StatefulRealtime, AnticipativeEligible] engine_lane_count=2 engine_anticipative_lanes=1 engine_lane_order=[Anticipative, Realtime] engine_dispatch_count=2 engine_dispatch_boundaries=1 engine_dispatch_order=[Anticipative, Realtime] engine_prepared_dispatches=1 engine_realtime_dispatches=1 engine_dispatch_handoffs=1 engine_scheduler_topology_compatible=false engine_scheduler_topology_requires_host_reinterpretation=true engine_scheduler_topology_track_lanes=2/1 engine_scheduler_topology_buses=1/2 engine_scheduler_topology_send_returns=0/0 engine_scheduler_topology_consoles=1/1 engine_scheduler_topology_schedule_streams=None engine_scheduler_topology_issue_count=1 engine_scheduler_topology_issues=[MissingScheduleProjectionForTrackLanes { required_streams: 1 }] engine_prework_cache_enabled=true engine_prework_cache_state=Admitted engine_prework_service_state=Idle engine_prework_service_pressure=Normal engine_prework_service_semantic_policy=PluginConstrained engine_prework_service_active_plugin_sandboxes=1 engine_prework_service_bound_plugin_sandboxes=1 engine_prework_service_active_bound_plugin_sandboxes=1 engine_prework_service_degraded_bound_plugin_sandboxes=0 engine_prework_service_missing_bound_plugin_sandboxes=0 engine_prework_service_plugin_gate_active=false engine_prework_pending_targets=0 engine_prework_pending_immediate_targets=0 engine_prework_pending_near_term_targets=0 engine_prework_pending_deferred_targets=0 engine_prework_next_pending_target_block=None engine_prework_service_cycles=8 engine_prework_service_prepared_targets=16 engine_prework_service_pauses=3 engine_prework_service_resumes=0 engine_prework_service_starvations=0 engine_prework_service_throttles=0 engine_prework_service_yields=0 engine_last_prework_service_epoch=Some(1) engine_last_prework_serviced_target_block=Some(10) engine_last_prework_serviced_backlog_class=Some(NearTerm) engine_prework_requested_mode=RuntimeRoleDefault engine_prework_mode=RuntimeRoleDefault engine_prework_policy_configured=true engine_prework_profile=Some(Local) engine_prework_profile_source=Some(RuntimeRoleDefault) engine_prework_profile_window_override=None engine_prework_policy_window_blocks=Some(2) engine_prework_queue_capacity=3 engine_prework_queue_depth=3 engine_prework_peak_queue_depth=3 engine_prework_window_targets=3 engine_prework_window_blocks=[8, 9, 10] engine_prework_freshness_state=Fresh engine_prework_block_window=2 engine_prework_remaining_valid_blocks=Some(2) engine_prework_cache_admissions=20 engine_prework_cache_consumptions=8 engine_prework_queued_admissions=12 engine_prework_queued_consumptions=0 engine_prework_cache_hits=0 engine_prework_cache_misses=8 engine_prework_cache_invalidations=17 engine_prework_cache_retirements=17 engine_prework_unconsumed_retirements=10 engine_prework_consumed_retirements=7 engine_last_prework_cache_hit=false engine_last_prework_invalidation=Some(InputSignatureChanged) engine_last_prework_retirement=Some(InputSignatureChanged) engine_last_prework_retired_unconsumed=Some(true) engine_prework_cache_valid_until=Some(2) engine_prework_cache_valid_until_block=Some(12) engine_last_prework_source_epoch=Some(1) engine_last_prework_source_block=Some(10) engine_last_prework_admission_epoch=Some(1) engine_last_prework_admission_block=Some(10) engine_last_prework_admitted_from_block=Some(8) engine_last_prework_consumption_epoch=Some(1) engine_last_prework_consumption_block=Some(8) engine_last_prework_consumed_from_block=Some(8) engine_last_prework_retirement_epoch=Some(1) engine_last_prework_retirement_block=Some(8) engine_stage_count=7 engine_dynamic_kernel_stages=0 engine_dynamic_stage_state_model=RebuiltPerBlock engine_total_latency_samples=24 engine_max_node_latency_samples=24 engine_total_tail_samples=0 engine_max_node_tail_samples=0 engine_output_tail_samples=48 engine_max_bus_tail_samples=48 engine_processed_blocks=8 engine_last_block=Some(8) engine_prework_output_peak=Some(0.06739768) engine_realtime_input_peak=Some(0.06739768) engine_output_peak=Some(0.8) engine_output_rms=Some(0.80000544) engine_projection_epoch=Some(2) engine_parameter_epoch=Some(11) engine_context_anticipative=Some(true) engine_transport_playing=Some(true) engine_transport_tempo=Some(126.0) engine_timeline_position=Some(4096) engine_transport_epoch=0 engine_transport_transition=None engine_transport_block_start=Some(4096) engine_transport_block_end=Some(4608) engine_transport_loop_wrapped=false transport_concurrency_limits=1/2 transport_concurrency_current=1 transport_concurrency_peak=1 transport_concurrency_recovery_current=0 transport_concurrency_recovery_peak=0 transport_concurrency_cleanup_pending=0 transport_concurrency_deferred_retries=0 transport_concurrency_next_cleanup_epoch=1 transport_concurrency_oldest_ready_epoch=None transport_fault_boundary=FaultAdjacentOnly transport_fault_sources=0/0/0 transport_fault_phases=0/0/0/0 transport_session_boundary=HealthyPathVisible transport_session_state=AttachActive transport_session_attached=true transport_session_heartbeat_state=Fresh transport_session_dispatch_state=Completed transport_session_attached_sessions=2 transport_session_max_attached_sessions=2 transport_session_attach=2 transport_session_detach=0/0/0 transport_session_heartbeat=9/9/0 transport_session_dispatch=8/8/0 events=91 supervision_updates=0 plugin_faults=0 plugin_instance_states=13 recovery_events=0 lifecycle_events=12 transport_events=2 heartbeat_events=18 block_dispatch_events=16 lease_rollover_events=0 invalidation_events=0 completion_slot_events=24 transport_fault_events=0 broker_failure_events=0 sandbox_operation_failure_events=0 last_watchdog=none last_fault=none last_plugin_instance_state=local-default-sandbox:instance:local:default:Active/Ready/active=true@Some(1) last_recovery=none last_lifecycle=local-default-sandbox:TransportAttached@Some(1) last_transport=local-default-sandbox:local-default-sandbox:instance:local:default:epoch-1:region-71734-1775856443423248000-1-1:Attached@Some(1) last_heartbeat=local-default-sandbox:Responded@Some(1)/block=Some(8) last_dispatch=local-default-sandbox:local-default-sandbox:instance:local:default:epoch-1:Completed/block=8@1 last_rollover=none last_invalidation=none last_completion_slot=local-default-sandbox:local-default-sandbox:instance:local:default:epoch-1:Completed@1/block=8 last_transport_fault=none last_broker_failure=none last_sandbox_operation_failure=none transport_concurrency_cleanup_waves=0 recording_capture=Some(Idle)/None/None ready=true take=None track=None frames=0 events=0 blocks=0 pressure=0 last_take=None last_path=None last_duration=None recording_capture_interruption=None execution_topology_summary_nodes=4 execution_topology_summary_roles=0/2/1/0/1 execution_topology_summary_groups=1/2/1 execution_topology_summary_secondary_inputs=0/0/0/0/0 execution_topology_summary_bus_connections=3 execution_topology_summary_auxiliary_paths=2 execution_topology_summary_plugin_chain=1/1/0/0/1/0/0/0/0/24/48 execution_topology_summary_lanes=2 execution_topology_summary_lane_shapes=Anticipative:1|Realtime:3 metering_snapshot_meters=5 metering_snapshot_main=Some(0.8)/Some(0.80000544) metering_snapshot_loudness=Some(-1.9382001)/Some(-1.9382001)/Some(-1.9382001) metering_snapshot_clipped=0 metering_snapshot_routes=1/2/0/1 metering_snapshot_track_lane_shapes=track:lead:2 metering_snapshot_bus_group_shapes=mix:master:1|mix:tracks:2 metering_snapshot_send_return_shapes= metering_snapshot_console_group_shapes=console:main:1 linux_session=NotLinux/NotLinux/NotLinux/NotLinux/NotLinux/NotLinux backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 pipewire_alsa=NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 jack=NotJack/NotJack/NotJack/NotJack backend=coreaudio device=coreaudio:macbook-pro-speakers session=Detached/false heartbeat=Unknown dispatch=Idle simulated=false host_backend=coreaudio host_linux_backend=NotLinux/Unsupported/Unsupported/Unsupported/Unsupported host_device=coreaudio:macbook-pro-speakers host_stream_state=Running host_clock_source=Internal host_clock_domain=SameClock host_clock_fallback_state=Direct host_clock_transition_state=Stable host_clock_drift_state=Stable host_clock_discontinuity_state=Continuous host_duplex_mismatch_state=NotApplicable host_endpoint_topology=OutputOnly host_partial_availability=false host_clock_crossing_required=false host_clock_processing_sample_rate=48000 host_clock_hardware_sample_rate=48000 host_clock_ownership=HostDrivenCallback host_clock_restart_policy=HostMustRestart host_callback_interval_ms=10.667 host_output_latency_samples=512 host_graph_latency_samples=24 host_estimated_output_latency_samples=536 host_backend_health=Healthy host_backend_xruns=0 host_backend_device_losses=0 host_backend_restart_attempts=0 host_backend_restart_failures=0 host_audio_callbacks=8 host_audio_frames=4096 host_audio_copied_samples=8192 host_audio_zero_filled_samples=0 host_audio_dropped_samples=0 host_audio_peak=Some(0.8) host_audio_graph=Some(\"signal.host.local.demo\") host_audio_graph_matches_runtime=true event_stream=91",
+      "stdout_tail": [
+        "signal-host-local profile=Local backend=coreaudio clap_supported=true sandbox=\"local-default-sandbox\" control_requests=14 control_responses=14 heartbeat_responses=9 processed_blocks=8 completion=Completed last_block_sequence=8 interaction_mode=parameter-step automation_value=Some(0.0) parameter_events=2 generated_event_bytes=268 deadline_misses=0 heartbeat_misses=0 watchdog_triggered=false watchdog_reason=None last_control_message=\"sandbox.heartbeat\" epoch=1 lease_id=\"local-default-sandbox:instance:local:default:epoch-1\" region_id=\"region-71734-1775856443423248000-1-1\" shared_memory_bytes=12608 restarts=0 teardowns=0 audio_state=Running audio_callbacks=8 audio_frames=4096 audio_copied_samples=8192 audio_zero_filled_samples=0 audio_dropped_samples=0 audio_peak=Some(0.8) audio_graph=Some(\"signal.host.local.demo\") topology_nodes=4 topology_roles=2/1/1 topology_groups=1/2/1 observation=readiness=Ready sample_rate=48000 block_size=512 handshaken=true configured=true running=true handshakes=1 configures=1 starts=1 stops=0 restarts=0 xruns=0 active_sandboxes=1 safe_mode=false next_block_sequence=0 sequence_segments=1 sequence_first_block=Some(1) sequence_last_block=Some(8) plugin_scans=1 plugin_filtered_scans=1 plugin_discovered_types=1 plugin_discovered_formats=1 plugin_parity_formats=3 plugin_capability_coverage=formats=1 multi_format=false types=1 complex_io=0 multi_output_instruments=0 bus_capable_fx=1 sidechain_capable_fx=0 features=1/0/0/1/0 snapshot=1 reset=1 bypass=1 latency=1 tail=1 sample_accurate=1 midi_in=0 note_in=0 note_expression=0 midi_out=0 silence_aware=1 main_thread_state=0 prepare=1 activate=1 reset_while_active=1 max_complex_io_groups=2 max_audio_buses=2 max_parameters=2 plugin_last_scan=scan=1 roots=1 formats=[Vst3] discovered_types=1 discovered_formats=1 discovery_diagnostics=0 plugin_sandboxes=1/1 plugin_sandbox_placement=0/1 plugin_sandbox_rebindable=0 plugin_sandbox_terminal=0 plugin_parity_formats=3 plugin_chains=1/1 plugin_chain_placement=0/1/0 plugin_chain_pending=0 plugin_chain_settling=0 plugin_chain_compensated=1 plugin_chain_degraded=0 plugin_chain_bypassed=0 plugin_chain_missing=0 plugin_chain_rebindable=0 plugin_chain_terminal=0 plugin_chain_latency=24/0 plugin_chain_tail=48 automation_param=4096 automation_projection=0/0/0 automation_shapes=0/0 automation_batch_policy=0/None automation_segments=1 automation_first_epoch=Some(1) automation_last_epoch=Some(1) automation_lease_rollovers=0 plugin_events_last_batch=11/2/2/2/1/3/1 plugin_events_total=88/16/16/16/8/24/8 plugin_events_expression_last_batch=1/1/1 plugin_events_expression_total=8/8/8 plugin_events_posture=Guarded/Guarded plugin_events_segments=1 plugin_events_first_epoch=Some(1) plugin_events_last_epoch=Some(1) plugin_events_lease_rollovers=0 plugin_events_last_block=Some(8) plugin_events_last_bytes=268 transport_epoch=0 transport_transition=None transport_transition_epoch=None transport_transition_block=None transport_playing=Some(true) transport_tempo_bpm=Some(126.0) transport_timeline_position_samples=Some(4608) transport_loop_start_samples=Some(0) transport_loop_end_samples=Some(8192) transport_last_block_start_samples=Some(4096) transport_last_block_end_samples=Some(4608) transport_loop_wrap_count=0 scheduler_snapshot_state=Anticipative scheduler_snapshot_phase=Realtime scheduler_snapshot_graph_applied=true scheduler_snapshot_schedule_applied=false scheduler_snapshot_transport_projected=true scheduler_snapshot_anticipative_enabled=true scheduler_snapshot_graph_id=Some(\"signal.host.local.demo\") scheduler_snapshot_phase_count=2 scheduler_snapshot_lane_count=2 scheduler_snapshot_dispatch_count=2 scheduler_snapshot_pending_prework_targets=0 scheduler_snapshot_processed_blocks=8 scheduler_summary_phases=2/1 scheduler_summary_lanes=2/1 scheduler_summary_dispatches=2/1/1 scheduler_summary_handoffs=1 scheduler_summary_prework=Idle/Normal/PluginConstrained scheduler_summary_pending=0/0 scheduler_summary_topology=false/true/1 scheduler_summary_lane_order=[Anticipative, Realtime] scheduler_summary_dispatch_order=[Anticipative, Realtime] block_summary_processed=8 block_summary_last=Some(1)/Some(8)/2ch@512 block_summary_timing=Some(507292)/Some(10666666)/Some(4.7558627)/None/Normal/0 block_summary_prework=Admitted/Fresh/Some(InputSignatureChanged) block_summary_latency_tail=24/0/48 block_summary_levels=Some(0.0)/Some(0.8)/Some(0.80000544) block_summary_transport=0/None/false block_summary_context=Some(true)/Some(true)/Some(126.0)/Some(4096) degradation_summary_state=false/false degradation_summary_faults=0/0/0/0 degradation_summary_recovery=0 degradation_summary_sessions=0/0/0/0/0 degradation_summary_gates=false/false degradation_summary_last_watchdog=None fault_status=Steady/safe_mode=false active=0 xrun=false plugin=false watchdog=false device_loss=false transport=false binding=false restarts=0/0 plugin_faults=0 transport_faulted_sessions=0 device_losses=0 fault_diagnostic=None/None/Steady recovery=Steady safe_mode=false rebindable=false contributions=4 interruption=Steady/active=false rebindable=false recovery=Steady primary=None deferred=None/None device_supervision=Stable/Unneeded/Clear recovery=Steady interruption=Steady primary=None safe_mode=false device_loss_active=false device_losses=0 restart_attempts=Some(0) restart_failures=Some(0) watchdog_restarts=0 external_io=Ready/Stable/ProgramOutput/Direct/Unavailable linux_backend=NotLinux/Unsupported/Unsupported/Unsupported/Unsupported backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running endpoint=OutputOnly fallback=false device_losses=0 restart_attempts=0 restart_failures=0 linux_session=NotLinux/NotLinux/NotLinux/NotLinux/NotLinux/NotLinux backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 pipewire_alsa=NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 jack=NotJack/NotJack/NotJack/NotJack backend=coreaudio device=coreaudio:macbook-pro-speakers session=Detached/false heartbeat=Unknown dispatch=Idle simulated=false external_midi=Idle/Empty/NoLiveOwnership/Detached/NotLinux/NotLinux provider=signal-host-local devices=0 endpoints=0/0/0/0 routes=0/0 engine_graph_id=Some(\"signal.host.local.demo\") engine_node_count=4 engine_stateful_nodes=4 engine_latency_nodes=1 engine_plugin_backed_nodes=1 engine_planning_anticipative=true engine_inline_realtime_nodes=0 engine_stateful_realtime_nodes=3 engine_anticipative_eligible_nodes=1 engine_phase_count=2 engine_anticipative_phases=1 engine_phase_order=[StatefulRealtime, AnticipativeEligible] engine_lane_count=2 engine_anticipative_lanes=1 engine_lane_order=[Anticipative, Realtime] engine_dispatch_count=2 engine_dispatch_boundaries=1 engine_dispatch_order=[Anticipative, Realtime] engine_prepared_dispatches=1 engine_realtime_dispatches=1 engine_dispatch_handoffs=1 engine_scheduler_topology_compatible=false engine_scheduler_topology_requires_host_reinterpretation=true engine_scheduler_topology_track_lanes=2/1 engine_scheduler_topology_buses=1/2 engine_scheduler_topology_send_returns=0/0 engine_scheduler_topology_consoles=1/1 engine_scheduler_topology_schedule_streams=None engine_scheduler_topology_issue_count=1 engine_scheduler_topology_issues=[MissingScheduleProjectionForTrackLanes { required_streams: 1 }] engine_prework_cache_enabled=true engine_prework_cache_state=Admitted engine_prework_service_state=Idle engine_prework_service_pressure=Normal engine_prework_service_semantic_policy=PluginConstrained engine_prework_service_active_plugin_sandboxes=1 engine_prework_service_bound_plugin_sandboxes=1 engine_prework_service_active_bound_plugin_sandboxes=1 engine_prework_service_degraded_bound_plugin_sandboxes=0 engine_prework_service_missing_bound_plugin_sandboxes=0 engine_prework_service_plugin_gate_active=false engine_prework_pending_targets=0 engine_prework_pending_immediate_targets=0 engine_prework_pending_near_term_targets=0 engine_prework_pending_deferred_targets=0 engine_prework_next_pending_target_block=None engine_prework_service_cycles=8 engine_prework_service_prepared_targets=16 engine_prework_service_pauses=3 engine_prework_service_resumes=0 engine_prework_service_starvations=0 engine_prework_service_throttles=0 engine_prework_service_yields=0 engine_last_prework_service_epoch=Some(1) engine_last_prework_serviced_target_block=Some(10) engine_last_prework_serviced_backlog_class=Some(NearTerm) engine_prework_requested_mode=RuntimeRoleDefault engine_prework_mode=RuntimeRoleDefault engine_prework_policy_configured=true engine_prework_profile=Some(Local) engine_prework_profile_source=Some(RuntimeRoleDefault) engine_prework_profile_window_override=None engine_prework_policy_window_blocks=Some(2) engine_prework_queue_capacity=3 engine_prework_queue_depth=3 engine_prework_peak_queue_depth=3 engine_prework_window_targets=3 engine_prework_window_blocks=[8, 9, 10] engine_prework_freshness_state=Fresh engine_prework_block_window=2 engine_prework_remaining_valid_blocks=Some(2) engine_prework_cache_admissions=20 engine_prework_cache_consumptions=8 engine_prework_queued_admissions=12 engine_prework_queued_consumptions=0 engine_prework_cache_hits=0 engine_prework_cache_misses=8 engine_prework_cache_invalidations=17 engine_prework_cache_retirements=17 engine_prework_unconsumed_retirements=10 engine_prework_consumed_retirements=7 engine_last_prework_cache_hit=false engine_last_prework_invalidation=Some(InputSignatureChanged) engine_last_prework_retirement=Some(InputSignatureChanged) engine_last_prework_retired_unconsumed=Some(true) engine_prework_cache_valid_until=Some(2) engine_prework_cache_valid_until_block=Some(12) engine_last_prework_source_epoch=Some(1) engine_last_prework_source_block=Some(10) engine_last_prework_admission_epoch=Some(1) engine_last_prework_admission_block=Some(10) engine_last_prework_admitted_from_block=Some(8) engine_last_prework_consumption_epoch=Some(1) engine_last_prework_consumption_block=Some(8) engine_last_prework_consumed_from_block=Some(8) engine_last_prework_retirement_epoch=Some(1) engine_last_prework_retirement_block=Some(8) engine_stage_count=7 engine_dynamic_kernel_stages=0 engine_dynamic_stage_state_model=RebuiltPerBlock engine_total_latency_samples=24 engine_max_node_latency_samples=24 engine_total_tail_samples=0 engine_max_node_tail_samples=0 engine_output_tail_samples=48 engine_max_bus_tail_samples=48 engine_processed_blocks=8 engine_last_block=Some(8) engine_prework_output_peak=Some(0.06739768) engine_realtime_input_peak=Some(0.06739768) engine_output_peak=Some(0.8) engine_output_rms=Some(0.80000544) engine_projection_epoch=Some(2) engine_parameter_epoch=Some(11) engine_context_anticipative=Some(true) engine_transport_playing=Some(true) engine_transport_tempo=Some(126.0) engine_timeline_position=Some(4096) engine_transport_epoch=0 engine_transport_transition=None engine_transport_block_start=Some(4096) engine_transport_block_end=Some(4608) engine_transport_loop_wrapped=false transport_concurrency_limits=1/2 transport_concurrency_current=1 transport_concurrency_peak=1 transport_concurrency_recovery_current=0 transport_concurrency_recovery_peak=0 transport_concurrency_cleanup_pending=0 transport_concurrency_deferred_retries=0 transport_concurrency_next_cleanup_epoch=1 transport_concurrency_oldest_ready_epoch=None transport_fault_boundary=FaultAdjacentOnly transport_fault_sources=0/0/0 transport_fault_phases=0/0/0/0 transport_session_boundary=HealthyPathVisible transport_session_state=AttachActive transport_session_attached=true transport_session_heartbeat_state=Fresh transport_session_dispatch_state=Completed transport_session_attached_sessions=2 transport_session_max_attached_sessions=2 transport_session_attach=2 transport_session_detach=0/0/0 transport_session_heartbeat=9/9/0 transport_session_dispatch=8/8/0 events=91 supervision_updates=0 plugin_faults=0 plugin_instance_states=13 recovery_events=0 lifecycle_events=12 transport_events=2 heartbeat_events=18 block_dispatch_events=16 lease_rollover_events=0 invalidation_events=0 completion_slot_events=24 transport_fault_events=0 broker_failure_events=0 sandbox_operation_failure_events=0 last_watchdog=none last_fault=none last_plugin_instance_state=local-default-sandbox:instance:local:default:Active/Ready/active=true@Some(1) last_recovery=none last_lifecycle=local-default-sandbox:TransportAttached@Some(1) last_transport=local-default-sandbox:local-default-sandbox:instance:local:default:epoch-1:region-71734-1775856443423248000-1-1:Attached@Some(1) last_heartbeat=local-default-sandbox:Responded@Some(1)/block=Some(8) last_dispatch=local-default-sandbox:local-default-sandbox:instance:local:default:epoch-1:Completed/block=8@1 last_rollover=none last_invalidation=none last_completion_slot=local-default-sandbox:local-default-sandbox:instance:local:default:epoch-1:Completed@1/block=8 last_transport_fault=none last_broker_failure=none last_sandbox_operation_failure=none transport_concurrency_cleanup_waves=0 recording_capture=Some(Idle)/None/None ready=true take=None track=None frames=0 events=0 blocks=0 pressure=0 last_take=None last_path=None last_duration=None recording_capture_interruption=None execution_topology_summary_nodes=4 execution_topology_summary_roles=0/2/1/0/1 execution_topology_summary_groups=1/2/1 execution_topology_summary_secondary_inputs=0/0/0/0/0 execution_topology_summary_bus_connections=3 execution_topology_summary_auxiliary_paths=2 execution_topology_summary_plugin_chain=1/1/0/0/1/0/0/0/0/24/48 execution_topology_summary_lanes=2 execution_topology_summary_lane_shapes=Anticipative:1|Realtime:3 metering_snapshot_meters=5 metering_snapshot_main=Some(0.8)/Some(0.80000544) metering_snapshot_loudness=Some(-1.9382001)/Some(-1.9382001)/Some(-1.9382001) metering_snapshot_clipped=0 metering_snapshot_routes=1/2/0/1 metering_snapshot_track_lane_shapes=track:lead:2 metering_snapshot_bus_group_shapes=mix:master:1|mix:tracks:2 metering_snapshot_send_return_shapes= metering_snapshot_console_group_shapes=console:main:1 linux_session=NotLinux/NotLinux/NotLinux/NotLinux/NotLinux/NotLinux backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 pipewire_alsa=NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa/NotPipeWireOrAlsa backend=coreaudio device=coreaudio:macbook-pro-speakers stream=Running simulated=false device_losses=0 restart_attempts=0 restart_failures=0 jack=NotJack/NotJack/NotJack/NotJack backend=coreaudio device=coreaudio:macbook-pro-speakers session=Detached/false heartbeat=Unknown dispatch=Idle simulated=false host_backend=coreaudio host_linux_backend=NotLinux/Unsupported/Unsupported/Unsupported/Unsupported host_device=coreaudio:macbook-pro-speakers host_stream_state=Running host_clock_source=Internal host_clock_domain=SameClock host_clock_fallback_state=Direct host_clock_transition_state=Stable host_clock_drift_state=Stable host_clock_discontinuity_state=Continuous host_duplex_mismatch_state=NotApplicable host_endpoint_topology=OutputOnly host_partial_availability=false host_clock_crossing_required=false host_clock_processing_sample_rate=48000 host_clock_hardware_sample_rate=48000 host_clock_ownership=HostDrivenCallback host_clock_restart_policy=HostMustRestart host_callback_interval_ms=10.667 host_output_latency_samples=512 host_graph_latency_samples=24 host_estimated_output_latency_samples=536 host_backend_health=Healthy host_backend_xruns=0 host_backend_device_losses=0 host_backend_restart_attempts=0 host_backend_restart_failures=0 host_audio_callbacks=8 host_audio_frames=4096 host_audio_copied_samples=8192 host_audio_zero_filled_samples=0 host_audio_dropped_samples=0 host_audio_peak=Some(0.8) host_audio_graph=Some(\"signal.host.local.demo\") host_audio_graph_matches_runtime=true event_stream=91"
+      ],
+      "stderr_tail": [],
+      "interaction_mode": "parameter-step",
+      "interaction_value": "Some(0.0)",
+      "parameter_event_count": "2",
+      "generated_event_bytes": "268",
+      "interaction_proved": true
+    }
+  ],
+  "operator_checks": [
+    {
+      "id": "operator.plugin-browser.inventory-visible",
+      "status": "passed",
+      "summary": "The browser shows discovered plugin inventory instead of a placeholder or hardcoded list."
+    },
+    {
+      "id": "operator.plugin-browser.launch-path-visible",
+      "status": "passed",
+      "summary": "The browser exposes bounded per-plugin launch targets through repo-owned host commands."
+    },
+    {
+      "id": "operator.plugin-browser.supported-live-path",
+      "status": "passed",
+      "summary": "At least one supported CLAP or VST3 launch path executed successfully during the capture run."
+    },
+    {
+      "id": "operator.plugin-browser.bounded-interaction-visible",
+      "status": "passed",
+      "summary": "At least one bounded browser launch surfaced an explicit parameter-step interaction result instead of bootstrap-only success."
+    },
+    {
+      "id": "operator.plugin-browser.exclusions-explicit",
+      "status": "passed",
+      "summary": "Unsupported editor embedding, platform exclusions, and bounded host-bootstrap posture remain explicit in the surface."
+    }
+  ]
+}

@@ -12,8 +12,6 @@ mod session;
 
 pub use model::*;
 #[cfg(test)]
-pub(crate) use scaffold::vst3_scaffold_factory_metadata_contents;
-#[cfg(test)]
 pub(crate) use scaffold::vst3_scaffold_module_metadata_contents;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

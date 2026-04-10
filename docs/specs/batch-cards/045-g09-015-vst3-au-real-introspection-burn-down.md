@@ -1,6 +1,6 @@
-# 045 - g09.015 VST3 AU Real Introspection Burn-Down
+# 045 - g09.015 AU Real Component Introspection And VST3 Split
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Parent roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
@@ -8,18 +8,17 @@ Governing contracts: `docs/contracts/072-real-plugin-hosting-discovery-and-sandb
 
 ## Objective
 
-Replace the remaining Signal-specific VST3 and AU metadata-file discovery
-shims with real bundle/module/component introspection so the future plugin
-browser can claim installed-plugin discovery honestly.
+Replace the remaining AU metadata-file discovery shim with real component
+bundle introspection, and split the still-deeper VST3 work into its own batch
+so the plugin browser remains honest about installed-plugin discovery posture.
 
 ## Scope
 
-- remove `signal-vst3-module.txt` and `signal-vst3-factory.txt` dependency from
-  the VST3 production discovery path
 - remove `signal-au-component.txt` dependency from the AU production discovery
   path
 - keep test fixtures and public proof roots aligned to the real discovery shape
-- leave the browser deferred until CLAP, VST3, and AU discovery are all honest
+- split the remaining VST3 class-factory discovery seam explicitly if the AU
+  path proves narrower and landable first
 
 ## Out Of Scope
 
@@ -29,35 +28,33 @@ browser can claim installed-plugin discovery honestly.
 
 ## Acceptance Criteria
 
-- VST3 production discovery no longer depends on Signal-specific `.txt`
-  metadata files
 - AU production discovery no longer depends on Signal-specific `.txt`
   metadata files
-- the next browser batch is honest about supported installed-plugin browsing
-  posture across CLAP, VST3, and AU
+- the remaining VST3 discovery blocker is narrowed into its own ready card
+  instead of hidden inside a falsely complete combined batch
 
 ## Validation
 
-- `effigy health`
-- focused VST3 and AU discovery and host parity proof commands
+- `cargo check -p signal-plugin-au`
+- `cargo test -p signal-plugin-au --lib`
+- direct local and server host runs against temporary `.component` bundles
 - `effigy qa:docs`
 - `effigy qa:northstar`
 
 ## Evidence
 
-- updated roadmap/currentness surfaces
-- code path changes showing `.txt` metadata discovery removal
+- updated roadmap/currentness surfaces reflecting the AU closeout and VST3
+  split
+- code path changes showing AU `.txt` metadata discovery removal
 - batch log with validation actually run
 
 ## Stop Conditions
 
-- real VST3 class-factory or AU component metadata introspection needs deeper
-  contract or architecture decisions not yet frozen in the plugin-hosting
-  surfaces
-- the VST3 and AU removal work proves too broad for one bounded batch and must
-  be split explicitly
+- installed VST3 bundles on the active machine still do not provide a cheap
+  metadata-only replacement for Signal's current factory/controller truth, so
+  class-factory discovery must be split into a deeper follow-on batch
 
 ## Next Task
 
-Implement this card by removing the remaining VST3 and AU metadata-file
-discovery shims before the browser resumes.
+Continue the reopened strict `g09` lane from
+`docs/specs/batch-cards/046-g09-015-vst3-class-factory-discovery-burn-down.md`.

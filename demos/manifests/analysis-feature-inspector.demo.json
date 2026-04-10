@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:analysis-feature-inspector",
     "owner_surface": "effigy-task",
-    "notes": "Runs the existing rhythm, tonal, and loudness examples plus one shared character-and-semantic inspection example and records one machine-readable receipt."
+    "notes": "Runs the existing rhythm, tonal, and loudness examples plus one shared character-and-semantic inspection example, records one machine-readable receipt, and renders a low-dependency companion view for operator inspection."
   },
   "covered_crates": [
     "signal-analysis",
@@ -28,18 +28,21 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/analysis-feature-inspector.receipt.json",
+    "view_path": "demos/receipts/analysis-feature-inspector.view.html",
     "operator_notes_path": "demos/scenarios/analysis-feature-inspector.default.md",
-    "capture": "json-receipt-and-operator-notes",
+    "capture": "json-receipt-rendered-view-and-operator-notes",
     "notes": "This bootstrap surface wraps existing offline analysis examples and one shared character-plus-semantic example without inventing a browser, editor, or asset scan-root workflow."
   },
   "known_exclusions": [
     "This surface stays offline and synthetic-input oriented; it does not browse user assets or scan plugin roots.",
     "The demo proves bounded analysis posture and does not replace corpus, harness, or metadata-boundary automation.",
-    "This demo does not claim downstream product tagging, recommendation, or library UX breadth."
+    "This demo does not claim downstream product tagging, recommendation, or library UX breadth.",
+    "The rendered companion is a low-dependency operator view over bounded example output, not a persistent browser or analysis workstation shell."
   ],
   "expected_checks": [
     "The receipt captures runnable rhythm, tonal, loudness, and shared character-plus-semantic inspection outputs.",
     "The receipt records that the shared analysis inspector keeps character and semantic posture inside the same bounded demo family.",
+    "The rendered companion view lets an operator inspect rhythm, tonal, loudness, and character-semantic posture without reading raw JSON first.",
     "signal-analysis, signal-analysis-character, signal-analysis-embed, signal-analysis-loudness, signal-analysis-rhythm, and signal-analysis-tonal only move to live demo coverage because this manifest and receipt exist."
   ]
 }

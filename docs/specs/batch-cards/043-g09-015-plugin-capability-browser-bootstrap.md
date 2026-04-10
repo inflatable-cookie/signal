@@ -1,6 +1,6 @@
 # 043 - g09.015 Plugin Capability Browser Bootstrap
 
-Status: pending
+Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Parent roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
@@ -14,14 +14,14 @@ paths through repo-owned commands.
 
 ## Status Note
 
-This card remains valid follow-on work, but it is not executable yet. Current
-adapter reality still blocks an honest installed-plugin browser:
+The discovery blocker is now burned down enough for honest execution:
 
-- CLAP discovery is still harness-backed rather than filesystem-backed
-- VST3 and AU discovery still rely on Signal-specific metadata files
-- LV2 still keeps scaffold-backed direct `discover_plugin_type(...)` lookup
-
-The browser should resume only after those discovery seams are burned down.
+- CLAP now scans real `.clap` libraries from filesystem roots
+- AU now reads real `Contents/Info.plist` component metadata
+- VST3 now reads official `moduleinfo.json` when present and falls back to real
+  factory/class introspection when it is absent
+- LV2 remains closer to real manifest discovery already and is not the current
+  browser blocker
 
 ## Scope
 
@@ -74,6 +74,6 @@ The browser should resume only after those discovery seams are burned down.
 
 ## Next Task
 
-Resume this card after
-`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`
-is complete.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is deeper live plugin interaction, broader plugin-browser
+operator posture, or a planning pause.

@@ -139,22 +139,3 @@ pub(crate) fn vst3_scaffold_module_metadata_contents(plugin_type_id: &str) -> Op
         metadata.features.join(","),
     ))
 }
-
-#[cfg(test)]
-pub(crate) fn vst3_scaffold_factory_metadata_contents(plugin_type_id: &str) -> Option<String> {
-    let metadata = vst3_scaffold_module_metadata(plugin_type_id)?;
-    let mut contents = format!(
-        "component={}|{}|{}\n",
-        metadata.class_id, metadata.category, metadata.name
-    );
-    if let Some(controller_class_id) = metadata.controller_class_id {
-        contents.push_str(
-            format!(
-                "controller={}|Controller|{}\n",
-                controller_class_id, metadata.name
-            )
-            .as_str(),
-        );
-    }
-    Some(contents)
-}

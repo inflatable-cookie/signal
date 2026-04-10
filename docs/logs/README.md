@@ -34,7 +34,7 @@ Use this section for:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`
+  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
 
 ## Recent active-lane evidence
 
@@ -102,8 +102,22 @@ Use this section for:
 - `2026-04/10-240500-g09-015-interactive-demo-strategy-and-gap-inventory.md`
 - `2026-04/10-243500-g09-015-plugin-discovery-reality-correction.md`
 - `2026-04/10-250500-g09-015-real-clap-discovery-and-vst3-au-ready.md`
+- `2026-04/10-261500-g09-015-au-info-plist-migration-and-vst3-split.md`
+- `2026-04/10-271500-g09-015-vst3-moduleinfo-and-browser-reactivation.md`
+- `2026-04/10-281500-g09-015-plugin-capability-browser-closeout.md`
+- `2026-04/10-291500-g09-015-honest-local-launch-targets-closeout.md`
+- `2026-04/10-193941-g09-015-local-scan-containment-ready-handoff.md`
+- `2026-04/10-201500-g09-015-local-scan-containment-closeout.md`
+- `2026-04/10-203500-g09-015-browser-operator-posture-ready-handoff.md`
+- `2026-04/10-211500-g09-015-browser-operator-posture-closeout.md`
+- `2026-04/10-213500-g09-015-analysis-operator-view-ready-handoff.md`
+- `2026-04/10-221500-g09-015-analysis-operator-view-closeout.md`
+- `2026-04/10-231500-g09-015-plugin-browser-live-scan-resilience-closeout.md`
+- `2026-04/10-233500-g09-015-plugin-browser-interaction-ready-handoff.md`
+- `2026-04/10-223500-g09-015-plugin-browser-bounded-interaction-closeout.md`
+- `2026-04/10-224500-g09-015-graph-operator-view-ready-handoff.md`
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.

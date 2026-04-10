@@ -9,7 +9,7 @@ fn main() {
     let topology = &report.observation.observation.execution_topology_summary;
 
     println!(
-        "signal-host-local profile={:?} backend={} clap_supported={} sandbox={:?} control_requests={} control_responses={} heartbeat_responses={} processed_blocks={} completion={:?} last_block_sequence={} deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?} last_control_message={:?} epoch={} lease_id={:?} region_id={:?} shared_memory_bytes={} restarts={} teardowns={} audio_state={:?} audio_callbacks={} audio_frames={} audio_copied_samples={} audio_zero_filled_samples={} audio_dropped_samples={} audio_peak={:?} audio_graph={:?} topology_nodes={} topology_roles={}/{}/{} topology_groups={}/{}/{} observation={}",
+        "signal-host-local profile={:?} backend={} clap_supported={} sandbox={:?} control_requests={} control_responses={} heartbeat_responses={} processed_blocks={} completion={:?} last_block_sequence={} interaction_mode={} automation_value={:?} parameter_events={} generated_event_bytes={} deadline_misses={} heartbeat_misses={} watchdog_triggered={} watchdog_reason={:?} last_control_message={:?} epoch={} lease_id={:?} region_id={:?} shared_memory_bytes={} restarts={} teardowns={} audio_state={:?} audio_callbacks={} audio_frames={} audio_copied_samples={} audio_zero_filled_samples={} audio_dropped_samples={} audio_peak={:?} audio_graph={:?} topology_nodes={} topology_roles={}/{}/{} topology_groups={}/{}/{} observation={}",
         host.runtime().config().profile,
         summary.backend_name,
         host.clap_supported(),
@@ -20,6 +20,17 @@ fn main() {
         summary.execution.processed_blocks,
         summary.execution.last_completion_state,
         summary.execution.last_block_sequence,
+        if std::env::var_os("SIGNAL_HOST_DEMO_INTERACTION_MODE").is_some() {
+            "parameter-step"
+        } else {
+            "none"
+        },
+        summary
+            .plugin_dispatch
+            .as_ref()
+            .and_then(|dispatch| dispatch.automation_value),
+        summary.last_payload.parameter_event_count,
+        summary.last_payload.generated_event_bytes,
         summary.faults.deadline_misses,
         summary.faults.heartbeat_misses,
         summary.faults.watchdog_triggered,

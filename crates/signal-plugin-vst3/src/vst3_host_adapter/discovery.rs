@@ -1,7 +1,4 @@
-use super::introspection::{
-    metadata_descriptor, metadata_io_layout, read_vst3_factory_classes, read_vst3_module_metadata,
-    Vst3FactoryClassRole,
-};
+use super::introspection::{metadata_descriptor, metadata_io_layout, read_vst3_bundle_snapshot};
 use super::*;
 use std::{env, fs, path::PathBuf};
 
@@ -68,6 +65,14 @@ impl Vst3HostAdapter {
         let mut discovered = Vec::new();
         for root in roots {
             let expanded_root = expand_scan_root(&root);
+            if expanded_root
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("vst3"))
+            {
+                push_vst3_bundle_if_present(&mut discovered, &expanded_root, platform);
+                continue;
+            }
             let Ok(entries) = fs::read_dir(&expanded_root) else {
                 continue;
             };
@@ -80,56 +85,37 @@ impl Vst3HostAdapter {
                 if !file_name.ends_with(".vst3") {
                     continue;
                 }
-                let Ok(metadata) = read_vst3_module_metadata(&path) else {
-                    continue;
-                };
-                let Ok(factory_classes) = read_vst3_factory_classes(&path) else {
-                    continue;
-                };
-                if !factory_classes.iter().any(|class| {
-                    class.role == Vst3FactoryClassRole::Component
-                        && class.class_id == metadata.class_id
-                        && class.category == metadata.category
-                        && class.name == metadata.name
-                }) {
-                    continue;
-                }
-                if let Some(controller_class_id) = metadata.controller_class_id.as_deref() {
-                    if !factory_classes.iter().any(|class| {
-                        class.role == Vst3FactoryClassRole::Controller
-                            && class.class_id == controller_class_id
-                            && class.name == metadata.name
-                    }) {
-                        continue;
-                    }
-                }
-                if metadata.controller_class_id.is_none()
-                    && factory_classes
-                        .iter()
-                        .any(|class| class.role == Vst3FactoryClassRole::Controller)
-                {
-                    continue;
-                }
-                let plugin = Vst3DiscoveredPluginType {
-                    plugin_type_id: PluginTypeId(metadata.plugin_type_id.clone()),
-                    class_id: metadata.class_id.clone(),
-                    controller_class_id: metadata.controller_class_id.clone(),
-                    category: metadata.category.clone(),
-                    module_root: path.to_string_lossy().into_owned(),
-                    descriptor: metadata_descriptor(&metadata),
-                    default_io_layout: metadata_io_layout(&metadata),
-                };
-                if !discovered
-                    .iter()
-                    .any(|existing: &Vst3DiscoveredPluginType| {
-                        existing.plugin_type_id == plugin.plugin_type_id
-                    })
-                {
-                    discovered.push(plugin);
-                }
+                push_vst3_bundle_if_present(&mut discovered, &path, platform);
             }
         }
         discovered
+    }
+}
+
+fn push_vst3_bundle_if_present(
+    discovered: &mut Vec<Vst3DiscoveredPluginType>,
+    path: &PathBuf,
+    platform: Vst3HostPlatform,
+) {
+    let Ok(snapshot) = read_vst3_bundle_snapshot(path, platform) else {
+        return;
+    };
+    for metadata in snapshot.plugins {
+        let plugin = Vst3DiscoveredPluginType {
+            plugin_type_id: PluginTypeId(metadata.plugin_type_id.clone()),
+            class_id: metadata.class_id.clone(),
+            controller_class_id: metadata.controller_class_id.clone(),
+            category: metadata.category.clone(),
+            module_root: path.to_string_lossy().into_owned(),
+            descriptor: metadata_descriptor(&metadata),
+            default_io_layout: metadata_io_layout(&metadata),
+        };
+        if !discovered
+            .iter()
+            .any(|existing: &Vst3DiscoveredPluginType| existing.plugin_type_id == plugin.plugin_type_id)
+        {
+            discovered.push(plugin);
+        }
     }
 }
 

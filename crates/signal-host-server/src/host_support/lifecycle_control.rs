@@ -172,6 +172,7 @@ impl ServerRuntimeHost {
             last_midi_event_count: 0,
             last_generated_event_bytes: 0,
             last_output_first_sample: None,
+            last_plugin_automation_value: None,
             deadline_misses: 0,
             heartbeat_misses: 0,
             watchdog_triggered: false,

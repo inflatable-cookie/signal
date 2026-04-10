@@ -1,0 +1,54 @@
+{
+  "manifest_version": "signal.demo.manifest.v1",
+  "id": "signal.demo.plugin.capability-browser",
+  "title": "Signal Plugin Capability Browser",
+  "domain": "plugin",
+  "kind": "shared-domain-demo",
+  "status": "active",
+  "launch": {
+    "command": "effigy demo:plugin-capability-browser",
+    "owner_surface": "effigy-task",
+    "notes": "The default task now launches the interactive browser in system scan mode with bounded exact-root scan batches, local-first macOS inventory, and auto-selected localhost serving when the default port is occupied. The browser surfaces local/server availability at a glance and keeps the bounded non-interactive validation entrypoint available as `effigy demo:plugin-capability-browser:proof`."
+  },
+  "covered_crates": [
+    "signal-plugin",
+    "signal-plugin-clap",
+    "signal-plugin-vst3",
+    "signal-plugin-au",
+    "signal-plugin-lv2",
+    "signal-host-local",
+    "signal-host-server"
+  ],
+  "scenarios": [
+    {
+      "id": "signal.demo.plugin.capability-browser.default",
+      "title": "Installed Plugin Inventory With Bounded Host Launch",
+      "summary": "Browses real discovered plugin inventory and proves one bounded supported host interaction path without embedding a heavyweight UI framework.",
+      "notes_path": "demos/scenarios/plugin-capability-browser.default.md"
+    }
+  ],
+  "evidence": {
+    "receipt_path": "demos/receipts/plugin-capability-browser.receipt.json",
+    "operator_notes_path": "demos/scenarios/plugin-capability-browser.default.md",
+    "capture": "json-receipt-and-operator-notes",
+    "notes": "The surface remains intentionally bounded: inventory plus one host-owned interaction proof, not custom plugin-editor embedding or a persistent plugin workstation."
+  },
+  "known_exclusions": [
+    "The browser does not embed vendor plugin editors or build a heavyweight shared UI runtime.",
+    "The launch surface proves one bounded host-owned parameter-step interaction, not arbitrary continuous transport control.",
+    "LV2 remains server-host only, and local host launch remains macOS-only.",
+    "Local launch buttons are only shown for plugins returned by the local scan surface; the browser does not infer local launchability from server discovery alone.",
+    "The official proof task defaults to one bounded fixture-backed scan so the browser stays automatable even if arbitrary installed plugins hang during discovery.",
+    "The operator surface now summarizes availability and launch outcome before the raw bounded host detail, but it remains a bounded proof surface rather than a persistent plugin session shell.",
+    "Interactive system scans now prefer bounded local inventory first on macOS and use bounded exact-root scan batches rather than claiming exhaustive machine-wide crawl posture."
+  ],
+  "expected_checks": [
+    "The browser shows real discovered plugin inventory rather than a hardcoded catalog.",
+    "The browser exposes per-plugin bounded launch targets through repo-owned commands.",
+    "The browser surfaces local versus server availability clearly enough that an operator does not need to inspect raw launch-target JSON first.",
+    "At least one supported CLAP or VST3 path launches successfully during official capture.",
+    "At least one launch surfaces explicit bounded interaction truth beyond bootstrap success alone.",
+    "Interactive system-mode runs survive killed or slow host scans as bounded degradation instead of crashing or blanking the browser wholesale.",
+    "Platform and unsupported-path exclusions remain explicit in the surface."
+  ]
+}

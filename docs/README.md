@@ -33,7 +33,7 @@ interactive-demo stream.
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
 - Active strict-lane card:
-  [specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md](./specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md)
+  [053-g09-015-graph-execution-operator-view.md](./specs/batch-cards/053-g09-015-graph-execution-operator-view.md)
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -57,5 +57,5 @@ interactive-demo stream.
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.

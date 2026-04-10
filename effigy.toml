@@ -91,6 +91,16 @@ qa = [
   { run = "python3 demos/scripts/run_analysis_feature_inspector_demo.py" },
   { run = "python3 -m json.tool demos/receipts/analysis-feature-inspector.receipt.json > /dev/null" },
 ]
+"demo:plugin-capability-browser" = [
+  { task = "demo:plugin-capability-browser:proof" },
+  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py --scan-mode system --serve" },
+]
+"demo:plugin-capability-browser:proof" = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/plugin-capability-browser.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/plugin-capability-browser.receipt.json > /dev/null" },
+]
 "demo:linux-lv2-and-backend-boundary" = [
   { task = "demo:coverage-matrix" },
   { run = "python3 -m json.tool demos/manifests/linux-lv2-backend-boundary.demo.json > /dev/null" },

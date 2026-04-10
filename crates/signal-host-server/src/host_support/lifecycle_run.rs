@@ -25,6 +25,7 @@ pub(crate) struct LifecycleRunSummary {
     pub(crate) last_midi_event_count: usize,
     pub(crate) last_generated_event_bytes: u32,
     pub(crate) last_output_first_sample: Option<f32>,
+    pub(crate) last_plugin_automation_value: Option<f32>,
     pub(crate) deadline_misses: u32,
     pub(crate) heartbeat_misses: u32,
     pub(crate) watchdog_triggered: bool,

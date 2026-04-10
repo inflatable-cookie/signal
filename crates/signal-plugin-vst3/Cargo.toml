@@ -8,4 +8,8 @@ publish = false
 description = "VST3 plugin adapter surfaces for Signal."
 
 [dependencies]
+json5 = "0.4"
+libloading = "0.8"
+plist = "1"
+serde = { version = "1", features = ["derive"] }
 signal-plugin = { path = "../signal-plugin" }

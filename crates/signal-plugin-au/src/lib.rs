@@ -27,16 +27,12 @@ mod tests {
     fn write_au_bundle(bundle_root: &std::path::Path, plugin_type_id: &str) {
         let metadata = au_scaffold_component_metadata_contents(plugin_type_id)
             .unwrap_or_else(|| panic!("unknown AU scaffold metadata request: {plugin_type_id}"));
-        fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
-            .expect("au metadata resources should be created");
+        fs::create_dir_all(bundle_root.join("Contents")).expect("au bundle contents should exist");
         fs::write(
-            bundle_root
-                .join("Contents")
-                .join("Resources")
-                .join("signal-au-component.txt"),
-            metadata,
+            bundle_root.join("Contents").join("Info.plist"),
+            au_info_plist_contents(&metadata),
         )
-        .expect("au component metadata should be written");
+        .expect("au component info plist should be written");
     }
 
     #[test]
@@ -166,18 +162,13 @@ mod tests {
     fn au_adapter_exposes_explicit_fault_boundaries_from_metadata() {
         let adapter = AuHostAdapter::default();
         let root = temp_plugin_root("faults");
-        fs::create_dir_all(
-            root.join("Signal Fault.component")
-                .join("Contents")
-                .join("Resources"),
-        )
-        .expect("fault au metadata resources should be created");
+        fs::create_dir_all(root.join("Signal Fault.component").join("Contents"))
+            .expect("fault au bundle contents should be created");
         fs::write(
             root.join("Signal Fault.component")
                 .join("Contents")
-                .join("Resources")
-                .join("signal-au-component.txt"),
-            concat!(
+                .join("Info.plist"),
+            au_info_plist_contents(concat!(
                 "plugin_type_id=plugin:au:faulty\n",
                 "component_type=aumu\n",
                 "component_subtype=sigf\n",
@@ -191,9 +182,9 @@ mod tests {
                 "midi_outputs=0\n",
                 "features=Instrument,Analyzer\n",
                 "render_context_failure=unsupported_sample_rate\n"
-            ),
+            )),
         )
-        .expect("fault au metadata should be written");
+        .expect("fault au info plist should be written");
         let discovered = adapter
             .discover_plugins_for_roots(AuHostPlatform::MacOs, &[root.display().to_string()])
             .into_iter()
@@ -213,5 +204,125 @@ mod tests {
             .expect_err("faulty au activation should fail")
             .contains("unsupported_sample_rate"));
         let _ = fs::remove_dir_all(root);
+    }
+
+    fn au_info_plist_contents(metadata: &str) -> String {
+        let mut plugin_type_id = "";
+        let mut component_type = "";
+        let mut component_subtype = "";
+        let mut manufacturer_code = "";
+        let mut vendor = "Signal";
+        let mut name = "Signal AU Plugin";
+        let mut version = "0.1.0";
+        let mut audio_inputs = "2";
+        let mut audio_outputs = "2";
+        let mut midi_inputs = "0";
+        let mut midi_outputs = "0";
+        let mut features = "";
+        let mut init_failure = None;
+        let mut bus_layout_failure = None;
+        let mut render_context_failure = None;
+
+        for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+            let Some((key, value)) = line.split_once('=') else {
+                continue;
+            };
+            match key.trim() {
+                "plugin_type_id" => plugin_type_id = value.trim(),
+                "component_type" => component_type = value.trim(),
+                "component_subtype" => component_subtype = value.trim(),
+                "manufacturer_code" => manufacturer_code = value.trim(),
+                "vendor" => vendor = value.trim(),
+                "name" => name = value.trim(),
+                "version" => version = value.trim(),
+                "audio_inputs" => audio_inputs = value.trim(),
+                "audio_outputs" => audio_outputs = value.trim(),
+                "midi_inputs" => midi_inputs = value.trim(),
+                "midi_outputs" => midi_outputs = value.trim(),
+                "features" => features = value.trim(),
+                "init_failure" => init_failure = Some(value.trim()),
+                "bus_layout_failure" => bus_layout_failure = Some(value.trim()),
+                "render_context_failure" => render_context_failure = Some(value.trim()),
+                _ => {}
+            }
+        }
+
+        let feature_array = features
+            .split(',')
+            .map(str::trim)
+            .filter(|feature| !feature.is_empty())
+            .map(|feature| format!("    <string>{feature}</string>"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut extras = String::new();
+        if let Some(value) = init_failure {
+            extras.push_str(&format!(
+                "  <key>SignalInitFailure</key>\n  <string>{value}</string>\n"
+            ));
+        }
+        if let Some(value) = bus_layout_failure {
+            extras.push_str(&format!(
+                "  <key>SignalBusLayoutFailure</key>\n  <string>{value}</string>\n"
+            ));
+        }
+        if let Some(value) = render_context_failure {
+            extras.push_str(&format!(
+                "  <key>SignalRenderContextFailure</key>\n  <string>{value}</string>\n"
+            ));
+        }
+
+        format!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
+<plist version=\"1.0\">\n\
+<dict>\n\
+  <key>AudioComponents</key>\n\
+  <array>\n\
+    <dict>\n\
+      <key>manufacturer</key>\n\
+      <string>{manufacturer_code}</string>\n\
+      <key>name</key>\n\
+      <string>{vendor}: {name}</string>\n\
+      <key>sandboxSafe</key>\n\
+      <false/>\n\
+      <key>subtype</key>\n\
+      <string>{component_subtype}</string>\n\
+      <key>type</key>\n\
+      <string>{component_type}</string>\n\
+      <key>version</key>\n\
+      <integer>1</integer>\n\
+    </dict>\n\
+  </array>\n\
+  <key>CFBundleExecutable</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundleIdentifier</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>CFBundleName</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundlePackageType</key>\n\
+  <string>BNDL</string>\n\
+  <key>CFBundleShortVersionString</key>\n\
+  <string>{version}</string>\n\
+  <key>SignalPluginTypeId</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>SignalVendor</key>\n\
+  <string>{vendor}</string>\n\
+  <key>SignalDisplayName</key>\n\
+  <string>{name}</string>\n\
+  <key>SignalAudioInputs</key>\n\
+  <integer>{audio_inputs}</integer>\n\
+  <key>SignalAudioOutputs</key>\n\
+  <integer>{audio_outputs}</integer>\n\
+  <key>SignalMidiInputs</key>\n\
+  <integer>{midi_inputs}</integer>\n\
+  <key>SignalMidiOutputs</key>\n\
+  <integer>{midi_outputs}</integer>\n\
+  <key>SignalFeatures</key>\n\
+  <array>\n\
+{feature_array}\n\
+  </array>\n\
+{extras}</dict>\n\
+</plist>\n"
+        )
     }
 }

@@ -103,6 +103,13 @@
         "semantic_confidence=0.1902",
         "semantic_margin=0.1858"
       ]
+    },
+    {
+      "kind": "analysis-operator-view",
+      "html_path": "demos/receipts/analysis-feature-inspector.view.html",
+      "status": "passed",
+      "section_count": 6,
+      "preset_count": 3
     }
   ],
   "operator_checks": [
@@ -130,6 +137,11 @@
       "id": "operator.analysis-feature.offline-focused-posture",
       "status": "passed",
       "summary": "The receipt keeps analysis meaning explicit and offline-focused instead of pretending to be a browser, asset library, or recommendation UI."
+    },
+    {
+      "id": "operator.analysis-feature.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes the bounded analysis outputs visually inspectable without reading the raw receipt first."
     }
   ]
 }

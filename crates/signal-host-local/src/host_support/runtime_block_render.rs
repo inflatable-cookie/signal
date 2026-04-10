@@ -9,7 +9,10 @@ use super::super::{
     LocalRuntimeHost, LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES,
     LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES,
 };
-use super::{plugin_automation_value_from_runtime_batch, LifecycleRunSummary};
+use super::{
+    demo_interaction_parameter_step, plugin_automation_value_from_runtime_batch,
+    LifecycleRunSummary,
+};
 
 impl LocalRuntimeHost {
     pub(crate) fn build_plugin_block_request(
@@ -73,7 +76,8 @@ impl LocalRuntimeHost {
         let mut payload = protocol.test_input_payload(block_sequence, frame_count);
         let automation_parameter_id = protocol.automation_parameter_id();
         let automation_value =
-            plugin_automation_value_from_runtime_batch(automation_parameter_id, parameter_batch);
+            plugin_automation_value_from_runtime_batch(automation_parameter_id, parameter_batch)
+                .or_else(|| demo_interaction_parameter_step(automation_parameter_id));
         for event in &mut payload.events.events {
             if let (PluginEvent::ParameterValue(existing), Some(automation_value)) =
                 (event, automation_value)

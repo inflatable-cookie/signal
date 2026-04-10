@@ -100,4 +100,4 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ## Next Task
 
 Use this contract while executing
-`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
+`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.

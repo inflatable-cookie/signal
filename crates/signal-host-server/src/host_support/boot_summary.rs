@@ -4,7 +4,7 @@ use super::super::{
     ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerRuntimeHost,
     ServerRuntimeHostSummary, ServerTransportSummary,
 };
-use super::LifecycleRunSummary;
+use super::{LifecycleRunSummary, ServerPluginDispatchSummary};
 
 impl ServerRuntimeHost {
     pub(crate) fn summarize_boot_outcome(
@@ -58,6 +58,13 @@ impl ServerRuntimeHost {
                     .unwrap_or_default(),
                 shared_memory_bytes: header.layout.total_bytes(),
             },
+            plugin_dispatch: run
+                .last_plugin_automation_value
+                .map(|automation_value| ServerPluginDispatchSummary {
+                    processing_epoch: run.processing_epoch,
+                    block_sequence: run.last_block_sequence,
+                    automation_value: Some(automation_value),
+                }),
             last_payload: ServerPayloadSummary {
                 event_count: run.last_output_event_count,
                 parameter_event_count: run.last_parameter_event_count,

@@ -19,7 +19,7 @@ memory alone.
 - `docs/specs/001-g09-lane-first-strict-adoption.md` records the completed
   strict-lane model
 - the current ready card is
-  `docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`
+  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
 
 ## Strict Lane Working Rule
 
@@ -144,4 +144,4 @@ frozen elsewhere in this index.
 ## Next Task
 
 Use this index as the contract-selection front door while executing
-`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
+`053-g09-015-graph-execution-operator-view.md`.

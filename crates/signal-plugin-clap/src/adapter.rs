@@ -126,6 +126,7 @@ impl ClapPluginHostAdapter {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClapDiscoveredPluginType {
     pub plugin_type_id: PluginTypeId,
+    pub library_path: String,
     pub descriptor: PluginDescriptor,
     pub default_io_layout: PluginIoLayout,
 }

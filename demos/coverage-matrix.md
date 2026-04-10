@@ -13,6 +13,7 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 - live official demo manifests:
   - `signal.demo.plugin.sandbox-lifecycle`
+  - `signal.demo.plugin.capability-browser`
   - `signal.demo.runtime.recovery-inspector`
   - `signal.demo.runtime.supervisor-boundary-companion`
   - `signal.demo.host.local-server-compare`
@@ -31,6 +32,11 @@ workspace without overclaiming live demo coverage before `g09.012` and
 - `signal.demo.plugin.sandbox-lifecycle`
   - crates: `signal-plugin-sandbox`, `signal-ipc`
   - launch: `effigy demo:sandbox-lifecycle`
+- `signal.demo.plugin.capability-browser`
+  - crates: `signal-plugin`, `signal-plugin-clap`, `signal-plugin-vst3`,
+    `signal-plugin-au`, `signal-plugin-lv2`, `signal-host-local`,
+    `signal-host-server`
+  - launch: `effigy demo:plugin-capability-browser`
 - `signal.demo.runtime.recovery-inspector`
   - crates: `signal-runtime`
   - launch: `effigy demo:runtime-recovery-inspector`
@@ -61,15 +67,27 @@ workspace without overclaiming live demo coverage before `g09.012` and
     `signal-analysis-rhythm`, `signal-analysis-tonal`
   - launch: `effigy demo:analysis-feature-inspector`
 
-## Planned surfaces
+## Active g09.015 note
 
-### `g09.015` operator-visible interactive demos
-
-- `signal.demo.plugin.capability-browser`
-  - crates: `signal-plugin`, `signal-plugin-vst3`, `signal-plugin-au`,
-    `signal-plugin-clap`
-  - current blocker: real CLAP discovery and removal of VST3/AU metadata-file
-    discovery shims
+- `signal.demo.plugin.capability-browser` is now live
+- interactive terminal runs prefer real system plugin roots
+- browser launch roots now use exact per-plugin bundle/library paths instead of
+  broad directory roots
+- local browser buttons are now recovered through bounded per-plugin exact-root
+  local probes rather than one fragile broad local scan
+- the browser now surfaces local/server availability and bounded launch status
+  directly in the UI rather than leaving those signals buried in raw JSON
+- the interactive plugin browser now prefers bounded local-first macOS
+  inventory and bounded exact-root scan batches so real machine scans stay
+  usable when some installed plugins misbehave
+- the analysis feature inspector now includes a rendered companion view so the
+  analysis family is no longer receipt-only
+- the graph execution inspector is the next planned operator-view uplift so the
+  graph family does not remain receipt-only while plugin and analysis surfaces
+  grow more visually inspectable
+- the official non-interactive proof task uses one bounded fixture-backed scan
+  so browser validation does not depend on arbitrary installed plugins being
+  safe or fast to introspect
 
 ## Deferred After g09
 
@@ -85,5 +103,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.

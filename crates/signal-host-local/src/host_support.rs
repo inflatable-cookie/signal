@@ -82,7 +82,7 @@ pub(crate) use clocking::{
 };
 pub use demo::ensure_default_demo_plugin_override;
 pub(crate) use demo::{
-    local_demo_runtime_assembly, payload_automation_value,
+    demo_interaction_parameter_step, local_demo_runtime_assembly, payload_automation_value,
     plugin_automation_value_from_runtime_batch, runtime_watchdog_trigger, transport_attach_intent,
 };
 pub(crate) use discovery::discovered_plugins_for_scan;

@@ -140,7 +140,7 @@ fn discover_from_clap_library(library_path: &Path) -> Option<Vec<ClapDiscoveredP
         }
     }
 
-    let discovered = unsafe { discover_from_entry(*entry) };
+    let discovered = unsafe { discover_from_entry(*entry, library_path) };
 
     if let Some(deinit) = entry.deinit {
         unsafe { deinit() };
@@ -149,7 +149,10 @@ fn discover_from_clap_library(library_path: &Path) -> Option<Vec<ClapDiscoveredP
     Some(discovered)
 }
 
-unsafe fn discover_from_entry(entry: clap_plugin_entry) -> Vec<ClapDiscoveredPluginType> {
+unsafe fn discover_from_entry(
+    entry: clap_plugin_entry,
+    library_path: &Path,
+) -> Vec<ClapDiscoveredPluginType> {
     let Some(get_factory) = entry.get_factory else {
         return Vec::new();
     };
@@ -171,7 +174,7 @@ unsafe fn discover_from_entry(entry: clap_plugin_entry) -> Vec<ClapDiscoveredPlu
         if descriptor_ptr.is_null() {
             continue;
         }
-        if let Some(plugin) = build_discovered_plugin(factory, descriptor_ptr) {
+        if let Some(plugin) = build_discovered_plugin(factory, descriptor_ptr, library_path) {
             discovered.push(plugin);
         }
     }
@@ -181,6 +184,7 @@ unsafe fn discover_from_entry(entry: clap_plugin_entry) -> Vec<ClapDiscoveredPlu
 unsafe fn build_discovered_plugin(
     factory: *const clap_plugin_factory,
     descriptor_ptr: *const clap_plugin_descriptor,
+    library_path: &Path,
 ) -> Option<ClapDiscoveredPluginType> {
     let descriptor = &*descriptor_ptr;
     let plugin_id = cstr_ptr_to_string(descriptor.id)?;
@@ -233,6 +237,7 @@ unsafe fn build_discovered_plugin(
 
     Some(ClapDiscoveredPluginType {
         plugin_type_id: PluginTypeId(plugin_id),
+        library_path: library_path.to_string_lossy().to_string(),
         descriptor: plugin_descriptor,
         default_io_layout: io_and_params.default_io_layout,
     })

@@ -4,6 +4,7 @@
   "active_workspace_crate_count": 24,
   "live_demo_manifests": [
     "signal.demo.plugin.sandbox-lifecycle",
+    "signal.demo.plugin.capability-browser",
     "signal.demo.runtime.recovery-inspector",
     "signal.demo.runtime.supervisor-boundary-companion",
     "signal.demo.host.local-server-compare",
@@ -18,7 +19,12 @@
     "g09.011 freezes the first workspace coverage matrix but does not yet claim full domain demo implementation.",
     "Every active crate is mapped either to a deferred planned demo surface or an explicit live manifest list.",
     "The first live demo surfaces are deferred to g09.012 and g09.013.",
-    "g09.015 reopens the demo stream for operator-visible interactive proof, starting with the plugin capability browser."
+    "g09.015 reopens the demo stream for operator-visible interactive proof, starting with the plugin capability browser.",
+    "The plugin capability browser uses system-root scanning in interactive mode and one bounded fixture-backed proof mode for non-interactive validation.",
+    "The plugin capability browser now uses exact per-plugin launch roots, and local launch buttons are shown only for plugins returned by the local scan surface.",
+    "The plugin capability browser now surfaces local versus server availability and bounded launch outcome directly in the operator UI instead of relying on raw JSON alone.",
+    "The interactive plugin capability browser now prefers bounded local-first macOS inventory and bounded exact-root scan batches so real machine scans can degrade without blanking the browser.",
+    "The analysis feature inspector now includes a rendered operator companion view so the analysis family is no longer receipt-only."
   ],
   "crate_matrix": [
     {
@@ -59,38 +65,32 @@
     },
     {
       "crate": "signal-plugin",
-      "status": "planned",
-      "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "g09.015",
-      "blocker": "real plugin discovery burn-down",
+      "status": "active",
+      "manifest_id": "signal.demo.plugin.capability-browser",
       "domain": "plugin"
     },
     {
       "crate": "signal-plugin-vst3",
-      "status": "planned",
-      "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "g09.015",
-      "blocker": "real plugin discovery burn-down",
+      "status": "active",
+      "manifest_id": "signal.demo.plugin.capability-browser",
       "domain": "plugin"
     },
     {
       "crate": "signal-plugin-au",
       "status": "active",
-      "manifest_id": "signal.demo.macos.au-coreaudio-boundary",
+      "manifest_id": "signal.demo.plugin.capability-browser",
       "domain": "plugin"
     },
     {
       "crate": "signal-plugin-lv2",
       "status": "active",
-      "manifest_id": "signal.demo.linux.lv2-backend-boundary",
+      "manifest_id": "signal.demo.plugin.capability-browser",
       "domain": "plugin"
     },
     {
       "crate": "signal-plugin-clap",
-      "status": "planned",
-      "planned_surface_id": "signal.demo.plugin.capability-browser",
-      "planned_milestone": "g09.015",
-      "blocker": "real plugin discovery burn-down",
+      "status": "active",
+      "manifest_id": "signal.demo.plugin.capability-browser",
       "domain": "plugin"
     },
     {

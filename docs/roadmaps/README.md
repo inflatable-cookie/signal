@@ -121,7 +121,7 @@ interactive-demo stream:
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`
+  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
 
 ## Working Rule
 
@@ -131,5 +131,5 @@ interactive-demo stream:
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.
+Continue the active strict `g09` lane from
+`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.

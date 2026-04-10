@@ -41,9 +41,9 @@ strict surface that can be attached to one active generation at a time.
 
 The current ready batch card is:
 
-- `batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`
+- `batch-cards/053-g09-015-graph-execution-operator-view.md`
 
 ## Next Task
 
-Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
+Continue the active strict `g09` lane from
+`batch-cards/053-g09-015-graph-execution-operator-view.md`.

@@ -1,9 +1,7 @@
 use super::introspection::{
-    read_vst3_factory_classes, read_vst3_module_metadata, Vst3FactoryClass, Vst3FactoryClassRole,
-    Vst3ModuleMetadata,
+    read_vst3_bundle_snapshot, Vst3FactoryClass, Vst3FactoryClassRole, Vst3ModuleMetadata,
 };
 use super::*;
-use signal_plugin::PluginFeature;
 use std::io;
 
 impl Vst3HostAdapter {
@@ -20,6 +18,7 @@ impl Vst3HostAdapter {
             instance_id: PluginInstanceId(instance_id.to_string()),
             class_id: discovered.class_id.clone(),
             controller_class_id: discovered.controller_class_id.clone(),
+            category: discovered.category.clone(),
             component_name: component.name.clone(),
             controller_name,
             factory_export_count: factory_classes.len(),
@@ -156,6 +155,7 @@ impl Vst3HostAdapter {
             instance_id: instance.instance_id.clone(),
             class_id: instance.class_id.clone(),
             controller_class_id: instance.controller_class_id.clone(),
+            category: instance.category.clone(),
             component_name: instance.component_name.clone(),
             controller_name: instance.controller_name.clone(),
             factory_export_count: instance.factory_export_count,
@@ -307,18 +307,22 @@ fn validate_discovered_bundle_contract(
     Option<String>,
 )> {
     let bundle_root = std::path::Path::new(&discovered.module_root);
-    let module_metadata = read_vst3_module_metadata(bundle_root)?;
-    let factory_classes = read_vst3_factory_classes(bundle_root)?;
-
-    if module_metadata.plugin_type_id != discovered.plugin_type_id.0
-        || module_metadata.class_id != discovered.class_id
-        || module_metadata.controller_class_id != discovered.controller_class_id
-    {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "VST3 instantiation metadata no longer matches discovered plugin identity",
-        ));
-    }
+    let snapshot = read_vst3_bundle_snapshot(bundle_root, inferred_platform(bundle_root))?;
+    let factory_classes = snapshot.factory_classes;
+    let module_metadata = snapshot
+        .plugins
+        .into_iter()
+        .find(|metadata| {
+            metadata.plugin_type_id == discovered.plugin_type_id.0
+                && metadata.class_id == discovered.class_id
+                && metadata.controller_class_id == discovered.controller_class_id
+        })
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "VST3 instantiation metadata no longer matches discovered plugin identity",
+            )
+        })?;
 
     let component = factory_classes
         .iter()
@@ -364,21 +368,26 @@ fn validate_instance_bundle_contract(instance: &Vst3InstanceControlSurface) -> i
         plugin_type_id: instance.plugin_type_id.clone(),
         class_id: instance.class_id.clone(),
         controller_class_id: instance.controller_class_id.clone(),
-        category: if instance
-            .descriptor
-            .features
-            .contains(&PluginFeature::Instrument)
-        {
-            "Instrument".into()
-        } else {
-            "Fx".into()
-        },
+        category: instance.category.clone(),
         module_root: instance.module_root.clone(),
         descriptor: instance.descriptor.clone(),
         default_io_layout: instance.default_io_layout,
     };
     let _ = validate_discovered_bundle_contract(&discovered)?;
     Ok(())
+}
+
+fn inferred_platform(bundle_root: &std::path::Path) -> Vst3HostPlatform {
+    let contents = bundle_root.join("Contents");
+    if contents.join("MacOS").exists() {
+        Vst3HostPlatform::MacOs
+    } else if contents.join("x86_64-linux").exists() || contents.join("aarch64-linux").exists() {
+        Vst3HostPlatform::Linux
+    } else if contents.join("x86_64-win").exists() || contents.join("arm64-win").exists() {
+        Vst3HostPlatform::Windows
+    } else {
+        Vst3HostPlatform::MacOs
+    }
 }
 
 fn digest_bytes(bytes: &[u8]) -> String {

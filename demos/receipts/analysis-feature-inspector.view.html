@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal Analysis Feature Inspector</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f2ea;
+      --panel: #fffdf9;
+      --line: #d9cfc1;
+      --text: #1f1b16;
+      --muted: #6c6357;
+      --accent: #b65028;
+      --accent-soft: #f3d8c9;
+      --ok: #1f6b43;
+      --ok-soft: #dcefe2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Iowan Old Style", serif;
+      background: radial-gradient(circle at top, #fff8f0, var(--bg));
+      color: var(--text);
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p { line-height: 1.5; }
+    .hero {
+      background: linear-gradient(135deg, #fff8ef, #f5eadf);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 14px 40px rgba(74, 44, 18, 0.08);
+    }
+    .hero p { margin: 0; color: var(--muted); }
+    .checks {
+      margin: 18px 0 0;
+      padding-left: 18px;
+    }
+    .checks li {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(46, 33, 20, 0.06);
+    }
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+    .metrics {
+      display: grid;
+      gap: 10px;
+    }
+    .metric {
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #faf5ee;
+      border: 1px solid #eadfce;
+    }
+    .label {
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .value {
+      font-size: 1rem;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .callout {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #cfe0d6;
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Signal Analysis Feature Inspector</h1>
+      <p>Operator-facing offline view for bounded rhythm, tonal, loudness, character, and semantic posture. This surface stays synthetic-input and low-dependency; it is not an asset browser or recommendation shell.</p>
+      <ul class="checks"><li><strong>PASSED</strong> The demo captured bounded rhythm analysis posture from the existing offline rhythm example.</li><li><strong>PASSED</strong> The demo captured bounded tonal analysis posture from the existing offline tonal example.</li><li><strong>PASSED</strong> The demo captured bounded loudness analysis posture from the existing offline loudness example.</li><li><strong>PASSED</strong> The shared analysis inspector exposes both character metrics and semantic top-tag posture across bounded synthetic presets.</li><li><strong>PASSED</strong> The receipt keeps analysis meaning explicit and offline-focused instead of pretending to be a browser, asset library, or recommendation UI.</li><li><strong>PASSED</strong> A rendered companion view makes the bounded analysis outputs visually inspectable without reading the raw receipt first.</li></ul>
+    </section>
+    <div class="grid">
+      <section class="card"><h2>Rhythm posture</h2><p class="subtitle">Current tempo and meter-consumption summary from the offline rhythm example.</p><div class="metrics"><div class="metric"><span class="label">Estimated BPM</span><span class="value">120.00</span></div><div class="metric"><span class="label">Tempo state</span><span class="value">action:Lock,reason:StableIntegerTempo,confidence:0.892</span></div><div class="metric"><span class="label">Tempo consumption</span><span class="value">current:SnappedCurrentTempo@Some(120.0)/fallback:SnappedCurrentTempo@Some(120.0)/action:Lock/Lock/after:20@0.892/scope:WholeTrackStable</span></div><div class="metric"><span class="label">Beats per bar</span><span class="value">unknown</span></div><div class="metric"><span class="label">Meter confidence</span><span class="value">0.000</span></div><div class="metric"><span class="label">Meter detection</span><span class="value">unknown</span></div></div></section>
+      <section class="card"><h2>Tonal posture</h2><p class="subtitle">Bounded key and confidence summary from the offline tonal example.</p><div class="metrics"><div class="metric"><span class="label">Preset</span><span class="value">c-major</span></div><div class="metric"><span class="label">Key</span><span class="value">C major</span></div><div class="metric"><span class="label">Confidence</span><span class="value">0.1558</span></div><div class="metric"><span class="label">Chroma</span><span class="value">[0.37654996, 0.006485465, 0.0013682741, 0.0058181905, 0.31411314, 0.002937362, 0.0037605576, 0.26129287, 0.001003471, 0.00049462216, 0.002405657, 0.023770517]</span></div></div></section>
+      <section class="card"><h2>Loudness posture</h2><p class="subtitle">Integrated loudness and peak posture from the offline loudness example.</p><div class="metrics"><div class="metric"><span class="label">Sample rate</span><span class="value">48000</span></div><div class="metric"><span class="label">Amplitude</span><span class="value">0.200</span></div><div class="metric"><span class="label">Integrated LUFS</span><span class="value">-16.983</span></div><div class="metric"><span class="label">True peak dBTP</span><span class="value">-13.979</span></div><div class="metric"><span class="label">Confidence</span><span class="value">1.000</span></div></div></section>
+    </div>
+    <div class="grid">
+      <section class="card"><h2>Character + Semantic: tone</h2><p class="subtitle">Shared bounded synthetic-input inspector surface.</p><div class="metrics"><div class="metric"><span class="label">Top tag</span><span class="value">TonalFocus</span></div><div class="metric"><span class="label">Driver</span><span class="value">harmonic_focus</span></div><div class="metric"><span class="label">Semantic confidence</span><span class="value">0.1628</span></div><div class="metric"><span class="label">Character confidence</span><span class="value">0.2000</span></div><div class="metric"><span class="label">Spectral</span><span class="value">centroid_hz:451.75,flatness:0.00000,spread_hz:412.93</span></div><div class="metric"><span class="label">Temporal</span><span class="value">onset_density:0.0000,transient_density:0.0000,sustain_ratio:0.9883,peak_transient_strength:0.0000</span></div><div class="metric"><span class="label">Dynamics</span><span class="value">rms_energy:0.7071,peak_amplitude:1.0000,dynamic_range:0.2929</span></div></div></section><section class="card"><h2>Character + Semantic: noise</h2><p class="subtitle">Shared bounded synthetic-input inspector surface.</p><div class="metrics"><div class="metric"><span class="label">Top tag</span><span class="value">TexturalNoise</span></div><div class="metric"><span class="label">Driver</span><span class="value">spectral_complexity</span></div><div class="metric"><span class="label">Semantic confidence</span><span class="value">0.1816</span></div><div class="metric"><span class="label">Character confidence</span><span class="value">0.2000</span></div><div class="metric"><span class="label">Spectral</span><span class="value">centroid_hz:12011.07,flatness:0.56041,spread_hz:6937.03</span></div><div class="metric"><span class="label">Temporal</span><span class="value">onset_density:0.0000,transient_density:20.0000,sustain_ratio:0.9588,peak_transient_strength:0.0000</span></div><div class="metric"><span class="label">Dynamics</span><span class="value">rms_energy:0.2890,peak_amplitude:0.5000,dynamic_range:0.2110</span></div></div></section><section class="card"><h2>Character + Semantic: pulse</h2><p class="subtitle">Shared bounded synthetic-input inspector surface.</p><div class="metrics"><div class="metric"><span class="label">Top tag</span><span class="value">PulseDriven</span></div><div class="metric"><span class="label">Driver</span><span class="value">rhythmic_activity</span></div><div class="metric"><span class="label">Semantic confidence</span><span class="value">0.1902</span></div><div class="metric"><span class="label">Character confidence</span><span class="value">0.2143</span></div><div class="metric"><span class="label">Spectral</span><span class="value">centroid_hz:8.09,flatness:0.00000,spread_hz:20.92</span></div><div class="metric"><span class="label">Temporal</span><span class="value">onset_density:4.2001,transient_density:1.8667,sustain_ratio:0.9938,peak_transient_strength:1.0000</span></div><div class="metric"><span class="label">Dynamics</span><span class="value">rms_energy:0.6108,peak_amplitude:0.9000,dynamic_range:0.2892</span></div></div></section>
+    </div>
+    <section class="callout">
+      The underlying source of truth is still the receipt and the bounded example commands. This rendered view exists to make the analysis family visually inspectable without reading raw JSON first.
+    </section>
+  </main>
+</body>
+</html>

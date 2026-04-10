@@ -96,35 +96,29 @@ fn write_vst3_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
     std::fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
         .expect("server vst3 resources should be created");
     std::fs::write(
-        bundle_root
-            .join("Contents")
-            .join("Resources")
-            .join("signal-vst3-module.txt"),
-        vst3_metadata_contents(plugin_type_id),
+        bundle_root.join("Contents").join("Info.plist"),
+        vst3_info_plist_contents(vst3_metadata_contents(plugin_type_id), &bundle_root),
     )
-    .expect("server vst3 metadata should be written");
+    .expect("server vst3 info plist should be written");
     std::fs::write(
         bundle_root
             .join("Contents")
             .join("Resources")
-            .join("signal-vst3-factory.txt"),
-        vst3_factory_contents(plugin_type_id),
+            .join("moduleinfo.json"),
+        vst3_moduleinfo_contents(vst3_metadata_contents(plugin_type_id)),
     )
-    .expect("server vst3 factory metadata should be written");
+    .expect("server vst3 moduleinfo should be written");
 }
 
 fn write_au_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
     let bundle_root = root.join(bundle);
-    std::fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
-        .expect("server au resources should be created");
+    std::fs::create_dir_all(bundle_root.join("Contents"))
+        .expect("server au contents should be created");
     std::fs::write(
-        bundle_root
-            .join("Contents")
-            .join("Resources")
-            .join("signal-au-component.txt"),
-        au_metadata_contents(plugin_type_id),
+        bundle_root.join("Contents").join("Info.plist"),
+        au_info_plist_contents(au_metadata_contents(plugin_type_id)),
     )
-    .expect("server au metadata should be written");
+    .expect("server au info plist should be written");
 }
 
 fn write_lv2_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
@@ -155,22 +149,119 @@ fn vst3_metadata_contents(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn vst3_factory_contents(plugin_type_id: &str) -> &'static str {
-    match plugin_type_id {
-        "plugin:vst3:linux-synth" => {
-            "component=7E1D8F8A4D874D56A2C44DE250100101|Instrument|Signal Linux Synth VST3 Plugin\ncontroller=7E1D8F8A4D874D56A2C44DE250100102|Controller|Signal Linux Synth VST3 Plugin\n"
+fn vst3_info_plist_contents(metadata: &str, bundle_root: &PathBuf) -> String {
+    let mut plugin_type_id = "";
+    let mut name = "Signal VST3 Plugin";
+    let mut version = "0.1.0";
+    let mut audio_inputs = "2";
+    let mut audio_outputs = "2";
+    let mut midi_inputs = "0";
+    let mut midi_outputs = "0";
+    let mut features = "";
+
+    for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        match key.trim() {
+            "plugin_type_id" => plugin_type_id = value.trim(),
+            "name" => name = value.trim(),
+            "version" => version = value.trim(),
+            "audio_inputs" => audio_inputs = value.trim(),
+            "audio_outputs" => audio_outputs = value.trim(),
+            "midi_inputs" => midi_inputs = value.trim(),
+            "midi_outputs" => midi_outputs = value.trim(),
+            "features" => features = value.trim(),
+            _ => {}
         }
-        "plugin:vst3:multiout-instrument" => {
-            "component=7E1D8F8A4D874D56A2C44DE250100011|Instrument|Signal Multi Output Instrument VST3 Plugin\ncontroller=7E1D8F8A4D874D56A2C44DE250100012|Controller|Signal Multi Output Instrument VST3 Plugin\n"
-        }
-        "plugin:vst3:utility" => {
-            "component=7E1D8F8A4D874D56A2C44DE250100201|Fx|Signal Utility VST3 Plugin\ncontroller=7E1D8F8A4D874D56A2C44DE250100202|Controller|Signal Utility VST3 Plugin\n"
-        }
-        "plugin:vst3:bus-fx" => {
-            "component=7E1D8F8A4D874D56A2C44DE250100211|Fx|Signal Bus FX VST3 Plugin\ncontroller=7E1D8F8A4D874D56A2C44DE250100212|Controller|Signal Bus FX VST3 Plugin\n"
-        }
-        other => panic!("unknown server VST3 factory type: {other}"),
     }
+
+    let executable_name = bundle_root
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .unwrap_or(name);
+    let feature_array = features
+        .split(',')
+        .map(str::trim)
+        .filter(|feature| !feature.is_empty())
+        .map(|feature| format!("    <string>{feature}</string>"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
+<plist version=\"1.0\">\n\
+<dict>\n\
+  <key>CFBundleExecutable</key>\n\
+  <string>{executable_name}</string>\n\
+  <key>CFBundleIdentifier</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>CFBundleName</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundlePackageType</key>\n\
+  <string>BNDL</string>\n\
+  <key>CFBundleShortVersionString</key>\n\
+  <string>{version}</string>\n\
+  <key>SignalPluginTypeId</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>SignalAudioInputs</key>\n\
+  <integer>{audio_inputs}</integer>\n\
+  <key>SignalAudioOutputs</key>\n\
+  <integer>{audio_outputs}</integer>\n\
+  <key>SignalMidiInputs</key>\n\
+  <integer>{midi_inputs}</integer>\n\
+  <key>SignalMidiOutputs</key>\n\
+  <integer>{midi_outputs}</integer>\n\
+  <key>SignalFeatures</key>\n\
+  <array>\n\
+{feature_array}\n\
+  </array>\n\
+</dict>\n\
+</plist>\n"
+    )
+}
+
+fn vst3_moduleinfo_contents(metadata: &str) -> String {
+    let mut class_id = "";
+    let mut controller_class_id = "";
+    let mut category = "Fx";
+    let mut vendor = "Signal";
+    let mut name = "Signal VST3 Plugin";
+    let mut version = "0.1.0";
+
+    for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        match key.trim() {
+            "class_id" => class_id = value.trim(),
+            "controller_class_id" => controller_class_id = value.trim(),
+            "category" => category = value.trim(),
+            "vendor" => vendor = value.trim(),
+            "name" => name = value.trim(),
+            "version" => version = value.trim(),
+            _ => {}
+        }
+    }
+
+    let subcategory = if category.eq_ignore_ascii_case("Instrument") {
+        "Instrument"
+    } else {
+        "Fx"
+    };
+    let controller_class = if controller_class_id.is_empty()
+        || controller_class_id.eq_ignore_ascii_case("none")
+    {
+        String::new()
+    } else {
+        format!(
+            ",\n    {{\n      \"CID\": \"{controller_class_id}\",\n      \"Category\": \"Component Controller Class\",\n      \"Name\": \"{name}\",\n      \"Vendor\": \"{vendor}\",\n      \"Version\": \"{version}\",\n      \"Sub Categories\": [\"{subcategory}\"]\n    }}"
+        )
+    };
+
+    format!(
+        "{{\n  \"Name\": \"{name}\",\n  \"Version\": \"{version}\",\n  \"Factory Info\": {{\n    \"Vendor\": \"{vendor}\",\n    \"URL\": \"https://signal.dev\",\n    \"E-Mail\": \"\"\n  }},\n  \"Classes\": [\n    {{\n      \"CID\": \"{class_id}\",\n      \"Category\": \"Audio Module Class\",\n      \"Name\": \"{name}\",\n      \"Vendor\": \"{vendor}\",\n      \"Version\": \"{version}\",\n      \"Sub Categories\": [\"{subcategory}\"]\n    }}{controller_class}\n  ]\n}}\n"
+    )
 }
 
 fn au_metadata_contents(plugin_type_id: &str) -> &'static str {
@@ -189,6 +280,103 @@ fn au_metadata_contents(plugin_type_id: &str) -> &'static str {
         }
         other => panic!("unknown server AU plugin type: {other}"),
     }
+}
+
+fn au_info_plist_contents(metadata: &str) -> String {
+    let mut plugin_type_id = "";
+    let mut component_type = "";
+    let mut component_subtype = "";
+    let mut manufacturer_code = "";
+    let mut vendor = "Signal";
+    let mut name = "Signal AU Plugin";
+    let mut version = "0.1.0";
+    let mut audio_inputs = "2";
+    let mut audio_outputs = "2";
+    let mut midi_inputs = "0";
+    let mut midi_outputs = "0";
+    let mut features = "";
+
+    for line in metadata.lines().filter(|line| !line.trim().is_empty()) {
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        match key.trim() {
+            "plugin_type_id" => plugin_type_id = value.trim(),
+            "component_type" => component_type = value.trim(),
+            "component_subtype" => component_subtype = value.trim(),
+            "manufacturer_code" => manufacturer_code = value.trim(),
+            "vendor" => vendor = value.trim(),
+            "name" => name = value.trim(),
+            "version" => version = value.trim(),
+            "audio_inputs" => audio_inputs = value.trim(),
+            "audio_outputs" => audio_outputs = value.trim(),
+            "midi_inputs" => midi_inputs = value.trim(),
+            "midi_outputs" => midi_outputs = value.trim(),
+            "features" => features = value.trim(),
+            _ => {}
+        }
+    }
+
+    let feature_array = features
+        .split(',')
+        .map(str::trim)
+        .filter(|feature| !feature.is_empty())
+        .map(|feature| format!("    <string>{feature}</string>"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n\
+<plist version=\"1.0\">\n\
+<dict>\n\
+  <key>AudioComponents</key>\n\
+  <array>\n\
+    <dict>\n\
+      <key>manufacturer</key>\n\
+      <string>{manufacturer_code}</string>\n\
+      <key>name</key>\n\
+      <string>{vendor}: {name}</string>\n\
+      <key>sandboxSafe</key>\n\
+      <false/>\n\
+      <key>subtype</key>\n\
+      <string>{component_subtype}</string>\n\
+      <key>type</key>\n\
+      <string>{component_type}</string>\n\
+      <key>version</key>\n\
+      <integer>1</integer>\n\
+    </dict>\n\
+  </array>\n\
+  <key>CFBundleExecutable</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundleIdentifier</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>CFBundleName</key>\n\
+  <string>{name}</string>\n\
+  <key>CFBundlePackageType</key>\n\
+  <string>BNDL</string>\n\
+  <key>CFBundleShortVersionString</key>\n\
+  <string>{version}</string>\n\
+  <key>SignalPluginTypeId</key>\n\
+  <string>{plugin_type_id}</string>\n\
+  <key>SignalVendor</key>\n\
+  <string>{vendor}</string>\n\
+  <key>SignalDisplayName</key>\n\
+  <string>{name}</string>\n\
+  <key>SignalAudioInputs</key>\n\
+  <integer>{audio_inputs}</integer>\n\
+  <key>SignalAudioOutputs</key>\n\
+  <integer>{audio_outputs}</integer>\n\
+  <key>SignalMidiInputs</key>\n\
+  <integer>{midi_inputs}</integer>\n\
+  <key>SignalMidiOutputs</key>\n\
+  <integer>{midi_outputs}</integer>\n\
+  <key>SignalFeatures</key>\n\
+  <array>\n\
+{feature_array}\n\
+  </array>\n\
+</dict>\n\
+</plist>\n"
+    )
 }
 
 fn lv2_manifest_contents(plugin_type_id: &str) -> &'static str {
