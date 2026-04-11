@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-10
+Updated: 2026-04-11
 Related contracts: `docs/contracts/079-interactive-demo-binary-and-crate-capability-proof-contract.md`, `docs/contracts/080-production-readiness-grade-and-generation-release-gate-contract.md`
 Related architecture: `docs/architecture/system-architecture.md`, `docs/architecture/system-inventory.md`
 
@@ -65,5 +65,5 @@ while avoiding a new heavyweight in-repo UI dependency stack.
 
 ## Next Task
 
-Use this contract while executing
-`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.
+Use this contract as the benchmark if a future generation proposes additional
+operator-visible demo work beyond the closed `g09.015` lane.

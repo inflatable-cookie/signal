@@ -1,7 +1,7 @@
 # Logs
 
 Status: active
-Updated: 2026-04-10
+Updated: 2026-04-11
 
 ## Why this section matters now
 
@@ -33,7 +33,7 @@ Use this section for:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card: none; `g09` is complete
 
 ## Recent active-lane evidence
 
@@ -118,9 +118,21 @@ Use this section for:
 - `2026-04/10-235500-g09-015-graph-execution-operator-view-closeout.md`
 - `2026-04/10-236500-g09-015-dsp-operator-view-ready-handoff.md`
 - `2026-04/10-237500-g09-015-dsp-processing-operator-view-closeout.md`
+- `2026-04/11-000500-g09-015-runtime-recovery-operator-view-ready-handoff.md`
+- `2026-04/11-001500-g09-015-runtime-recovery-operator-view-closeout.md`
+- `2026-04/11-002500-g09-015-runtime-supervisor-companion-ready-handoff.md`
+- `2026-04/11-003500-g09-015-runtime-supervisor-companion-operator-view-closeout.md`
+- `2026-04/11-004500-g09-015-hardware-topology-operator-view-ready-handoff.md`
+- `2026-04/11-011500-g09-015-hardware-topology-operator-view-closeout.md`
+- `2026-04/11-013500-g09-015-local-server-host-comparison-operator-view-ready-handoff.md`
+- `2026-04/11-021500-g09-015-local-server-host-comparison-operator-view-closeout.md`
+- `2026-04/11-023500-g09-015-sandbox-lifecycle-operator-view-ready-handoff.md`
+- `2026-04/11-031500-g09-015-plugin-sandbox-lifecycle-operator-view-closeout.md`
+- `2026-04/11-033500-g09-015-platform-boundary-operator-views-ready-handoff.md`
+- `2026-04/11-041500-g09-015-platform-boundary-operator-views-closeout.md`
+- `2026-04/11-105249-g09-015-closeout-and-generation-complete.md`
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
+before promoting another strict execution lane.

@@ -11,9 +11,15 @@
       "highlights": {
         "readiness": "Ready",
         "watchdog": "HeartbeatMisses",
-        "plugin_fault_count": 2,
-        "event_count": 3
+        "plugin_fault_count": "0",
+        "event_count": "3"
       }
+    },
+    {
+      "kind": "runtime-recovery-operator-view",
+      "html_path": "demos/receipts/runtime-recovery-inspector.view.html",
+      "status": "passed",
+      "section_count": 3
     }
   ],
   "operator_checks": [
@@ -41,6 +47,11 @@
       "id": "operator.runtime-recovery.external-surface",
       "status": "passed",
       "summary": "Runtime report preserved degraded hardware/backend surfaces explicitly."
+    },
+    {
+      "id": "operator.runtime-recovery.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes watchdog, fault, safe-mode, and degraded-surface posture visually inspectable without reading the raw receipt first."
     }
   ]
 }

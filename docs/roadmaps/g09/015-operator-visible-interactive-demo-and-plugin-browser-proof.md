@@ -1,6 +1,6 @@
 # 015 - Operator-Visible Interactive Demo And Plugin Browser Proof
 
-Status: active
+Status: complete
 Owner: core-product
 Created: 2026-04-10
 Depends on: g09.014
@@ -289,12 +289,88 @@ to be honest.
   exact focused runtime proofs instead of loose `cargo test` filters that
   could execute the wrong runtime binaries or zero tests
 
-### Current Planning Posture
+### Batch 15.13 - Runtime Family Operator Views
 
-- `g09.015` remains active, but there is no current ready card after the DSP
-  operator-view closeout
-- the next honest seam needs fresh planning judgment instead of another
-  inferred demo batch
+- [x] add rendered operator companions for the runtime recovery inspector and
+      the runtime supervisor boundary companion
+- [x] keep the runtime family grounded in existing bounded reports and
+      descriptor surfaces
+- [x] avoid widening into runtime control, dashboards, or new supervisor
+      behavior
+
+#### Batch 15.13 Outcome
+
+- `signal.demo.runtime.recovery-inspector` now emits a rendered companion view
+  at `demos/receipts/runtime-recovery-inspector.view.html`
+- `signal.demo.runtime.supervisor-boundary-companion` now emits a rendered
+  companion view at
+  `demos/receipts/runtime-supervisor-boundary-companion.view.html`
+- the runtime family is no longer split between one rendered surface and one
+  receipt-only companion; recovery, interruption, and fault-diagnostic posture
+  are now visually inspectable at the operator layer
+- both uplifts stayed presentation-only over existing supervisor-report and
+  descriptor output rather than widening into a runtime console or host shell
+
+### Batch 15.14 - Hardware And Host Operator Views
+
+- [x] add rendered operator companions for hardware topology diagnostics and
+      local-versus-server host comparison
+- [x] keep both surfaces grounded in existing bounded host and topology truth
+- [x] avoid widening into backend control panels or host session shells
+
+#### Batch 15.14 Outcome
+
+- `signal.demo.hardware.topology-diagnostics` now emits a rendered companion
+  view at `demos/receipts/hardware-topology-diagnostics.view.html`
+- `signal.demo.host.local-server-compare` now emits a rendered companion view
+  at `demos/receipts/local-server-host-comparison.view.html`
+- the hardware and host families are now visually inspectable instead of
+  relying on receipts alone
+- the host comparison uplift also corrected inherited readiness parsing so the
+  operator surface reflects the actual host summary truth
+
+### Batch 15.15 - Sandbox And Platform Operator Views
+
+- [x] add rendered operator companions for sandbox lifecycle and the remaining
+      macOS/Linux platform-boundary demos
+- [x] keep those surfaces grounded in existing bounded lifecycle and platform
+      proof data
+- [x] avoid widening into broker consoles, native-device dashboards, or
+      platform-specific product shells
+
+#### Batch 15.15 Outcome
+
+- `signal.demo.plugin.sandbox-lifecycle` now emits a rendered companion view
+  at `demos/receipts/plugin-sandbox-lifecycle.view.html`
+- `signal.demo.macos.au-coreaudio-boundary` now emits a rendered companion
+  view at `demos/receipts/macos-au-coreaudio-boundary.view.html`
+- `signal.demo.linux.lv2-backend-boundary` now emits a rendered companion view
+  at `demos/receipts/linux-lv2-backend-boundary.view.html`
+- the remaining dedicated plugin-lifecycle and platform-boundary surfaces are
+  no longer receipt-only
+- the platform demo runners were flattened onto direct proof commands so they
+  no longer deadlock by recursively invoking nested `effigy acceptance:*`
+  tasks from inside `effigy demo:*`
+
+## Closeout Decision
+
+- the plugin family now satisfies the operator-visible contract honestly:
+  real installed-plugin browsing, bounded launch or attach truth, and one
+  bounded live `parameter-step` interaction proof over supported host paths
+- every live demo surface in the active crate set now provides direct operator
+  inspection through either live browser-native interaction or a rendered
+  companion view instead of receipt-only posture
+- no additional operator-visible gap remains that would justify another
+  `g09.015` batch without inventing scope beyond Contract `081`
+
+### Final Outcome
+
+- `g09.015` is complete under `core-product`
+- operator-visible coverage is now live and inspectable across plugin browser,
+  sandbox lifecycle, runtime, host comparison, hardware, graph, DSP, analysis,
+  and the remaining platform boundaries
+- `g09` is ready to close again at the generation front door because the
+  reopened operator-visible demo scope is now complete and honest
 
 ## Acceptance Criteria
 
@@ -313,6 +389,5 @@ to be honest.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: `g09.015` is closed. Re-enter planning at the next-generation
+boundary before promoting another strict execution lane.

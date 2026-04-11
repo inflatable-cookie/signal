@@ -31,6 +31,12 @@
           "line_count": 6
         }
       ]
+    },
+    {
+      "kind": "sandbox-lifecycle-operator-view",
+      "html_path": "demos/receipts/plugin-sandbox-lifecycle.view.html",
+      "status": "passed",
+      "section_count": 3
     }
   ],
   "operator_checks": [
@@ -58,6 +64,11 @@
       "id": "operator.sandbox-lifecycle.shutdown",
       "status": "passed",
       "summary": "Broker exited through the explicit shutdown receipt."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes broker lifecycle and timeout recovery posture visually inspectable without reading the raw receipt first."
     }
   ]
 }

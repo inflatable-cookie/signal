@@ -17,8 +17,8 @@ planning surface.
 - `specs/` for the active lane-first strict `g09` surface
 
 Signal is still using a baseline Northstar spine overall. The `g09` generation
-uses a reopened lane-first strict surface under `docs/specs/` for the current
-interactive-demo stream.
+used a reopened lane-first strict surface under `docs/specs/` for the completed
+interactive-demo stream and is now closed again.
 
 ## Current Entry Points
 
@@ -32,7 +32,7 @@ interactive-demo stream.
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card: none currently ready
+- Active strict-lane card: none; `g09` is complete
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -48,7 +48,7 @@ interactive-demo stream.
   reusable library boundary
 - keep section indexes aligned to Northstar conventions
 - treat `legacy/cpp/` as reference surface, not primary implementation surface
-- treat the active generation as a lane-first strict Northstar surface under
+- treat an active generation as a lane-first strict Northstar surface under
   `docs/specs/` only while that generation is explicitly open
 - in the strict lane, treat a bare `continue` as "follow the previous closeout's
   `Next Task`" rather than as permission to infer a new batch
@@ -56,6 +56,5 @@ interactive-demo stream.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
+before promoting another strict execution lane.

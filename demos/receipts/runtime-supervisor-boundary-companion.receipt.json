@@ -163,6 +163,12 @@
           }
         }
       ]
+    },
+    {
+      "kind": "runtime-supervisor-operator-view",
+      "html_path": "demos/receipts/runtime-supervisor-boundary-companion.view.html",
+      "status": "passed",
+      "boundary_count": 2
     }
   ],
   "operator_checks": [
@@ -180,6 +186,11 @@
       "id": "operator.runtime-supervisor.runtime-family-companion",
       "status": "passed",
       "summary": "The receipt keeps its relationship to the runtime recovery inspector explicit as a companion surface."
+    },
+    {
+      "id": "operator.runtime-supervisor.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes interruption and fault-diagnostic boundary posture visually inspectable without reading the raw receipt first."
     }
   ]
 }

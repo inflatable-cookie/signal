@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal Runtime Recovery Inspector</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #edf3f6;
+      --panel: #fbfdff;
+      --line: #ccd7df;
+      --text: #162028;
+      --muted: #5f6c76;
+      --accent: #2d6e94;
+      --ok: #1e6445;
+      --ok-soft: #dcefe5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #f7fbfd, var(--bg));
+      color: var(--text);
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p { line-height: 1.5; }
+    .hero {
+      background: linear-gradient(135deg, #f7fbff, #e7f0f6);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 14px 40px rgba(18, 44, 62, 0.08);
+    }
+    .hero p { margin: 0; color: var(--muted); }
+    .checks {
+      margin: 18px 0 0;
+      padding-left: 18px;
+    }
+    .checks li {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(15, 37, 53, 0.06);
+    }
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+    .metrics {
+      display: grid;
+      gap: 10px;
+    }
+    .metric {
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f3f8fb;
+      border: 1px solid #dbe6ee;
+    }
+    .label {
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .value {
+      font-size: 0.98rem;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .callout {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #cfe0d6;
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Signal Runtime Recovery Inspector</h1>
+      <p>Operator-facing rendered view for bounded runtime recovery posture across handshake, watchdog, plugin faults, safe mode, and degraded external/backend surfaces. This surface stays example-backed and low-dependency; it is not a runtime dashboard or control shell.</p>
+      <ul class="checks"><li><strong>PASSED</strong> Runtime example completed handshake, configuration, and start.</li><li><strong>PASSED</strong> Supervisor output exposed the watchdog-trigger snapshot.</li><li><strong>PASSED</strong> Runtime example exported the injected plugin timeout faults.</li><li><strong>PASSED</strong> Runtime report kept explicit safe-mode posture in the steady-state surface.</li><li><strong>PASSED</strong> Runtime report preserved degraded hardware/backend surfaces explicitly.</li><li><strong>PASSED</strong> A rendered companion view makes watchdog, fault, safe-mode, and degraded-surface posture visually inspectable without reading the raw receipt first.</li></ul>
+    </section>
+    <div class="grid">
+      <section class="card"><h2>Lifecycle posture</h2><p class="subtitle">Bounded runtime startup and readiness posture from the supervisor report example.</p><div class="metrics"><div class="metric"><span class="label">Readiness</span><span class="value">Ready</span></div><div class="metric"><span class="label">Handshaken</span><span class="value">true</span></div><div class="metric"><span class="label">Configured</span><span class="value">true</span></div><div class="metric"><span class="label">Running</span><span class="value">true</span></div></div></section>
+      <section class="card"><h2>Watchdog and faults</h2><p class="subtitle">Observed watchdog trigger and plugin-fault history from the bounded recovery report.</p><div class="metrics"><div class="metric"><span class="label">Watchdog</span><span class="value">HeartbeatMisses</span></div><div class="metric"><span class="label">Plugin faults</span><span class="value">0</span></div><div class="metric"><span class="label">Last fault</span><span class="value">sandbox-demo:Timeout</span></div><div class="metric"><span class="label">Events</span><span class="value">3</span></div></div></section>
+      <section class="card"><h2>Safe mode and degraded surfaces</h2><p class="subtitle">Steady-state safe-mode and external/backend degradation posture.</p><div class="metrics"><div class="metric"><span class="label">Safe mode</span><span class="value">false</span></div><div class="metric"><span class="label">Device safe mode</span><span class="value">false</span></div><div class="metric"><span class="label">External I/O</span><span class="value">health=Unavailable</span></div><div class="metric"><span class="label">Linux backend</span><span class="value">backend=Unavailable</span></div></div></section>
+    </div>
+    <section class="callout">
+      The underlying source of truth is still the receipt and the bounded runtime report example. This rendered view exists to make runtime recovery posture visually inspectable without reading raw JSON first.
+    </section>
+  </main>
+</body>
+</html>

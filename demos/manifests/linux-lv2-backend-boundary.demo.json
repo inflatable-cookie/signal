@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:linux-lv2-and-backend-boundary",
     "owner_surface": "effigy-task",
-    "notes": "Runs the existing Linux LV2 execution and Linux audio-backend boundary descriptor and acceptance lanes and records one machine-readable receipt."
+    "notes": "Runs the existing Linux LV2 execution and Linux audio-backend boundary descriptor and acceptance lanes, records one machine-readable receipt, and emits a rendered operator companion."
   },
   "covered_crates": [
     "signal-plugin-lv2",
@@ -25,9 +25,10 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/linux-lv2-backend-boundary.receipt.json",
+    "view_path": "demos/receipts/linux-lv2-backend-boundary.view.html",
     "operator_notes_path": "demos/scenarios/linux-lv2-backend-boundary.default.md",
-    "capture": "json-receipt-and-operator-notes",
-    "notes": "This bootstrap surface wraps the existing Linux LV2 execution and Linux audio-backend boundary descriptors plus their current acceptance lanes without inventing a plugin browser or new host UI."
+    "capture": "json-receipt-rendered-view-and-operator-notes",
+    "notes": "This bootstrap surface wraps the existing Linux LV2 execution and Linux audio-backend boundary descriptors plus their current acceptance lanes while adding a rendered operator companion and without inventing a plugin browser or new host UI."
   },
   "known_exclusions": [
     "Plugin capability browsing remains deferred to a later g09.012 planning decision.",
@@ -38,6 +39,7 @@
     "The receipt captures the machine-readable Linux LV2 execution boundary descriptor.",
     "The receipt captures the machine-readable Linux audio-backend boundary descriptor.",
     "The receipt records that the existing Linux LV2 execution and Linux audio-backend acceptance lanes completed successfully.",
+    "The rendered companion view makes the Linux LV2 and backend boundaries visually inspectable without reading the raw receipt first.",
     "signal-plugin-lv2 only moves to live demo coverage because this manifest and receipt exist."
   ]
 }

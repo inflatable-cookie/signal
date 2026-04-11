@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-10
+Updated: 2026-04-11
 
 ## Purpose
 
@@ -12,13 +12,14 @@ memory alone.
 
 ## Current Lane
 
-- Signal is in lane-first stricter adoption for the reopened `g09`
+- Signal completed the lane-first stricter adoption run for the reopened `g09`
   interactive-demo queue
 - `001-working-rules` governs the strict-lane execution posture
-- `g09.015` is the current strict-execution milestone
+- there is currently no active strict-execution milestone; `g09.015` is
+  complete
 - `docs/specs/001-g09-lane-first-strict-adoption.md` records the completed
   strict-lane model
-- there is no current ready card
+- there is currently no ready card because `g09` is complete
 
 ## Strict Lane Working Rule
 
@@ -142,5 +143,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door while re-entering planning
-for the next honest `g09.015` seam.
+Use this index as the contract-selection front door when the next generation
+opens a new active planning lane.

@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:runtime-recovery-inspector",
     "owner_surface": "effigy-task",
-    "notes": "Bootstraps the existing signal-runtime supervisor report example and records a machine-readable receipt."
+    "notes": "Bootstraps the existing signal-runtime supervisor report example, records a machine-readable receipt, and emits a rendered operator companion view."
   },
   "covered_crates": [
     "signal-runtime"
@@ -23,8 +23,9 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/runtime-recovery-inspector.receipt.json",
+    "view_path": "demos/receipts/runtime-recovery-inspector.view.html",
     "operator_notes_path": "demos/scenarios/runtime-recovery-inspector.default.md",
-    "capture": "json-receipt-and-operator-notes",
+    "capture": "json-receipt-rendered-view-and-operator-notes",
     "notes": "This bootstrap surface proves runtime recovery inspection without widening into host comparison or plugin browsing."
   },
   "known_exclusions": [
@@ -37,6 +38,7 @@
     "The runtime report records handshaken, configured, and running state.",
     "The runtime report records the watchdog trigger snapshot.",
     "The runtime report records plugin timeout fault history.",
-    "The runtime report keeps safe-mode and degraded external-surface posture explicit."
+    "The runtime report keeps safe-mode and degraded external-surface posture explicit.",
+    "The rendered companion view makes runtime recovery posture visually inspectable without reading raw JSON first."
   ]
 }

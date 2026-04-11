@@ -1,7 +1,7 @@
 # Demo Coverage Matrix
 
 Status: active
-Updated: 2026-04-10
+Updated: 2026-04-11
 
 ## Purpose
 
@@ -67,7 +67,7 @@ workspace without overclaiming live demo coverage before `g09.012` and
     `signal-analysis-rhythm`, `signal-analysis-tonal`
   - launch: `effigy demo:analysis-feature-inspector`
 
-## Active g09.015 note
+## g09.015 closeout note
 
 - `signal.demo.plugin.capability-browser` is now live
 - interactive terminal runs prefer real system plugin roots
@@ -86,6 +86,22 @@ workspace without overclaiming live demo coverage before `g09.012` and
   graph family is no longer receipt-only
 - the DSP processing lab now includes a rendered companion view so the DSP
   family is no longer receipt-only
+- the runtime recovery inspector now includes a rendered companion view so the
+  runtime family is no longer receipt-only at the operator layer
+- the runtime supervisor boundary companion now includes a rendered companion
+  view so the runtime family no longer has a receipt-only supervisor companion
+- the hardware topology diagnostics surface now includes a rendered companion
+  view so the hardware family is no longer receipt-only
+- the local-versus-server host comparison surface now includes a rendered
+  companion view so the host family is no longer receipt-only
+- the sandbox lifecycle surface now includes a rendered companion view so the
+  dedicated plugin lifecycle proof no longer remains receipt-only
+- the macOS AU/CoreAudio and Linux LV2/backend platform surfaces now include
+  rendered companion views, so the remaining platform-boundary gaps are no
+  longer receipt-only
+- the operator-visible demo lane is now complete:
+  installed-plugin browsing, bounded plugin interaction, and rendered
+  companions together cover the active crate set without a heavier UI stack
 - the official non-interactive proof task uses one bounded fixture-backed scan
   so browser validation does not depend on arbitrary installed plugins being
   safe or fast to introspect
@@ -104,6 +120,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: `g09.015` is closed. Re-enter planning at the next-generation
+boundary before promoting another strict execution lane.

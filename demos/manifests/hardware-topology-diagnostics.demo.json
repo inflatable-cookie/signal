@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:hardware-topology-diagnostics",
     "owner_surface": "effigy-task",
-    "notes": "Runs the existing local and server host binaries and captures their current hardware-facing summary fields without redesigning host output."
+    "notes": "Runs the existing local and server host binaries, captures their current hardware-facing summary fields, and emits a rendered operator companion without redesigning host output."
   },
   "covered_crates": [
     "signal-hardware",
@@ -24,9 +24,10 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/hardware-topology-diagnostics.receipt.json",
+    "view_path": "demos/receipts/hardware-topology-diagnostics.view.html",
     "operator_notes_path": "demos/scenarios/hardware-topology-diagnostics.default.md",
-    "capture": "json-receipt-and-operator-notes",
-    "notes": "This hardware surface stays inside the current host binaries and records their existing device supervision, backend, endpoint, and external-I/O truth."
+    "capture": "json-receipt-rendered-view-and-operator-notes",
+    "notes": "This hardware surface stays inside the current host binaries and records their existing device supervision, backend, endpoint, and external-I/O truth while adding a rendered operator companion."
   },
   "known_exclusions": [
     "Plugin capability browsing remains deferred to a later g09.012 planning decision.",
@@ -37,6 +38,7 @@
     "The local host reports native CoreAudio backend and output endpoint posture.",
     "The server host reports simulated Linux backend session posture and explicit external-I/O/device-supervision truth.",
     "The receipt keeps native-versus-simulated differences explicit instead of flattening them.",
+    "The rendered companion view makes native-versus-simulated posture visually inspectable without reading the raw receipt first.",
     "signal-hardware and signal-hardware-coreaudio only move to live coverage because this manifest and receipt exist."
   ]
 }

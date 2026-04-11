@@ -2,15 +2,15 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-10
+Updated: 2026-04-11
 Depends on: docs/architecture/system-architecture.md
 Authority owners: core-product
 Affects: docs, crates
 
 ## Problem
 
-Signal now needs a lane-first strict Northstar surface for the active `g09`
-queue so longer-running runtime and host work can stay inside explicit
+Signal needed a lane-first strict Northstar surface for the active `g09`
+queue so longer-running runtime and host work could stay inside explicit
 guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ## Contract
@@ -29,9 +29,9 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ### Lane-first strict posture
 
-- The first strict lane remains attached to the reopened `g09` queue.
-- `g09.015` is the current strict-execution milestone.
-- The immediate follow-on boundary is `g09.015`.
+- The first strict lane was attached to the reopened `g09` queue.
+- `g09.015` was the final strict-execution milestone in that lane.
+- There is currently no active strict-execution milestone.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
 
@@ -99,6 +99,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 
 ## Next Task
 
-Use this contract while executing
-there is no current ready card, so re-enter planning from the active `g09.015`
-surfaces before resuming execution.
+Use this contract again when the next generation opens a new active strict
+lane.

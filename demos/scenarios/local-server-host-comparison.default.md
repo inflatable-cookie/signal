@@ -22,6 +22,10 @@ Updated: 2026-04-09
 - confirm the receipt also preserves real local-versus-server differences such
   as backend and engine-output posture instead of pretending the hosts are
   identical
+- confirm the rendered companion view at
+  `demos/receipts/local-server-host-comparison.view.html` makes shared
+  lifecycle truth and local-versus-server differences visually inspectable
+  without reading the raw receipt first
 
 ## Environment Notes
 
@@ -35,3 +39,5 @@ Updated: 2026-04-09
 - plugin capability browsing and hardware diagnostics remain deferred and should
   stay explicit in the receipt rather than being implied by this comparison
   surface
+- the rendered companion view is presentation-only over the existing host
+  summary lines and does not claim a new host UI shell

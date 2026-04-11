@@ -1,7 +1,7 @@
 # g09 Milestones
 
-Status: active
-Updated: 2026-04-10
+Status: complete
+Updated: 2026-04-11
 
 ## Why this generation matters now
 
@@ -62,7 +62,7 @@ proof:
   - DSP/graph/analysis interactive demo suite and audit closeout proof
 - `g09.014` `complete`
   - production readiness grade and generation release gate
-- `g09.015` `active`
+- `g09.015` `complete`
   - operator-visible interactive demo and plugin browser proof
 
 ## Lane structure
@@ -97,12 +97,12 @@ with proof instead of prose.
 ## Strict lane attachment
 
 `g09` carried a lane-first strict Northstar surface through the reopened
-production-readiness gate, then reopened for operator-visible interactive demo
-work.
+production-readiness gate and then through the operator-visible interactive
+demo stream. That strict lane is now closed again.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card: none; `g09` is complete
 
 ## Working rules for this thread
 
@@ -116,6 +116,5 @@ work.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
+before promoting another strict execution lane.

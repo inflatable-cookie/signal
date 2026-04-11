@@ -98,13 +98,13 @@
         "running 1 test",
         "test local_shared_host_edge_exports_runtime_device_supervision_truth ... ok",
         "",
-        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.92s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.97s",
         "",
         "",
         "running 1 test",
         "test supervisor_main_tests::boundary_family_a::macos_au_coreaudio_boundary_json_reports_runtime_and_host_edge_proofs ... ok",
         "",
-        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 147 filtered out; finished in 0.03s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 147 filtered out; finished in 0.00s",
         "",
         "",
         "running 0 tests",
@@ -114,6 +114,12 @@
         "{\"boundary\":\"signal.runtime.macos-au-coreaudio-boundary\",\"contract_path\":\"docs/contracts/073-native-backend-device-truth-and-coreaudio-implementation-contract.md\",\"acceptance_task\":\"effigy acceptance:macos-au-coreaudio-boundary\",\"surface_count\":3,\"surfaces\":[{\"id\":\"coreaudio-device-enumeration\",\"kind\":\"backend\",\"crate\":\"signal-hardware-coreaudio\",\"surface\":\"enumerate_devices() -> Vec<AudioDeviceDescriptor>\",\"runtime_anchor\":\"AudioDeviceDescriptor\",\"rationale\":\"Keeps macOS device identity, default-output presence, and degraded-versus-healthy diagnostics anchored in the real CoreAudio realization layer instead of a synthetic default-device shortcut.\"},{\"id\":\"runtime-au-lifecycle-and-fault-report\",\"kind\":\"runtime-report\",\"crate\":\"signal-runtime\",\"surface\":\"RuntimeObservationReport::plugin_lifecycle_snapshot and RuntimeHostObservationReport::host_io\",\"runtime_anchor\":\"RuntimePluginLifecycleSnapshot + RuntimeHostIoSummary\",\"rationale\":\"Keeps AU lifecycle, readiness, and fault truth aligned with runtime-owned host-I/O summaries so device-backed macOS bring-up remains one shared report surface.\"},{\"id\":\"local-host-au-coreaudio-supervisor-report\",\"kind\":\"host-edge\",\"crate\":\"signal-host-local\",\"surface\":\"host_supervisor_report() -> RuntimeHostSupervisorReport\",\"runtime_anchor\":\"LocalRuntimeHost::host_supervisor_report()\",\"rationale\":\"Proves the stable local host edge exports real CoreAudio device truth plus AU lifecycle or AU fault truth from the same runtime-owned macOS supervisor surface.\"}],\"validation_step_count\":7,\"validation_steps\":[{\"id\":\"coreaudio-backend-proof\",\"command\":\"cargo test -p signal-hardware-coreaudio\",\"rationale\":\"Proves the CoreAudio backend enumerates real bounded device truth and exports degraded versus healthy diagnostics without the synthetic default-device production path.\"},{\"id\":\"runtime-au-public-proof\",\"command\":\"cargo test -p signal-runtime public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_truth\",\"rationale\":\"Keeps the AU discovery and lifecycle half of the macOS lane grounded in runtime-owned public contract truth.\"},{\"id\":\"runtime-external-io-public-proof\",\"command\":\"cargo test -p signal-runtime public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth\",\"rationale\":\"Keeps the host-I/O and device-facing side of the macOS lane grounded in runtime-owned public contract truth.\"},{\"id\":\"local-host-au-coreaudio-proof\",\"command\":\"cargo test -p signal-host-local --test public_host_edge_au -- --nocapture --test-threads=1\",\"rationale\":\"Proves the stable local host edge exports AU baseline and AU fault truth alongside real CoreAudio-backed host-I/O state.\"},{\"id\":\"local-host-hardware-proof\",\"command\":\"cargo test -p signal-host-local --test public_host_edge_external_io -- --nocapture --test-threads=1\",\"rationale\":\"Proves the stable local host edge exports runtime-owned CoreAudio-backed external-I/O truth from the same macOS host family.\"},{\"id\":\"local-host-supervision-proof\",\"command\":\"cargo test -p signal-host-local --test public_host_edge_device_supervision -- --nocapture --test-threads=1\",\"rationale\":\"Proves the same macOS host edge keeps device supervision and recovery truth aligned with the real CoreAudio-backed hardware path.\"},{\"id\":\"boundary-descriptor\",\"command\":\"cargo run -p signal-supervisor-tools -- --describe-macos-au-coreaudio-boundary --format=json\",\"rationale\":\"Lets consumers inspect the focused macOS plugin-plus-device acceptance surface without reading host, AU adapter, or CoreAudio implementation detail.\"}],\"deferred_scope\":[\"this boundary proves one honest macOS plugin-plus-device lane through AU lifecycle or AU fault truth and CoreAudio device truth, but it does not yet claim editor hosting, deeper parameter-tree breadth, or publication-grade AU render parity\",\"the stable local host edge is the authority for this focused macOS proof; broader server-host parity and the later interactive demo substrate remain separate milestones\"]}",
         ""
       ]
+    },
+    {
+      "kind": "macos-au-coreaudio-operator-view",
+      "html_path": "demos/receipts/macos-au-coreaudio-boundary.view.html",
+      "status": "passed",
+      "section_count": 3
     }
   ],
   "operator_checks": [
@@ -131,6 +137,11 @@
       "id": "operator.macos-au-coreaudio.macos-specific-posture",
       "status": "passed",
       "summary": "The receipt keeps the surface explicitly macOS-specific and does not pretend to provide Linux-native or general plugin-browsing breadth."
+    },
+    {
+      "id": "operator.macos-au-coreaudio.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes the macOS AU/CoreAudio boundary visually inspectable without reading the raw receipt first."
     }
   ]
 }

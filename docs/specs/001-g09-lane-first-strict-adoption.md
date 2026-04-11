@@ -1,11 +1,11 @@
 # 001 - g09 Lane-First Strict Adoption
 
-Status: active
+Status: complete
 Owner: core-product
-Updated: 2026-04-10
+Updated: 2026-04-11
 Vision refs: docs/vision/001-signal-vision.md
 Promotion targets: docs/architecture/product-guardrails.md, docs/contracts/001-working-rules.md
-Roadmap refs: g09.014
+Roadmap refs: g09.015
 
 ## Problem
 
@@ -25,10 +25,10 @@ bounded strict surface on the live `g09` queue:
 
 ## Current Posture
 
-- current phase: `lane-first stricter adoption`
-- scope: reopened `g09` interactive-demo lane
-- active milestone: `g09.015`
-- immediate follow-on boundary: `g09.015`
+- current phase: `lane-first stricter adoption complete`
+- scope: closed `g09` interactive-demo lane
+- active milestone: none; `g09.015` is complete
+- immediate follow-on boundary: next-generation planning
 
 ## Goals
 
@@ -57,6 +57,12 @@ bounded strict surface on the live `g09` queue:
 - keep the interactive-demo stream explicit until the generation can close this
   follow-on scope honestly
 
+#### Phase 2 Outcome
+
+- the reopened `g09.015` queue stayed bounded under one strict lane until the
+  operator-visible demo scope could close honestly
+- the strict lane is now complete and no active ready card remains
+
 ## Open Questions
 
 - none; the current migration tranche is intentionally bounded
@@ -81,6 +87,5 @@ bounded strict surface on the live `g09` queue:
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: the `g09` strict lane is closed. Re-enter planning at the
+next-generation boundary before promoting another strict execution lane.

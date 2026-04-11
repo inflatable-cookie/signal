@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:supervisor-runtime-boundary-companion",
     "owner_surface": "effigy-task",
-    "notes": "Runs existing signal-supervisor-tools boundary descriptor commands and records a machine-readable companion receipt for the runtime recovery inspector family."
+    "notes": "Runs existing signal-supervisor-tools boundary descriptor commands, records a machine-readable companion receipt for the runtime recovery inspector family, and emits a rendered operator companion view."
   },
   "covered_crates": [
     "signal-supervisor-tools"
@@ -23,8 +23,9 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/runtime-supervisor-boundary-companion.receipt.json",
+    "view_path": "demos/receipts/runtime-supervisor-boundary-companion.view.html",
     "operator_notes_path": "demos/scenarios/runtime-supervisor-boundary-companion.default.md",
-    "capture": "json-receipt-and-operator-notes",
+    "capture": "json-receipt-rendered-view-and-operator-notes",
     "notes": "This companion surface stays inside existing signal-supervisor-tools descriptor commands and complements, rather than replaces, the runtime recovery inspector example."
   },
   "known_exclusions": [
@@ -35,6 +36,7 @@
   "expected_checks": [
     "The receipt captures machine-readable interruption-boundary truth from signal-supervisor-tools.",
     "The receipt captures machine-readable fault-diagnostic-boundary truth from signal-supervisor-tools.",
+    "The rendered companion view makes the interruption and fault-diagnostic boundary posture visually inspectable without reading raw JSON first.",
     "The receipt keeps the relationship to the existing runtime recovery inspector explicit instead of pretending to replace runtime execution proof.",
     "signal-supervisor-tools only moves to live demo coverage because this manifest and receipt exist."
   ]

@@ -1,10 +1,10 @@
 # Specs
 
 Status: active
-Updated: 2026-04-10
+Updated: 2026-04-11
 
-Signal is using a lane-first strict Northstar surface for the reopened `g09`
-interactive-demo stream.
+Signal used a lane-first strict Northstar surface for the reopened `g09`
+interactive-demo stream. There is currently no open strict lane.
 
 ## Purpose
 
@@ -36,13 +36,13 @@ strict surface that can be attached to one active generation at a time.
 
 ## Active Entry Points
 
-- `001-g09-lane-first-strict-adoption.md`
-- `batch-cards/001-install-g09-strict-lane-surfaces.md`
+- no active strict lane currently
+- `001-g09-lane-first-strict-adoption.md` remains as the completed reference
+  for the closed `g09` lane
 
-There is no current ready batch card.
+There is currently no ready batch card because `g09` is complete.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper
-live plugin interaction, or a planning pause.
+COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
+before promoting another strict execution lane.

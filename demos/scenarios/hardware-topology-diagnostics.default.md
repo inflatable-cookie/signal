@@ -22,6 +22,10 @@ Updated: 2026-04-09
   summary line
 - confirm the receipt keeps native-versus-simulated posture explicit rather
   than pretending the two sides are equivalent
+- confirm the rendered companion view at
+  `demos/receipts/hardware-topology-diagnostics.view.html` makes the native
+  local and simulated server posture visually inspectable without reading the
+  raw receipt first
 
 ## Environment Notes
 
@@ -35,3 +39,5 @@ Updated: 2026-04-09
 
 - plugin capability browsing remains deferred and should stay explicit in the
   receipt rather than being implied by this hardware bootstrap surface
+- the rendered companion view is presentation-only over the existing summary
+  fields and does not claim native Linux device ownership

@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:macos-au-coreaudio-boundary",
     "owner_surface": "effigy-task",
-    "notes": "Runs the existing macOS AU/CoreAudio boundary descriptor and acceptance lane and records one machine-readable receipt."
+    "notes": "Runs the existing macOS AU/CoreAudio boundary descriptor and acceptance lane, records one machine-readable receipt, and emits a rendered operator companion."
   },
   "covered_crates": [
     "signal-plugin-au",
@@ -25,9 +25,10 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/macos-au-coreaudio-boundary.receipt.json",
+    "view_path": "demos/receipts/macos-au-coreaudio-boundary.view.html",
     "operator_notes_path": "demos/scenarios/macos-au-coreaudio-boundary.default.md",
-    "capture": "json-receipt-and-operator-notes",
-    "notes": "This bootstrap surface wraps the existing macOS AU/CoreAudio boundary descriptor and acceptance lane without inventing a generalized plugin browser or new host UI."
+    "capture": "json-receipt-rendered-view-and-operator-notes",
+    "notes": "This bootstrap surface wraps the existing macOS AU/CoreAudio boundary descriptor and acceptance lane while adding a rendered operator companion without inventing a generalized plugin browser or new host UI."
   },
   "known_exclusions": [
     "Plugin capability browsing remains deferred to a later g09.012 planning decision.",
@@ -38,6 +39,7 @@
     "The receipt captures the machine-readable macOS AU/CoreAudio boundary descriptor.",
     "The receipt records that the existing acceptance:macos-au-coreaudio-boundary lane completed successfully.",
     "The receipt keeps AU lifecycle plus CoreAudio device truth explicit and macOS-specific.",
+    "The rendered companion view makes the macOS AU/CoreAudio boundary visually inspectable without reading the raw receipt first.",
     "signal-plugin-au only moves to live demo coverage because this manifest and receipt exist."
   ]
 }

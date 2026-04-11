@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal Hardware Topology Diagnostics</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef4f4;
+      --panel: #fbfefd;
+      --line: #ccd9d7;
+      --text: #16211f;
+      --muted: #5c6b69;
+      --ok: #215947;
+      --ok-soft: #dceee7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #f7fdfb, var(--bg));
+      color: var(--text);
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p { line-height: 1.5; }
+    .hero {
+      background: linear-gradient(135deg, #f7fdfb, #e8f1ef);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 14px 40px rgba(18, 44, 40, 0.08);
+    }
+    .hero p { margin: 0; color: var(--muted); }
+    .checks {
+      margin: 18px 0 0;
+      padding-left: 18px;
+    }
+    .checks li {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(18, 39, 35, 0.06);
+    }
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+    .metrics {
+      display: grid;
+      gap: 10px;
+    }
+    .metric {
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f2f8f7;
+      border: 1px solid #dce7e4;
+    }
+    .label {
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .value {
+      font-size: 0.98rem;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .callout {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #cfe0d8;
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Signal Hardware Topology Diagnostics</h1>
+      <p>Operator-facing rendered view for bounded native CoreAudio posture and simulated Linux backend posture across the existing local and server host summary surfaces. This surface stays low-dependency and presentation-only; it does not turn into a device control shell.</p>
+      <ul class="checks"><li><strong>PASSED</strong> Local host exported native CoreAudio backend, running stream, and output endpoint posture.</li><li><strong>PASSED</strong> Local host exported device supervision and external-I/O posture through the existing summary line.</li><li><strong>PASSED</strong> Server host exported simulated Linux backend session posture through the existing summary line.</li><li><strong>PASSED</strong> The receipt keeps native CoreAudio and simulated Linux backend posture explicit instead of flattening them.</li><li><strong>PASSED</strong> The demo records bounded host summary capture and can accept a valid summary line without waiting indefinitely for child process exit.</li><li><strong>PASSED</strong> A rendered companion view makes native and simulated hardware posture visually inspectable without reading the raw receipt first.</li></ul>
+    </section>
+    <div class="grid">
+      <section class="card"><h2>Native local hardware</h2><p class="subtitle">CoreAudio-facing posture from the local host summary line.</p><div class="metrics"><div class="metric"><span class="label">Backend</span><span class="value">coreaudio</span></div><div class="metric"><span class="label">Device</span><span class="value">coreaudio:macbook-pro-speakers</span></div><div class="metric"><span class="label">Stream</span><span class="value">Running</span></div><div class="metric"><span class="label">Endpoint topology</span><span class="value">OutputOnly</span></div><div class="metric"><span class="label">Device supervision</span><span class="value">Stable/Unneeded/Clear</span></div><div class="metric"><span class="label">External I/O</span><span class="value">Ready/Stable/ProgramOutput/Direct/Unavailable</span></div><div class="metric"><span class="label">Backend health</span><span class="value">Healthy</span></div><div class="metric"><span class="label">Estimated latency samples</span><span class="value">536</span></div><div class="metric"><span class="label">Capture timed out</span><span class="value">false</span></div></div></section>
+      <section class="card"><h2>Simulated server hardware</h2><p class="subtitle">Linux-backend session posture from the server host summary line.</p><div class="metrics"><div class="metric"><span class="label">Backend</span><span class="value">pipewire</span></div><div class="metric"><span class="label">Device</span><span class="value">pipewire:default-graph</span></div><div class="metric"><span class="label">Stream</span><span class="value">Running</span></div><div class="metric"><span class="label">Simulation</span><span class="value">true</span></div><div class="metric"><span class="label">PipeWire / ALSA</span><span class="value">PrimaryAudioIo/SharedGraph/BackendManagedGraph/ClockGuarded</span></div><div class="metric"><span class="label">JACK</span><span class="value">FollowingExternal/AttachedGuarded/TransportFollower/TransportGuarded</span></div><div class="metric"><span class="label">Device supervision</span><span class="value">Stable/Unneeded/Clear</span></div><div class="metric"><span class="label">External I/O</span><span class="value">Unavailable/Unavailable/Unavailable/Unavailable/Unavailable</span></div><div class="metric"><span class="label">Capture timed out</span><span class="value">false</span></div></div></section>
+    </div>
+    <section class="callout">
+      The underlying source of truth is still the receipt and the existing host summary lines. This rendered view exists to make native-versus-simulated hardware posture visually inspectable without reading raw JSON first.
+    </section>
+  </main>
+</body>
+</html>

@@ -135,7 +135,7 @@
         "running 1 test",
         "test server_public_host_edge_can_drive_broker_backed_lv2_crash_recovery ... ok",
         "",
-        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 1.79s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.82s",
         "",
         "",
         "running 1 test",
@@ -162,13 +162,13 @@
         "running 1 test",
         "test server_shared_host_edge_exports_runtime_linux_audio_backend_truth ... ok",
         "",
-        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.01s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s",
         "",
         "",
         "running 1 test",
         "test supervisor_main_tests::boundary_family_a::linux_audio_backend_boundary_json_reports_runtime_and_host_edge_proofs ... ok",
         "",
-        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 147 filtered out; finished in 0.00s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 147 filtered out; finished in 0.01s",
         "",
         "",
         "running 0 tests",
@@ -178,6 +178,12 @@
         "{\"boundary\":\"signal.runtime.linux-audio-backend-boundary\",\"contract_path\":\"docs/contracts/040-linux-audio-backend-portability-across-alsa-jack-and-pipewire-contract.md\",\"acceptance_task\":\"effigy acceptance:linux-audio-backend-boundary\",\"surface_count\":2,\"validation_step_count\":3,\"surfaces\":[{\"id\":\"runtime-linux-audio-observation-report\",\"kind\":\"runtime-report\",\"crate\":\"signal-runtime\",\"surface\":\"RuntimeObservationReport::external_io_snapshot and RuntimeSupervisorReport::observation.external_io_snapshot\",\"runtime_anchor\":\"RuntimeExternalIoSnapshot\",\"rationale\":\"Keeps ALSA, JACK, PipeWire, unavailable, and non-Linux backend classification on one runtime-owned external-I/O seam instead of backend-private capability tables.\"},{\"id\":\"server-host-linux-audio-supervisor-report\",\"kind\":\"host-edge\",\"crate\":\"signal-host-server\",\"surface\":\"supervisor_report() -> RuntimeSupervisorReport\",\"runtime_anchor\":\"RuntimeSupervisorApi::supervisor_report()\",\"rationale\":\"Ensures the stable Linux-facing server host edge forwards explicit runtime-owned unavailable and fallback Linux backend truth instead of host-local Linux hardware heuristics.\"}],\"validation_steps\":[{\"id\":\"runtime-linux-audio-public-proof\",\"command\":\"cargo test -p signal-runtime public_runtime_linux_audio_backend_boundary_reports_runtime_owned_backend_identity_truth\",\"rationale\":\"Proves a downstream-style runtime consumer can inspect ALSA, JACK, PipeWire, and unavailable Linux backend identity and portability-band truth through public runtime surfaces alone.\"},{\"id\":\"server-host-linux-audio-proof\",\"command\":\"cargo test -p signal-host-server --test public_host_edge_external_io server_shared_host_edge_exports_runtime_linux_audio_backend_truth -- --exact --nocapture --test-threads=1\",\"rationale\":\"Proves the stable server host edge forwards the runtime-owned unavailable Linux backend fallback state instead of inventing host-local Linux capability matrices.\"},{\"id\":\"boundary-descriptor\",\"command\":\"cargo run -p signal-supervisor-tools -- --describe-linux-audio-backend-boundary --format=json\",\"rationale\":\"Lets consumers inspect the shared Linux audio backend proof boundary without reading backend-private Linux host code.\"}],\"residual_risk\":\"the current boundary proves typed Linux backend identity, portability-band, and unavailable fallback export, not live ALSA/JACK/PipeWire host ownership or deeper backend-native graph behavior\"}",
         ""
       ]
+    },
+    {
+      "kind": "linux-lv2-backend-operator-view",
+      "html_path": "demos/receipts/linux-lv2-backend-boundary.view.html",
+      "status": "passed",
+      "section_count": 3
     }
   ],
   "operator_checks": [
@@ -200,6 +206,11 @@
       "id": "operator.linux-boundary.linux-specific-posture",
       "status": "passed",
       "summary": "The receipt keeps the surface explicitly Linux-specific and does not pretend to provide a generalized plugin browser or live Linux ownership breadth."
+    },
+    {
+      "id": "operator.linux-boundary.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes the Linux LV2 and backend boundaries visually inspectable without reading the raw receipt first."
     }
   ]
 }

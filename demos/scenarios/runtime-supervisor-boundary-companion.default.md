@@ -15,12 +15,16 @@ Updated: 2026-04-10
 
 ## Expected Human Checks
 
+- confirm the rendered companion view exists at
+  `demos/receipts/runtime-supervisor-boundary-companion.view.html`
 - confirm the receipt captures at least the interruption and fault-diagnostic
   boundary descriptors through the current `signal-supervisor-tools` CLI
 - confirm the receipt keeps the acceptance-task and contract-path truth from
   those descriptors visible instead of reducing them to a pass/fail flag
 - confirm the receipt explicitly says it complements the existing runtime
   recovery inspector rather than replacing the example-backed runtime demo
+- confirm the rendered companion makes the interruption and fault-diagnostic
+  boundary posture visually inspectable without replacing the receipt
 
 ## Environment Notes
 
@@ -33,5 +37,7 @@ Updated: 2026-04-10
 
 - machine-readable run output is captured in
   `demos/receipts/runtime-supervisor-boundary-companion.receipt.json`
+- rendered operator view is captured in
+  `demos/receipts/runtime-supervisor-boundary-companion.view.html`
 - plugin capability browsing remains deferred and should stay explicit rather
   than being implied by this runtime-family companion surface

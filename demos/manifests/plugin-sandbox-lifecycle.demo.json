@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:sandbox-lifecycle",
     "owner_surface": "effigy-task",
-    "notes": "Bootstraps the existing signal-plugin-sandbox broker binary and records a machine-readable receipt."
+    "notes": "Bootstraps the existing signal-plugin-sandbox broker binary, records a machine-readable receipt, and emits a rendered operator companion."
   },
   "covered_crates": [
     "signal-plugin-sandbox",
@@ -24,9 +24,10 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/plugin-sandbox-lifecycle.receipt.json",
+    "view_path": "demos/receipts/plugin-sandbox-lifecycle.view.html",
     "operator_notes_path": "demos/scenarios/plugin-sandbox-lifecycle.default.md",
-    "capture": "json-receipt-and-operator-notes",
-    "notes": "This bootstrap surface proves the sandbox broker lifecycle without widening into plugin capability browsing or host/runtime demo coverage."
+    "capture": "json-receipt-rendered-view-and-operator-notes",
+    "notes": "This bootstrap surface proves the sandbox broker lifecycle while adding a rendered operator companion and without widening into plugin capability browsing or host/runtime demo coverage."
   },
   "known_exclusions": [
     "Plugin capability browsing remains deferred to later g09.012 batches.",
@@ -38,6 +39,7 @@
     "The explicit attach/status/teardown path is inspectable.",
     "The healthy demo run reaches running and teardown_complete states.",
     "The timeout demo run reports timed_out and cleanup-after-timeout states.",
+    "The rendered companion view makes broker lifecycle and timeout recovery posture visually inspectable without reading the raw receipt first.",
     "The final receipt records a clean shutdown."
   ]
 }
