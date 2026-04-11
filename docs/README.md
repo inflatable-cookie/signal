@@ -32,8 +32,7 @@ interactive-demo stream.
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
 - Strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card:
-  [053-g09-015-graph-execution-operator-view.md](./specs/batch-cards/053-g09-015-graph-execution-operator-view.md)
+- Active strict-lane card: none currently ready
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -57,5 +56,6 @@ interactive-demo stream.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

@@ -73,7 +73,7 @@ fn stretch_boundary_validation_steps() -> &'static [StretchBoundaryValidationSte
         StretchBoundaryValidationStep {
             id: "runtime-stretch-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_stretch_boundary_reports_runtime_owned_engine_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_stretch public_runtime_stretch_boundary_reports_runtime_owned_engine_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect stretch engine class, readiness, degraded-state, fallback, clip render, and offline preview truth through public runtime surfaces alone.",
         },

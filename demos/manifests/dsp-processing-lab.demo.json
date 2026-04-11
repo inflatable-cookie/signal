@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:dsp-processing-lab",
     "owner_surface": "effigy-task",
-    "notes": "Runs the existing stretch, marker-analysis, and transform-artifact boundary descriptor and acceptance lanes and records one machine-readable receipt."
+    "notes": "Runs the existing stretch, marker-analysis, and transform-artifact boundary descriptor and acceptance lanes, records one machine-readable receipt, and emits a rendered operator companion view."
   },
   "covered_crates": [
     "signal-dsp",
@@ -25,8 +25,9 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/dsp-processing-lab.receipt.json",
+    "view_path": "demos/receipts/dsp-processing-lab.view.html",
     "operator_notes_path": "demos/scenarios/dsp-processing-lab.default.md",
-    "capture": "json-receipt-and-operator-notes",
+    "capture": "json-receipt-rendered-view-and-operator-notes",
     "notes": "This bootstrap surface wraps the existing DSP boundary descriptors and acceptance lanes without inventing an editor shell, waveform browser, or tutorial UI."
   },
   "known_exclusions": [
@@ -37,6 +38,7 @@
   "expected_checks": [
     "The receipt captures machine-readable stretch, marker-analysis, and transform-artifact boundary descriptors.",
     "The receipt records that the existing stretch, marker-analysis, and transform-artifact acceptance lanes completed successfully.",
+    "The rendered companion view makes the three DSP boundary families visually inspectable without reading raw JSON first.",
     "The receipt keeps DSP processing meaning explicit instead of flattening the seam into a generic product demo.",
     "signal-dsp, signal-dsp-resample, and signal-dsp-spectral only move to live demo coverage because this manifest and receipt exist."
   ]

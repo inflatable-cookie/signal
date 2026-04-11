@@ -102,8 +102,7 @@ work.
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
+- current ready card: none
 
 ## Working rules for this thread
 
@@ -117,5 +116,6 @@ work.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

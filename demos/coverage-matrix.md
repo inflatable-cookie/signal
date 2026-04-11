@@ -82,9 +82,10 @@ workspace without overclaiming live demo coverage before `g09.012` and
   usable when some installed plugins misbehave
 - the analysis feature inspector now includes a rendered companion view so the
   analysis family is no longer receipt-only
-- the graph execution inspector is the next planned operator-view uplift so the
-  graph family does not remain receipt-only while plugin and analysis surfaces
-  grow more visually inspectable
+- the graph execution inspector now includes a rendered companion view so the
+  graph family is no longer receipt-only
+- the DSP processing lab now includes a rendered companion view so the DSP
+  family is no longer receipt-only
 - the official non-interactive proof task uses one bounded fixture-backed scan
   so browser validation does not depend on arbitrary installed plugins being
   safe or fast to introspect
@@ -103,5 +104,6 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

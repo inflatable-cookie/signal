@@ -4,7 +4,7 @@ pub(crate) fn assert_multichannel_boundary_text(rendered: &str) {
         "acceptance_task: effigy acceptance:multichannel-boundary",
         "surface: RuntimeObservationReport::execution_topology_summary, RuntimeObservationReport::external_io_snapshot, and RuntimeSupervisorReport::observation.{execution_topology_summary,external_io_snapshot}",
         "surface: RuntimeObservationApi::get_plugin_discovery_snapshot()",
-        "cargo test -p signal-runtime public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth",
+        "cargo test -p signal-runtime --test public_contract_boundary_multichannel public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth -- --exact --nocapture --test-threads=1",
         "cargo run -p signal-supervisor-tools -- --describe-multichannel-boundary --format=json",
     ] {
         assert!(rendered.contains(expected), "missing {expected}");
@@ -31,7 +31,7 @@ pub(crate) fn assert_multi_bus_boundary_text(rendered: &str) {
         "acceptance_task: effigy acceptance:multi-bus-boundary",
         "surface: RuntimeObservationReport::execution_topology_summary, RuntimeObservationReport::metering_snapshot, and RuntimeSupervisorReport::observation.{execution_topology_summary,metering_snapshot}",
         "surface: RuntimeOfflineRenderContractPreview::chain_contract",
-        "cargo test -p signal-runtime public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth",
+        "cargo test -p signal-runtime --test public_contract_boundary_multi_bus public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth -- --exact --nocapture --test-threads=1",
         "cargo run -p signal-supervisor-tools -- --describe-multi-bus-boundary --format=json",
     ] {
         assert!(rendered.contains(expected), "missing {expected}");
@@ -58,7 +58,7 @@ pub(crate) fn assert_sidechain_boundary_text(rendered: &str) {
         "acceptance_task: effigy acceptance:sidechain-boundary",
         "surface: RuntimeObservationReport::execution_topology_summary, RuntimeSupervisorReport::observation.{execution_topology_summary,plugin_chain_snapshot}, and RuntimeOfflineRenderContractPreview::chain_contract",
         "surface: GraphNodeBufferContractProjection::secondary_input",
-        "cargo test -p signal-runtime public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth",
+        "cargo test -p signal-runtime --test public_contract_boundary_sidechain public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth -- --exact --nocapture --test-threads=1",
         "cargo run -p signal-supervisor-tools -- --describe-sidechain-boundary --format=json",
     ] {
         assert!(rendered.contains(expected), "missing {expected}");

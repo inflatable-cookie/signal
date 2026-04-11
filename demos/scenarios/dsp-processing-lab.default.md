@@ -11,6 +11,8 @@ stretch, marker-analysis, and transform-artifact boundary family.
 
 ## Operator Checks
 
+- confirm the rendered companion view exists at
+  `demos/receipts/dsp-processing-lab.view.html`
 - confirm the receipt reports the expected machine-readable boundary ids:
   - `signal.runtime.stretch-boundary`
   - `signal.runtime.marker-analysis-boundary`
@@ -21,6 +23,8 @@ stretch, marker-analysis, and transform-artifact boundary family.
   - `effigy acceptance:transform-artifact-boundary`
 - confirm the receipt stays DSP-focused and does not claim editor-shell,
   waveform-browser, or tutorial UI breadth
+- confirm the rendered companion makes stretch, marker-analysis, and
+  transform-artifact posture visually inspectable without replacing the receipt
 - confirm the coverage matrix only promotes `signal-dsp`,
   `signal-dsp-resample`, and `signal-dsp-spectral` because this manifest and
   receipt exist
@@ -34,4 +38,4 @@ stretch, marker-analysis, and transform-artifact boundary family.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md`.
+`docs/specs/batch-cards/054-g09-015-dsp-processing-operator-view.md`.

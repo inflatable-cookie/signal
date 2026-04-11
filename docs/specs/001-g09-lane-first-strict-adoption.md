@@ -81,5 +81,6 @@ bounded strict surface on the live `g09` queue:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

@@ -75,7 +75,7 @@ pub(super) fn transform_artifact_boundary_validation_steps(
         TransformArtifactBoundaryValidationStep {
             id: "runtime-transform-artifact-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_transform_artifact public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect runtime-owned transform-artifact readiness, invalidation, reuse, retention, and cache-placement truth through public runtime surfaces alone.",
         },

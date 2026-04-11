@@ -33,8 +33,7 @@ Use this section for:
 
 - strict-lane spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
+- current ready card: none
 
 ## Recent active-lane evidence
 
@@ -116,8 +115,12 @@ Use this section for:
 - `2026-04/10-233500-g09-015-plugin-browser-interaction-ready-handoff.md`
 - `2026-04/10-223500-g09-015-plugin-browser-bounded-interaction-closeout.md`
 - `2026-04/10-224500-g09-015-graph-operator-view-ready-handoff.md`
+- `2026-04/10-235500-g09-015-graph-execution-operator-view-closeout.md`
+- `2026-04/10-236500-g09-015-dsp-operator-view-ready-handoff.md`
+- `2026-04/10-237500-g09-015-dsp-processing-operator-view-closeout.md`
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

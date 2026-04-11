@@ -72,7 +72,7 @@ pub(super) fn multichannel_boundary_validation_steps(
         MultichannelBoundaryValidationStep {
             id: "runtime-multichannel-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_multichannel public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect canonical layouts, channel roles, and bus intents through public runtime reexports alone.",
         },

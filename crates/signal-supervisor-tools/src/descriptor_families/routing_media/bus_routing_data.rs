@@ -105,7 +105,7 @@ pub(super) fn multi_bus_boundary_validation_steps() -> &'static [MultiBusBoundar
         MultiBusBoundaryValidationStep {
             id: "runtime-multi-bus-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_multi_bus public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect bus-role, connection-identity, and auxiliary-path receipts through public runtime reports alone.",
         },
@@ -179,21 +179,21 @@ pub(super) fn sidechain_boundary_validation_steps() -> &'static [SidechainBounda
         SidechainBoundaryValidationStep {
             id: "runtime-sidechain-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_sidechain public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect sidechain source, target, and fallback meaning through public runtime reports alone.",
         },
         SidechainBoundaryValidationStep {
             id: "local-host-sidechain-proof",
             command:
-                "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_sidechain_truth -- --exact --nocapture --test-threads=1",
+                "cargo test -p signal-host-local --test public_host_edge_boundary sidechain_truth::local_shared_host_edge_exports_runtime_sidechain_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable local host edge forwards runtime-owned sidechain topology and plugin-stage receipts on supervisor export.",
         },
         SidechainBoundaryValidationStep {
             id: "server-host-sidechain-proof",
             command:
-                "cargo test -p signal-host-server --test public_host_edge_boundary server_shared_host_edge_exports_runtime_sidechain_truth -- --exact --nocapture --test-threads=1",
+                "cargo test -p signal-host-server --test public_host_edge_boundary sidechain_truth::server_shared_host_edge_exports_runtime_sidechain_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves the stable server host edge forwards the same runtime-owned sidechain receipts without host-local routing reinterpretation.",
         },

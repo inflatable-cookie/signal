@@ -1,6 +1,6 @@
 # 053 - g09.015 Graph Execution Operator View
 
-Status: ready
+Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Parent roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
@@ -70,5 +70,6 @@ This is the next honest seam because:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

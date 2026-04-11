@@ -249,14 +249,52 @@ to be honest.
 - validated both the fixture-backed proof path and a real system-mode run on
   this machine with a passed bounded local interaction result
 
+### Batch 15.11 - Graph Execution Operator View
+
+- [x] add a rendered operator companion for the graph execution inspector
+- [x] keep the graph family grounded in existing descriptor and acceptance
+      proof data
+- [x] avoid widening into graph editing, routing mutation, or a product shell
+
+#### Batch 15.11 Outcome
+
+- `signal.demo.graph.execution-inspector` now emits a rendered companion view
+  at `demos/receipts/graph-execution-inspector.view.html`
+- the multichannel, sidechain, multi-bus, and spatial boundary families are
+  now visually inspectable as operator cards instead of receipt-only JSON
+- the graph uplift stayed presentation-only over existing descriptor and
+  acceptance data
+- while closing the batch, the inherited graph proof spine was corrected:
+  multichannel, sidechain, multi-bus, and spatial acceptance lanes now use
+  exact focused runtime proofs instead of loose `cargo test` filters that
+  could execute the wrong runtime binaries or zero host-edge tests
+
+### Batch 15.12 - DSP Processing Operator View
+
+- [x] add a rendered operator companion for the DSP processing lab
+- [x] keep the DSP family grounded in existing descriptor and acceptance proof
+      data
+- [x] avoid widening into waveform browsing, sample editing, or a product shell
+
+#### Batch 15.12 Outcome
+
+- `signal.demo.dsp.processing-lab` now emits a rendered companion view at
+  `demos/receipts/dsp-processing-lab.view.html`
+- the stretch, marker-analysis, and transform-artifact boundary families are
+  now visually inspectable as operator cards instead of receipt-only JSON
+- the DSP uplift stayed presentation-only over existing descriptor and
+  acceptance data
+- while closing the batch, the inherited DSP proof spine was corrected:
+  stretch, marker-analysis, and transform-artifact acceptance lanes now use
+  exact focused runtime proofs instead of loose `cargo test` filters that
+  could execute the wrong runtime binaries or zero tests
+
 ### Current Planning Posture
 
-- the next honest `g09.015` seam is another crate-family operator-view uplift
-- the graph execution inspector is the cleanest follow-on because it already
-  wraps bounded descriptor plus acceptance data but still remains too
-  receipt-heavy for direct operator verification
-- promoted the next ready batch as
-  `053-g09-015-graph-execution-operator-view.md`
+- `g09.015` remains active, but there is no current ready card after the DSP
+  operator-view closeout
+- the next honest seam needs fresh planning judgment instead of another
+  inferred demo batch
 
 ## Acceptance Criteria
 
@@ -275,5 +313,6 @@ to be honest.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

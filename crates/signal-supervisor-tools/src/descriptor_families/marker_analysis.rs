@@ -61,7 +61,7 @@ fn marker_analysis_boundary_validation_steps() -> &'static [MarkerAnalysisBounda
         MarkerAnalysisBoundaryValidationStep {
             id: "runtime-marker-analysis-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_marker_analysis_boundary_reports_runtime_owned_analysis_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_marker_analysis public_runtime_marker_analysis_boundary_reports_runtime_owned_analysis_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect runtime-owned warp-marker, transient-anchor, tempo-assist, readiness, and invalidation truth through public runtime surfaces alone.",
         },

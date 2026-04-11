@@ -18,8 +18,7 @@ memory alone.
 - `g09.015` is the current strict-execution milestone
 - `docs/specs/001-g09-lane-first-strict-adoption.md` records the completed
   strict-lane model
-- the current ready card is
-  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
+- there is no current ready card
 
 ## Strict Lane Working Rule
 
@@ -143,5 +142,5 @@ frozen elsewhere in this index.
 
 ## Next Task
 
-Use this index as the contract-selection front door while executing
-`053-g09-015-graph-execution-operator-view.md`.
+Use this index as the contract-selection front door while re-entering planning
+for the next honest `g09.015` seam.

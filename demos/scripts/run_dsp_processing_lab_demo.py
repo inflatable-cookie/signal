@@ -8,6 +8,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MANIFEST_PATH = REPO_ROOT / "demos" / "manifests" / "dsp-processing-lab.demo.json"
 RECEIPT_PATH = REPO_ROOT / "demos" / "receipts" / "dsp-processing-lab.receipt.json"
+HTML_PATH = REPO_ROOT / "demos" / "receipts" / "dsp-processing-lab.view.html"
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -77,6 +78,174 @@ def descriptor_artifact(kind: str, payload: dict[str, object]) -> dict[str, obje
     }
 
 
+def section_card(title: str, subtitle: str, items: list[tuple[str, str]]) -> str:
+    rows = "".join(
+        f"<div class=\"metric\"><span class=\"label\">{label}</span><span class=\"value\">{value}</span></div>"
+        for label, value in items
+    )
+    return (
+        f"<section class=\"card\"><h2>{title}</h2><p class=\"subtitle\">{subtitle}</p>"
+        f"<div class=\"metrics\">{rows}</div></section>"
+    )
+
+
+def boundary_card(payload: dict[str, object], surface_label: str) -> str:
+    deferred = payload.get("deferred_scope")
+    deferred_count = len(deferred) if isinstance(deferred, list) else 0
+    surfaces = payload.get("surfaces")
+    first_surface = "n/a"
+    if isinstance(surfaces, list) and surfaces:
+        first_surface = str(surfaces[0].get("id", "n/a"))
+    return section_card(
+        str(payload.get("boundary", surface_label)),
+        surface_label,
+        [
+            ("Contract", str(payload.get("contract_path", "n/a"))),
+            ("Acceptance", str(payload.get("acceptance_task", "n/a"))),
+            ("Surfaces", str(payload.get("surface_count", "n/a"))),
+            ("Validation steps", str(payload.get("validation_step_count", "n/a"))),
+            ("Deferred scope", str(deferred_count)),
+            ("Primary surface", first_surface),
+        ],
+    )
+
+
+def browser_html(model: dict[str, object]) -> str:
+    checks = "".join(
+        f"<li><strong>{check['status'].upper()}</strong> {check['summary']}</li>"
+        for check in model["operator_checks"]
+    )
+    boundaries = model["boundaries"]
+    acceptance = model["acceptance"]
+    acceptance_rows = "".join(
+        f"<div class=\"metric\"><span class=\"label\">{name}</span><span class=\"value\">passed</span></div>"
+        for name in acceptance
+    )
+    boundary_cards = "".join(
+        boundary_card(payload, subtitle) for subtitle, payload in boundaries
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal DSP Processing Lab</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      --bg: #f7f1eb;
+      --panel: #fffdfb;
+      --line: #d8cfc8;
+      --text: #201b17;
+      --muted: #6b6159;
+      --accent: #9f4f1f;
+      --accent-soft: #f2dccd;
+      --ok: #20593f;
+      --ok-soft: #ddeee5;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #fff8f2, var(--bg));
+      color: var(--text);
+    }}
+    main {{
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }}
+    h1, h2 {{ margin: 0 0 12px; }}
+    p {{ line-height: 1.5; }}
+    .hero {{
+      background: linear-gradient(135deg, #fff8f1, #f3e7db);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 14px 40px rgba(64, 39, 19, 0.08);
+    }}
+    .hero p {{ margin: 0; color: var(--muted); }}
+    .checks {{
+      margin: 18px 0 0;
+      padding-left: 18px;
+    }}
+    .checks li {{
+      margin: 8px 0;
+      color: var(--muted);
+    }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }}
+    .card {{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(46, 33, 20, 0.06);
+    }}
+    .subtitle {{
+      margin: 0 0 14px;
+      color: var(--muted);
+    }}
+    .metrics {{
+      display: grid;
+      gap: 10px;
+    }}
+    .metric {{
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #faf5ef;
+      border: 1px solid #eadfd4;
+    }}
+    .label {{
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }}
+    .value {{
+      font-size: 0.98rem;
+      color: var(--text);
+      word-break: break-word;
+    }}
+    .callout {{
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #cfe0d6;
+      background: var(--ok-soft);
+      color: var(--ok);
+    }}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Signal DSP Processing Lab</h1>
+      <p>Operator-facing rendered view for bounded DSP processing posture across stretch, marker-analysis, and transform-artifact boundary families. This surface stays descriptor-backed and low-dependency; it is not an editor, waveform browser, or tutorial shell.</p>
+      <ul class="checks">{checks}</ul>
+    </section>
+    <div class="grid">
+      {boundary_cards}
+    </div>
+    <div class="grid">
+      <section class="card"><h2>Acceptance posture</h2><p class="subtitle">Focused DSP boundary proof lanes completed during this capture.</p><div class="metrics">{acceptance_rows}</div></section>
+    </div>
+    <section class="callout">
+      The underlying source of truth is still the receipt and the bounded descriptor plus acceptance commands. This rendered view exists to make the DSP family visually inspectable without reading raw JSON first.
+    </section>
+  </main>
+</body>
+</html>
+"""
+
+
 def main() -> None:
     manifest = json.loads(MANIFEST_PATH.read_text())
     scenario = manifest["scenarios"][0]
@@ -112,6 +281,13 @@ def main() -> None:
             acceptance_artifact(stretch_acceptance_result, stretch_acceptance_command),
             acceptance_artifact(marker_acceptance_result, marker_acceptance_command),
             acceptance_artifact(artifact_acceptance_result, artifact_acceptance_command),
+            {
+                "kind": "dsp-processing-operator-view",
+                "html_path": "demos/receipts/dsp-processing-lab.view.html",
+                "status": "passed",
+                "boundary_count": 3,
+                "acceptance_count": 3,
+            },
         ],
         "operator_checks": [
             {
@@ -160,11 +336,31 @@ def main() -> None:
                 "status": "passed",
                 "summary": "The receipt keeps DSP processing meaning explicit and does not pretend to be an editor shell, waveform browser, or tutorial UI.",
             },
+            {
+                "id": "operator.dsp-processing.rendered-operator-view",
+                "status": "passed",
+                "summary": "A rendered companion view makes the stretch, marker-analysis, and transform-artifact posture visually inspectable without reading the raw receipt first.",
+            },
         ],
+    }
+
+    view_model = {
+        "boundaries": [
+            ("Stretch engine and render-preview posture.", stretch_payload),
+            ("Marker-analysis and transient-anchor posture.", marker_payload),
+            ("Transform-artifact and cache-policy posture.", artifact_payload),
+        ],
+        "acceptance": [
+            "stretch",
+            "marker-analysis",
+            "transform-artifact",
+        ],
+        "operator_checks": receipt["operator_checks"],
     }
 
     RECEIPT_PATH.parent.mkdir(parents=True, exist_ok=True)
     RECEIPT_PATH.write_text(json.dumps(receipt, indent=2) + "\n")
+    HTML_PATH.write_text(browser_html(view_model))
 
 
 if __name__ == "__main__":

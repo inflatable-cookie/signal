@@ -39,11 +39,10 @@ strict surface that can be attached to one active generation at a time.
 - `001-g09-lane-first-strict-adoption.md`
 - `batch-cards/001-install-g09-strict-lane-surfaces.md`
 
-The current ready batch card is:
-
-- `batch-cards/053-g09-015-graph-execution-operator-view.md`
+There is no current ready batch card.
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning for the active strict `g09` lane and decide whether the next
+honest `g09.015` seam is another crate-family operator-view uplift, deeper
+live plugin interaction, or a planning pause.

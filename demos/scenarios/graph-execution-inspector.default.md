@@ -15,6 +15,9 @@ Updated: 2026-04-10
 
 ## Expected Human Checks
 
+- confirm the rendered companion view makes multichannel, sidechain,
+  multi-bus, and spatial posture visually inspectable without reading raw JSON
+  first
 - confirm the receipt captures the current
   `--describe-multichannel-boundary --format=json`,
   `--describe-sidechain-boundary --format=json`,
@@ -37,5 +40,7 @@ Updated: 2026-04-10
 
 - machine-readable run output is captured in
   `demos/receipts/graph-execution-inspector.receipt.json`
+- rendered operator view output is captured in
+  `demos/receipts/graph-execution-inspector.view.html`
 - DSP processing-lab and analysis feature-inspector work remain deferred and
   should stay explicit rather than being implied by this graph-focused surface

@@ -100,4 +100,5 @@ guardrails instead of depending only on roadmap prose and ad hoc thread memory.
 ## Next Task
 
 Use this contract while executing
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+there is no current ready card, so re-enter planning from the active `g09.015`
+surfaces before resuming execution.

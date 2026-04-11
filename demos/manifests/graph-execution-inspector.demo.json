@@ -8,7 +8,7 @@
   "launch": {
     "command": "effigy demo:graph-execution-inspector",
     "owner_surface": "effigy-task",
-    "notes": "Runs the existing multichannel, sidechain, multi-bus, and spatial boundary descriptor and acceptance lanes and records one machine-readable receipt."
+    "notes": "Runs the existing multichannel, sidechain, multi-bus, and spatial boundary descriptor and acceptance lanes, records one machine-readable receipt, and renders a low-dependency companion view for operator inspection."
   },
   "covered_crates": [
     "signal-primitives",
@@ -24,8 +24,9 @@
   ],
   "evidence": {
     "receipt_path": "demos/receipts/graph-execution-inspector.receipt.json",
+    "view_path": "demos/receipts/graph-execution-inspector.view.html",
     "operator_notes_path": "demos/scenarios/graph-execution-inspector.default.md",
-    "capture": "json-receipt-and-operator-notes",
+    "capture": "json-receipt-rendered-view-and-operator-notes",
     "notes": "This bootstrap surface wraps the existing graph-routing boundary descriptors and acceptance lanes without inventing a DAW shell, visual graph editor, or tutorial UI."
   },
   "known_exclusions": [
@@ -36,6 +37,7 @@
   "expected_checks": [
     "The receipt captures machine-readable multichannel, sidechain, multi-bus, and spatial boundary descriptors.",
     "The receipt records that the existing multichannel, sidechain, multi-bus, and spatial acceptance lanes completed successfully.",
+    "The rendered companion view lets an operator inspect graph boundary posture without reading raw JSON first.",
     "The receipt keeps graph execution meaning explicit instead of flattening the seam into a generic product demo.",
     "signal-primitives and signal-graph only move to live demo coverage because this manifest and receipt exist."
   ]

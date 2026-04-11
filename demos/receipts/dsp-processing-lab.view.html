@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signal DSP Processing Lab</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f1eb;
+      --panel: #fffdfb;
+      --line: #d8cfc8;
+      --text: #201b17;
+      --muted: #6b6159;
+      --accent: #9f4f1f;
+      --accent-soft: #f2dccd;
+      --ok: #20593f;
+      --ok-soft: #ddeee5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #fff8f2, var(--bg));
+      color: var(--text);
+    }
+    main {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p { line-height: 1.5; }
+    .hero {
+      background: linear-gradient(135deg, #fff8f1, #f3e7db);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 14px 40px rgba(64, 39, 19, 0.08);
+    }
+    .hero p { margin: 0; color: var(--muted); }
+    .checks {
+      margin: 18px 0 0;
+      padding-left: 18px;
+    }
+    .checks li {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(46, 33, 20, 0.06);
+    }
+    .subtitle {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+    .metrics {
+      display: grid;
+      gap: 10px;
+    }
+    .metric {
+      display: grid;
+      gap: 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #faf5ef;
+      border: 1px solid #eadfd4;
+    }
+    .label {
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .value {
+      font-size: 0.98rem;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .callout {
+      margin-top: 22px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #cfe0d6;
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>Signal DSP Processing Lab</h1>
+      <p>Operator-facing rendered view for bounded DSP processing posture across stretch, marker-analysis, and transform-artifact boundary families. This surface stays descriptor-backed and low-dependency; it is not an editor, waveform browser, or tutorial shell.</p>
+      <ul class="checks"><li><strong>PASSED</strong> The demo captured the machine-readable stretch boundary descriptor.</li><li><strong>PASSED</strong> The demo captured the machine-readable marker-analysis boundary descriptor.</li><li><strong>PASSED</strong> The demo captured the machine-readable transform-artifact boundary descriptor.</li><li><strong>PASSED</strong> The existing stretch, marker-analysis, and transform-artifact acceptance lanes completed successfully.</li><li><strong>PASSED</strong> The receipt keeps DSP processing meaning explicit and does not pretend to be an editor shell, waveform browser, or tutorial UI.</li><li><strong>PASSED</strong> A rendered companion view makes the stretch, marker-analysis, and transform-artifact posture visually inspectable without reading the raw receipt first.</li></ul>
+    </section>
+    <div class="grid">
+      <section class="card"><h2>signal.runtime.stretch-boundary</h2><p class="subtitle">Stretch engine and render-preview posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/046-sample-domain-time-stretch-engine-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:stretch-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-stretch-observation-report</span></div></div></section><section class="card"><h2>signal.runtime.marker-analysis-boundary</h2><p class="subtitle">Marker-analysis and transient-anchor posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/047-warp-marker-transient-anchor-and-tempo-assist-analysis-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:marker-analysis-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">2</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-marker-analysis-observation-report</span></div></div></section><section class="card"><h2>signal.runtime.transform-artifact-boundary</h2><p class="subtitle">Transform-artifact and cache-policy posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/064-asset-session-transform-persistence-retention-and-cache-placement-policy-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:transform-artifact-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-transform-artifact-observation-report</span></div></div></section>
+    </div>
+    <div class="grid">
+      <section class="card"><h2>Acceptance posture</h2><p class="subtitle">Focused DSP boundary proof lanes completed during this capture.</p><div class="metrics"><div class="metric"><span class="label">stretch</span><span class="value">passed</span></div><div class="metric"><span class="label">marker-analysis</span><span class="value">passed</span></div><div class="metric"><span class="label">transform-artifact</span><span class="value">passed</span></div></div></section>
+    </div>
+    <section class="callout">
+      The underlying source of truth is still the receipt and the bounded descriptor plus acceptance commands. This rendered view exists to make the DSP family visually inspectable without reading raw JSON first.
+    </section>
+  </main>
+</body>
+</html>

@@ -83,7 +83,7 @@ pub(super) fn spatial_boundary_validation_steps() -> &'static [SpatialBoundaryVa
         SpatialBoundaryValidationStep {
             id: "runtime-spatial-public-proof",
             command:
-                "cargo test -p signal-runtime public_runtime_spatial_boundary_reports_runtime_owned_execution_truth",
+                "cargo test -p signal-runtime --test public_contract_boundary_spatial public_runtime_spatial_boundary_reports_runtime_owned_execution_truth -- --exact --nocapture --test-threads=1",
             rationale:
                 "Proves a downstream-style runtime consumer can inspect surround-bed, mix-policy, render-scope, immersive room-policy, deployment class, fold-down policy, monitoring-scene posture, bounded renderer negotiation, immersive export outcome, and render-preview receipts through public runtime surfaces alone.",
         },
