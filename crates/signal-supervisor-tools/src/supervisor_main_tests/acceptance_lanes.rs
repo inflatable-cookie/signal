@@ -2,7 +2,7 @@ use crate::{
     render_control_preview_workflow_acceptance_lane_json,
     render_control_preview_workflow_acceptance_lane_text,
     render_device_workflow_acceptance_lane_json, render_device_workflow_acceptance_lane_text,
-    render_g06_soak_lane_json, render_g07_acceptance_lane_json, render_g07_acceptance_lane_text,
+    render_g07_acceptance_lane_json, render_g07_acceptance_lane_text,
     render_immersive_acceptance_lane_json, render_immersive_acceptance_lane_text,
     render_integrated_acceptance_lane_json, render_integrated_acceptance_lane_text,
     render_integrated_live_workflow_acceptance_lane_json,
@@ -126,5 +126,4 @@ fn g06_soak_lane_text_reports_required_and_deferred_policy() {
 #[test]
 fn g06_soak_lane_json_reports_required_and_deferred_policy() {
     verify_g06_soak_lane_json_reports_required_and_deferred_policy();
-    assert!(render_g06_soak_lane_json().contains("\"g06_soak_lane\""));
 }

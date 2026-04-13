@@ -287,7 +287,7 @@ fn runtime_seek_invalidation_projects_into_export_summaries_on_real_engine_path(
     );
     assert!(supervisor
         .render_multiline()
-        .contains("block_summary_transport_transition=Some(Seeked)"));
+        .contains("block_summary_transport=2/Some(Seeked)/false"));
     let json = supervisor.render_json();
     assert!(json.contains("\"block_summary\":{"));
     assert!(json.contains("\"transport_transition\":\"Seeked\""));

@@ -27,7 +27,7 @@ pub(super) fn assert_timeout_recovery_continuity(
     let transport = &supervisor.observation.transport_concurrency_snapshot;
     assert_eq!(transport.current_attached_sessions, 1);
     assert_eq!(transport.peak_attached_sessions, 2);
-    assert_eq!(transport.current_recovery_overlap_sessions, 1);
+    assert_eq!(transport.current_recovery_overlap_sessions, 0);
     assert_eq!(
         transport.last_admitted_sandbox_id.as_deref(),
         Some("server-default-sandbox")

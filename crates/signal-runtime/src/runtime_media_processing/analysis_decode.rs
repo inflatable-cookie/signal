@@ -63,13 +63,34 @@ pub(crate) fn decode_runtime_media_asset(
             ),
         ));
     }
-    let cache_path = asset.cache_path.as_deref().ok_or_else(|| {
-        RuntimeError::new(
-            RuntimeErrorKind::InvalidState,
-            format!("offline render media asset `{asset_id}` has no cache path"),
-        )
-    })?;
-    let path = Path::new(cache_path);
+    let cache_path = asset
+        .cache_path
+        .as_deref()
+        .map(Path::new)
+        .filter(|path| path.is_file());
+    let path = if let Some(path) = cache_path {
+        path
+    } else {
+        let source_path = Path::new(&asset.registration.source_path);
+        if source_path.is_file() {
+            source_path
+        } else {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                match asset.cache_path.as_deref() {
+                    Some(cache_path) => format!(
+                        "offline render media asset `{asset_id}` cache missing at {} and source missing at {}",
+                        cache_path,
+                        source_path.display()
+                    ),
+                    None => format!(
+                        "offline render media asset `{asset_id}` has no cache path and source missing at {}",
+                        source_path.display()
+                    ),
+                },
+            ));
+        }
+    };
     let buffer = if path
         .extension()
         .and_then(|extension| extension.to_str())

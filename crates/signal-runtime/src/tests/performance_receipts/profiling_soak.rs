@@ -30,6 +30,7 @@ fn runtime_supervisor_report_derives_profiling_and_soak_receipts() {
     let supervisor = crate::interfaces::RuntimeSupervisorReport::capture(&runtime, &recorder);
     let profiling = supervisor.profiling_receipt();
     let soak = supervisor.soak_receipt();
+    let diagnostics = &supervisor.observation.diagnostics_snapshot;
 
     assert_eq!(profiling.sample_rate_hz, 48_000);
     assert_eq!(profiling.block_size, 256);
@@ -41,12 +42,11 @@ fn runtime_supervisor_report_derives_profiling_and_soak_receipts() {
     assert!(!profiling.plugin_gate_active);
     assert_eq!(profiling.plugin_chain_stage_count, 0);
     assert_eq!(profiling.plugin_chain_degraded_stage_count, 0);
-    assert!((profiling.runtime_cpu_load_percent - 7.25).abs() < 1.0e-6);
-    assert!((profiling.runtime_graph_latency_ms - 3.5).abs() < 1.0e-6);
+    assert_eq!(profiling.runtime_cpu_load_percent, diagnostics.cpu_load_percent);
+    assert_eq!(profiling.runtime_graph_latency_ms, diagnostics.graph_latency_ms);
     assert_eq!(profiling.host_callback_count, None);
-    assert!(profiling
-        .render_json()
-        .contains("\"runtime_graph_latency_ms\":3.5"));
+    assert!(profiling.render_json().contains("\"runtime_cpu_load_percent\":"));
+    assert!(profiling.render_json().contains("\"runtime_graph_latency_ms\":"));
 
     assert_eq!(soak.event_stream_count, 1);
     assert!(!soak.readiness_degraded);

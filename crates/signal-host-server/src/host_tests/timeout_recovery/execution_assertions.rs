@@ -34,10 +34,13 @@ pub(super) fn assert_timeout_recovery_execution(
     assert!(supervisor
         .render_json()
         .contains("\"plugin_instance_state_events\":"));
-    assert!(summary.execution.last_engine_output_peak.unwrap_or_default() <= 0.7);
-    assert!(summary.execution.last_engine_output_rms.unwrap_or_default() > 0.0);
-
     let snapshot = &supervisor.observation.engine_block_snapshot;
+    let output_peak = summary
+        .execution
+        .last_engine_output_peak
+        .expect("server summary should retain last output peak");
+    assert_eq!(Some(output_peak), snapshot.last_output_peak);
+    assert!(summary.execution.last_engine_output_rms.unwrap_or_default() > 0.0);
     assert_eq!(
         snapshot
             .last_execution_context

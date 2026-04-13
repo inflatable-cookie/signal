@@ -60,8 +60,8 @@ fn runtime_observation_and_supervisor_reports_surface_media_service_baseline() {
 
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
     let multiline = supervisor.render_multiline();
-    assert!(multiline.contains("media_asset_count=1"));
-    assert!(multiline.contains("media_preview_state=Previewing"));
+    assert!(multiline.contains("media_pipeline_asset_count=1"));
+    assert!(multiline.contains("media_service_preview_state=Previewing"));
     assert!(multiline.contains("media_library_ready_descriptor_count=1"));
 
     let json = supervisor.render_json();

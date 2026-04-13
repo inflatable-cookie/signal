@@ -77,6 +77,34 @@ impl LocalRuntimeHost {
         Ok(())
     }
 
+    pub(crate) fn cleanup_exact_lingering_session_if_present(
+        &mut self,
+        sandbox_id: &str,
+        lease_id: &str,
+        region_id: &str,
+        processing_epoch: u64,
+    ) {
+        let lingering_session = self
+            .runtime
+            .get_transport_concurrency_snapshot()
+            .active_sessions
+            .into_iter()
+            .find(|session| {
+                session.sandbox_id == sandbox_id
+                    && session.lease_id == lease_id
+                    && session.region_id == region_id
+                    && matches!(
+                        session.state,
+                        signal_runtime::TransportSessionState::DetachRequested
+                            | signal_runtime::TransportSessionState::DetachFaulted
+                    )
+            });
+
+        if let Some(session) = lingering_session {
+            let _ = self.cleanup_orphan_lingering_transport(&session, processing_epoch);
+        }
+    }
+
     pub(crate) fn reconcile_late_lingering_sessions_after_start(
         &mut self,
         sandbox_id: &str,

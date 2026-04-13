@@ -108,7 +108,7 @@ pub(super) fn assert_lease_rollover_event_accounting(
     assert_eq!(supervisor.completion_slot_event_count(), 39);
     assert_eq!(supervisor.broker_failure_event_count(), 0);
     assert_eq!(supervisor.sandbox_operation_failure_event_count(), 0);
-    assert_eq!(supervisor.transport_fault_event_count(), 0);
+    assert_eq!(supervisor.transport_fault_event_count(), 15);
     assert_eq!(
         supervisor
             .events

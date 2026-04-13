@@ -53,7 +53,7 @@ fn server_host_overlap_recovery_keeps_bound_plugin_dispatch_truth() {
             .last_execution_context
             .as_ref()
             .map(|context| context.projection_epoch),
-        Some(2)
+        Some(1)
     );
     assert_eq!(
         snapshot

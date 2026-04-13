@@ -203,7 +203,7 @@ impl RuntimeSupervisorReport {
         } else {
             String::new()
         };
-        let _automation = if self.observation.automation_snapshot.parameter_id != 0
+        let automation = if self.observation.automation_snapshot.parameter_id != 0
             || self.observation.automation_snapshot.lane_count > 0
             || self
                 .observation
@@ -767,7 +767,7 @@ impl RuntimeSupervisorReport {
         ); */
         let multiline = self.observation.render_compact().replace(' ', "\n");
         format!(
-            "{multiline}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{lv2_extension}{plugin_pin_matrix}{plugin_chain}{device_supervision_summary}{external_io_summary}{linux_backend_session_summary}{pipewire_alsa_parity_summary}{jack_coordination_summary}{external_midi_summary}{control_surface_summary}{advanced_hardware_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{automation}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{lv2_extension}{plugin_pin_matrix}{plugin_chain}{device_supervision_summary}{external_io_summary}{linux_backend_session_summary}{pipewire_alsa_parity_summary}{jack_coordination_summary}{external_midi_summary}{control_surface_summary}{advanced_hardware_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 

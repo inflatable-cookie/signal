@@ -331,10 +331,10 @@ fn runtime_scheduler_topology_projects_into_runtime_reports() {
     let supervisor = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
     assert!(supervisor
         .render_multiline()
-        .contains("engine_scheduler_topology_bus_groups=2"));
+        .contains("engine_scheduler_topology_buses=1/2"));
     assert!(supervisor
         .render_multiline()
-        .contains("engine_scheduler_topology_console_groups=1"));
+        .contains("engine_scheduler_topology_consoles=1/1"));
     assert!(supervisor
         .render_multiline()
         .contains("engine_scheduler_topology_issue_count=0"));

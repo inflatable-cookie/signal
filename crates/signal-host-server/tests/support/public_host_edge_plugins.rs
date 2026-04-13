@@ -135,6 +135,7 @@ fn write_clap_fixture_library(
 ) {
     let source_path = root.join(format!("{file_name}.rs"));
     let library_path = root.join(file_name);
+    let crate_name = file_name.replace(['.', '-'], "_");
     fs::write(
         &source_path,
         clap_fixture_source(plugin_type_id, plugin_name, midi_outputs),
@@ -142,6 +143,8 @@ fn write_clap_fixture_library(
     .expect("public server clap fixture source should be written");
     let output = Command::new("rustc")
         .arg("--crate-type=cdylib")
+        .arg("--crate-name")
+        .arg(&crate_name)
         .arg("--edition=2021")
         .arg(&source_path)
         .arg("-o")
@@ -188,11 +191,11 @@ unsafe extern "C" fn factory_get_plugin_count(_factory: *const clap_plugin_facto
 unsafe extern "C" fn plugin_init(_plugin: *const clap_plugin) -> bool {{ true }} unsafe extern "C" fn plugin_destroy(_plugin: *const clap_plugin) {{}} unsafe extern "C" fn plugin_activate(_plugin: *const clap_plugin, _sample_rate: f64, _min: u32, _max: u32) -> bool {{ true }} unsafe extern "C" fn plugin_deactivate(_plugin: *const clap_plugin) {{}} unsafe extern "C" fn plugin_start_processing(_plugin: *const clap_plugin) -> bool {{ true }} unsafe extern "C" fn plugin_stop_processing(_plugin: *const clap_plugin) {{}} unsafe extern "C" fn plugin_reset(_plugin: *const clap_plugin) {{}}
 unsafe extern "C" fn plugin_get_extension(_plugin: *const clap_plugin, extension_id: *const c_char) -> *const c_void {{ let requested = CStr::from_ptr(extension_id).to_bytes_with_nul(); if requested == AUDIO_PORTS_ID {{ (&AUDIO_PORTS as *const clap_plugin_audio_ports).cast() }} else if requested == NOTE_PORTS_ID {{ (&NOTE_PORTS as *const clap_plugin_note_ports).cast() }} else if requested == PARAMS_ID {{ (&PARAMS as *const clap_plugin_params).cast() }} else if requested == STATE_ID || requested == LATENCY_ID || requested == TAIL_ID {{ 1usize as *const c_void }} else {{ ptr::null() }} }}
 unsafe extern "C" fn audio_port_count(_plugin: *const clap_plugin, _is_input: bool) -> u32 {{ 1 }}
-unsafe extern "C" fn audio_port_get(_plugin: *const clap_plugin, index: u32, is_input: bool, info: *mut clap_audio_port_info) -> bool {{ if index != 0 {{ return false; }} let name: &[u8] = if is_input {{ b\"Main Input\\0\".as_slice() }} else {{ b\"Main Output\\0\".as_slice() }}; let mut port = clap_audio_port_info {{ id: if is_input {{ 1 }} else {{ 2 }}, name: [0; 256], flags: CLAP_AUDIO_PORT_IS_MAIN, channel_count: 2, port_type: ptr::null(), in_place_pair: u32::MAX }}; for (slot, value) in port.name.iter_mut().zip(name.iter().copied()) {{ *slot = value as c_char; }} *info = port; true }}
+unsafe extern "C" fn audio_port_get(_plugin: *const clap_plugin, index: u32, is_input: bool, info: *mut clap_audio_port_info) -> bool {{ if index != 0 {{ return false; }} let name: &[u8] = if is_input {{ b"Main Input\0".as_slice() }} else {{ b"Main Output\0".as_slice() }}; let mut port = clap_audio_port_info {{ id: if is_input {{ 1 }} else {{ 2 }}, name: [0; 256], flags: CLAP_AUDIO_PORT_IS_MAIN, channel_count: 2, port_type: ptr::null(), in_place_pair: u32::MAX }}; for (slot, value) in port.name.iter_mut().zip(name.iter().copied()) {{ *slot = value as c_char; }} *info = port; true }}
 unsafe extern "C" fn note_port_count(_plugin: *const clap_plugin, is_input: bool) -> u32 {{ if is_input {{ 1 }} else {{ {midi_outputs} }} }}
-unsafe extern "C" fn note_port_get(_plugin: *const clap_plugin, index: u32, is_input: bool, info: *mut clap_note_port_info) -> bool {{ if index != 0 {{ return false; }} let name: &[u8] = if is_input {{ b\"MIDI In\\0\".as_slice() }} else {{ b\"MIDI Out\\0\".as_slice() }}; let mut port = clap_note_port_info {{ id: if is_input {{ 11 }} else {{ 12 }}, supported_dialects: CLAP_NOTE_DIALECT_MIDI, preferred_dialect: CLAP_NOTE_DIALECT_MIDI, name: [0; 256] }}; for (slot, value) in port.name.iter_mut().zip(name.iter().copied()) {{ *slot = value as c_char; }} *info = port; true }}
+unsafe extern "C" fn note_port_get(_plugin: *const clap_plugin, index: u32, is_input: bool, info: *mut clap_note_port_info) -> bool {{ if index != 0 {{ return false; }} let name: &[u8] = if is_input {{ b"MIDI In\0".as_slice() }} else {{ b"MIDI Out\0".as_slice() }}; let mut port = clap_note_port_info {{ id: if is_input {{ 11 }} else {{ 12 }}, supported_dialects: CLAP_NOTE_DIALECT_MIDI, preferred_dialect: CLAP_NOTE_DIALECT_MIDI, name: [0; 256] }}; for (slot, value) in port.name.iter_mut().zip(name.iter().copied()) {{ *slot = value as c_char; }} *info = port; true }}
 unsafe extern "C" fn param_count(_plugin: *const clap_plugin) -> u32 {{ 2 }}
-unsafe extern "C" fn param_get_info(_plugin: *const clap_plugin, index: u32, info: *mut clap_param_info) -> bool {{ let (id, name, flags, default_value) = match index {{ 0 => (4096u32, b\"Gain\\0\".as_slice(), CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE, 0.5f64), 1 => (0u32, b\"Bypass\\0\".as_slice(), CLAP_PARAM_IS_BYPASS | CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_STEPPED, 0.0f64), _ => return false }}; let mut param = clap_param_info {{ id, flags, cookie: ptr::null_mut(), name: [0; 256], module: [0; 1024], min_value: 0.0, max_value: 1.0, default_value }}; for (slot, value) in param.name.iter_mut().zip(name.iter().copied()) {{ *slot = value as c_char; }} *info = param; true }}
+unsafe extern "C" fn param_get_info(_plugin: *const clap_plugin, index: u32, info: *mut clap_param_info) -> bool {{ let (id, name, flags, default_value) = match index {{ 0 => (4096u32, b"Gain\0".as_slice(), CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_MODULATABLE, 0.5f64), 1 => (0u32, b"Bypass\0".as_slice(), CLAP_PARAM_IS_BYPASS | CLAP_PARAM_IS_AUTOMATABLE | CLAP_PARAM_IS_STEPPED, 0.0f64), _ => return false }}; let mut param = clap_param_info {{ id, flags, cookie: ptr::null_mut(), name: [0; 256], module: [0; 1024], min_value: 0.0, max_value: 1.0, default_value }}; for (slot, value) in param.name.iter_mut().zip(name.iter().copied()) {{ *slot = value as c_char; }} *info = param; true }}
 unsafe extern "C" fn param_get_value(_plugin: *const clap_plugin, param_id: u32, out_value: *mut f64) -> bool {{ if out_value.is_null() {{ return false; }} *out_value = if param_id == 4096 {{ 0.5 }} else {{ 0.0 }}; true }}
 "#
     )

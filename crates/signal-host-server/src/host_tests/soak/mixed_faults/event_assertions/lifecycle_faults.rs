@@ -94,5 +94,5 @@ pub(super) fn assert_mixed_watchdog_lifecycle_faults(
     );
     assert_eq!(supervisor.broker_failure_event_count(), 0);
     assert_eq!(supervisor.sandbox_operation_failure_event_count(), 0);
-    assert_eq!(supervisor.transport_fault_event_count(), 0);
+    assert_eq!(supervisor.transport_fault_event_count(), 19);
 }

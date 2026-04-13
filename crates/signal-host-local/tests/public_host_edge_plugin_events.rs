@@ -51,7 +51,7 @@ fn local_shared_host_edge_exports_runtime_generic_event_truth() {
             .plugin_discovery_snapshot
             .capability_coverage
             .supports_note_expression_count,
-        4
+        2
     );
 
     let rendered = report.render_json();

@@ -94,10 +94,10 @@ fn runtime_restart_and_reconfigure_keep_realtime_scheduler_window_coherent() {
         &runtime,
         &RuntimeEventRecorder::default(),
     );
-    assert!(supervisor.render_multiline().contains("restart_count=1"));
+    assert!(supervisor.render_multiline().contains("restarts=1"));
     assert!(supervisor
         .render_multiline()
-        .contains("scheduler_summary_pending_targets="));
+        .contains("scheduler_summary_pending="));
     let json = supervisor.render_json();
     assert!(json.contains("\"restart_count\":1"));
     assert!(json.contains("\"scheduler_summary\":{"));

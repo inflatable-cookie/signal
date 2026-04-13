@@ -19,6 +19,7 @@ fn local_host_executes_track_bus_output_topology_through_audio_pump() {
 
 #[test]
 fn local_host_shared_report_surfaces_execution_topology_and_plugin_reports() {
+    let _demo_override = crate::host::ensure_default_demo_plugin_override();
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     host.boot_default().expect("default local host boot");
@@ -67,7 +68,7 @@ fn local_host_shared_report_surfaces_execution_topology_and_plugin_reports() {
             .observation
             .plugin_discovery_snapshot
             .discovered_type_count,
-        2
+        1
     );
     assert_eq!(
         report
@@ -77,7 +78,7 @@ fn local_host_shared_report_surfaces_execution_topology_and_plugin_reports() {
             .last_scan
             .as_ref()
             .map(|scan| scan.discovered_type_count),
-        Some(2)
+        Some(1)
     );
     assert!(report
         .observation
@@ -85,18 +86,9 @@ fn local_host_shared_report_surfaces_execution_topology_and_plugin_reports() {
         .plugin_discovery_snapshot
         .discovered_types
         .iter()
-        .any(|plugin| plugin.plugin_type_id == "plugin:clap:default"
-            && plugin.format == PluginFormat::Clap
-            && plugin.state_contract.supports_snapshot));
-    assert!(report
-        .observation
-        .observation
-        .plugin_discovery_snapshot
-        .discovered_types
-        .iter()
-        .any(|plugin| plugin.plugin_type_id == "plugin:clap:sandbox"
-            && plugin.features.contains(&signal_plugin::PluginFeature::Utility)
-            && plugin.processing_contract.produces_midi));
+        .any(|plugin| plugin.plugin_type_id == "plugin:vst3:instrument"
+            && plugin.format == PluginFormat::Vst3
+            && plugin.processing_contract.accepts_note_events));
     assert_eq!(
         report
             .observation
@@ -105,7 +97,7 @@ fn local_host_shared_report_surfaces_execution_topology_and_plugin_reports() {
             .sandboxes
             .first()
             .and_then(|sandbox| sandbox.plugin_format),
-        Some(PluginFormat::Clap)
+        Some(PluginFormat::Vst3)
     );
     assert!(report.render_json().contains("\"node_id\":\"plugin-insert\""));
     assert!(report

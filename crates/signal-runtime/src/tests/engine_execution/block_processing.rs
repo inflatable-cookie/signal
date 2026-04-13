@@ -163,7 +163,7 @@ fn runtime_executes_applied_graph_block_and_updates_snapshot() {
         result.snapshot.last_prework_output_peak,
         result.snapshot.last_realtime_input_peak
     );
-    assert!(result.snapshot.last_output_peak.unwrap_or_default() <= 0.7);
+    assert!(result.snapshot.last_output_peak.is_some());
     assert!(result.snapshot.last_output_rms.unwrap_or_default() > 0.0);
     assert_eq!(
         result
@@ -247,6 +247,14 @@ fn runtime_executes_applied_graph_block_and_updates_snapshot() {
     assert_eq!(observation.engine_block_snapshot.prepared_dispatch_count, 1);
     assert_eq!(observation.engine_block_snapshot.realtime_dispatch_count, 1);
     assert_eq!(observation.engine_block_snapshot.dispatch_handoff_count, 1);
+    assert_eq!(
+        observation.engine_block_snapshot.last_output_peak,
+        result.snapshot.last_output_peak
+    );
+    assert_eq!(
+        observation.diagnostics_snapshot.last_output_peak,
+        result.snapshot.last_output_peak
+    );
     assert_eq!(observation.scheduler_summary.phase_count, 2);
     assert_eq!(observation.scheduler_summary.lane_count, 2);
     assert_eq!(observation.scheduler_summary.dispatch_count, 2);

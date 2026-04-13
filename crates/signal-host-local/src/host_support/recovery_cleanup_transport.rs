@@ -1,4 +1,7 @@
-use signal_ipc::SharedMemoryTransportPayload;
+use signal_ipc::{
+    SharedMemoryRegionLifecycleError, SharedMemoryRegionLifecycleErrorKind,
+    SharedMemoryTransportPayload,
+};
 use signal_plugin_clap::ClapSandboxLifecycleHarness;
 use signal_runtime::{
     complete_broker_transport_detach, record_broker_transport_detach_failure,
@@ -135,31 +138,41 @@ impl LocalRuntimeHost {
         }
 
         if let Err(error) = self.broker.destroy_region(current_transport) {
-            record_broker_transport_detach_failure(
-                &mut self.runtime,
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-                run.processing_epoch,
-                Some(run.last_block_sequence),
-                signal_runtime::BrokerFailureStage::TransportDestroy,
-                error.to_string(),
-            );
-            return Err(runtime_error_from_io(error.into()));
+            if error.kind() != SharedMemoryRegionLifecycleErrorKind::MissingMetadata {
+                record_broker_transport_detach_failure(
+                    &mut self.runtime,
+                    sandbox_id,
+                    run.shared_memory_lease_id.as_str(),
+                    current_transport.region_id.as_str(),
+                    run.processing_epoch,
+                    Some(run.last_block_sequence),
+                    signal_runtime::BrokerFailureStage::TransportDestroy,
+                    error.to_string(),
+                );
+                return Err(runtime_error_from_io(error.into()));
+            }
         }
 
         if let Err(error) = lifecycle.teardown_active_transport() {
-            record_broker_transport_detach_failure(
-                &mut self.runtime,
-                sandbox_id,
-                run.shared_memory_lease_id.as_str(),
-                current_transport.region_id.as_str(),
-                run.processing_epoch,
-                Some(run.last_block_sequence),
-                signal_runtime::BrokerFailureStage::TransportTeardown,
-                error.to_string(),
-            );
-            return Err(runtime_error_from_io(error));
+            let missing_metadata = error
+                .get_ref()
+                .and_then(|source| source.downcast_ref::<SharedMemoryRegionLifecycleError>())
+                .is_some_and(|error| {
+                    error.kind() == SharedMemoryRegionLifecycleErrorKind::MissingMetadata
+                });
+            if !missing_metadata {
+                record_broker_transport_detach_failure(
+                    &mut self.runtime,
+                    sandbox_id,
+                    run.shared_memory_lease_id.as_str(),
+                    current_transport.region_id.as_str(),
+                    run.processing_epoch,
+                    Some(run.last_block_sequence),
+                    signal_runtime::BrokerFailureStage::TransportTeardown,
+                    error.to_string(),
+                );
+                return Err(runtime_error_from_io(error));
+            }
         }
 
         complete_broker_transport_detach(
