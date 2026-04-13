@@ -14,7 +14,7 @@ setup = ["bootstrap:deps"]
 
 [test.suites]
 compile = "cargo test --workspace --no-run"
-nextest = "cargo nextest run --workspace"
+nextest = "CARGO_TARGET_DIR=/tmp/signal-nextest-target cargo nextest run --workspace"
 
 [tasks]
 "bootstrap:deps" = "cargo fetch"
