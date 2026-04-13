@@ -13,5 +13,5 @@ pub(crate) use lifecycle::{
 };
 pub(crate) use offline_render::prepare_local_host_for_offline_render;
 pub(crate) use scan_roots::{
-    temp_local_au_scan_root, temp_local_vst3_scan_root, TempPluginScanRoot,
+    temp_local_au_scan_root, temp_local_vst3_scan_root,
 };

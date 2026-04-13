@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 pub(super) use std::{
     env, fs,
     path::{Path, PathBuf},
