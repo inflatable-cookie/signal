@@ -51,15 +51,9 @@ mod fixtures;
 #[path = "public_host_edge_boundary/graphs.rs"]
 mod graphs;
 
-pub(crate) use fixtures::{
-    public_server_media_fixture_path, record_public_plugin_sandbox_ready,
-    sample_complex_bus_fx_record, sample_complex_multi_output_record, sample_server_ara_context,
-    write_public_test_wav, write_public_transient_test_wav,
-};
+pub(crate) use fixtures::record_public_plugin_sandbox_ready;
 pub(crate) use graphs::{
-    apply_public_capture_graph, apply_public_complex_io_graph, apply_public_multi_bus_graph,
-    apply_public_multichannel_graph, apply_public_plugin_continuity_graph,
-    apply_public_render_graph, apply_public_sidechain_graph, apply_public_spatial_graph,
+    apply_public_capture_graph, apply_public_render_graph, apply_public_sidechain_graph,
 };
 
 #[path = "public_host_edge_boundary/consumable_surface.rs"]
