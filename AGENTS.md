@@ -43,3 +43,9 @@ from the active docs surfaces first.
 
 - `../chorus/specs/guidelines/agents-operating-guardrails.md`
 - `../chorus/specs/`
+
+## Internal Writing Style
+
+Use the repo-local style reference for internal work and normal replies:
+
+- `docs/policy/internal-writing-style.md`
