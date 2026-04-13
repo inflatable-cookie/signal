@@ -1,9 +1,9 @@
-#[path = "support/public_host_edge_runtime_surface.rs"]
-mod public_host_edge_runtime_surface;
+#[path = "support/public_host_edge_media.rs"]
+mod public_host_edge_media;
 
 use std::fs;
 
-use public_host_edge_runtime_surface::{public_server_media_fixture_path, write_public_test_wav};
+use public_host_edge_media::{public_server_media_fixture_path, write_public_test_wav};
 use signal_host_server::ServerRuntimeHost;
 use signal_runtime::{
     RuntimeConfig, RuntimeConfigRequest, RuntimeLifecycleApi, RuntimeMediaPreviewState,

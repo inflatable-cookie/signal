@@ -1,10 +1,10 @@
 #[path = "support/public_host_edge_runtime_recall.rs"]
 mod public_host_edge_runtime_recall;
-#[path = "support/public_host_edge_runtime_surface.rs"]
-mod public_host_edge_runtime_surface;
+#[path = "support/public_host_edge_continuity.rs"]
+mod public_host_edge_continuity_support;
 
 use public_host_edge_runtime_recall::sample_server_ara_context;
-use public_host_edge_runtime_surface::{
+use public_host_edge_continuity_support::{
     apply_public_plugin_continuity_graph, record_public_plugin_sandbox_ready,
 };
 use signal_host_server::ServerRuntimeHost;
