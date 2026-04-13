@@ -47,7 +47,6 @@ interactive-demo stream and is now closed again.
 - keep Finch and Loophole wrapper notes outside Signal unless they affect the
   reusable library boundary
 - keep section indexes aligned to Northstar conventions
-- treat `legacy/cpp/` as reference surface, not primary implementation surface
 - treat an active generation as a lane-first strict Northstar surface under
   `docs/specs/` only while that generation is explicitly open
 - in the strict lane, treat a bare `continue` as "follow the previous closeout's

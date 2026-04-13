@@ -14,8 +14,6 @@
 
 Signal is the shared audio-systems repo for Loophole, Finch, and future apps.
 Its active surface is the Rust library/runtime workspace under `crates/`.
-The legacy C++ engine/runtime implementation now lives behind a reference
-boundary under `legacy/cpp/`.
 
 Signal may run out-of-process where isolation is the right trade, but the repo
 itself is no longer defined by one mandatory standalone process topology.
@@ -57,31 +55,10 @@ crates/
   signal-host-server/       # Headless runtime host shell
   signal-supervisor-tools/  # Live supervisor and soak-reporting CLI
 docs/               # Local docs/spec notes
-legacy/
-  README.md         # Legacy/reference boundary notes
-  cpp/
-    src/            # Legacy C++ engine/runtime source tree
-    tests/          # Legacy C++ engine tests
-    CMakeLists.txt  # Legacy C++ build surface
-CMakeLists.txt      # Root compatibility wrapper for legacy/cpp
 Cargo.toml
 ```
 
 Northstar-aligned planning and research docs now live under `docs/`.
-
-## Active vs Legacy
-
-Active implementation direction:
-
-- Rust crates under `crates/`
-- Northstar-shaped docs under `docs/`
-
-Reference-only implementation surface:
-
-- legacy C++ runtime under `legacy/cpp/`
-
-That C++ tree still builds and remains useful for migration/reference work, but
-it is no longer the primary repo surface.
 
 ## Development
 
@@ -95,22 +72,6 @@ effigy dev
 effigy validate
 effigy qa:docs
 ```
-
-Reference-only legacy CMake flow:
-
-```bash
-effigy reference:legacy:build
-effigy reference:legacy:dev
-effigy reference:legacy:test
-cmake -S legacy/cpp -B legacy/cpp/build
-cmake --build legacy/cpp/build --config Debug
-ctest --test-dir legacy/cpp/build --output-on-failure
-```
-
-The root CMake entrypoint still wraps `legacy/cpp/`, but that tree is now a
-reference surface only. Repo-owned Effigy `health`, `build`, `dev`, and
-`validate` target the active Rust workspace instead of treating legacy CMake as
-the default validation gate.
 
 Rust workspace bootstrap:
 
