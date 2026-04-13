@@ -1,147 +1,22 @@
 {
-  "receipt_version": "signal.demo.receipt.v1",
-  "manifest_id": "signal.demo.analysis.feature-inspector",
-  "scenario_id": "signal.demo.analysis.feature-inspector.default",
-  "status": "passed",
-  "launch_command": "effigy demo:analysis-feature-inspector",
   "artifacts": [
-    {
-      "kind": "rhythm-example-run",
-      "command": "cargo run -q -p signal-analysis-rhythm --example offline_rhythm_demo -- --bpm 120",
-      "status": "passed",
-      "stdout_tail": [
-        "bar_length.refresh=after:0:Clear/Cleared/Cleared/Degrading/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport",
-        "bar_length.decay0=after:0:Clear/Cleared/Cleared/Degrading/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport",
-        "bar_length.decay1=after:0:Clear/Cleared/Cleared/Degrading/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport",
-        "downbeat_phase=current:Clear/Cleared/Cleared/Degrading/arc:Collapsing/EvidenceLoss/support:0.000,0.540,0.540/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport trusted:0 recheck:0",
-        "downbeat_phase.refresh=after:0:Clear/Cleared/Cleared/Degrading/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport",
-        "downbeat_phase.decay0=after:0:Clear/Cleared/Cleared/Degrading/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport",
-        "downbeat_phase.decay1=after:0:Clear/Cleared/Cleared/Degrading/InsufficientEvidence@0.000/trigger:EvidenceLoss/u:0b:0bar:0f/causes:EvidenceLoss+TempoAmbiguity+SparseMeterSupport",
-        "beats_per_bar=unknown",
-        "meter_confidence=0.000",
-        "meter_detection=unknown",
-        "meter_trust=unknown",
-        "meter_recommendation=unknown",
-        "meter_support_profile=none",
-        "meter_confidence_breakdown=none",
-        "meter_recovery=none",
-        "downbeats=[]",
-        "first_beats=[0.47277117, 0.9725813, 1.4729354, 1.9734439, 2.4744008, 2.9753473, 3.4760296, 3.9753985]",
-        "first_local_tempo=[\"0-1:120.05\", \"1-2:119.92\", \"2-3:119.88\", \"3-4:119.77\", \"4-5:119.77\", \"5-6:119.84\"]",
-        "first_windowed_tempo=[\"0-4:119.90\", \"1-5:119.83\", \"2-6:119.81\", \"3-7:119.88\"]",
-        "first_grid_error=[\"0:fit-0.42/anchor0.00\", \"1:fit-0.73/anchor-0.70\", \"2:fit-0.49/anchor-0.85\", \"3:fit-0.10/anchor-0.85\", \"4:fit0.73/anchor-0.40\", \"5:fit1.56/anchor0.03\"]"
-      ]
-    },
-    {
-      "kind": "tonal-example-run",
-      "command": "cargo run -q -p signal-analysis-tonal --example offline_tonal_demo -- c-major",
-      "status": "passed",
-      "stdout_tail": [
-        "preset=c-major",
-        "key=C major",
-        "confidence=0.1558",
-        "chroma=[0.37654996, 0.006485465, 0.0013682741, 0.0058181905, 0.31411314, 0.002937362, 0.0037605576, 0.26129287, 0.001003471, 0.00049462216, 0.002405657, 0.023770517]"
-      ]
-    },
-    {
-      "kind": "loudness-example-run",
-      "command": "cargo run -q -p signal-analysis-loudness --example offline_loudness_demo -- --amplitude 0.2",
-      "status": "passed",
-      "stdout_tail": [
-        "sample_rate=48000",
-        "amplitude=0.200",
-        "integrated_lufs=-16.983",
-        "lra_lu=0.000",
-        "true_peak_dbtp=-13.979",
-        "confidence=1.000"
-      ]
-    },
-    {
-      "kind": "analysis-inspector-tone-run",
-      "command": "cargo run -q -p signal-analysis-embed --example offline_analysis_feature_inspector -- tone",
-      "status": "passed",
-      "stdout_tail": [
-        "preset=tone",
-        "character_confidence=0.2000",
-        "character_spectral=centroid_hz:451.75,flatness:0.00000,spread_hz:412.93",
-        "character_temporal=onset_density:0.0000,transient_density:0.0000,sustain_ratio:0.9883,peak_transient_strength:0.0000",
-        "character_dynamics=rms_energy:0.7071,peak_amplitude:1.0000,dynamic_range:0.2929",
-        "semantic_top_tag=TonalFocus",
-        "semantic_driver=harmonic_focus",
-        "semantic_confidence=0.1628",
-        "semantic_margin=0.1735"
-      ]
-    },
-    {
-      "kind": "analysis-inspector-noise-run",
-      "command": "cargo run -q -p signal-analysis-embed --example offline_analysis_feature_inspector -- noise",
-      "status": "passed",
-      "stdout_tail": [
-        "preset=noise",
-        "character_confidence=0.2000",
-        "character_spectral=centroid_hz:12011.07,flatness:0.56041,spread_hz:6937.03",
-        "character_temporal=onset_density:0.0000,transient_density:20.0000,sustain_ratio:0.9588,peak_transient_strength:0.0000",
-        "character_dynamics=rms_energy:0.2890,peak_amplitude:0.5000,dynamic_range:0.2110",
-        "semantic_top_tag=TexturalNoise",
-        "semantic_driver=spectral_complexity",
-        "semantic_confidence=0.1816",
-        "semantic_margin=0.3760"
-      ]
-    },
-    {
-      "kind": "analysis-inspector-pulse-run",
-      "command": "cargo run -q -p signal-analysis-embed --example offline_analysis_feature_inspector -- pulse",
-      "status": "passed",
-      "stdout_tail": [
-        "preset=pulse",
-        "character_confidence=0.2143",
-        "character_spectral=centroid_hz:8.09,flatness:0.00000,spread_hz:20.92",
-        "character_temporal=onset_density:4.2001,transient_density:1.8667,sustain_ratio:0.9938,peak_transient_strength:1.0000",
-        "character_dynamics=rms_energy:0.6108,peak_amplitude:0.9000,dynamic_range:0.2892",
-        "semantic_top_tag=PulseDriven",
-        "semantic_driver=rhythmic_activity",
-        "semantic_confidence=0.1902",
-        "semantic_margin=0.1858"
-      ]
-    },
-    {
-      "kind": "analysis-operator-view",
-      "html_path": "demos/receipts/analysis-feature-inspector.view.html",
-      "status": "passed",
-      "section_count": 6,
-      "preset_count": 3
-    }
+    "demos/receipts/analysis-feature-inspector.view.html",
+    "demos/scenarios/analysis-feature-inspector.default.md"
   ],
-  "operator_checks": [
-    {
-      "id": "operator.analysis-feature.rhythm-posture",
-      "status": "passed",
-      "summary": "The demo captured bounded rhythm analysis posture from the existing offline rhythm example."
-    },
-    {
-      "id": "operator.analysis-feature.tonal-posture",
-      "status": "passed",
-      "summary": "The demo captured bounded tonal analysis posture from the existing offline tonal example."
-    },
-    {
-      "id": "operator.analysis-feature.loudness-posture",
-      "status": "passed",
-      "summary": "The demo captured bounded loudness analysis posture from the existing offline loudness example."
-    },
-    {
-      "id": "operator.analysis-feature.character-semantic-posture",
-      "status": "passed",
-      "summary": "The shared analysis inspector exposes both character metrics and semantic top-tag posture across bounded synthetic presets."
-    },
-    {
-      "id": "operator.analysis-feature.offline-focused-posture",
-      "status": "passed",
-      "summary": "The receipt keeps analysis meaning explicit and offline-focused instead of pretending to be a browser, asset library, or recommendation UI."
-    },
-    {
-      "id": "operator.analysis-feature.rendered-operator-view",
-      "status": "passed",
-      "summary": "A rendered companion view makes the bounded analysis outputs visually inspectable without reading the raw receipt first."
-    }
-  ]
+  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && python3 -m json.tool demos/manifest.schema.json > /dev/null && python3 -m json.tool demos/templates/demo-manifest.example.json > /dev/null) && python3 -m json.tool demos/templates/demo-receipt.example.json > /dev/null) && python3 -m json.tool demos/coverage-matrix.json > /dev/null) && python3 -m json.tool demos/manifests/analysis-feature-inspector.demo.json > /dev/null && python3 demos/scripts/run_analysis_feature_inspector_demo.py && python3 -m json.tool demos/receipts/analysis-feature-inspector.receipt.json > /dev/null",
+  "demo_id": "analysis-feature-inspector",
+  "entrypoint": {
+    "kind": "task",
+    "value": "demo:analysis-feature-inspector"
+  },
+  "exit_code": 0,
+  "ok": true,
+  "recorded_at_epoch_ms": 1776088761262,
+  "schema": "effigy.demo.receipt.v1",
+  "schema_version": 1,
+  "stale": false,
+  "status": "passed",
+  "stderr_log_path": null,
+  "stdout_log_path": null,
+  "summary": "Demo `analysis-feature-inspector` completed via task `demo:analysis-feature-inspector`."
 }

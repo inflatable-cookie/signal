@@ -261,7 +261,8 @@ fn write_au_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
 
 fn write_custom_au_bundle(root: &PathBuf, bundle: &str, metadata: &str) {
     let bundle_root = root.join(bundle);
-    fs::create_dir_all(bundle_root.join("Contents")).expect("public local au contents should be created");
+    fs::create_dir_all(bundle_root.join("Contents"))
+        .expect("public local au contents should be created");
     fs::write(
         bundle_root.join("Contents").join("Info.plist"),
         au_info_plist_contents(metadata),

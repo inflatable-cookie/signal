@@ -112,7 +112,9 @@ fn push_vst3_bundle_if_present(
         };
         if !discovered
             .iter()
-            .any(|existing: &Vst3DiscoveredPluginType| existing.plugin_type_id == plugin.plugin_type_id)
+            .any(|existing: &Vst3DiscoveredPluginType| {
+                existing.plugin_type_id == plugin.plugin_type_id
+            })
         {
             discovered.push(plugin);
         }

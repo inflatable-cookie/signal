@@ -200,7 +200,8 @@ unsafe extern "C" fn param_get_value(_plugin: *const clap_plugin, param_id: u32,
 
 fn write_au_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
     let bundle_root = root.join(bundle);
-    fs::create_dir_all(bundle_root.join("Contents")).expect("public server au contents should be created");
+    fs::create_dir_all(bundle_root.join("Contents"))
+        .expect("public server au contents should be created");
     fs::write(
         bundle_root.join("Contents").join("Info.plist"),
         au_info_plist_contents(au_metadata_contents(plugin_type_id)),

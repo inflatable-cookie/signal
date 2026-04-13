@@ -6,9 +6,8 @@ use signal_runtime::RuntimeError;
 
 use super::super::ServerRuntimeHost;
 use super::{
-    demo_interaction_step,
-    record_broker_failure_and_convert, record_runtime_fault, runtime_error_from_failure,
-    runtime_watchdog_trigger, LifecycleRunSummary,
+    demo_interaction_step, record_broker_failure_and_convert, record_runtime_fault,
+    runtime_error_from_failure, runtime_watchdog_trigger, LifecycleRunSummary,
 };
 
 impl ServerRuntimeHost {

@@ -1,0 +1,11 @@
+[package]
+name = "signal-plugin-inventory"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Shared plugin inventory domain for Signal consumers."
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }

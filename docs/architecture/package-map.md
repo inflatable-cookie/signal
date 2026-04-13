@@ -206,6 +206,15 @@ The main naming rule is:
 - `signal-plugin`
   - plugin-host abstractions
   - common instance/state/parameter surfaces
+- `signal-plugin-inventory`
+  - shared plugin identity, descriptor, and scan-receipt domain for
+    cross-product consumers
+- `signal-plugin-library`
+  - canonical collections, folders, tags, placements, annotations, and
+    library-domain helpers
+- `signal-plugin-library-store`
+  - shared repository traits and unit-of-work seam for plugin inventory and
+    library consumers
 - `signal-plugin-clap`
   - CLAP adapter
   - typed CLAP sandbox failure classification for attach/flush/protocol fault stages

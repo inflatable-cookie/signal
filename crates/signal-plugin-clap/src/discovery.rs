@@ -65,9 +65,7 @@ impl Default for DiscoveredPluginIoSummary {
 }
 
 pub(crate) fn discover_clap_plugins_for_roots(roots: &[String]) -> Vec<ClapDiscoveredPluginType> {
-    roots.iter()
-        .flat_map(|root| scan_clap_root(root))
-        .collect()
+    roots.iter().flat_map(|root| scan_clap_root(root)).collect()
 }
 
 fn scan_clap_root(root: &str) -> Vec<ClapDiscoveredPluginType> {
@@ -130,7 +128,11 @@ fn clap_bundle_binary(bundle_root: &Path) -> Option<PathBuf> {
 
 fn discover_from_clap_library(library_path: &Path) -> Option<Vec<ClapDiscoveredPluginType>> {
     let library = unsafe { Library::new(library_path).ok()? };
-    let entry_symbol = unsafe { library.get::<*const clap_plugin_entry>(b"clap_entry\0").ok()? };
+    let entry_symbol = unsafe {
+        library
+            .get::<*const clap_plugin_entry>(b"clap_entry\0")
+            .ok()?
+    };
     let entry = unsafe { &**entry_symbol };
     let plugin_path = CString::new(library_path.to_string_lossy().to_string()).ok()?;
 
@@ -194,12 +196,8 @@ unsafe fn build_discovered_plugin(
     let features = clap_features(descriptor.features);
     let io_and_params = probe_plugin_shape(factory, &plugin_id);
 
-    let mut plugin_descriptor = PluginDescriptor::new(
-        plugin_id.clone(),
-        vendor,
-        name,
-        PluginFormat::Clap,
-    );
+    let mut plugin_descriptor =
+        PluginDescriptor::new(plugin_id.clone(), vendor, name, PluginFormat::Clap);
     if let Some(version) = version {
         plugin_descriptor = plugin_descriptor.with_version(version);
     }
@@ -210,29 +208,37 @@ unsafe fn build_discovered_plugin(
         .with_audio_buses(io_and_params.audio_buses.clone())
         .with_parameters(io_and_params.parameters.clone())
         .with_state_contract(PluginStateContract {
-        supports_snapshot: plugin_supports_extension(factory, &plugin_id, CLAP_EXT_STATE.as_ptr()),
-        supports_reset: true,
-        supports_bypass: io_and_params
-            .parameters
-            .iter()
-            .any(|parameter| parameter.domain == PluginParameterDomain::Bypass),
-        exposes_latency: plugin_supports_extension(factory, &plugin_id, CLAP_EXT_LATENCY.as_ptr()),
-        exposes_tail: plugin_supports_extension(factory, &plugin_id, CLAP_EXT_TAIL.as_ptr()),
+            supports_snapshot: plugin_supports_extension(
+                factory,
+                &plugin_id,
+                CLAP_EXT_STATE.as_ptr(),
+            ),
+            supports_reset: true,
+            supports_bypass: io_and_params
+                .parameters
+                .iter()
+                .any(|parameter| parameter.domain == PluginParameterDomain::Bypass),
+            exposes_latency: plugin_supports_extension(
+                factory,
+                &plugin_id,
+                CLAP_EXT_LATENCY.as_ptr(),
+            ),
+            exposes_tail: plugin_supports_extension(factory, &plugin_id, CLAP_EXT_TAIL.as_ptr()),
         })
         .with_processing_contract(PluginProcessingContract {
-        max_block_frames: 4096,
-        sample_accurate_automation: !io_and_params.parameters.is_empty(),
-        accepts_midi: io_and_params.default_io_layout.midi_inputs > 0,
-        accepts_note_events: io_and_params.default_io_layout.midi_inputs > 0,
-        supports_note_expression: io_and_params.default_io_layout.midi_inputs > 0,
-        produces_midi: io_and_params.default_io_layout.midi_outputs > 0,
-        silence_aware: true,
+            max_block_frames: 4096,
+            sample_accurate_automation: !io_and_params.parameters.is_empty(),
+            accepts_midi: io_and_params.default_io_layout.midi_inputs > 0,
+            accepts_note_events: io_and_params.default_io_layout.midi_inputs > 0,
+            supports_note_expression: io_and_params.default_io_layout.midi_inputs > 0,
+            produces_midi: io_and_params.default_io_layout.midi_outputs > 0,
+            silence_aware: true,
         })
         .with_lifecycle_contract(PluginLifecycleContract {
-        requires_main_thread_for_state: false,
-        supports_prepare: true,
-        supports_activate: true,
-        supports_reset_while_active: true,
+            requires_main_thread_for_state: false,
+            supports_prepare: true,
+            supports_activate: true,
+            supports_reset_while_active: true,
         });
 
     Some(ClapDiscoveredPluginType {
@@ -275,15 +281,16 @@ unsafe fn probe_plugin_shape(
     summary
 }
 
-unsafe fn plugin_io_and_parameter_summary(plugin: *const clap_sys::plugin::clap_plugin) -> DiscoveredPluginIoSummary {
+unsafe fn plugin_io_and_parameter_summary(
+    plugin: *const clap_sys::plugin::clap_plugin,
+) -> DiscoveredPluginIoSummary {
     let mut summary = DiscoveredPluginIoSummary::default();
 
     let get_extension = (*plugin).get_extension;
-    let audio_ports = get_extension
-        .and_then(|get_extension| {
-            let extension = get_extension(plugin, CLAP_EXT_AUDIO_PORTS.as_ptr());
-            (!extension.is_null()).then_some(extension.cast::<clap_plugin_audio_ports>())
-        });
+    let audio_ports = get_extension.and_then(|get_extension| {
+        let extension = get_extension(plugin, CLAP_EXT_AUDIO_PORTS.as_ptr());
+        (!extension.is_null()).then_some(extension.cast::<clap_plugin_audio_ports>())
+    });
     if let Some(audio_ports) = audio_ports {
         summary.audio_buses = audio_buses_from_extension(plugin, audio_ports);
         summary.default_io_layout.audio_inputs = summary
@@ -300,21 +307,19 @@ unsafe fn plugin_io_and_parameter_summary(plugin: *const clap_sys::plugin::clap_
             .sum();
     }
 
-    let note_ports = get_extension
-        .and_then(|get_extension| {
-            let extension = get_extension(plugin, CLAP_EXT_NOTE_PORTS.as_ptr());
-            (!extension.is_null()).then_some(extension.cast::<clap_plugin_note_ports>())
-        });
+    let note_ports = get_extension.and_then(|get_extension| {
+        let extension = get_extension(plugin, CLAP_EXT_NOTE_PORTS.as_ptr());
+        (!extension.is_null()).then_some(extension.cast::<clap_plugin_note_ports>())
+    });
     if let Some(note_ports) = note_ports {
         summary.default_io_layout.midi_inputs = note_port_count(plugin, note_ports, true);
         summary.default_io_layout.midi_outputs = note_port_count(plugin, note_ports, false);
     }
 
-    let params = get_extension
-        .and_then(|get_extension| {
-            let extension = get_extension(plugin, CLAP_EXT_PARAMS.as_ptr());
-            (!extension.is_null()).then_some(extension.cast::<clap_plugin_params>())
-        });
+    let params = get_extension.and_then(|get_extension| {
+        let extension = get_extension(plugin, CLAP_EXT_PARAMS.as_ptr());
+        (!extension.is_null()).then_some(extension.cast::<clap_plugin_params>())
+    });
     if let Some(params) = params {
         summary.parameters = parameter_descriptors_from_extension(plugin, params);
     }
@@ -340,11 +345,7 @@ unsafe fn audio_buses_from_extension(
             if get(plugin, index, is_input, info.as_mut_ptr()) {
                 let info = info.assume_init();
                 buses.push(PluginAudioBusDescriptor {
-                    bus_id: format!(
-                        "clap:{}:{}",
-                        if is_input { "in" } else { "out" },
-                        info.id
-                    ),
+                    bus_id: format!("clap:{}:{}", if is_input { "in" } else { "out" }, info.id),
                     name: clap_char_buffer_to_string(&info.name),
                     direction: if is_input {
                         PluginAudioBusDirection::Input
@@ -522,7 +523,10 @@ fn clap_features(features_ptr: *const *const c_char) -> Vec<PluginFeature> {
 }
 
 fn clap_char_buffer_to_string(buffer: &[c_char]) -> String {
-    let len = buffer.iter().position(|value| *value == 0).unwrap_or(buffer.len());
+    let len = buffer
+        .iter()
+        .position(|value| *value == 0)
+        .unwrap_or(buffer.len());
     let bytes = buffer[..len]
         .iter()
         .map(|value| *value as u8)
@@ -534,7 +538,11 @@ fn cstr_ptr_to_string(ptr: *const c_char) -> Option<String> {
     if ptr.is_null() {
         None
     } else {
-        Some(unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned())
+        Some(
+            unsafe { CStr::from_ptr(ptr) }
+                .to_string_lossy()
+                .into_owned(),
+        )
     }
 }
 

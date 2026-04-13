@@ -93,7 +93,8 @@ fn main() {
 
     if formats.is_empty() || formats.contains(&PluginFormat::Lv2) {
         let adapter = Lv2HostAdapter::default();
-        let batch = adapter.discover_plugins_for_roots_with_diagnostics(Lv2HostPlatform::Linux, &roots);
+        let batch =
+            adapter.discover_plugins_for_roots_with_diagnostics(Lv2HostPlatform::Linux, &roots);
         for plugin in batch.discovered {
             assert!(
                 discovered_type_ids.contains(&plugin.plugin_type_id.0),
@@ -211,7 +212,9 @@ fn parse_args() -> (Vec<String>, Vec<PluginFormat>) {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--root" => roots.push(args.next().expect("--root expects a value")),
-            "--format" => formats.push(parse_format(&args.next().expect("--format expects a value"))),
+            "--format" => formats.push(parse_format(
+                &args.next().expect("--format expects a value"),
+            )),
             other => panic!("unsupported argument: {other}"),
         }
     }

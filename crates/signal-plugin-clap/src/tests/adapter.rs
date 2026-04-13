@@ -41,7 +41,10 @@ fn clap_adapter_scans_real_clap_libraries_from_roots() {
     assert_eq!(discovered.len(), 1);
     let discovered = &discovered[0];
     assert_eq!(discovered.plugin_type_id.0, "com.signal.real-scan-fixture");
-    assert_eq!(discovered.descriptor.plugin_id, "com.signal.real-scan-fixture");
+    assert_eq!(
+        discovered.descriptor.plugin_id,
+        "com.signal.real-scan-fixture"
+    );
     assert_eq!(discovered.descriptor.name, "Signal Real Scan Fixture");
     assert_eq!(discovered.descriptor.vendor, "Signal");
     assert_eq!(discovered.default_io_layout.audio_inputs, 2);

@@ -51,12 +51,7 @@ fn main() {
     );
 }
 
-fn sine_audio(
-    frequency_hz: f32,
-    seconds: f32,
-    sample_rate: u32,
-    amplitude: f32,
-) -> AudioBuffer {
+fn sine_audio(frequency_hz: f32, seconds: f32, sample_rate: u32, amplitude: f32) -> AudioBuffer {
     let frames = (seconds * sample_rate as f32).round() as usize;
     let mut samples = Vec::with_capacity(frames);
     for index in 0..frames {

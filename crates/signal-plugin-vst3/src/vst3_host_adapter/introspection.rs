@@ -103,8 +103,7 @@ struct RawPluginFactory {
 
 #[repr(C)]
 struct PluginFactoryVTable {
-    query_interface:
-        unsafe extern "C" fn(*mut c_void, *const c_void, *mut *mut c_void) -> i32,
+    query_interface: unsafe extern "C" fn(*mut c_void, *const c_void, *mut *mut c_void) -> i32,
     add_ref: unsafe extern "C" fn(*mut c_void) -> u32,
     release: unsafe extern "C" fn(*mut c_void) -> u32,
     get_factory_info: unsafe extern "C" fn(*mut c_void, *mut PFactoryInfo) -> i32,
@@ -327,7 +326,12 @@ fn read_vst3_factory_snapshot(
         let vendor = document
             .factory_info
             .and_then(|factory| factory.vendor)
-            .or_else(|| document.classes.iter().find_map(|class| class.vendor.clone()));
+            .or_else(|| {
+                document
+                    .classes
+                    .iter()
+                    .find_map(|class| class.vendor.clone())
+            });
         let classes = document
             .classes
             .into_iter()
@@ -497,18 +501,21 @@ fn candidate_moduleinfo_paths(bundle_root: &Path) -> Vec<PathBuf> {
     ]
 }
 
-fn resolve_module_binary_path(bundle_root: &Path, platform: Vst3HostPlatform) -> io::Result<PathBuf> {
+fn resolve_module_binary_path(
+    bundle_root: &Path,
+    platform: Vst3HostPlatform,
+) -> io::Result<PathBuf> {
     let bundle = read_vst3_bundle_info(bundle_root)?;
     let bundle_stem = bundle_root
         .file_stem()
         .and_then(|stem| stem.to_str())
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid VST3 bundle name"))?;
-    let executable_name = bundle
-        .executable_name
-        .as_deref()
-        .unwrap_or(bundle_stem);
+    let executable_name = bundle.executable_name.as_deref().unwrap_or(bundle_stem);
     let direct_candidates = match platform {
-        Vst3HostPlatform::MacOs => vec![bundle_root.join("Contents").join("MacOS").join(executable_name)],
+        Vst3HostPlatform::MacOs => vec![bundle_root
+            .join("Contents")
+            .join("MacOS")
+            .join(executable_name)],
         Vst3HostPlatform::Linux => vec![
             bundle_root
                 .join("Contents")
@@ -609,8 +616,7 @@ fn default_features(is_instrument: bool) -> Vec<PluginFeature> {
 
 fn class_is_instrument(class: &Vst3FactoryClass) -> bool {
     class.subcategories.iter().any(|subcategory| {
-        subcategory.eq_ignore_ascii_case("instrument")
-            || subcategory.eq_ignore_ascii_case("synth")
+        subcategory.eq_ignore_ascii_case("instrument") || subcategory.eq_ignore_ascii_case("synth")
     }) || class.category.eq_ignore_ascii_case("Instrument")
 }
 
@@ -665,11 +671,10 @@ fn sanitize_plugin_id_segment(value: &str) -> String {
     sanitized.trim_matches('-').to_string()
 }
 
-fn plist_string(
-    dict: &plist::Dictionary,
-    key: &str,
-) -> Option<String> {
-    dict.get(key).and_then(plist::Value::as_string).map(str::to_string)
+fn plist_string(dict: &plist::Dictionary, key: &str) -> Option<String> {
+    dict.get(key)
+        .and_then(plist::Value::as_string)
+        .map(str::to_string)
 }
 
 fn plist_u16(dict: &plist::Dictionary, key: &str) -> Option<u16> {
@@ -679,13 +684,15 @@ fn plist_u16(dict: &plist::Dictionary, key: &str) -> Option<u16> {
 }
 
 fn plist_string_array(dict: &plist::Dictionary, key: &str) -> Option<Vec<String>> {
-    dict.get(key).and_then(plist::Value::as_array).map(|values| {
-        values
-            .iter()
-            .filter_map(plist::Value::as_string)
-            .map(str::to_string)
-            .collect::<Vec<_>>()
-    })
+    dict.get(key)
+        .and_then(plist::Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(plist::Value::as_string)
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
 }
 
 fn parse_feature_list(raw: &str) -> io::Result<Vec<PluginFeature>> {

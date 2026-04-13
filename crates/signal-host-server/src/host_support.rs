@@ -54,7 +54,9 @@ mod sandbox_sessions;
 mod summary_types;
 
 pub use demo::ensure_default_demo_plugin_override;
-pub(crate) use demo::{demo_interaction_step, server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly};
+pub(crate) use demo::{
+    demo_interaction_step, server_demo_runtime_assembly, ServerDemoPluginSandboxAssembly,
+};
 pub(crate) use discovery::discovered_plugins_for_scan;
 pub(crate) use faults::{
     build_fault_envelope, extract_prepare_metadata, lifecycle_stage_for_request,
@@ -83,6 +85,6 @@ pub(crate) use sandbox_sessions::{
     ensure_vst3_sandbox_session, teardown_broker_sandbox_session, SandboxBrokerSession,
 };
 pub use summary_types::{
-    ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary,
-    ServerPluginDispatchSummary, ServerRuntimeHostSummary, ServerTransportSummary,
+    ServerExecutionSummary, ServerFaultSummary, ServerPayloadSummary, ServerPluginDispatchSummary,
+    ServerRuntimeHostSummary, ServerTransportSummary,
 };

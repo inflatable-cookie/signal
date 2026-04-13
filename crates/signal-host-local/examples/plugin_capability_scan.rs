@@ -180,7 +180,9 @@ fn parse_args() -> (Vec<String>, Vec<PluginFormat>) {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--root" => roots.push(args.next().expect("--root expects a value")),
-            "--format" => formats.push(parse_format(&args.next().expect("--format expects a value"))),
+            "--format" => formats.push(parse_format(
+                &args.next().expect("--format expects a value"),
+            )),
             other => panic!("unsupported argument: {other}"),
         }
     }

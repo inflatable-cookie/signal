@@ -64,6 +64,16 @@ explicitly promoted back into active planning.
 - `signal-plugin`
   - format-neutral plugin contracts, model, sandbox protocol, and lifecycle
     vocabulary
+- `signal-plugin-inventory`
+  - shared plugin inventory domain for cross-product consumers
+  - currently bootstrap-level and not yet wired into runtime-owned discovery
+- `signal-plugin-library`
+  - canonical plugin library domain for cross-product organization semantics
+  - currently bootstrap-level and not yet adopted by downstream consumers
+- `signal-plugin-library-store`
+  - storage traits and mutation batch seam for shared plugin inventory/library
+    consumers
+  - currently defines trait boundaries only, not a shared concrete adapter
 - `signal-plugin-clap`
   - CLAP-specific adapter and sandbox harness realization
   - currently still contains panic-oriented `expect(...)` paths inside request

@@ -82,7 +82,11 @@ fn parse_au_component_metadata(metadata_path: &Path) -> io::Result<AuComponentMe
     let component_name = required_plist_string(component, "name")?;
     let bundle_identifier = optional_plist_string(root, "CFBundleIdentifier");
     let vendor = optional_plist_string(root, "SignalVendor")
-        .or_else(|| component_name.split_once(':').map(|(vendor, _)| vendor.trim().to_string()))
+        .or_else(|| {
+            component_name
+                .split_once(':')
+                .map(|(vendor, _)| vendor.trim().to_string())
+        })
         .unwrap_or_else(|| "Unknown".into());
     let name = optional_plist_string(root, "SignalDisplayName").unwrap_or_else(|| {
         component_name
@@ -220,10 +224,7 @@ fn parse_feature_list(value: &str) -> io::Result<Vec<PluginFeature>> {
         .collect()
 }
 
-fn required_plist_string(
-    dict: &plist::Dictionary,
-    key: &str,
-) -> io::Result<String> {
+fn required_plist_string(dict: &plist::Dictionary, key: &str) -> io::Result<String> {
     optional_plist_string(dict, key).ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidData,

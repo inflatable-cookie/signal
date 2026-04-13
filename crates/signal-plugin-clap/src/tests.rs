@@ -15,8 +15,8 @@ mod tests {
     use std::{
         fs,
         path::PathBuf,
-        process::Command,
         process,
+        process::Command,
         time::{SystemTime, UNIX_EPOCH},
     };
 

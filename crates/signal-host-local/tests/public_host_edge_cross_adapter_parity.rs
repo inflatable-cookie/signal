@@ -21,11 +21,7 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     let au_root = temp_public_local_au_scan_root();
 
     host.start_plugin_scan(PluginScanRequest {
-        roots: vec![
-            clap_root.root(),
-            vst3_root.root(),
-            au_root.root(),
-        ],
+        roots: vec![clap_root.root(), vst3_root.root(), au_root.root()],
         formats: vec![PluginFormat::Clap, PluginFormat::Vst3, PluginFormat::Au],
     })
     .expect("public local parity scan should succeed");
