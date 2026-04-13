@@ -11,76 +11,6 @@
   { task = "demo:conventions" },
   { run = "python3 -m json.tool demos/coverage-matrix.json > /dev/null" },
 ]
-"demo:sandbox-lifecycle" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/plugin-sandbox-lifecycle.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_sandbox_lifecycle_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/plugin-sandbox-lifecycle.receipt.json > /dev/null" },
-]
-"demo:runtime-recovery-inspector" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/runtime-recovery-inspector.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_runtime_recovery_inspector_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/runtime-recovery-inspector.receipt.json > /dev/null" },
-]
-"demo:supervisor-runtime-boundary-companion" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/runtime-supervisor-boundary-companion.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_runtime_supervisor_boundary_companion_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/runtime-supervisor-boundary-companion.receipt.json > /dev/null" },
-]
-"demo:macos-au-coreaudio-boundary" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/macos-au-coreaudio-boundary.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_macos_au_coreaudio_boundary_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/macos-au-coreaudio-boundary.receipt.json > /dev/null" },
-]
-"demo:local-server-host-comparison" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/local-server-host-comparison.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_local_server_host_comparison_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/local-server-host-comparison.receipt.json > /dev/null" },
-]
-"demo:hardware-topology-diagnostics" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/hardware-topology-diagnostics.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_hardware_topology_diagnostics_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/hardware-topology-diagnostics.receipt.json > /dev/null" },
-]
-"demo:graph-execution-inspector" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/graph-execution-inspector.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_graph_execution_inspector_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/graph-execution-inspector.receipt.json > /dev/null" },
-]
-"demo:dsp-processing-lab" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/dsp-processing-lab.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_dsp_processing_lab_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/dsp-processing-lab.receipt.json > /dev/null" },
-]
-"demo:analysis-feature-inspector" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/analysis-feature-inspector.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_analysis_feature_inspector_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/analysis-feature-inspector.receipt.json > /dev/null" },
-]
-"demo:plugin-capability-browser" = [
-  { task = "demo:plugin-capability-browser:proof" },
-  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py --scan-mode system --serve" },
-]
-"demo:plugin-capability-browser:proof" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/plugin-capability-browser.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/plugin-capability-browser.receipt.json > /dev/null" },
-]
-"demo:linux-lv2-and-backend-boundary" = [
-  { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/linux-lv2-backend-boundary.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_linux_lv2_and_backend_boundary_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/linux-lv2-backend-boundary.receipt.json > /dev/null" },
-]
 
 [demos.plugin-sandbox-lifecycle]
 title = "Signal Sandbox Lifecycle Demo"
@@ -91,7 +21,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-plugin-sandbox", "signal-ipc"]
 tags = ["plugin", "sandbox", "lifecycle"]
-task = "demo:sandbox-lifecycle"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/plugin-sandbox-lifecycle.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_sandbox_lifecycle_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/plugin-sandbox-lifecycle.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/plugin-sandbox-lifecycle.receipt.json"
 artifacts = [
   "demos/receipts/plugin-sandbox-lifecycle.view.html",
@@ -107,7 +42,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-runtime"]
 tags = ["runtime", "recovery", "supervisor"]
-task = "demo:runtime-recovery-inspector"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/runtime-recovery-inspector.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_runtime_recovery_inspector_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/runtime-recovery-inspector.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/runtime-recovery-inspector.receipt.json"
 artifacts = [
   "demos/receipts/runtime-recovery-inspector.view.html",
@@ -123,7 +63,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-supervisor-tools"]
 tags = ["runtime", "supervisor", "boundary"]
-task = "demo:supervisor-runtime-boundary-companion"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/runtime-supervisor-boundary-companion.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_runtime_supervisor_boundary_companion_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/runtime-supervisor-boundary-companion.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/runtime-supervisor-boundary-companion.receipt.json"
 artifacts = [
   "demos/receipts/runtime-supervisor-boundary-companion.view.html",
@@ -139,7 +84,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-host-local", "signal-host-server"]
 tags = ["host", "comparison", "local-server"]
-task = "demo:local-server-host-comparison"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/local-server-host-comparison.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_local_server_host_comparison_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/local-server-host-comparison.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/local-server-host-comparison.receipt.json"
 artifacts = [
   "demos/receipts/local-server-host-comparison.view.html",
@@ -155,7 +105,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-hardware", "signal-hardware-coreaudio"]
 tags = ["hardware", "topology", "diagnostics"]
-task = "demo:hardware-topology-diagnostics"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/hardware-topology-diagnostics.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_hardware_topology_diagnostics_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/hardware-topology-diagnostics.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/hardware-topology-diagnostics.receipt.json"
 artifacts = [
   "demos/receipts/hardware-topology-diagnostics.view.html",
@@ -171,7 +126,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-plugin-au", "signal-hardware-coreaudio", "signal-host-local"]
 tags = ["hardware", "macos", "au", "coreaudio"]
-task = "demo:macos-au-coreaudio-boundary"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/macos-au-coreaudio-boundary.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_macos_au_coreaudio_boundary_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/macos-au-coreaudio-boundary.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/macos-au-coreaudio-boundary.receipt.json"
 artifacts = [
   "demos/receipts/macos-au-coreaudio-boundary.view.html",
@@ -187,7 +147,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-plugin-lv2", "signal-host-server", "signal-supervisor-tools"]
 tags = ["plugin", "linux", "lv2", "backend"]
-task = "demo:linux-lv2-and-backend-boundary"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/linux-lv2-backend-boundary.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_linux_lv2_and_backend_boundary_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/linux-lv2-backend-boundary.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/linux-lv2-backend-boundary.receipt.json"
 artifacts = [
   "demos/receipts/linux-lv2-backend-boundary.view.html",
@@ -203,7 +168,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-primitives", "signal-graph"]
 tags = ["graph", "routing", "execution"]
-task = "demo:graph-execution-inspector"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/graph-execution-inspector.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_graph_execution_inspector_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/graph-execution-inspector.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/graph-execution-inspector.receipt.json"
 artifacts = [
   "demos/receipts/graph-execution-inspector.view.html",
@@ -219,7 +189,12 @@ mode = "headless"
 status = "ready"
 covers = ["signal-dsp", "signal-dsp-resample", "signal-dsp-spectral"]
 tags = ["dsp", "processing", "lab"]
-task = "demo:dsp-processing-lab"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/dsp-processing-lab.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_dsp_processing_lab_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/dsp-processing-lab.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/dsp-processing-lab.receipt.json"
 artifacts = [
   "demos/receipts/dsp-processing-lab.view.html",
@@ -242,7 +217,12 @@ covers = [
   "signal-analysis-tonal",
 ]
 tags = ["analysis", "inspector", "offline"]
-task = "demo:analysis-feature-inspector"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/analysis-feature-inspector.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_analysis_feature_inspector_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/analysis-feature-inspector.receipt.json > /dev/null" },
+]
 receipt = "demos/receipts/analysis-feature-inspector.receipt.json"
 artifacts = [
   "demos/receipts/analysis-feature-inspector.view.html",
@@ -266,6 +246,12 @@ covers = [
   "signal-host-server",
 ]
 tags = ["plugin", "browser", "interactive"]
-task = "demo:plugin-capability-browser"
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/plugin-capability-browser.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/plugin-capability-browser.receipt.json > /dev/null" },
+  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py --scan-mode system --serve" },
+]
 receipt = "demos/receipts/plugin-capability-browser.receipt.json"
 artifacts = ["demos/scenarios/plugin-capability-browser.default.md"]
