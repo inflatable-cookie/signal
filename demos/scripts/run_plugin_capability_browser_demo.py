@@ -324,7 +324,7 @@ def run_scan_example(
         "-p",
         package,
         "--example",
-        "plugin_capability_scan",
+        f"{package.replace('-', '_')}_plugin_capability_scan",
         "--",
     ]
     for fmt in formats:

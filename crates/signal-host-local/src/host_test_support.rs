@@ -14,5 +14,5 @@ pub(crate) use assertions::{
 pub(crate) use setup::{
     prepare_local_host_for_offline_render, prepare_local_host_with_lifecycle,
     prepare_local_host_without_lifecycle, temp_artifact_dir, temp_local_au_scan_root,
-    temp_local_vst3_scan_root, unique_test_path, write_test_wav, TempPluginScanRoot,
+    temp_local_vst3_scan_root, unique_test_path, write_test_wav,
 };

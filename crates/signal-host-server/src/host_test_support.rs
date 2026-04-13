@@ -13,5 +13,5 @@ pub(crate) use assertions::{
 pub(crate) use setup::{
     prepare_server_host_with_lifecycle, prepare_server_host_without_lifecycle,
     temp_media_fixture_path, temp_server_au_scan_root, temp_server_lv2_scan_root,
-    temp_server_vst3_scan_root, TempPluginScanRoot,
+    temp_server_vst3_scan_root,
 };

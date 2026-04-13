@@ -3,7 +3,6 @@ mod dispatch_accounting;
 #[path = "event_assertions/lifecycle_faults.rs"]
 mod lifecycle_faults;
 
-use super::super::super::super::*;
 use crate::LocalRuntimeHostSummary;
 use signal_runtime::RuntimeSupervisorReport;
 

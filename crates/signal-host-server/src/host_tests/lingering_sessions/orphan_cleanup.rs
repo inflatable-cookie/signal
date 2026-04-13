@@ -1,5 +1,4 @@
 use crate::host::host_test_support::prepare_server_host_with_lifecycle;
-use signal_plugin_clap::ClapSandboxLifecycleHarness;
 use signal_runtime::{
     LingeringCleanupMode, PluginSandboxTransportStage, RecoveryRestartIntent, RuntimeConfig,
     RuntimeErrorKind, RuntimeReadiness, SignalRuntime, TransportAttachIntent,

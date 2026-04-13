@@ -3,7 +3,6 @@ mod continuity;
 #[path = "prework_cache/lifecycle.rs"]
 mod lifecycle;
 
-use super::super::super::super::*;
 use crate::LocalRuntimeHostSummary;
 
 pub(super) fn assert_timeout_prework_cache(

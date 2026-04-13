@@ -1,5 +1,3 @@
-use super::super::super::super::*;
-
 pub(super) fn assert_timeout_topology_dispatch(
     supervisor: &signal_runtime::RuntimeSupervisorReport,
 ) {

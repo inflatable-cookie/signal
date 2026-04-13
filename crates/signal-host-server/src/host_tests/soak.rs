@@ -4,10 +4,9 @@ use super::super::host_test_support::{
 };
 use super::super::ServerRuntimeHost;
 use signal_runtime::{
-    BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
+    BlockDispatchStage, BrokerInvalidationStage, CompletionSlotStage,
     HeartbeatCycleStage, PluginSandboxLifecycleStage, PluginSandboxTransportStage,
-    RecoveryRestartIntent, RuntimeConfig, RuntimeObservationApi,
-    SandboxOperationFailureStage, SignalRuntime, StopReason,
+    RecoveryRestartIntent, RuntimeConfig, SignalRuntime, StopReason,
 };
 
 #[path = "soak/lease_rollover.rs"]
