@@ -23,6 +23,7 @@ Example entry:
 `(2025-11-21 22:46:10 UTC) [changed] Normalised IPC event naming and removed response kind in favour of correlated events.`
 
 ## [Unreleased]
+(2026-04-13 13:40:11 UTC) [added] Promoted Signal's official demo task pack into native Effigy `[demos.*]` registry entries so the current browser, inspect, history, and live terminal surfaces can discover the repo's real demo cohort directly.
 (2026-03-12 22:51:28 UTC) [dev] Widened runtime-owned plugin discovery receipts with format-coverage and backend-neutral capability aggregates for the opening `g05` backend-breadth tranche.
 (2026-03-12 22:51:28 UTC) [docs] Documented the widened `g05.001` plugin discovery receipt boundary and moved the roadmap queue to conformance proof.
 (2026-03-12 22:07:21 UTC) [dev] Added a combined `g04` closeout description mode and repo-owned acceptance task for conformance, release baseline, and post-generation queue handoff.

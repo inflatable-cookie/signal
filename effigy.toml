@@ -112,6 +112,7 @@ qa = [
   { task = "qa:docs:agent-defaults" },
   { task = "qa:northstar" },
 ]
+
 "acceptance:analysis" = [
   { run = "cargo test -p signal-analysis harness -- --nocapture" },
   { run = "cargo test -p signal-analysis-rhythm harness -- --nocapture" },
@@ -591,6 +592,194 @@ test = "cargo test --workspace --no-run"
 "reference:legacy:configure:debug" = "cmake -S legacy/cpp -B legacy/cpp/build"
 "reference:legacy:compile:debug" = "cmake --build legacy/cpp/build --config Debug"
 "audit:god-files" = "effigy scan god-files --fail-on-findings"
+
+[demos.plugin-sandbox-lifecycle]
+title = "Signal Sandbox Lifecycle Demo"
+summary = "Exercises the sandbox broker lifecycle, timeout recovery, and shutdown proof through the existing repo-owned task."
+proof = "Operator-visible proof that sandbox lifecycle state, timeout cleanup, and rendered evidence stay inspectable through Effigy's demo surface."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-plugin-sandbox", "signal-ipc"]
+tags = ["plugin", "sandbox", "lifecycle"]
+task = "demo:sandbox-lifecycle"
+receipt = "demos/receipts/plugin-sandbox-lifecycle.receipt.json"
+artifacts = [
+  "demos/receipts/plugin-sandbox-lifecycle.view.html",
+  "demos/scenarios/plugin-sandbox-lifecycle.default.md",
+]
+
+[demos.runtime-recovery-inspector]
+title = "Signal Runtime Recovery Inspector Demo"
+summary = "Captures runtime supervisor readiness, watchdog, degraded-surface, and fault posture through the existing example-backed proof task."
+proof = "Operator-visible proof that runtime recovery truth can be discovered, run, and reviewed inside Effigy's demo registry instead of raw task memory."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-runtime"]
+tags = ["runtime", "recovery", "supervisor"]
+task = "demo:runtime-recovery-inspector"
+receipt = "demos/receipts/runtime-recovery-inspector.receipt.json"
+artifacts = [
+  "demos/receipts/runtime-recovery-inspector.view.html",
+  "demos/scenarios/runtime-recovery-inspector.default.md",
+]
+
+[demos.supervisor-runtime-boundary-companion]
+title = "Signal Runtime Supervisor Boundary Companion Demo"
+summary = "Wraps the existing supervisor boundary descriptors and acceptance proof as a companion to the runtime recovery inspector."
+proof = "Operator-visible proof that supervisor-owned interruption and fault-diagnostic truth is discoverable as a first-class demo surface."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-supervisor-tools"]
+tags = ["runtime", "supervisor", "boundary"]
+task = "demo:supervisor-runtime-boundary-companion"
+receipt = "demos/receipts/runtime-supervisor-boundary-companion.receipt.json"
+artifacts = [
+  "demos/receipts/runtime-supervisor-boundary-companion.view.html",
+  "demos/scenarios/runtime-supervisor-boundary-companion.default.md",
+]
+
+[demos.local-server-host-comparison]
+title = "Signal Local Server Host Comparison Demo"
+summary = "Compares the existing local and server host bootstrap surfaces through one bounded repo-owned proof task."
+proof = "Operator-visible proof that host lifecycle truth and local-versus-server differences stay inspectable through Effigy's demo browser."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-host-local", "signal-host-server"]
+tags = ["host", "comparison", "local-server"]
+task = "demo:local-server-host-comparison"
+receipt = "demos/receipts/local-server-host-comparison.receipt.json"
+artifacts = [
+  "demos/receipts/local-server-host-comparison.view.html",
+  "demos/scenarios/local-server-host-comparison.default.md",
+]
+
+[demos.hardware-topology-diagnostics]
+title = "Signal Hardware Topology Diagnostics Demo"
+summary = "Captures native local-host and simulated server-host hardware posture through the existing summary-driven demo task."
+proof = "Operator-visible proof that native-versus-simulated hardware topology truth is discoverable and reviewable as a first-class demo."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-hardware", "signal-hardware-coreaudio"]
+tags = ["hardware", "topology", "diagnostics"]
+task = "demo:hardware-topology-diagnostics"
+receipt = "demos/receipts/hardware-topology-diagnostics.receipt.json"
+artifacts = [
+  "demos/receipts/hardware-topology-diagnostics.view.html",
+  "demos/scenarios/hardware-topology-diagnostics.default.md",
+]
+
+[demos.macos-au-coreaudio-boundary]
+title = "Signal macOS AU CoreAudio Boundary Demo"
+summary = "Runs the existing macOS-specific AU and CoreAudio proof lane through one dedicated demo entry."
+proof = "Operator-visible proof that the macOS AU/CoreAudio boundary is queryable and reviewable through Effigy's demo registry."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-plugin-au", "signal-hardware-coreaudio", "signal-host-local"]
+tags = ["hardware", "macos", "au", "coreaudio"]
+task = "demo:macos-au-coreaudio-boundary"
+receipt = "demos/receipts/macos-au-coreaudio-boundary.receipt.json"
+artifacts = [
+  "demos/receipts/macos-au-coreaudio-boundary.view.html",
+  "demos/scenarios/macos-au-coreaudio-boundary.default.md",
+]
+
+[demos.linux-lv2-and-backend-boundary]
+title = "Signal Linux LV2 And Backend Boundary Demo"
+summary = "Runs the existing Linux LV2 execution and backend identity proof lane through one dedicated demo entry."
+proof = "Operator-visible proof that Linux-specific LV2 and backend boundary truth is queryable and reviewable through Effigy's demo registry."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-plugin-lv2", "signal-host-server", "signal-supervisor-tools"]
+tags = ["plugin", "linux", "lv2", "backend"]
+task = "demo:linux-lv2-and-backend-boundary"
+receipt = "demos/receipts/linux-lv2-backend-boundary.receipt.json"
+artifacts = [
+  "demos/receipts/linux-lv2-backend-boundary.view.html",
+  "demos/scenarios/linux-lv2-backend-boundary.default.md",
+]
+
+[demos.graph-execution-inspector]
+title = "Signal Graph Execution Inspector Demo"
+summary = "Wraps the existing multichannel, sidechain, multi-bus, and spatial graph proof surfaces through one shared demo."
+proof = "Operator-visible proof that graph-routing boundary posture stays inspectable through Effigy's demo browser instead of raw descriptor commands."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-primitives", "signal-graph"]
+tags = ["graph", "routing", "execution"]
+task = "demo:graph-execution-inspector"
+receipt = "demos/receipts/graph-execution-inspector.receipt.json"
+artifacts = [
+  "demos/receipts/graph-execution-inspector.view.html",
+  "demos/scenarios/graph-execution-inspector.default.md",
+]
+
+[demos.dsp-processing-lab]
+title = "Signal DSP Processing Lab Demo"
+summary = "Wraps the existing stretch, marker-analysis, and transform-artifact proof family through one shared demo."
+proof = "Operator-visible proof that DSP processing posture is discoverable and reviewable through Effigy's demo surface instead of loose acceptance commands."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = ["signal-dsp", "signal-dsp-resample", "signal-dsp-spectral"]
+tags = ["dsp", "processing", "lab"]
+task = "demo:dsp-processing-lab"
+receipt = "demos/receipts/dsp-processing-lab.receipt.json"
+artifacts = [
+  "demos/receipts/dsp-processing-lab.view.html",
+  "demos/scenarios/dsp-processing-lab.default.md",
+]
+
+[demos.analysis-feature-inspector]
+title = "Signal Analysis Feature Inspector Demo"
+summary = "Wraps the existing rhythm, tonal, loudness, character, and semantic inspection proof family through one shared demo."
+proof = "Operator-visible proof that bounded analysis posture is discoverable and reviewable through Effigy's demo surface."
+owner = "signal"
+mode = "headless"
+status = "ready"
+covers = [
+  "signal-analysis",
+  "signal-analysis-character",
+  "signal-analysis-embed",
+  "signal-analysis-loudness",
+  "signal-analysis-rhythm",
+  "signal-analysis-tonal",
+]
+tags = ["analysis", "inspector", "offline"]
+task = "demo:analysis-feature-inspector"
+receipt = "demos/receipts/analysis-feature-inspector.receipt.json"
+artifacts = [
+  "demos/receipts/analysis-feature-inspector.view.html",
+  "demos/scenarios/analysis-feature-inspector.default.md",
+]
+
+[demos.plugin-capability-browser]
+title = "Signal Plugin Capability Browser"
+summary = "Launches the bounded interactive plugin browser and keeps the official proof receipt and operator notes attached to one demo entry."
+proof = "Operator-visible proof that real plugin inventory, host launchability, live terminal output, and bounded interaction can be driven through Effigy's demo browser."
+owner = "signal"
+mode = "interactive"
+status = "ready"
+covers = [
+  "signal-plugin",
+  "signal-plugin-clap",
+  "signal-plugin-vst3",
+  "signal-plugin-au",
+  "signal-plugin-lv2",
+  "signal-host-local",
+  "signal-host-server",
+]
+tags = ["plugin", "browser", "interactive"]
+task = "demo:plugin-capability-browser"
+receipt = "demos/receipts/plugin-capability-browser.receipt.json"
+artifacts = ["demos/scenarios/plugin-capability-browser.default.md"]
 
 [docs_policy.indexes.vision]
 file = "docs/vision/README.md"
