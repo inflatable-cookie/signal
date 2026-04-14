@@ -17,10 +17,10 @@ covers = [
 tags = ["plugin", "browser", "interactive"]
 run = [
   { task = "demo:coverage-matrix" },
-  { run = "python3 -m json.tool demos/manifests/plugin-capability-browser.demo.json > /dev/null" },
-  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py" },
-  { run = "python3 -m json.tool demos/receipts/plugin-capability-browser.receipt.json > /dev/null" },
-  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py --scan-mode system --serve" },
+  { run = "bun -e \"await Bun.file('demos/manifests/plugin-capability-browser.demo.json').json()\"" },
+  { run = "bun run demos/scripts/run_plugin_capability_browser_demo.ts" },
+  { run = "bun -e \"await Bun.file('demos/receipts/plugin-capability-browser.receipt.json').json()\"" },
+  { run = "bun run demos/scripts/run_plugin_capability_browser_demo.ts --scan-mode system --serve" },
 ]
 receipt = "demos/receipts/plugin-capability-browser.receipt.json"
 artifacts = ["demos/scenarios/plugin-capability-browser.default.md"]
