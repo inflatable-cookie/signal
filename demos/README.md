@@ -67,6 +67,8 @@ operator memory.
   - `<surface>.view.html`
 - historical `g09` planning and closeout docs may still mention older runner
   paths; the live authority is the current file layout under `demos/`
+- if history and live surfaces disagree on runner language or file names, trust
+  the current demo registry and `demos/scripts/`
 
 ## Program Shape
 
@@ -145,6 +147,6 @@ operator memory.
 
 ## Next Task
 
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.013` seam is analysis feature-inspector bootstrap or a continued
-planning pause.
+Reassess whether another live demo-surface cleanup is actually needed before
+editing historical `g09` material. Prefer changing current authority files over
+rewriting archival closeout records.

@@ -1,7 +1,7 @@
 # Demo Coverage Matrix
 
 Status: active
-Updated: 2026-04-11
+Updated: 2026-04-14
 
 ## Purpose
 
@@ -26,6 +26,9 @@ workspace without overclaiming live demo coverage before `g09.012` and
 - shared substrate is frozen under `demos/`
 - every active workspace crate is mapped to either a live demo manifest or an
   explicit planned demo surface and milestone
+- historical `g09` logs and batch cards may still reference pre-Bun runner
+  paths; the live authority is the current Effigy demo registry plus the files
+  under `demos/`
 
 ## Live surfaces
 
@@ -120,5 +123,5 @@ workspace without overclaiming live demo coverage before `g09.012` and
 
 ## Next Task
 
-COMPLETED: `g09.015` is closed. Re-enter planning at the next-generation
-boundary before promoting another strict execution lane.
+Reassess whether any remaining cleanup belongs in the live demo registry or
+whether the next meaningful lane is outside `demos/`.
