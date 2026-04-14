@@ -1,22 +1,74 @@
 {
-  "artifacts": [
-    "demos/receipts/plugin-sandbox-lifecycle.view.html",
-    "demos/scenarios/plugin-sandbox-lifecycle.default.md"
-  ],
-  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && python3 -m json.tool demos/manifest.schema.json > /dev/null && python3 -m json.tool demos/templates/demo-manifest.example.json > /dev/null) && python3 -m json.tool demos/templates/demo-receipt.example.json > /dev/null) && python3 -m json.tool demos/coverage-matrix.json > /dev/null) && python3 -m json.tool demos/manifests/plugin-sandbox-lifecycle.demo.json > /dev/null && python3 demos/scripts/run_sandbox_lifecycle_demo.py && python3 -m json.tool demos/receipts/plugin-sandbox-lifecycle.receipt.json > /dev/null",
-  "demo_id": "plugin-sandbox-lifecycle",
-  "entrypoint": {
-    "kind": "run",
-    "value": "<sequence:4>"
-  },
-  "exit_code": 0,
-  "ok": true,
-  "recorded_at_epoch_ms": 1776095501190,
-  "schema": "effigy.demo.receipt.v1",
-  "schema_version": 1,
-  "stale": false,
+  "receipt_version": "signal.demo.receipt.v1",
+  "manifest_id": "signal.demo.plugin.sandbox-lifecycle",
+  "scenario_id": "signal.demo.plugin.sandbox-lifecycle.default",
   "status": "passed",
-  "stderr_log_path": ".effigy/demo/logs/plugin-sandbox-lifecycle.stderr.log",
-  "stdout_log_path": ".effigy/demo/logs/plugin-sandbox-lifecycle.stdout.log",
-  "summary": "Demo `plugin-sandbox-lifecycle` completed via run entrypoint."
+  "launch_command": "cargo run -q -p signal-plugin-sandbox",
+  "artifacts": [
+    {
+      "kind": "broker-transcript-lines",
+      "line_count": 19,
+      "observed_states": [
+        "attached",
+        "ready",
+        "running",
+        "shutdown",
+        "starting",
+        "teardown_complete",
+        "timed_out"
+      ],
+      "runs": [
+        {
+          "run_id": "attach_status_teardown",
+          "line_count": 7
+        },
+        {
+          "run_id": "healthy_run",
+          "line_count": 6
+        },
+        {
+          "run_id": "timeout_run",
+          "line_count": 6
+        }
+      ]
+    },
+    {
+      "kind": "sandbox-lifecycle-operator-view",
+      "html_path": "demos/receipts/plugin-sandbox-lifecycle.view.html",
+      "status": "passed",
+      "section_count": 3
+    }
+  ],
+  "operator_checks": [
+    {
+      "id": "operator.sandbox-lifecycle.ready-state",
+      "status": "passed",
+      "summary": "Broker reported the ready state before live lifecycle commands."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.attach-and-teardown",
+      "status": "passed",
+      "summary": "Explicit attach/status/teardown path remained inspectable."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.run-path",
+      "status": "passed",
+      "summary": "Healthy demo run reached running and clean teardown states."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.timeout-path",
+      "status": "passed",
+      "summary": "Timeout demo run remained bounded and reported cleanup after interruption."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.shutdown",
+      "status": "passed",
+      "summary": "Broker exited through the explicit shutdown receipt."
+    },
+    {
+      "id": "operator.sandbox-lifecycle.rendered-operator-view",
+      "status": "passed",
+      "summary": "A rendered companion view makes broker lifecycle and timeout recovery posture visually inspectable without reading the raw receipt first."
+    }
+  ]
 }

@@ -3,20 +3,20 @@
     "demos/receipts/macos-au-coreaudio-boundary.view.html",
     "demos/scenarios/macos-au-coreaudio-boundary.default.md"
   ],
-  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && python3 -m json.tool demos/manifest.schema.json > /dev/null && python3 -m json.tool demos/templates/demo-manifest.example.json > /dev/null) && python3 -m json.tool demos/templates/demo-receipt.example.json > /dev/null) && python3 -m json.tool demos/coverage-matrix.json > /dev/null) && python3 -m json.tool demos/manifests/macos-au-coreaudio-boundary.demo.json > /dev/null && python3 demos/scripts/run_macos_au_coreaudio_boundary_demo.py && python3 -m json.tool demos/receipts/macos-au-coreaudio-boundary.receipt.json > /dev/null",
+  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/manifest.schema.json', 'utf8'))\" && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/templates/demo-manifest.example.json', 'utf8'))\") && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/templates/demo-receipt.example.json', 'utf8'))\") && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/coverage-matrix.json', 'utf8'))\") && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/manifests/macos-au-coreaudio-boundary.demo.json', 'utf8'))\" && bun run demos/scripts/run_macos_au_coreaudio_boundary_demo.ts && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/receipts/macos-au-coreaudio-boundary.receipt.json', 'utf8'))\"",
   "demo_id": "macos-au-coreaudio-boundary",
   "entrypoint": {
     "kind": "run",
     "value": "<sequence:4>"
   },
-  "exit_code": null,
-  "ok": false,
-  "recorded_at_epoch_ms": 1776095394296,
+  "exit_code": 0,
+  "ok": true,
+  "recorded_at_epoch_ms": 1776120635722,
   "schema": "effigy.demo.receipt.v1",
   "schema_version": 1,
   "stale": false,
-  "status": "terminated",
-  "stderr_log_path": ".effigy/demo/logs/macos-au-coreaudio-boundary.stderr.log",
-  "stdout_log_path": ".effigy/demo/logs/macos-au-coreaudio-boundary.stdout.log",
-  "summary": "Demo `macos-au-coreaudio-boundary` was terminated after stop was requested."
+  "status": "passed",
+  "stderr_log_path": null,
+  "stdout_log_path": null,
+  "summary": "Demo `macos-au-coreaudio-boundary` completed via run entrypoint."
 }

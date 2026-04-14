@@ -7,30 +7,30 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f1f3f7;
-      --panel: #fbfcfe;
-      --line: #d2d8e2;
-      --text: #19212a;
-      --muted: #626b77;
-      --ok: #205b45;
-      --ok-soft: #dceee6;
+      --bg: #eef3f7;
+      --panel: #fbfdff;
+      --line: #ced8e2;
+      --text: #17202a;
+      --muted: #5f6b77;
+      --ok: #215e49;
+      --ok-soft: #dcefe7;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Avenir Next", "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #f8fbff, var(--bg));
+      background: radial-gradient(circle at top, #f7fbff, var(--bg));
       color: var(--text);
     }
     main {
-      max-width: 1180px;
+      max-width: 1220px;
       margin: 0 auto;
       padding: 32px 24px 48px;
     }
     h1, h2 { margin: 0 0 12px; }
     p { line-height: 1.5; }
     .hero {
-      background: linear-gradient(135deg, #f8fbff, #e8edf5);
+      background: linear-gradient(135deg, #f7fbff, #e7eef6);
       border: 1px solid var(--line);
       border-radius: 22px;
       padding: 24px;
@@ -90,7 +90,7 @@
       margin-top: 22px;
       padding: 16px 18px;
       border-radius: 16px;
-      border: 1px solid #cfe0d6;
+      border: 1px solid #cfe0d8;
       background: var(--ok-soft);
       color: var(--ok);
     }
@@ -103,14 +103,8 @@
       <p>Operator-facing rendered view for bounded broker lifecycle truth across ready, attach, status, healthy run, timeout run, teardown, and shutdown. This surface stays broker-backed and low-dependency; it is not a broker control console.</p>
       <ul class="checks"><li><strong>PASSED</strong> Broker reported the ready state before live lifecycle commands.</li><li><strong>PASSED</strong> Explicit attach/status/teardown path remained inspectable.</li><li><strong>PASSED</strong> Healthy demo run reached running and clean teardown states.</li><li><strong>PASSED</strong> Timeout demo run remained bounded and reported cleanup after interruption.</li><li><strong>PASSED</strong> Broker exited through the explicit shutdown receipt.</li><li><strong>PASSED</strong> A rendered companion view makes broker lifecycle and timeout recovery posture visually inspectable without reading the raw receipt first.</li></ul>
     </section>
-    <div class="grid">
-      <section class="card"><h2>Lifecycle coverage</h2><p class="subtitle">Observed broker states across the bounded lifecycle runs.</p><div class="metrics"><div class="metric"><span class="label">Observed states</span><span class="value">attached, ready, running, shutdown, starting, teardown_complete, timed_out</span></div><div class="metric"><span class="label">Runs</span><span class="value">3</span></div><div class="metric"><span class="label">Transcript lines</span><span class="value">19</span></div><div class="metric"><span class="label">Healthy run lines</span><span class="value">6</span></div><div class="metric"><span class="label">Timeout run lines</span><span class="value">6</span></div></div></section>
-      <section class="card"><h2>Explicit attach path</h2><p class="subtitle">Attach, status, teardown, and shutdown posture from the manual lifecycle run.</p><div class="metrics"><div class="metric"><span class="label">Ready state</span><span class="value">yes</span></div><div class="metric"><span class="label">Attached</span><span class="value">yes</span></div><div class="metric"><span class="label">Teardown complete</span><span class="value">yes</span></div><div class="metric"><span class="label">Shutdown</span><span class="value">yes</span></div><div class="metric"><span class="label">Transcript lines</span><span class="value">7</span></div></div></section>
-      <section class="card"><h2>Healthy and timeout runs</h2><p class="subtitle">Comparison of the clean run and timeout recovery run.</p><div class="metrics"><div class="metric"><span class="label">Healthy run reached running</span><span class="value">yes</span></div><div class="metric"><span class="label">Healthy cleanup detail</span><span class="value">yes</span></div><div class="metric"><span class="label">Timeout reached timed_out</span><span class="value">yes</span></div><div class="metric"><span class="label">Timeout cleanup detail</span><span class="value">yes</span></div><div class="metric"><span class="label">Shutdown in both runs</span><span class="value">yes</span></div></div></section>
-    </div>
-    <section class="callout">
-      The underlying source of truth is still the receipt and broker transcript lines. This rendered view exists to make broker lifecycle and timeout recovery posture visually inspectable without reading raw JSON first.
-    </section>
+    <div class="grid"><section class="card"><h2>Lifecycle coverage</h2><p class="subtitle">Observed broker states across the bounded lifecycle runs.</p><div class="metrics"><div class="metric"><span class="label">Observed states</span><span class="value">attached, ready, running, shutdown, starting, teardown_complete, timed_out</span></div><div class="metric"><span class="label">Runs</span><span class="value">3</span></div><div class="metric"><span class="label">Transcript lines</span><span class="value">19</span></div><div class="metric"><span class="label">Healthy run lines</span><span class="value">6</span></div><div class="metric"><span class="label">Timeout run lines</span><span class="value">6</span></div></div></section><section class="card"><h2>Explicit attach path</h2><p class="subtitle">Attach, status, teardown, and shutdown posture from the manual lifecycle run.</p><div class="metrics"><div class="metric"><span class="label">Ready state</span><span class="value">yes</span></div><div class="metric"><span class="label">Attached</span><span class="value">yes</span></div><div class="metric"><span class="label">Teardown complete</span><span class="value">yes</span></div><div class="metric"><span class="label">Shutdown</span><span class="value">yes</span></div><div class="metric"><span class="label">Transcript lines</span><span class="value">7</span></div></div></section><section class="card"><h2>Healthy and timeout runs</h2><p class="subtitle">Comparison of the clean run and timeout recovery run.</p><div class="metrics"><div class="metric"><span class="label">Healthy run reached running</span><span class="value">yes</span></div><div class="metric"><span class="label">Healthy cleanup detail</span><span class="value">yes</span></div><div class="metric"><span class="label">Timeout reached timed_out</span><span class="value">yes</span></div><div class="metric"><span class="label">Timeout cleanup detail</span><span class="value">yes</span></div><div class="metric"><span class="label">Shutdown in both runs</span><span class="value">yes</span></div></div></section></div>
+    <section class="callout">The underlying source of truth is still the receipt and broker transcript lines. This rendered view exists to make broker lifecycle and timeout recovery posture visually inspectable without reading raw JSON first.</section>
   </main>
 </body>
 </html>

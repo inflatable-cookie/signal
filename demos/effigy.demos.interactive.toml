@@ -1,0 +1,26 @@
+[demos.plugin-capability-browser]
+title = "Signal Plugin Capability Browser"
+summary = "Launches the bounded interactive plugin browser and keeps the official proof receipt and operator notes attached to one demo entry."
+proof = "Operator-visible proof that real plugin inventory, host launchability, live terminal output, and bounded interaction can be driven through Effigy's demo browser."
+owner = "signal"
+mode = "interactive"
+status = "ready"
+covers = [
+  "signal-plugin",
+  "signal-plugin-clap",
+  "signal-plugin-vst3",
+  "signal-plugin-au",
+  "signal-plugin-lv2",
+  "signal-host-local",
+  "signal-host-server",
+]
+tags = ["plugin", "browser", "interactive"]
+run = [
+  { task = "demo:coverage-matrix" },
+  { run = "python3 -m json.tool demos/manifests/plugin-capability-browser.demo.json > /dev/null" },
+  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py" },
+  { run = "python3 -m json.tool demos/receipts/plugin-capability-browser.receipt.json > /dev/null" },
+  { run = "python3 demos/scripts/run_plugin_capability_browser_demo.py --scan-mode system --serve" },
+]
+receipt = "demos/receipts/plugin-capability-browser.receipt.json"
+artifacts = ["demos/scenarios/plugin-capability-browser.default.md"]

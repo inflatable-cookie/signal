@@ -7,21 +7,19 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #eef4f1;
-      --panel: #fcfffd;
-      --line: #c9d7d0;
-      --text: #112019;
-      --muted: #5d6c65;
-      --accent: #1f7a63;
-      --accent-soft: #d9f0e7;
-      --ok: #19563d;
-      --ok-soft: #dceee5;
+      --bg: #eef3f7;
+      --panel: #fbfdff;
+      --line: #ced8e2;
+      --text: #17202a;
+      --muted: #5f6b77;
+      --ok: #215e49;
+      --ok-soft: #dcefe7;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Avenir Next", "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #f8fdfa, var(--bg));
+      background: radial-gradient(circle at top, #f7fbff, var(--bg));
       color: var(--text);
     }
     main {
@@ -32,12 +30,12 @@
     h1, h2 { margin: 0 0 12px; }
     p { line-height: 1.5; }
     .hero {
-      background: linear-gradient(135deg, #f7fffb, #e9f6f0);
+      background: linear-gradient(135deg, #f7fbff, #e7eef6);
       border: 1px solid var(--line);
       border-radius: 22px;
       padding: 24px;
       margin-bottom: 24px;
-      box-shadow: 0 14px 40px rgba(17, 54, 41, 0.08);
+      box-shadow: 0 14px 40px rgba(18, 33, 52, 0.08);
     }
     .hero p { margin: 0; color: var(--muted); }
     .checks {
@@ -59,7 +57,7 @@
       border: 1px solid var(--line);
       border-radius: 18px;
       padding: 18px;
-      box-shadow: 0 10px 24px rgba(15, 41, 31, 0.06);
+      box-shadow: 0 10px 24px rgba(15, 30, 46, 0.06);
     }
     .subtitle {
       margin: 0 0 14px;
@@ -74,8 +72,8 @@
       gap: 4px;
       padding: 10px 12px;
       border-radius: 12px;
-      background: #f4faf7;
-      border: 1px solid #d6e5de;
+      background: #f3f7fb;
+      border: 1px solid #dde6ef;
     }
     .label {
       font-size: 0.82rem;
@@ -92,7 +90,7 @@
       margin-top: 22px;
       padding: 16px 18px;
       border-radius: 16px;
-      border: 1px solid #cfe0d6;
+      border: 1px solid #cfe0d8;
       background: var(--ok-soft);
       color: var(--ok);
     }
@@ -105,15 +103,8 @@
       <p>Operator-facing rendered view for bounded graph execution posture across multichannel, sidechain, multi-bus, and spatial boundary families. This surface stays descriptor-backed and low-dependency; it is not a graph editor or routing console.</p>
       <ul class="checks"><li><strong>PASSED</strong> The demo captured the machine-readable multichannel boundary descriptor.</li><li><strong>PASSED</strong> The demo captured the machine-readable sidechain boundary descriptor.</li><li><strong>PASSED</strong> The demo captured the machine-readable multi-bus boundary descriptor.</li><li><strong>PASSED</strong> The demo captured the machine-readable spatial boundary descriptor.</li><li><strong>PASSED</strong> The existing multichannel, sidechain, multi-bus, and spatial acceptance lanes completed successfully.</li><li><strong>PASSED</strong> The receipt keeps graph execution meaning explicit and does not pretend to be a product shell, graph editor, or tutorial UI.</li><li><strong>PASSED</strong> A rendered companion view makes the multichannel, sidechain, multi-bus, and spatial graph posture visually inspectable without reading the raw receipt first.</li></ul>
     </section>
-    <div class="grid">
-      <section class="card"><h2>signal.runtime.multichannel-boundary</h2><p class="subtitle">Multichannel layout and role posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/032-canonical-multichannel-layout-and-channel-role-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:multichannel-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-multichannel-topology-report</span></div></div></section><section class="card"><h2>signal.runtime.sidechain-boundary</h2><p class="subtitle">Sidechain routing and secondary-input posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/033-sidechain-routing-and-secondary-input-execution-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:sidechain-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-sidechain-topology-report</span></div></div></section><section class="card"><h2>signal.runtime.multi-bus-boundary</h2><p class="subtitle">Multi-bus and auxiliary-topology posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:multi-bus-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-multi-bus-topology-report</span></div></div></section><section class="card"><h2>signal.runtime.spatial-boundary</h2><p class="subtitle">Spatial execution posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/059-renderer-capability-negotiation-and-immersive-export-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:spatial-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">4</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-spatial-topology-report</span></div></div></section>
-    </div>
-    <div class="grid">
-      <section class="card"><h2>Acceptance posture</h2><p class="subtitle">Focused graph boundary proof lanes completed during this capture.</p><div class="metrics"><div class="metric"><span class="label">multichannel</span><span class="value">passed</span></div><div class="metric"><span class="label">sidechain</span><span class="value">passed</span></div><div class="metric"><span class="label">multi-bus</span><span class="value">passed</span></div><div class="metric"><span class="label">spatial</span><span class="value">passed</span></div></div></section>
-    </div>
-    <section class="callout">
-      The underlying source of truth is still the receipt and the bounded descriptor plus acceptance commands. This rendered view exists to make the graph family visually inspectable without reading raw JSON first.
-    </section>
+    <div class="grid"><section class="card"><h2>signal.runtime.multichannel-boundary</h2><p class="subtitle">Multichannel layout and role posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/032-canonical-multichannel-layout-and-channel-role-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:multichannel-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-multichannel-topology-report</span></div></div></section><section class="card"><h2>signal.runtime.sidechain-boundary</h2><p class="subtitle">Sidechain routing and secondary-input posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/033-sidechain-routing-and-secondary-input-execution-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:sidechain-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-sidechain-topology-report</span></div></div></section><section class="card"><h2>signal.runtime.multi-bus-boundary</h2><p class="subtitle">Multi-bus and auxiliary-topology posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:multi-bus-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">3</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-multi-bus-topology-report</span></div></div></section><section class="card"><h2>signal.runtime.spatial-boundary</h2><p class="subtitle">Spatial execution posture.</p><div class="metrics"><div class="metric"><span class="label">Contract</span><span class="value">docs/contracts/059-renderer-capability-negotiation-and-immersive-export-contract.md</span></div><div class="metric"><span class="label">Acceptance</span><span class="value">effigy acceptance:spatial-boundary</span></div><div class="metric"><span class="label">Surfaces</span><span class="value">4</span></div><div class="metric"><span class="label">Validation steps</span><span class="value">5</span></div><div class="metric"><span class="label">Deferred scope</span><span class="value">2</span></div><div class="metric"><span class="label">Primary surface</span><span class="value">runtime-spatial-topology-report</span></div></div></section><section class="card"><h2>Acceptance posture</h2><p class="subtitle">Focused graph boundary proof lanes completed during this capture.</p><div class="metrics"><div class="metric"><span class="label">multichannel</span><span class="value">passed</span></div><div class="metric"><span class="label">sidechain</span><span class="value">passed</span></div><div class="metric"><span class="label">multi-bus</span><span class="value">passed</span></div><div class="metric"><span class="label">spatial</span><span class="value">passed</span></div></div></section></div>
+    <section class="callout">The underlying source of truth is still the receipt and the bounded descriptor plus acceptance commands. This rendered view exists to make the graph family visually inspectable without reading raw JSON first.</section>
   </main>
 </body>
 </html>

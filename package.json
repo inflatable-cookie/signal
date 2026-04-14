@@ -1,0 +1,6 @@
+{
+  "name": "signal-demo-runtime",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.15"
+}
