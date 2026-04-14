@@ -1,14 +1,15 @@
 # Demo Program
 
 Status: active
-Updated: 2026-04-09
+Updated: 2026-04-14
 
 ## Purpose
 
-This folder is the shared substrate for repo-owned Signal demo programs.
+This folder is the repo-owned demo program for Signal.
 
 It does not replace crate code. It defines the authority layer that turns demo
-commands into inspectable proof instead of loose examples.
+commands into inspectable proof instead of loose examples, one-off scripts, or
+operator memory.
 
 ## Layout
 
@@ -22,11 +23,50 @@ commands into inspectable proof instead of loose examples.
   - machine-readable crate-to-demo coverage inventory for the active workspace
 - `coverage-matrix.md`
   - human-readable view of the same coverage inventory
+- `effigy.demos.toml`
+  - shared demo task shim plus local manifest-import root for the demo registry
+- `effigy.demos.operator-views.toml`
+  - headless operator-view demo records
+- `effigy.demos.platform-boundaries.toml`
+  - headless platform-boundary demo records
+- `effigy.demos.interactive.toml`
+  - interactive demo records
 - `receipts/`
-  - machine-readable run receipts for official demos
+  - repo-owned proof artifacts for official demos
 - `scenarios/`
-  - future operator-facing notes for shared scenario bundles when human checks
-    matter
+  - operator-facing notes for shared scenario bundles when human checks matter
+- `scripts/lib/`
+  - shared Bun/TS runner helpers for headless and interactive demo surfaces
+- `scripts/`
+  - Bun/TS demo runner entrypoints; the runner name should match the manifest
+    surface name
+
+## Proof Policy
+
+- manifests, scenarios, coverage inventory, and receipts are the authoritative
+  demo layer
+- receipt JSON and rendered `.view.html` companions are repo-owned proof, not
+  disposable build trash
+- transient runtime logs, local scan noise, and ad hoc browser sessions are not
+  part of the repo-owned proof layer
+- if a demo should stay reproducible in CI, its receipt path and rendered
+  companion should remain tracked
+
+## Current Shape
+
+- registry files are split by concern instead of accumulating in one giant
+  manifest:
+  - operator views
+  - platform boundaries
+  - interactive surfaces
+- Bun/TS now owns all live demo runners
+- the plugin capability browser is no longer a Python exception
+- `receipts/` remains flat on purpose because each live demo has one canonical
+  proof pair today:
+  - `<surface>.receipt.json`
+  - `<surface>.view.html`
+- historical `g09` planning and closeout docs may still mention older runner
+  paths; the live authority is the current file layout under `demos/`
 
 ## Program Shape
 
@@ -98,10 +138,10 @@ commands into inspectable proof instead of loose examples.
 
 ## Current Boundary
 
-- this substrate pack freezes the program shape, launch/evidence conventions,
-  coverage matrix, and first official live demo manifest
-- broader plugin, host, runtime, hardware, DSP, graph, and analysis demo
-  breadth remains deferred to later `g09.012+` and `g09.013+` batches
+- the demo surface is now fully Bun/TS-backed
+- Effigy owns discovery and launch through the demo registry
+- the current live set stays intentionally small and explicit rather than
+  widening into product shells or ad hoc utility scripts
 
 ## Next Task
 
