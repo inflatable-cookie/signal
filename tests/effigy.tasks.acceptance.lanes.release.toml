@@ -1,0 +1,38 @@
+[tasks]
+"acceptance:release-boundary" = [
+  { task = "acceptance:conformance" },
+  { run = "cargo test -p signal-supervisor-tools release_boundary_json_reports_packaging_baseline" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-release-boundary --format=json" },
+]
+"acceptance:packaging-manifest" = [
+  { task = "acceptance:release-boundary" },
+  { run = "cargo test -p signal-supervisor-tools packaging_manifest_json_reports_release_bundle_and_receipts" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-packaging-manifest --format=json" },
+]
+"acceptance:release-packaging-consumer" = [
+  { task = "acceptance:packaging-manifest" },
+  { run = "cargo test -p signal-supervisor-tools --test public_packaging_manifest_boundary public_release_packaging_boundary_is_consumable_without_private_scripts" },
+]
+"acceptance:downstream-release" = [
+  { task = "acceptance:release-packaging-consumer" },
+  { run = "cargo test -p signal-supervisor-tools downstream_automation_json_reports_mandatory_and_optional_fixtures" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-downstream-automation --format=json" },
+]
+"acceptance:downstream-depth" = [
+  { run = "cargo run -p signal-supervisor-tools -- --format=json local mixed" },
+  { run = "cargo run -p signal-supervisor-tools -- --format=json local soak" },
+]
+"acceptance:downstream-automation" = [
+  { task = "acceptance:downstream-release" },
+  { task = "acceptance:downstream-depth" },
+]
+"acceptance:downstream-gate" = [
+  { task = "acceptance:downstream-release" },
+  { run = "cargo test -p signal-supervisor-tools downstream_fail_gates_json_reports_required_and_deferred_policy" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-downstream-fail-gates --format=json" },
+]
+"acceptance:g05-closeout" = [
+  { task = "acceptance:downstream-gate" },
+  { run = "cargo test -p signal-supervisor-tools generation_closeout_json_reports_combined_boundary_and_next_queue" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-generation-closeout --format=json" },
+]

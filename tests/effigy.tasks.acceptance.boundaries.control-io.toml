@@ -1,0 +1,71 @@
+[tasks]
+"acceptance:external-midi-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_external_midi_boundary_reports_runtime_owned_endpoint_graph_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_external_midi_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_external_midi_truth" },
+  { run = "cargo test -p signal-supervisor-tools external_midi_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-external-midi-boundary --format=json" },
+]
+"acceptance:generic-event-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capability_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_generic_event_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_generic_event_truth" },
+  { run = "cargo test -p signal-supervisor-tools generic_event_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-generic-event-boundary --format=json" },
+]
+"acceptance:controller-expression-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_controller_expression_boundary_reports_runtime_owned_expression_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_controller_expression_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_controller_expression_truth" },
+  { run = "cargo test -p signal-supervisor-tools controller_expression_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-controller-expression-boundary --format=json" },
+]
+"acceptance:control-surface-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_control_surface_boundary_reports_runtime_owned_transport_and_feedback_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_control_surface_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_control_surface_truth" },
+  { run = "cargo test -p signal-supervisor-tools control_surface_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-control-surface-boundary --format=json" },
+]
+"acceptance:advanced-hardware-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_advanced_hardware_boundary_reports_runtime_owned_policy_and_feedback_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_advanced_hardware_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_advanced_hardware_truth" },
+  { run = "cargo test -p signal-supervisor-tools advanced_hardware_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-advanced-hardware-boundary --format=json" },
+]
+"acceptance:recall-portability-boundary" = [
+  { run = "cargo test -p signal-runtime --test public_contract_boundary public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_reexports" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_recall_portability_truth" },
+  { run = "cargo test -p signal-host-server --test public_host_edge_boundary server_shared_host_edge_exports_runtime_recall_portability_truth" },
+  { run = "cargo test -p signal-supervisor-tools recall_portability_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-recall-portability-boundary --format=json" },
+]
+"acceptance:device-supervision-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_device_supervision_boundary_reports_recovering_and_faulted_runtime_states" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_device_supervision_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_device_supervision_truth" },
+  { run = "cargo test -p signal-supervisor-tools device_supervision_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-device-supervision-boundary --format=json" },
+]
+"acceptance:clock-topology-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_receipts" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_boundary local_shared_host_edge_exports_runtime_clock_topology_truth" },
+  { run = "cargo test -p signal-host-local local_host_shared_report_surfaces_duplex_ -- --nocapture" },
+  { run = "cargo test -p signal-supervisor-tools clock_topology_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-clock-topology-boundary --format=json" },
+]
+"acceptance:external-io-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_external_io_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_external_io_truth" },
+  { run = "cargo test -p signal-supervisor-tools external_io_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-external-io-boundary --format=json" },
+]
+"acceptance:media-service-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_invalidation_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_media_service_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_media_service_truth" },
+  { run = "cargo test -p signal-supervisor-tools media_service_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-media-service-boundary --format=json" },
+]

@@ -1,0 +1,86 @@
+[tasks]
+"acceptance:vst3-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_vst3_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_vst3_baseline_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_vst3_baseline_truth" },
+  { run = "cargo test -p signal-supervisor-tools vst3_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-vst3-boundary --format=json" },
+]
+"acceptance:au-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_au_baseline_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_au_baseline_truth" },
+  { run = "cargo test -p signal-supervisor-tools au_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-au-boundary --format=json" },
+]
+"acceptance:macos-au-coreaudio-boundary" = [
+  { run = "cargo test -p signal-hardware-coreaudio" },
+  { run = "cargo test -p signal-runtime public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-runtime public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopback_truth" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_au -- --nocapture --test-threads=1" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_external_io -- --nocapture --test-threads=1" },
+  { run = "cargo test -p signal-host-local --test public_host_edge_device_supervision -- --nocapture --test-threads=1" },
+  { run = "cargo test -p signal-supervisor-tools macos_au_coreaudio_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-macos-au-coreaudio-boundary --format=json" },
+]
+"acceptance:lv2-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_lv2_extension_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_lv2_extension_truth" },
+  { run = "cargo test -p signal-supervisor-tools lv2_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-lv2-boundary --format=json" },
+]
+"acceptance:linux-lv2-execution-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_truth" },
+  { run = "cargo test -p signal-host-server --test public_host_edge_sandbox_broker server_public_host_edge_can_route_lv2_sandbox_through_broker_process -- --exact --nocapture --test-threads=1" },
+  { run = "cargo test -p signal-host-server --test public_host_edge_sandbox_broker server_public_host_edge_can_drive_broker_backed_lv2_crash_recovery -- --exact --nocapture --test-threads=1" },
+  { run = "cargo test -p signal-supervisor-tools linux_lv2_execution_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-linux-lv2-execution-boundary --format=json" },
+]
+"acceptance:cross-adapter-parity-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portability_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_cross_adapter_parity_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_cross_adapter_parity_truth" },
+  { run = "cargo test -p signal-supervisor-tools cross_adapter_parity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-cross-adapter-parity-boundary --format=json" },
+]
+"acceptance:linux-plugin-parity-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_policy_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_plugin_parity_truth" },
+  { run = "cargo test -p signal-supervisor-tools linux_plugin_parity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-linux-plugin-parity-boundary --format=json" },
+]
+"acceptance:linux-audio-backend-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_linux_audio_backend_boundary_reports_runtime_owned_backend_identity_truth" },
+  { run = "cargo test -p signal-host-server --test public_host_edge_external_io server_shared_host_edge_exports_runtime_linux_audio_backend_truth -- --exact --nocapture --test-threads=1" },
+  { run = "cargo test -p signal-supervisor-tools linux_audio_backend_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-linux-audio-backend-boundary --format=json" },
+]
+"acceptance:linux-live-ownership-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_linux_live_ownership_boundary_reports_runtime_owned_session_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_linux_live_ownership_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_live_ownership_truth" },
+  { run = "cargo test -p signal-supervisor-tools linux_live_ownership_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-linux-live-ownership-boundary --format=json" },
+]
+"acceptance:jack-coordination-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_jack_coordination_boundary_reports_runtime_owned_transport_graph_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_jack_coordination_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_jack_coordination_truth" },
+  { run = "cargo test -p signal-supervisor-tools jack_coordination_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-jack-coordination-boundary --format=json" },
+]
+"acceptance:pipewire-alsa-parity-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_pipewire_alsa_parity_boundary_reports_runtime_owned_claim_and_policy_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_pipewire_alsa_parity_truth" },
+  { run = "cargo test -p signal-supervisor-tools pipewire_alsa_parity_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-pipewire-alsa-parity-boundary --format=json" },
+]
+"acceptance:linux-backend-clock-topology-boundary" = [
+  { run = "cargo test -p signal-runtime public_runtime_linux_backend_clock_topology_boundary_reports_runtime_owned_linux_parity_truth" },
+  { run = "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth" },
+  { run = "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth" },
+  { run = "cargo test -p signal-supervisor-tools linux_backend_clock_topology_boundary_json_reports_runtime_and_host_edge_proofs" },
+  { run = "cargo run -p signal-supervisor-tools -- --describe-linux-backend-clock-topology-boundary --format=json" },
+]
