@@ -1,7 +1,7 @@
 # Signal Docs
 
-Signal uses the Northstar documentation shape as a generic library-system
-planning surface.
+Signal uses the Northstar documentation shape as the repo-owned authority layer
+for the reusable library/runtime surface.
 
 ## Core Sections
 
@@ -14,11 +14,11 @@ planning surface.
 ## Optional Sections In Use
 
 - `research/`
-- `specs/` for the active lane-first strict `g09` surface
+- `specs/` for closed strict-lane references and any future reopened strict
+  lane
 
-Signal is still using a baseline Northstar spine overall. The `g09` generation
-used a reopened lane-first strict surface under `docs/specs/` for the completed
-interactive-demo stream and is now closed again.
+Signal is back in a baseline Northstar posture. There is currently no active
+strict lane.
 
 ## Current Entry Points
 
@@ -31,8 +31,10 @@ interactive-demo stream and is now closed again.
 - Working rules: [contracts/001-working-rules.md](./contracts/001-working-rules.md)
 - Shared DSP boundary: [contracts/001-shared-dsp-and-host-boundary.md](./contracts/001-shared-dsp-and-host-boundary.md)
 - Supervisor export boundary: [contracts/002-supervisor-export-schema-and-report-boundary.md](./contracts/002-supervisor-export-schema-and-report-boundary.md)
-- Strict-lane spec: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
-- Active strict-lane card: none; `g09` is complete
+- Roadmap index: [roadmaps/README.md](./roadmaps/README.md)
+- Generation index: [roadmaps/generation-index.md](./roadmaps/generation-index.md)
+- Strict-lane reference: [specs/001-g09-lane-first-strict-adoption.md](./specs/001-g09-lane-first-strict-adoption.md)
+- Active strict-lane card: none
 - Research index: [research/master-index.md](./research/master-index.md)
 
 ## Validation
@@ -49,11 +51,13 @@ interactive-demo stream and is now closed again.
 - keep section indexes aligned to Northstar conventions
 - treat an active generation as a lane-first strict Northstar surface under
   `docs/specs/` only while that generation is explicitly open
+- if there is no active strict lane, use the roadmap and contract front doors
+  instead of reading old batch-card state as current authority
 - in the strict lane, treat a bare `continue` as "follow the previous closeout's
   `Next Task`" rather than as permission to infer a new batch
-- if there is no current ready card, re-enter planning instead of improvising
 
 ## Next Task
 
-COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
-before promoting another strict execution lane.
+Use this front door to find the current authority surfaces first:
+`vision/`, `architecture/`, `contracts/`, and `roadmaps/`. Only drop into
+`specs/` when a new strict lane is explicitly reopened.

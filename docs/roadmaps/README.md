@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-04-10
+Updated: 2026-04-14
 
 ## Why this section matters now
 
@@ -24,11 +24,8 @@ Use this section for:
 
 ## Current posture
 
-`g06`, `g07`, and `g08` are now complete. `g09` is now active as the
-reopened production-readiness generation covering the prior post-audit
-remediation runway plus the final role-correct release gate for the existing
-crate set. The earlier
-post-`g08` backlog note remains in
+`g06`, `g07`, `g08`, and `g09` are complete. The earlier post-`g08` backlog
+note remains in
 `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`.
 `g01` established the Rust workspace, engine, host/device
 path, and plugin/runtime baseline; `g02` completed the first reusable DSP and
@@ -104,7 +101,7 @@ The latest completed continuation runway was:
 - preview-device, audition, and product-adjacent workflow services that remain
   runtime-owned
 
-The deferred continuation scope after `g08` is:
+The deferred continuation scope after `g09` is:
 
 - broader repeated-run and environment-specific acceptance depth beyond the
   bounded `g08` closeout gate
@@ -113,15 +110,13 @@ The deferred continuation scope after `g08` is:
 - product-local controller, browser, immersive-console, certification, and
   downstream launch workflows
 
-## Strict lane
+## Strict lane posture
 
-Signal is using a lane-first strict Northstar surface on the reopened `g09`
-interactive-demo stream:
+Signal is not currently running an active strict lane.
 
-- strict-lane spec:
+- strict-lane reference:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
+- current ready card: none
 
 ## Working Rule
 
@@ -131,5 +126,5 @@ interactive-demo stream:
 
 ## Next Task
 
-Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+Re-enter planning at the next-generation boundary before promoting another
+strict execution lane.

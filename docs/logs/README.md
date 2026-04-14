@@ -1,7 +1,7 @@
 # Logs
 
 Status: active
-Updated: 2026-04-11
+Updated: 2026-04-14
 
 ## Why this section matters now
 
@@ -29,13 +29,15 @@ Use this section for:
 - in the strict lane, a bare `continue` should resolve through the previous
   closeout's `Next Task`, not through a giant reminder prompt
 
-## Current lane
+## Current lane posture
 
-- strict-lane spec:
+- strict-lane reference:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none; `g09` is complete
+- current ready card: none
+- `g09` is complete; newer work should not treat the recent `g09` log chain as
+  live execution state
 
-## Recent active-lane evidence
+## Recent strict-lane evidence
 
 - `2026-04/09-245000-g09-005-linux-lv2-acceptance-boundary-and-promotion.md`
 - `2026-04/09-260000-g09-006-shared-cycle-and-watchdog-helper-tranche.md`
@@ -134,5 +136,6 @@ Use this section for:
 
 ## Next Task
 
-COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
-before promoting another strict execution lane.
+Use this index as evidence history, not as live queue state. Re-enter planning
+through the roadmap and contract front doors before promoting another strict
+execution lane.
