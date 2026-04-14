@@ -16,7 +16,10 @@ covers = [
 ]
 tags = ["plugin", "browser", "interactive"]
 run = [
-  { task = "demo:coverage-matrix" },
+  { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
+  { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
+  { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
+  { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/plugin-capability-browser.demo.json').json()\"" },
   { run = "bun run demos/scripts/run_plugin_capability_browser_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/plugin-capability-browser.receipt.json').json()\"" },

@@ -4,17 +4,3 @@ include = [
   "effigy.demos.platform-boundaries.toml",
   "effigy.demos.interactive.toml",
 ]
-
-[tasks]
-"demo:program-shape" = [
-  { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
-]
-"demo:conventions" = [
-  { task = "demo:program-shape" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
-]
-"demo:coverage-matrix" = [
-  { task = "demo:conventions" },
-  { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
-]
