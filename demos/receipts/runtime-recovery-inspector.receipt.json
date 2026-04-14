@@ -1,57 +1,22 @@
 {
-  "receipt_version": "signal.demo.receipt.v1",
-  "manifest_id": "signal.demo.runtime.recovery-inspector",
-  "scenario_id": "signal.demo.runtime.recovery-inspector.default",
-  "status": "passed",
-  "launch_command": "cargo run -q -p signal-runtime --example supervisor_report_demo",
   "artifacts": [
-    {
-      "kind": "runtime-supervisor-report-lines",
-      "line_count": 574,
-      "highlights": {
-        "readiness": "Ready",
-        "watchdog": "HeartbeatMisses",
-        "plugin_fault_count": "0",
-        "event_count": "3"
-      }
-    },
-    {
-      "kind": "runtime-recovery-operator-view",
-      "html_path": "demos/receipts/runtime-recovery-inspector.view.html",
-      "status": "passed",
-      "section_count": 3
-    }
+    "demos/receipts/runtime-recovery-inspector.view.html",
+    "demos/scenarios/runtime-recovery-inspector.default.md"
   ],
-  "operator_checks": [
-    {
-      "id": "operator.runtime-recovery.handshake-and-start",
-      "status": "passed",
-      "summary": "Runtime example completed handshake, configuration, and start."
-    },
-    {
-      "id": "operator.runtime-recovery.watchdog-snapshot",
-      "status": "passed",
-      "summary": "Supervisor output exposed the watchdog-trigger snapshot."
-    },
-    {
-      "id": "operator.runtime-recovery.plugin-faults",
-      "status": "passed",
-      "summary": "Runtime example exported the injected plugin timeout faults."
-    },
-    {
-      "id": "operator.runtime-recovery-safe-mode-posture",
-      "status": "passed",
-      "summary": "Runtime report kept explicit safe-mode posture in the steady-state surface."
-    },
-    {
-      "id": "operator.runtime-recovery.external-surface",
-      "status": "passed",
-      "summary": "Runtime report preserved degraded hardware/backend surfaces explicitly."
-    },
-    {
-      "id": "operator.runtime-recovery.rendered-operator-view",
-      "status": "passed",
-      "summary": "A rendered companion view makes watchdog, fault, safe-mode, and degraded-surface posture visually inspectable without reading the raw receipt first."
-    }
-  ]
+  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && bun -e \"await Bun.file('demos/manifest.schema.json').json()\" && bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\") && bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\") && bun -e \"await Bun.file('demos/coverage-matrix.json').json()\") && bun -e \"await Bun.file('demos/manifests/runtime-recovery-inspector.demo.json').json()\" && bun run demos/scripts/run_runtime_recovery_inspector_demo.ts && bun -e \"await Bun.file('demos/receipts/runtime-recovery-inspector.receipt.json').json()\"",
+  "demo_id": "runtime-recovery-inspector",
+  "entrypoint": {
+    "kind": "run",
+    "value": "<sequence:4>"
+  },
+  "exit_code": 0,
+  "ok": true,
+  "recorded_at_epoch_ms": 1776152665521,
+  "schema": "effigy.demo.receipt.v1",
+  "schema_version": 1,
+  "stale": false,
+  "status": "passed",
+  "stderr_log_path": null,
+  "stdout_log_path": null,
+  "summary": "Demo `runtime-recovery-inspector` completed via run entrypoint."
 }

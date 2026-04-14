@@ -1,196 +1,22 @@
 {
-  "receipt_version": "signal.demo.receipt.v1",
-  "manifest_id": "signal.demo.runtime.supervisor-boundary-companion",
-  "scenario_id": "signal.demo.runtime.supervisor-boundary-companion.default",
-  "status": "passed",
-  "launch_command": "effigy demo:supervisor-runtime-boundary-companion",
   "artifacts": [
-    {
-      "kind": "signal-supervisor-tools-runtime-boundaries",
-      "companion_to_manifest": "signal.demo.runtime.recovery-inspector",
-      "descriptors": [
-        {
-          "boundary": "signal.runtime.interruption-boundary",
-          "contract_path": "docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md",
-          "acceptance_task": "effigy acceptance:interruption-boundary",
-          "surface_count": 5,
-          "validation_step_count": 5,
-          "deferred_scope_count": 2,
-          "raw_payload": {
-            "boundary": "signal.runtime.interruption-boundary",
-            "contract_path": "docs/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md",
-            "acceptance_task": "effigy acceptance:interruption-boundary",
-            "surfaces": [
-              {
-                "id": "runtime-fault-status",
-                "kind": "runtime-report",
-                "crate": "signal-runtime",
-                "surface": "RuntimeObservationReport::fault_status and RuntimeSupervisorReport::observation.fault_status",
-                "runtime_anchor": "RuntimeFaultStatusSnapshot",
-                "rationale": "Carries the runtime-owned recovery-state and primary-fault classification without host-local inference."
-              },
-              {
-                "id": "runtime-interruption-summary",
-                "kind": "runtime-report",
-                "crate": "signal-runtime",
-                "surface": "RuntimeObservationReport::interruption_summary and RuntimeSupervisorReport::observation.interruption_summary",
-                "runtime_anchor": "RuntimeInterruptionSummary",
-                "rationale": "Carries the shared interruption taxonomy directly on the public observation and supervisor boundary."
-              },
-              {
-                "id": "deferred-service-interruption-receipt",
-                "kind": "continuity-receipt",
-                "crate": "signal-runtime",
-                "surface": "RuntimeDeferredServiceReceipt::interruption_class",
-                "runtime_anchor": "RuntimeDeferredServiceReceipt",
-                "rationale": "Keeps deferred-work resumability and terminal abort semantics typed instead of implied by queue policy prose."
-              },
-              {
-                "id": "offline-render-execution-interruption-receipt",
-                "kind": "continuity-receipt",
-                "crate": "signal-runtime",
-                "surface": "RuntimeOfflineRenderExecutionProgressReceipt::interruption_class",
-                "runtime_anchor": "RuntimeOfflineRenderExecutionProgressReceipt",
-                "rationale": "Keeps paused, recoverable, and completed offline execution continuity visible through the same interruption vocabulary."
-              },
-              {
-                "id": "shared-host-supervisor-report",
-                "kind": "host-edge",
-                "crate": "signal-host-local + signal-host-server",
-                "surface": "supervisor_report() -> RuntimeSupervisorReport",
-                "runtime_anchor": "RuntimeSupervisorApi::supervisor_report()",
-                "rationale": "Ensures both stable host edges expose runtime-owned interruption meaning without their own recovery taxonomy."
-              }
-            ],
-            "validation_steps": [
-              {
-                "id": "runtime-restartable-proof",
-                "command": "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_restartable_runtime_state",
-                "rationale": "Proves a downstream-style runtime consumer can inspect a non-steady restartable interruption class through public reexports."
-              },
-              {
-                "id": "runtime-resumable-deferred-proof",
-                "command": "cargo test -p signal-runtime public_runtime_interruption_boundary_reports_resumable_deferred_state",
-                "rationale": "Proves resumable deferred-work continuity stays visible on public runtime receipts and observation export."
-              },
-              {
-                "id": "local-host-edge-proof",
-                "command": "cargo test -p signal-host-local local_shared_host_edge_is_consumable_without_private_helpers",
-                "rationale": "Proves the local shared host edge forwards interruption state through supervisor_report() without private helpers."
-              },
-              {
-                "id": "server-host-edge-proof",
-                "command": "cargo test -p signal-host-server server_shared_host_edge_is_consumable_without_private_helpers",
-                "rationale": "Proves the server shared host edge forwards interruption state through supervisor_report() without private helpers."
-              },
-              {
-                "id": "boundary-descriptor",
-                "command": "cargo run -p signal-supervisor-tools -- --describe-interruption-boundary --format=json",
-                "rationale": "Lets consumers inspect the runtime and host-edge interruption proof boundary without reading private implementation detail."
-              }
-            ],
-            "deferred_scope": [
-              "device-loss-specific truth is still stronger on broader host I/O surfaces than on a dedicated runtime-owned device-loss receipt",
-              "full hardware and recovery milestone breadth remains deferred beyond this interruption taxonomy boundary"
-            ]
-          }
-        },
-        {
-          "boundary": "signal.runtime.fault-diagnostic-boundary",
-          "contract_path": "docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md",
-          "acceptance_task": "effigy acceptance:fault-diagnostic-boundary",
-          "surface_count": 3,
-          "validation_step_count": 4,
-          "deferred_scope_count": 2,
-          "raw_payload": {
-            "boundary": "signal.runtime.fault-diagnostic-boundary",
-            "contract_path": "docs/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md",
-            "acceptance_task": "effigy acceptance:fault-diagnostic-boundary",
-            "surface_count": 3,
-            "surfaces": [
-              {
-                "id": "runtime-observation-fault-diagnostic",
-                "kind": "runtime-report",
-                "crate": "signal-runtime",
-                "surface": "RuntimeObservationReport::fault_diagnostic_receipt and RuntimeSupervisorReport::observation.fault_diagnostic_receipt",
-                "runtime_anchor": "RuntimeFaultDiagnosticReceipt",
-                "rationale": "Carries the canonical primary-family and typed contribution evidence directly on the public runtime observation and supervisor surfaces."
-              },
-              {
-                "id": "runtime-profiling-fault-diagnostic",
-                "kind": "runtime-receipt",
-                "crate": "signal-runtime",
-                "surface": "RuntimeProfilingReceipt::fault_diagnostic_receipt",
-                "runtime_anchor": "RuntimeProfilingReceipt",
-                "rationale": "Keeps later profiling and soak work aligned to the same runtime-owned fault-diagnostic receipt rather than a separate performance-only taxonomy."
-              },
-              {
-                "id": "shared-host-fault-diagnostic-report",
-                "kind": "host-edge",
-                "crate": "signal-host-local + signal-host-server",
-                "surface": "supervisor_report() -> RuntimeSupervisorReport",
-                "runtime_anchor": "RuntimeSupervisorApi::supervisor_report()",
-                "rationale": "Ensures stable host edges expose the same canonical primary-family and contribution evidence without host-local causal reconstruction."
-              }
-            ],
-            "validation_step_count": 4,
-            "validation_steps": [
-              {
-                "id": "runtime-public-fault-diagnostic-proof",
-                "command": "cargo test -p signal-runtime public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts",
-                "rationale": "Proves a downstream-style runtime consumer can read canonical primary-family and typed contribution evidence through public runtime surfaces."
-              },
-              {
-                "id": "local-host-fault-diagnostic-proof",
-                "command": "cargo test -p signal-host-local local_shared_host_edge_exports_runtime_fault_diagnostic_truth",
-                "rationale": "Proves the local shared host edge forwards the runtime-owned fault-diagnostic receipt without private host-side diagnosis."
-              },
-              {
-                "id": "server-host-fault-diagnostic-proof",
-                "command": "cargo test -p signal-host-server server_shared_host_edge_exports_runtime_fault_diagnostic_truth",
-                "rationale": "Proves the server shared host edge forwards the same runtime-owned fault-diagnostic receipt without server-local causal rewriting."
-              },
-              {
-                "id": "boundary-descriptor",
-                "command": "cargo run -p signal-supervisor-tools -- --describe-fault-diagnostic-boundary --format=json",
-                "rationale": "Lets downstream tooling inspect the fault-diagnostic boundary, proof commands, and deferred scope without private implementation detail."
-              }
-            ],
-            "deferred_scope": [
-              "callback pressure remains advisory host evidence rather than a stronger canonical runtime family",
-              "per-event traces, remote diagnostics pipelines, and product-specific diagnostic UX remain out of scope for this shared boundary"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "kind": "runtime-supervisor-operator-view",
-      "html_path": "demos/receipts/runtime-supervisor-boundary-companion.view.html",
-      "status": "passed",
-      "boundary_count": 2
-    }
+    "demos/receipts/runtime-supervisor-boundary-companion.view.html",
+    "demos/scenarios/runtime-supervisor-boundary-companion.default.md"
   ],
-  "operator_checks": [
-    {
-      "id": "operator.runtime-supervisor.interruption-boundary",
-      "status": "passed",
-      "summary": "The supervisor companion captured the machine-readable interruption boundary descriptor."
-    },
-    {
-      "id": "operator.runtime-supervisor.fault-diagnostic-boundary",
-      "status": "passed",
-      "summary": "The supervisor companion captured the machine-readable fault-diagnostic boundary descriptor."
-    },
-    {
-      "id": "operator.runtime-supervisor.runtime-family-companion",
-      "status": "passed",
-      "summary": "The receipt keeps its relationship to the runtime recovery inspector explicit as a companion surface."
-    },
-    {
-      "id": "operator.runtime-supervisor.rendered-operator-view",
-      "status": "passed",
-      "summary": "A rendered companion view makes interruption and fault-diagnostic boundary posture visually inspectable without reading the raw receipt first."
-    }
-  ]
+  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && bun -e \"await Bun.file('demos/manifest.schema.json').json()\" && bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\") && bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\") && bun -e \"await Bun.file('demos/coverage-matrix.json').json()\") && bun -e \"await Bun.file('demos/manifests/runtime-supervisor-boundary-companion.demo.json').json()\" && bun run demos/scripts/run_runtime_supervisor_boundary_companion_demo.ts && bun -e \"await Bun.file('demos/receipts/runtime-supervisor-boundary-companion.receipt.json').json()\"",
+  "demo_id": "supervisor-runtime-boundary-companion",
+  "entrypoint": {
+    "kind": "run",
+    "value": "<sequence:4>"
+  },
+  "exit_code": 0,
+  "ok": true,
+  "recorded_at_epoch_ms": 1776152667776,
+  "schema": "effigy.demo.receipt.v1",
+  "schema_version": 1,
+  "stale": false,
+  "status": "passed",
+  "stderr_log_path": null,
+  "stdout_log_path": null,
+  "summary": "Demo `supervisor-runtime-boundary-companion` completed via run entrypoint."
 }

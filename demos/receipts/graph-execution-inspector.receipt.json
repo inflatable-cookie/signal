@@ -3,7 +3,7 @@
     "demos/receipts/graph-execution-inspector.view.html",
     "demos/scenarios/graph-execution-inspector.default.md"
   ],
-  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/manifest.schema.json', 'utf8'))\" && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/templates/demo-manifest.example.json', 'utf8'))\") && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/templates/demo-receipt.example.json', 'utf8'))\") && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/coverage-matrix.json', 'utf8'))\") && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/manifests/graph-execution-inspector.demo.json', 'utf8'))\" && bun run demos/scripts/run_graph_execution_inspector_demo.ts && bun -e \"JSON.parse(require('node:fs').readFileSync('demos/receipts/graph-execution-inspector.receipt.json', 'utf8'))\"",
+  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && bun -e \"await Bun.file('demos/manifest.schema.json').json()\" && bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\") && bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\") && bun -e \"await Bun.file('demos/coverage-matrix.json').json()\") && bun -e \"await Bun.file('demos/manifests/graph-execution-inspector.demo.json').json()\" && bun run demos/scripts/run_graph_execution_inspector_demo.ts && bun -e \"await Bun.file('demos/receipts/graph-execution-inspector.receipt.json').json()\"",
   "demo_id": "graph-execution-inspector",
   "entrypoint": {
     "kind": "run",
@@ -11,7 +11,7 @@
   },
   "exit_code": 0,
   "ok": true,
-  "recorded_at_epoch_ms": 1776120639237,
+  "recorded_at_epoch_ms": 1776152646270,
   "schema": "effigy.demo.receipt.v1",
   "schema_version": 1,
   "stale": false,

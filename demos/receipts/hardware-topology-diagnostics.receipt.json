@@ -11,7 +11,7 @@
   },
   "exit_code": 0,
   "ok": true,
-  "recorded_at_epoch_ms": 1776120900098,
+  "recorded_at_epoch_ms": 1776152648454,
   "schema": "effigy.demo.receipt.v1",
   "schema_version": 1,
   "stale": false,
