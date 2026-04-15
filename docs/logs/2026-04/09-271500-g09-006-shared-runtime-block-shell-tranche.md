@@ -9,7 +9,7 @@ runtime-owned host unification support layer.
 ## Changes
 
 - extended
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/host_unification_support.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/host_unification_support.rs`
   with a shared brokered block-execution shell
 - changed both hosts so `runtime_block.rs` now supplies only the genuinely
   different phases:

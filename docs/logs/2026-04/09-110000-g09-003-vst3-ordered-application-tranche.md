@@ -9,17 +9,17 @@ proves ordered per-block application, not only final mutation summaries.
 
 - added `parameter_application_order` and `event_packet_order` to bounded VST3
   block execution records in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/model.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/model.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
 - aggregated those per-block records into broker-visible `application_order`
   and `packet_order` summaries in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
 - tightened the broker-backed VST3 public host-edge assertions so both hosts
   now require the ordered application history in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
 
 ## Validation
 

@@ -10,15 +10,15 @@ sequentially.
 
 - VST3 block execution now emits `parameter_signature`, `state_transition`, and
   `next_state_digest` in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
 - the broker-owned VST3 execution stream carries those mutation markers through
   the short execution run in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
 - broker-backed VST3 host reports now surface the mutation summary through the
   attached transport detail in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
 
 ## Validation
 

@@ -8,7 +8,7 @@ promoting the milestone.
 ## Changes
 
 - added `effigy acceptance:linux-lv2-execution-boundary` in
-  `/Users/betterthanclay/Dev/projects/signal/effigy.toml`
+  `~/Dev/projects/signal/effigy.toml`
 - added the supervisor-tools boundary descriptor
   `signal.runtime.linux-lv2-execution-boundary`
 - wired the new boundary through:

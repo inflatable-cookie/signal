@@ -8,20 +8,20 @@ real manifest-backed discovery path.
 ## Delivered
 
 - added a real LV2 manifest parser in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-lv2/src/lv2_host_adapter/introspection.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-lv2/src/lv2_host_adapter/introspection.rs`
 - rewired production discovery in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-lv2/src/lv2_host_adapter/discovery.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-lv2/src/lv2_host_adapter/discovery.rs`
   so `.lv2` bundle traversal parses `manifest.ttl` metadata instead of matching
   bundle names back into scaffold records
 - updated adapter tests in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-lv2/src/lib.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-lv2/src/lib.rs`
   to use real manifest-backed temp bundles
 - updated server internal and public LV2 proof roots in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/src/host_test_support/setup.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/src/host_test_support/setup.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/tests/support/public_host_edge_plugins.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/tests/support/public_host_edge_plugins.rs`
   to emit the same manifest contract
-- promoted `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/005-real-lv2-discovery-extension-negotiation-and-linux-proof.md`
+- promoted `~/Dev/projects/signal/docs/roadmaps/g09/005-real-lv2-discovery-extension-negotiation-and-linux-proof.md`
   from `draft` to `active`
 
 ## Validation

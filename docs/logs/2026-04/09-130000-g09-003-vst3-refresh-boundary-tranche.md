@@ -9,20 +9,20 @@ without tearing the sandbox down.
 ## Code landed
 
 - added a `refresh-vst3` broker command and attached-session refresh handling in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
 - exposed the refresh path through the shared broker client in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
 - widened the local and server broker-backed VST3 ensure flows so they now
   drive `stream -> stream -> refresh -> stream` and export that refresh boundary
   in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
 - tightened the public local and server VST3 broker proofs so the host-facing
   report now requires `refresh_cycle` and `continuity_reset=refreshed` in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
 
 ## Validation
 

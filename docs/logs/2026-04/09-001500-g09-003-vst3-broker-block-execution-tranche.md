@@ -8,14 +8,14 @@ the broker-prepared VST3 session.
 ## Landed
 
 - added `Vst3BlockProcessingRecord` plus `execute_block(...)` in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/model.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/model.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
 - extended the VST3 adapter proof in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/lib.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/lib.rs`
   to validate bounded block execution over a real discovered temp bundle
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
   so the broker-owned VST3 execution state retains the real instantiated
   control surface, prepared session plan, and state snapshot, and `run-vst3`
   now calls the adapter `execute_block(...)` path rather than reporting only

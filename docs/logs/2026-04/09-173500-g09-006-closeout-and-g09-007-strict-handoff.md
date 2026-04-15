@@ -26,27 +26,27 @@ carveout and leaving test-surface normalization as the next follow-on seam.
 ## Changes
 
 - promoted
-  `/Users/betterthanclay/Dev/projects/signal/docs/contracts/075-runtime-public-interface-decomposition-and-internal-assembly-boundary-contract.md`
+  `~/Dev/projects/signal/docs/contracts/075-runtime-public-interface-decomposition-and-internal-assembly-boundary-contract.md`
   to `active`
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/docs/contracts/001-working-rules.md`
+  `~/Dev/projects/signal/docs/contracts/001-working-rules.md`
   so the current strict milestone is now `g09.007`
 - marked
-  `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/006-shared-host-runtime-execution-and-recovery-unification.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/006-shared-host-runtime-execution-and-recovery-unification.md`
   as `complete`
 - marked
-  `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/007-runtime-interface-decomposition-and-test-surface-normalization.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/007-runtime-interface-decomposition-and-test-surface-normalization.md`
   as `active` and corrected its live seam description
 - added the new ready card at
-  `/Users/betterthanclay/Dev/projects/signal/docs/specs/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`
+  `~/Dev/projects/signal/docs/specs/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`
 - refreshed the currentness/front-door surfaces in:
-  - `/Users/betterthanclay/Dev/projects/signal/docs/specs/README.md`
-  - `/Users/betterthanclay/Dev/projects/signal/docs/specs/001-g09-lane-first-strict-adoption.md`
-  - `/Users/betterthanclay/Dev/projects/signal/docs/logs/README.md`
-  - `/Users/betterthanclay/Dev/projects/signal/docs/contracts/contract-index.md`
-  - `/Users/betterthanclay/Dev/projects/signal/docs/README.md`
-  - `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/README.md`
-  - `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/README.md`
+  - `~/Dev/projects/signal/docs/specs/README.md`
+  - `~/Dev/projects/signal/docs/specs/001-g09-lane-first-strict-adoption.md`
+  - `~/Dev/projects/signal/docs/logs/README.md`
+  - `~/Dev/projects/signal/docs/contracts/contract-index.md`
+  - `~/Dev/projects/signal/docs/README.md`
+  - `~/Dev/projects/signal/docs/roadmaps/README.md`
+  - `~/Dev/projects/signal/docs/roadmaps/g09/README.md`
 
 ## Validation
 

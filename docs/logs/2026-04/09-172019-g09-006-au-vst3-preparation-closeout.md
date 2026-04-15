@@ -9,21 +9,21 @@ ready card still exists inside the milestone.
 ## Changes
 
 - extended
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
   with a shared prepared-session shell for AU/VST3 plus a shared
   protocol-violation prepare-fault recorder
 - reexported the new shared support through
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/lib.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/lib.rs`
 - changed
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
   so the local host now supplies only local environment assembly, instance-id
   prefixes, and format-specific edge behavior
 - changed
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
   so the server host now supplies only server environment assembly, server-only
   LV2 behavior, and the remaining format-specific edge behavior
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
+  `~/Dev/projects/signal/docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
   as complete
 - updated the active currentness/front-door surfaces so the strict lane no
   longer claims there is a live ready card

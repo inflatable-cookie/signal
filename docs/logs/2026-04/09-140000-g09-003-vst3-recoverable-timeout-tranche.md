@@ -10,21 +10,21 @@ attached session.
 ## Code landed
 
 - added an attached-session `timeout-vst3` broker command in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
   that reports `execution_interrupted`, `timeout=recoverable`, and
   `resume_hint=refresh_or_stream` without forcing teardown
 - exposed that timeout path through the shared broker client in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
 - widened the local and server broker-backed VST3 ensure flows so the report
   now captures carried execution, refresh, and recoverable interruption in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
 - tightened the public VST3 broker proofs so the exported host report now
   requires the timeout markers in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
 
 ## Validation
 

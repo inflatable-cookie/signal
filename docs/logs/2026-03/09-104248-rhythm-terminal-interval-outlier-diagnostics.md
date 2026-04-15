@@ -30,7 +30,7 @@ tempo interpretation decides whether to snap or defer.
 ## Real-file result
 
 Test file:
-`/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav`
+`~/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav`
 
 Current result after this batch:
 
@@ -51,7 +51,7 @@ that as a localized recovery problem instead of a reason to miss the integer BPM
 
 - `cargo test -p signal-analysis-rhythm`
 - `cargo check -p signal-analysis-rhythm --example file_rhythm_probe`
-- `cargo run -p signal-analysis-rhythm --example file_rhythm_probe -- '/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
+- `cargo run -p signal-analysis-rhythm --example file_rhythm_probe -- '~/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
 - `effigy health`
 - `effigy test`
 - `effigy validate`

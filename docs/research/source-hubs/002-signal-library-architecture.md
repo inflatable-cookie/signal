@@ -14,7 +14,7 @@ and its first consumers, especially **Finch** and **Loophole**.
 
 ### Signal
 A general-purpose Rust DSP and audio analysis library from the Loophole project.
-- **Repository**: sibling `signal` repo (`/Users/betterthanclay/Dev/projects/signal` locally)
+- **Repository**: sibling `signal` repo (`~/Dev/projects/signal` locally)
 - **License**: MIT/Apache (open source)
 - **Scope**: General audio DSP, MIR, synthesis
 - **Replaces**: Essentia, Librosa (for Rust ecosystem)

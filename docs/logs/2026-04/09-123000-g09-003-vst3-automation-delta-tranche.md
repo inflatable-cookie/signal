@@ -9,19 +9,19 @@ across runs, not only continuity counters.
 ## Code landed
 
 - added an `automation_delta` marker to bounded VST3 block execution records in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/model.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/model.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/session.rs`
 - widened the broker-backed VST3 stream so carried-forward runs apply a bounded
   incremented event delta and aggregate that delta into the broker execution
   summary in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
 - tightened the local and server public VST3 broker proofs so the exported host
   report now requires both the fresh baseline delta and the carried-forward
   delta in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
 
 ## Validation
 

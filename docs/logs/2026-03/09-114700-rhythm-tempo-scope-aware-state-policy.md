@@ -34,7 +34,7 @@ the same hard-lock treatment as whole-track or edge-damaged stable material.
 ## Real-file result
 
 Test file:
-`/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav`
+`~/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav`
 
 Current result after this batch:
 
@@ -63,7 +63,7 @@ full hard lock for that case.
 ## Validation
 
 - `cargo test -p signal-analysis-rhythm`
-- `cargo run -q -p signal-analysis-rhythm --example file_rhythm_probe -- '/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
+- `cargo run -q -p signal-analysis-rhythm --example file_rhythm_probe -- '~/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
 - `cargo run -q -p signal-analysis-rhythm --example offline_rhythm_demo -- --bpm 90 --seconds 8`
 - `effigy health`
 - `effigy validate`

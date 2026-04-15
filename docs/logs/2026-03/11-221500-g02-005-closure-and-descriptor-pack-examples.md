@@ -70,7 +70,7 @@ Validation note:
 
 - `effigy validate` failed during external CMake fetch/setup because it
   could not remove
-  `/Users/betterthanclay/Dev/projects/loophole/signal/legacy/cpp/build/_deps/asio-src`
+  `~/Dev/projects/loophole/signal/legacy/cpp/build/_deps/asio-src`
   before validation started. The Rust crate changes validated cleanly; this
   blocker appears outside the `signal-analysis-character` batch.
 

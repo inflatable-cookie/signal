@@ -35,7 +35,7 @@ that continued no-context monitoring is not useful.
 ## Real-file result
 
 Test file:
-`/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav`
+`~/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav`
 
 Current result after this batch:
 
@@ -76,7 +76,7 @@ So the compact policy is now explicit:
 - `cargo test -p signal-analysis-rhythm tempo_state_locks_edge_damaged_integer_scope -- --nocapture`
 - `cargo test -p signal-analysis-rhythm beat_tracker_resolves_tempo_consumption_across_real_analysis_paths -- --nocapture`
 - `cargo run -q -p signal-analysis-rhythm --example offline_rhythm_demo -- --bpm 90 --seconds 8`
-- `cargo run -q -p signal-analysis-rhythm --example file_rhythm_probe -- '/Users/betterthanclay/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
+- `cargo run -q -p signal-analysis-rhythm --example file_rhythm_probe -- '~/Library/CloudStorage/Dropbox/Music/Projects/Garamond/1. 086/Output/1. 086 - v1.5 - Master Stream.wav'`
 - `cargo test -p signal-analysis-rhythm`
 - `effigy health`
 - `effigy validate`

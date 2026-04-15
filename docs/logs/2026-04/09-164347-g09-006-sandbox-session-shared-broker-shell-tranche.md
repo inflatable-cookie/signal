@@ -10,17 +10,17 @@ layer.
 ## Changes
 
 - extended
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/sandbox_broker_support.rs`
   with shared broker attach, prepared-recording, attached execution summary,
   VST3 broker execution sequence, and teardown helpers
 - reexported the new shared broker shell through
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/lib.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/lib.rs`
 - changed
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/src/host_support/sandbox_sessions.rs`
   so the local host now keeps only AU/VST3 preparation and local env assembly
   at the edge
 - changed
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/src/host_support/sandbox_sessions.rs`
   so the server host now keeps only AU/LV2/VST3 preparation, server env
   assembly, and LV2-specific execution handling at the edge
 - preserved the format-specific and host-specific seams explicitly instead of

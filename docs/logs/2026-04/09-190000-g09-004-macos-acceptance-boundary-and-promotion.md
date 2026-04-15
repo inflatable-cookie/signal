@@ -8,14 +8,14 @@ acceptance boundary and promoting the milestone from `active` to `complete`.
 ## Delivered
 
 - added `effigy acceptance:macos-au-coreaudio-boundary` in
-  `/Users/betterthanclay/Dev/projects/signal/effigy.toml`
+  `~/Dev/projects/signal/effigy.toml`
 - added the supervisor-tools descriptor family at
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-supervisor-tools/src/descriptor_families/macos_au_coreaudio.rs`
+  `~/Dev/projects/signal/crates/signal-supervisor-tools/src/descriptor_families/macos_au_coreaudio.rs`
 - wired the new boundary through supervisor schema constants, describe flags,
   describe dispatch, and boundary assertion tests
 - recorded the promotion and explicit demo-lane handoff in
-  `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/004-real-au-discovery-coreaudio-backed-execution-and-macos-proof.md`
-  and `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/README.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/004-real-au-discovery-coreaudio-backed-execution-and-macos-proof.md`
+  and `~/Dev/projects/signal/docs/roadmaps/g09/README.md`
 
 ## Validation
 
@@ -30,9 +30,9 @@ acceptance boundary and promoting the milestone from `active` to `complete`.
 
 - the new acceptance lane passed end to end
 - pre-existing warnings remain non-blocking:
-  - unused imports in `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/tests.rs`
+  - unused imports in `~/Dev/projects/signal/crates/signal-runtime/src/tests.rs`
   - dead-code warnings in local public broker test support under
-    `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/tests/support/public_host_edge_sandbox_broker.rs`
+    `~/Dev/projects/signal/crates/signal-host-local/tests/support/public_host_edge_sandbox_broker.rs`
 - `g09.004` is treated as complete because the remaining AU omissions are
   deliberate scope and the interactive operator path is already owned by the
   dedicated demo milestones `g09.011` and `g09.012`

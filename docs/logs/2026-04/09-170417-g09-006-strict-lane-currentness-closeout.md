@@ -26,20 +26,20 @@ out of the shared extraction.
 ## Changes
 
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/docs/specs/batch-cards/002-g09-006-sandbox-session-consolidation.md`
+  `~/Dev/projects/signal/docs/specs/batch-cards/002-g09-006-sandbox-session-consolidation.md`
   so its continuation points at the next card instead of presenting itself as
   the live ready boundary
 - added the next strict ready card at
-  `/Users/betterthanclay/Dev/projects/signal/docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
+  `~/Dev/projects/signal/docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/docs/roadmaps/g09/006-shared-host-runtime-execution-and-recovery-unification.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/006-shared-host-runtime-execution-and-recovery-unification.md`
   with the strict-lane reassessment outcome and the new ready-card reference
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/docs/specs/README.md`
-  and `/Users/betterthanclay/Dev/projects/signal/docs/logs/README.md`
+  `~/Dev/projects/signal/docs/specs/README.md`
+  and `~/Dev/projects/signal/docs/logs/README.md`
   so the active strict front doors point at the current ready card
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/docs/contracts/contract-index.md`
+  `~/Dev/projects/signal/docs/contracts/contract-index.md`
   so the contract front door reflects the true active strict card
 
 ## Validation

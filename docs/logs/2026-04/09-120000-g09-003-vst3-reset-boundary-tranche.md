@@ -11,13 +11,13 @@ reattach after teardown.
 - added a broker-level reattach proof that drives
   `attach -> stream -> stream -> teardown -> attach -> stream -> stream -> teardown`
   and requires both fresh and carried-forward continuity markers in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-sandbox/src/broker.rs`
 - added local and server public host-edge proofs that reattach the same VST3
   sandbox id after teardown and require both fresh and carried-forward
   continuity markers in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-local/tests/public_host_edge_sandbox_broker.rs`
   and
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
+  `~/Dev/projects/signal/crates/signal-host-server/tests/public_host_edge_sandbox_broker.rs`
 
 ## Validation
 

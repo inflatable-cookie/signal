@@ -3,7 +3,7 @@
     "demos/receipts/local-server-host-comparison.view.html",
     "demos/scenarios/local-server-host-comparison.default.md"
   ],
-  "command": "(cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && (cd '/Users/betterthanclay/Dev/projects/signal' && bun -e \"await Bun.file('demos/manifest.schema.json').json()\" && bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\") && bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\") && bun -e \"await Bun.file('demos/coverage-matrix.json').json()\") && bun -e \"await Bun.file('demos/manifests/local-server-host-comparison.demo.json').json()\" && bun run demos/scripts/run_local_server_host_comparison_demo.ts && bun -e \"await Bun.file('demos/receipts/local-server-host-comparison.receipt.json').json()\"",
+  "command": "(cd '/Users/tom/Dev/projects/signal' && (cd '/Users/tom/Dev/projects/signal' && (cd '/Users/tom/Dev/projects/signal' && bun -e \"await Bun.file('demos/manifest.schema.json').json()\" && bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\") && bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\") && bun -e \"await Bun.file('demos/coverage-matrix.json').json()\") && bun -e \"await Bun.file('demos/manifests/local-server-host-comparison.demo.json').json()\" && bun run demos/scripts/run_local_server_host_comparison_demo.ts && bun -e \"await Bun.file('demos/receipts/local-server-host-comparison.receipt.json').json()\"",
   "demo_id": "local-server-host-comparison",
   "entrypoint": {
     "kind": "run",

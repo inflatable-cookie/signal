@@ -10,7 +10,7 @@ identical code.
 
 - activated `g09.006` in the roadmap surfaces
 - added a runtime-owned shared support module at
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/host_unification_support.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/host_unification_support.rs`
 - moved the shared recovery plan DTOs into `signal-runtime`:
   - `RepeatedWatchdogRecoveryPlan`
   - `TimeoutRecoveryRetryPlan<'a, Failure>`

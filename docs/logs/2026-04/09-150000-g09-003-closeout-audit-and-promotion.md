@@ -10,12 +10,12 @@ than an accidental fallback.
 
 - removed the scaffold-backed production `discover_plugin_type(...)` shortcut
   from
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/discovery.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/discovery.rs`
 - moved the VST3 scaffold module behind `#[cfg(test)]` in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter.rs`
 - trimmed the old unused production helper wall out of the test-only scaffold
   file in
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/scaffold.rs`
+  `~/Dev/projects/signal/crates/signal-plugin-vst3/src/vst3_host_adapter/scaffold.rs`
 
 ## Validation
 

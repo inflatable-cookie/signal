@@ -9,19 +9,19 @@ runtime entrypoint stable.
 ## Changes
 
 - updated
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview.rs`
   to include explicit helper modules for the request-preview family
 - added
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/validation.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/validation.rs`
   for request-level validation
 - added
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/stem_targets.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/stem_targets.rs`
   for stem-target resolution
 - added
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/freeze_artifacts.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/freeze_artifacts.rs`
   for freeze-artifact recall derivation
 - reduced
-  `/Users/betterthanclay/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/request_assembly.rs`
+  `~/Dev/projects/signal/crates/signal-runtime/src/interfaces_offline_contract_family/request_preview/request_assembly.rs`
   to the stable orchestration entrypoint over those helpers
 
 ## Validation
