@@ -42,11 +42,21 @@ fn runtime_supervisor_report_derives_profiling_and_soak_receipts() {
     assert!(!profiling.plugin_gate_active);
     assert_eq!(profiling.plugin_chain_stage_count, 0);
     assert_eq!(profiling.plugin_chain_degraded_stage_count, 0);
-    assert_eq!(profiling.runtime_cpu_load_percent, diagnostics.cpu_load_percent);
-    assert_eq!(profiling.runtime_graph_latency_ms, diagnostics.graph_latency_ms);
+    assert_eq!(
+        profiling.runtime_cpu_load_percent,
+        diagnostics.cpu_load_percent
+    );
+    assert_eq!(
+        profiling.runtime_graph_latency_ms,
+        diagnostics.graph_latency_ms
+    );
     assert_eq!(profiling.host_callback_count, None);
-    assert!(profiling.render_json().contains("\"runtime_cpu_load_percent\":"));
-    assert!(profiling.render_json().contains("\"runtime_graph_latency_ms\":"));
+    assert!(profiling
+        .render_json()
+        .contains("\"runtime_cpu_load_percent\":"));
+    assert!(profiling
+        .render_json()
+        .contains("\"runtime_graph_latency_ms\":"));
 
     assert_eq!(soak.event_stream_count, 1);
     assert!(!soak.readiness_degraded);

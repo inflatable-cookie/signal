@@ -1,12 +1,12 @@
-#[path = "support/public_host_edge_runtime_recall.rs"]
-mod public_host_edge_runtime_recall;
 #[path = "support/public_host_edge_continuity.rs"]
 mod public_host_edge_continuity_support;
+#[path = "support/public_host_edge_runtime_recall.rs"]
+mod public_host_edge_runtime_recall;
 
-use public_host_edge_runtime_recall::sample_server_ara_context;
 use public_host_edge_continuity_support::{
     apply_public_plugin_continuity_graph, record_public_plugin_sandbox_ready,
 };
+use public_host_edge_runtime_recall::sample_server_ara_context;
 use signal_host_server::ServerRuntimeHost;
 use signal_plugin::{PluginFeature, PluginFormat};
 use signal_runtime::{

@@ -29,12 +29,9 @@ impl ServerRuntimeHost {
                     .filter(|session| {
                         session.sandbox_id == sandbox_id
                             && (session.lease_id != run.shared_memory_lease_id
-                                || run
-                                    .transport
-                                    .as_ref()
-                                    .is_none_or(|transport| {
-                                        session.region_id != transport.region_id
-                                    }))
+                                || run.transport.as_ref().is_none_or(|transport| {
+                                    session.region_id != transport.region_id
+                                }))
                     })
                     .map(|session| (session.lease_id, session.region_id))
                     .collect::<Vec<_>>()

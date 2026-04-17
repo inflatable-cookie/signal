@@ -1875,19 +1875,19 @@ mod tests {
             bundle_root.join("Contents").join("Info.plist"),
             vst3_info_plist_contents(
                 concat!(
-                "plugin_type_id=plugin:vst3:instrument\n",
-                "class_id=7E1D8F8A4D874D56A2C44DE250100001\n",
-                "controller_class_id=7E1D8F8A4D874D56A2C44DE250100002\n",
-                "category=Instrument\n",
-                "vendor=Signal\n",
-                "name=Signal Instrument VST3 Plugin\n",
-                "version=0.1.0\n",
-                "audio_inputs=0\n",
-                "audio_outputs=2\n",
-                "midi_inputs=1\n",
-                "midi_outputs=0\n",
-                "features=Instrument,Analyzer\n"
-            ),
+                    "plugin_type_id=plugin:vst3:instrument\n",
+                    "class_id=7E1D8F8A4D874D56A2C44DE250100001\n",
+                    "controller_class_id=7E1D8F8A4D874D56A2C44DE250100002\n",
+                    "category=Instrument\n",
+                    "vendor=Signal\n",
+                    "name=Signal Instrument VST3 Plugin\n",
+                    "version=0.1.0\n",
+                    "audio_inputs=0\n",
+                    "audio_outputs=2\n",
+                    "midi_inputs=1\n",
+                    "midi_outputs=0\n",
+                    "features=Instrument,Analyzer\n"
+                ),
                 bundle_root,
             ),
         )

@@ -14,8 +14,6 @@ implicit repo context.
 ## Workspace Scope
 
 Signal's active implementation surface is the Rust workspace under `crates/`.
-The legacy C++ tree under `legacy/cpp/` remains reference material only unless
-explicitly promoted back into active planning.
 
 ## Layer Inventory
 
@@ -164,8 +162,6 @@ explicitly promoted back into active planning.
 
 ## Deferred Scope
 
-- legacy C++ modernization stays outside active planning unless explicitly
-  reactivated
 - product-local UI shells, browser workflows, controller-page UX, and release
   packaging remain outside this inventory unless they are promoted into shared
   Signal-owned substrate

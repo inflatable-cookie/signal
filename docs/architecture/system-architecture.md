@@ -33,9 +33,6 @@ The intended top-level layers are:
    - hardware/device adapters
    - narrow FFI or IPC boundaries only where platform reality forces them
 
-The current legacy C++ engine remains a temporary compatibility island under
-`legacy/cpp/` while the Rust-owned shared stack is built out.
-
 The current package-level naming proposal is recorded in
 `docs/architecture/package-map.md`.
 

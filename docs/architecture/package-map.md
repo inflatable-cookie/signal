@@ -12,9 +12,6 @@ Freeze the first naming proposal for the extracted Signal workspace so research,
 architecture, and implementation can converge on stable package and host names.
 The Rust workspace now lives under `signal/crates/`, so package names remain
 stable while their on-disk layout is grouped under one explicit workspace root.
-The legacy C++ implementation now sits behind `signal/legacy/cpp/` as a
-reference surface rather than sharing the active repo root with the Rust
-workspace.
 
 The main naming rule is:
 
@@ -347,9 +344,8 @@ signal/
     signal-supervisor-tools/
 ```
 
-This keeps the repository root reserved for repo-level concerns such as the
-legacy C++ implementation, docs, top-level build surfaces, and workspace
-manifests.
+This keeps the repository root reserved for repo-level concerns such as docs,
+top-level build surfaces, and workspace manifests.
 
 ## Next Task
 
