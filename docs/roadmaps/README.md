@@ -124,6 +124,16 @@ Signal is not currently running an active strict lane.
 - log by meaningful batch
 - move deferred scope into backlog instead of leaving it half-active
 
+## Rollover guardrail
+
+Do not open `gNN+1` while the current generation still has live roadmap files or stale strict-lane debris in the active specs tree.
+
+Before rollover:
+
+- every roadmap in the closing generation must be explicitly closed, paused, superseded, or moved to backlog
+- the roadmap front doors must agree that the old generation is no longer the live queue
+- `docs/specs/` must be purged so only live or near-live planning artifacts remain in the active tree
+
 ## Next Task
 
 Re-enter planning at the next-generation boundary before promoting another
