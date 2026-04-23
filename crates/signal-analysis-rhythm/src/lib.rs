@@ -19,6 +19,7 @@
 //! assert_eq!(tracker.mode(), signal_analysis::AnalysisMode::Offline);
 //! assert!(result.beat_positions_seconds.is_empty() || result.bpm >= 0.0);
 //! ```
+
 #![warn(missing_docs)]
 
 mod beat_tempo_core;

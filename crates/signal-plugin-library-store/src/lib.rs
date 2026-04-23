@@ -2,6 +2,7 @@
 
 #![warn(missing_docs)]
 
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use signal_plugin_inventory::{DiscoveredPlugin, InventoryListItem};

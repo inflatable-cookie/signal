@@ -11,4 +11,3 @@ description = "Tonal analysis surfaces for Signal, including chroma and key dete
 signal-analysis = { path = "../signal-analysis" }
 signal-dsp-spectral = { path = "../signal-dsp-spectral" }
 signal-primitives = { path = "../signal-primitives" }
-

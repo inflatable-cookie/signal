@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 use signal_host_local::LocalRuntimeHost;
 use signal_runtime::{RuntimeConfig, SignalRuntime};
 

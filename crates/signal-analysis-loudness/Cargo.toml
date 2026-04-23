@@ -10,4 +10,3 @@ description = "Loudness analysis surfaces for Signal, including LUFS and true pe
 [dependencies]
 signal-analysis = { path = "../signal-analysis" }
 signal-primitives = { path = "../signal-primitives" }
-

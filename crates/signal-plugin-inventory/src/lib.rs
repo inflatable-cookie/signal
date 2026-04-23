@@ -2,6 +2,7 @@
 
 #![warn(missing_docs)]
 
+
 use serde::{Deserialize, Serialize};
 
 /// Full descriptor for a plugin discovered during a scan. Contains identity, hostability, and origin metadata.

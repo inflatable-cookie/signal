@@ -9,4 +9,3 @@ description = "Reusable DSP kernels and transforms for Signal."
 
 [dependencies]
 signal-primitives = { path = "../signal-primitives" }
-

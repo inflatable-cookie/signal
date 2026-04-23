@@ -6,4 +6,3 @@ license.workspace = true
 repository.workspace = true
 publish = false
 description = "Foundational audio, time, and channel primitives for Signal."
-

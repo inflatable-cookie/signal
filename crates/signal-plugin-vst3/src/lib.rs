@@ -1,6 +1,7 @@
 //! VST3 plugin format adapter for Signal.
 
 #![warn(missing_docs)]
+
 mod vst3_host_adapter;
 
 pub use vst3_host_adapter::*;

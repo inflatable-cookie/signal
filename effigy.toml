@@ -22,12 +22,14 @@ health = [{ task = "build" }]
 validate = [
   { task = "health" },
   { task = "test compile" },
+  { task = "check:docs" },
 ]
 qa = [
   { task = "validate" },
   { task = "qa:docs" },
 ]
 build = "cargo build --workspace"
+"check:docs" = "RUSTFLAGS='-D missing-docs' cargo check --workspace --lib"
 dev = [
   { task = "build" },
   { run = "cargo run -p signal-host-local -- {args}" },
