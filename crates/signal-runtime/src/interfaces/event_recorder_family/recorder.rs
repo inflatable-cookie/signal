@@ -1,11 +1,17 @@
 use super::*;
 
+/// Thread-shareable in-memory accumulator for [`RuntimeEvent`]s.
+///
+/// Pass a clone to `SignalRuntime::subscribe` (via its [`RuntimeEventSink`]
+/// impl) and read back events with `snapshot()` or the typed helpers.  Used
+/// as the standard event sink in tests and diagnostic harnesses.
 #[derive(Clone, Default)]
 pub struct RuntimeEventRecorder {
     pub(super) events: Arc<Mutex<Vec<RuntimeEvent>>>,
 }
 
 impl RuntimeEventRecorder {
+    /// Returns the number of events accumulated so far.
     pub fn count(&self) -> usize {
         self.events
             .lock()
@@ -13,6 +19,7 @@ impl RuntimeEventRecorder {
             .unwrap_or_default()
     }
 
+    /// Clones all accumulated events into a `Vec`.
     pub fn snapshot(&self) -> Vec<RuntimeEvent> {
         self.events
             .lock()
@@ -20,6 +27,7 @@ impl RuntimeEventRecorder {
             .unwrap_or_default()
     }
 
+    /// Filters accumulated events to supervision-change snapshots only.
     pub fn supervision_updates(&self) -> Vec<RuntimeSupervisionSnapshot> {
         self.snapshot()
             .into_iter()
@@ -30,6 +38,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns plugin fault records extracted from the event stream.
     pub fn plugin_faults(&self) -> Vec<PluginFaultRecord> {
         self.snapshot()
             .into_iter()
@@ -50,6 +59,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns plugin sandbox instance state records from the event stream.
     pub fn plugin_instance_states(&self) -> Vec<PluginSandboxInstanceStateRecord> {
         self.snapshot()
             .into_iter()
@@ -60,6 +70,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns recovery-cycle records from the event stream.
     pub fn recovery_events(&self) -> Vec<RecoveryRecord> {
         self.snapshot()
             .into_iter()
@@ -80,6 +91,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns plugin sandbox lifecycle records from the event stream.
     pub fn lifecycle_events(&self) -> Vec<PluginSandboxLifecycleRecord> {
         self.snapshot()
             .into_iter()
@@ -98,6 +110,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns sandbox operation failure records from the event stream.
     pub fn sandbox_operation_failure_events(&self) -> Vec<SandboxOperationFailureRecord> {
         self.snapshot()
             .into_iter()

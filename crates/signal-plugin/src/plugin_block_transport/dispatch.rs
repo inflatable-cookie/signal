@@ -5,17 +5,30 @@ use crate::{
 
 use super::header::BlockProcessingHeader;
 
+/// All information the sandbox needs to process a single audio block.
+///
+/// `BlockDispatch` is serialised into the shared-memory render-context region before the host
+/// signals the sandbox to begin processing, and deserialised by the sandbox process at the start
+/// of each block.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlockDispatch {
+    /// Instance that should process this block.
     pub instance_id: PluginInstanceId,
+    /// Block identity and channel/frame geometry.
     pub header: BlockProcessingHeader,
+    /// Audio and MIDI bus counts for this block.
     pub io_layout: PluginIoLayout,
+    /// IPC transport to use when reading/writing audio and events.
     pub transport: SandboxTransport,
+    /// Byte-range map of the shared-memory regions for this block.
     pub layout: SharedMemoryLayout,
+    /// Transport and timing context for this block.
     pub render_context: PluginRenderContext,
 }
 
 impl BlockDispatch {
+    /// Constructs a `BlockDispatch` for shared-memory transport, computing the audio byte budget
+    /// from `io_layout` and `frame_count`.
     pub fn new(
         instance_id: PluginInstanceId,
         processing_epoch: u64,
@@ -43,6 +56,7 @@ impl BlockDispatch {
         }
     }
 
+    /// Encodes the block header and render context into the shared-memory render-context region.
     pub fn write_to_shared_memory(&self, bytes: &mut [u8]) -> Result<(), &'static str> {
         let render_region = self
             .layout
@@ -62,6 +76,7 @@ impl BlockDispatch {
         Ok(())
     }
 
+    /// Decodes a `BlockDispatch` from the shared-memory render-context region.
     pub fn read_from_shared_memory(
         instance_id: PluginInstanceId,
         io_layout: PluginIoLayout,

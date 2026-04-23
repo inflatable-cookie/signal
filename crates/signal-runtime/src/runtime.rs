@@ -228,6 +228,18 @@ const OFFLINE_RENDER_PROGRESS_CHECKPOINT_TARGET_COUNT: usize = 6;
 const BLOCK_DEADLINE_ELEVATED_UTILIZATION_PERCENT: f32 = 75.0;
 const BLOCK_DEADLINE_CRITICAL_UTILIZATION_PERCENT: f32 = 95.0;
 
+/// Central control-plane and observation-plane for Signal graph execution.
+///
+/// `SignalRuntime` owns the graph scheduler, plugin sandbox lifecycle, prework
+/// service, transport and parameter state, media pipeline, recording capture,
+/// and offline render queue.
+///
+/// Construct with [`SignalRuntime::new`], then drive through the lifecycle with
+/// the [`RuntimeLifecycleApi`] trait methods (`handshake → configure → start →
+/// … → stop`).  Use [`RuntimeProjectionApi`] to feed the engine a graph and
+/// transport state, and [`RuntimeSupervisorApi`] to manage plugin sandboxes and
+/// offline rendering.  Read state without mutating via [`RuntimeObservationApi`]
+/// and event subscriptions via [`RuntimeEventSink`].
 pub struct SignalRuntime {
     config: RuntimeConfig,
     readiness: RuntimeReadiness,

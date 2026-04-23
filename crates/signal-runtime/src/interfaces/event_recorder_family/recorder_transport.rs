@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimeEventRecorder {
+    /// Returns all plugin sandbox transport events from the recorder snapshot.
     pub fn transport_events(&self) -> Vec<PluginSandboxTransportRecord> {
         self.snapshot()
             .into_iter()
@@ -25,6 +26,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all heartbeat cycle events from the recorder snapshot.
     pub fn heartbeat_events(&self) -> Vec<HeartbeatCycleRecord> {
         self.snapshot()
             .into_iter()
@@ -45,6 +47,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all block dispatch events from the recorder snapshot.
     pub fn block_dispatch_events(&self) -> Vec<BlockDispatchRecord> {
         self.snapshot()
             .into_iter()
@@ -71,6 +74,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all lease rollover events from the recorder snapshot.
     pub fn lease_rollover_events(&self) -> Vec<LeaseRolloverRecord> {
         self.snapshot()
             .into_iter()
@@ -93,6 +97,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all broker invalidation events from the recorder snapshot.
     pub fn invalidation_events(&self) -> Vec<BrokerInvalidationRecord> {
         self.snapshot()
             .into_iter()
@@ -117,6 +122,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all completion slot transition events from the recorder snapshot.
     pub fn completion_slot_events(&self) -> Vec<CompletionSlotRecord> {
         self.snapshot()
             .into_iter()
@@ -139,6 +145,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all broker failure events from the recorder snapshot.
     pub fn broker_failure_events(&self) -> Vec<BrokerFailureRecord> {
         self.snapshot()
             .into_iter()
@@ -163,6 +170,7 @@ impl RuntimeEventRecorder {
             .collect()
     }
 
+    /// Returns all transport fault events from the recorder snapshot.
     pub fn transport_fault_events(&self) -> Vec<TransportFaultRecord> {
         self.snapshot()
             .into_iter()

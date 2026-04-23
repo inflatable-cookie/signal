@@ -9,21 +9,25 @@ use super::super::{FaultInjection, ServerRuntimeHost, SOAK_RESTART_EPISODES, STE
 use super::{server_demo_runtime_assembly, ServerRuntimeHostSummary};
 
 impl ServerRuntimeHost {
+    /// Boots the server host with no fault injection.
     pub fn boot_default(&mut self) -> Result<ServerRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(None)
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises sandbox timeout recovery.
     pub fn boot_with_timeout_recovery(&mut self) -> Result<ServerRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::Timeout))
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises sandbox crash recovery.
     pub fn boot_with_crash_recovery(&mut self) -> Result<ServerRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::Crash))
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises heartbeat-miss watchdog recovery.
     pub fn boot_with_heartbeat_miss_recovery(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -31,6 +35,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises recovery teardown failure handling.
     pub fn boot_with_recovery_teardown_failure(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -38,6 +43,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises deferred recovery teardown failure handling.
     pub fn boot_with_recovery_deferred_teardown_failure(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -45,6 +51,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises deferred teardown followed by cleanup.
     pub fn boot_with_recovery_deferred_teardown_then_cleanup(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -52,6 +59,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises deferred teardown cleanup retry handling.
     pub fn boot_with_recovery_deferred_teardown_cleanup_retry(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -59,6 +67,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises recovery restart failure handling.
     pub fn boot_with_recovery_restart_failure(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -66,6 +75,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises recovery overlap contention handling.
     pub fn boot_with_recovery_overlap_contention(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -73,6 +83,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises interleaved failure recovery handling.
     pub fn boot_with_recovery_interleaved_failures(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -80,6 +91,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and exercises two rounds of escalating heartbeat-miss recovery.
     pub fn boot_with_escalating_heartbeat_failures(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {
@@ -89,6 +101,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and runs a full soak of escalating heartbeat-miss recovery episodes.
     pub fn boot_with_watchdog_soak(&mut self) -> Result<ServerRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::EscalatingHeartbeatMisses {
             restart_episodes: SOAK_RESTART_EPISODES,
@@ -96,6 +109,7 @@ impl ServerRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the server host and runs a full soak of mixed watchdog recovery episodes.
     pub fn boot_with_mixed_watchdog_soak(
         &mut self,
     ) -> Result<ServerRuntimeHostSummary, RuntimeError> {

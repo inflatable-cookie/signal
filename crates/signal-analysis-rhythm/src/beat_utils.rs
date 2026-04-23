@@ -109,6 +109,8 @@ pub(crate) fn refine_beat(onset_envelope: &[f32], center: isize, tolerance_frame
     best_index as isize
 }
 
+/// Normalise `values` in-place so the maximum absolute value is 1.0.
+/// Does nothing if the slice is empty or all values are zero.
 pub fn normalize(values: &mut [f32]) {
     let max_value = values
         .iter()

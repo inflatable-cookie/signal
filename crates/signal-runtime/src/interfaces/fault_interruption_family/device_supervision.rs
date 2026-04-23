@@ -1,54 +1,92 @@
 use super::*;
 
+/// State of the audio device restart attempt.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimeDeviceRestartState {
+    /// No restart is needed; the device is healthy.
     #[default]
     Unneeded,
+    /// A restart is in progress.
     Attempting,
+    /// Device was successfully restarted.
     Recovered,
+    /// All restart attempts have been exhausted.
     Exhausted,
+    /// Device faulted and cannot be restarted.
     Faulted,
 }
 
+/// Fault boundary state for the audio hardware path.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimeDeviceFaultBoundaryState {
+    /// No fault boundary is active.
     #[default]
     Clear,
+    /// A fault boundary is present but the device can be restarted.
     Restartable,
+    /// Restart attempts exhausted; the boundary is at capacity.
     Exhausted,
+    /// Unrecoverable fault boundary.
     Faulted,
 }
 
+/// Overall hardware supervision health.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimeDeviceSupervisionState {
+    /// Device is stable and healthy.
     #[default]
     Stable,
+    /// Device is undergoing recovery.
     Recovering,
+    /// Recovery exhausted; device is no longer usable.
     Exhausted,
+    /// Device has faulted and cannot be recovered.
     Faulted,
 }
 
+/// Synthesised snapshot of hardware supervision state derived from host I/O and
+/// fault status.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeDeviceSupervisionSnapshot {
+    /// Overall supervision health.
     pub state: RuntimeDeviceSupervisionState,
+    /// Restart attempt state.
     pub restart_state: RuntimeDeviceRestartState,
+    /// Fault boundary state.
     pub fault_boundary: RuntimeDeviceFaultBoundaryState,
+    /// Runtime recovery trajectory.
     pub recovery_state: RuntimeRecoveryState,
+    /// Interruption class derived from this supervision state.
     pub interruption_class: RuntimeInterruptionClass,
+    /// Primary fault cause if a fault is active.
     pub primary_fault_cause: Option<RuntimeFaultCause>,
+    /// Whether safe mode is engaged.
     pub safe_mode_enabled: bool,
+    /// Whether a device loss event is currently active.
     pub device_loss_active: bool,
+    /// Configured active output device identifier, if known.
     pub active_output_device: Option<String>,
+    /// Runtime device identifier, if available.
     pub device_id: Option<String>,
+    /// Runtime device name, if available.
     pub device_name: Option<String>,
+    /// Restart policy configured for the host, if known.
     pub restart_policy: Option<RuntimeHostRestartPolicy>,
+    /// Backend health reported by the host, if available.
     pub backend_health: Option<BackendHealth>,
+    /// Audio stream state reported by the host, if available.
     pub stream_state: Option<RuntimeHostAudioStreamState>,
+    /// Total number of device-loss events since startup.
     pub device_loss_count: u64,
+    /// Total number of device restart attempts, if the host reports it.
     pub restart_attempt_count: Option<u64>,
+    /// Total number of failed restart attempts, if the host reports it.
     pub restart_failure_count: Option<u64>,
+    /// Total watchdog-triggered restarts since startup.
     pub watchdog_restart_count: u32,
+    /// What triggered the last watchdog event, if any.
     pub last_watchdog_trigger: Option<RuntimeWatchdogTrigger>,
+    /// Human-readable summary of this snapshot.
     pub summary: String,
 }
 
@@ -80,6 +118,7 @@ impl Default for RuntimeDeviceSupervisionSnapshot {
 }
 
 impl RuntimeDeviceSupervisionSnapshot {
+    /// Captures a hardware supervision snapshot from the current supervision, fault, and host I/O state.
     pub fn capture(
         effective_config: &EffectiveRuntimeConfig,
         supervision_snapshot: &RuntimeSupervisionSnapshot,

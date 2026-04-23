@@ -1,23 +1,35 @@
 use crate::{BlockDispatch, SharedMemoryLayout};
 
+/// Lifecycle phase of a block processing slot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CompletionState {
+    /// No block is currently in flight; the slot is available.
     Idle,
+    /// A block has been dispatched and is waiting for the plugin to begin processing.
     ReadyForProcessing,
+    /// The plugin is actively processing the block.
     Processing,
+    /// The plugin finished processing the block before the deadline.
     Completed,
+    /// The plugin did not complete processing before the deadline.
     TimedOut,
+    /// The block's processing epoch was invalidated; the result should be discarded.
     Invalidated,
 }
 
+/// Identifies a specific block dispatch within its processing epoch and sequence.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CompletionSlot {
+    /// Current lifecycle state of this slot.
     pub state: CompletionState,
+    /// Processing epoch this slot belongs to.
     pub processing_epoch: u64,
+    /// Monotonically increasing block counter within the epoch.
     pub block_sequence: u64,
 }
 
 impl CompletionSlot {
+    /// Creates an idle slot with zeroed epoch and sequence counters.
     pub fn idle() -> Self {
         Self {
             state: CompletionState::Idle,
@@ -27,16 +39,22 @@ impl CompletionSlot {
     }
 }
 
+/// The result written back to shared memory after a plugin finishes (or fails to finish) a block.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BlockProcessResult {
+    /// Slot carrying the completion state and block identity.
     pub slot: CompletionSlot,
+    /// Number of event bytes the plugin wrote into the event-output region.
     pub generated_event_bytes: u32,
+    /// `true` if the host applied a fallback strategy because the plugin did not complete in time.
     pub fallback_applied: bool,
 }
 
 impl BlockProcessResult {
+    /// Size of the encoded result in the shared-memory completion region.
     pub const ENCODED_BYTES: usize = 32;
 
+    /// Creates a `ReadyForProcessing` result for the given dispatch.
     pub fn ready_for(dispatch: &BlockDispatch) -> Self {
         Self {
             slot: CompletionSlot {
@@ -49,6 +67,7 @@ impl BlockProcessResult {
         }
     }
 
+    /// Encodes this result into the completion region of `bytes` according to `layout`.
     pub fn write_to_shared_memory(
         &self,
         layout: SharedMemoryLayout,
@@ -70,6 +89,7 @@ impl BlockProcessResult {
         Ok(())
     }
 
+    /// Decodes a `BlockProcessResult` from the completion region of `bytes` according to `layout`.
     pub fn read_from_shared_memory(
         layout: SharedMemoryLayout,
         bytes: &[u8],

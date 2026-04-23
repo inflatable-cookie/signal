@@ -6,90 +6,151 @@ use super::{
     MeterStateReason, MeterTrustLevel,
 };
 
+/// How a bar's position was determined.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BarSupportKind {
+    /// Bar is fully supported by whole-track meter evidence.
     WholeTrack,
+    /// Bar falls within the segment-recovery window.
     RecoveryWindow,
+    /// Bar position was extrapolated from adjacent evidence.
     Extrapolated,
 }
 
+/// Time span of one bar within a rhythm structure summary.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BarSpan {
+    /// Zero-based index of this bar within the track.
     pub bar_index: usize,
+    /// Downbeat time of this bar, in seconds.
     pub start_seconds: f32,
+    /// Estimated end time of this bar (start of the next bar), if known.
     pub end_seconds: Option<f32>,
+    /// How this bar's position was determined.
     pub support: BarSupportKind,
 }
 
+/// Flattened meter continuity state for embedding in a structure summary.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RhythmStructureContinuitySummary {
+    /// High-level meter state action.
     pub action: MeterStateAction,
+    /// Reason for the meter state action.
     pub reason: MeterStateReason,
+    /// Overall meter confidence.
     pub confidence: Confidence,
+    /// Continuity action for bar length.
     pub bar_length_action: MeterContinuityAction,
+    /// Confidence in the bar-length continuity.
     pub bar_length_confidence: Confidence,
+    /// Continuity action for downbeat phase.
     pub downbeat_phase_action: MeterContinuityAction,
+    /// Confidence in the downbeat-phase continuity.
     pub downbeat_phase_confidence: Confidence,
 }
 
+/// High-level rhythm structure description for a detected meter.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RhythmStructureSummary {
+    /// Number of beats per bar.
     pub beats_per_bar: usize,
+    /// Whether the meter was derived whole-track or via segment recovery.
     pub detection_kind: MeterDetectionKind,
+    /// Reliability of the meter estimate.
     pub trust: MeterTrustLevel,
+    /// Suggested consumer action for the meter.
     pub recommendation: MeterRecommendation,
+    /// Downbeat times in seconds, in ascending order.
     pub downbeat_positions_seconds: Vec<f32>,
+    /// Span information for each detected bar.
     pub bars: Vec<BarSpan>,
+    /// Total number of bars in `bars`.
     pub bar_count: usize,
+    /// Number of bars that fall within the recovery window.
     pub recovered_bar_count: usize,
+    /// Recovery context if a sub-segment recovery was used.
     pub recovery: Option<MeterRecoveryContext>,
+    /// Meter continuity state at the time of this summary.
     pub continuity: RhythmStructureContinuitySummary,
 }
 
+/// Nature of any rhythmic structure ambiguity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RhythmStructureAmbiguityKind {
+    /// Two or more bar-length hypotheses have similar support.
     CompetingMeter,
+    /// Two or more downbeat phase hypotheses have similar support.
     CompetingDownbeatPhase,
+    /// The strongest downbeat phase is consistent with syncopation.
     SyncopatedDownbeatPhase,
+    /// Downbeat accents are present but weak relative to other beats.
     WeakAccent,
+    /// The primary evidence comes from a recovery window rather than the full track.
     RecoveryWindowFallback,
+    /// Not enough evidence to characterise the ambiguity.
     InsufficientEvidence,
 }
 
+/// One competing meter/downbeat hypothesis in an ambiguity summary.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RhythmStructureCandidate {
+    /// Number of beats per bar for this candidate.
     pub beats_per_bar: usize,
+    /// Downbeat phase offset in beats relative to the beat grid.
     pub phase_offset_beats: usize,
+    /// Detection confidence for this candidate.
     pub confidence: Confidence,
+    /// Component confidence scores for this candidate.
     pub confidence_breakdown: MeterConfidenceBreakdown,
 }
 
+/// Summary of rhythmic structure ambiguity for a single analysis pass.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RhythmStructureAmbiguitySummary {
+    /// Dominant type of ambiguity detected.
     pub kind: RhythmStructureAmbiguityKind,
+    /// Confidence that the ambiguity is genuine (higher = more ambiguous).
     pub confidence: Confidence,
+    /// The strongest meter/phase candidate, if one was identified.
     pub primary: Option<RhythmStructureCandidate>,
+    /// The next-strongest candidate, if one exists.
     pub runner_up: Option<RhythmStructureCandidate>,
+    /// Confidence remaining in a recovery window from a prior pass.
     pub trailing_recovery_confidence: Confidence,
 }
 
+/// Fallback meter continuity information when no structure summary is available.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RhythmStructureFallbackSummary {
+    /// High-level meter state action at fallback time.
     pub action: MeterStateAction,
+    /// Reason for the meter state action.
     pub reason: MeterStateReason,
+    /// Overall meter confidence at fallback time.
     pub confidence: Confidence,
+    /// Continuity action to apply for bar length.
     pub bar_length_action: MeterContinuityAction,
+    /// Source of the bar-length value being carried.
     pub bar_length_source: MeterContinuitySource,
+    /// Continuity action to apply for downbeat phase.
     pub downbeat_phase_action: MeterContinuityAction,
+    /// Source of the downbeat-phase value being carried.
     pub downbeat_phase_source: MeterContinuitySource,
+    /// Whether a recovery window is present and can be used.
     pub recovery_window_available: bool,
+    /// Confidence remaining in any trailing recovery window.
     pub trailing_recovery_confidence: Confidence,
 }
 
+/// Complete rhythm structure assessment returned by
+/// [`BeatAnalysisResult::rhythm_structure_assessment`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct RhythmStructureAssessment {
+    /// Full structure summary, or `None` if no meter was detected.
     pub structure: Option<RhythmStructureSummary>,
+    /// Ambiguity information regardless of whether a structure was found.
     pub ambiguity: RhythmStructureAmbiguitySummary,
+    /// Fallback continuity state for use when `structure` is `None`.
     pub fallback: RhythmStructureFallbackSummary,
 }
 
@@ -157,6 +218,8 @@ fn bar_support_kind(
 }
 
 impl BeatAnalysisResult {
+    /// Build a [`RhythmStructureSummary`] from the detected meter, or return
+    /// `None` if no meter was found.
     pub fn rhythm_structure_summary(&self) -> Option<RhythmStructureSummary> {
         let meter = self.meter.as_ref()?;
         let bars = meter_bar_spans(meter);
@@ -187,6 +250,8 @@ impl BeatAnalysisResult {
         })
     }
 
+    /// Build a complete [`RhythmStructureAssessment`] including ambiguity and
+    /// fallback continuity regardless of whether a meter was detected.
     pub fn rhythm_structure_assessment(&self) -> RhythmStructureAssessment {
         let structure = self.rhythm_structure_summary();
         let fallback = RhythmStructureFallbackSummary {

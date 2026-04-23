@@ -4,72 +4,117 @@ use crate::{
     RuntimeExternalMidiGraphState,
 };
 
+/// Overall state of the control surface device graph.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeControlSurfaceGraphState {
+    /// Control surface graph backend is unavailable.
     Unavailable,
+    /// Graph is available but no control surface devices are connected.
     Empty,
+    /// All control surface devices are ready with no guarded conditions.
     Ready,
+    /// One or more devices are in a guarded state.
     Guarded,
 }
 
+/// Transport control direction capability of a control surface device.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeControlSurfaceTransportPosture {
+    /// Transport control is not available for this device.
     Unavailable,
+    /// Device supports input (receiving) transport controls only.
     InputOnly,
+    /// Device supports feedback (sending) transport updates only.
     FeedbackOnly,
+    /// Device supports both input and feedback transport control.
     Duplex,
+    /// Transport control capability is in a guarded state.
     Guarded,
 }
 
+/// Mapping input capability of a control surface device.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeControlSurfaceMappingPosture {
+    /// Device does not support mapping input.
     Unsupported,
+    /// Device can observe mappings but cannot issue transport or feedback commands.
     ObserveOnly,
+    /// Mapping input is available but in a guarded state.
     Guarded,
+    /// Mapping input is portable across sessions.
     Portable,
 }
 
+/// Feedback output readiness of a control surface device.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeControlSurfaceFeedbackReadiness {
+    /// Feedback output is not available for this device.
     Unavailable,
+    /// Feedback output is present but in a guarded state.
     Guarded,
+    /// Feedback output is ready and can be written.
     Ready,
 }
 
+/// Capability flags for a control surface device.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeControlSurfaceCapabilitySummary {
+    /// Whether the device supports sending transport control commands.
     pub supports_transport_control: bool,
+    /// Whether the device supports receiving mapping input events.
     pub supports_mapping_input: bool,
+    /// Whether the device supports writing feedback output.
     pub supports_feedback_output: bool,
+    /// Whether the device supports widened expression (MPE, MIDI 2.0, etc.).
     pub supports_widened_expression: bool,
+    /// Human-readable summary of the capability flags.
     pub summary: String,
 }
 
+/// Descriptor for a single control surface device including posture and capability.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeControlSurfaceDeviceDescriptor {
+    /// Stable identifier for this control surface device.
     pub device_id: String,
+    /// Human-readable name for this control surface device.
     pub device_name: String,
+    /// Transport control direction capability of this device.
     pub transport_posture: RuntimeControlSurfaceTransportPosture,
+    /// Mapping input capability of this device.
     pub mapping_posture: RuntimeControlSurfaceMappingPosture,
+    /// Feedback output readiness of this device.
     pub feedback_readiness: RuntimeControlSurfaceFeedbackReadiness,
+    /// Aggregated capability flags for this device.
     pub capability: RuntimeControlSurfaceCapabilitySummary,
+    /// Human-readable summary of this device descriptor.
     pub summary: String,
 }
 
+/// Aggregate snapshot of all control surface devices and their mapping/feedback counts.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeControlSurfaceSnapshot {
+    /// Current discovery phase of the underlying MIDI graph.
     pub discovery_state: RuntimeExternalMidiDiscoveryState,
+    /// Overall readiness of the control surface device graph.
     pub graph_state: RuntimeControlSurfaceGraphState,
+    /// Name of the backend provider supplying the device list.
     pub provider_name: String,
+    /// Total number of discovered control surface devices.
     pub device_count: usize,
+    /// Number of devices with a usable mapping posture.
     pub mapped_device_count: usize,
+    /// Number of devices whose feedback output is ready.
     pub feedback_ready_device_count: usize,
+    /// Number of devices in a guarded state.
     pub guarded_device_count: usize,
+    /// Per-device descriptors for all discovered control surface devices.
     pub devices: Vec<RuntimeControlSurfaceDeviceDescriptor>,
+    /// Human-readable summary of the snapshot.
     pub summary: String,
 }
 
 impl RuntimeControlSurfaceSnapshot {
+    /// Returns an unavailable snapshot with all counts zeroed.
     pub fn unavailable() -> Self {
         Self {
             discovery_state: RuntimeExternalMidiDiscoveryState::Unavailable,
@@ -84,6 +129,7 @@ impl RuntimeControlSurfaceSnapshot {
         }
     }
 
+    /// Returns an empty snapshot for the given provider with discovery in the `Idle` state.
     pub fn empty(provider_name: impl Into<String>) -> Self {
         let provider_name = provider_name.into();
         Self {
@@ -102,6 +148,7 @@ impl RuntimeControlSurfaceSnapshot {
         }
     }
 
+    /// Projects a control surface snapshot from a raw external MIDI endpoint graph snapshot.
     pub fn from_external_midi_snapshot(
         snapshot: &RuntimeExternalMidiEndpointGraphSnapshot,
     ) -> Self {

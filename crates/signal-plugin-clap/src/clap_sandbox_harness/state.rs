@@ -13,6 +13,7 @@ use super::{ClapHarnessError, ClapHarnessResult};
 
 mod projection;
 
+/// Stateful lifecycle harness for a CLAP sandbox process. Owns the shared-memory broker, the active instance, and the block state machine.
 #[derive(Debug)]
 pub struct ClapSandboxLifecycleHarness {
     pub(super) adapter: ClapPluginHostAdapter,
@@ -53,6 +54,7 @@ impl Default for ClapSandboxLifecycleHarness {
 }
 
 impl ClapSandboxLifecycleHarness {
+    /// Creates a new harness using the given host adapter.
     pub fn with_adapter(adapter: ClapPluginHostAdapter) -> Self {
         Self {
             adapter,
@@ -136,14 +138,17 @@ impl ClapSandboxLifecycleHarness {
         )))
     }
 
+    /// Returns the active shared-memory lease, if one is currently allocated.
     pub fn lease(&self) -> Option<&SharedMemoryLease> {
         self.active_lease.as_ref()
     }
 
+    /// Returns the number of heartbeat messages processed by this harness.
     pub fn heartbeat_count(&self) -> u64 {
         self.heartbeat_count
     }
 
+    /// Invalidates the active processing epoch, returning `(completion_invalidated, lease_invalidated)`.
     pub fn invalidate_active_epoch(&mut self, processing_epoch: u64) -> (bool, bool) {
         let lease_invalidated = self
             .active_lease
@@ -158,6 +163,7 @@ impl ClapSandboxLifecycleHarness {
         (completion_invalidated, lease_invalidated)
     }
 
+    /// Destroys the active shared-memory transport and resets all processing state.
     pub fn teardown_active_transport(&mut self) -> io::Result<()> {
         if let Some(transport) = self
             .active_lease

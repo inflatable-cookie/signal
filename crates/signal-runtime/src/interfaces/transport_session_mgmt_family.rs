@@ -3,88 +3,152 @@ use super::*;
 mod transport_session_mgmt_helpers;
 use transport_session_mgmt_helpers::*;
 
+/// Scoping policy for transport session observation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransportSessionBoundaryMode {
+    /// Only healthy (non-faulted) transport sessions are visible.
     HealthyPathVisible,
 }
 
+/// Lifecycle state of a transport session between the runtime and a plugin sandbox.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransportSessionState {
+    /// Session is not attached.
     Detached,
+    /// Session attachment is active.
     AttachActive,
+    /// A detach has been requested.
     DetachRequested,
+    /// Detach encountered a fault.
     DetachFaulted,
 }
 
+/// Freshness of the last heartbeat exchange with a sandbox.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransportHeartbeatFreshness {
+    /// Heartbeat state is unknown (no exchange yet).
     Unknown,
+    /// A heartbeat request has been sent and is awaiting a response.
     Requested,
+    /// The most recent heartbeat exchange completed successfully.
     Fresh,
+    /// A heartbeat response was not received within the deadline.
     Missed,
 }
 
+/// Current dispatch pipeline state for a transport session.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TransportDispatchState {
+    /// No dispatch is in progress.
     Idle,
+    /// A block dispatch has been sent and is awaiting completion.
     Requested,
+    /// The most recent block dispatch completed successfully.
     Completed,
+    /// The most recent block dispatch timed out.
     TimedOut,
 }
 
+/// Point-in-time state of one active transport session: attachment, heartbeat, dispatch, and fault detail.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ActiveTransportSessionRecord {
+    /// Sandbox ID for this session.
     pub sandbox_id: String,
+    /// Lease ID for this session.
     pub lease_id: String,
+    /// Region ID for this session.
     pub region_id: String,
+    /// Current lifecycle state of this session.
     pub state: TransportSessionState,
+    /// Whether this session is currently attached.
     pub currently_attached: bool,
+    /// Freshness of the most recent heartbeat for this session.
     pub heartbeat_freshness: TransportHeartbeatFreshness,
+    /// Current dispatch state for this session.
     pub dispatch_state: TransportDispatchState,
+    /// Processing epoch of the most recent event for this session.
     pub processing_epoch: Option<u64>,
+    /// Most recent active block sequence number.
     pub active_block_sequence: Option<u64>,
+    /// Number of transport faults recorded for this session.
     pub transport_fault_count: usize,
+    /// Source of the most recent transport fault.
     pub last_transport_fault_source: Option<TransportFaultSource>,
+    /// Stage of the most recent transport fault.
     pub last_transport_fault_stage: Option<TransportFaultStage>,
+    /// Phase of the most recent transport fault.
     pub last_transport_fault_phase: Option<TransportFaultPhase>,
+    /// Processing epoch of the most recent transport fault.
     pub last_transport_fault_processing_epoch: Option<u64>,
+    /// Block sequence number of the most recent transport fault.
     pub last_transport_fault_block_sequence: Option<u64>,
 }
 
+/// Aggregate transport session summary: overall state, event counts, epoch bounds, and active session list.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TransportSessionSummary {
+    /// Scoping policy for this session summary.
     pub boundary_mode: TransportSessionBoundaryMode,
+    /// Current overall session state.
     pub current_state: TransportSessionState,
+    /// Whether any session is currently attached.
     pub currently_attached: bool,
+    /// Freshness of the most recent heartbeat.
     pub heartbeat_freshness: TransportHeartbeatFreshness,
+    /// Current dispatch state.
     pub dispatch_state: TransportDispatchState,
+    /// Number of currently attached sessions.
     pub current_attached_session_count: usize,
+    /// Peak number of concurrently attached sessions observed.
     pub max_concurrent_attached_sessions: usize,
+    /// Total number of attach events.
     pub attach_events: usize,
+    /// Total number of detach-requested events.
     pub detach_requested_events: usize,
+    /// Total number of detached events.
     pub detached_events: usize,
+    /// Total number of detach-fault events.
     pub detach_fault_events: usize,
+    /// Total number of heartbeat-requested events.
     pub heartbeat_requested_events: usize,
+    /// Total number of heartbeat-responded events.
     pub heartbeat_responded_events: usize,
+    /// Total number of heartbeat-missed events.
     pub heartbeat_missed_events: usize,
+    /// Total number of dispatch-requested events.
     pub dispatch_requested_events: usize,
+    /// Total number of dispatch-completed events.
     pub dispatch_completed_events: usize,
+    /// Total number of dispatch-timed-out events.
     pub dispatch_timed_out_events: usize,
+    /// Earliest processing epoch seen across all events.
     pub first_processing_epoch: Option<u64>,
+    /// Latest processing epoch seen across all events.
     pub last_processing_epoch: Option<u64>,
+    /// Earliest block sequence seen across all events.
     pub first_block_sequence: Option<u64>,
+    /// Latest block sequence seen across all events.
     pub last_block_sequence: Option<u64>,
+    /// Sandbox ID of the currently active session.
     pub active_sandbox_id: Option<String>,
+    /// Lease ID of the currently active session.
     pub active_lease_id: Option<String>,
+    /// Region ID of the currently active session.
     pub active_region_id: Option<String>,
+    /// Most recently seen active block sequence.
     pub active_block_sequence: Option<u64>,
+    /// List of currently active transport session records.
     pub active_sessions: Vec<ActiveTransportSessionRecord>,
+    /// Sandbox ID from the most recent transport event.
     pub last_sandbox_id: Option<String>,
+    /// Lease ID from the most recent transport event.
     pub last_lease_id: Option<String>,
+    /// Region ID from the most recent transport event.
     pub last_region_id: Option<String>,
 }
 
 impl TransportSessionSummary {
+    /// Builds a transport session summary by replaying all transport, heartbeat, dispatch, and fault events from the diagnostics log.
     pub fn from_diagnostics(diagnostics: &RuntimeObservationDiagnostics) -> Self {
         let mut summary = Self {
             boundary_mode: TransportSessionBoundaryMode::HealthyPathVisible,

@@ -3,6 +3,8 @@ use super::performance_snapshot_render::*;
 use super::RuntimePerformanceSnapshot;
 
 impl RuntimePerformanceSnapshot {
+    /// Builds a performance snapshot from the current config, diagnostics, block state, and
+    /// last deferred service receipt.
     pub fn capture(
         effective_config: &EffectiveRuntimeConfig,
         diagnostics_snapshot: &RuntimeDiagnosticsSnapshot,

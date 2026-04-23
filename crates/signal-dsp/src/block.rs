@@ -1,12 +1,20 @@
 use crate::{DelayLine, OnePoleLowPass};
 use signal_primitives::{FrequencyHz, Sample};
 
+/// Apply a sample-accurate gain control buffer to an audio block.
+///
+/// Each sample in `block` is multiplied by the corresponding value in
+/// `gain_control`, zip-truncating to the shorter slice.
 pub fn apply_gain_control(block: &mut [Sample], gain_control: &[Sample]) {
     for (sample, gain) in block.iter_mut().zip(gain_control.iter().copied()) {
         *sample *= gain;
     }
 }
 
+/// Process an audio block through a low-pass filter driven by a per-sample cutoff control buffer.
+///
+/// The cutoff is updated only when it changes between consecutive samples to
+/// avoid redundant coefficient recalculations.
 pub fn process_low_pass_with_cutoff_control(
     filter: &mut OnePoleLowPass,
     block: &mut [Sample],
@@ -22,6 +30,9 @@ pub fn process_low_pass_with_cutoff_control(
     }
 }
 
+/// Process an audio block through a delay line driven by a per-sample feedback control buffer.
+///
+/// The feedback is updated only when it changes between consecutive samples.
 pub fn process_delay_with_feedback_control(
     delay: &mut DelayLine,
     block: &mut [Sample],

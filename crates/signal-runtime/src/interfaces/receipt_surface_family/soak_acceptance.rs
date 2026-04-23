@@ -1,58 +1,115 @@
 use super::*;
 
+/// Aggregate event and fault counters collected over a soak run.
+///
+/// Built from a [`RuntimeSupervisorReport`] via `soak_receipt()`.  Used in
+/// integration tests to assert that a lifecycle scenario produced the expected
+/// number of restarts, faults, and transport events.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeSoakReceipt {
+    /// Number of event streams captured in this soak run.
     pub event_stream_count: usize,
+    /// Total number of runtime restarts observed.
     pub restart_count: u64,
+    /// Total number of runtime stop events observed.
     pub stop_count: u64,
+    /// Number of watchdog-triggered restarts observed.
     pub watchdog_restart_count: u32,
+    /// Whether safe mode was enabled during the soak run.
     pub safe_mode_enabled: bool,
+    /// Whether runtime readiness was degraded at the end of the soak run.
     pub readiness_degraded: bool,
+    /// Total number of plugin fault events observed.
     pub plugin_fault_count: usize,
+    /// Total number of recovery events observed.
     pub recovery_event_count: usize,
+    /// Total number of sandbox lifecycle events observed.
     pub lifecycle_event_count: usize,
+    /// Total number of sandbox transport events observed.
     pub transport_event_count: usize,
+    /// Total number of sandbox heartbeat events observed.
     pub heartbeat_event_count: usize,
+    /// Total number of block dispatch events observed.
     pub block_dispatch_event_count: usize,
+    /// Total number of lease rollover events observed.
     pub lease_rollover_event_count: usize,
+    /// Total number of broker invalidation events observed.
     pub invalidation_event_count: usize,
+    /// Total number of completion slot events observed.
     pub completion_slot_event_count: usize,
+    /// Total number of transport fault events observed.
     pub transport_fault_event_count: usize,
+    /// Total number of broker failure events observed.
     pub broker_failure_event_count: usize,
+    /// Total number of sandbox operation failure events observed.
     pub sandbox_operation_failure_event_count: usize,
+    /// Peak number of simultaneously attached transport sessions.
     pub peak_attached_sessions: usize,
+    /// Peak number of recovery sessions overlapping with the realtime thread.
     pub peak_recovery_overlap_sessions: usize,
+    /// Peak number of lingering (stale) sessions.
     pub peak_lingering_sessions: usize,
+    /// Number of pending cleanup waves at the end of the soak run.
     pub pending_cleanup_waves: usize,
+    /// Number of plugin sandboxes in the ready state at the end of the soak run.
     pub plugin_ready_sandbox_count: usize,
+    /// Number of plugin sandboxes in a degraded state at the end of the soak run.
     pub plugin_degraded_sandbox_count: usize,
+    /// Number of plugin sandboxes in a faulted state at the end of the soak run.
     pub plugin_faulted_sandbox_count: usize,
+    /// Number of plugin sandboxes currently restarting at the end of the soak run.
     pub plugin_restarting_sandbox_count: usize,
+    /// Number of quarantined plugin sandboxes at the end of the soak run.
     pub plugin_quarantined_sandbox_count: usize,
+    /// Total number of recall handoff stages.
     pub recall_stage_count: usize,
+    /// Number of recall handoff stages with a recovered state.
     pub recovered_recall_stage_count: usize,
+    /// Number of recall handoff stages with an unavailable state.
     pub unavailable_recall_stage_count: usize,
+    /// Recovery restart intent from the most recent recovery event, if any.
     pub last_recovery_intent: Option<RecoveryRestartIntent>,
+    /// Reason for the most recent runtime stop, if any.
     pub last_stop_reason: Option<StopReason>,
+    /// Human-readable one-line summary.
     pub summary: String,
 }
 
+/// Multi-lane acceptance check for a configured runtime.
+///
+/// Built via `RuntimeAcceptanceReceipt::capture()`.  Each boolean lane
+/// represents a functional readiness dimension: playback, recording, media,
+/// clip-processing, plugin, and recovery.  `runtime_ready_lane_count` out of
+/// `runtime_lane_count` must be `true` for the runtime to be considered fully
+/// ready for a test or production scenario.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeAcceptanceReceipt {
+    /// Total number of readiness lanes evaluated.
     pub runtime_lane_count: usize,
+    /// Number of readiness lanes that passed.
     pub runtime_ready_lane_count: usize,
+    /// Whether the runtime is ready for playback.
     pub playback_ready: bool,
+    /// Whether the runtime is ready for recording.
     pub recording_ready: bool,
+    /// Whether the media service is ready.
     pub media_ready: bool,
+    /// Whether the clip processing pipeline is ready.
     pub clip_processing_ready: bool,
+    /// Whether all plugin sandboxes are ready.
     pub plugin_ready: bool,
+    /// Whether the recovery subsystem is ready.
     pub recovery_ready: bool,
+    /// Minimum number of trace observations required for acceptance.
     pub minimum_trace_observation_count: usize,
+    /// Minimum number of soak events required for acceptance.
     pub minimum_soak_event_count: usize,
+    /// Human-readable one-line summary.
     pub summary: String,
 }
 
 impl RuntimeAcceptanceReceipt {
+    /// Captures a readiness acceptance receipt from the current runtime observation state.
     pub fn capture(runtime: &impl RuntimeObservationApi) -> Self {
         build_runtime_acceptance_receipt(RuntimeAcceptanceReceiptInput {
             readiness: runtime.get_readiness(),
@@ -68,6 +125,7 @@ impl RuntimeAcceptanceReceipt {
 }
 
 impl RuntimeSupervisorReport {
+    /// Produces a soak receipt summarising event and fault counters from this supervisor report.
     pub fn soak_receipt(&self) -> RuntimeSoakReceipt {
         build_runtime_soak_receipt(RuntimeSoakReceiptInput {
             observation: &self.observation,

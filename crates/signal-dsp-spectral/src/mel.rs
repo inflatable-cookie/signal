@@ -44,9 +44,13 @@ pub enum MelFilterNorm {
 /// Configuration for a mel filterbank.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MelFilterbankConfig {
+    /// Number of triangular mel-frequency filters.
     pub mel_bin_count: usize,
+    /// Lower frequency boundary of the filterbank in Hz.
     pub low_frequency_hz: f32,
+    /// Upper frequency boundary of the filterbank in Hz.
     pub high_frequency_hz: f32,
+    /// Mel frequency scale formula to use.
     pub mel_scale: MelScale,
     /// Triangle normalization mode.  Use [`MelFilterNorm::UnitTri`] to match
     /// Essentia's `MelBands(normalize='unit_tri')`.
@@ -56,13 +60,16 @@ pub struct MelFilterbankConfig {
 /// Configuration for mel-spectrogram projection.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MelSpectrogramConfig {
+    /// Filterbank parameters used to project the linear-frequency spectrum.
     pub filterbank: MelFilterbankConfig,
+    /// Log-compression applied to each mel band energy after projection.
     pub log_compression: LogCompression,
 }
 
 /// A mel-frequency spectrogram projected from a linear-frequency [`Spectrogram`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct MelSpectrogram {
+    /// Configuration used to produce this mel spectrogram.
     pub config: MelSpectrogramConfig,
     /// Mel-frequency energy per frame: `frames[frame_index][mel_bin]`.
     pub frames: Vec<Vec<f32>>,

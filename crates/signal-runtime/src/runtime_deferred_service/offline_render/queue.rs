@@ -1,6 +1,7 @@
 use super::*;
 
 impl SignalRuntime {
+    /// Renders a batch of offline requests in sequence, deferring any that exceed the admission limit.
     pub fn render_offline_queue(
         &self,
         requests: Vec<RuntimeOfflineRenderRequest>,

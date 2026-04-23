@@ -9,6 +9,7 @@ use crate::{
 };
 
 impl RuntimeExternalMidiLiveOwnershipSummary {
+    /// Returns an unavailable ownership summary with all fields set to unavailable.
     pub fn unavailable() -> Self {
         Self {
             ownership_posture: RuntimeExternalMidiLiveOwnershipPosture::Unavailable,
@@ -25,6 +26,7 @@ impl RuntimeExternalMidiLiveOwnershipSummary {
         }
     }
 
+    /// Returns a detached ownership summary with no backend context.
     pub fn detached_without_backend_context() -> Self {
         Self {
             ownership_posture: RuntimeExternalMidiLiveOwnershipPosture::NoLiveOwnership,
@@ -41,6 +43,7 @@ impl RuntimeExternalMidiLiveOwnershipSummary {
         }
     }
 
+    /// Derives a live ownership summary from a Linux backend session and interruption context.
     pub fn from_linux_session_and_interruption(
         linux_session: &RuntimeLinuxBackendSessionSnapshot,
         interruption_summary: &RuntimeInterruptionSummary,
@@ -176,6 +179,7 @@ impl RuntimeExternalMidiLiveOwnershipSummary {
 }
 
 impl RuntimeExternalMidiEndpointGraphSnapshot {
+    /// Returns an unavailable snapshot with all counts zeroed and discovery in the `Unavailable` state.
     pub fn unavailable() -> Self {
         Self {
             discovery_state: crate::RuntimeExternalMidiDiscoveryState::Unavailable,
@@ -195,6 +199,7 @@ impl RuntimeExternalMidiEndpointGraphSnapshot {
         }
     }
 
+    /// Returns an empty snapshot for the given provider with discovery in the `Idle` state.
     pub fn empty(provider_name: impl Into<String>) -> Self {
         let provider_name = provider_name.into();
         Self {
@@ -219,6 +224,7 @@ impl RuntimeExternalMidiEndpointGraphSnapshot {
         }
     }
 
+    /// Attaches a computed live ownership summary derived from the given Linux session and interruption context.
     pub fn with_live_ownership_summary(
         mut self,
         linux_session: &RuntimeLinuxBackendSessionSnapshot,

@@ -2,6 +2,7 @@ use super::super::*;
 use super::RuntimeDeferredServiceReceipt;
 
 impl RuntimeDeferredServiceReceipt {
+    /// Renders this receipt as a multi-line key=value string for logging or diagnostics.
     pub fn render_multiline(&self) -> String {
         format!(
             concat!(
@@ -55,6 +56,7 @@ impl RuntimeDeferredServiceReceipt {
         )
     }
 
+    /// Renders this receipt as a JSON object string.
     pub fn render_json(&self) -> String {
         format!(
             concat!(

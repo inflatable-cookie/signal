@@ -38,6 +38,7 @@ impl SignalRuntime {
         targets.len()
     }
 
+    /// Returns the smallest planned prework block sequence greater than `after_block_sequence`, if any.
     pub fn next_planned_prework_block_sequence(
         &self,
         after_block_sequence: Option<u64>,
@@ -55,6 +56,7 @@ impl SignalRuntime {
             .min()
     }
 
+    /// Plans the target block sequence list for the prework window relative to the current block.
     pub fn plan_prework_window_block_sequences(
         &mut self,
         current_block_sequence: u64,

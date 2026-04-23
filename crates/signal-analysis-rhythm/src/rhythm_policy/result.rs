@@ -14,23 +14,37 @@ use crate::{
     TempoStateRecommendation, TempoStructureSummary,
 };
 
+/// Full output of a single [`BeatTracker`](crate::BeatTracker) analysis pass.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BeatAnalysisResult {
+    /// Primary tempo estimate in beats per minute.
     pub bpm: f32,
+    /// Overall confidence in the tempo and beat grid.
     pub confidence: Confidence,
+    /// Beat onset times in seconds, in ascending order.
     pub beat_positions_seconds: Vec<f32>,
+    /// Normalised onset-strength envelope used for tempo and beat estimation.
     pub onset_envelope: Vec<f32>,
+    /// Ranked list of competing tempo hypotheses.
     pub tempo_candidates: Vec<TempoCandidate>,
+    /// Detailed per-beat and windowed tempo stability diagnostics.
     pub tempo_diagnostics: TempoDiagnostics,
+    /// High-level tempo trust level and snap recommendation.
     pub tempo_interpretation: TempoInterpretation,
+    /// Continuity-aware tempo state and handoff recommendation.
     pub tempo_state: TempoStateRecommendation,
+    /// Confidence that a strong alternative tempo exists (higher = more ambiguous).
     pub tempo_ambiguity: Confidence,
+    /// Continuity-aware meter state and handoff recommendation.
     pub meter_state: MeterStateRecommendation,
+    /// Meter estimate (beats per bar and downbeat positions), if detected.
     pub meter: Option<MeterEstimate>,
+    /// Summary of any competing or ambiguous meter/downbeat hypotheses.
     pub structure_ambiguity: RhythmStructureAmbiguitySummary,
 }
 
 impl BeatAnalysisResult {
+    /// Build a compact tempo structure summary suitable for display or logging.
     pub fn tempo_structure_summary(&self) -> TempoStructureSummary {
         let consumption = self.tempo_consumption(None);
         let mut segments = Vec::new();
@@ -94,6 +108,8 @@ impl BeatAnalysisResult {
         }
     }
 
+    /// Decide which BPM value to expose and when to fall back, given an optional
+    /// BPM from a previous analysis pass.
     pub fn tempo_consumption(&self, prior_bpm: Option<f32>) -> TempoConsumptionDecision {
         fn should_clear_core_stable_without_prior_early(
             confidence: Confidence,

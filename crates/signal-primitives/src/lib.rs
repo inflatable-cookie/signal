@@ -16,37 +16,53 @@
 //! assert_eq!(audio.channel_count().0, 2);
 //! ```
 
+#![warn(missing_docs)]
+
+/// Floating-point audio sample value.
 pub type Sample = f32;
 
+/// Error returned when an [`AudioBuffer`] cannot be constructed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AudioBufferConstructionError {
+    /// The requested channel layout has a channel count of zero.
     InvalidChannelLayout {
+        /// The invalid channel count that was provided.
         channel_count: usize,
     },
+    /// The interleaved sample slice length is not an exact multiple of the channel count.
     LossyInterleavedSampleCount {
+        /// The channel count used to validate the sample slice.
         channel_count: usize,
+        /// The number of samples in the slice that could not be evenly divided.
         sample_count: usize,
     },
 }
 
+/// Sample rate in Hz.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SampleRate(pub u32);
 
+/// Number of audio frames (samples per channel) in a block or buffer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FrameCount(pub usize);
 
+/// Number of audio channels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ChannelCount(pub usize);
 
+/// Duration in seconds.
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Seconds(pub f32);
 
+/// Frequency in Hz.
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct FrequencyHz(pub f32);
 
+/// Linear (non-dB) gain multiplier.
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct GainLinear(pub Sample);
 
+/// A constant-value segment of a step envelope, expressed in sample-accurate frame offsets.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StepSegment {
     start_frame: usize,
@@ -55,10 +71,15 @@ pub struct StepSegment {
 }
 
 impl SampleRate {
+    /// Return the sample rate as an `f32`.
     pub fn as_f32(self) -> f32 {
         self.0 as f32
     }
 
+    /// Convert a duration in seconds to a frame count at this sample rate.
+    ///
+    /// Negative durations are clamped to zero. Returns [`FrameCount(0)`] if the
+    /// sample rate is zero.
     pub fn seconds_to_frames(self, seconds: Seconds) -> FrameCount {
         if self.0 == 0 {
             return FrameCount(0);
@@ -67,6 +88,9 @@ impl SampleRate {
         FrameCount((seconds.0.max(0.0) * self.as_f32()).round() as usize)
     }
 
+    /// Convert a frame count to a duration in seconds at this sample rate.
+    ///
+    /// Returns [`Seconds(0.0)`] if the sample rate is zero.
     pub fn frames_to_seconds(self, frames: FrameCount) -> Seconds {
         if self.0 == 0 {
             return Seconds(0.0);
@@ -77,28 +101,35 @@ impl SampleRate {
 }
 
 impl FrameCount {
+    /// Return the frame count as a `usize`.
     pub fn as_usize(self) -> usize {
         self.0
     }
 }
 
 impl ChannelCount {
+    /// Return the channel count as a `usize`.
     pub fn as_usize(self) -> usize {
         self.0
     }
 }
 
 impl Seconds {
+    /// Return the duration as an `f32`.
     pub fn as_f32(self) -> f32 {
         self.0
     }
 }
 
 impl FrequencyHz {
+    /// Return the frequency as an `f32`.
     pub fn as_f32(self) -> f32 {
         self.0
     }
 
+    /// Return the frequency normalized to the range `[0.0, 0.5]` (Nyquist = 0.5).
+    ///
+    /// Returns `0.0` if the sample rate is zero.
     pub fn normalized(self, sample_rate: SampleRate) -> f32 {
         if sample_rate.0 == 0 {
             return 0.0;
@@ -109,12 +140,14 @@ impl FrequencyHz {
 }
 
 impl GainLinear {
+    /// Return the gain as a [`Sample`] value.
     pub fn as_sample(self) -> Sample {
         self.0
     }
 }
 
 impl StepSegment {
+    /// Create a new segment starting at `start_frame`, spanning `frame_count` frames, held at `value`.
     pub fn new(start_frame: usize, frame_count: usize, value: Sample) -> Self {
         Self {
             start_frame,
@@ -123,35 +156,45 @@ impl StepSegment {
         }
     }
 
+    /// First frame index included in this segment.
     pub fn start_frame(self) -> usize {
         self.start_frame
     }
 
+    /// Number of frames in this segment.
     pub fn frame_count(self) -> usize {
         self.frame_count
     }
 
+    /// One past the last frame index in this segment (exclusive upper bound).
     pub fn end_frame(self) -> usize {
         self.start_frame.saturating_add(self.frame_count)
     }
 
+    /// The held sample value for this segment.
     pub fn value(self) -> Sample {
         self.value
     }
 
+    /// Return `true` if `frame_index` falls within `[start_frame, end_frame)`.
     pub fn contains(self, frame_index: usize) -> bool {
         frame_index >= self.start_frame && frame_index < self.end_frame()
     }
 }
 
+/// Named or arbitrary channel layout for an audio buffer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ChannelLayout {
+    /// Single channel.
     Mono,
+    /// Two channels (left + right).
     Stereo,
+    /// Arbitrary channel count.
     Count(ChannelCount),
 }
 
 impl ChannelLayout {
+    /// Return the number of channels described by this layout.
     pub fn channels(self) -> ChannelCount {
         match self {
             Self::Mono => ChannelCount(1),
@@ -160,6 +203,7 @@ impl ChannelLayout {
         }
     }
 
+    /// Collapse `Count(1)` and `Count(2)` to their named equivalents; leave others unchanged.
     pub fn normalized(self) -> Self {
         match self.channels().0 {
             1 => Self::Mono,
@@ -168,6 +212,7 @@ impl ChannelLayout {
         }
     }
 
+    /// Normalize the layout and return an error if the channel count is zero.
     pub fn validate(self) -> Result<Self, AudioBufferConstructionError> {
         let normalized = self.normalized();
         let channel_count = normalized.channels().0;
@@ -178,6 +223,7 @@ impl ChannelLayout {
     }
 }
 
+/// Owned interleaved PCM audio buffer.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AudioBuffer {
     sample_rate: SampleRate,
@@ -187,11 +233,17 @@ pub struct AudioBuffer {
 }
 
 impl AudioBuffer {
+    /// Allocate a silent buffer for the given sample rate, channel layout, and frame count.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `channels` resolves to a zero channel count.
     pub fn new(sample_rate: SampleRate, channels: ChannelLayout, frames: FrameCount) -> Self {
         Self::try_new(sample_rate, channels, frames)
             .expect("audio buffer construction should use a non-zero channel layout")
     }
 
+    /// Allocate a silent buffer, returning an error instead of panicking on invalid input.
     pub fn try_new(
         sample_rate: SampleRate,
         channels: ChannelLayout,
@@ -207,6 +259,12 @@ impl AudioBuffer {
         })
     }
 
+    /// Wrap an existing interleaved sample slice.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `channels` resolves to a zero channel count, or if `data.len()` is not an exact
+    /// multiple of the channel count.
     pub fn from_interleaved(
         sample_rate: SampleRate,
         channels: ChannelLayout,
@@ -217,6 +275,8 @@ impl AudioBuffer {
         )
     }
 
+    /// Wrap an existing interleaved sample slice, returning an error instead of panicking on
+    /// invalid input.
     pub fn try_from_interleaved(
         sample_rate: SampleRate,
         channels: ChannelLayout,
@@ -240,38 +300,47 @@ impl AudioBuffer {
         })
     }
 
+    /// Sample rate of this buffer.
     pub fn sample_rate(&self) -> SampleRate {
         self.sample_rate
     }
 
+    /// Channel layout of this buffer.
     pub fn channels(&self) -> ChannelLayout {
         self.channels
     }
 
+    /// Number of frames (samples per channel) in this buffer.
     pub fn frames(&self) -> FrameCount {
         self.frames
     }
 
+    /// Number of channels in this buffer.
     pub fn channel_count(&self) -> ChannelCount {
         self.channels.channels()
     }
 
+    /// Return `true` if the buffer contains no samples.
     pub fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 
+    /// Interleaved sample data as a slice.
     pub fn samples(&self) -> &[Sample] {
         &self.data
     }
 
+    /// Interleaved sample data as a mutable slice.
     pub fn samples_mut(&mut self) -> &mut [Sample] {
         &mut self.data
     }
 
+    /// Zero all samples in the buffer.
     pub fn clear(&mut self) {
         self.data.fill(0.0);
     }
 
+    /// Mix all channels down to mono by averaging, returning a new sample vector.
     pub fn to_mono(&self) -> Vec<Sample> {
         let channels = self.channel_count().0;
         if channels == 0 || self.data.is_empty() {
@@ -289,6 +358,9 @@ impl AudioBuffer {
             .collect()
     }
 
+    /// Duration of a single frame in seconds (reciprocal of the sample rate).
+    ///
+    /// Returns `0.0` if the sample rate is zero.
     pub fn seconds_per_frame(&self) -> f32 {
         if self.sample_rate.0 == 0 {
             return 0.0;

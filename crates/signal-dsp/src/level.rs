@@ -1,6 +1,7 @@
 use crate::{flush_denormal, DspKernel};
 use signal_primitives::{Sample, SampleRate, Seconds};
 
+/// Stateful peak meter that tracks the maximum absolute sample value seen since the last reset.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PeakMeter {
     peak: Sample,
@@ -8,6 +9,7 @@ pub struct PeakMeter {
 }
 
 impl PeakMeter {
+    /// Create a new peak meter initialised to zero.
     pub fn new() -> Self {
         Self {
             peak: 0.0,
@@ -15,6 +17,7 @@ impl PeakMeter {
         }
     }
 
+    /// Return the highest absolute sample value observed since the last reset.
     pub fn peak(&self) -> Sample {
         self.peak
     }
@@ -50,6 +53,7 @@ impl DspKernel for PeakMeter {
     }
 }
 
+/// Sliding-window RMS meter that computes the root-mean-square level over a fixed sample window.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RmsMeter {
     window: Vec<Sample>,
@@ -61,6 +65,9 @@ pub struct RmsMeter {
 }
 
 impl RmsMeter {
+    /// Create a new RMS meter with a window of `window_samples` samples.
+    ///
+    /// `window_samples` is clamped to a minimum of 1.
     pub fn new(window_samples: usize) -> Self {
         Self {
             window: vec![0.0; window_samples.max(1)],
@@ -72,6 +79,7 @@ impl RmsMeter {
         }
     }
 
+    /// Return the current RMS level.
     pub fn rms(&self) -> Sample {
         self.rms
     }
@@ -114,6 +122,7 @@ impl DspKernel for RmsMeter {
     }
 }
 
+/// Exponential attack/release envelope follower that tracks the amplitude of an audio signal.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct EnvelopeFollower {
     sample_rate: SampleRate,
@@ -126,6 +135,7 @@ pub struct EnvelopeFollower {
 }
 
 impl EnvelopeFollower {
+    /// Create a new envelope follower with the given attack and release times.
     pub fn new(sample_rate: SampleRate, attack: Seconds, release: Seconds) -> Self {
         let mut follower = Self {
             sample_rate,
@@ -140,20 +150,24 @@ impl EnvelopeFollower {
         follower
     }
 
+    /// Return the current envelope level.
     pub fn envelope(&self) -> Sample {
         self.envelope
     }
 
+    /// Set a new attack time and recompute the coefficient.
     pub fn set_attack(&mut self, attack: Seconds) {
         self.attack = attack;
         self.update_coefficients();
     }
 
+    /// Set a new release time and recompute the coefficient.
     pub fn set_release(&mut self, release: Seconds) {
         self.release = release;
         self.update_coefficients();
     }
 
+    /// Process one input sample and return the updated envelope level.
     pub fn process_sample(&mut self, input: Sample) -> Sample {
         let input = input.abs();
         let coeff = if input >= self.envelope {

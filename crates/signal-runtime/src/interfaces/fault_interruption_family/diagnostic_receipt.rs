@@ -1,18 +1,33 @@
 use super::*;
 
+/// Structured fault diagnosis: primary cause, interruption class, and a list
+/// of [`RuntimeFaultContributionReceipt`]s covering each fault family.
+///
+/// Built by `RuntimeFaultDiagnosticReceipt::capture()`.  Used by the host to
+/// present structured fault information in the UI and to decide recovery
+/// actions.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeFaultDiagnosticReceipt {
+    /// Primary fault family, if a dominant fault family can be identified.
     pub primary_family: Option<RuntimeFaultDiagnosticFamily>,
+    /// Primary fault cause driving the current interruption.
     pub primary_fault_cause: Option<RuntimeFaultCause>,
+    /// Interruption class derived from the fault status.
     pub interruption_class: RuntimeInterruptionClass,
+    /// Recovery trajectory at the time this receipt was captured.
     pub recovery_state: RuntimeRecoveryState,
+    /// Whether safe mode is currently engaged.
     pub safe_mode_enabled: bool,
+    /// Whether the current fault state allows rebinding without a full restart.
     pub rebindable: bool,
+    /// Per-family contribution receipts.
     pub contributions: Vec<RuntimeFaultContributionReceipt>,
+    /// Human-readable summary of this receipt.
     pub summary: String,
 }
 
 impl RuntimeFaultDiagnosticReceipt {
+    /// Captures a diagnostic receipt from the current fault, interruption, and engine state.
     pub fn capture(
         fault_status: &RuntimeFaultStatusSnapshot,
         interruption_summary: &RuntimeInterruptionSummary,

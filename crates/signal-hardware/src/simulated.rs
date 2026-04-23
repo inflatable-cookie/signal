@@ -15,6 +15,12 @@ use crate::{
 mod configuration;
 
 /// A simulated hardware backend for testing and development.
+///
+/// Implements [`HardwareBackend`] against an explicit device list provided at
+/// construction. Use this in tests and CI where real audio hardware is not
+/// available. Stream negotiations are validated against the device list — unknown
+/// devices and out-of-range channel counts return errors just as a real backend
+/// would.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SimulatedHardwareBackend {
     backend_identity: HardwareBackendIdentity,

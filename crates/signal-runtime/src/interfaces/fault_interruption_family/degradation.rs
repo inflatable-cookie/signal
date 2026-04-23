@@ -1,5 +1,8 @@
 use super::*;
 
+/// Aggregated degradation counters for a single observation tick: xruns,
+/// plugin faults, gate states, concurrency counts, and transport events.
+/// Built via `RuntimeDegradationSummary::capture()`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeDegradationSummary {
     pub readiness_degraded: bool,

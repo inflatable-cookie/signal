@@ -15,6 +15,8 @@ use tempo_state_use_refined_stable_arm::use_refined_stable_arm;
 mod tempo_state_fallback_arms;
 use tempo_state_fallback_arms::{defer_arm, use_core_window_arm, use_refined_guarded_arm};
 
+/// Produce a [`TempoStateRecommendation`] from the interpretation pipeline output,
+/// taking the stability scope into account when choosing the action and continuity plan.
 pub fn tempo_state_recommendation_with_scope(
     interpretation: TempoInterpretation,
     confidence: Confidence,

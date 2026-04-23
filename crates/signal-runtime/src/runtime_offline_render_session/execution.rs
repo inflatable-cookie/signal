@@ -3,6 +3,7 @@ use super::*;
 mod internal_render;
 
 impl SignalRuntime {
+    /// Performs a synchronous offline render and returns the result.
     pub fn render_offline(
         &self,
         request: RuntimeOfflineRenderRequest,
@@ -11,6 +12,7 @@ impl SignalRuntime {
             .map(|execution| execution.result)
     }
 
+    /// Performs a synchronous offline render and returns the result together with all emitted checkpoints.
     pub fn render_offline_with_checkpoints(
         &self,
         request: RuntimeOfflineRenderRequest,
@@ -18,6 +20,7 @@ impl SignalRuntime {
         self.render_offline_internal(request, true)
     }
 
+    /// Registers a new offline render execution session and emits the first checkpoint.
     pub fn begin_offline_render_execution(
         &mut self,
         request: RuntimeOfflineRenderRequest,

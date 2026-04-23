@@ -12,6 +12,8 @@
 //! The output is deterministic for a given input sample stream, chunking
 //! pattern, and configuration.
 
+#![warn(missing_docs)]
+
 use signal_primitives::{Sample, SampleRate};
 
 /// Quality / cost trade-off for resampling.
@@ -28,12 +30,16 @@ pub enum ResampleQuality {
 /// Resampling configuration for one mono stream.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ResampleConfig {
+    /// Sample rate of the input signal.
     pub input_rate: SampleRate,
+    /// Desired sample rate of the output signal.
     pub output_rate: SampleRate,
+    /// Quality level for the resampling kernel.
     pub quality: ResampleQuality,
 }
 
 impl ResampleConfig {
+    /// Construct a `ResampleConfig` from the given rates and quality level.
     pub fn new(input_rate: SampleRate, output_rate: SampleRate, quality: ResampleQuality) -> Self {
         Self {
             input_rate,
@@ -46,21 +52,32 @@ impl ResampleConfig {
 /// Summary metrics for one resampled output stream.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ResampleArtifactMetrics {
+    /// Number of samples in the resampled output.
     pub output_len: usize,
+    /// Absolute peak amplitude of the output.
     pub peak_amplitude: f32,
+    /// Root-mean-square amplitude of the output.
     pub rms_amplitude: f32,
+    /// Mean absolute difference between adjacent output samples.
     pub mean_abs_step: f32,
+    /// Mean squared difference between adjacent output samples.
     pub step_energy: f32,
 }
 
 /// Frozen comparison surface for the crate's three quality tiers.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ResampleQualityComparisonReport {
+    /// Sample rate of the input signal used for the comparison.
     pub input_rate: SampleRate,
+    /// Target sample rate used for the comparison.
     pub output_rate: SampleRate,
+    /// Number of input samples used for the comparison.
     pub input_len: usize,
+    /// Artifact metrics for the [`ResampleQuality::Nearest`] tier.
     pub nearest: ResampleArtifactMetrics,
+    /// Artifact metrics for the [`ResampleQuality::Linear`] tier.
     pub linear: ResampleArtifactMetrics,
+    /// Artifact metrics for the [`ResampleQuality::BandLimited`] tier.
     pub band_limited: ResampleArtifactMetrics,
 }
 
@@ -73,6 +90,7 @@ pub struct StreamingResampler {
 }
 
 impl StreamingResampler {
+    /// Create a new `StreamingResampler` with the given configuration.
     pub fn new(config: ResampleConfig) -> Self {
         let step = if config.input_rate.0 == 0 || config.output_rate.0 == 0 {
             0.0
@@ -88,15 +106,18 @@ impl StreamingResampler {
         }
     }
 
+    /// Return the current resampling configuration.
     pub fn config(&self) -> ResampleConfig {
         self.config
     }
 
+    /// Reset internal state, discarding any buffered samples.
     pub fn reset(&mut self) {
         self.pending.clear();
         self.next_source_index = 0.0;
     }
 
+    /// Feed one chunk of input samples and return all newly available output samples.
     pub fn process_chunk(&mut self, input: &[Sample]) -> Vec<Sample> {
         if input.is_empty() || self.config.input_rate.0 == 0 || self.config.output_rate.0 == 0 {
             return Vec::new();
@@ -110,6 +131,9 @@ impl StreamingResampler {
         self.drain_available(false)
     }
 
+    /// Flush remaining buffered samples and return any final output samples.
+    ///
+    /// Resets internal state. Call once after the last [`process_chunk`](Self::process_chunk).
     pub fn finish(&mut self) -> Vec<Sample> {
         if self.config.input_rate.0 == 0 || self.config.output_rate.0 == 0 {
             self.reset();

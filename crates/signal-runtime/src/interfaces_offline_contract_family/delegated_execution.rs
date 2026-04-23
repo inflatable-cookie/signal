@@ -2,6 +2,7 @@ use super::*;
 use std::collections::BTreeSet;
 
 impl RuntimeOfflinePluginExecutionBoundary {
+    /// Builds a delegated execution request containing only the stages that require host delegation.
     pub fn delegated_execution_request(&self) -> RuntimeOfflinePluginDelegatedExecutionRequest {
         let stages = self
             .stages
@@ -60,6 +61,7 @@ impl RuntimeOfflinePluginExecutionBoundary {
 }
 
 impl RuntimeOfflineRenderManifest {
+    /// Validates and applies a delegated plugin execution receipt to this manifest.
     pub fn apply_delegated_execution_receipt(
         &mut self,
         receipt: RuntimeOfflinePluginDelegatedExecutionReceipt,

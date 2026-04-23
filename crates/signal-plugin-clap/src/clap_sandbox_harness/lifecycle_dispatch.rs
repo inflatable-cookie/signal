@@ -5,6 +5,7 @@ use super::state::ClapSandboxLifecycleHarness;
 use crate::ClapHarnessResult;
 
 impl ClapSandboxLifecycleHarness {
+    /// Dispatches an incoming lifecycle request envelope to the appropriate handler and returns the response envelope.
     pub fn handle(
         &mut self,
         request: PluginMessageEnvelope,

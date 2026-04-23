@@ -1,5 +1,6 @@
 use signal_primitives::{FrameCount, FrequencyHz, Sample, SampleRate};
 
+/// Deterministic in-memory signal buffer for testing DSP kernels.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SignalFixture {
     sample_rate: SampleRate,
@@ -7,6 +8,7 @@ pub struct SignalFixture {
 }
 
 impl SignalFixture {
+    /// Create a silent (all-zero) fixture of the given length.
     pub fn silence(sample_rate: SampleRate, frames: FrameCount) -> Self {
         Self {
             sample_rate,
@@ -14,6 +16,10 @@ impl SignalFixture {
         }
     }
 
+    /// Create a fixture with a single non-zero sample at `impulse_frame`.
+    ///
+    /// Frames outside `[0, frames)` are silent. If `impulse_frame` is out of
+    /// range the entire fixture is silent.
     pub fn impulse(
         sample_rate: SampleRate,
         frames: FrameCount,
@@ -27,6 +33,7 @@ impl SignalFixture {
         fixture
     }
 
+    /// Create a fixture that is zero before `step_frame` and `amplitude` from `step_frame` onward.
     pub fn step(
         sample_rate: SampleRate,
         frames: FrameCount,
@@ -40,6 +47,7 @@ impl SignalFixture {
         fixture
     }
 
+    /// Create a fixture containing a sine wave at the given frequency, amplitude, and phase.
     pub fn sine(
         sample_rate: SampleRate,
         frames: FrameCount,
@@ -59,18 +67,22 @@ impl SignalFixture {
         }
     }
 
+    /// Return the sample rate of this fixture.
     pub fn sample_rate(&self) -> SampleRate {
         self.sample_rate
     }
 
+    /// Return the number of frames in this fixture.
     pub fn frames(&self) -> FrameCount {
         FrameCount(self.samples.len())
     }
 
+    /// Return a slice of all samples.
     pub fn samples(&self) -> &[Sample] {
         &self.samples
     }
 
+    /// Consume the fixture and return the underlying sample buffer.
     pub fn into_samples(self) -> Vec<Sample> {
         self.samples
     }

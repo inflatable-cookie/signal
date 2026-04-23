@@ -13,6 +13,7 @@ use crate::{
 };
 
 impl RuntimePipeWireAlsaParitySnapshot {
+    /// Returns an unavailable PipeWire/ALSA parity snapshot with all fields set to unavailable.
     pub fn unavailable() -> Self {
         Self {
             backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
@@ -40,11 +41,13 @@ impl RuntimePipeWireAlsaParitySnapshot {
         }
     }
 
+    /// Derives a PipeWire/ALSA parity snapshot directly from a host I/O summary.
     pub fn from_host_io(host_io: &RuntimeHostIoSummary) -> Self {
         let linux_session = RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
         Self::from_host_io_and_linux_session(host_io, &linux_session)
     }
 
+    /// Derives a PipeWire/ALSA parity snapshot from a host I/O summary and a pre-computed Linux session snapshot.
     pub fn from_host_io_and_linux_session(
         host_io: &RuntimeHostIoSummary,
         linux_session: &RuntimeLinuxBackendSessionSnapshot,

@@ -6,6 +6,9 @@ use crate::{
 
 const ENCODED_BYTES: usize = 24;
 
+/// Encodes `event` into the first 24 bytes of `bytes` in the shared-memory wire format.
+///
+/// Returns an error if `bytes` is shorter than `PluginEvent::ENCODED_BYTES`.
 pub fn write_event_to_slice(event: &PluginEvent, bytes: &mut [u8]) -> Result<(), &'static str> {
     if bytes.len() < PluginEvent::ENCODED_BYTES {
         return Err("event region entry is too small for encoded event");
@@ -72,6 +75,9 @@ pub fn write_event_to_slice(event: &PluginEvent, bytes: &mut [u8]) -> Result<(),
     Ok(())
 }
 
+/// Decodes a [`PluginEvent`] from the first 24 bytes of `bytes`.
+///
+/// Returns an error if `bytes` is too short or contains an unrecognised type tag.
 pub fn read_event_from_slice(bytes: &[u8]) -> Result<PluginEvent, &'static str> {
     if bytes.len() < PluginEvent::ENCODED_BYTES {
         return Err("event region entry is too small for encoded event");

@@ -3,6 +3,7 @@ use super::*;
 mod advance;
 
 impl SignalRuntime {
+    /// Pauses an active offline render execution session.
     pub fn pause_offline_render_execution(
         &mut self,
         request_id: &str,
@@ -36,6 +37,7 @@ impl SignalRuntime {
         Ok(receipt)
     }
 
+    /// Resumes a paused offline render execution session.
     pub fn resume_offline_render_execution(
         &mut self,
         request_id: &str,
@@ -68,6 +70,7 @@ impl SignalRuntime {
         Ok(receipt)
     }
 
+    /// Marks an active offline render execution session as recoverable with the given reason.
     pub fn interrupt_offline_render_execution(
         &mut self,
         request_id: &str,
@@ -110,6 +113,7 @@ impl SignalRuntime {
         Ok(receipt)
     }
 
+    /// Cancels and removes an active offline render execution session, returning a cancellation receipt.
     pub fn cancel_offline_render_execution(
         &mut self,
         request_id: &str,

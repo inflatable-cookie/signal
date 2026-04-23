@@ -4,6 +4,7 @@ use crate::{
 };
 
 impl SignalRuntime {
+    /// Primes the prework window with forecast targets and services them up to the policy budget.
     pub fn prime_engine_prework_window_with_forecast(
         &mut self,
         processing_epoch: u64,

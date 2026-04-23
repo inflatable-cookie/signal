@@ -41,6 +41,12 @@ pub(crate) use host_support::{
     SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 
+/// The local desktop runtime host.
+///
+/// Owns the [`SignalRuntime`], the [`CoreAudioBackend`], CLAP/AU/VST3 plugin
+/// adapters, the shared-memory broker, and the audio pump. Construct with
+/// [`LocalRuntimeHost::new`] and drive via the [`RuntimeSupervisorApi`] and
+/// [`RuntimeObservationApi`] traits implemented in `host_api.rs`.
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
     coreaudio: CoreAudioBackend,
@@ -61,6 +67,11 @@ pub struct LocalRuntimeHost {
 }
 
 impl LocalRuntimeHost {
+    /// Construct a new local host wrapping the given runtime.
+    ///
+    /// Initialises the CoreAudio backend, all plugin format adapters, and the
+    /// shared-memory broker. The runtime is subscribed to an internal event
+    /// recorder immediately.
     pub fn new(runtime: SignalRuntime) -> Self {
         let events = RuntimeEventRecorder::default();
         let mut runtime = runtime;
@@ -87,19 +98,25 @@ impl LocalRuntimeHost {
         }
     }
 
+    /// Returns a reference to the underlying runtime.
     pub fn runtime(&self) -> &SignalRuntime {
         &self.runtime
     }
 
+    /// Returns `true` if the CLAP plugin format is supported on this platform.
     pub fn clap_supported(&self) -> bool {
         self.clap.supports_format(PluginFormat::Clap)
     }
 
+    /// Returns an observation report combining the current runtime state with
+    /// host I/O metrics (hardware, pump, transport).
     pub fn host_observation_report(&self) -> RuntimeHostObservationReport {
         let (observation, host_io) = self.observation_with_host_io();
         RuntimeHostObservationReport::new(observation, host_io)
     }
 
+    /// Returns a supervisor report combining the current runtime state with
+    /// host I/O metrics for use by recovery and watchdog logic.
     pub fn host_supervisor_report(&self) -> RuntimeHostSupervisorReport {
         let (supervisor, host_io) = self.supervisor_with_host_io();
         RuntimeHostSupervisorReport::new(supervisor, host_io)

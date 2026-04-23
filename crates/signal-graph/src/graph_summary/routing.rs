@@ -2,6 +2,11 @@ use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 impl ExecutableGraph {
+    /// Analyse the bus routing topology for the current plan.
+    ///
+    /// Counts producers and consumers per bus, classifies each bus as a direct
+    /// edge, fan-in, fan-out, or mixed, and computes accumulated latency and
+    /// tail times.
     pub fn routing_summary(&self) -> GraphRoutingSummary {
         let mut producer_counts = BTreeMap::<String, usize>::new();
         let mut consumer_counts = BTreeMap::<String, usize>::new();

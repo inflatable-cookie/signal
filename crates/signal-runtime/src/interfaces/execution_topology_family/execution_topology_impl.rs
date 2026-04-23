@@ -4,6 +4,7 @@ use super::execution_topology_lanes::build_topology_lanes;
 use super::execution_topology_nodes::build_topology_nodes;
 
 impl RuntimeExecutionTopologySummary {
+    /// Builds a topology summary from a block snapshot, deriving lanes, nodes, bus connections, and auxiliary paths.
     pub fn from_snapshot(snapshot: &RuntimeEngineBlockSnapshot) -> Self {
         let lanes_result = build_topology_lanes(snapshot);
         let nodes_result = build_topology_nodes(&snapshot.planned_nodes);

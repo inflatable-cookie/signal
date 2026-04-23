@@ -4,6 +4,7 @@ use crate::{
 };
 
 impl BlockDispatch {
+    /// Encodes `block` into the audio-input region of the shared-memory buffer.
     pub fn write_audio_input(
         &self,
         bytes: &mut [u8],
@@ -12,10 +13,12 @@ impl BlockDispatch {
         self.write_audio_region(bytes, self.layout.audio_input, block)
     }
 
+    /// Decodes an [`AudioBlock`] from the audio-input region of the shared-memory buffer.
     pub fn read_audio_input(&self, bytes: &[u8]) -> Result<AudioBlock, &'static str> {
         self.read_audio_region(bytes, self.layout.audio_input)
     }
 
+    /// Encodes `block` into the audio-output region of the shared-memory buffer.
     pub fn write_audio_output(
         &self,
         bytes: &mut [u8],
@@ -24,10 +27,12 @@ impl BlockDispatch {
         self.write_audio_region(bytes, self.layout.audio_output, block)
     }
 
+    /// Decodes an [`AudioBlock`] from the audio-output region of the shared-memory buffer.
     pub fn read_audio_output(&self, bytes: &[u8]) -> Result<AudioBlock, &'static str> {
         self.read_audio_region(bytes, self.layout.audio_output)
     }
 
+    /// Encodes `packet` into the event-input region of the shared-memory buffer.
     pub fn write_event_input(
         &self,
         bytes: &mut [u8],
@@ -36,10 +41,12 @@ impl BlockDispatch {
         self.write_event_region(bytes, self.layout.event_input, packet)
     }
 
+    /// Decodes an [`EventPacket`] from the event-input region of the shared-memory buffer.
     pub fn read_event_input(&self, bytes: &[u8]) -> Result<EventPacket, &'static str> {
         self.read_event_region(bytes, self.layout.event_input)
     }
 
+    /// Encodes `packet` into the event-output region of the shared-memory buffer.
     pub fn write_event_output(
         &self,
         bytes: &mut [u8],
@@ -48,10 +55,12 @@ impl BlockDispatch {
         self.write_event_region(bytes, self.layout.event_output, packet)
     }
 
+    /// Decodes an [`EventPacket`] from the event-output region of the shared-memory buffer.
     pub fn read_event_output(&self, bytes: &[u8]) -> Result<EventPacket, &'static str> {
         self.read_event_region(bytes, self.layout.event_output)
     }
 
+    /// Encodes both the audio and event portions of `payload` into the input regions.
     pub fn write_input_payload(
         &self,
         bytes: &mut [u8],
@@ -62,6 +71,7 @@ impl BlockDispatch {
         Ok(())
     }
 
+    /// Decodes the audio and event input regions into a [`BlockPayload`].
     pub fn read_input_payload(&self, bytes: &[u8]) -> Result<BlockPayload, &'static str> {
         Ok(BlockPayload::new(
             self.read_audio_input(bytes)?,
@@ -69,6 +79,7 @@ impl BlockDispatch {
         ))
     }
 
+    /// Encodes both the audio and event portions of `payload` into the output regions.
     pub fn write_output_payload(
         &self,
         bytes: &mut [u8],
@@ -79,6 +90,7 @@ impl BlockDispatch {
         Ok(())
     }
 
+    /// Decodes the audio and event output regions into a [`BlockPayload`].
     pub fn read_output_payload(&self, bytes: &[u8]) -> Result<BlockPayload, &'static str> {
         Ok(BlockPayload::new(
             self.read_audio_output(bytes)?,

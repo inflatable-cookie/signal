@@ -1,12 +1,18 @@
 use super::*;
 
 #[derive(Clone, Debug, PartialEq)]
+/// Combines a [`RuntimeObservationReport`] with the host audio I/O summary
+/// captured in the same tick.  Used when the host pump is in scope and
+/// hardware metrics should be included alongside runtime diagnostics.
 pub struct RuntimeHostObservationReport {
+    /// Runtime observation report captured in this tick.
     pub observation: RuntimeObservationReport,
+    /// Host audio I/O summary captured alongside the observation report.
     pub host_io: RuntimeHostIoSummary,
 }
 
 impl RuntimeHostObservationReport {
+    /// Constructs a report from separate observation and host I/O summaries.
     pub fn new(observation: RuntimeObservationReport, host_io: RuntimeHostIoSummary) -> Self {
         Self {
             observation,
@@ -14,6 +20,7 @@ impl RuntimeHostObservationReport {
         }
     }
 
+    /// Renders a single-line summary of the observation and host I/O fields.
     pub fn render_compact(&self) -> String {
         format!(
             "{} host_backend={} host_linux_backend={:?}/{:?}/{:?}/{:?}/{:?} host_device={} host_stream_state={:?} host_clock_source={:?} host_clock_domain={:?} host_clock_fallback_state={:?} host_clock_transition_state={:?} host_clock_drift_state={:?} host_clock_discontinuity_state={:?} host_duplex_mismatch_state={:?} host_endpoint_topology={:?} host_partial_availability={} host_clock_crossing_required={} host_clock_processing_sample_rate={} host_clock_hardware_sample_rate={} host_clock_ownership={:?} host_clock_restart_policy={:?} host_callback_interval_ms={:.3} host_output_latency_samples={} host_graph_latency_samples={} host_estimated_output_latency_samples={} host_backend_health={:?} host_backend_xruns={} host_backend_device_losses={} host_backend_restart_attempts={} host_backend_restart_failures={} host_audio_callbacks={} host_audio_frames={} host_audio_copied_samples={} host_audio_zero_filled_samples={} host_audio_dropped_samples={} host_audio_peak={:?} host_audio_graph={:?} host_audio_graph_matches_runtime={}",
@@ -60,6 +67,7 @@ impl RuntimeHostObservationReport {
         )
     }
 
+    /// Renders a multi-line diagnostic string with one field per line.
     pub fn render_multiline(&self) -> String {
         format!(
             concat!(

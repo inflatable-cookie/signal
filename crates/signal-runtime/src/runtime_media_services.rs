@@ -1,6 +1,7 @@
 use super::*;
 
 impl SignalRuntime {
+    /// Renders a clip processing buffer at the current runtime sample rate.
     pub fn render_clip_processing_buffer(
         &self,
         request: RuntimeClipRenderRequest,
@@ -27,6 +28,7 @@ impl SignalRuntime {
         )
     }
 
+    /// Prepares the plugin execution boundary for an offline render request.
     pub fn prepare_offline_plugin_execution_boundary(
         &self,
         request: &RuntimeOfflineRenderRequest,
@@ -71,6 +73,7 @@ impl SignalRuntime {
         Ok(layout.unwrap_or(ChannelLayout::Stereo))
     }
 
+    /// Starts a new recording capture session with the given request parameters.
     pub fn start_recording_capture(
         &mut self,
         request: RuntimeRecordingCaptureStartRequest,
@@ -83,16 +86,19 @@ impl SignalRuntime {
         )
     }
 
+    /// Finalises the active recording capture session and returns a commit receipt.
     pub fn finish_recording_capture(
         &mut self,
     ) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError> {
         self.recording_capture.finish_capture()
     }
 
+    /// Cancels the active recording capture session without committing any data.
     pub fn cancel_recording_capture(&mut self) -> Result<(), RuntimeError> {
         self.recording_capture.cancel_capture()
     }
 
+    /// Reconciles the registered media asset list with the current pipeline state.
     pub fn reconcile_media_assets(
         &mut self,
         assets: Vec<RuntimeMediaAssetRegistration>,
@@ -100,15 +106,18 @@ impl SignalRuntime {
         self.media_pipeline.reconcile_assets(assets)
     }
 
+    /// Starts media preview playback for the given asset.
     pub fn start_media_preview(&mut self, asset_id: &str) -> Result<(), RuntimeError> {
         self.media_pipeline.start_preview(asset_id)
     }
 
+    /// Stops the active media preview session.
     pub fn stop_media_preview(&mut self) -> Result<(), RuntimeError> {
         self.media_pipeline.stop_preview();
         Ok(())
     }
 
+    /// Reconciles the registered warp clip list with the current pipeline state.
     pub fn reconcile_warp_clips(
         &mut self,
         clips: Vec<RuntimeWarpClipRegistration>,
@@ -117,6 +126,7 @@ impl SignalRuntime {
         Ok(())
     }
 
+    /// Reconciles the registered clip processing clip list with the current pipeline state.
     pub fn reconcile_clip_processing_clips(
         &mut self,
         clips: Vec<RuntimeClipProcessingRegistration>,

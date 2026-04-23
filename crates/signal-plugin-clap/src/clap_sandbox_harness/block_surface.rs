@@ -5,6 +5,7 @@ use crate::{translate_input_events, translate_output_events, ClapHarnessResult};
 use super::state::ClapSandboxLifecycleHarness;
 
 impl ClapSandboxLifecycleHarness {
+    /// Reads the pending block dispatch, processes it through the CLAP instance, and writes the result back.
     pub fn process_pending_block(&mut self) -> ClapHarnessResult<BlockProcessResult> {
         let dispatch = self.read_pending_dispatch("processBlock")?;
         let completion = self.read_completion(&dispatch)?;
@@ -53,6 +54,7 @@ impl ClapSandboxLifecycleHarness {
         self.commit_processed_block(&dispatch, &output, result)
     }
 
+    /// Records a deadline miss for the current block, applying the timeout fallback.
     pub fn mark_deadline_miss(&mut self) -> ClapHarnessResult<BlockProcessResult> {
         let dispatch = self.read_pending_dispatch("processBlock")?;
         self.block_machine.begin_block(&dispatch);

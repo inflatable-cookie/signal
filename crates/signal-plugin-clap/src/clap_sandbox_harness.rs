@@ -22,5 +22,7 @@ pub(crate) use descriptor::{
     clap_discovered_plugin_type, clap_fixture_descriptor, descriptor_payload,
 };
 
+/// Error type for CLAP sandbox harness operations — a boxed [`PluginMessageEnvelope`] containing the failure event.
 pub type ClapHarnessError = Box<PluginMessageEnvelope>;
+/// Result type for CLAP sandbox harness operations.
 pub type ClapHarnessResult<T> = Result<T, ClapHarnessError>;

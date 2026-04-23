@@ -1,6 +1,7 @@
 use super::super::*;
 
 impl RuntimeExecutionTopologySummary {
+    /// Enriches the topology summary with plugin chain data, attaching chain, recall, and latency information to each node.
     pub fn with_plugin_chain_snapshot(mut self, snapshot: &RuntimePluginChainSnapshot) -> Self {
         let mut stage_by_node =
             std::collections::BTreeMap::<&str, &RuntimePluginChainStageSnapshot>::new();

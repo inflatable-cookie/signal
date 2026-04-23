@@ -159,6 +159,7 @@ pub(crate) fn runtime_spatial_execution_summary_for_stages(
 }
 
 impl RuntimeMultichannelIoSummary {
+    /// Constructs an I/O summary from explicit layout summaries and bus intents.
     pub fn new(
         input_layout: RuntimeMultichannelLayoutSummary,
         output_layout: RuntimeMultichannelLayoutSummary,
@@ -181,6 +182,7 @@ impl RuntimeMultichannelIoSummary {
         }
     }
 
+    /// Constructs an I/O summary from raw `ChannelLayout` values and bus intents.
     pub fn for_channel_layouts(
         input_layout: ChannelLayout,
         output_layout: ChannelLayout,
@@ -195,6 +197,7 @@ impl RuntimeMultichannelIoSummary {
         )
     }
 
+    /// Constructs an I/O summary for a plugin from its declared I/O layout, using `MainProgram` bus intent on both sides.
     pub fn for_plugin_io(layout: PluginIoLayout) -> Self {
         Self::new(
             RuntimeMultichannelLayoutSummary::from_channel_count(layout.audio_inputs),
@@ -204,6 +207,7 @@ impl RuntimeMultichannelIoSummary {
         )
     }
 
+    /// Constructs an I/O summary for a hardware device with the given channel counts.
     pub fn for_hardware(input_channels: u16, output_channels: u16) -> Self {
         Self::new(
             RuntimeMultichannelLayoutSummary::from_channel_count(input_channels),

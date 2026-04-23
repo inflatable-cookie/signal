@@ -11,6 +11,7 @@ use crate::event_translation::{io_layout_payload, shared_memory_layout_payload};
 use crate::protocol::ClapBlockProtocol;
 
 impl ClapBlockProtocol {
+    /// Allocates a shared-memory region and returns a [`ClapPreparePlan`] for the given sandbox and epoch.
     pub fn prepare_plan(
         &self,
         broker: &SharedMemoryBroker,
@@ -47,6 +48,7 @@ impl ClapBlockProtocol {
         })
     }
 
+    /// Builds the full lifecycle message sequence (handshake → load → create → prepare → activate) for this plugin.
     pub fn lifecycle_sequence(
         &self,
         broker: &SharedMemoryBroker,
@@ -123,6 +125,7 @@ impl ClapBlockProtocol {
         ])
     }
 
+    /// Builds a heartbeat request envelope for the given sandbox and optional processing epoch.
     pub fn heartbeat_request(
         &self,
         sandbox_id: &str,
@@ -139,6 +142,7 @@ impl ClapBlockProtocol {
         )
     }
 
+    /// Builds the teardown message sequence (deactivate → reset → destroy) for this plugin instance.
     pub fn teardown_sequence(
         &self,
         sandbox_id: &str,

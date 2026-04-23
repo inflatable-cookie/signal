@@ -1,4 +1,6 @@
-//! LV2 plugin adapter surfaces for Signal.
+//! LV2 plugin format adapter for Signal.
+
+#![warn(missing_docs)]
 mod lv2_host_adapter;
 
 pub use lv2_host_adapter::*;

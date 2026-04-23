@@ -1,4 +1,24 @@
 //! Format-neutral plugin host abstractions for Signal.
+//!
+//! This crate defines the contracts, data types, and transport primitives that the Signal runtime
+//! uses to communicate with plugins. All types are independent of the underlying plugin format:
+//! CLAP, VST3, AU, and LV2 adapters all map their native concepts onto these shared abstractions.
+//!
+//! Use this crate when writing code that must work across formats — host-side scheduling,
+//! sandboxing, event routing, and block dispatch. For format-specific loading or bridging,
+//! use the corresponding adapter crate (`signal-plugin-clap`, `signal-plugin-vst3`, etc.).
+//!
+//! # Example
+//!
+//! ```no_run
+//! use signal_plugin::{PluginDescriptor, PluginFormat, PluginTypeId, SandboxPolicy};
+//!
+//! fn accepts_strict_sandbox(descriptor: &PluginDescriptor) -> bool {
+//!     descriptor.format == PluginFormat::Clap
+//! }
+//! ```
+
+#![warn(missing_docs)]
 
 mod blocks;
 mod event_codec;

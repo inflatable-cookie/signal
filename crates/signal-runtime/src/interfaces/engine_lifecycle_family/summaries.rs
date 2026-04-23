@@ -1,5 +1,7 @@
 use super::*;
 
+/// Scheduler topology and prework service summary extracted from an engine
+/// block snapshot for use in JSON export surfaces.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeSchedulerExportSummary {
     pub phase_count: usize,
@@ -49,6 +51,8 @@ impl RuntimeSchedulerExportSummary {
     }
 }
 
+/// Per-block execution summary flattened from an engine block snapshot for
+/// use in scheduler JSON export and observation receipt surfaces.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeBlockExecutionSummary {
     pub processed_blocks: u64,

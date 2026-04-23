@@ -1,6 +1,7 @@
 use crate::{flush_denormal, DspKernel};
 use signal_primitives::Sample;
 
+/// Single-channel delay line with feedback and a fixed maximum capacity.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DelayLine {
     buffer: Vec<Sample>,
@@ -11,6 +12,7 @@ pub struct DelayLine {
 }
 
 impl DelayLine {
+    /// Create a delay line with the given maximum delay in samples.
     pub fn with_max_delay(max_delay_samples: usize) -> Self {
         Self {
             buffer: vec![0.0; max_delay_samples.saturating_add(1)],
@@ -21,22 +23,29 @@ impl DelayLine {
         }
     }
 
+    /// Return the maximum delay in samples that this line can produce.
     pub fn capacity(&self) -> usize {
         self.buffer.len().saturating_sub(1)
     }
 
+    /// Return the current delay in samples.
     pub fn delay_samples(&self) -> usize {
         self.delay_samples
     }
 
+    /// Set the delay in samples, clamped to `capacity`.
     pub fn set_delay_samples(&mut self, delay_samples: usize) {
         self.delay_samples = delay_samples.min(self.capacity());
     }
 
+    /// Set the feedback gain, clamped to `[-0.999, 0.999]` to prevent runaway.
     pub fn set_feedback(&mut self, feedback: Sample) {
         self.feedback = feedback.clamp(-0.999, 0.999);
     }
 
+    /// Read the delayed output at the given tap offset without advancing the write position.
+    ///
+    /// `delay_samples` is clamped to `capacity`. Returns `0.0` if the buffer is empty.
     pub fn tap(&self, delay_samples: usize) -> Sample {
         if self.buffer.is_empty() {
             return 0.0;
@@ -52,6 +61,10 @@ impl DelayLine {
         self.buffer[read_index]
     }
 
+    /// Write one input sample and return the delayed output.
+    ///
+    /// When bypassed the sample passes through unmodified while the buffer
+    /// continues to advance so state is preserved across bypass transitions.
     pub fn process_sample(&mut self, input: Sample) -> Sample {
         if self.buffer.is_empty() {
             return input;

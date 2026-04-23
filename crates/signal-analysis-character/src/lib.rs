@@ -21,6 +21,8 @@
 //! assert!(result.dynamics.rms_energy >= 0.0 && result.dynamics.rms_energy <= 1.0);
 //! ```
 
+#![warn(missing_docs)]
+
 use signal_analysis::{
     prepare_audio_analysis, prepare_mono_analysis, AnalysisInputConfig, AnalysisMode, AnalysisStage,
 };

@@ -3,6 +3,7 @@ use super::*;
 use std::{env, fs, path::PathBuf};
 
 impl Vst3HostAdapter {
+    /// Returns the default VST3 scan roots for the given platform.
     pub fn default_scan_roots(&self, platform: Vst3HostPlatform) -> Vec<Vst3ScanRoot> {
         match platform {
             Vst3HostPlatform::MacOs => vec![
@@ -49,6 +50,7 @@ impl Vst3HostAdapter {
         }
     }
 
+    /// Scans the given filesystem roots for VST3 bundle directories and returns all discovered plugin types.
     pub fn discover_plugins_for_roots(
         &self,
         platform: Vst3HostPlatform,

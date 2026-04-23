@@ -1,6 +1,7 @@
 use super::*;
 
 impl SignalRuntime {
+    /// Records a plugin sandbox fault, invalidates its render state, and emits the fault event.
     pub fn record_plugin_sandbox_fault(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -25,6 +26,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a plugin sandbox recovery cycle, invalidates its render state, and emits the event.
     pub fn record_recovery_cycle(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -48,6 +50,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a plugin sandbox lifecycle stage transition and emits the corresponding event.
     pub fn record_plugin_sandbox_lifecycle(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -75,6 +78,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a plugin sandbox transport stage transition and emits the corresponding event.
     pub fn record_plugin_sandbox_transport(
         &mut self,
         sandbox_id: impl Into<String>,

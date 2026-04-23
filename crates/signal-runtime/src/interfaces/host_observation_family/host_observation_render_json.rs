@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimeHostObservationReport {
+    /// Renders this observation report as a JSON object string.
     pub fn render_json(&self) -> String {
         format!(
             "{{\"observation\":{},\"host_io\":{}}}",

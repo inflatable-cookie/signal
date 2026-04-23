@@ -1,6 +1,7 @@
 use crate::{flush_denormal, DspKernel};
 use signal_primitives::{FrequencyHz, Sample, SampleRate};
 
+/// One-pole IIR low-pass filter with sample-accurate cutoff control.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct OnePoleLowPass {
     sample_rate: SampleRate,
@@ -11,6 +12,7 @@ pub struct OnePoleLowPass {
 }
 
 impl OnePoleLowPass {
+    /// Create a new filter for the given sample rate and initial cutoff frequency.
     pub fn new(sample_rate: SampleRate, cutoff_hz: FrequencyHz) -> Self {
         let mut filter = Self {
             sample_rate,
@@ -23,15 +25,21 @@ impl OnePoleLowPass {
         filter
     }
 
+    /// Return the current cutoff frequency.
     pub fn cutoff_hz(&self) -> FrequencyHz {
         self.cutoff_hz
     }
 
+    /// Set a new cutoff frequency and recompute the filter coefficient immediately.
     pub fn set_cutoff_hz(&mut self, cutoff_hz: FrequencyHz) {
         self.cutoff_hz = cutoff_hz;
         self.update_alpha();
     }
 
+    /// Process one input sample and return the filtered output.
+    ///
+    /// When bypassed the input passes through and the filter state tracks the
+    /// input so there is no discontinuity when bypass is removed.
     pub fn process_sample(&mut self, input: Sample) -> Sample {
         if self.bypassed {
             self.state = input;

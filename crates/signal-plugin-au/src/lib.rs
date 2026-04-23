@@ -1,4 +1,6 @@
-//! Audio Unit plugin adapter surfaces for Signal.
+//! Audio Units plugin format adapter for Signal. macOS only.
+
+#![warn(missing_docs)]
 
 mod au_host_adapter;
 

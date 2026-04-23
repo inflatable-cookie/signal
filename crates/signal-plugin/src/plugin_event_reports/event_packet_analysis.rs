@@ -4,6 +4,7 @@ use crate::{
 };
 
 impl EventPacket {
+    /// Returns a per-type event count summary for this packet.
     pub fn summary(&self) -> EventPacketSummary {
         let mut summary = EventPacketSummary {
             total_events: self.events.len(),
@@ -45,6 +46,7 @@ impl EventPacket {
         summary
     }
 
+    /// Returns automation statistics for the given `parameter_id` across all events in this packet.
     pub fn parameter_automation_summary(&self, parameter_id: u32) -> ParameterAutomationSummary {
         let mut summary = ParameterAutomationSummary {
             parameter_id,

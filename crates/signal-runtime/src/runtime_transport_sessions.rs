@@ -11,6 +11,7 @@ use super::runtime_utils::transport_session_provenance;
 use super::SignalRuntime;
 
 impl SignalRuntime {
+    /// Begins a new transport session for the given sandbox, lease, and region.
     pub fn begin_transport_session(
         &mut self,
         sandbox_id: &str,
@@ -34,6 +35,7 @@ impl SignalRuntime {
         Ok(snapshot)
     }
 
+    /// Sets the steady and recovery transport session concurrency limits.
     pub fn set_transport_session_limits(
         &mut self,
         steady_session_limit: usize,
@@ -46,6 +48,7 @@ impl SignalRuntime {
         Ok(snapshot)
     }
 
+    /// Begins a new transport session with optional backing path and byte size metadata.
     pub fn begin_transport_session_with_metadata(
         &mut self,
         sandbox_id: &str,
@@ -67,6 +70,7 @@ impl SignalRuntime {
         })
     }
 
+    /// Begins a new transport session using a fully populated attach request including the processing epoch.
     pub fn begin_transport_session_with_metadata_for_epoch(
         &mut self,
         request: RuntimeTransportSessionAttachRequest,
@@ -77,6 +81,7 @@ impl SignalRuntime {
         Ok(snapshot)
     }
 
+    /// Enqueues lingering cleanup work for a sandbox transport session.
     pub fn enqueue_lingering_cleanup_work(
         &mut self,
         sandbox_id: &str,
@@ -103,6 +108,7 @@ impl SignalRuntime {
             })
     }
 
+    /// Dequeues the next lingering cleanup plan for the given sandbox at the current epoch.
     pub fn dequeue_lingering_cleanup_work_for_sandbox(
         &mut self,
         sandbox_id: &str,
@@ -112,6 +118,7 @@ impl SignalRuntime {
             .dequeue_cleanup_work_for_sandbox(sandbox_id, current_processing_epoch)
     }
 
+    /// Records a lingering cleanup failure and re-enqueues the work item for a deferred retry if applicable.
     pub fn record_lingering_cleanup_failure(
         &mut self,
         sandbox_id: &str,
@@ -153,6 +160,7 @@ impl SignalRuntime {
         self.transport_concurrency.snapshot()
     }
 
+    /// Clears the in-progress flag for a lingering cleanup session without ending the session.
     pub fn clear_lingering_cleanup_in_progress(
         &mut self,
         sandbox_id: &str,
@@ -163,6 +171,7 @@ impl SignalRuntime {
             .clear_cleanup_in_progress(sandbox_id, lease_id, region_id)
     }
 
+    /// Marks lingering cleanup as successfully complete and ends the transport session.
     pub fn complete_lingering_cleanup_success(
         &mut self,
         sandbox_id: &str,
@@ -178,6 +187,7 @@ impl SignalRuntime {
         snapshot
     }
 
+    /// Ends the transport session for the given sandbox, lease, and region.
     pub fn end_transport_session(
         &mut self,
         sandbox_id: &str,
@@ -191,6 +201,7 @@ impl SignalRuntime {
         snapshot
     }
 
+    /// Promotes a recovery transport session to steady state for the given sandbox, lease, and region.
     pub fn promote_transport_session_to_steady_state(
         &mut self,
         sandbox_id: &str,

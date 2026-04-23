@@ -1,5 +1,8 @@
 use crate::{LoopRange, PluginRenderContext};
 
+/// Encodes `context` into the first 48 bytes of `bytes` in the shared-memory wire format.
+///
+/// Returns an error if `bytes` is shorter than `PluginRenderContext::ENCODED_BYTES`.
 pub fn write_render_context_to_slice(
     context: &PluginRenderContext,
     bytes: &mut [u8],
@@ -27,6 +30,9 @@ pub fn write_render_context_to_slice(
     Ok(())
 }
 
+/// Decodes a [`PluginRenderContext`] from the first 48 bytes of `bytes`.
+///
+/// Returns an error if `bytes` is too short or a field cannot be decoded.
 pub fn read_render_context_from_slice(bytes: &[u8]) -> Result<PluginRenderContext, &'static str> {
     if bytes.len() < PluginRenderContext::ENCODED_BYTES {
         return Err("render-context region is too small for encoded context");

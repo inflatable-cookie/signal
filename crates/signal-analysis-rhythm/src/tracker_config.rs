@@ -25,9 +25,13 @@ pub enum AnalysisProfile {
 /// Configuration for the offline beat tracker.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BeatTrackerConfig {
+    /// STFT parameters: window size, hop size, and phase computation flag.
     pub stft: StftConfig,
+    /// Minimum tempo the tracker will consider, in BPM.
     pub min_bpm: f32,
+    /// Maximum tempo the tracker will consider, in BPM.
     pub max_bpm: f32,
+    /// Fractional beat-period tolerance for beat tracking (0–1).
     pub beat_tolerance: f32,
     /// Sample rate used by the rhythm analysis path after input prep.
     ///

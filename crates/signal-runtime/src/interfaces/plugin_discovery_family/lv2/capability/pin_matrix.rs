@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimePluginPinMatrixSnapshot {
+    /// Builds a pin matrix snapshot by cross-referencing discovered plugin types, sandbox lifecycle state, and chain stages.
     pub fn capture(
         discovery: &RuntimePluginDiscoverySnapshot,
         lifecycle: &RuntimePluginLifecycleSnapshot,

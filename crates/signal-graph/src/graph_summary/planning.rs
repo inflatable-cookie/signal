@@ -1,6 +1,12 @@
 use super::*;
 
 impl ExecutableGraph {
+    /// Build the execution schedule for the current plan.
+    ///
+    /// Assigns each node to a planning group, forms phases, and produces an
+    /// ordered list of lane dispatches. Pass `anticipative_enabled: true` to
+    /// allow anticipative-eligible nodes to be placed on the anticipative lane;
+    /// when `false` they fall back to the stateful-realtime lane.
     pub fn planning_summary(&self, anticipative_enabled: bool) -> GraphPlanningSummary {
         let planned_nodes = self
             .plan

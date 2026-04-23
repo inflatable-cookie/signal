@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimeStretchClipSnapshot {
+    /// Derives a stretch clip snapshot from a clip processing snapshot.
     pub fn from_clip_processing_snapshot(
         clip: &RuntimeClipProcessingSnapshot,
     ) -> RuntimeStretchClipSnapshot {
@@ -67,6 +68,7 @@ impl RuntimeStretchClipSnapshot {
 }
 
 impl RuntimeStretchEngineSnapshot {
+    /// Derives a stretch engine snapshot from the full clip processing pipeline snapshot.
     pub fn from_clip_processing_pipeline(
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
     ) -> RuntimeStretchEngineSnapshot {

@@ -8,6 +8,7 @@ use crate::{
 mod device_projection;
 
 impl RuntimeAdvancedHardwareSnapshot {
+    /// Returns an unavailable snapshot with all counts zeroed.
     pub fn unavailable() -> Self {
         Self {
             discovery_state: RuntimeExternalMidiDiscoveryState::Unavailable,
@@ -30,6 +31,7 @@ impl RuntimeAdvancedHardwareSnapshot {
         }
     }
 
+    /// Returns an empty snapshot for the given provider with discovery in the `Idle` state.
     pub fn empty(provider_name: impl Into<String>) -> Self {
         let provider_name = provider_name.into();
         Self {
@@ -56,6 +58,7 @@ impl RuntimeAdvancedHardwareSnapshot {
         }
     }
 
+    /// Projects an advanced hardware snapshot from a control surface snapshot.
     pub fn from_control_surface_snapshot(snapshot: &RuntimeControlSurfaceSnapshot) -> Self {
         if matches!(
             snapshot.discovery_state,

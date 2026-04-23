@@ -175,9 +175,14 @@ fn combine_status(left: AcceptanceStatus, right: AcceptanceStatus) -> Acceptance
 /// Evaluation of one metric against one acceptance threshold.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AcceptanceMetricAssessment {
+    /// Name of the metric that was evaluated.
     pub metric: String,
+    /// Measured value of the metric.
     pub value: f32,
+    /// Lower bound from the threshold; `None` means unbounded.
     pub min: Option<f32>,
+    /// Upper bound from the threshold; `None` means unbounded.
     pub max: Option<f32>,
+    /// Pass/warn/fail outcome for this metric.
     pub status: AcceptanceStatus,
 }

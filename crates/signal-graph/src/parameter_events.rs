@@ -117,9 +117,17 @@ pub fn parameter_application_report(
     report
 }
 
-/// Extension trait for GraphStageParameter.
+/// Extension methods on [`GraphStageParameter`].
+///
+/// Implemented for [`GraphStageParameter`] to add compatibility queries that
+/// are not part of the core enum definition.
 pub trait GraphStageParameterExt {
-    /// Check if this parameter applies to a given stage.
+    /// Returns `true` if this parameter variant is valid for the given stage.
+    ///
+    /// Use this before dispatching a [`GraphParameterEvent`] to verify that the
+    /// parameter kind matches the stage kind — e.g. `GainLinear` only applies
+    /// to a `Gain` stage. Mismatched events are silently ignored during
+    /// execution but flagged in [`GraphBlockReport::parameter_ignored_event_count`].
     fn applies_to(self, stage: &GraphStageSpec) -> bool;
 }
 

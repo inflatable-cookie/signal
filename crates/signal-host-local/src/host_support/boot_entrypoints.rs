@@ -42,21 +42,25 @@ impl LocalRuntimeHost {
         )
     }
 
+    /// Boots the local host with no fault injection.
     pub fn boot_default(&mut self) -> Result<LocalRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(None)
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises sandbox timeout recovery.
     pub fn boot_with_timeout_recovery(&mut self) -> Result<LocalRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::Timeout))
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises sandbox crash recovery.
     pub fn boot_with_crash_recovery(&mut self) -> Result<LocalRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::Crash))
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises heartbeat-miss watchdog recovery.
     pub fn boot_with_heartbeat_miss_recovery(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -64,6 +68,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises recovery teardown failure handling.
     pub fn boot_with_recovery_teardown_failure(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -71,6 +76,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises deferred recovery teardown failure handling.
     pub fn boot_with_recovery_deferred_teardown_failure(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -78,6 +84,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises deferred teardown followed by cleanup.
     pub fn boot_with_recovery_deferred_teardown_then_cleanup(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -85,6 +92,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises deferred teardown cleanup retry handling.
     pub fn boot_with_recovery_deferred_teardown_cleanup_retry(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -92,6 +100,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises recovery restart failure handling.
     pub fn boot_with_recovery_restart_failure(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -99,6 +108,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises recovery overlap contention handling.
     pub fn boot_with_recovery_overlap_contention(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -106,6 +116,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises interleaved failure recovery handling.
     pub fn boot_with_recovery_interleaved_failures(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -113,6 +124,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and exercises two rounds of escalating heartbeat-miss recovery.
     pub fn boot_with_escalating_heartbeat_failures(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -122,18 +134,21 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and runs a full soak of escalating heartbeat-miss recovery episodes.
     pub fn boot_with_watchdog_soak(&mut self) -> Result<LocalRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::EscalatingHeartbeatMisses {
             restart_episodes: SOAK_RESTART_EPISODES,
         }))
     }
 
+    /// Boots the local host and exercises audio device loss recovery.
     pub fn boot_with_device_loss_recovery(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
         self.boot_with_fault_recovery(Some(FaultInjection::DeviceLoss))
     }
 
+    /// Boots the local host and exercises audio device loss followed by restart failure.
     pub fn boot_with_device_loss_restart_failure(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
@@ -141,6 +156,7 @@ impl LocalRuntimeHost {
     }
 
     #[cfg_attr(not(test), allow(dead_code))]
+    /// Boots the local host and runs a full soak of mixed watchdog recovery episodes.
     pub fn boot_with_mixed_watchdog_soak(
         &mut self,
     ) -> Result<LocalRuntimeHostSummary, RuntimeError> {

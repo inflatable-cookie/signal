@@ -5,6 +5,7 @@ mod finalize;
 mod render_progress;
 
 impl SignalRuntime {
+    /// Advances an active offline render execution session by one checkpoint step.
     pub fn advance_offline_render_execution(
         &mut self,
         request_id: &str,

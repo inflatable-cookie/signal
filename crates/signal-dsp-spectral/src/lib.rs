@@ -16,6 +16,8 @@
 //! assert_eq!(spectrogram.bins(), 513);
 //! ```
 
+#![warn(missing_docs)]
+
 pub mod analysis;
 pub mod mel;
 
@@ -26,7 +28,9 @@ use std::sync::Arc;
 /// Configuration for a forward short-time Fourier transform.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StftConfig {
+    /// Number of samples per FFT window.
     pub window_size: FrameCount,
+    /// Number of samples to advance between consecutive windows.
     pub hop_size: FrameCount,
     /// When `false`, phase values are omitted from each [`SpectrumFrame`],
     /// saving the per-bin `atan2` cost.  Defaults to `true`.
@@ -47,15 +51,21 @@ impl StftConfig {
 /// A single positive-frequency spectrum frame.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpectrumFrame {
+    /// FFT magnitude per positive-frequency bin (`window_size / 2 + 1` bins).
     pub magnitudes: Vec<f32>,
+    /// FFT phase per positive-frequency bin in radians. Empty when
+    /// [`StftConfig::compute_phases`] is `false`.
     pub phases: Vec<f32>,
 }
 
 /// A mono spectrogram produced by [`Stft::analyze_mono`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct Spectrogram {
+    /// Sample rate of the source audio.
     pub sample_rate: SampleRate,
+    /// STFT configuration used to produce this spectrogram.
     pub config: StftConfig,
+    /// Ordered sequence of spectrum frames, one per hop position.
     pub frames: Vec<SpectrumFrame>,
 }
 
@@ -197,10 +207,12 @@ impl StreamingStft {
         }
     }
 
+    /// Return the current STFT configuration.
     pub fn config(&self) -> StftConfig {
         self.config
     }
 
+    /// Reset internal state, discarding any buffered samples and frame count.
     pub fn reset(&mut self) {
         self.pending.clear();
         self.frames_emitted = 0;

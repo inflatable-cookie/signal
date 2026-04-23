@@ -7,6 +7,7 @@ use crate::adapter::BrokeredBlockOutcome;
 use crate::protocol::ClapBlockProtocol;
 
 impl ClapBlockProtocol {
+    /// Writes a silent block dispatch (zeroed audio, no events) to the shared-memory region.
     pub fn write_block_dispatch(
         &self,
         broker: &SharedMemoryBroker,
@@ -33,6 +34,7 @@ impl ClapBlockProtocol {
         )
     }
 
+    /// Writes the full block dispatch and input payload to the shared-memory region, then marks it ready for processing.
     pub fn write_block_payload(
         &self,
         broker: &SharedMemoryBroker,
@@ -53,6 +55,7 @@ impl ClapBlockProtocol {
         region.flush()
     }
 
+    /// Reads the block process result from the shared-memory region.
     pub fn read_block_result(
         &self,
         broker: &SharedMemoryBroker,
@@ -65,6 +68,7 @@ impl ClapBlockProtocol {
             .map_err(io::Error::other)
     }
 
+    /// Reads both the input payload, output payload, and process result from the shared-memory region into a [`BrokeredBlockOutcome`].
     pub fn read_block_outcome(
         &self,
         broker: &SharedMemoryBroker,

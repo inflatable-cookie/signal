@@ -9,6 +9,7 @@ pub struct Gain {
 }
 
 impl Gain {
+    /// Create a new gain kernel with the given linear gain factor.
     pub fn new(gain: Sample) -> Self {
         Self {
             gain,
@@ -16,10 +17,12 @@ impl Gain {
         }
     }
 
+    /// Return the current linear gain factor.
     pub fn gain(&self) -> Sample {
         self.gain
     }
 
+    /// Set the linear gain factor.
     pub fn set_gain(&mut self, gain: Sample) {
         self.gain = gain;
     }
@@ -45,22 +48,26 @@ impl DspKernel for Gain {
     }
 }
 
+/// Zero every sample in the block.
 pub fn clear_block(block: &mut [Sample]) {
     block.fill(0.0);
 }
 
+/// Multiply every sample in the block by `gain` in place.
 pub fn apply_gain_in_place(block: &mut [Sample], gain: Sample) {
     for sample in block {
         *sample *= gain;
     }
 }
 
+/// Add source samples into destination in-place, zip-truncating to the shorter slice.
 pub fn sum_in_place(destination: &mut [Sample], source: &[Sample]) {
     for (dst, src) in destination.iter_mut().zip(source.iter().copied()) {
         *dst += src;
     }
 }
 
+/// Scale source by `source_gain` and accumulate into destination in-place, zip-truncating to the shorter slice.
 pub fn mix_in_place(destination: &mut [Sample], source: &[Sample], source_gain: Sample) {
     for (dst, src) in destination.iter_mut().zip(source.iter().copied()) {
         *dst += src * source_gain;

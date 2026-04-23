@@ -1,4 +1,6 @@
-//! CLAP plugin adapter surfaces for Signal.
+//! CLAP plugin format adapter for Signal. Implements the CLAP host protocol and bridges CLAP plugin instances to the format-neutral `signal-plugin` abstractions. macOS and Linux only.
+
+#![warn(missing_docs)]
 
 mod adapter;
 mod clap_sandbox_harness;

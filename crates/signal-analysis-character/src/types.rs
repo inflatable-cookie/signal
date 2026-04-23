@@ -7,6 +7,7 @@ pub(crate) const MEL_PROFILE_BAND_COUNT: usize = 8;
 /// Configuration for the offline character analyzer.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CharacterAnalyzerConfig {
+    /// STFT parameters for spectral analysis.
     pub stft: StftConfig,
     /// Sample rate used by the character analysis path after input prep.
     ///
@@ -94,24 +95,43 @@ pub enum DescriptorReduction {
 /// Explicit reduction policy for every current character descriptor.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CharacterDescriptorReductionPolicy {
+    /// Reduction applied to produce `SpectralShapeDescriptorPack::centroid_hz`.
     pub spectral_centroid_hz: DescriptorReduction,
+    /// Reduction applied to produce `SpectralShapeDescriptorPack::spread_hz`.
     pub spectral_spread_hz: DescriptorReduction,
+    /// Reduction applied to produce `SpectralShapeDescriptorPack::rolloff_85_hz`.
     pub spectral_rolloff_85_hz: DescriptorReduction,
+    /// Reduction applied to produce `SpectralShapeDescriptorPack::rolloff_95_hz`.
     pub spectral_rolloff_95_hz: DescriptorReduction,
+    /// Reduction applied to produce `SpectralShapeDescriptorPack::flatness`.
     pub spectral_flatness: DescriptorReduction,
+    /// Reduction applied to produce `SpectralContrastDescriptorPack::contrast_db`.
     pub spectral_contrast_db: DescriptorReduction,
+    /// Reduction applied to produce `SpectralProfileDescriptorPack::normalized_mel_band_profile`.
     pub normalized_mel_band_profile: DescriptorReduction,
+    /// Reduction applied to produce `TemporalDescriptorPack::onset_density`.
     pub onset_density: DescriptorReduction,
+    /// Reduction applied to produce `TemporalDescriptorPack::zero_crossing_rate_hz`.
     pub zero_crossing_rate_hz: DescriptorReduction,
+    /// Reduction applied to produce `TemporalDescriptorPack::transient_density`.
     pub transient_density: DescriptorReduction,
+    /// Reduction applied to produce `TemporalDescriptorPack::sustain_ratio`.
     pub sustain_ratio: DescriptorReduction,
+    /// Reduction applied to produce `TemporalShapeDescriptorPack::peak_transient_strength`.
     pub peak_transient_strength: DescriptorReduction,
+    /// Reduction applied to produce `TemporalShapeDescriptorPack::median_transient_strength`.
     pub median_transient_strength: DescriptorReduction,
+    /// Reduction applied to produce `TemporalShapeDescriptorPack::attack_time_ms`.
     pub attack_time_ms: DescriptorReduction,
+    /// Reduction applied to produce `TemporalShapeDescriptorPack::decay_time_ms`.
     pub decay_time_ms: DescriptorReduction,
+    /// Reduction applied to produce `TemporalShapeDescriptorPack::sustain_plateau_ratio`.
     pub sustain_plateau_ratio: DescriptorReduction,
+    /// Reduction applied to produce `DynamicsDescriptorPack::rms_energy`.
     pub rms_energy: DescriptorReduction,
+    /// Reduction applied to produce `DynamicsDescriptorPack::peak_amplitude`.
     pub peak_amplitude: DescriptorReduction,
+    /// Reduction applied to produce `DynamicsDescriptorPack::dynamic_range`.
     pub dynamic_range: DescriptorReduction,
 }
 
@@ -284,13 +304,21 @@ impl DynamicsDescriptorPack {
 ///    clips or persisting them into downstream feature stores.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CharacterAnalysisResult {
+    /// Spectral shape descriptors: centroid, spread, rolloff, and flatness.
     pub spectral_shape: SpectralShapeDescriptorPack,
+    /// Spectral contrast descriptor.
     pub spectral_contrast: SpectralContrastDescriptorPack,
+    /// Coarse mel-band energy profile.
     pub spectral_profile: SpectralProfileDescriptorPack,
+    /// Activity-oriented temporal descriptors.
     pub temporal: TemporalDescriptorPack,
+    /// Event-oriented transient and envelope-shape descriptors.
     pub temporal_shape: TemporalShapeDescriptorPack,
+    /// Amplitude-domain dynamics descriptors.
     pub dynamics: DynamicsDescriptorPack,
+    /// Reduction policy applied to produce each descriptor in this result.
     pub reduction_policy: CharacterDescriptorReductionPolicy,
+    /// Confidence in the descriptor pack; low for short or silent buffers.
     pub confidence: Confidence,
 }
 

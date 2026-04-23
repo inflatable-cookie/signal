@@ -4,6 +4,7 @@ use super::stem_targets::build_offline_render_stem_targets;
 use super::validation::validate_offline_preview_request;
 
 impl RuntimeOfflineRenderContractPreview {
+    /// Assembles a full offline render contract preview from the current runtime state.
     pub fn from_runtime_state(
         request: &RuntimeOfflineRenderRequest,
         topology: &RuntimeExecutionTopologySummary,

@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimePerformanceTraceReceipt {
+    /// Renders a JSON object of all performance trace receipt fields.
     pub fn render_json(&self) -> String {
         format!(
             concat!(

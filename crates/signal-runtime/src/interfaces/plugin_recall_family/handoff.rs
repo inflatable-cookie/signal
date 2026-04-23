@@ -1,45 +1,74 @@
 use super::*;
 
+/// Stable identity for a plugin chain stage used in recall handoff selection.
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RuntimePluginRecallHandoffStageId {
+    /// Chain identifier for this stage.
     pub chain_id: String,
+    /// Index of this stage within the chain.
     pub stage_index: usize,
+    /// Graph node identifier for this stage.
     pub node_id: String,
 }
 
+/// A named subset of recall handoff stages, e.g. all stages for a freeze artifact.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginRecallHandoffSelection {
+    /// Expected number of stages in this selection.
     pub stage_count: usize,
+    /// Stage identities included in this selection.
     pub stage_ids: Vec<RuntimePluginRecallHandoffStageId>,
 }
 
+/// Single stage in a recall handoff: identity, chain location, and recall payload.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimePluginRecallHandoffStage {
+    /// Composite stage identity.
     pub stage_id: RuntimePluginRecallHandoffStageId,
+    /// Graph node identifier for this stage.
     pub node_id: String,
+    /// Index of this stage within the chain.
     pub stage_index: usize,
+    /// Chain identifier for this stage.
     pub chain_id: String,
+    /// Track lane ID, if this stage is on a track lane chain.
     pub track_lane_id: Option<String>,
+    /// Bus group ID, if this stage is on a bus chain.
     pub bus_group_id: Option<String>,
+    /// Console group ID, if this stage is on a console chain.
     pub console_group_id: Option<String>,
+    /// Send/return ID, if this stage is on a send/return chain.
     pub send_return_id: Option<String>,
+    /// Recall readiness state for this stage.
     pub recall_state: RuntimePluginRecallState,
+    /// Full recall payload for this stage.
     pub recall_payload: RuntimePluginRecallPayload,
 }
 
+/// Aggregate recall handoff snapshot: counts by state and the full stage list.
+/// Built via `from_plugin_chain_snapshot()`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginRecallHandoffSnapshot {
+    /// Total number of stages in this handoff snapshot.
     pub stage_count: usize,
+    /// Number of stages with no sandbox binding.
     pub unbound_stage_count: usize,
+    /// Number of stages with a cold (untransferred) state.
     pub cold_stage_count: usize,
+    /// Number of stages with a warm (ready) state.
     pub warm_stage_count: usize,
+    /// Number of stages with a recovered state.
     pub recovered_stage_count: usize,
+    /// Number of stages in an unavailable state.
     pub unavailable_stage_count: usize,
+    /// Full list of recall handoff stage records.
     pub stages: Vec<RuntimePluginRecallHandoffStage>,
+    /// Human-readable one-line summary.
     pub summary: String,
 }
 
 impl RuntimePluginRecallHandoffSnapshot {
+    /// Builds a recall handoff snapshot from the full plugin chain snapshot.
     pub fn from_plugin_chain_snapshot(snapshot: &RuntimePluginChainSnapshot) -> Self {
         let stages = snapshot
             .chains
@@ -103,6 +132,7 @@ impl RuntimePluginRecallHandoffSnapshot {
         handoff
     }
 
+    /// Returns the handoff stage matching the given stage identity, or `None` if not found.
     pub fn resolve_stage(
         &self,
         stage_id: &RuntimePluginRecallHandoffStageId,
@@ -110,6 +140,7 @@ impl RuntimePluginRecallHandoffSnapshot {
         self.stages.iter().find(|stage| &stage.stage_id == stage_id)
     }
 
+    /// Resolves all stages in a selection, returning `None` if any stage is missing or the count is inconsistent.
     pub fn resolve_selection<'a>(
         &'a self,
         selection: &RuntimePluginRecallHandoffSelection,

@@ -1,6 +1,7 @@
 use super::*;
 
 impl SignalRuntime {
+    /// Services the prework lane for the given number of cycles using the current forecast policy.
     pub fn service_prework_lane(
         &mut self,
         processing_epoch: u64,
@@ -22,10 +23,12 @@ impl SignalRuntime {
         )
     }
 
+    /// Allocates and returns the next block sequence number from the timeline.
     pub fn allocate_block_sequence(&mut self) -> u64 {
         self.timeline.allocate_block_sequence()
     }
 
+    /// Records a completed block sequence and emits a lease rollover event if a rollover occurred.
     pub fn record_block_sequence(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -50,6 +53,7 @@ impl SignalRuntime {
         }
     }
 
+    /// Records a parameter automation summary for the given epoch and lease.
     pub fn record_automation_summary(
         &mut self,
         processing_epoch: u64,
@@ -60,6 +64,7 @@ impl SignalRuntime {
             .record_summary(processing_epoch, lease_id, summary);
     }
 
+    /// Records a plugin event packet summary for the given epoch, lease, and block sequence.
     pub fn record_plugin_event_summary(
         &mut self,
         processing_epoch: u64,

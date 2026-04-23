@@ -16,11 +16,13 @@ use super::{
 
 impl ServerRuntimeHost {
     #[allow(dead_code)]
+    /// Returns raw observation diagnostics captured from the event log.
     pub fn observation_diagnostics(&self) -> RuntimeObservationDiagnostics {
         self.events.diagnostics()
     }
 
     #[allow(dead_code)]
+    /// Returns a full observation report enriched with simulated Linux host I/O state.
     pub fn observation_report(&self) -> RuntimeObservationReport {
         let observation = RuntimeObservationReport::capture(&self.runtime, &self.events);
         let host_io = self.host_io_summary(&observation);
@@ -34,6 +36,7 @@ impl ServerRuntimeHost {
             ))
     }
 
+    /// Returns a supervisor report enriched with simulated Linux host I/O state.
     pub fn supervisor_report(&self) -> RuntimeSupervisorReport {
         let mut report = RuntimeSupervisorReport::capture(&self.runtime, &self.events);
         let host_io = self.host_io_summary(&report.observation);

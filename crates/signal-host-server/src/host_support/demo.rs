@@ -113,6 +113,7 @@ pub(crate) fn server_demo_runtime_assembly() -> ServerDemoRuntimeAssembly {
     }
 }
 
+/// RAII guard that installs a demo plugin environment override and removes it on drop.
 pub struct DemoBootstrapGuard {
     root: Option<PathBuf>,
     old_demo_format: Option<OsString>,
@@ -137,6 +138,7 @@ impl Drop for DemoBootstrapGuard {
     }
 }
 
+/// Ensures a demo plugin environment is configured for the server host, writing a temporary VST3 bundle if needed. Returns a guard that restores the previous environment on drop.
 pub fn ensure_default_demo_plugin_override() -> DemoBootstrapGuard {
     if broker_demo_plugin_override().is_some() {
         return DemoBootstrapGuard {

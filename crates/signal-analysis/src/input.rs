@@ -19,9 +19,13 @@ pub enum AnalysisChannelPolicy {
 /// Shared preprocessing configuration for offline or chunk-owned analyzers.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AnalysisInputConfig {
+    /// How multi-channel input is reduced to mono before analysis.
     pub channel_policy: AnalysisChannelPolicy,
+    /// When set, only the central `max_duration` seconds of audio are analyzed.
     pub max_duration: Option<Seconds>,
+    /// When set, audio is resampled to this rate during preparation.
     pub target_sample_rate: Option<SampleRate>,
+    /// Quality/speed trade-off applied when resampling is needed.
     pub resample_quality: ResampleQuality,
 }
 
@@ -39,7 +43,9 @@ impl Default for AnalysisInputConfig {
 /// Prepared mono analysis input after optional duration limiting and resampling.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PreparedAnalysisBuffer {
+    /// Sample rate of `samples` (may differ from the source if resampled).
     pub sample_rate: SampleRate,
+    /// Interleaved mono samples ready for analysis.
     pub samples: Vec<Sample>,
 }
 

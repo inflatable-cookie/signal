@@ -6,6 +6,7 @@ use signal_plugin::{
     PluginEvent, PluginIoLayout, SharedMemoryLayout, SharedMemoryRegion,
 };
 
+/// Translates a Signal [`EventPacket`] into a CLAP [`ClapEventPacket`] for dispatch to a plugin.
 pub fn translate_input_events(packet: &EventPacket) -> ClapEventPacket {
     let events = packet
         .events
@@ -74,6 +75,7 @@ pub fn translate_input_events(packet: &EventPacket) -> ClapEventPacket {
     ClapEventPacket { events }
 }
 
+/// Translates a CLAP [`ClapEventPacket`] received from a plugin into a Signal [`EventPacket`].
 pub fn translate_output_events(packet: &ClapEventPacket) -> EventPacket {
     let events = packet
         .events
@@ -133,6 +135,7 @@ pub fn translate_output_events(packet: &ClapEventPacket) -> EventPacket {
     EventPacket::new(events)
 }
 
+/// Converts a Signal [`NoteExpressionKind`] to the equivalent [`ClapNoteExpressionKind`].
 pub fn clap_note_expression_kind(kind: NoteExpressionKind) -> ClapNoteExpressionKind {
     match kind {
         NoteExpressionKind::Pressure => ClapNoteExpressionKind::Pressure,
@@ -141,6 +144,7 @@ pub fn clap_note_expression_kind(kind: NoteExpressionKind) -> ClapNoteExpression
     }
 }
 
+/// Converts a [`ClapNoteExpressionKind`] to the equivalent Signal [`NoteExpressionKind`].
 pub fn plugin_note_expression_kind(kind: ClapNoteExpressionKind) -> NoteExpressionKind {
     match kind {
         ClapNoteExpressionKind::Pressure => NoteExpressionKind::Pressure,
@@ -149,6 +153,7 @@ pub fn plugin_note_expression_kind(kind: ClapNoteExpressionKind) -> NoteExpressi
     }
 }
 
+/// Converts a raw MIDI event to a CLAP note event if the status byte is a note-on or note-off.
 pub fn midi_to_clap_note(event: MidiEvent) -> Option<ClapNoteEvent> {
     let status = event.status & 0xF0;
     let channel = event.status & 0x0F;
@@ -175,6 +180,7 @@ pub fn midi_to_clap_note(event: MidiEvent) -> Option<ClapNoteEvent> {
     }
 }
 
+/// Converts a raw MIDI event to a CLAP note expression event if the status byte is polyphonic aftertouch.
 pub fn midi_to_clap_note_expression(event: MidiEvent) -> Option<ClapNoteExpressionEvent> {
     let status = event.status & 0xF0;
     let channel = event.status & 0x0F;
@@ -192,6 +198,7 @@ pub fn midi_to_clap_note_expression(event: MidiEvent) -> Option<ClapNoteExpressi
     }
 }
 
+/// Converts a [`PluginIoLayout`] to its IPC payload representation.
 pub fn io_layout_payload(io_layout: PluginIoLayout) -> PluginIoLayoutPayload {
     PluginIoLayoutPayload {
         audio_inputs: io_layout.audio_inputs,
@@ -201,6 +208,7 @@ pub fn io_layout_payload(io_layout: PluginIoLayout) -> PluginIoLayoutPayload {
     }
 }
 
+/// Converts a [`PluginIoLayoutPayload`] back to a [`PluginIoLayout`].
 pub fn io_layout_from_payload(payload: PluginIoLayoutPayload) -> PluginIoLayout {
     PluginIoLayout {
         audio_inputs: payload.audio_inputs,
@@ -210,6 +218,7 @@ pub fn io_layout_from_payload(payload: PluginIoLayoutPayload) -> PluginIoLayout 
     }
 }
 
+/// Converts a [`SharedMemoryLayout`] to its IPC payload representation.
 pub fn shared_memory_layout_payload(layout: SharedMemoryLayout) -> SharedMemoryLayoutPayload {
     SharedMemoryLayoutPayload {
         audio_input: shared_region_payload(layout.audio_input),
@@ -221,6 +230,7 @@ pub fn shared_memory_layout_payload(layout: SharedMemoryLayout) -> SharedMemoryL
     }
 }
 
+/// Converts a [`SharedMemoryLayoutPayload`] back to a [`SharedMemoryLayout`].
 pub fn shared_memory_layout(payload: SharedMemoryLayoutPayload) -> SharedMemoryLayout {
     SharedMemoryLayout {
         audio_input: shared_region(payload.audio_input),
@@ -232,6 +242,7 @@ pub fn shared_memory_layout(payload: SharedMemoryLayoutPayload) -> SharedMemoryL
     }
 }
 
+/// Converts a [`SharedMemoryRegion`] to its IPC payload representation.
 pub fn shared_region_payload(region: SharedMemoryRegion) -> SharedMemoryRegionPayload {
     SharedMemoryRegionPayload {
         offset_bytes: region.offset_bytes,
@@ -239,6 +250,7 @@ pub fn shared_region_payload(region: SharedMemoryRegion) -> SharedMemoryRegionPa
     }
 }
 
+/// Converts a [`SharedMemoryRegionPayload`] back to a [`SharedMemoryRegion`].
 pub fn shared_region(payload: SharedMemoryRegionPayload) -> SharedMemoryRegion {
     SharedMemoryRegion {
         offset_bytes: payload.offset_bytes,

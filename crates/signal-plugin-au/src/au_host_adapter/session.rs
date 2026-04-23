@@ -1,6 +1,7 @@
 use super::*;
 
 impl AuHostAdapter {
+    /// Creates an [`AuInstanceControlSurface`] for the given discovered plugin type and instance ID, or returns an error if the failure contract prevents instantiation.
     pub fn instantiate_plugin(
         &self,
         discovered: &AuDiscoveredPluginType,
@@ -28,6 +29,7 @@ impl AuHostAdapter {
         })
     }
 
+    /// Negotiates bus layout and returns an [`AuProcessSessionPlan`], or returns an error if the failure contract prevents session setup.
     pub fn prepare_session(
         &self,
         instance: &AuInstanceControlSurface,
@@ -65,6 +67,7 @@ impl AuHostAdapter {
         })
     }
 
+    /// Captures and returns a state snapshot for the given instance.
     pub fn store_state_snapshot(&self, instance: &AuInstanceControlSurface) -> AuStateSnapshot {
         let bytes = format!(
             "plugin_type={} instance={} component_type={} component_subtype={} manufacturer={} bundle_root={}",
@@ -104,6 +107,7 @@ impl AuHostAdapter {
         }
     }
 
+    /// Activates the given instance at the specified sample rate and block size, optionally restoring from a state snapshot. Returns an error if the failure contract prevents activation.
     pub fn activate_instance(
         &self,
         instance: &AuInstanceControlSurface,
@@ -139,6 +143,7 @@ impl AuHostAdapter {
         })
     }
 
+    /// Tears down the given instance and returns a record of how many state bytes were flushed.
     pub fn teardown_instance(
         &self,
         instance: &AuInstanceControlSurface,

@@ -70,10 +70,12 @@ impl SignalRuntime {
             .retain(|_, render| render.sandbox_id != sandbox_id);
     }
 
+    /// Increments the xrun counter by one.
     pub fn increment_xruns(&mut self) {
         self.diagnostics.xruns = self.diagnostics.xruns.saturating_add(1);
     }
 
+    /// Records a plugin sandbox instance state snapshot and emits the corresponding event.
     pub fn record_plugin_sandbox_instance_state(
         &mut self,
         state: PluginSandboxInstanceStateRecord,
@@ -82,6 +84,7 @@ impl SignalRuntime {
         self.emit(RuntimeEvent::PluginSandboxInstanceState { state });
     }
 
+    /// Records an LV2 prepared negotiation result for the given sandbox.
     pub fn record_plugin_sandbox_lv2_prepared_negotiation(
         &mut self,
         sandbox_id: &str,
@@ -91,6 +94,7 @@ impl SignalRuntime {
             .record_lv2_prepared_negotiation(sandbox_id, negotiation);
     }
 
+    /// Records a heartbeat cycle stage transition and emits the corresponding event.
     pub fn record_heartbeat_cycle(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -106,6 +110,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a block dispatch record and emits the corresponding event.
     pub fn record_block_dispatch(&mut self, record: crate::BlockDispatchRecord) {
         self.emit(RuntimeEvent::BlockDispatch {
             sandbox_id: record.sandbox_id,
@@ -118,6 +123,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a broker invalidation event and emits the corresponding event.
     pub fn record_broker_invalidation(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -137,6 +143,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a completion slot stage transition and emits the corresponding event.
     pub fn record_completion_slot_transition(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -154,6 +161,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a broker failure event and emits the corresponding event.
     pub fn record_broker_failure(
         &mut self,
         sandbox_id: impl Into<String>,
@@ -173,6 +181,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Records a sandbox operation failure and emits the corresponding event.
     pub fn record_sandbox_operation_failure(
         &mut self,
         record: crate::SandboxOperationFailureRecord,

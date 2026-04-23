@@ -3,6 +3,7 @@ use super::*;
 use std::{env, fs, path::PathBuf};
 
 impl AuHostAdapter {
+    /// Returns the default AU scan roots for the given platform.
     pub fn default_scan_roots(&self, platform: AuHostPlatform) -> Vec<AuScanRoot> {
         match platform {
             AuHostPlatform::MacOs => vec![
@@ -25,6 +26,7 @@ impl AuHostAdapter {
         }
     }
 
+    /// Scans the given filesystem roots for AU component bundles and returns all discovered plugin types.
     pub fn discover_plugins_for_roots(
         &self,
         platform: AuHostPlatform,

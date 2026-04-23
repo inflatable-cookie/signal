@@ -5,8 +5,11 @@ use super::SmoothedValue;
 /// Shape of a control segment transition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ControlSegmentShape {
+    /// Jump immediately to the target value.
     Step,
+    /// Ramp linearly from the current value to the target over the segment duration.
     Linear,
+    /// Ramp exponentially from the current value to the target over the segment duration.
     Exponential,
 }
 

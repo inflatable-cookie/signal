@@ -19,6 +19,8 @@
 //! assert_eq!(tracker.mode(), signal_analysis::AnalysisMode::Offline);
 //! assert!(result.beat_positions_seconds.is_empty() || result.bpm >= 0.0);
 //! ```
+#![warn(missing_docs)]
+
 mod beat_tempo_core;
 mod beat_utils;
 mod meter_state;
@@ -247,10 +249,13 @@ impl BeatTracker {
 }
 
 impl AnalysisStage<BeatAnalysisResult> for BeatTracker {
+    /// Always returns [`AnalysisMode::Offline`] — the tracker requires the
+    /// full buffer before it can produce results.
     fn mode(&self) -> AnalysisMode {
         AnalysisMode::Offline
     }
 
+    /// Mix the buffer to mono, apply input prep, then run beat/tempo/meter analysis.
     fn analyze(&mut self, audio: &AudioBuffer) -> BeatAnalysisResult {
         let prepared = prepare_audio_analysis(audio, self.analysis_input_config());
         self.analyze_prepared(prepared.sample_rate, &prepared.samples)

@@ -1,58 +1,113 @@
 use super::*;
 
+/// Complete observation snapshot of all runtime subsystems without the event
+/// stream.
+///
+/// Constructed by `capture()` using a `RuntimeObservationApi` + a
+/// `RuntimeEventRecorder`.  Consumed directly or wrapped in a
+/// [`RuntimeSupervisorReport`] for diagnostics.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeObservationReport {
+    /// Current readiness state of the runtime.
     pub readiness: RuntimeReadiness,
+    /// Effective runtime configuration (sample rate, block size, flags).
     pub effective_config: EffectiveRuntimeConfig,
+    /// Control-plane snapshot (running state, session counts, etc.).
     pub control_snapshot: RuntimeControlSnapshot,
+    /// Scheduler snapshot (phase/lane structure, topology).
     pub scheduler_snapshot: RuntimeSchedulerSnapshot,
+    /// Runtime diagnostics snapshot (CPU load, xrun count, etc.).
     pub diagnostics_snapshot: RuntimeDiagnosticsSnapshot,
+    /// Metering snapshot with per-bus peak/RMS data.
     pub metering_snapshot: RuntimeMeteringSnapshot,
+    /// Supervision snapshot (watchdog state, safe mode, fault gates).
     pub supervision_snapshot: RuntimeSupervisionSnapshot,
+    /// Fault status snapshot derived from readiness and supervision state.
     pub fault_status: RuntimeFaultStatusSnapshot,
+    /// Fault diagnostic receipt with classified interruption root cause.
     pub fault_diagnostic_receipt: RuntimeFaultDiagnosticReceipt,
+    /// Interruption summary derived from fault status.
     pub interruption_summary: RuntimeInterruptionSummary,
+    /// Device supervision snapshot including hardware health.
     pub device_supervision_snapshot: RuntimeDeviceSupervisionSnapshot,
+    /// External I/O snapshot (hardware backend state, clocking, latency).
     pub external_io_snapshot: RuntimeExternalIoSnapshot,
+    /// Linux audio backend session snapshot (ALSA/PipeWire/JACK session details).
     pub linux_backend_session_snapshot: RuntimeLinuxBackendSessionSnapshot,
+    /// PipeWire/ALSA parity snapshot for Linux backend comparisons.
     pub pipewire_alsa_parity_snapshot: RuntimePipeWireAlsaParitySnapshot,
+    /// JACK coordination snapshot.
     pub jack_coordination_snapshot: RuntimeJackCoordinationSnapshot,
+    /// External MIDI endpoint graph snapshot.
     pub external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
+    /// Control surface connectivity snapshot.
     pub control_surface_snapshot: RuntimeControlSurfaceSnapshot,
+    /// Advanced hardware capabilities snapshot.
     pub advanced_hardware_snapshot: RuntimeAdvancedHardwareSnapshot,
+    /// Timeline playback/transport snapshot.
     pub timeline_snapshot: RuntimeTimelineSnapshot,
+    /// Tempo map snapshot with resolved project tempo.
     pub tempo_map_snapshot: RuntimeTempoMapSnapshot,
+    /// Warp pipeline snapshot with per-clip warp states.
     pub warp_pipeline_snapshot: RuntimeWarpPipelineSnapshot,
+    /// Clip processing pipeline snapshot.
     pub clip_processing_pipeline_snapshot: RuntimeClipProcessingPipelineSnapshot,
+    /// Stretch engine snapshot.
     pub stretch_engine_snapshot: RuntimeStretchEngineSnapshot,
+    /// Marker analysis snapshot.
     pub marker_analysis_snapshot: RuntimeMarkerAnalysisSnapshot,
+    /// Transform artifact snapshot.
     pub transform_artifact_snapshot: RuntimeTransformArtifactSnapshot,
+    /// Preview transform service snapshot.
     pub preview_transform_snapshot: RuntimePreviewTransformServiceSnapshot,
+    /// Recording capture snapshot.
     pub recording_capture_snapshot: RuntimeRecordingCaptureSnapshot,
+    /// Media pipeline snapshot (asset ingestion and conforming state).
     pub media_pipeline_snapshot: RuntimeMediaPipelineSnapshot,
+    /// Media service snapshot (indexing and preview state).
     pub media_service_snapshot: RuntimeMediaServiceSnapshot,
+    /// Media library service snapshot (analysis descriptor state).
     pub media_library_snapshot: RuntimeMediaLibraryServiceSnapshot,
+    /// Offline render session queue snapshot.
     pub offline_render_session_snapshot: RuntimeOfflineRenderSessionSnapshot,
+    /// Automation snapshot.
     pub automation_snapshot: RuntimeAutomationSnapshot,
+    /// Plugin event snapshot.
     pub plugin_event_snapshot: RuntimePluginEventSnapshot,
+    /// Engine block snapshot with per-block timing and scheduler state.
     pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
+    /// Transport concurrency snapshot (session and lease counts).
     pub transport_concurrency_snapshot: RuntimeTransportConcurrencySnapshot,
+    /// Plugin discovery snapshot.
     pub plugin_discovery_snapshot: RuntimePluginDiscoverySnapshot,
+    /// Plugin lifecycle snapshot.
     pub plugin_lifecycle_snapshot: RuntimePluginLifecycleSnapshot,
+    /// LV2 extension snapshot.
     pub lv2_extension_snapshot: RuntimeLv2ExtensionSnapshot,
+    /// Plugin pin matrix snapshot.
     pub plugin_pin_matrix_snapshot: RuntimePluginPinMatrixSnapshot,
+    /// Plugin chain snapshot.
     pub plugin_chain_snapshot: RuntimePluginChainSnapshot,
+    /// Scheduler export summary derived from the engine block snapshot.
     pub scheduler_summary: RuntimeSchedulerExportSummary,
+    /// Block execution summary derived from the engine block snapshot.
     pub block_summary: RuntimeBlockExecutionSummary,
+    /// Degradation summary capturing active fault conditions.
     pub degradation_summary: RuntimeDegradationSummary,
+    /// Execution topology summary (track lanes, bus groups, etc.).
     pub execution_topology_summary: RuntimeExecutionTopologySummary,
+    /// Transport fault summary derived from observed transport fault events.
     pub transport_fault_summary: TransportFaultSummary,
+    /// Transport session summary derived from observed events.
     pub transport_session_summary: TransportSessionSummary,
+    /// Most recent deferred background service receipt, if any.
     pub last_deferred_service_receipt: Option<RuntimeDeferredServiceReceipt>,
+    /// Categorised event diagnostics from the attached event recorder.
     pub observation: RuntimeObservationDiagnostics,
 }
 
 impl RuntimeObservationReport {
+    /// Captures a full observation report by polling all runtime subsystems and the event recorder.
     pub fn capture(runtime: &impl RuntimeObservationApi, recorder: &RuntimeEventRecorder) -> Self {
         let observation = recorder.diagnostics();
         let readiness = runtime.get_readiness();
@@ -202,6 +257,7 @@ impl RuntimeObservationReport {
         }
     }
 
+    /// Replaces the device supervision snapshot using hardware I/O context from the host.
     pub fn with_host_device_supervision(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.device_supervision_snapshot = RuntimeDeviceSupervisionSnapshot::capture(
             &self.effective_config,
@@ -213,17 +269,20 @@ impl RuntimeObservationReport {
         self
     }
 
+    /// Replaces the external I/O snapshot using the host I/O summary.
     pub fn with_host_external_io(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.external_io_snapshot = host_io.build_external_io_snapshot();
         self
     }
 
+    /// Replaces the Linux backend session snapshot derived from the host I/O summary.
     pub fn with_linux_backend_session_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.linux_backend_session_snapshot =
             RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
         self
     }
 
+    /// Replaces the PipeWire/ALSA parity snapshot derived from host I/O and the Linux session.
     pub fn with_pipewire_alsa_parity_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.pipewire_alsa_parity_snapshot =
             RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
@@ -233,6 +292,7 @@ impl RuntimeObservationReport {
         self
     }
 
+    /// Replaces the JACK coordination snapshot derived from host I/O and the transport session.
     pub fn with_jack_coordination_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.jack_coordination_snapshot =
             RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
@@ -242,6 +302,7 @@ impl RuntimeObservationReport {
         self
     }
 
+    /// Replaces the external MIDI, control surface, and advanced hardware snapshots.
     pub fn with_external_midi_snapshot(
         mut self,
         external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
@@ -260,12 +321,14 @@ impl RuntimeObservationReport {
         self
     }
 
+    /// Renders a single-line compact summary of the observation report.
     pub fn render_compact(&self) -> String {
         render_runtime_observation_report_compact(self)
     }
 }
 
 impl RuntimeObservationReport {
+    /// Renders a JSON representation of the observation report via a zero-event supervisor report.
     pub fn render_json(&self) -> String {
         RuntimeSupervisorReport {
             observation: self.clone(),

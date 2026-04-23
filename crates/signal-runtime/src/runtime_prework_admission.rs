@@ -1,6 +1,7 @@
 use super::*;
 
 impl SignalRuntime {
+    /// Admits a prework buffer for the given target block sequence using the current transport and parameter state.
     pub fn prepare_engine_prework_for_block(
         &mut self,
         processing_epoch: u64,
@@ -18,6 +19,7 @@ impl SignalRuntime {
         )
     }
 
+    /// Admits a prework buffer for the given target block sequence with optional transport and parameter overrides.
     pub fn prepare_engine_prework_for_block_with_future_state(
         &mut self,
         processing_epoch: u64,
@@ -48,6 +50,7 @@ impl SignalRuntime {
         )
     }
 
+    /// Admits a sorted window of prework targets, retiring any stale entries outside the new window.
     pub fn prepare_engine_prework_window(
         &mut self,
         processing_epoch: u64,

@@ -99,6 +99,7 @@ impl LocalRuntimeHost {
         }))
     }
 
+    /// Applies a locally-simulated delegated execution outcome to a completed offline render result.
     pub fn finalize_offline_render_with_local_delegated_executor(
         &self,
         result: RuntimeOfflineRenderResult,
@@ -110,6 +111,7 @@ impl LocalRuntimeHost {
             .apply_offline_plugin_delegated_execution_outcome(&result, outcome)
     }
 
+    /// Renders offline audio and applies the local delegated execution outcome in one call.
     pub fn render_offline_with_local_delegated_executor(
         &self,
         request: RuntimeOfflineRenderRequest,

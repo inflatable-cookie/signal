@@ -5,6 +5,7 @@ mod clip_snapshot;
 use clip_snapshot::build_preview_transform_clip_snapshot;
 
 impl RuntimePreviewTransformServiceSnapshot {
+    /// Builds a preview transform service snapshot from the current pipeline, media, stretch, marker, and artifact state.
     pub fn from_runtime_preview_state(
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
         media_service: &RuntimeMediaServiceSnapshot,

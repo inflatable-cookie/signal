@@ -1,6 +1,7 @@
 use super::super::*;
 
 impl SignalRuntime {
+    /// Forecasts the transport projection for the given block sequence using the forecast policy loop settings.
     pub fn forecast_transport_projection_for_block(
         &self,
         block_sequence: u64,
@@ -26,6 +27,7 @@ impl SignalRuntime {
         }
     }
 
+    /// Forecasts a parameter batch for the given block sequence using the forecast policy cycle settings.
     pub fn forecast_parameter_batch_for_block(
         &self,
         block_sequence: u64,
@@ -46,6 +48,7 @@ impl SignalRuntime {
         }
     }
 
+    /// Applies forecast transport and parameter state for the given block sequence and reconciles the prework window.
     pub fn apply_forecast_state_for_block(
         &mut self,
         processing_epoch: u64,
@@ -70,6 +73,7 @@ impl SignalRuntime {
         Ok(self.reconcile_prework_window_with_forecast(block_sequence, &policy))
     }
 
+    /// Prepares the plugin dispatch state for the given block sequence, applying forecast overrides if enabled.
     pub fn prepare_plugin_dispatch_state_for_block(
         &mut self,
         processing_epoch: u64,

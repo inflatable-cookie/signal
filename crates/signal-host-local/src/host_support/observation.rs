@@ -7,15 +7,18 @@ use super::super::LocalRuntimeHost;
 
 impl LocalRuntimeHost {
     #[allow(dead_code)]
+    /// Returns raw observation diagnostics captured from the event log.
     pub fn observation_diagnostics(&self) -> RuntimeObservationDiagnostics {
         self.events.diagnostics()
     }
 
     #[allow(dead_code)]
+    /// Returns a full observation report enriched with host I/O state.
     pub fn observation_report(&self) -> RuntimeObservationReport {
         self.observation_with_host_io().0
     }
 
+    /// Returns a supervisor report enriched with host I/O state.
     pub fn supervisor_report(&self) -> RuntimeSupervisorReport {
         self.supervisor_with_host_io().0
     }

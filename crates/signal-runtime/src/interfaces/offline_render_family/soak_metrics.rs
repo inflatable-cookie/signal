@@ -1,24 +1,41 @@
 use super::*;
 
+/// Soak receipt for a completed offline render: clip readiness, recall stage coverage,
+/// delegation outcomes, and artifact materialization status.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeOfflineRenderSoakReceipt {
+    /// ID of the render request this receipt belongs to.
     pub request_id: String,
+    /// Total number of clips involved in the render.
     pub clip_count: usize,
+    /// Number of clips in the ready state at render time.
     pub ready_clip_count: usize,
+    /// Number of freeze artifacts rendered.
     pub freeze_artifact_count: usize,
+    /// Number of plugin recall stages involved in the render.
     pub recall_stage_count: usize,
+    /// Number of recall stages that were successfully recovered.
     pub recovered_recall_stage_count: usize,
+    /// Number of recall stages that were unavailable.
     pub unavailable_recall_stage_count: usize,
+    /// Number of stages delegated to host execution.
     pub delegated_stage_count: usize,
+    /// Number of delegated stages that completed successfully.
     pub delegated_completed_stage_count: usize,
+    /// Number of delegated stages that were rejected by the host.
     pub delegated_rejected_stage_count: usize,
+    /// Number of delegated stages that were unavailable.
     pub delegated_unavailable_stage_count: usize,
+    /// Number of artifacts materialized to disk.
     pub materialized_artifact_count: usize,
+    /// Whether the render report file was materialized.
     pub report_materialized: bool,
+    /// Human-readable summary of this soak receipt.
     pub summary: String,
 }
 
 impl RuntimeOfflineRenderSoakReceipt {
+    /// Renders a multi-line diagnostic string with one field per line.
     pub fn render_multiline(&self) -> String {
         format!(
             concat!(
@@ -54,6 +71,7 @@ impl RuntimeOfflineRenderSoakReceipt {
         )
     }
 
+    /// Renders a JSON object of all soak receipt fields.
     pub fn render_json(&self) -> String {
         format!(
             concat!(
@@ -93,6 +111,7 @@ impl RuntimeOfflineRenderSoakReceipt {
 }
 
 impl RuntimeOfflineRenderResult {
+    /// Constructs a soak receipt summarising this render result.
     pub fn soak_receipt(&self) -> RuntimeOfflineRenderSoakReceipt {
         let delegated_receipt = self.manifest.delegated_execution_receipt.as_ref();
         RuntimeOfflineRenderSoakReceipt {

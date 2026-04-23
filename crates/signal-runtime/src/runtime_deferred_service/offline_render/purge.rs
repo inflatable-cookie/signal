@@ -1,6 +1,7 @@
 use super::*;
 
 impl SignalRuntime {
+    /// Purges the artifact directory and report file for a completed offline render request.
     pub fn purge_offline_render_artifacts(
         &self,
         request: RuntimeOfflineRenderPurgeRequest,

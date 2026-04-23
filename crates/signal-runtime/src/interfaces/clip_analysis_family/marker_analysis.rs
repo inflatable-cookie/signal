@@ -13,6 +13,7 @@ fn runtime_estimated_analysis_event_count(
 }
 
 impl RuntimeMarkerAnalysisSnapshot {
+    /// Derives a marker analysis snapshot from the clip processing pipeline, stretch engine, warp pipeline, and media library snapshots.
     pub fn from_clip_processing_and_media_library(
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
         stretch_engine: &RuntimeStretchEngineSnapshot,

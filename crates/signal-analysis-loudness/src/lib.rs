@@ -20,6 +20,8 @@
 //! assert_eq!(result.loudness_range_lu, 0.0);
 //! ```
 
+#![warn(missing_docs)]
+
 use signal_analysis::{
     prepare_mono_analysis, AnalysisInputConfig, AnalysisMode, AnalysisStage, Confidence,
 };

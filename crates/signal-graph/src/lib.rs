@@ -25,6 +25,8 @@
 //! assert_eq!(report.frame_count, 64);
 //! ```
 
+#![warn(missing_docs)]
+
 mod bus;
 mod execution;
 mod execution_support;
@@ -46,12 +48,23 @@ use graph_summary::{classify_channel_adaptation, planning_group_for_node};
 use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, FrameCount, SampleRate};
 use stage_processor::StageParameterEvent;
 
+/// A compiled, executable audio processing graph.
+///
+/// Wraps a [`GraphExecutionPlan`] and exposes the block-processing entry
+/// points. Build one from a graph ID and a list of [`GraphNodeSpec`]s, then
+/// call [`ExecutableGraph::process_with_context`] each audio block from the
+/// realtime thread.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ExecutableGraph {
     plan: GraphExecutionPlan,
 }
 
 impl ExecutableGraph {
+    /// Construct a graph from a unique `graph_id` and an ordered node list.
+    ///
+    /// Nodes are processed in slice order unless the planner reorders them for
+    /// lane dispatch. An empty `nodes` list is valid and produces a pass-through
+    /// graph.
     pub fn new(graph_id: impl Into<String>, nodes: Vec<GraphNodeSpec>) -> Self {
         Self {
             plan: GraphExecutionPlan {
@@ -61,10 +74,12 @@ impl ExecutableGraph {
         }
     }
 
+    /// Returns the graph's unique identifier.
     pub fn graph_id(&self) -> &str {
         self.plan.graph_id.as_str()
     }
 
+    /// Returns a reference to the underlying execution plan.
     pub fn plan(&self) -> &GraphExecutionPlan {
         &self.plan
     }
@@ -76,6 +91,7 @@ impl ExecutableGraph {
 /// richer execution authority lives in [`GraphExecutionContext`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GraphConfig {
+    /// Nominal processing block size in frames.
     pub block_size: usize,
 }
 
@@ -85,6 +101,12 @@ impl Default for GraphConfig {
     }
 }
 
+/// Create a deterministic stereo [`AudioBuffer`] for testing and demos.
+///
+/// Fills a stereo interleaved buffer with a simple ramp-derived waveform. The
+/// `seed` shifts the amplitude range so different calls produce distinguishable
+/// signals. The left channel ramps from `seed * 0.03125 - 1` to
+/// `seed * 0.03125 + 1`; the right channel mirrors at half amplitude.
 pub fn synthetic_stereo_block(
     sample_rate: SampleRate,
     frames: FrameCount,

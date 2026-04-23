@@ -171,6 +171,7 @@ impl SignalRuntime {
         Ok(())
     }
 
+    /// Prepares a delegated plugin execution request from the current runtime state for the given render request.
     pub fn prepare_offline_plugin_delegated_execution_request(
         &self,
         request: &RuntimeOfflineRenderRequest,
@@ -179,6 +180,7 @@ impl SignalRuntime {
         Ok(Self::offline_plugin_delegated_execution_request(&boundary))
     }
 
+    /// Applies a delegated plugin execution receipt to an existing render result and re-materializes the manifest.
     pub fn apply_offline_plugin_delegated_execution_receipt(
         &self,
         result: &RuntimeOfflineRenderResult,
@@ -195,6 +197,7 @@ impl SignalRuntime {
         Ok(updated)
     }
 
+    /// Applies a delegated plugin execution outcome (receipt + audio merge) to an existing render result.
     pub fn apply_offline_plugin_delegated_execution_outcome(
         &self,
         result: &RuntimeOfflineRenderResult,

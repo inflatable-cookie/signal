@@ -7,6 +7,7 @@ mod persistence;
 use clip_snapshot::build_transform_artifact_clip_snapshot;
 
 impl RuntimeTransformArtifactSnapshot {
+    /// Builds a transform artifact snapshot from the current pipeline, stretch engine, marker analysis, and media pipeline state.
     pub fn from_runtime_transform_state(
         clip_processing: &RuntimeClipProcessingPipelineSnapshot,
         stretch_engine: &RuntimeStretchEngineSnapshot,

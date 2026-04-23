@@ -5,6 +5,7 @@ use super::*;
 use std::io;
 
 impl Vst3HostAdapter {
+    /// Creates a [`Vst3InstanceControlSurface`] for the given discovered plugin type and instance ID, validating the factory manifest.
     pub fn instantiate_plugin(
         &self,
         discovered: &Vst3DiscoveredPluginType,
@@ -30,6 +31,7 @@ impl Vst3HostAdapter {
         })
     }
 
+    /// Validates and loads a raw state byte slice as a [`Vst3StateSnapshot`] for the given instance.
     pub fn load_state_snapshot(
         &self,
         instance: &Vst3InstanceControlSurface,
@@ -61,6 +63,7 @@ impl Vst3HostAdapter {
         })
     }
 
+    /// Captures and returns a state snapshot for the given instance.
     pub fn store_state_snapshot(
         &self,
         instance: &Vst3InstanceControlSurface,
@@ -93,6 +96,7 @@ impl Vst3HostAdapter {
         })
     }
 
+    /// Activates the given instance at the specified sample rate and block size, optionally applying a state snapshot.
     pub fn activate_instance(
         &self,
         instance: &Vst3InstanceControlSurface,
@@ -126,6 +130,7 @@ impl Vst3HostAdapter {
         })
     }
 
+    /// Tears down the given instance and returns a record of how many state bytes were flushed.
     pub fn teardown_instance(
         &self,
         instance: &Vst3InstanceControlSurface,
@@ -144,6 +149,7 @@ impl Vst3HostAdapter {
         })
     }
 
+    /// Returns a [`Vst3ProcessSessionPlan`] for the given instance, sample rate, and block size.
     pub fn prepare_session(
         &self,
         instance: &Vst3InstanceControlSurface,
@@ -179,6 +185,7 @@ impl Vst3HostAdapter {
         }
     }
 
+    /// Executes a single audio block and returns a detailed processing record with parameter, MIDI, and state diagnostics.
     pub fn execute_block(
         &self,
         instance: &Vst3InstanceControlSurface,

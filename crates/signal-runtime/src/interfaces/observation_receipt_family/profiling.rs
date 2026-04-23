@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimeProfilingReceipt {
+    /// Renders a multi-line diagnostic string with one field per line.
     pub fn render_multiline(&self) -> String {
         format!(
             concat!(
@@ -100,6 +101,7 @@ impl RuntimeProfilingReceipt {
         )
     }
 
+    /// Renders a JSON object of all profiling receipt fields.
     pub fn render_json(&self) -> String {
         format!(
             concat!(

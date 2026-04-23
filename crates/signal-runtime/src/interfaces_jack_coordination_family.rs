@@ -8,71 +8,122 @@ use crate::{
     TransportSessionState, TransportSessionSummary,
 };
 
+/// JACK transport integration posture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeJackTransportPosture {
+    /// Running on a non-JACK backend.
     NotJack,
+    /// JACK transport state is unavailable.
     Unavailable,
+    /// Not currently attached to a JACK transport session.
     Detached,
+    /// Following an external JACK transport master.
     FollowingExternal,
+    /// Runtime is leading the JACK transport.
     RuntimeLed,
+    /// JACK transport integration is in a guarded state.
     Guarded,
 }
 
+/// State of JACK graph coordination.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeJackGraphCoordinationState {
+    /// Running on a non-JACK backend.
     NotJack,
+    /// JACK graph coordination state is unavailable.
     Unavailable,
+    /// JACK client is not currently attached to the graph.
     NotAttached,
+    /// JACK client is attached and the graph is stable.
     AttachedStable,
+    /// JACK client is attached but the graph is in a guarded state.
     AttachedGuarded,
+    /// JACK client is recovering from an interruption.
     Recovering,
+    /// JACK client has been released from the graph.
     Released,
 }
 
+/// Role of the runtime as a JACK client.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeJackClientRole {
+    /// Running on a non-JACK backend.
     NotJack,
+    /// JACK client role is unavailable.
     Unavailable,
+    /// Client is the primary audio I/O path in the JACK graph.
     PrimaryAudioIo,
+    /// Client is capable of monitoring but not full duplex I/O.
     MonitoringCapable,
+    /// Client is following an external JACK transport master.
     TransportFollower,
+    /// Client is serving as a fallback continuation path.
     FallbackContinuation,
 }
 
+/// Guarded coordination state of the JACK client.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RuntimeJackGuardedCoordinationState {
+    /// Running on a non-JACK backend.
     NotJack,
+    /// Guarded coordination state is unavailable.
     Unavailable,
+    /// JACK client has direct coordination with no guarded constraint.
     Direct,
+    /// JACK transport session is introducing a guarded constraint.
     TransportGuarded,
+    /// JACK graph attachment is in a guarded state.
     GraphGuarded,
+    /// JACK client is recovering from an interruption.
     Recovering,
 }
 
+/// Full JACK coordination snapshot: transport posture, graph state, client
+/// role, guarded state, session attachment, and heartbeat freshness.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimeJackCoordinationSnapshot {
+    /// Linux audio backend identity (expected to be JACK).
     pub backend_identity: RuntimeLinuxAudioBackendIdentity,
+    /// Human-readable name of the active backend.
     pub backend_name: String,
+    /// Portability band for this backend.
     pub portability_band: RuntimeLinuxAudioBackendPortabilityBand,
+    /// JACK transport integration posture.
     pub transport_posture: RuntimeJackTransportPosture,
+    /// State of JACK graph coordination.
     pub graph_state: RuntimeJackGraphCoordinationState,
+    /// Role of the runtime as a JACK client.
     pub client_role: RuntimeJackClientRole,
+    /// Guarded coordination constraint summary.
     pub guarded_state: RuntimeJackGuardedCoordinationState,
+    /// Stable identifier for the active audio device.
     pub device_id: String,
+    /// Human-readable name of the active audio device.
     pub device_name: String,
+    /// Current JACK transport session state.
     pub session_state: TransportSessionState,
+    /// Whether the JACK transport session is currently attached.
     pub currently_attached: bool,
+    /// Freshness of the most recent transport heartbeat.
     pub heartbeat_freshness: TransportHeartbeatFreshness,
+    /// Current transport dispatch state.
     pub dispatch_state: TransportDispatchState,
+    /// Number of times the JACK transport session was attached.
     pub attach_events: usize,
+    /// Number of times a JACK transport detach was requested.
     pub detach_requested_events: usize,
+    /// Number of times the JACK transport session was detached.
     pub detached_events: usize,
+    /// Health state reported by the JACK backend.
     pub backend_health: BackendHealth,
+    /// Whether the backend is operating in simulated mode.
     pub simulated: bool,
+    /// Human-readable summary of the coordination snapshot.
     pub summary: String,
 }
 
 impl RuntimeJackCoordinationSnapshot {
+    /// Returns a snapshot representing unavailable JACK coordination.
     pub fn unavailable() -> Self {
         Self {
             backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
@@ -99,6 +150,7 @@ impl RuntimeJackCoordinationSnapshot {
         }
     }
 
+    /// Derives the JACK coordination snapshot from host I/O state and a JACK transport session summary.
     pub fn from_host_io_and_transport_session(
         host_io: &RuntimeHostIoSummary,
         transport_session: &TransportSessionSummary,

@@ -13,13 +13,20 @@ use crate::{
     RuntimeLv2PreparedNegotiationRecord, SignalRuntime, StopReason,
 };
 
+/// Record of a successfully attached sandbox broker session.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SandboxBrokerAttachedSession {
+    /// Stable identifier for the attached sandbox.
     pub sandbox_id: String,
+    /// Instance identifier assigned by the broker.
     pub instance_id: String,
+    /// Processing epoch at which the session was attached.
     pub processing_epoch: u64,
+    /// Shared-memory lease identifier for this session.
     pub lease_id: String,
+    /// Shared-memory region identifier for this session.
     pub region_id: String,
+    /// Human-readable detail from the broker attach receipt.
     pub detail: String,
 }
 
@@ -34,71 +41,111 @@ struct SandboxBrokerReceiptLine {
     detail: String,
 }
 
+/// Handle to a running sandbox broker child process.
 pub struct SandboxBrokerClientSession {
     child: Child,
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
 }
 
+/// Plugin format served by a sandbox broker.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SandboxBrokerFlavor {
+    /// Demo plugin sandbox broker.
     Demo,
+    /// Audio Unit (AU) plugin sandbox broker.
     Au,
+    /// LV2 plugin sandbox broker.
     Lv2,
+    /// VST3 plugin sandbox broker.
     Vst3,
 }
 
+/// Environment variable overrides for spawning a sandbox broker process.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct SandboxBrokerSpawnConfig {
+    /// Environment variable overrides to apply when spawning the broker process.
     pub env: Vec<(String, String)>,
 }
 
+/// Combines the live broker client session with the attached session record.
 pub struct SandboxBrokerSession {
+    /// Live child-process client session.
     pub client: SandboxBrokerClientSession,
+    /// Attached session record returned by the broker.
     pub attached: SandboxBrokerAttachedSession,
+    /// Plugin format served by this broker session.
     pub flavor: SandboxBrokerFlavor,
+    /// Summary from the broker prepare phase, if completed.
     pub prepared_summary: Option<String>,
+    /// Summary from the broker teardown phase, if completed.
     pub teardown_summary: Option<String>,
 }
 
+/// Summary of blocks processed through a broker execution sequence.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SandboxBrokerExecutionSummary {
+    /// Number of audio blocks processed in this broker execution sequence.
     pub processed_blocks: usize,
+    /// Human-readable detail from the execution sequence.
     pub detail: String,
 }
 
+/// Record describing a prepared (pre-activated) sandbox session.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PreparedSandboxSessionRecord {
+    /// Plugin type identifier for the prepared sandbox.
     pub plugin_type_id: String,
+    /// Instance identifier assigned to the prepared sandbox.
     pub instance_id: String,
+    /// Sample rate in Hz used for preparation.
     pub sample_rate_hz: u32,
+    /// Maximum block size in frames used for preparation.
     pub max_block_frames: u32,
+    /// Number of audio input channels.
     pub audio_inputs: u16,
+    /// Number of audio output channels.
     pub audio_outputs: u16,
+    /// Number of MIDI input channels.
     pub midi_inputs: u16,
+    /// Number of MIDI output channels.
     pub midi_outputs: u16,
+    /// Processing epoch at which preparation occurred, if known.
     pub processing_epoch: Option<u64>,
+    /// Shared-memory lease identifier for this session.
     pub lease_id: String,
+    /// Shared-memory region identifier for this session.
     pub region_id: String,
+    /// LV2-specific prepared negotiation record, if applicable.
     pub lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
+    /// Human-readable summary of the prepared session, if available.
     pub summary: Option<String>,
 }
 
+/// Specification for spawning and preparing a brokered plugin sandbox.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PreparedBrokerSandboxSpec {
+    /// Plugin type identifier for the sandbox to be spawned.
     pub plugin_type_id: String,
+    /// Default I/O layout used when the broker does not specify one.
     pub default_io_layout: PluginIoLayout,
+    /// Fallback instance identifier used if the broker does not assign one.
     pub fallback_instance_id: String,
+    /// Plugin format served by this broker.
     pub flavor: SandboxBrokerFlavor,
+    /// Environment configuration for spawning the broker process.
     pub spawn_config: SandboxBrokerSpawnConfig,
+    /// LV2-specific prepared negotiation record, if applicable.
     pub lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
 }
 
 impl SandboxBrokerClientSession {
+    /// Returns `true` if the `SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND` environment variable is set.
     pub fn broker_enabled() -> bool {
         std::env::var_os("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND").is_some()
     }
 
+    /// Spawns a sandbox broker child process using environment-variable configuration.
     pub fn spawn_from_env(config: &SandboxBrokerSpawnConfig) -> Result<Self, RuntimeError> {
         let command = std::env::var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND").map_err(|_| {
             RuntimeError::new(
@@ -150,6 +197,7 @@ impl SandboxBrokerClientSession {
         })
     }
 
+    /// Reads the initial `starting` and `ready` receipts from the broker process.
     pub fn read_startup_receipts(&mut self) -> Result<(), RuntimeError> {
         let starting = self.read_receipt().map_err(io_runtime_error)?;
         let ready = self.read_receipt().map_err(io_runtime_error)?;
@@ -165,6 +213,7 @@ impl SandboxBrokerClientSession {
         Ok(())
     }
 
+    /// Sends an attach command for the given plugin flavor and reads the attached session receipt.
     pub fn attach(
         &mut self,
         flavor: SandboxBrokerFlavor,
@@ -196,6 +245,7 @@ impl SandboxBrokerClientSession {
         })
     }
 
+    /// Sends a teardown command and returns the raw teardown receipt fields.
     pub fn request_teardown(
         &mut self,
         flavor: SandboxBrokerFlavor,
@@ -219,6 +269,7 @@ impl SandboxBrokerClientSession {
         ))
     }
 
+    /// Sends a `stream-vst3` command and collects the execution stream until the broker re-attaches.
     pub fn request_vst3_execution_stream(
         &mut self,
     ) -> std::io::Result<SandboxBrokerExecutionSummary> {
@@ -253,6 +304,7 @@ impl SandboxBrokerClientSession {
         }
     }
 
+    /// Sends a `refresh-vst3` command and reads the resulting receipt.
     pub fn request_vst3_refresh(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
         self.write_command("refresh-vst3")?;
         let receipt = self.read_receipt()?;
@@ -272,6 +324,7 @@ impl SandboxBrokerClientSession {
         }
     }
 
+    /// Sends a `timeout-vst3` command and reads the resulting receipt.
     pub fn request_vst3_timeout(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
         self.write_command("timeout-vst3")?;
         let receipt = self.read_receipt()?;
@@ -291,6 +344,7 @@ impl SandboxBrokerClientSession {
         }
     }
 
+    /// Sends a `stream-lv2` command and collects the execution stream until the broker re-attaches.
     pub fn request_lv2_execution_stream(
         &mut self,
     ) -> std::io::Result<SandboxBrokerExecutionSummary> {
@@ -325,6 +379,7 @@ impl SandboxBrokerClientSession {
         }
     }
 
+    /// Sends a shutdown command, reads the final receipt, and waits for the child process to exit.
     pub fn shutdown(mut self) -> std::io::Result<()> {
         self.write_command("shutdown")?;
         match self.read_receipt() {
@@ -377,6 +432,7 @@ fn teardown_command_for(flavor: SandboxBrokerFlavor) -> &'static str {
     }
 }
 
+/// Records lifecycle events and instance state for a successfully prepared broker sandbox.
 pub fn record_broker_sandbox_prepared(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -440,6 +496,7 @@ pub fn record_broker_sandbox_prepared(
     );
 }
 
+/// Spawns a broker process, attaches a sandbox session, and records the prepared lifecycle events.
 pub fn ensure_broker_sandbox_session(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -500,6 +557,7 @@ pub fn ensure_broker_sandbox_session(
     })
 }
 
+/// Prepares a sandbox session via the broker if enabled, otherwise via the direct path.
 pub fn ensure_prepared_sandbox_session<BrokerPrepareFn, DirectPrepareFn, AfterBrokerAttachFn>(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -542,6 +600,7 @@ where
     }
 }
 
+/// Records lifecycle and fault events for a prepare failure caused by a protocol violation.
 pub fn record_protocol_violation_prepare_failure(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -590,6 +649,7 @@ pub fn record_protocol_violation_prepare_failure(
     RuntimeError::new(RuntimeErrorKind::InvalidRequest, detail)
 }
 
+/// Records a transport attached event with an execution summary and appends it to the session's prepared summary.
 pub fn record_broker_attached_execution_summary(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -610,6 +670,7 @@ pub fn record_broker_attached_execution_summary(
     });
 }
 
+/// Runs the full VST3 broker execution sequence: two streams, a refresh, a refreshed stream, and a timeout.
 pub fn run_vst3_broker_execution_sequence(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -695,10 +756,12 @@ pub fn run_vst3_broker_execution_sequence(
     Ok(())
 }
 
+/// Marks the start of a recovery overlap by setting the active sandbox count to two.
 pub fn begin_recovery_overlap(runtime: &mut SignalRuntime) {
     runtime.set_active_plugin_sandboxes(2);
 }
 
+/// Completes a recovery overlap restart by resetting the sandbox count and optionally promoting the new transport session.
 pub fn complete_recovery_overlap_restart(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -711,10 +774,12 @@ pub fn complete_recovery_overlap_restart(
     }
 }
 
+/// Rolls back a recovery overlap by setting the active sandbox count to zero.
 pub fn rollback_recovery_overlap(runtime: &mut SignalRuntime) {
     runtime.set_active_plugin_sandboxes(0);
 }
 
+/// Records a recovery cycle and emits broker invalidation events for any invalidated completion or lease slots.
 pub fn begin_brokered_recovery_cycle<InvalidateFn>(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -766,6 +831,7 @@ pub fn begin_brokered_recovery_cycle<InvalidateFn>(
     }
 }
 
+/// Returns an error if the overlap was requested but the competing attach unexpectedly succeeded.
 pub fn handle_overlap_prepare_contention(
     requested: bool,
     competing_attach_result: Result<(), RuntimeError>,
@@ -783,6 +849,7 @@ pub fn handle_overlap_prepare_contention(
     })
 }
 
+/// Commits a recovery overlap restart or rolls back on failure, propagating the first error encountered.
 pub fn complete_recovery_overlap_restart_or_rollback(
     restart_result: Result<(), RuntimeError>,
     inject_replacement_start_failure: bool,
@@ -805,6 +872,7 @@ pub fn complete_recovery_overlap_restart_or_rollback(
     Ok(())
 }
 
+/// Commits a lingering recovery restart, promotes the new transport session, or rolls back on failure.
 pub fn complete_lingering_recovery_restart_or_rollback(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -831,12 +899,17 @@ pub fn complete_lingering_recovery_restart_or_rollback(
     Ok(())
 }
 
+/// Outcome of tearing down the old transport session during a recovery overlap.
 pub enum RecoveryOverlapOldTransportTeardownOutcome {
+    /// Teardown succeeded; proceed with the replacement session.
     Continue,
+    /// Teardown failed; keep the replacement session and roll back the overlap.
     RollbackKeepReplacement(RuntimeError),
+    /// Teardown failed; clear the overlap and roll back entirely.
     RollbackClearOverlap(RuntimeError),
 }
 
+/// Processes teardown of the old transport session during a recovery overlap, returning the appropriate outcome.
 pub fn handle_recovery_overlap_old_transport_teardown(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -949,6 +1022,7 @@ pub fn handle_recovery_overlap_old_transport_teardown(
     RecoveryOverlapOldTransportTeardownOutcome::Continue
 }
 
+/// Records a transport `DetachRequested` stage event for the given sandbox session.
 pub fn record_broker_transport_detach_requested(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -967,6 +1041,7 @@ pub fn record_broker_transport_detach_requested(
     );
 }
 
+/// Records a transport `DetachFault` stage event for the given sandbox session.
 pub fn record_broker_transport_detach_fault(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -985,6 +1060,7 @@ pub fn record_broker_transport_detach_fault(
     );
 }
 
+/// Records a broker failure and the resulting transport detach fault for the given sandbox session.
 pub fn record_broker_transport_detach_failure(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -1014,6 +1090,7 @@ pub fn record_broker_transport_detach_failure(
     );
 }
 
+/// Records transport `Detached` and lifecycle teardown events for a broker sandbox.
 pub fn record_broker_sandbox_detached(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -1045,6 +1122,7 @@ pub fn record_broker_sandbox_detached(
     }
 }
 
+/// Records broker detach events and ends the transport session for the given sandbox.
 pub fn complete_broker_transport_detach(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -1066,6 +1144,7 @@ pub fn complete_broker_transport_detach(
     runtime.end_transport_session(sandbox_id, lease_id, region_id);
 }
 
+/// Requests teardown from the broker process, records the detach events, and shuts down the child.
 pub fn teardown_broker_sandbox_session(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,
@@ -1136,6 +1215,7 @@ pub fn teardown_broker_sandbox_session(
     Ok(())
 }
 
+/// Finalises a brokered recovery transport detach, recording failures or completing cleanly as appropriate.
 pub fn finalize_brokered_recovery_transport_detach(
     runtime: &mut SignalRuntime,
     sandbox_id: &str,

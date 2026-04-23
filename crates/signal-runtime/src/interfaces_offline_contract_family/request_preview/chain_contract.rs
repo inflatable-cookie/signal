@@ -1,6 +1,7 @@
 use super::super::*;
 
 impl RuntimeOfflineRenderContractPreview {
+    /// Builds the chain dependency preview from a live execution topology and recall handoff snapshot.
     pub fn chain_contract_from_runtime_state(
         topology: &RuntimeExecutionTopologySummary,
         recall_handoff: &RuntimePluginRecallHandoffSnapshot,

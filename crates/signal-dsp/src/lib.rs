@@ -10,6 +10,8 @@
 //! - control ramps and segment playback for block-local automation
 //! - basic delay, filter, and level-tracking kernels
 //! - stateless block mixing helpers and deterministic signal fixtures
+//! - [`flush_denormal`] and [`flush_denormals_in_place`] helpers for clearing
+//!   subnormal values from kernel state between blocks
 //!
 //! ```no_run
 //! use signal_dsp::{DspKernel, Gain, SmoothedValue};
@@ -24,6 +26,8 @@
 //! assert_eq!(block, [0.4, -0.2, 0.1]);
 //! assert!(smoothing.next_value() > 0.0);
 //! ```
+
+#![warn(missing_docs)]
 
 mod block;
 mod control;
@@ -48,6 +52,7 @@ pub use ramp::{ExponentialRamp, LinearRamp};
 
 use signal_primitives::Sample;
 
+/// Magnitude threshold below which a sample value is treated as a subnormal and flushed to zero.
 pub const DENORMAL_THRESHOLD: Sample = 1.0e-20;
 
 /// Common trait for reusable in-place DSP processors.

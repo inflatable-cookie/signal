@@ -1,6 +1,7 @@
 use super::super::*;
 
 impl RuntimePerformanceSnapshot {
+    /// Renders a JSON object containing all performance snapshot fields.
     pub fn render_json(&self) -> String {
         format!(
             concat!(
@@ -203,6 +204,7 @@ impl RuntimePerformanceSnapshot {
     }
 }
 
+/// Builds per-lane instrumentation summaries from the planned nodes in a block snapshot.
 pub fn runtime_worker_lane_instrumentation_summaries(
     engine_block_snapshot: &RuntimeEngineBlockSnapshot,
 ) -> Vec<RuntimeWorkerLaneInstrumentationSummary> {
@@ -253,6 +255,7 @@ pub fn runtime_worker_lane_instrumentation_summaries(
     summaries
 }
 
+/// Returns the display name string for a graph node planning group.
 pub fn runtime_graph_node_planning_group_name(group: GraphNodePlanningGroup) -> &'static str {
     match group {
         GraphNodePlanningGroup::InlineRealtime => "InlineRealtime",
@@ -261,6 +264,7 @@ pub fn runtime_graph_node_planning_group_name(group: GraphNodePlanningGroup) -> 
     }
 }
 
+/// Returns the display name string for a graph node topology role.
 pub fn runtime_graph_node_topology_role_name(role: GraphNodeTopologyRole) -> &'static str {
     match role {
         GraphNodeTopologyRole::Utility => "Utility",
@@ -279,6 +283,7 @@ pub(crate) fn runtime_execution_lane_name(lane: GraphExecutionLane) -> &'static 
     }
 }
 
+/// Returns the display name string for a prework backlog class.
 pub fn runtime_prework_backlog_class_name(value: RuntimePreworkBacklogClass) -> &'static str {
     match value {
         RuntimePreworkBacklogClass::Immediate => "Immediate",
@@ -288,6 +293,7 @@ pub fn runtime_prework_backlog_class_name(value: RuntimePreworkBacklogClass) -> 
 }
 
 impl RuntimeObservationReport {
+    /// Captures a performance snapshot from this observation report.
     pub fn performance_snapshot(&self) -> RuntimePerformanceSnapshot {
         RuntimePerformanceSnapshot::capture(
             &self.effective_config,
@@ -299,6 +305,7 @@ impl RuntimeObservationReport {
 }
 
 impl RuntimeSupervisorReport {
+    /// Captures a performance snapshot from the observation within this supervisor report.
     pub fn performance_snapshot(&self) -> RuntimePerformanceSnapshot {
         self.observation.performance_snapshot()
     }

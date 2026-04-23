@@ -1,5 +1,6 @@
 use super::*;
 impl RuntimeLv2ExtensionSnapshot {
+    /// Builds an LV2 extension snapshot by correlating discovered plugin types with sandbox lifecycle state.
     pub fn capture(
         discovery: &RuntimePluginDiscoverySnapshot,
         lifecycle: &RuntimePluginLifecycleSnapshot,

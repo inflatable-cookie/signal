@@ -13,29 +13,47 @@ use crate::{SharedMemoryTransportKind, SharedMemoryTransportPayload};
 
 static PROCESS_WIDE_REGION_SEQUENCE: AtomicU64 = AtomicU64::new(1);
 
+/// A live memory-mapped shared-memory region.
+///
+/// Created by [`SharedMemoryBroker::create_region`] or attached via
+/// [`SharedMemoryBroker::attach_region`]. The mapping stays live for the
+/// lifetime of this value; drop it to release the mapping (the backing file is
+/// not removed on drop — call [`SharedMemoryBroker::destroy_region`] for that).
 pub struct MappedSharedMemoryRegion {
     metadata: SharedMemoryTransportPayload,
     file: File,
     map: MmapMut,
 }
 
+/// Which lifecycle operation a shared-memory error occurred during.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SharedMemoryRegionOperation {
+    /// The region was being created.
     Create,
+    /// The region was being attached.
     Attach,
+    /// The region was being destroyed.
     Destroy,
 }
 
+/// Reason category for a shared-memory lifecycle failure.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SharedMemoryRegionLifecycleErrorKind {
+    /// The metadata sidecar file was not found.
     MissingMetadata,
+    /// The backing data file was not found.
     MissingBackingFile,
+    /// The sidecar file exists but could not be parsed.
     InvalidMetadata,
+    /// The sidecar file contents do not match the transport descriptor.
     MetadataMismatch,
+    /// The backing file size does not match the expected byte count.
     SizeMismatch,
+    /// A filesystem or OS I/O call failed.
     IoFailure,
 }
 
+/// Error returned by shared-memory lifecycle operations.
 #[derive(Debug)]
 pub struct SharedMemoryRegionLifecycleError {
     operation: SharedMemoryRegionOperation,
@@ -47,22 +65,27 @@ pub struct SharedMemoryRegionLifecycleError {
 }
 
 impl SharedMemoryRegionLifecycleError {
+    /// Which lifecycle operation failed.
     pub fn operation(&self) -> SharedMemoryRegionOperation {
         self.operation
     }
 
+    /// Category of the failure.
     pub fn kind(&self) -> SharedMemoryRegionLifecycleErrorKind {
         self.kind
     }
 
+    /// Region ID associated with the failure.
     pub fn region_id(&self) -> &str {
         &self.region_id
     }
 
+    /// Path to the backing file involved in the failure.
     pub fn backing_path(&self) -> &str {
         &self.backing_path
     }
 
+    /// Human-readable explanation of the failure.
     pub fn detail(&self) -> &str {
         &self.detail
     }
@@ -101,31 +124,48 @@ impl core::fmt::Debug for MappedSharedMemoryRegion {
 }
 
 impl MappedSharedMemoryRegion {
+    /// Returns the transport descriptor for this region.
     pub fn metadata(&self) -> &SharedMemoryTransportPayload {
         &self.metadata
     }
 
+    /// Returns the mapped bytes as an immutable slice.
     pub fn as_slice(&self) -> &[u8] {
         &self.map
     }
 
+    /// Returns the mapped bytes as a mutable slice.
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self.map
     }
 
+    /// Flush dirty pages to the backing file.
     pub fn flush(&mut self) -> io::Result<()> {
         self.map.flush()
     }
 
+    /// Returns the total size of this region in bytes as declared in its metadata.
     pub fn total_bytes(&self) -> u32 {
         self.metadata.total_bytes
     }
 
+    /// Returns the current size of the backing file on disk.
     pub fn file_len(&self) -> io::Result<u64> {
         self.file.metadata().map(|metadata| metadata.len())
     }
 }
 
+/// Creates, attaches, and destroys named shared-memory regions backed by
+/// memory-mapped files.
+///
+/// All regions are stored under a configurable root directory (default:
+/// `$TMPDIR/signal-shared-memory`). The broker writes a `.meta` sidecar file
+/// alongside each data file containing the region ID, lease ID, byte count, and
+/// owner PID so that the attach and destroy paths can validate the transport
+/// descriptor before mapping or removing the files.
+///
+/// On Unix the broker tightens directory permissions to `0700` and file
+/// permissions to `0600` at creation time.
 #[derive(Debug)]
 pub struct SharedMemoryBroker {
     root: PathBuf,
@@ -139,6 +179,7 @@ impl Default for SharedMemoryBroker {
 }
 
 impl SharedMemoryBroker {
+    /// Construct a broker rooted at the given directory.
     pub fn new(root: impl Into<PathBuf>) -> Self {
         Self {
             root: root.into(),
@@ -146,10 +187,17 @@ impl SharedMemoryBroker {
         }
     }
 
+    /// Returns the root directory where region files are stored.
     pub fn root(&self) -> &PathBuf {
         &self.root
     }
 
+    /// Create a new shared-memory region of `total_bytes` bytes.
+    ///
+    /// `lease_id` is used as a human-readable prefix in the backing file name.
+    /// The returned [`MappedSharedMemoryRegion`] is zeroed and ready to use.
+    /// Call [`destroy_region`][Self::destroy_region] with the region's transport
+    /// payload when the region is no longer needed.
     pub fn create_region(
         &self,
         lease_id: &str,
@@ -267,6 +315,11 @@ impl SharedMemoryBroker {
         })
     }
 
+    /// Attach to an existing region identified by `transport`.
+    ///
+    /// Validates the sidecar metadata and file size before mapping. Returns an
+    /// error if the backing file is missing, the metadata does not match, or the
+    /// size differs from the transport descriptor.
     pub fn attach_region(
         &self,
         transport: &SharedMemoryTransportPayload,
@@ -348,6 +401,9 @@ impl SharedMemoryBroker {
         })
     }
 
+    /// Remove the backing file and metadata sidecar for the region identified by
+    /// `transport`. Any live mappings obtained via [`attach_region`][Self::attach_region]
+    /// become invalid after this call.
     pub fn destroy_region(
         &self,
         transport: &SharedMemoryTransportPayload,

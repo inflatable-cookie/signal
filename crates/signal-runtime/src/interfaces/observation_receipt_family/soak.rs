@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimeSoakReceipt {
+    /// Renders a multi-line diagnostic string with one field per line.
     pub fn render_multiline(&self) -> String {
         format!(
             concat!(
@@ -74,6 +75,7 @@ impl RuntimeSoakReceipt {
         )
     }
 
+    /// Renders a JSON object of all soak receipt fields.
     pub fn render_json(&self) -> String {
         format!(
             concat!(

@@ -1,16 +1,32 @@
+/// Plan for exercising retrying timeout recovery in a test harness.
+///
+/// Describes a sequence of injected failures and whether to attempt a clean
+/// recovery after all failures have been exhausted.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TimeoutRecoveryRetryPlan<'a, Failure> {
+    /// Sequence of failure modes to inject, applied in order.
     pub failures: &'a [Failure],
+    /// Detail message used when the terminal failure is reached.
     pub terminal_detail: &'a str,
+    /// Whether to attempt a clean recovery after all failures have been exhausted.
     pub recover_after_failures: bool,
 }
 
+/// Plan for exercising repeated watchdog recovery cycles in a test harness.
+///
+/// `restart_episodes` controls how many watchdog-trigger → recover cycles to
+/// run; `mixed_faults` alternates between heartbeat-miss and timeout faults.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RepeatedWatchdogRecoveryPlan {
+    /// Number of watchdog-trigger → recover cycles to run.
     pub restart_episodes: u32,
+    /// Whether to alternate between heartbeat-miss and timeout faults across episodes.
     pub mixed_faults: bool,
 }
 
+/// Implements the realtime block-cycle execution helpers (`execute_block_sequence`,
+/// `run_realtime_cycle`, `prework_service_pressure`, `poll_heartbeat`) on a host
+/// harness type that owns a [`SignalRuntime`] field named `runtime`.
 #[macro_export]
 macro_rules! impl_host_runtime_cycle_support {
     ($host_ty:path) => {
@@ -173,6 +189,10 @@ macro_rules! impl_host_runtime_cycle_support {
     };
 }
 
+/// Implements the boot-time watchdog and timeout recovery helpers
+/// (`apply_timeout_recovery_failure`, `apply_retrying_timeout_recovery`,
+/// `apply_interleaved_timeout_recovery`, `apply_repeated_watchdog_recovery`,
+/// `walk_timeout_watchdog`) on a host harness type.
 #[macro_export]
 macro_rules! impl_host_boot_recovery_helpers {
     ($host_ty:path, $sandbox_ty:path, $timeout_plan_ty:ty, $instance_id:expr) => {
@@ -432,6 +452,9 @@ macro_rules! impl_host_boot_recovery_helpers {
     };
 }
 
+/// Implements the brokered block execution helper (`execute_block`) on a host harness
+/// type, handling payload dispatch, completion-slot tracking, and engine result
+/// recording via the embedded [`SignalRuntime`].
 #[macro_export]
 macro_rules! impl_host_runtime_block_support {
     ($host_ty:path) => {

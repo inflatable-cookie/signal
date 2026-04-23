@@ -1,4 +1,12 @@
-//! CoreAudio backend realization for Signal.
+//! CoreAudio hardware backend for macOS. Implements [`HardwareBackend`] from `signal-hardware`.
+//!
+//! On initialization [`CoreAudioBackend`] discovers the current device inventory
+//! by invoking `system_profiler SPAudioDataType -json`. In test and CI
+//! environments you can inject a fixture by setting the
+//! `SIGNAL_COREAUDIO_SPAUDIO_JSON` environment variable to a JSON string in the
+//! same format that `system_profiler` produces.
+
+#![warn(missing_docs)]
 
 use serde_json::Value;
 use signal_hardware::{
@@ -14,6 +22,15 @@ use std::{collections::HashMap, env, process::Command};
 const COREAUDIO_FIXTURE_ENV: &str = "SIGNAL_COREAUDIO_SPAUDIO_JSON";
 const COREAUDIO_SYSTEM_PROFILER_DATASET: &str = "SPAudioDataType";
 
+/// CoreAudio hardware backend for macOS.
+///
+/// Implements [`HardwareBackend`] by querying `system_profiler` for the current
+/// device inventory. The backend is immutable after construction; call
+/// [`Default::default`] or rebuild to pick up device changes.
+///
+/// The diagnostic mutation helpers (`simulate_device_loss`, etc.) are provided
+/// for testing only — they record fault events and update health state without
+/// touching real hardware.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoreAudioBackend {
     policy_tier: BackendPolicyTier,
@@ -33,10 +50,15 @@ impl Default for CoreAudioBackend {
 }
 
 impl CoreAudioBackend {
+    /// Returns the isolation tier this backend is operating under.
     pub fn policy_tier(&self) -> BackendPolicyTier {
         self.policy_tier
     }
 
+    /// Negotiate and return a stream config for the default output device.
+    ///
+    /// Fails with [`HardwareNegotiationError`] if no default output device is
+    /// available or the requested parameters are not supported.
     pub fn default_output_stream(
         &self,
         sample_rate: u32,
@@ -53,6 +75,9 @@ impl CoreAudioBackend {
         self.negotiate_stream(&request)
     }
 
+    /// Derive a [`HardwareConfigRequest`] from the default output device at the
+    /// given sample rate and buffer size. Panics if no default output device is
+    /// available.
     pub fn default_output_request(
         &self,
         sample_rate: u32,
@@ -64,10 +89,14 @@ impl CoreAudioBackend {
         HardwareConfigRequest::from_stream(&stream, self.policy_tier)
     }
 
+    /// Reset the diagnostic snapshot to a clean baseline derived from the
+    /// current device list.
     pub fn reset_diagnostics(&mut self) {
         self.diagnostics = baseline_diagnostics(&self.devices);
     }
 
+    /// Transition health back to `Healthy` (or `Degraded` if no default output
+    /// device is present) after a recovery sequence.
     pub fn mark_recovered(&mut self) {
         self.diagnostics.health = if self.default_output_device().is_some() {
             BackendHealth::Healthy
@@ -76,6 +105,9 @@ impl CoreAudioBackend {
         };
     }
 
+    /// Inject a simulated device-loss event for testing. Records a
+    /// [`HardwareDiagnosticKind::DeviceDisconnected`] event and sets health to
+    /// `Degraded`.
     pub fn simulate_device_loss(&mut self, detail: impl Into<String>) {
         let device_id = self.default_output_device().map(|device| device.device_id);
         self.diagnostics.health = BackendHealth::Degraded;
@@ -89,6 +121,9 @@ impl CoreAudioBackend {
         });
     }
 
+    /// Inject a simulated restart-attempt event for testing. Records a
+    /// [`HardwareDiagnosticKind::RestartAttempted`] event and sets health to
+    /// `Recovering`.
     pub fn simulate_restart_attempt(&mut self, detail: impl Into<String>) {
         let device_id = self.default_output_device().map(|device| device.device_id);
         self.diagnostics.health = BackendHealth::Recovering;
@@ -103,6 +138,9 @@ impl CoreAudioBackend {
         });
     }
 
+    /// Inject a simulated restart-failure event for testing. Records a
+    /// [`HardwareDiagnosticKind::RestartFailed`] event and sets health to
+    /// `Degraded`.
     pub fn simulate_restart_failure(&mut self, detail: impl Into<String>) {
         let device_id = self.default_output_device().map(|device| device.device_id);
         self.diagnostics.health = BackendHealth::Degraded;

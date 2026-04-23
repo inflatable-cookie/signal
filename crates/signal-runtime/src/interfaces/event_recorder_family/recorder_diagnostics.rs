@@ -1,6 +1,7 @@
 use super::*;
 
 impl RuntimeEventRecorder {
+    /// Returns a diagnostics summary built from the recorder's current event snapshot.
     pub fn diagnostics(&self) -> RuntimeObservationDiagnostics {
         RuntimeObservationDiagnostics {
             total_events: self.count(),

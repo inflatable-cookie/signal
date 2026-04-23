@@ -1,6 +1,7 @@
 use super::super::*;
 
 impl RuntimeObservationDiagnostics {
+    /// Renders a single-line summary of all event counts and the last event of each category.
     pub fn render_compact(&self) -> String {
         let last_trigger = self
             .last_supervision_update()

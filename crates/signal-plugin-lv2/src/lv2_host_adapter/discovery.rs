@@ -6,6 +6,7 @@ use crate::lv2_host_adapter::scaffold::lv2_scaffold_discovered_plugin_type;
 use std::{env, fs, path::PathBuf};
 
 impl Lv2HostAdapter {
+    /// Returns the default LV2 scan roots for the given platform.
     pub fn default_scan_roots(&self, platform: Lv2HostPlatform) -> Vec<Lv2ScanRoot> {
         match platform {
             Lv2HostPlatform::Linux => vec![
@@ -28,10 +29,12 @@ impl Lv2HostAdapter {
         }
     }
 
+    /// Looks up a scaffold-registered LV2 plugin type by its type ID.
     pub fn discover_plugin_type(&self, plugin_type_id: &str) -> Option<Lv2DiscoveredPluginType> {
         lv2_scaffold_discovered_plugin_type(plugin_type_id)
     }
 
+    /// Scans the given filesystem roots for LV2 bundles and returns all successfully discovered plugin types.
     pub fn discover_plugins_for_roots(
         &self,
         platform: Lv2HostPlatform,
@@ -41,6 +44,7 @@ impl Lv2HostAdapter {
             .discovered
     }
 
+    /// Scans the given roots and returns a [`Lv2DiscoveryBatch`] containing both discovered plugins and any per-bundle diagnostics.
     pub fn discover_plugins_for_roots_with_diagnostics(
         &self,
         platform: Lv2HostPlatform,

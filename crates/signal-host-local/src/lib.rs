@@ -1,3 +1,14 @@
+//! Local desktop runtime host.
+//!
+//! Assembles `signal-runtime`, `signal-hardware-coreaudio`, and the plugin
+//! stack into a runnable host for use in desktop applications. The top-level
+//! type is [`LocalRuntimeHost`], which owns the runtime, the CoreAudio backend,
+//! and all plugin adapters. The host drives the audio pump and manages plugin
+//! sandbox lifecycle.
+
+#![warn(missing_docs)]
+
+/// Internal host implementation module.
 pub mod host;
 
 pub use host::{

@@ -2,6 +2,11 @@ use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 impl ExecutableGraph {
+    /// Validate all node contracts in the plan and return an aggregate summary.
+    ///
+    /// Checks bus IDs, channel adaptation compatibility, topology annotations,
+    /// and ordering constraints. Issues are non-fatal; they are recorded in the
+    /// returned [`GraphContractSummary`] and surfaced in [`GraphBlockReport`].
     pub fn contract_summary(&self) -> GraphContractSummary {
         let mut summary = GraphContractSummary::default();
         let all_output_buses = self

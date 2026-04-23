@@ -1,6 +1,7 @@
 use super::*;
 
 impl Lv2HostAdapter {
+    /// Creates an [`Lv2InstanceControlSurface`] for the given discovered plugin type and instance ID.
     pub fn instantiate_plugin(
         &self,
         discovered: &Lv2DiscoveredPluginType,
@@ -21,6 +22,7 @@ impl Lv2HostAdapter {
         }
     }
 
+    /// Negotiates LV2 extensions and returns a [`Lv2ProcessSessionPlan`] for the given sample rate and block size.
     pub fn prepare_session(
         &self,
         instance: &Lv2InstanceControlSurface,
@@ -53,6 +55,7 @@ impl Lv2HostAdapter {
         }
     }
 
+    /// Tears down the given instance and returns a teardown record.
     pub fn teardown_instance(
         &self,
         instance: &Lv2InstanceControlSurface,
@@ -70,6 +73,7 @@ impl Lv2HostAdapter {
         }
     }
 
+    /// Executes a single audio block and returns a processing record with event and output channel counts.
     pub fn execute_block(
         &self,
         instance: &Lv2InstanceControlSurface,

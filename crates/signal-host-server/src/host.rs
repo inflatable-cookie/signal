@@ -35,6 +35,12 @@ pub(crate) use host_support::{
     SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 
+/// The headless server runtime host.
+///
+/// Owns the [`SignalRuntime`] and all plugin format adapters (CLAP, AU, LV2,
+/// VST3) plus the shared-memory broker. There is no audio hardware backend —
+/// audio processing is driven programmatically. Construct with
+/// [`ServerRuntimeHost::new`] and drive via [`RuntimeSupervisorApi`].
 pub struct ServerRuntimeHost {
     runtime: SignalRuntime,
     broker: SharedMemoryBroker,
@@ -53,6 +59,10 @@ pub struct ServerRuntimeHost {
 }
 
 impl ServerRuntimeHost {
+    /// Construct a new server host wrapping the given runtime.
+    ///
+    /// Initialises all plugin format adapters and the shared-memory broker.
+    /// The runtime is subscribed to an internal event recorder immediately.
     pub fn new(runtime: SignalRuntime) -> Self {
         let events = RuntimeEventRecorder::default();
         let mut runtime = runtime;
@@ -77,6 +87,7 @@ impl ServerRuntimeHost {
         }
     }
 
+    /// Returns a reference to the underlying runtime.
     pub fn runtime(&self) -> &SignalRuntime {
         &self.runtime
     }

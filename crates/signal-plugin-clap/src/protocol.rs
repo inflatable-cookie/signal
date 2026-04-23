@@ -10,23 +10,31 @@ use crate::clap_sandbox_harness;
 use crate::event_translation::{translate_input_events, translate_output_events};
 use crate::events::ClapEventPacket;
 
+/// Block-transport protocol for a CLAP plugin instance. Builds dispatch headers, test payloads, and translates events between Signal and CLAP representations.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClapBlockProtocol {
+    /// Plugin type this protocol targets.
     pub plugin_type_id: PluginTypeId,
+    /// Instance this protocol targets.
     pub instance_id: signal_plugin::PluginInstanceId,
+    /// I/O layout used when building dispatches and test payloads.
     pub io_layout: PluginIoLayout,
+    /// Maximum event buffer size in bytes.
     pub event_capacity_bytes: u32,
 }
 
 impl ClapBlockProtocol {
+    /// Returns the parameter ID used for automation testing in generated test payloads.
     pub fn automation_parameter_id(&self) -> u32 {
         4_096
     }
 
+    /// Returns the number of blocks per automation value cycle in generated test payloads.
     pub fn automation_cycle_span_blocks(&self) -> u64 {
         4
     }
 
+    /// Creates a new protocol for the given plugin type, instance, I/O layout, and event buffer capacity.
     pub fn new(
         plugin_type_id: impl Into<String>,
         instance_id: impl Into<String>,
@@ -41,6 +49,7 @@ impl ClapBlockProtocol {
         }
     }
 
+    /// Returns the plugin descriptor for this protocol's type and I/O layout.
     pub fn descriptor(&self) -> PluginDescriptor {
         clap_sandbox_harness::clap_fixture_descriptor(
             self.plugin_type_id.0.as_str(),
@@ -48,6 +57,7 @@ impl ClapBlockProtocol {
         )
     }
 
+    /// Builds a shared-memory block header for the given epoch, sequence, and frame count.
     pub fn block_header(
         &self,
         processing_epoch: u64,
@@ -69,6 +79,7 @@ impl ClapBlockProtocol {
         }
     }
 
+    /// Returns a default render context suitable for testing at 48 kHz, 120 BPM, playing.
     pub fn default_render_context(&self, frame_count: u32) -> PluginRenderContext {
         PluginRenderContext {
             sample_rate_hz: 48_000,
@@ -81,6 +92,7 @@ impl ClapBlockProtocol {
         }
     }
 
+    /// Builds a full [`BlockDispatch`] for the given epoch, sequence, frame count, and render context.
     pub fn block_dispatch(
         &self,
         processing_epoch: u64,
@@ -99,6 +111,7 @@ impl ClapBlockProtocol {
         )
     }
 
+    /// Generates a deterministic test input payload containing audio ramps and a representative mix of MIDI and parameter events.
     pub fn test_input_payload(&self, block_sequence: u64, frame_count: u32) -> BlockPayload {
         let channel_count = self.io_layout.audio_channels();
         let mut samples = Vec::with_capacity(channel_count as usize * frame_count as usize);
@@ -191,10 +204,12 @@ impl ClapBlockProtocol {
         BlockPayload::new(audio, events)
     }
 
+    /// Translates a Signal [`EventPacket`] into a [`ClapEventPacket`].
     pub fn translate_input_events(&self, packet: &EventPacket) -> ClapEventPacket {
         translate_input_events(packet)
     }
 
+    /// Translates a [`ClapEventPacket`] received from a plugin back into a Signal [`EventPacket`].
     pub fn translate_output_events(&self, packet: &ClapEventPacket) -> EventPacket {
         translate_output_events(packet)
     }

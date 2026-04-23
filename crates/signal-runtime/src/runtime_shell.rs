@@ -24,6 +24,7 @@ impl core::fmt::Debug for SignalRuntime {
 }
 
 impl SignalRuntime {
+    /// Creates a new `SignalRuntime` instance with the given boot-time configuration.
     pub fn new(config: RuntimeConfig) -> Self {
         let mut runtime = Self {
             config,
@@ -90,6 +91,7 @@ impl SignalRuntime {
         runtime
     }
 
+    /// Returns the boot-time configuration for this runtime instance.
     pub fn config(&self) -> RuntimeConfig {
         self.config
     }
@@ -115,6 +117,7 @@ impl SignalRuntime {
             .transition_prework_service_state(state, processing_epoch);
     }
 
+    /// Sets the active output device ID and emits a hardware device changed event.
     pub fn set_active_output_device(&mut self, device_id: impl Into<String>) {
         self.active_output_device = Some(device_id.into());
         self.emit(RuntimeEvent::HardwareDeviceChanged {
@@ -122,6 +125,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Updates the active plugin sandbox count and refreshes the prework service policy.
     pub fn set_active_plugin_sandboxes(&mut self, count: u32) {
         self.diagnostics.active_plugin_sandboxes = count;
         self.plugin_lifecycle.set_active_sandbox_count(count);
@@ -131,6 +135,7 @@ impl SignalRuntime {
         });
     }
 
+    /// Applies a batch of plugin node render results to the engine state.
     pub fn apply_plugin_node_render_batch(
         &mut self,
         batch: PluginNodeRenderBatch,
@@ -138,34 +143,42 @@ impl SignalRuntime {
         self.engine.apply_plugin_node_render_batch(batch)
     }
 
+    /// Sets the backend policy tier reported in diagnostics.
     pub fn set_backend_policy_tier(&mut self, tier: BackendPolicyTier) {
         self.diagnostics.backend_policy_tier = tier;
     }
 
+    /// Sets the reported CPU load percentage in diagnostics.
     pub fn set_cpu_load_percent(&mut self, cpu_load_percent: f32) {
         self.diagnostics.cpu_load_percent = cpu_load_percent.max(0.0);
     }
 
+    /// Sets the reported graph latency in milliseconds in diagnostics.
     pub fn set_graph_latency_ms(&mut self, graph_latency_ms: f32) {
         self.diagnostics.graph_latency_ms = graph_latency_ms.max(0.0);
     }
 
+    /// Returns the current projection epoch.
     pub fn projection_epoch(&self) -> u64 {
         self.projection_epoch
     }
 
+    /// Resets the block timeline to its initial state.
     pub fn reset_block_timeline(&mut self) {
         self.timeline.reset();
     }
 
+    /// Resets all automation tracking state.
     pub fn reset_automation_tracking(&mut self) {
         self.automation.reset();
     }
 
+    /// Resets all plugin event tracking state.
     pub fn reset_plugin_event_tracking(&mut self) {
         self.plugin_events.reset();
     }
 
+    /// Processes one engine block and returns the block result including graph output.
     pub fn process_engine_block(
         &mut self,
         processing_epoch: u64,
