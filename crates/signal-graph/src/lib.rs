@@ -27,7 +27,6 @@
 
 #![warn(missing_docs)]
 
-
 mod bus;
 mod execution;
 mod execution_support;

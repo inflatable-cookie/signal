@@ -29,7 +29,6 @@
 
 #![warn(missing_docs)]
 
-
 pub mod corpus;
 pub mod harness;
 pub mod input;

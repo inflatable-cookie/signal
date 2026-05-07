@@ -16,7 +16,6 @@
 
 #![warn(missing_docs)]
 
-
 mod plugin_protocol;
 mod runtime_message;
 mod shared_memory;

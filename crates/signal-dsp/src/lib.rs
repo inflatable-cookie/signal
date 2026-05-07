@@ -29,7 +29,6 @@
 
 #![warn(missing_docs)]
 
-
 mod block;
 mod control;
 mod delay;

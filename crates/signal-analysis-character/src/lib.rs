@@ -23,7 +23,6 @@
 
 #![warn(missing_docs)]
 
-
 use signal_analysis::{
     prepare_audio_analysis, prepare_mono_analysis, AnalysisInputConfig, AnalysisMode, AnalysisStage,
 };

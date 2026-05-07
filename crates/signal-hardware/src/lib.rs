@@ -15,7 +15,6 @@
 
 #![warn(missing_docs)]
 
-
 mod backend_contract;
 mod diagnostics;
 

@@ -2,7 +2,6 @@
 
 #![warn(missing_docs)]
 
-
 mod adapter;
 mod clap_sandbox_harness;
 mod discovery;

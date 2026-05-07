@@ -20,7 +20,6 @@
 
 #![warn(missing_docs)]
 
-
 mod blocks;
 mod event_codec;
 mod events;

@@ -26,7 +26,6 @@
 
 #![warn(missing_docs)]
 
-
 use signal_analysis::{AnalysisMode, AnalysisStage};
 use signal_analysis_character::{CharacterAnalysisResult, CharacterAnalyzer};
 use signal_primitives::AudioBuffer;

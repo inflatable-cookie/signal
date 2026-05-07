@@ -8,7 +8,6 @@
 
 #![warn(missing_docs)]
 
-
 /// Internal host implementation module.
 pub mod host;
 

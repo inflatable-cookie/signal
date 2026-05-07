@@ -18,7 +18,6 @@
 
 #![warn(missing_docs)]
 
-
 /// Floating-point audio sample value.
 pub type Sample = f32;
 
