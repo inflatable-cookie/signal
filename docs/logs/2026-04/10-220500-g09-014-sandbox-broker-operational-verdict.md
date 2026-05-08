@@ -1,7 +1,7 @@
 # 2026-04-10 - g09.014 Sandbox Broker Operational Verdict
 
 Roadmap: `docs/roadmaps/g09/014-production-readiness-grade-and-generation-release-gate.md`
-Card: `docs/specs/batch-cards/040-g09-014-sandbox-broker-operational-verdict.md`
+Card: `docs/roadmaps/g09/batch-cards/040-g09-014-sandbox-broker-operational-verdict.md`
 
 Closed `040-g09-014-sandbox-broker-operational-verdict.md` by deciding the
 final remaining reopened `g09` crate verdict and promoting
@@ -45,4 +45,4 @@ remaining work is final release-gate closeout only.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/041-g09-014-final-release-gate-closeout.md`.
+`docs/roadmaps/g09/batch-cards/041-g09-014-final-release-gate-closeout.md`.

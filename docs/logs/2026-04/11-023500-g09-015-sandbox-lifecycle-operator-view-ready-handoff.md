@@ -2,7 +2,7 @@
 
 Date: 2026-04-11  
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`  
-Ready card: `docs/specs/batch-cards/059-g09-015-plugin-sandbox-lifecycle-operator-view.md`
+Ready card: `docs/roadmaps/g09/batch-cards/059-g09-015-plugin-sandbox-lifecycle-operator-view.md`
 
 ## Achieved
 
@@ -46,4 +46,4 @@ behavior.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/059-g09-015-plugin-sandbox-lifecycle-operator-view.md`.
+`docs/roadmaps/g09/batch-cards/059-g09-015-plugin-sandbox-lifecycle-operator-view.md`.

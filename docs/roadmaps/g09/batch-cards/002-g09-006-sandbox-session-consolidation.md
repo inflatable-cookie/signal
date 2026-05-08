@@ -75,4 +75,4 @@ remaining adapter- and host-specific behavior into a false common layer.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`.
+`docs/roadmaps/g09/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`.

@@ -60,4 +60,4 @@ claimed honestly before the plugin browser batch resumes.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/043-g09-015-plugin-capability-browser-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/043-g09-015-plugin-capability-browser-bootstrap.md`.

@@ -1,7 +1,7 @@
 # 2026-04-10 - g09.015 Plugin Discovery Reality Correction
 
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
-Card: `docs/specs/batch-cards/042-g09-015-interactive-demo-strategy-and-gap-inventory.md`
+Card: `docs/roadmaps/g09/batch-cards/042-g09-015-interactive-demo-strategy-and-gap-inventory.md`
 
 Corrected the active `g09.015` lane after adapter inspection showed the first
 ready browser card was premature.
@@ -28,4 +28,4 @@ ready browser card was premature.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.
+`docs/roadmaps/g09/batch-cards/044-g09-015-real-plugin-discovery-gap-burn-down.md`.

@@ -37,9 +37,9 @@ card.
   `meter_state_continuity_lock_arms.rs`, and
   `meter_state_continuity_watch_clear_arms.rs`
 - promoted new ready card:
-  `docs/specs/batch-cards/015-g09-010-meter-continuity-plan-shell-unification.md`
+  `docs/roadmaps/g09/batch-cards/015-g09-010-meter-continuity-plan-shell-unification.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/015-g09-010-meter-continuity-plan-shell-unification.md`.
+`docs/roadmaps/g09/batch-cards/015-g09-010-meter-continuity-plan-shell-unification.md`.

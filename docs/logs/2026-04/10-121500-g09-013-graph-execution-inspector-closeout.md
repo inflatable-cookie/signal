@@ -2,7 +2,7 @@
 
 Status: complete
 Date: 2026-04-10
-Spec refs: docs/specs/batch-cards/031-g09-013-graph-execution-inspector-bootstrap.md
+Spec refs: docs/roadmaps/g09/batch-cards/031-g09-013-graph-execution-inspector-bootstrap.md
 Roadmap refs: docs/roadmaps/g09/013-dsp-graph-analysis-interactive-demo-suite-and-audit-closeout-proof.md
 
 ## Summary

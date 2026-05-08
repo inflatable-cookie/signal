@@ -14,7 +14,7 @@ clarity without inventing new host capability.
 
 Promoted the ready card:
 
-- `docs/specs/batch-cards/049-g09-015-browser-operator-posture-uplift.md`
+- `docs/roadmaps/g09/batch-cards/049-g09-015-browser-operator-posture-uplift.md`
 
 Kept the scope narrow:
 
@@ -33,4 +33,4 @@ interaction still needs fresh host-side design judgment.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/049-g09-015-browser-operator-posture-uplift.md`.
+`docs/roadmaps/g09/batch-cards/049-g09-015-browser-operator-posture-uplift.md`.

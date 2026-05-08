@@ -26,11 +26,11 @@ out of the shared extraction.
 ## Changes
 
 - updated
-  `~/Dev/projects/signal/docs/specs/batch-cards/002-g09-006-sandbox-session-consolidation.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/batch-cards/002-g09-006-sandbox-session-consolidation.md`
   so its continuation points at the next card instead of presenting itself as
   the live ready boundary
 - added the next strict ready card at
-  `~/Dev/projects/signal/docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
 - updated
   `~/Dev/projects/signal/docs/roadmaps/g09/006-shared-host-runtime-execution-and-recovery-unification.md`
   with the strict-lane reassessment outcome and the new ready-card reference
@@ -59,4 +59,4 @@ The strict-lane docs surface is coherent again:
 ## Next Task
 
 Continue the active strict `g09.006` lane from
-`docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`.
+`docs/roadmaps/g09/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`.

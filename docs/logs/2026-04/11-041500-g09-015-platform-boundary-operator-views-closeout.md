@@ -1,7 +1,7 @@
 # g09.015 - Platform Boundary Operator Views Closeout
 
 Date: 2026-04-11  
-Card: `docs/specs/batch-cards/060-g09-015-platform-boundary-operator-views.md`  
+Card: `docs/roadmaps/g09/batch-cards/060-g09-015-platform-boundary-operator-views.md`  
 Status: complete
 
 ## Summary

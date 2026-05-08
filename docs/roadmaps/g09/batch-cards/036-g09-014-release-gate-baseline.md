@@ -56,4 +56,4 @@ real runnable baseline.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/037-g09-014-workspace-validate-surface-repair.md`.
+`docs/roadmaps/g09/batch-cards/037-g09-014-workspace-validate-surface-repair.md`.

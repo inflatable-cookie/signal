@@ -2,7 +2,7 @@
 
 Status: complete
 Date: 2026-04-10
-Batch card: `docs/specs/batch-cards/054-g09-015-dsp-processing-operator-view.md`
+Batch card: `docs/roadmaps/g09/batch-cards/054-g09-015-dsp-processing-operator-view.md`
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
 
 ## Summary

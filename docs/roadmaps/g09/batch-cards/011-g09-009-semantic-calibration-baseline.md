@@ -58,7 +58,7 @@ without explainable evidence.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/roadmaps/g09/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
 
 ## Outcome
 

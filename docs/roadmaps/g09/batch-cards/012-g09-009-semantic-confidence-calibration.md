@@ -56,7 +56,7 @@ opaque heuristic blend over margin and embedding activity.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+`docs/roadmaps/g09/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
 
 ## Outcome
 

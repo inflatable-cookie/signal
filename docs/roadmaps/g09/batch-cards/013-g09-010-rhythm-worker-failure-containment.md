@@ -54,4 +54,4 @@ feature availability that preserves deterministic output shape.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/014-g09-010-tempo-state-arm-unification.md`.
+`docs/roadmaps/g09/batch-cards/014-g09-010-tempo-state-arm-unification.md`.

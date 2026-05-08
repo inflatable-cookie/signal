@@ -77,4 +77,4 @@ named residual gap that prevents `g09` closeout.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/041-g09-014-final-release-gate-closeout.md`.
+`docs/roadmaps/g09/batch-cards/041-g09-014-final-release-gate-closeout.md`.

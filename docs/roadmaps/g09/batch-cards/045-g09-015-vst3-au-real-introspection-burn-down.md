@@ -57,4 +57,4 @@ so the plugin browser remains honest about installed-plugin discovery posture.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/046-g09-015-vst3-class-factory-discovery-burn-down.md`.
+`docs/roadmaps/g09/batch-cards/046-g09-015-vst3-class-factory-discovery-burn-down.md`.

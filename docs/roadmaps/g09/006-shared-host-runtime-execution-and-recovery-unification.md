@@ -166,4 +166,4 @@ lane should close or hand off into the next milestone.
 ## Next Task
 
 `g09.006` is closed. Hand off the active strict lane into
-`docs/specs/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`.
+`docs/roadmaps/g09/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`.

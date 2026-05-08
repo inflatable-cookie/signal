@@ -53,4 +53,4 @@ VST3 and AU `.txt` metadata shims.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.
+`docs/roadmaps/g09/batch-cards/045-g09-015-vst3-au-real-introspection-burn-down.md`.

@@ -2,7 +2,7 @@
 
 Date: 2026-04-11  
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`  
-Ready card: `docs/specs/batch-cards/058-g09-015-local-server-host-comparison-operator-view.md`
+Ready card: `docs/roadmaps/g09/batch-cards/058-g09-015-local-server-host-comparison-operator-view.md`
 
 ## Why This Follow-On Is Ready
 
@@ -36,4 +36,4 @@ This is the next honest seam because:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/058-g09-015-local-server-host-comparison-operator-view.md`.
+`docs/roadmaps/g09/batch-cards/058-g09-015-local-server-host-comparison-operator-view.md`.

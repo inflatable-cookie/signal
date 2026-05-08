@@ -39,4 +39,4 @@ region design work that the shared-memory batch still needs.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/007-g09-008-clap-sandbox-protocol-hardening.md`.
+`docs/roadmaps/g09/batch-cards/007-g09-008-clap-sandbox-protocol-hardening.md`.

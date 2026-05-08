@@ -205,4 +205,4 @@ Batch 12.3 planning result after the macOS AU/CoreAudio demo:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/031-g09-013-graph-execution-inspector-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/031-g09-013-graph-execution-inspector-bootstrap.md`.

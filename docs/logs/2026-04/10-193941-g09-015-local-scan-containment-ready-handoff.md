@@ -14,7 +14,7 @@ broad system roots. That makes local-scan containment the right next batch.
 
 Promoted the ready card:
 
-- `docs/specs/batch-cards/048-g09-015-local-scan-containment-and-visibility.md`
+- `docs/roadmaps/g09/batch-cards/048-g09-015-local-scan-containment-and-visibility.md`
 
 Kept the scope narrow:
 
@@ -35,4 +35,4 @@ default still needs a more reliable local visibility substrate first.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/048-g09-015-local-scan-containment-and-visibility.md`.
+`docs/roadmaps/g09/batch-cards/048-g09-015-local-scan-containment-and-visibility.md`.

@@ -25,7 +25,7 @@ The next meaningful strict seam is `g09.008` Batch 8.1:
 - promoted `g09.008` to active
 - promoted contract `076` to active
 - created the new ready card
-  `docs/specs/batch-cards/006-g09-008-graph-and-primitive-invariants.md`
+  `docs/roadmaps/g09/batch-cards/006-g09-008-graph-and-primitive-invariants.md`
 - refreshed the strict-lane front doors to point at the new active milestone
   and ready card
 
@@ -37,4 +37,4 @@ The next meaningful strict seam is `g09.008` Batch 8.1:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/006-g09-008-graph-and-primitive-invariants.md`.
+`docs/roadmaps/g09/batch-cards/006-g09-008-graph-and-primitive-invariants.md`.

@@ -69,5 +69,5 @@ bounded real CLAP host sandbox integration path.
 ## Next Task
 
 Return to
-`docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
+`docs/roadmaps/g09/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md`
 now that the host comparison surface is no longer blocked by the CLAP gap.

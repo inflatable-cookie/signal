@@ -60,4 +60,4 @@ full domain demo breadth or coverage-matrix backfill.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/021-g09-011-demo-coverage-matrix.md`.
+`docs/roadmaps/g09/batch-cards/021-g09-011-demo-coverage-matrix.md`.

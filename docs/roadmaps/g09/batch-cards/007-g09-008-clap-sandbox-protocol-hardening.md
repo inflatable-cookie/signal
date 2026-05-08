@@ -93,4 +93,4 @@ Validation note:
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/008-g09-008-shared-memory-lifecycle-hardening.md`.
+`docs/roadmaps/g09/batch-cards/008-g09-008-shared-memory-lifecycle-hardening.md`.

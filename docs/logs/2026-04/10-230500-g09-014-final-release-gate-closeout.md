@@ -1,7 +1,7 @@
 # 2026-04-10 - g09.014 Final Release Gate Closeout
 
 Roadmap: `docs/roadmaps/g09/014-production-readiness-grade-and-generation-release-gate.md`
-Card: `docs/specs/batch-cards/041-g09-014-final-release-gate-closeout.md`
+Card: `docs/roadmaps/g09/batch-cards/041-g09-014-final-release-gate-closeout.md`
 
 Closed `041-g09-014-final-release-gate-closeout.md` by rerunning the reopened
 production-readiness gate, freezing the final per-crate verdict, and closing

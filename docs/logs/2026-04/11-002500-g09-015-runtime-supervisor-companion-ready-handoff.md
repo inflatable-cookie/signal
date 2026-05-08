@@ -2,7 +2,7 @@
 
 Status: active
 Date: 2026-04-11
-Batch card: `docs/specs/batch-cards/056-g09-015-runtime-supervisor-companion-operator-view.md`
+Batch card: `docs/roadmaps/g09/batch-cards/056-g09-015-runtime-supervisor-companion-operator-view.md`
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
 
 ## Summary
@@ -34,4 +34,4 @@ promoted the runtime supervisor boundary companion as the next honest
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/056-g09-015-runtime-supervisor-companion-operator-view.md`.
+`docs/roadmaps/g09/batch-cards/056-g09-015-runtime-supervisor-companion-operator-view.md`.

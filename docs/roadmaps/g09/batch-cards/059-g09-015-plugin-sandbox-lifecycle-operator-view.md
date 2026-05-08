@@ -71,4 +71,4 @@ This is the next honest seam because:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/060-g09-015-platform-boundary-operator-views.md`.
+`docs/roadmaps/g09/batch-cards/060-g09-015-platform-boundary-operator-views.md`.

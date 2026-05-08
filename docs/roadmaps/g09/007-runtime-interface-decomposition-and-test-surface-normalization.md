@@ -122,4 +122,4 @@ more runtime-decomposition churn inside `g09.007`.
 ## Next Task
 
 `g09.007` is complete. Continue the active strict lane from
-`docs/specs/batch-cards/006-g09-008-graph-and-primitive-invariants.md`.
+`docs/roadmaps/g09/batch-cards/006-g09-008-graph-and-primitive-invariants.md`.

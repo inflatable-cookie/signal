@@ -58,7 +58,7 @@ not overclaim fidelity through enum names alone.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/011-g09-009-semantic-calibration-baseline.md`.
+`docs/roadmaps/g09/batch-cards/011-g09-009-semantic-calibration-baseline.md`.
 
 ## Outcome
 

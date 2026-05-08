@@ -6,7 +6,7 @@ Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `DSP`, `ANALYSIS`, `FIDELITY`
 Contract refs: `046`, `047`, `077`
-Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/roadmaps/g09/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Problem
 
@@ -141,4 +141,4 @@ production `join().unwrap()` path in onset feature extraction.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+`docs/roadmaps/g09/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.

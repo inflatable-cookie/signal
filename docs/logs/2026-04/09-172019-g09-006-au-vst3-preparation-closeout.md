@@ -23,7 +23,7 @@ ready card still exists inside the milestone.
   so the server host now supplies only server environment assembly, server-only
   LV2 behavior, and the remaining format-specific edge behavior
 - updated
-  `~/Dev/projects/signal/docs/specs/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/batch-cards/003-g09-006-au-vst3-preparation-fault-shell.md`
   as complete
 - updated the active currentness/front-door surfaces so the strict lane no
   longer claims there is a live ready card

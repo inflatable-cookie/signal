@@ -58,4 +58,4 @@ tempo and refined-stable tempo into one explicit staged policy surface.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/015-g09-010-meter-continuity-plan-shell-unification.md`.
+`docs/roadmaps/g09/batch-cards/015-g09-010-meter-continuity-plan-shell-unification.md`.

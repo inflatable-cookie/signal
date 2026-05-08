@@ -33,4 +33,4 @@ Install the minimum strict Northstar docs surface around the active `g09` lane.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/002-g09-006-sandbox-session-consolidation.md`.
+`docs/roadmaps/g09/batch-cards/002-g09-006-sandbox-session-consolidation.md`.

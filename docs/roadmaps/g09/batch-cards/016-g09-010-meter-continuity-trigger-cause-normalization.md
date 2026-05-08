@@ -56,4 +56,4 @@ selection now split across `meter_state_continuity_helpers.rs` and
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/017-g09-010-meter-stage-plan-context-unification.md`.
+`docs/roadmaps/g09/batch-cards/017-g09-010-meter-stage-plan-context-unification.md`.

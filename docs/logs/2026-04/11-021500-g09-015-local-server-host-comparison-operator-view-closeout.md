@@ -1,7 +1,7 @@
 # g09.015 - Local Server Host Comparison Operator View Closeout
 
 Date: 2026-04-11  
-Card: `docs/specs/batch-cards/058-g09-015-local-server-host-comparison-operator-view.md`  
+Card: `docs/roadmaps/g09/batch-cards/058-g09-015-local-server-host-comparison-operator-view.md`  
 Status: complete
 
 ## Summary

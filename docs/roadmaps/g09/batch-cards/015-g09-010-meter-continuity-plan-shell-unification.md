@@ -57,4 +57,4 @@ and `meter_state_continuity_watch_clear_arms.rs`.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/016-g09-010-meter-continuity-trigger-cause-normalization.md`.
+`docs/roadmaps/g09/batch-cards/016-g09-010-meter-continuity-trigger-cause-normalization.md`.

@@ -30,4 +30,4 @@ corpus and explainable evidence are frozen.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/012-g09-009-semantic-confidence-calibration.md`.
+`docs/roadmaps/g09/batch-cards/012-g09-009-semantic-confidence-calibration.md`.

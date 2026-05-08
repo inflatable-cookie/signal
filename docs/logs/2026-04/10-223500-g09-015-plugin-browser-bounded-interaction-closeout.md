@@ -2,7 +2,7 @@
 
 Status: complete
 Date: 2026-04-10
-Card: `docs/specs/batch-cards/052-g09-015-plugin-browser-bounded-interaction-proof.md`
+Card: `docs/roadmaps/g09/batch-cards/052-g09-015-plugin-browser-bounded-interaction-proof.md`
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
 
 ## Summary

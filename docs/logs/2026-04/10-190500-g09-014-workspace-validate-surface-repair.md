@@ -40,4 +40,4 @@ real required signal again.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/038-g09-014-plugin-broker-readiness-verdict.md`.
+`docs/roadmaps/g09/batch-cards/038-g09-014-plugin-broker-readiness-verdict.md`.

@@ -72,4 +72,4 @@ the still-blocked `signal-plugin-sandbox`.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/040-g09-014-sandbox-broker-operational-verdict.md`.
+`docs/roadmaps/g09/batch-cards/040-g09-014-sandbox-broker-operational-verdict.md`.

@@ -2,7 +2,7 @@
 
 Status: complete
 Date: 2026-04-10
-Spec refs: docs/specs/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md
+Spec refs: docs/roadmaps/g09/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md
 Roadmap refs: docs/roadmaps/g09/013-dsp-graph-analysis-interactive-demo-suite-and-audit-closeout-proof.md
 
 ## Summary
@@ -35,7 +35,7 @@ the next honest `g09.013` seam as the bounded DSP processing-lab bootstrap.
 
 ## Surfaces Updated
 
-- `docs/specs/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md`
+- `docs/roadmaps/g09/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md`
 - `docs/roadmaps/g09/013-dsp-graph-analysis-interactive-demo-suite-and-audit-closeout-proof.md`
 - `docs/specs/README.md`
 - `docs/logs/README.md`
@@ -55,4 +55,4 @@ the next honest `g09.013` seam as the bounded DSP processing-lab bootstrap.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md`.

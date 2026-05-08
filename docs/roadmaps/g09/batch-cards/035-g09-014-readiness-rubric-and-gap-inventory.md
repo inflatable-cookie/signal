@@ -59,4 +59,4 @@ generation closeout.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/036-g09-014-release-gate-baseline.md`.
+`docs/roadmaps/g09/batch-cards/036-g09-014-release-gate-baseline.md`.

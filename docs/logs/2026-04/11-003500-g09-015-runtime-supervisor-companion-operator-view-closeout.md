@@ -1,7 +1,7 @@
 # g09.015 - Runtime Supervisor Companion Operator View Closeout
 
 Date: 2026-04-11  
-Card: `docs/specs/batch-cards/056-g09-015-runtime-supervisor-companion-operator-view.md`  
+Card: `docs/roadmaps/g09/batch-cards/056-g09-015-runtime-supervisor-companion-operator-view.md`  
 Status: complete
 
 ## Summary

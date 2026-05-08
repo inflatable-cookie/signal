@@ -63,7 +63,7 @@ band-limited low-pass smoothing instead of only swapping interpolation choice.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`docs/roadmaps/g09/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
 
 ## Outcome
 

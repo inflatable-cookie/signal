@@ -57,4 +57,4 @@ that do not yet map to a live demo surface.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`.

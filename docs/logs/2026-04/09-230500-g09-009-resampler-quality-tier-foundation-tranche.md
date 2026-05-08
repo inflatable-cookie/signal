@@ -34,4 +34,4 @@ calibration.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.
+`docs/roadmaps/g09/batch-cards/010-g09-009-resampler-proof-and-benchmark-surface.md`.

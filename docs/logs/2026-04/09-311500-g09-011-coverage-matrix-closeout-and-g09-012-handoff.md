@@ -4,7 +4,7 @@ Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Roadmap refs: docs/roadmaps/g09/011-interactive-demo-substrate-manifest-and-operator-conventions.md, docs/roadmaps/g09/012-runtime-host-plugin-and-hardware-interactive-demo-suite.md
-Spec refs: docs/specs/batch-cards/021-g09-011-demo-coverage-matrix.md, docs/specs/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md
+Spec refs: docs/roadmaps/g09/batch-cards/021-g09-011-demo-coverage-matrix.md, docs/roadmaps/g09/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md
 
 ## Summary
 
@@ -22,7 +22,7 @@ through a bounded sandbox lifecycle bootstrap card.
 - added `demo:coverage-matrix` in `effigy.toml`
 - marked `g09.011` complete and activated `g09.012`
 - promoted the next ready card:
-  `docs/specs/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`
+  `docs/roadmaps/g09/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`
 
 ## Validation
 
@@ -45,4 +45,4 @@ through a bounded sandbox lifecycle bootstrap card.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/022-g09-012-sandbox-lifecycle-demo-bootstrap.md`.

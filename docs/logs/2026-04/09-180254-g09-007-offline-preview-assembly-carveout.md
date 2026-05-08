@@ -50,4 +50,4 @@ heavy internal assembly wall.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/005-g09-007-runtime-tests-front-door-normalization.md`.
+`docs/roadmaps/g09/batch-cards/005-g09-007-runtime-tests-front-door-normalization.md`.

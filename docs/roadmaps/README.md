@@ -17,6 +17,7 @@ Use this section for:
 
 ## Layout
 
+- `gNN/batch-cards/` optional per-generation execution cards
 - `g*/`: generation roadmaps and closure records
 - `generation-index.md`: generation history and rollover notes
 - `backlog/`: deferred work only

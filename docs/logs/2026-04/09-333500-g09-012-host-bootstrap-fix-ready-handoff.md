@@ -4,7 +4,7 @@ Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Roadmap refs: docs/roadmaps/g09/012-runtime-host-plugin-and-hardware-interactive-demo-suite.md
-Spec refs: docs/specs/batch-cards/024-g09-012-host-demo-bootstrap-fix.md
+Spec refs: docs/roadmaps/g09/batch-cards/024-g09-012-host-demo-bootstrap-fix.md
 
 ## Summary
 
@@ -22,7 +22,7 @@ honest `g09.012` ready card around the existing host demo bring-up failure.
 ## Ready Surface
 
 - new ready card:
-  `docs/specs/batch-cards/024-g09-012-host-demo-bootstrap-fix.md`
+  `docs/roadmaps/g09/batch-cards/024-g09-012-host-demo-bootstrap-fix.md`
 - governing executable surfaces:
   `crates/signal-host-local/src/main.rs`
   `crates/signal-host-server/src/main.rs`
@@ -35,4 +35,4 @@ honest `g09.012` ready card around the existing host demo bring-up failure.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/024-g09-012-host-demo-bootstrap-fix.md`.
+`docs/roadmaps/g09/batch-cards/024-g09-012-host-demo-bootstrap-fix.md`.

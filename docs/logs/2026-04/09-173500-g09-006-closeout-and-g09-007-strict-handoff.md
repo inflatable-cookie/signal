@@ -38,7 +38,7 @@ carveout and leaving test-surface normalization as the next follow-on seam.
   `~/Dev/projects/signal/docs/roadmaps/g09/007-runtime-interface-decomposition-and-test-surface-normalization.md`
   as `active` and corrected its live seam description
 - added the new ready card at
-  `~/Dev/projects/signal/docs/specs/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`
+  `~/Dev/projects/signal/docs/roadmaps/g09/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`
 - refreshed the currentness/front-door surfaces in:
   - `~/Dev/projects/signal/docs/specs/README.md`
   - `~/Dev/projects/signal/docs/specs/001-g09-lane-first-strict-adoption.md`
@@ -65,4 +65,4 @@ The strict lane is executable again:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`.
+`docs/roadmaps/g09/batch-cards/004-g09-007-offline-preview-assembly-carveout.md`.

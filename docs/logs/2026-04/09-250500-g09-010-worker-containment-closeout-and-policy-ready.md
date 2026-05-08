@@ -34,9 +34,9 @@ normalization seam.
   `tempo_state_snap_integer_arm.rs` and
   `tempo_state_use_refined_stable_arm.rs`
 - promoted new ready card:
-  `docs/specs/batch-cards/014-g09-010-tempo-state-arm-unification.md`
+  `docs/roadmaps/g09/batch-cards/014-g09-010-tempo-state-arm-unification.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/014-g09-010-tempo-state-arm-unification.md`.
+`docs/roadmaps/g09/batch-cards/014-g09-010-tempo-state-arm-unification.md`.

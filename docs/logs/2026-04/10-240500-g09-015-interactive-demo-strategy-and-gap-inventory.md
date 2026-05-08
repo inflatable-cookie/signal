@@ -1,7 +1,7 @@
 # 2026-04-10 - g09.015 Interactive Demo Strategy And Gap Inventory
 
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
-Card: `docs/specs/batch-cards/042-g09-015-interactive-demo-strategy-and-gap-inventory.md`
+Card: `docs/roadmaps/g09/batch-cards/042-g09-015-interactive-demo-strategy-and-gap-inventory.md`
 
 Reopened `g09` for a new interactive-demo stream that stays inside the
 generation and focuses on operator-visible proof rather than crate-readiness.
@@ -28,4 +28,4 @@ generation and focuses on operator-visible proof rather than crate-readiness.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/043-g09-015-plugin-capability-browser-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/043-g09-015-plugin-capability-browser-bootstrap.md`.

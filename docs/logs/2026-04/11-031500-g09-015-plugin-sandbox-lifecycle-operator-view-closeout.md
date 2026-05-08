@@ -1,7 +1,7 @@
 # g09.015 - Plugin Sandbox Lifecycle Operator View Closeout
 
 Date: 2026-04-11  
-Card: `docs/specs/batch-cards/059-g09-015-plugin-sandbox-lifecycle-operator-view.md`  
+Card: `docs/roadmaps/g09/batch-cards/059-g09-015-plugin-sandbox-lifecycle-operator-view.md`  
 Status: complete
 
 ## Summary
@@ -39,4 +39,4 @@ run, teardown, and shutdown posture without widening into a broker console.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/060-g09-015-platform-boundary-operator-views.md`.
+`docs/roadmaps/g09/batch-cards/060-g09-015-platform-boundary-operator-views.md`.

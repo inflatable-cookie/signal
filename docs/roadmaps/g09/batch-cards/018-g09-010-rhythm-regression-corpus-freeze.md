@@ -63,4 +63,4 @@ into new demo or feature work.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/019-g09-011-demo-program-shape.md`.
+`docs/roadmaps/g09/batch-cards/019-g09-011-demo-program-shape.md`.

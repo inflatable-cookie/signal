@@ -12,8 +12,6 @@ Use this folder for the active strict lane only:
 
 - one live spec that binds the stricter execution model to the active
   generation while it is open
-- bounded batch cards that let the active thread continue without fresh
-  planning decisions
 
 Signal is not using specs as a repo-wide default. This is a lane-first strict
 surface that can attach to one active generation at a time.

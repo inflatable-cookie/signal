@@ -33,4 +33,4 @@ consolidation lane now has:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/002-g09-006-sandbox-session-consolidation.md`.
+`docs/roadmaps/g09/batch-cards/002-g09-006-sandbox-session-consolidation.md`.

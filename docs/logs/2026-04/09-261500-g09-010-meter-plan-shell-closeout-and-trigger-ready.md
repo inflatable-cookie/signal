@@ -37,9 +37,9 @@ honest meter continuity trigger/cause normalization seam as the ready card.
   logic across `meter_state_continuity_helpers.rs` and
   `meter_state_continuity_cause_stack.rs`
 - promoted new ready card:
-  `docs/specs/batch-cards/016-g09-010-meter-continuity-trigger-cause-normalization.md`
+  `docs/roadmaps/g09/batch-cards/016-g09-010-meter-continuity-trigger-cause-normalization.md`
 
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/016-g09-010-meter-continuity-trigger-cause-normalization.md`.
+`docs/roadmaps/g09/batch-cards/016-g09-010-meter-continuity-trigger-cause-normalization.md`.

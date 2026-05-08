@@ -61,4 +61,4 @@ place.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.
+`docs/roadmaps/g09/batch-cards/039-g09-014-runtime-host-hardware-broker-operational-verdict.md`.

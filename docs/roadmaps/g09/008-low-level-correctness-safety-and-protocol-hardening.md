@@ -6,7 +6,7 @@ Created: 2026-04-08
 Depends on: g09.001
 Vision tags: `CORRECTNESS`, `IPC`, `SAFETY`
 Contract refs: `001`, `032`, `056`, `076`
-Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/specs/batch-cards/008-g09-008-shared-memory-lifecycle-hardening.md`
+Strict lane refs: `docs/specs/001-g09-lane-first-strict-adoption.md`, `docs/roadmaps/g09/batch-cards/008-g09-008-shared-memory-lifecycle-hardening.md`
 
 ## Problem
 
@@ -131,4 +131,4 @@ before inventing another ready card.
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`.
+`docs/roadmaps/g09/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`.

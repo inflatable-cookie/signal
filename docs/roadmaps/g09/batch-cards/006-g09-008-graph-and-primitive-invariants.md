@@ -89,4 +89,4 @@ Breaking-change note:
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/007-g09-008-clap-sandbox-protocol-hardening.md`.
+`docs/roadmaps/g09/batch-cards/007-g09-008-clap-sandbox-protocol-hardening.md`.

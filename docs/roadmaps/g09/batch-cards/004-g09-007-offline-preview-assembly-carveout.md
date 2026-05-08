@@ -86,4 +86,4 @@ Validation note:
 ## Next Task
 
 Continue the active strict lane from
-`docs/specs/batch-cards/005-g09-007-runtime-tests-front-door-normalization.md`.
+`docs/roadmaps/g09/batch-cards/005-g09-007-runtime-tests-front-door-normalization.md`.

@@ -32,4 +32,4 @@ proof churn.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/011-g09-009-semantic-calibration-baseline.md`.
+`docs/roadmaps/g09/batch-cards/011-g09-009-semantic-calibration-baseline.md`.

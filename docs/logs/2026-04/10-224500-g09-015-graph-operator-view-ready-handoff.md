@@ -3,7 +3,7 @@
 Status: active
 Date: 2026-04-10
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
-Ready card: `docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`
+Ready card: `docs/roadmaps/g09/batch-cards/053-g09-015-graph-execution-operator-view.md`
 
 ## Why This Handoff Exists
 
@@ -43,4 +43,4 @@ This is the cleanest follow-on because:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/053-g09-015-graph-execution-operator-view.md`.
+`docs/roadmaps/g09/batch-cards/053-g09-015-graph-execution-operator-view.md`.

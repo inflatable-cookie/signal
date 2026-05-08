@@ -62,4 +62,4 @@ implemented.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.
+`docs/roadmaps/g09/batch-cards/020-g09-011-demo-launch-and-evidence-conventions.md`.

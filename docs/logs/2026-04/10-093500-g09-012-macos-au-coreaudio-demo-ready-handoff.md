@@ -4,7 +4,7 @@ Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Roadmap refs: docs/roadmaps/g09/012-runtime-host-plugin-and-hardware-interactive-demo-suite.md
-Spec refs: docs/specs/batch-cards/029-g09-012-macos-au-coreaudio-demo-bootstrap.md
+Spec refs: docs/roadmaps/g09/batch-cards/029-g09-012-macos-au-coreaudio-demo-bootstrap.md
 
 ## Summary
 
@@ -32,4 +32,4 @@ demo bootstrap.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/029-g09-012-macos-au-coreaudio-demo-bootstrap.md`.
+`docs/roadmaps/g09/batch-cards/029-g09-012-macos-au-coreaudio-demo-bootstrap.md`.

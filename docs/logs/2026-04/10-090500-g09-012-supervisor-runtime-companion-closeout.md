@@ -4,7 +4,7 @@ Status: complete
 Owner: core-product
 Updated: 2026-04-10
 Roadmap refs: docs/roadmaps/g09/012-runtime-host-plugin-and-hardware-interactive-demo-suite.md
-Spec refs: docs/specs/batch-cards/028-g09-012-supervisor-runtime-boundary-companion.md
+Spec refs: docs/roadmaps/g09/batch-cards/028-g09-012-supervisor-runtime-boundary-companion.md
 
 ## Summary
 

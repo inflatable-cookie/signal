@@ -3,7 +3,7 @@
 Status: complete
 Owner: core-product
 Roadmap: `docs/roadmaps/g09/014-production-readiness-grade-and-generation-release-gate.md`
-Card: `docs/specs/batch-cards/035-g09-014-readiness-rubric-and-gap-inventory.md`
+Card: `docs/roadmaps/g09/batch-cards/035-g09-014-readiness-rubric-and-gap-inventory.md`
 
 ## Summary
 
@@ -32,4 +32,4 @@ existing Signal workspace.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/036-g09-014-release-gate-baseline.md`.
+`docs/roadmaps/g09/batch-cards/036-g09-014-release-gate-baseline.md`.

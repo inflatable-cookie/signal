@@ -3,7 +3,7 @@
 Status: complete
 Owner: core-product
 Roadmap: `docs/roadmaps/g09/014-production-readiness-grade-and-generation-release-gate.md`
-Card: `docs/specs/batch-cards/036-g09-014-release-gate-baseline.md`
+Card: `docs/roadmaps/g09/batch-cards/036-g09-014-release-gate-baseline.md`
 
 ## Summary
 
@@ -40,4 +40,4 @@ Defined the first repo-owned production-readiness gate baseline for reopened
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/037-g09-014-workspace-validate-surface-repair.md`.
+`docs/roadmaps/g09/batch-cards/037-g09-014-workspace-validate-surface-repair.md`.

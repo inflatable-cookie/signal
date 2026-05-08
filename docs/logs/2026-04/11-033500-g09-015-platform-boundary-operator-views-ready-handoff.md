@@ -2,7 +2,7 @@
 
 Date: 2026-04-11  
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`  
-Ready card: `docs/specs/batch-cards/060-g09-015-platform-boundary-operator-views.md`
+Ready card: `docs/roadmaps/g09/batch-cards/060-g09-015-platform-boundary-operator-views.md`
 
 ## Achieved
 
@@ -48,4 +48,4 @@ presentation-only batch instead of turning into more platform behavior work.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/060-g09-015-platform-boundary-operator-views.md`.
+`docs/roadmaps/g09/batch-cards/060-g09-015-platform-boundary-operator-views.md`.

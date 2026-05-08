@@ -3,7 +3,7 @@
 Status: active
 Owner: core-product
 Roadmap: `docs/roadmaps/g09/014-production-readiness-grade-and-generation-release-gate.md`
-Card: `docs/specs/batch-cards/035-g09-014-readiness-rubric-and-gap-inventory.md`
+Card: `docs/roadmaps/g09/batch-cards/035-g09-014-readiness-rubric-and-gap-inventory.md`
 
 ## Summary
 
@@ -31,4 +31,4 @@ remediation and demo proof are complete.
 ## Next Task
 
 Continue the reopened strict `g09` lane from
-`docs/specs/batch-cards/035-g09-014-readiness-rubric-and-gap-inventory.md`.
+`docs/roadmaps/g09/batch-cards/035-g09-014-readiness-rubric-and-gap-inventory.md`.

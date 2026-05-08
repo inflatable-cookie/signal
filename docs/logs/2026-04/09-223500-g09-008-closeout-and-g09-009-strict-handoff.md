@@ -20,7 +20,7 @@ strict batch for `g09.009`.
 - active strict spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`
+  `docs/roadmaps/g09/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`
 
 ## Validation
 
@@ -30,4 +30,4 @@ strict batch for `g09.009`.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`.
+`docs/roadmaps/g09/batch-cards/009-g09-009-resampler-quality-tier-foundation.md`.

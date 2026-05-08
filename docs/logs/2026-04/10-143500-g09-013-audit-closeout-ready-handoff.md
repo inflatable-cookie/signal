@@ -3,7 +3,7 @@
 Status: active
 Owner: core-product
 Roadmap: `docs/roadmaps/g09/013-dsp-graph-analysis-interactive-demo-suite-and-audit-closeout-proof.md`
-Card: `docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
+Card: `docs/roadmaps/g09/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`
 
 ## Summary
 
@@ -28,4 +28,4 @@ need another demo or runtime implementation surface. It only needs to:
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.
+`docs/roadmaps/g09/batch-cards/034-g09-013-audit-closeout-proof-bundle.md`.

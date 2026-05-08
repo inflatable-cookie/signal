@@ -2,7 +2,7 @@
 
 Status: active
 Date: 2026-04-10
-Batch card: `docs/specs/batch-cards/054-g09-015-dsp-processing-operator-view.md`
+Batch card: `docs/roadmaps/g09/batch-cards/054-g09-015-dsp-processing-operator-view.md`
 Roadmap: `docs/roadmaps/g09/015-operator-visible-interactive-demo-and-plugin-browser-proof.md`
 
 ## Summary
@@ -32,4 +32,4 @@ processing lab as the next honest `g09.015` seam.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/054-g09-015-dsp-processing-operator-view.md`.
+`docs/roadmaps/g09/batch-cards/054-g09-015-dsp-processing-operator-view.md`.

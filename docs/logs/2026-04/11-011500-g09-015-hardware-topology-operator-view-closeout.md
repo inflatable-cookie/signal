@@ -1,7 +1,7 @@
 # g09.015 - Hardware Topology Operator View Closeout
 
 Date: 2026-04-11  
-Card: `docs/specs/batch-cards/057-g09-015-hardware-topology-operator-view.md`  
+Card: `docs/roadmaps/g09/batch-cards/057-g09-015-hardware-topology-operator-view.md`  
 Status: complete
 
 ## Summary

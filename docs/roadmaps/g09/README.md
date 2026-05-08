@@ -118,3 +118,6 @@ demo stream. That strict lane is now closed again.
 
 COMPLETED: `g09` is closed. Re-enter planning at the next-generation boundary
 before promoting another strict execution lane.
+
+
+Batch cards live in `g09/batch-cards/` when strict posture uses them.

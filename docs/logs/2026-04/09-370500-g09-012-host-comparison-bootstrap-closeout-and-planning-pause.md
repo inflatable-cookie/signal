@@ -4,7 +4,7 @@ Status: complete
 Owner: core-product
 Updated: 2026-04-09
 Roadmap refs: docs/roadmaps/g09/012-runtime-host-plugin-and-hardware-interactive-demo-suite.md
-Spec refs: docs/specs/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md
+Spec refs: docs/roadmaps/g09/batch-cards/025-g09-012-local-server-host-comparison-bootstrap.md
 
 ## Summary
 

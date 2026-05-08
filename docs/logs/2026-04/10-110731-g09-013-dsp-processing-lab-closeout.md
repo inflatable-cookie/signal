@@ -2,7 +2,7 @@
 
 Status: complete
 Date: 2026-04-10
-Spec refs: docs/specs/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md
+Spec refs: docs/roadmaps/g09/batch-cards/032-g09-013-dsp-processing-lab-bootstrap.md
 Roadmap refs: docs/roadmaps/g09/013-dsp-graph-analysis-interactive-demo-suite-and-audit-closeout-proof.md
 
 ## Summary

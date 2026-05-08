@@ -34,4 +34,4 @@ then promoted the coverage-matrix seam as the next `g09.011` batch.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/021-g09-011-demo-coverage-matrix.md`.
+`docs/roadmaps/g09/batch-cards/021-g09-011-demo-coverage-matrix.md`.

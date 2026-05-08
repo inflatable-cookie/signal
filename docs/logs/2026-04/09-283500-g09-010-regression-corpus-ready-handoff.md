@@ -11,7 +11,7 @@ freeze built on the existing preset-driven proof surfaces.
 - did not close `g09.010` yet
 - did not widen directly into `g09.011` demo work
 - promoted
-  `docs/specs/batch-cards/018-g09-010-rhythm-regression-corpus-freeze.md`
+  `docs/roadmaps/g09/batch-cards/018-g09-010-rhythm-regression-corpus-freeze.md`
   as the current ready card
 
 ## Rationale
@@ -38,4 +38,4 @@ freeze built on the existing preset-driven proof surfaces.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/018-g09-010-rhythm-regression-corpus-freeze.md`.
+`docs/roadmaps/g09/batch-cards/018-g09-010-rhythm-regression-corpus-freeze.md`.

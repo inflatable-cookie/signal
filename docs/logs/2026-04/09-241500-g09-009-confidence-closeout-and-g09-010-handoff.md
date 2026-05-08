@@ -20,7 +20,7 @@ containment and policy normalization.
 - active strict spec:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
 - current ready card:
-  `docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
+  `docs/roadmaps/g09/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`
 
 ## Validation
 
@@ -33,4 +33,4 @@ containment and policy normalization.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
+`docs/roadmaps/g09/batch-cards/013-g09-010-rhythm-worker-failure-containment.md`.
