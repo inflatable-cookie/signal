@@ -2,6 +2,7 @@
 alias = "signal"
 
 [manifest]
+minimum_effigy_version = "0.7.0"
 include = [
   "docs/effigy.tasks.docs.toml",
   "tests/effigy.tasks.acceptance.boundaries.toml",
