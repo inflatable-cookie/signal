@@ -77,7 +77,6 @@ $RECYCLE.BIN/
 
 # btca
 .btca
-.effigy/
 
 # Rust
 target/
@@ -85,3 +84,7 @@ target/
 
 .dsp_cache
 .claude/settings.local.json
+
+# BEGIN EFFIGY LOCAL STATE
+.effigy/
+# END EFFIGY LOCAL STATE
