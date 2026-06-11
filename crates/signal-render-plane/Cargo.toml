@@ -1,0 +1,15 @@
+[package]
+name = "signal-render-plane"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Real-time render plane: compiled preallocated plans executed alloc-free on the audio thread."
+
+[dev-dependencies]
+signal-hardware = { path = "../signal-hardware" }
+signal-hardware-output-cpal = { path = "../signal-hardware-output-cpal" }
+
+[[example]]
+name = "render_soak"

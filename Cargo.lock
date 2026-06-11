@@ -1072,6 +1072,14 @@ name = "signal-primitives"
 version = "0.1.0"
 
 [[package]]
+name = "signal-render-plane"
+version = "0.1.0"
+dependencies = [
+ "signal-hardware",
+ "signal-hardware-output-cpal",
+]
+
+[[package]]
 name = "signal-runtime"
 version = "0.1.0"
 dependencies = [
