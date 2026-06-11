@@ -26,15 +26,6 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
     descriptor: signal_plugin::PluginDescriptor,
     lv2_extension_capabilities: Option<signal_runtime::RuntimeLv2ExtensionCapabilitySummary>,
 ) -> RuntimePluginDiscoveredTypeRecord {
-    let summary = format!(
-        "plugin_type={} plugin_id={} format={:?} features={} io={:?} parameters={}",
-        plugin_type_id,
-        descriptor.plugin_id,
-        descriptor.format,
-        descriptor.features.len(),
-        default_io_layout,
-        descriptor.parameters.len(),
-    );
     RuntimePluginDiscoveredTypeRecord {
         plugin_type_id,
         plugin_id: descriptor.plugin_id.clone(),
@@ -55,7 +46,6 @@ fn runtime_plugin_discovered_type_record_from_descriptor(
         processing_contract: descriptor.processing_contract,
         lifecycle_contract: descriptor.lifecycle_contract,
         lv2_extension_capabilities,
-        summary,
     }
 }
 
@@ -97,9 +87,6 @@ pub(crate) fn runtime_plugin_format_platform_coverage(
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -112,9 +99,6 @@ pub(crate) fn runtime_plugin_format_platform_coverage(
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Au,
@@ -126,7 +110,6 @@ pub(crate) fn runtime_plugin_format_platform_coverage(
             linux_parity_band: RuntimePluginParityBand::Unsupported,
             linux_preferred_sandbox_outcome: None,
             linux_strict_sandbox_default: false,
-            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
         },
     ]
 }

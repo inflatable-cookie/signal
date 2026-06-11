@@ -63,8 +63,6 @@ pub struct RuntimePluginRecallHandoffSnapshot {
     pub unavailable_stage_count: usize,
     /// Full list of recall handoff stage records.
     pub stages: Vec<RuntimePluginRecallHandoffStage>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 impl RuntimePluginRecallHandoffSnapshot {
@@ -95,7 +93,7 @@ impl RuntimePluginRecallHandoffSnapshot {
                     })
             })
             .collect::<Vec<_>>();
-        let mut handoff = Self {
+        let handoff = Self {
             stage_count: stages.len(),
             unbound_stage_count: stages
                 .iter()
@@ -118,17 +116,7 @@ impl RuntimePluginRecallHandoffSnapshot {
                 .filter(|stage| stage.recall_state == RuntimePluginRecallState::Unavailable)
                 .count(),
             stages,
-            summary: String::new(),
         };
-        handoff.summary = format!(
-            "stages={} unbound={} cold={} warm={} recovered={} unavailable={}",
-            handoff.stage_count,
-            handoff.unbound_stage_count,
-            handoff.cold_stage_count,
-            handoff.warm_stage_count,
-            handoff.recovered_stage_count,
-            handoff.unavailable_stage_count,
-        );
         handoff
     }
 

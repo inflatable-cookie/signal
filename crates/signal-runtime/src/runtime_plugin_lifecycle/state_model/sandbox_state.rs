@@ -103,33 +103,6 @@ impl RuntimePluginSandboxStateModel {
             active_lease_id: self.active_lease_id.clone(),
             active_region_id: self.active_region_id.clone(),
             lv2_prepared_negotiation: self.lv2_prepared_negotiation.clone(),
-            summary: format!(
-                "state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} preset={} ara_region={} lv2={} fault={}",
-                self.state,
-                self.plugin_format,
-                self.lifecycle_stage,
-                self.transport_stage,
-                self.restart_count,
-                self.recovery_count,
-                self.fault_count,
-                self.active,
-                self.active_transport,
-                self.instance_id.as_deref().unwrap_or("none"),
-                self.preset_descriptor
-                    .as_ref()
-                    .and_then(|descriptor| descriptor.label.as_deref())
-                    .unwrap_or("none"),
-                self.ara_context
-                    .as_ref()
-                    .and_then(|context| context.region_context.as_ref())
-                    .map(|region| region.region_id.as_str())
-                    .unwrap_or("none"),
-                self.lv2_prepared_negotiation
-                    .as_ref()
-                    .map(|record| record.summary.as_str())
-                    .unwrap_or("none"),
-                self.last_fault_detail.as_deref().unwrap_or("none"),
-            ),
         }
     }
 }

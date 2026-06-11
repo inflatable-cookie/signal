@@ -102,15 +102,8 @@ impl RuntimePluginDiscoveryStateModel {
             format_coverage: Vec::new(),
             parity_coverage: Vec::new(),
             capability_coverage: RuntimePluginCapabilityCoverageSummary {
-                summary: "formats=0 multi_format=false types=0".into(),
                 ..RuntimePluginCapabilityCoverageSummary::default()
             },
-            summary: format!(
-                "scan={} roots={} formats={:?} discovered_types=0 discovered_formats=0 discovery_diagnostics=0",
-                scan_handle.0,
-                request.roots.len(),
-                request.formats,
-            ),
         });
         scan_handle
     }
@@ -133,15 +126,6 @@ impl RuntimePluginDiscoveryStateModel {
                 last_scan.format_coverage = format_coverage;
                 last_scan.parity_coverage = parity_coverage;
                 last_scan.capability_coverage = capability_coverage;
-                last_scan.summary = format!(
-                    "scan={} roots={} formats={:?} discovered_types={} discovered_formats={} discovery_diagnostics={}",
-                    last_scan.scan_handle.0,
-                    last_scan.roots.len(),
-                    last_scan.formats,
-                    last_scan.discovered_type_count,
-                    last_scan.discovered_format_count,
-                    last_scan.discovery_diagnostic_count,
-                );
                 self.discovered_types = discovered_types;
             }
         }
@@ -163,27 +147,6 @@ impl RuntimePluginDiscoveryStateModel {
             parity_coverage,
             capability_coverage,
             discovered_types: self.discovered_types.clone(),
-            summary: format!(
-                "scans={} filtered_scans={} discovered_types={} discovered_formats={} last_scan={} capability={}",
-                self.scan_count,
-                self.format_filtered_scan_count,
-                self.discovered_types.len(),
-                {
-                    let mut formats = self
-                        .discovered_types
-                        .iter()
-                        .map(|record| record.format)
-                        .collect::<Vec<_>>();
-                    formats.sort_by_key(|format| plugin_format_sort_key(*format));
-                    formats.dedup();
-                    formats.len()
-                },
-                self.last_scan
-                    .as_ref()
-                    .map(|scan| scan.summary.as_str())
-                    .unwrap_or("none"),
-                runtime_plugin_capability_coverage(&self.discovered_types).summary,
-            ),
         }
     }
 }

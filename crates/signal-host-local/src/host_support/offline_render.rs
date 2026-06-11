@@ -47,16 +47,8 @@ impl LocalRuntimeHost {
                         "local delegated executor rendered stage {}:{}",
                         stage.chain_id, stage.stage_index
                     )),
-                    summary: format!(
-                        "stage={}:{} delegate=local-host-delegated-executor",
-                        stage.chain_id, stage.stage_index
-                    ),
                 })
                 .collect(),
-            summary: format!(
-                "request={} delegated_stages={} delegate=local-host-delegated-executor",
-                result.request_id, delegated_request.stage_count
-            ),
         };
         let merge = RuntimeOfflinePluginDelegatedExecutionMerge {
             request_id: result.request_id.clone(),
@@ -70,7 +62,6 @@ impl LocalRuntimeHost {
                 .map(|stem| RuntimeOfflinePluginDelegatedStemOutput {
                     stem_id: stem.stem_id.clone(),
                     output: scale_audio_buffer(&stem.output, attenuation),
-                    summary: format!("stem={} gain={attenuation:.3}", stem.stem_id),
                 })
                 .collect(),
             freeze_artifacts: result
@@ -80,22 +71,13 @@ impl LocalRuntimeHost {
                     |artifact| RuntimeOfflinePluginDelegatedFreezeArtifactOutput {
                         artifact_id: artifact.artifact_id.clone(),
                         output: scale_audio_buffer(&artifact.output, attenuation),
-                        summary: format!("artifact={} gain={attenuation:.3}", artifact.artifact_id),
                     },
                 )
                 .collect(),
-            summary: format!(
-                "request={} delegated_stages={} gain={attenuation:.3}",
-                result.request_id, delegated_request.stage_count
-            ),
         };
         Ok(Some(RuntimeOfflinePluginDelegatedExecutionOutcome {
             receipt,
             merge,
-            summary: format!(
-                "request={} delegated_stages={} adapter=local-host",
-                result.request_id, delegated_request.stage_count
-            ),
         }))
     }
 

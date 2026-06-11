@@ -152,6 +152,4 @@ pub struct RuntimeExternalIoSnapshot {
     pub restart_attempt_count: u64,
     /// Total number of failed device restart attempts since startup.
     pub restart_failure_count: u64,
-    /// Human-readable summary of this snapshot.
-    pub summary: String,
 }

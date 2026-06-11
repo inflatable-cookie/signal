@@ -59,10 +59,6 @@ impl RuntimeStretchClipSnapshot {
             engine_class,
             readiness,
             fallback_kind,
-            summary: format!(
-                "clip={} engine={:?} readiness={:?} fallback={:?}",
-                clip.clip_id, engine_class, readiness, fallback_kind
-            ),
         }
     }
 }
@@ -121,18 +117,6 @@ impl RuntimeStretchEngineSnapshot {
             ratio_only_clip_count,
             fallback_clip_count,
             clips,
-            summary: format!(
-                "stretch clips={} disabled={} ready={} pending_media={} pending_warp={} degraded={} sample_domain={} ratio_only={} fallback={}",
-                clip_processing.clip_count,
-                disabled_clip_count,
-                ready_clip_count,
-                pending_media_clip_count,
-                pending_warp_clip_count,
-                degraded_clip_count,
-                sample_domain_clip_count,
-                ratio_only_clip_count,
-                fallback_clip_count
-            ),
         }
     }
 }

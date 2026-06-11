@@ -1,6 +1,5 @@
 use super::*;
 
-mod observation_diagnostics_render;
 
 /// Push event emitted by the runtime to all registered [`RuntimeEventSink`]s.
 ///

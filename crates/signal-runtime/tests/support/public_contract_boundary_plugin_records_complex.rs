@@ -63,7 +63,6 @@ pub fn sample_complex_multi_output_record() -> RuntimePluginDiscoveredTypeRecord
             supports_reset_while_active: false,
         },
         lv2_extension_capabilities: None,
-        summary: "public boundary complex multi-output instrument".into(),
     }
 }
 
@@ -124,6 +123,5 @@ pub fn sample_complex_bus_fx_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_reset_while_active: true,
         },
         lv2_extension_capabilities: None,
-        summary: "public boundary bus-capable fx".into(),
     }
 }

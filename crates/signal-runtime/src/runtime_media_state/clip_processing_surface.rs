@@ -127,18 +127,6 @@ impl RuntimeClipProcessingPipelineStateModel {
             warped_clip_count,
             treatment_stage_count,
             clips,
-            summary: format!(
-                "clip_processing clips={} ready={} pending_media={} pending_warp={} invalid={} faded={} gain_shaped={} warped={} treatment_stages={}",
-                self.clips.len(),
-                ready_clip_count,
-                pending_media_clip_count,
-                pending_warp_clip_count,
-                invalid_clip_count,
-                faded_clip_count,
-                gain_shaped_clip_count,
-                warped_clip_count,
-                treatment_stage_count,
-            ),
         }
     }
     pub(crate) fn reconcile_clips(&mut self, clips: Vec<RuntimeClipProcessingRegistration>) {

@@ -83,10 +83,10 @@ impl RuntimePreviewTransformServiceSnapshot {
             .count();
         let preview_device_policy =
             Self::derive_preview_device_policy(media_service, active_audition_clip_count);
-        let routing_posture = preview_device_policy.routing_posture;
-        let audition_sink_class = preview_device_policy.audition_sink_class;
-        let low_latency_device_policy_class = preview_device_policy.low_latency_device_policy_class;
-        let low_latency_device_policy_outcome =
+        let _routing_posture = preview_device_policy.routing_posture;
+        let _audition_sink_class = preview_device_policy.audition_sink_class;
+        let _low_latency_device_policy_class = preview_device_policy.low_latency_device_policy_class;
+        let _low_latency_device_policy_outcome =
             preview_device_policy.low_latency_device_policy_outcome;
         let preview_workflow = Self::derive_preview_workflow(
             media_service,
@@ -97,9 +97,9 @@ impl RuntimePreviewTransformServiceSnapshot {
             artifact_backed_clip_count,
             unsupported_clip_count,
         );
-        let queue_posture = preview_workflow.queue_posture;
-        let audition_posture = preview_workflow.audition_posture;
-        let transform_scheduling_posture = preview_workflow.transform_scheduling_posture;
+        let _queue_posture = preview_workflow.queue_posture;
+        let _audition_posture = preview_workflow.audition_posture;
+        let _transform_scheduling_posture = preview_workflow.transform_scheduling_posture;
 
         RuntimePreviewTransformServiceSnapshot {
             clip_count: clips.len(),
@@ -116,27 +116,6 @@ impl RuntimePreviewTransformServiceSnapshot {
             preview_device_policy,
             preview_workflow,
             clips,
-            summary: format!(
-                "preview_transform clips={} active_audition={} scrub_supported={} ready={} pending={} degraded={} invalidated={} unsupported={} stretch_aligned={} artifact_backed={} fallback={} route={:?} sink={:?} policy={:?} outcome={:?} queue={:?} audition={:?} scheduling={:?}",
-                clip_processing.clip_count,
-                active_audition_clip_count,
-                scrub_supported_clip_count,
-                ready_clip_count,
-                pending_clip_count,
-                degraded_clip_count,
-                invalidated_clip_count,
-                unsupported_clip_count,
-                stretch_aligned_clip_count,
-                artifact_backed_clip_count,
-                fallback_clip_count,
-                routing_posture,
-                audition_sink_class,
-                low_latency_device_policy_class,
-                low_latency_device_policy_outcome,
-                queue_posture,
-                audition_posture,
-                transform_scheduling_posture,
-            ),
         }
     }
 }

@@ -10,7 +10,7 @@ pub(crate) fn transport_fault_record_from_event(
             processing_epoch,
             block_sequence,
             stage,
-            detail,
+            detail: _,
         } => Some(TransportFaultRecord {
             sandbox_id,
             lease_id,
@@ -22,7 +22,6 @@ pub(crate) fn transport_fault_record_from_event(
             resource: map_broker_failure_resource(stage),
             operation: broker_failure_operation(stage).into(),
             error_kind: None,
-            detail,
         }),
         RuntimeEvent::SandboxOperationFailure {
             sandbox_id,
@@ -31,7 +30,7 @@ pub(crate) fn transport_fault_record_from_event(
             operation,
             error_kind,
             stage,
-            detail,
+            detail: _,
         } => Some(TransportFaultRecord {
             sandbox_id,
             lease_id,
@@ -43,14 +42,13 @@ pub(crate) fn transport_fault_record_from_event(
             resource: map_sandbox_operation_failure_resource(stage),
             operation,
             error_kind: Some(error_kind),
-            detail,
         }),
         RuntimeEvent::PluginSandboxTransport {
             sandbox_id,
             lease_id,
             stage: PluginSandboxTransportStage::DetachRequested,
             processing_epoch,
-            detail,
+            detail: _,
             ..
         } => Some(TransportFaultRecord {
             sandbox_id,
@@ -63,14 +61,13 @@ pub(crate) fn transport_fault_record_from_event(
             resource: TransportFaultResource::SharedMemoryLease,
             operation: "transport.detach_request".into(),
             error_kind: None,
-            detail: detail.unwrap_or_else(|| "transport detach requested".into()),
         }),
         RuntimeEvent::PluginSandboxTransport {
             sandbox_id,
             lease_id,
             stage: PluginSandboxTransportStage::Detached,
             processing_epoch,
-            detail,
+            detail: _,
             ..
         } => Some(TransportFaultRecord {
             sandbox_id,
@@ -83,14 +80,13 @@ pub(crate) fn transport_fault_record_from_event(
             resource: TransportFaultResource::SharedMemoryLease,
             operation: "transport.detached".into(),
             error_kind: None,
-            detail: detail.unwrap_or_else(|| "transport detached".into()),
         }),
         RuntimeEvent::PluginSandboxTransport {
             sandbox_id,
             lease_id,
             stage: PluginSandboxTransportStage::DetachFault,
             processing_epoch,
-            detail,
+            detail: _,
             ..
         } => Some(TransportFaultRecord {
             sandbox_id,
@@ -103,7 +99,6 @@ pub(crate) fn transport_fault_record_from_event(
             resource: TransportFaultResource::SharedMemoryLease,
             operation: "transport.detach_fault".into(),
             error_kind: None,
-            detail: detail.unwrap_or_else(|| "transport detach fault".into()),
         }),
         RuntimeEvent::BrokerInvalidation {
             sandbox_id,
@@ -111,7 +106,7 @@ pub(crate) fn transport_fault_record_from_event(
             processing_epoch,
             block_sequence,
             stage,
-            reason,
+            reason: _,
         } => Some(TransportFaultRecord {
             sandbox_id,
             lease_id: Some(lease_id),
@@ -123,7 +118,6 @@ pub(crate) fn transport_fault_record_from_event(
             resource: map_broker_invalidation_resource(stage),
             operation: broker_invalidation_operation(stage).into(),
             error_kind: None,
-            detail: reason,
         }),
         RuntimeEvent::CompletionSlotTransition {
             sandbox_id,
@@ -142,7 +136,6 @@ pub(crate) fn transport_fault_record_from_event(
             resource: TransportFaultResource::CompletionSlot,
             operation: "completion_slot.timeout".into(),
             error_kind: None,
-            detail: "completion slot timed out".into(),
         }),
         RuntimeEvent::CompletionSlotTransition {
             sandbox_id,
@@ -161,7 +154,6 @@ pub(crate) fn transport_fault_record_from_event(
             resource: TransportFaultResource::CompletionSlot,
             operation: "completion_slot.invalidate".into(),
             error_kind: None,
-            detail: "completion slot invalidated".into(),
         }),
         RuntimeEvent::CompletionSlotTransition {
             sandbox_id,
@@ -180,7 +172,6 @@ pub(crate) fn transport_fault_record_from_event(
             resource: TransportFaultResource::CompletionSlot,
             operation: "completion_slot.fallback_apply".into(),
             error_kind: None,
-            detail: "fallback applied after invalidation".into(),
         }),
         _ => None,
     }

@@ -29,9 +29,6 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -44,9 +41,6 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Au,
@@ -58,7 +52,6 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
             linux_parity_band: RuntimePluginParityBand::Unsupported,
             linux_preferred_sandbox_outcome: None,
             linux_strict_sandbox_default: false,
-            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
         },
     ]);
     let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
@@ -149,7 +142,7 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
     );
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
 
     assert_eq!(
         observation.plugin_discovery_snapshot.parity_coverage.len(),
@@ -204,15 +197,4 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
     assert_eq!(vst3_parity.ready_sandbox_count, 1);
     assert_eq!(vst3_parity.active_transport_count, 1);
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"parity_coverage\":["));
-    assert!(observation_json.contains("\"parity_band\":\"Portable\""));
-    assert!(observation_json.contains("\"parity_band\":\"Guarded\""));
-    assert!(observation_json.contains("\"supported_platforms\":[\"MacOs\",\"Linux\",\"Windows\"]"));
-    assert!(observation_json.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(supervisor_json.contains("\"parity_coverage\":["));
 }

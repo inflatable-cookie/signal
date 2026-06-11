@@ -86,11 +86,4 @@ fn public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts() {
         performance.critical_path_lane_total_latency_samples
     );
 
-    let performance_json = performance.render_json();
-    assert!(performance_json.contains("\"hot_latency_group_node_count\":"));
-    assert!(performance_json.contains("\"worker_lane_summaries\":["));
-
-    let trace_json = trace.render_json();
-    assert!(trace_json.contains("\"peak_critical_path_lane\":"));
-    assert!(trace_json.contains("\"peak_hot_latency_group_node_count\":"));
 }

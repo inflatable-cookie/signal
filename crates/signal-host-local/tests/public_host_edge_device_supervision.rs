@@ -124,8 +124,4 @@ fn local_shared_host_edge_exports_runtime_device_supervision_truth() {
         RuntimeRecoveryState::Faulted
     );
 
-    let rendered = faulted.render_json();
-    assert!(rendered.contains("\"device_supervision_snapshot\":{"));
-    assert!(rendered.contains("\"state\":\"Faulted\""));
-    assert!(rendered.contains("\"fault_boundary\":\"Faulted\""));
 }

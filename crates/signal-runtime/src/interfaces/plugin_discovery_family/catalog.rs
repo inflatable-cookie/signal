@@ -42,8 +42,6 @@ pub struct RuntimePluginScanReceipt {
     pub parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     /// Aggregate capability coverage across all discovered types.
     pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Category of diagnostic issue found during a plugin scan.
@@ -70,10 +68,6 @@ pub struct RuntimePluginScanDiagnosticRecord {
     pub plugin_type_id: Option<String>,
     /// Category of issue.
     pub kind: RuntimePluginScanDiagnosticKind,
-    /// Diagnostic detail message.
-    pub detail: String,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Full descriptor for one discovered plugin type.
@@ -111,8 +105,6 @@ pub struct RuntimePluginDiscoveredTypeRecord {
     pub lifecycle_contract: PluginLifecycleContract,
     /// LV2-specific extension capability summary, if applicable.
     pub lv2_extension_capabilities: Option<RuntimeLv2ExtensionCapabilitySummary>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Per-format type and capability counts from a scan.
@@ -158,8 +150,6 @@ pub struct RuntimePluginFormatCoverageRecord {
     pub max_audio_bus_count: usize,
     /// Maximum parameter count across all types in this format.
     pub max_parameter_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Host platform supported by a plugin format.
@@ -199,8 +189,6 @@ pub struct RuntimePluginFormatPlatformCoverageRecord {
     pub linux_preferred_sandbox_outcome: Option<RuntimePluginIsolationOutcome>,
     /// Whether strict sandbox mode is the default on Linux.
     pub linux_strict_sandbox_default: bool,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Combined parity + sandbox lifecycle counts for one plugin format.
@@ -254,6 +242,4 @@ pub struct RuntimePluginFormatParityRecord {
     pub active_transport_count: usize,
     /// Number of explicit placement rules configured for this format.
     pub explicit_placement_rule_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

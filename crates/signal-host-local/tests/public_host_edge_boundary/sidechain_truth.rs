@@ -70,11 +70,4 @@ fn local_shared_host_edge_exports_runtime_sidechain_truth() {
     );
     assert_eq!(stage_secondary_input.target_id, "compressor");
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"execution_topology_summary\":{"));
-    assert!(rendered.contains("\"secondary_input_count\":1"));
-    assert!(rendered.contains("\"source_id\":\"kick-sidechain\""));
-    assert!(rendered.contains("\"target_kind\":\"NodeInput\""));
-    assert!(rendered.contains("\"target_kind\":\"PluginInput\""));
-    assert!(rendered.contains("\"fallback_outcome\":\"SafeModeDegradation\""));
 }

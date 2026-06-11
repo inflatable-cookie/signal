@@ -20,18 +20,6 @@ fn render_artifact_receipt(
         byte_size,
         peak_level,
         rms_level,
-        summary: format!(
-            "artifact={} kind={:?} path={} sample_rate={} channels={} frames={} bytes={} peak={:.3} rms={:.3}",
-            artifact_id,
-            artifact_kind,
-            output_path,
-            buffer.sample_rate().0,
-            buffer.channel_count().0,
-            buffer.frames().0,
-            byte_size,
-            peak_level,
-            rms_level,
-        ),
     }
 }
 

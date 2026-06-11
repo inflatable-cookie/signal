@@ -65,8 +65,6 @@ pub struct RuntimeFaultStatusSnapshot {
     pub transport_faulted_session_count: usize,
     /// Total device-loss event count since startup.
     pub device_loss_count: u64,
-    /// Human-readable summary of this snapshot.
-    pub summary: String,
 }
 
 /// Input data bundle for [`RuntimeFaultStatusSnapshot::capture`].
@@ -152,7 +150,7 @@ impl RuntimeFaultStatusSnapshot {
         } else {
             RuntimeRecoveryState::Steady
         };
-        let mut snapshot = Self {
+        let snapshot = Self {
             recovery_state,
             primary_fault_cause,
             active_fault_count,
@@ -168,21 +166,7 @@ impl RuntimeFaultStatusSnapshot {
             plugin_fault_count,
             transport_faulted_session_count,
             device_loss_count: input.device_loss_count,
-            summary: String::new(),
         };
-        snapshot.summary = format!(
-            "recovery={:?} primary={:?} faults={} xruns={} plugin_faults={} watchdog_restarts={} device_losses={} transport_faulted_sessions={} safe_mode={} restarts={}",
-            snapshot.recovery_state,
-            snapshot.primary_fault_cause,
-            snapshot.active_fault_count,
-            input.diagnostics_snapshot.xruns,
-            snapshot.plugin_fault_count,
-            snapshot.watchdog_restart_count,
-            snapshot.device_loss_count,
-            snapshot.transport_faulted_session_count,
-            snapshot.safe_mode_enabled,
-            snapshot.restart_count,
-        );
         snapshot
     }
 }
@@ -207,8 +191,6 @@ pub struct RuntimeInterruptionSummary {
     pub deferred_service_class: Option<RuntimeDeferredServiceClass>,
     /// Decision made for the most recent deferred service work item, if any.
     pub deferred_service_decision: Option<RuntimeDeferredServiceDecision>,
-    /// Human-readable summary of this interruption state.
-    pub summary: String,
 }
 
 impl RuntimeInterruptionSummary {
@@ -256,7 +238,7 @@ impl RuntimeInterruptionSummary {
                     | RuntimeFaultCause::MissingPluginBinding
             )
         );
-        let mut summary = Self {
+        let summary = Self {
             active: class != RuntimeInterruptionClass::Steady,
             class,
             rebindable,
@@ -266,19 +248,7 @@ impl RuntimeInterruptionSummary {
             deferred_service_class: last_deferred_service_receipt.map(|receipt| receipt.work_class),
             deferred_service_decision: last_deferred_service_receipt
                 .map(|receipt| receipt.decision),
-            summary: String::new(),
         };
-        summary.summary = format!(
-            "class={:?} active={} rebindable={} recovery={:?} primary={:?} deferred={:?}/{:?} safe_mode={}",
-            summary.class,
-            summary.active,
-            summary.rebindable,
-            summary.recovery_state,
-            summary.primary_fault_cause,
-            summary.deferred_service_class,
-            summary.deferred_service_decision,
-            summary.safe_mode_enabled,
-        );
         summary
     }
 }

@@ -44,7 +44,6 @@ impl SignalRuntime {
                 .then(|| session.last_checkpoint.clone())
                 .flatten(),
             last_checkpoint: session.last_checkpoint.clone(),
-            summary: session.last_state_summary.clone(),
         }
     }
 
@@ -71,9 +70,9 @@ impl SignalRuntime {
             .borrow()
             .clone();
         let last_purge = self.last_offline_render_purge_receipt.borrow().clone();
-        let last_session_present = last_session.is_some();
-        let last_cancellation_present = last_cancellation.is_some();
-        let last_purge_present = last_purge.is_some();
+        let _last_session_present = last_session.is_some();
+        let _last_cancellation_present = last_cancellation.is_some();
+        let _last_purge_present = last_purge.is_some();
         crate::interfaces::RuntimeOfflineRenderSessionSnapshot {
             active_session_count,
             paused_session_count,
@@ -82,15 +81,6 @@ impl SignalRuntime {
             last_session,
             last_cancellation,
             last_purge,
-            summary: format!(
-                "active_sessions={} paused_sessions={} recoverable_sessions={} last_session={} last_cancellation={} last_purge={}",
-                active_session_count,
-                paused_session_count,
-                recoverable_session_count,
-                last_session_present,
-                last_cancellation_present,
-                last_purge_present,
-            ),
         }
     }
 
@@ -102,7 +92,7 @@ impl SignalRuntime {
             .replace(Some(snapshot));
     }
 
-    pub(in super::super) fn mark_offline_render_sessions_restartable(&mut self, reason: &str) {
+    pub(in super::super) fn mark_offline_render_sessions_restartable(&mut self, _reason: &str) {
         let summary_snapshot = self
             .offline_render_executions
             .values_mut()
@@ -110,14 +100,6 @@ impl SignalRuntime {
                 session.state = RuntimeOfflineRenderExecutionState::Recoverable;
                 session.interruption_count = session.interruption_count.saturating_add(1);
                 session.interruption_class_override = Some(RuntimeInterruptionClass::Restartable);
-                session.last_state_summary = format!(
-                    "request={} state=recoverable interruption=restartable checkpoints={}/{} interruptions={} reason={}",
-                    session.request.request_id,
-                    session.emitted_checkpoint_count,
-                    session.checkpoint_count,
-                    session.interruption_count,
-                    reason,
-                );
                 Self::offline_render_session_state_snapshot(session)
             })
             .last();
@@ -129,21 +111,12 @@ impl SignalRuntime {
     pub(in super::super) fn record_terminal_offline_render_session_failure(
         &self,
         session: &mut RuntimeOfflineRenderExecutionSession,
-        stage: RuntimeOfflineRenderCheckpointStage,
-        error: &RuntimeError,
+        _stage: RuntimeOfflineRenderCheckpointStage,
+        _error: &RuntimeError,
     ) {
         session.state = RuntimeOfflineRenderExecutionState::Failed;
         session.interruption_count = session.interruption_count.saturating_add(1);
         session.interruption_class_override = Some(RuntimeInterruptionClass::Terminal);
-        session.last_state_summary = format!(
-            "request={} state=failed stage={:?} checkpoints={}/{} interruptions={} error={:?}",
-            session.request.request_id,
-            stage,
-            session.emitted_checkpoint_count,
-            session.checkpoint_count,
-            session.interruption_count,
-            error,
-        );
         self.record_last_offline_render_session_snapshot(
             Self::offline_render_session_state_snapshot(session),
         );
@@ -163,7 +136,6 @@ impl SignalRuntime {
             checkpoint_count: session.checkpoint_count,
             checkpoint: None,
             result: None,
-            summary: session.last_state_summary.clone(),
         }
     }
 }

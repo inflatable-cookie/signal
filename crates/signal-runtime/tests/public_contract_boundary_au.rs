@@ -61,7 +61,7 @@ fn public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_trut
     );
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
 
     assert_eq!(
         observation.plugin_discovery_snapshot.discovered_type_count,
@@ -105,13 +105,4 @@ fn public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_trut
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
     assert!(sandbox.active_transport);
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"formats\":[\"Au\"]"));
-    assert!(observation_json.contains("\"plugin_type_id\":\"plugin:au:public-instrument\""));
-    assert!(observation_json.contains("\"transport_stage\":\"Attached\""));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_type_id\":\"plugin:au:public-instrument\""));
 }

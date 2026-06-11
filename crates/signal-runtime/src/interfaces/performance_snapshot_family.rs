@@ -1,8 +1,7 @@
 use super::*;
 
-mod performance_snapshot_render;
-pub(crate) use performance_snapshot_render::runtime_execution_lane_name;
 mod performance_snapshot_capture;
+mod performance_snapshot_support;
 
 /// Comprehensive per-tick performance snapshot covering CPU load, block timing,
 /// scheduler topology, prework service, background service, and hot-path
@@ -149,8 +148,6 @@ pub struct RuntimePerformanceSnapshot {
     pub background_pending_cleanup_work_item_count: usize,
     /// Number of work items pending retry in the background service.
     pub background_pending_retry_work_item_count: usize,
-    /// Human-readable summary of this performance snapshot.
-    pub summary: String,
 }
 
 /// Instrumentation summary for a single scheduler worker lane.

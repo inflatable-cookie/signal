@@ -135,8 +135,6 @@ pub struct RuntimeClipProcessingSnapshot {
     pub readiness: RuntimeClipProcessingReadiness,
     /// Last error message if the clip processing pipeline encountered a problem, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of this clip's processing state.
-    pub summary: String,
 }
 
 /// Aggregate snapshot of the clip processing pipeline: counts by readiness
@@ -163,8 +161,6 @@ pub struct RuntimeClipProcessingPipelineSnapshot {
     pub treatment_stage_count: usize,
     /// Per-clip processing snapshots.
     pub clips: Vec<RuntimeClipProcessingSnapshot>,
-    /// Human-readable summary of the pipeline state.
-    pub summary: String,
 }
 
 /// Class of time-stretch engine active for a clip.
@@ -219,8 +215,6 @@ pub struct RuntimeStretchClipSnapshot {
     pub readiness: RuntimeStretchReadiness,
     /// Fallback mode in use if the preferred engine is unavailable.
     pub fallback_kind: RuntimeStretchFallbackKind,
-    /// Human-readable summary of this clip's stretch state.
-    pub summary: String,
 }
 
 /// Aggregate stretch engine snapshot across all clips.
@@ -246,8 +240,6 @@ pub struct RuntimeStretchEngineSnapshot {
     pub fallback_clip_count: usize,
     /// Per-clip stretch snapshots.
     pub clips: Vec<RuntimeStretchClipSnapshot>,
-    /// Human-readable summary of the stretch engine state.
-    pub summary: String,
 }
 
 /// Readiness of warp marker / transient analysis for a clip.
@@ -327,8 +319,6 @@ pub struct RuntimeMarkerAnalysisClipSnapshot {
     pub tempo_assist_hint_source: RuntimeTempoAssistHintSource,
     /// Last error message if marker analysis encountered a problem, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of this clip's marker analysis state.
-    pub summary: String,
 }
 
 /// Aggregate marker analysis snapshot across all clips.
@@ -354,8 +344,6 @@ pub struct RuntimeMarkerAnalysisSnapshot {
     pub transient_anchor_count: usize,
     /// Per-clip marker analysis snapshots.
     pub clips: Vec<RuntimeMarkerAnalysisClipSnapshot>,
-    /// Human-readable summary of the marker analysis state.
-    pub summary: String,
 }
 
 /// Input stage from which a clip render is sourced.
@@ -409,6 +397,4 @@ pub struct RuntimeClipRenderResult {
     pub peak_applied_gain: Option<f32>,
     /// Rendered audio output buffer.
     pub output: AudioBuffer,
-    /// Human-readable summary of the render result.
-    pub summary: String,
 }

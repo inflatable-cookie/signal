@@ -57,7 +57,6 @@ fn runtime_external_io_snapshot_marks_clock_fallback_active() {
         RuntimeHostEndpointTopology::OutputOnly
     );
     assert!(!snapshot.partial_availability);
-    assert!(snapshot.summary.contains("fallback=true"));
 }
 
 #[test]
@@ -182,7 +181,6 @@ fn runtime_external_io_snapshot_surfaces_duplex_and_topology_receipts() {
         Some(RuntimeCanonicalChannelLayout::Stereo)
     );
     assert!(!snapshot.partial_availability);
-    assert!(snapshot.summary.contains("CrossClockManaged"));
 }
 
 #[test]
@@ -214,7 +212,6 @@ fn runtime_external_io_snapshot_defaults_to_unavailable_without_host_context() {
         restart_failure_count: None,
         watchdog_restart_count: 0,
         last_watchdog_trigger: None,
-        summary: "steady".into(),
     };
 
     let snapshot = RuntimeHostIoSummary::unavailable_external_io_snapshot(
@@ -250,5 +247,4 @@ fn runtime_external_io_snapshot_defaults_to_unavailable_without_host_context() {
         snapshot.endpoint_topology,
         RuntimeHostEndpointTopology::Unconfigured
     );
-    assert!(snapshot.summary.contains("runtime-unavailable"));
 }

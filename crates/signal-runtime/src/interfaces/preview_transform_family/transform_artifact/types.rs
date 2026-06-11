@@ -70,8 +70,6 @@ pub struct RuntimeTransformArtifactClipSnapshot {
     pub stretch_readiness: RuntimeStretchReadiness,
     /// Readiness of the marker analysis for this clip.
     pub marker_analysis_readiness: RuntimeMarkerAnalysisReadiness,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Aggregate transform artifact snapshot across all clips with persistence summary.
@@ -101,8 +99,6 @@ pub struct RuntimeTransformArtifactSnapshot {
     pub transform_persistence: RuntimeTransformPersistenceSummary,
     /// Per-clip transform artifact snapshots.
     pub clips: Vec<RuntimeTransformArtifactClipSnapshot>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Persistence posture for transform artifacts.
@@ -233,6 +229,4 @@ pub struct RuntimeTransformPersistenceSummary {
     pub guarded_persistence_clip_count: usize,
     /// Number of clips whose persisted artifacts have been invalidated.
     pub invalidated_persistence_clip_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

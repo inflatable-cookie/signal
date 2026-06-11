@@ -87,9 +87,6 @@ fn runtime_recording_capture_buffers_output_and_commits_wav() {
         observation.recording_capture_snapshot.capture_kind,
         Some(RuntimeRecordingCaptureKind::Audio)
     );
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"recording_capture_snapshot\":{"));
-    assert!(observation_json.contains("\"checkpoint_class\":\"Committed\""));
 
     let _ = fs::remove_file(capture_path);
 }

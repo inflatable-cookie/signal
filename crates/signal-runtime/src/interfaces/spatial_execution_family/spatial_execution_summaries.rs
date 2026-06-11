@@ -130,28 +130,6 @@ pub(crate) fn runtime_spatial_execution_summary_for_stages(
                 balance: Some(balance.clone()),
                 input_layout: input_layout.clone(),
                 output_layout: output_layout.clone(),
-                summary: format!(
-                    "node={} adapter={:?} mode={:?} target={:?} controls={:?} policy={:?} fallback={:?}/{:?} bed={:?} objects={:?}/{} mix={:?} render={:?} immersive={:?} monitoring={:?} export={:?} balance={} input={} output={}",
-                    node_id,
-                    RuntimeSpatialAdapterClass::Balance,
-                    execution_mode,
-                    target_environment,
-                    RuntimeSpatialControlFamily::BalanceScalar,
-                    RuntimeSpatialActivationPolicy::EnabledIfSupported,
-                    fallback_outcome,
-                    expanded_fallback_outcome,
-                    bed_class,
-                    None::<RuntimeSpatialObjectRole>,
-                    object_count,
-                    mix_policy,
-                    render_scope,
-                    immersive_room_policy.as_ref().map(|summary| &summary.summary),
-                    deployment_monitoring.as_ref().map(|summary| &summary.summary),
-                    renderer_export.as_ref().map(|summary| &summary.summary),
-                    balance,
-                    input_layout.summary,
-                    output_layout.summary,
-                ),
             })
         }
         _ => None,
@@ -166,7 +144,7 @@ impl RuntimeMultichannelIoSummary {
         input_bus_intent: RuntimeBusIntent,
         output_bus_intent: RuntimeBusIntent,
     ) -> Self {
-        let summary = format!(
+        let _summary = format!(
             "input={:?}/{:?} output={:?}/{:?}",
             input_bus_intent,
             input_layout.canonical_layout,
@@ -178,7 +156,6 @@ impl RuntimeMultichannelIoSummary {
             output_layout,
             input_bus_intent,
             output_bus_intent,
-            summary,
         }
     }
 

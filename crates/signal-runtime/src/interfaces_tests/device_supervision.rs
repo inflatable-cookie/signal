@@ -33,7 +33,6 @@ fn runtime_device_supervision_snapshot_tracks_recovered_device_episode() {
         plugin_fault_count: 0,
         transport_faulted_session_count: 0,
         device_loss_count: 1,
-        summary: "steady".into(),
     };
     let interruption_summary = RuntimeInterruptionSummary {
         active: false,
@@ -44,7 +43,6 @@ fn runtime_device_supervision_snapshot_tracks_recovered_device_episode() {
         safe_mode_enabled: false,
         deferred_service_class: None,
         deferred_service_decision: None,
-        summary: "steady".into(),
     };
     let host_io = host_io_summary(
         RuntimeHostClockFallbackState::Direct,
@@ -109,7 +107,6 @@ fn runtime_device_supervision_snapshot_distinguishes_exhausted_from_faulted() {
         plugin_fault_count: 0,
         transport_faulted_session_count: 0,
         device_loss_count: 1,
-        summary: "recovering".into(),
     };
     let exhausted_interruption = RuntimeInterruptionSummary {
         active: true,
@@ -120,7 +117,6 @@ fn runtime_device_supervision_snapshot_distinguishes_exhausted_from_faulted() {
         safe_mode_enabled: true,
         deferred_service_class: None,
         deferred_service_decision: None,
-        summary: "restartable".into(),
     };
     let exhausted_host_io = host_io_summary(
         RuntimeHostClockFallbackState::RecoveryConstrained,
@@ -165,7 +161,6 @@ fn runtime_device_supervision_snapshot_distinguishes_exhausted_from_faulted() {
         plugin_fault_count: 0,
         transport_faulted_session_count: 0,
         device_loss_count: 1,
-        summary: "faulted".into(),
     };
     let faulted_interruption = RuntimeInterruptionSummary {
         active: true,
@@ -176,7 +171,6 @@ fn runtime_device_supervision_snapshot_distinguishes_exhausted_from_faulted() {
         safe_mode_enabled: true,
         deferred_service_class: None,
         deferred_service_decision: None,
-        summary: "terminal".into(),
     };
 
     let faulted = RuntimeDeviceSupervisionSnapshot::capture(

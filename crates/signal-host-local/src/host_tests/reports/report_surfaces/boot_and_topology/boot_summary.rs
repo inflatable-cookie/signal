@@ -78,7 +78,4 @@ fn local_host_boot_summary_exposes_negotiated_hardware_contract() {
     assert_eq!(observed_plugin_state.instance_id, "instance:local:default");
     assert_eq!(observed_plugin_state.lifecycle_state, "Active");
     assert_eq!(observed_plugin_state.readiness_state, "Ready");
-    assert!(supervisor
-        .render_json()
-        .contains("\"plugin_instance_state_events\":"));
 }

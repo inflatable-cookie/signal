@@ -78,15 +78,6 @@ impl RuntimeTempoMapStateModel {
                         end_tempo_bpm: segment.end_tempo_bpm,
                         interpolation: segment.interpolation,
                         covers_timeline_position: resolved.active_segment_index == Some(index),
-                        summary: format!(
-                            "segment={} interpolation={:?} start={} end={:?} tempo={:.3}->{:?}",
-                            segment.segment_id,
-                            segment.interpolation,
-                            segment.start_samples,
-                            segment.end_samples,
-                            segment.start_tempo_bpm,
-                            segment.end_tempo_bpm,
-                        ),
                     })
                     .collect::<Vec<_>>()
             })
@@ -100,17 +91,6 @@ impl RuntimeTempoMapStateModel {
             tempo_source: resolved.source,
             timeline_position_samples: resolved.timeline_position_samples,
             segments,
-            summary: format!(
-                "tempo_map segments={} active={:?}/{:?} source={:?} tempo={:.3} next_segment={:?}",
-                self.projection
-                    .as_ref()
-                    .map_or(0, |projection| projection.segment_count),
-                resolved.active_segment_index,
-                resolved.active_segment_id,
-                resolved.source,
-                resolved.tempo_bpm,
-                resolved.next_segment_start_samples,
-            ),
         }
     }
 }

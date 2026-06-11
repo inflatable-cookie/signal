@@ -25,7 +25,7 @@ impl RuntimeRecordingCaptureStateModel {
         } else {
             Some(RuntimeRecordingCaptureState::Idle)
         };
-        let summary = if let Some(checkpoint) = active_checkpoint.as_ref() {
+        let _summary = if let Some(checkpoint) = active_checkpoint.as_ref() {
             format!(
                 "state=capturing ready={} kind={:?} checkpoint={:?}/{:?} take={} track={} frames={} events={} blocks={} pressure={} path={}",
                 self.capture_ready(configured, readiness),
@@ -111,7 +111,6 @@ impl RuntimeRecordingCaptureStateModel {
             last_committed_path: self.last_committed_path.clone(),
             last_committed_duration_samples: self.last_committed_duration_samples,
             last_error: self.last_error.clone(),
-            summary,
         }
     }
 
@@ -153,7 +152,7 @@ impl RuntimeRecordingCaptureStateModel {
         checkpoint_class: RuntimeRecordingCaptureCheckpointClass,
         interruption_class: RuntimeInterruptionClass,
         last_error: Option<String>,
-        reason: &str,
+        _reason: &str,
     ) -> RuntimeRecordingCaptureCheckpointSnapshot {
         RuntimeRecordingCaptureCheckpointSnapshot {
             capture_kind: active.capture_kind,
@@ -170,20 +169,6 @@ impl RuntimeRecordingCaptureStateModel {
             peak_level: (active.channel_count > 0).then_some(active.peak_level),
             pressure_event_count: active.pressure_event_count,
             last_error,
-            summary: format!(
-                "kind={:?} checkpoint={:?} interruption={:?} take={} track={} frames={} events={} blocks={} pressure={} reason={} path={}",
-                active.capture_kind,
-                checkpoint_class,
-                interruption_class,
-                active.take_id,
-                active.track_id,
-                active.buffered_frame_count,
-                active.buffered_event_count,
-                active.buffered_block_count,
-                active.pressure_event_count,
-                reason,
-                active.capture_path,
-            ),
         }
     }
 }

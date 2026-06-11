@@ -22,7 +22,7 @@ impl RuntimePluginLifecycleStateModel {
                 )
             })
             .collect::<Vec<_>>();
-        let mut snapshot = RuntimePluginLifecycleSnapshot {
+        let snapshot = RuntimePluginLifecycleSnapshot {
             sandbox_count: sandboxes.len(),
             active_sandbox_count: self.active_sandbox_count,
             shared_sandbox_count: sandboxes
@@ -80,24 +80,7 @@ impl RuntimePluginLifecycleStateModel {
                 platform_coverage,
             ),
             sandboxes,
-            summary: String::new(),
         };
-        snapshot.summary = format!(
-            "sandboxes={} active={} shared={} isolated={} ready={} booting={} degraded={} faulted={} restarting={} quarantined={} stopped={} rebindable={} terminal={}",
-            snapshot.sandbox_count,
-            snapshot.active_sandbox_count,
-            snapshot.shared_sandbox_count,
-            snapshot.isolated_sandbox_count,
-            snapshot.ready_sandbox_count,
-            snapshot.booting_sandbox_count,
-            snapshot.degraded_sandbox_count,
-            snapshot.faulted_sandbox_count,
-            snapshot.restarting_sandbox_count,
-            snapshot.quarantined_sandbox_count,
-            snapshot.stopped_sandbox_count,
-            snapshot.rebindable_sandbox_count,
-            snapshot.terminal_sandbox_count,
-        );
         snapshot
     }
 }

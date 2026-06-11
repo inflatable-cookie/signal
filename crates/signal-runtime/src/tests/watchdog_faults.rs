@@ -82,7 +82,6 @@ fn runtime_fault_status_snapshot_classifies_watchdog_plugin_fault_and_xrun_press
     assert!(status.safe_mode_enabled);
     assert_eq!(status.plugin_fault_count, 1);
     assert_eq!(status.watchdog_restart_count, 2);
-    assert!(status.summary.contains("primary=Some(WatchdogRestart)"));
 }
 
 #[test]
@@ -154,11 +153,6 @@ fn runtime_observation_report_surfaces_restartable_interruption_summary() {
     assert!(observation.interruption_summary.active);
     assert!(!observation.interruption_summary.rebindable);
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"fault_status\":{"));
-    assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(observation_json.contains("\"interruption_summary\":{"));
-    assert!(observation_json.contains("\"class\":\"Restartable\""));
 }
 
 #[test]
@@ -197,9 +191,6 @@ fn runtime_fault_diagnostic_receipt_maps_xrun_pressure_into_runtime_owned_primar
         crate::interfaces::RuntimeFaultDiagnosticAuthority::RuntimeCanonical
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(observation_json.contains("\"primary_family\":\"XrunPressure\""));
 }
 
 #[test]

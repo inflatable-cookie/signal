@@ -83,13 +83,4 @@ fn runtime_offline_render_contract_preview_reuses_runtime_topology_tempo_clip_an
             .bus_capable_fx_class,
         Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
     );
-    assert!(preview.chain_contract.summary.contains("pending=2"));
-    assert!(preview
-        .chain_contract
-        .summary
-        .contains("complex_io_stages=2"));
-    assert!(preview.chain_contract.summary.contains("recall=2/"));
-    assert!(preview.summary.contains("stems=1"));
-    assert!(preview.summary.contains("freeze_artifacts=1"));
-    assert!(preview.summary.contains("chain_contract=chains=1"));
 }

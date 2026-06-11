@@ -74,19 +74,6 @@ impl RuntimeMediaPipelineStateModel {
             tonal_deferred_descriptor_count,
             embedding_deferred_descriptor_count,
             descriptors,
-            summary: format!(
-                "indexed={} ready={} pending={} invalidated={} unavailable={} loudness_ready={} character_ready={} rhythm_deferred={} tonal_deferred={} embedding_deferred={}",
-                self.assets.len(),
-                ready_descriptor_count,
-                pending_descriptor_count,
-                invalidated_descriptor_count,
-                unavailable_descriptor_count,
-                loudness_ready_descriptor_count,
-                character_ready_descriptor_count,
-                rhythm_deferred_descriptor_count,
-                tonal_deferred_descriptor_count,
-                embedding_deferred_descriptor_count,
-            ),
         }
     }
 
@@ -118,23 +105,6 @@ impl RuntimeMediaPipelineStateModel {
                 .last_error
                 .clone()
                 .or_else(|| asset.last_error.clone()),
-            summary: format!(
-                "asset={} state={:?} metadata={:?} loudness={:?} character={:?} rhythm={:?} tonal={:?} embedding={:?}",
-                asset.registration.asset_id,
-                asset.state,
-                asset.analysis.descriptor_state,
-                media_family_state(
-                    asset.analysis.descriptor_state,
-                    asset.analysis.loudness.is_some(),
-                ),
-                media_family_state(
-                    asset.analysis.descriptor_state,
-                    asset.analysis.character.is_some(),
-                ),
-                RuntimeMediaAnalysisFamilyState::Deferred,
-                RuntimeMediaAnalysisFamilyState::Deferred,
-                RuntimeMediaAnalysisFamilyState::Deferred,
-            ),
         }
     }
 }

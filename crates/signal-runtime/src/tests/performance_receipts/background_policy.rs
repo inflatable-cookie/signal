@@ -219,21 +219,6 @@ fn runtime_performance_snapshot_captures_scheduler_pressure_and_background_polic
     assert_eq!(performance.background_service_cancelled_work_item_count, 0);
     assert_eq!(performance.background_queued_work_item_count, 1);
     assert_eq!(performance.background_deferred_work_item_count, 1);
-    assert!(performance
-        .render_json()
-        .contains("\"background_service_decision\":\"Defer\""));
-    assert!(performance
-        .render_json()
-        .contains("\"background_service_backpressure_source\":\"SafeMode\""));
-    assert!(performance
-        .render_json()
-        .contains("\"scheduler_dispatch_handoff_count\":"));
-    assert!(performance
-        .render_json()
-        .contains("\"critical_path_lane\":"));
-    assert!(performance
-        .render_json()
-        .contains("\"worker_lane_summaries\":["));
 
     runtime
         .set_safe_mode(SafeModeRequest { enabled: false })

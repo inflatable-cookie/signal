@@ -7,7 +7,7 @@ use super::*;
 /// - `Warm`: state is present and ready to use.
 /// - `Recovered`: state was recovered from a prior session.
 /// - `Unavailable`: sandbox is faulted or quarantined; recall blocked.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
 pub enum RuntimePluginRecallState {
     #[default]
     /// No sandbox is assigned; preset cannot be recalled.
@@ -63,8 +63,6 @@ pub struct RuntimePluginPresetDescriptor {
     pub label: Option<String>,
     /// Where this preset originated.
     pub origin: RuntimePluginPresetOrigin,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Portability and state-transfer snapshot for a plugin sandbox.
@@ -78,8 +76,6 @@ pub struct RuntimePluginInterchangeSnapshot {
     pub native_supplement_required: bool,
     /// Preset descriptor for the currently loaded preset, if any.
     pub preset_descriptor: Option<RuntimePluginPresetDescriptor>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// ARA document context associated with a plugin sandbox.
@@ -89,8 +85,6 @@ pub struct RuntimePluginAraDocumentContext {
     pub document_id: String,
     /// Human-readable display label for the document.
     pub display_label: Option<String>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// ARA audio source context associated with a plugin sandbox.
@@ -100,8 +94,6 @@ pub struct RuntimePluginAraSourceContext {
     pub source_id: String,
     /// Human-readable display label for the audio source.
     pub display_label: Option<String>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// ARA region context (timeline placement) associated with a plugin sandbox.
@@ -115,8 +107,6 @@ pub struct RuntimePluginAraRegionContext {
     pub timeline_start_samples: Option<i64>,
     /// Region duration in samples.
     pub duration_samples: Option<u32>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Combined ARA context snapshot (portability, document, source, region).
@@ -130,8 +120,6 @@ pub struct RuntimePluginAraContextSnapshot {
     pub source_context: Option<RuntimePluginAraSourceContext>,
     /// ARA region context, if available.
     pub region_context: Option<RuntimePluginAraRegionContext>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Full recall payload for a plugin chain stage: sandbox identity, lifecycle
@@ -181,8 +169,6 @@ pub struct RuntimePluginRecallSnapshot {
     pub state: RuntimePluginRecallState,
     /// Full recall payload for this stage.
     pub payload: RuntimePluginRecallPayload,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Latency compensation state of a plugin chain stage.

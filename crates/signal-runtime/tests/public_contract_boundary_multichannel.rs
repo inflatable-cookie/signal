@@ -82,9 +82,4 @@ fn public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_tr
         Some(RuntimeCanonicalChannelLayout::Stereo)
     );
 
-    let rendered = observation.render_json();
-    assert!(rendered.contains("\"execution_topology_summary\":{"));
-    assert!(rendered.contains("\"canonical_layout\":\"Surround5_1\""));
-    assert!(rendered.contains("\"output_bus_intent\":\"AuxSend\""));
-    assert!(rendered.contains("\"default_multichannel_io\":{"));
 }

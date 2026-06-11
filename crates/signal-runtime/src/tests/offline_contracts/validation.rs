@@ -51,7 +51,6 @@ fn runtime_offline_render_contract_preview_rejects_misaligned_chain_and_recall_c
     let mut handoff = runtime.get_plugin_recall_handoff_snapshot();
     handoff.stage_count = 0;
     handoff.stages.clear();
-    handoff.summary = "stages=0".into();
     let request = RuntimeOfflineRenderRequest {
         request_id: "render:misaligned".into(),
         timeline_start_samples: 0,
@@ -143,13 +142,4 @@ fn runtime_offline_render_contract_preview_carries_sidechain_dependency_receipts
         path.auxiliary_path_id == "bus_group:mix:tracks"
             && path.path_kind == crate::RuntimeAuxiliaryPathKind::Submix
     }));
-    assert!(preview
-        .chain_contract
-        .summary
-        .contains("secondary_inputs=1"));
-    assert!(preview
-        .chain_contract
-        .summary
-        .contains("bus_connections=2 auxiliary_paths=1"));
-    assert!(preview.summary.contains("chain_contract=chains=1"));
 }

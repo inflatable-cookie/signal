@@ -12,9 +12,6 @@ fn local_host_executes_track_bus_output_topology_through_audio_pump() {
     assert_eq!(summary.audio_pump.callback_count, 8);
     assert_local_plugin_topology(&summary);
     assert_eq!(summary.topology, *topology);
-    assert!(supervisor
-        .render_multiline()
-        .contains("execution_topology_summary_node_3=output-main"));
 }
 
 #[test]
@@ -99,18 +96,4 @@ fn local_host_shared_report_surfaces_execution_topology_and_plugin_reports() {
             .and_then(|sandbox| sandbox.plugin_format),
         Some(PluginFormat::Vst3)
     );
-    assert!(report.render_json().contains("\"node_id\":\"plugin-insert\""));
-    assert!(report
-        .render_json()
-        .contains("\"plugin_sandbox_id\":\"local-default-sandbox\""));
-    assert!(report.render_json().contains("\"input_bus_id\":\"bus:track:lead\""));
-    assert!(report.render_json().contains("\"output_bus_id\":\"bus:mix:tracks\""));
-    assert!(report
-        .render_compact()
-        .contains("host_audio_graph_matches_runtime=true"));
-    assert!(report.render_compact().contains("metering_snapshot_routes=1/2/0/1"));
-    assert!(report.render_json().contains("\"device_loss_count\":0"));
-    assert!(report
-        .render_json()
-        .contains("\"metering_snapshot\":{\"meter_count\":"));
 }

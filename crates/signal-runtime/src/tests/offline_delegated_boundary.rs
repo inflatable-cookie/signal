@@ -34,9 +34,6 @@ fn runtime_offline_render_invalid_request_abort_surfaces_typed_cancellation_poli
         Some(RuntimeDeferredServiceCancellationCause::InvalidRequest)
     );
     assert_eq!(receipt.cancelled_work_item_count, 0);
-    assert!(report
-        .render_json()
-        .contains("\"cancellation_cause\":\"InvalidRequest\""));
 }
 
 #[test]
@@ -154,7 +151,6 @@ fn runtime_offline_plugin_delegated_execution_request_filters_host_stages() {
                 override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
                 latest_override_processing_epoch: Some(7),
                 latest_override_block_sequence: Some(12),
-                summary: "delegated".into(),
             },
             RuntimeOfflinePluginExecutionStageBoundary {
                 stage_id: RuntimePluginRecallHandoffStageId {
@@ -182,10 +178,8 @@ fn runtime_offline_plugin_delegated_execution_request_filters_host_stages() {
                 override_state: RuntimeOfflinePluginOverrideState::NotAvailable,
                 latest_override_processing_epoch: None,
                 latest_override_block_sequence: None,
-                summary: "signal".into(),
             },
         ],
-        summary: "boundary".into(),
     };
 
     let delegated_request = boundary.delegated_execution_request();

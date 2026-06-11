@@ -82,8 +82,6 @@ pub struct RuntimePreviewTransformClipSnapshot {
     pub audition_active: bool,
     /// Whether scrub playback is supported for this clip.
     pub scrub_supported: bool,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Preview output routing posture.
@@ -178,8 +176,6 @@ pub struct RuntimePreviewDevicePolicySummary {
     pub low_latency_device_policy_class: RuntimeLowLatencyDevicePolicyClass,
     /// Resolved outcome of the low-latency device policy.
     pub low_latency_device_policy_outcome: RuntimeLowLatencyDevicePolicyOutcome,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Preview browser queue posture.
@@ -348,8 +344,6 @@ pub struct RuntimePreviewWorkflowSummary {
     pub ready_transform_clip_count: usize,
     /// Number of clips using a fallback transform.
     pub fallback_transform_clip_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Aggregate snapshot of the preview transform service across all clips.
@@ -383,6 +377,4 @@ pub struct RuntimePreviewTransformServiceSnapshot {
     pub preview_workflow: RuntimePreviewWorkflowSummary,
     /// Per-clip preview transform snapshots.
     pub clips: Vec<RuntimePreviewTransformClipSnapshot>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

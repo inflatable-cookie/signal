@@ -46,16 +46,6 @@ impl RuntimeWarpPipelineStateModel {
             resolved_project_tempo_source: resolved_tempo.source,
             resolved_project_tempo_segment_id: resolved_tempo.active_segment_id.clone(),
             clips,
-            summary: format!(
-                "warp clips={} active={} ready={} degraded={} bypassed={} project_tempo={project_tempo_bpm:.2} source={:?} segment={:?}",
-                self.clips.len(),
-                active_warp_count,
-                ready_clip_count,
-                degraded_clip_count,
-                bypassed_clip_count,
-                resolved_tempo.source,
-                resolved_tempo.active_segment_id,
-            ),
         }
     }
 
@@ -146,19 +136,6 @@ impl RuntimeWarpPipelineStateModel {
             duration_samples: registration.duration_samples,
             readiness,
             last_error: last_error.clone(),
-            summary: format!(
-                "clip={} mode={:?} readiness={:?} ratio={realized_ratio:.3} source_tempo={} project_tempo={project_tempo_bpm:.2}/{:?}/{:?} error={}",
-                registration.clip_id,
-                registration.mode,
-                readiness,
-                registration
-                    .source_tempo_bpm
-                    .map(|tempo| format!("{tempo:.2}"))
-                    .unwrap_or_else(|| "none".to_string()),
-                resolved_tempo.source,
-                resolved_tempo.active_segment_id,
-                last_error.as_deref().unwrap_or("none"),
-            ),
         }
     }
 

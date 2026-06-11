@@ -20,7 +20,6 @@ pub(super) struct OfflineRenderCheckpointDraft {
     pub(super) rendered_block_count: usize,
     pub(super) total_block_count: usize,
     pub(super) progress_percent: u8,
-    pub(super) summary: String,
 }
 
 #[derive(Clone, Debug)]
@@ -45,7 +44,6 @@ pub(super) struct RuntimeOfflineRenderExecutionSession {
     pub(super) interruption_count: usize,
     pub(super) interruption_class_override: Option<RuntimeInterruptionClass>,
     pub(super) last_checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
-    pub(super) last_state_summary: String,
     pub(super) materialized_result: Option<RuntimeOfflineRenderResult>,
     pub(super) finalizing_checkpoint_emitted: bool,
 }
@@ -112,7 +110,6 @@ impl SignalRuntime {
                     rendered_block_count: draft.rendered_block_count,
                     total_block_count: draft.total_block_count,
                     progress_percent: draft.progress_percent,
-                    summary: draft.summary,
                 },
             )
             .collect()
@@ -173,7 +170,6 @@ impl SignalRuntime {
             interruption_count: 0,
             interruption_class_override: None,
             last_checkpoint: None,
-            last_state_summary: "state=running checkpoints=0".to_string(),
             materialized_result: None,
             finalizing_checkpoint_emitted: false,
         })
@@ -185,7 +181,6 @@ impl SignalRuntime {
         rendered_frame_count: usize,
         rendered_block_count: usize,
         progress_percent: u8,
-        summary: String,
     ) -> RuntimeOfflineRenderCheckpointReceipt {
         let checkpoint = RuntimeOfflineRenderCheckpointReceipt {
             request_id: session.request.request_id.clone(),
@@ -197,7 +192,6 @@ impl SignalRuntime {
             rendered_block_count,
             total_block_count: session.total_block_count,
             progress_percent,
-            summary,
         };
         session.emitted_checkpoint_count = session.emitted_checkpoint_count.saturating_add(1);
         session.last_checkpoint = Some(checkpoint.clone());

@@ -11,7 +11,7 @@ pub use session_receipts::*;
 pub use soak_metrics::RuntimeOfflineRenderSoakReceipt;
 
 /// Kind of audio artifact produced by an offline render.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub enum RuntimeOfflineRenderArtifactKind {
     /// The main mix output artifact.
     MainMix,
@@ -22,7 +22,7 @@ pub enum RuntimeOfflineRenderArtifactKind {
 }
 
 /// Receipt for a single materialized audio artifact from an offline render.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
 pub struct RuntimeOfflineRenderArtifactReceipt {
     /// Unique identifier for this artifact.
     pub artifact_id: String,
@@ -42,8 +42,6 @@ pub struct RuntimeOfflineRenderArtifactReceipt {
     pub peak_level: f32,
     /// RMS level of the artifact in linear scale.
     pub rms_level: f32,
-    /// Human-readable summary of this artifact receipt.
-    pub summary: String,
 }
 
 /// Receipt for the JSON report file emitted alongside render artifacts.
@@ -57,8 +55,6 @@ pub struct RuntimeOfflineRenderReportReceipt {
     pub artifact_count: usize,
     /// File size of the report in bytes.
     pub byte_size: u64,
-    /// Human-readable summary of this report receipt.
-    pub summary: String,
 }
 
 /// Complete manifest for one offline render job: artifacts, report,
@@ -81,8 +77,6 @@ pub struct RuntimeOfflineRenderManifest {
     pub delegated_execution_request: RuntimeOfflinePluginDelegatedExecutionRequest,
     /// Delegated plugin execution receipt from the host, if available.
     pub delegated_execution_receipt: Option<RuntimeOfflinePluginDelegatedExecutionReceipt>,
-    /// Human-readable summary of this manifest.
-    pub summary: String,
 }
 
 /// Per-stage request for delegated plugin execution during an offline render.
@@ -112,8 +106,6 @@ pub struct RuntimeOfflinePluginDelegatedExecutionStageRequest {
     pub latest_override_processing_epoch: Option<u64>,
     /// Block sequence of the latest available override block, if any.
     pub latest_override_block_sequence: Option<u64>,
-    /// Human-readable summary of this stage request.
-    pub summary: String,
 }
 
 /// Full request for host-delegated plugin execution: timeline range, block
@@ -138,12 +130,10 @@ pub struct RuntimeOfflinePluginDelegatedExecutionRequest {
     pub stage_count: usize,
     /// Per-stage execution requests.
     pub stages: Vec<RuntimeOfflinePluginDelegatedExecutionStageRequest>,
-    /// Human-readable summary of this execution request.
-    pub summary: String,
 }
 
 /// Outcome of one delegated plugin execution stage.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
 pub enum RuntimeOfflinePluginDelegatedExecutionStatus {
     #[default]
     /// The stage was executed successfully.
@@ -171,8 +161,6 @@ pub struct RuntimeOfflinePluginDelegatedExecutionStageReceipt {
     pub delegate_label: Option<String>,
     /// Additional detail about the execution outcome, if any.
     pub detail: Option<String>,
-    /// Human-readable summary of this stage receipt.
-    pub summary: String,
 }
 
 /// Aggregate receipt for all delegated plugin execution stages in one render job.
@@ -190,8 +178,6 @@ pub struct RuntimeOfflinePluginDelegatedExecutionReceipt {
     pub unavailable_stage_count: usize,
     /// Per-stage receipts.
     pub stages: Vec<RuntimeOfflinePluginDelegatedExecutionStageReceipt>,
-    /// Human-readable summary of this execution receipt.
-    pub summary: String,
 }
 
 /// Rendered audio buffer output for a single stem from a delegated plugin execution.
@@ -201,8 +187,6 @@ pub struct RuntimeOfflinePluginDelegatedStemOutput {
     pub stem_id: String,
     /// Rendered audio output for this stem.
     pub output: AudioBuffer,
-    /// Human-readable summary of this stem output.
-    pub summary: String,
 }
 
 /// Rendered audio buffer output for a single freeze artifact from a delegated plugin execution.
@@ -212,8 +196,6 @@ pub struct RuntimeOfflinePluginDelegatedFreezeArtifactOutput {
     pub artifact_id: String,
     /// Rendered audio output for this freeze artifact.
     pub output: AudioBuffer,
-    /// Human-readable summary of this freeze artifact output.
-    pub summary: String,
 }
 
 /// Merge of all delegated plugin execution outputs: main mix, stems, and freeze artifacts.
@@ -227,8 +209,6 @@ pub struct RuntimeOfflinePluginDelegatedExecutionMerge {
     pub stems: Vec<RuntimeOfflinePluginDelegatedStemOutput>,
     /// Per-freeze-artifact audio outputs.
     pub freeze_artifacts: Vec<RuntimeOfflinePluginDelegatedFreezeArtifactOutput>,
-    /// Human-readable summary of this execution merge.
-    pub summary: String,
 }
 
 /// Combined receipt and merged audio outputs from a delegated plugin execution.
@@ -238,8 +218,6 @@ pub struct RuntimeOfflinePluginDelegatedExecutionOutcome {
     pub receipt: RuntimeOfflinePluginDelegatedExecutionReceipt,
     /// Merged audio outputs from all delegated stages.
     pub merge: RuntimeOfflinePluginDelegatedExecutionMerge,
-    /// Human-readable summary of the execution outcome.
-    pub summary: String,
 }
 
 /// Who executes a plugin stage during offline render.
@@ -254,7 +232,7 @@ pub enum RuntimeOfflinePluginExecutionOwner {
 
 /// Whether a plugin's last processed block is available and fresh enough to
 /// serve as an override during offline render.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
 pub enum RuntimeOfflinePluginOverrideState {
     #[default]
     /// No override block is available for this stage.
@@ -305,8 +283,6 @@ pub struct RuntimeOfflinePluginExecutionStageBoundary {
     pub latest_override_processing_epoch: Option<u64>,
     /// Block sequence of the latest available override block, if any.
     pub latest_override_block_sequence: Option<u64>,
-    /// Human-readable summary of this stage boundary.
-    pub summary: String,
 }
 
 /// Full offline render plugin execution boundary: timeline range, block
@@ -339,6 +315,4 @@ pub struct RuntimeOfflinePluginExecutionBoundary {
     pub stale_override_stage_count: usize,
     /// Per-stage execution boundary records.
     pub stages: Vec<RuntimeOfflinePluginExecutionStageBoundary>,
-    /// Human-readable summary of this execution boundary.
-    pub summary: String,
 }

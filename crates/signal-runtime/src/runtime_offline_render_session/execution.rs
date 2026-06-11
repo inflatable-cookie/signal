@@ -38,29 +38,16 @@ impl SignalRuntime {
             ));
         }
         let mut session = self.build_offline_render_execution_session(request)?;
-        let preparing_summary = format!(
-            "request={} stage=preparing-input total_frames={} blocks={} stems={} freeze_artifacts={}",
-            session.request.request_id,
-            session.total_frames,
-            session.total_block_count,
-            session.preview.stem_count,
-            session.preview.freeze_artifact_count,
-        );
         let checkpoint = Self::emit_offline_render_session_checkpoint(
             &mut session,
             RuntimeOfflineRenderCheckpointStage::PreparingInput,
             0,
             0,
             5,
-            preparing_summary,
         );
         let request_id = session.request.request_id.clone();
         let checkpoint_count = session.checkpoint_count;
         let emitted_checkpoint_count = session.emitted_checkpoint_count;
-        session.last_state_summary = format!(
-            "request={} state=running checkpoints={}/{} stage=preparing-input",
-            request_id, emitted_checkpoint_count, checkpoint_count
-        );
         self.offline_render_executions
             .insert(request_id.clone(), session);
         let (interruption_rebindable, session_snapshot) = self
@@ -93,7 +80,6 @@ impl SignalRuntime {
                     report_materialized: false,
                     active_checkpoint: None,
                     last_checkpoint: None,
-                    summary: "state=running".into(),
                 },
             ));
         self.record_last_offline_render_session_snapshot(session_snapshot);
@@ -108,10 +94,6 @@ impl SignalRuntime {
             checkpoint_count,
             checkpoint: Some(checkpoint),
             result: None,
-            summary: format!(
-                "request={} state=running checkpoints={}/{} stage=preparing-input",
-                request_id, emitted_checkpoint_count, checkpoint_count
-            ),
         })
     }
 }

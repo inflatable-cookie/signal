@@ -138,17 +138,5 @@ pub(super) fn build_transform_artifact_clip_snapshot(
         stretch_engine_class,
         stretch_readiness,
         marker_analysis_readiness,
-        summary: format!(
-            "clip={} artifact={} readiness={:?} invalidation={:?} reuse={:?} cached_media={} stretch={:?}/{:?} marker={:?}",
-            clip.clip_id,
-            clip.media_asset_id.as_deref().unwrap_or("unsupported"),
-            readiness,
-            invalidation_state,
-            reuse_state,
-            cached_media_ready,
-            stretch_engine_class,
-            stretch_readiness,
-            marker_analysis_readiness,
-        ),
     }
 }

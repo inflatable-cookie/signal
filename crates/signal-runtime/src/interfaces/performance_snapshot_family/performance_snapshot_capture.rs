@@ -1,5 +1,5 @@
 use super::super::*;
-use super::performance_snapshot_render::*;
+use super::performance_snapshot_support::*;
 use super::RuntimePerformanceSnapshot;
 
 impl RuntimePerformanceSnapshot {
@@ -69,7 +69,7 @@ impl RuntimePerformanceSnapshot {
             .iter()
             .max_by_key(|summary| summary.total_latency_samples)
             .filter(|summary| summary.total_latency_samples > 0);
-        let mut snapshot = Self {
+        let snapshot = Self {
             sample_rate_hz: effective_config.sample_rate.0,
             block_size: effective_config.block_size,
             processed_block_count: engine_block_snapshot.processed_blocks,
@@ -181,47 +181,46 @@ impl RuntimePerformanceSnapshot {
             background_pending_retry_work_item_count: last_deferred_service_receipt
                 .map(|receipt| receipt.pending_deferred_retry_work_items)
                 .unwrap_or(0),
-            summary: String::new(),
         };
-        let dispatch_summary = format!(
+        let _dispatch_summary = format!(
             "{}/{}/{}",
             snapshot.scheduler_dispatch_count,
             snapshot.scheduler_prepared_dispatch_count,
             snapshot.scheduler_realtime_dispatch_count
         );
-        let topology_summary = format!(
+        let _topology_summary = format!(
             "{}/{}/{}",
             snapshot.scheduler_topology_compatible,
             snapshot.scheduler_topology_requires_host_reinterpretation,
             snapshot.scheduler_topology_issue_count
         );
-        let prework_summary = format!(
+        let _prework_summary = format!(
             "{:?}/{:?}/{:?}",
             snapshot.prework_service_state,
             snapshot.prework_service_pressure,
             snapshot.prework_service_semantic_policy,
         );
-        let service_summary = format!(
+        let _service_summary = format!(
             "{}/{}/{}/{}",
             snapshot.prework_service_starvation_count,
             snapshot.prework_service_throttle_count,
             snapshot.prework_service_yield_count,
             snapshot.last_prework_service_effective_cycles,
         );
-        let hot_node_summary = format!(
+        let _hot_node_summary = format!(
             "{:?}/{:?}/{:?}/{}",
             snapshot.hot_latency_node_id,
             snapshot.hot_latency_node_group,
             snapshot.hot_latency_node_topology_role,
             snapshot.hot_latency_node_samples,
         );
-        let hot_group_summary = format!(
+        let _hot_group_summary = format!(
             "{:?}/{}/{}",
             snapshot.hot_latency_group,
             snapshot.hot_latency_group_node_count,
             snapshot.hot_latency_group_total_samples
         );
-        let critical_lane_summary = format!(
+        let _critical_lane_summary = format!(
             "{:?}/{}/{}/{}/{}",
             snapshot.critical_path_lane,
             snapshot.critical_path_lane_node_count,
@@ -229,7 +228,7 @@ impl RuntimePerformanceSnapshot {
             snapshot.critical_path_lane_planning_group_count,
             snapshot.critical_path_lane_total_latency_samples
         );
-        let worker_lane_summary = snapshot
+        let _worker_lane_summary = snapshot
             .worker_lane_summaries
             .iter()
             .map(|summary| {
@@ -245,7 +244,7 @@ impl RuntimePerformanceSnapshot {
             })
             .collect::<Vec<_>>()
             .join("|");
-        let background_summary = format!(
+        let _background_summary = format!(
             "{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{}/{}",
             snapshot.background_service_class,
             snapshot.background_service_decision,
@@ -255,52 +254,6 @@ impl RuntimePerformanceSnapshot {
             snapshot.background_service_backpressure_source,
             snapshot.background_service_starvation_risk,
             snapshot.background_service_cancelled_work_item_count,
-        );
-        snapshot.summary = format!(
-            "sample_rate={} block_size={} blocks={} cpu_load={:.3} graph_latency_ms={:.3} timing={:?}/{:?}/{:?}/{:?}/{:?}/{} xruns={} phases={} lanes={} dispatches={} handoff={} topology={} prework={} pending_targets={}/{} queue={}/{} service={} cycles={} budget={:?}/{:?} backlog={:?} gates={}/{} hot_node={} hot_group={} critical_lane={} worker_lanes={} background={} policy={:?}/{:?}/{:?}/{}/{} items={}/{}/{}/{}",
-            snapshot.sample_rate_hz,
-            snapshot.block_size,
-            snapshot.processed_block_count,
-            snapshot.cpu_load_percent,
-            snapshot.graph_latency_ms,
-            snapshot.last_block_execution_time_ns,
-            snapshot.last_block_deadline_budget_ns,
-            snapshot.last_block_budget_utilization_percent,
-            snapshot.last_block_budget_overrun_ns,
-            snapshot.last_block_deadline_pressure,
-            snapshot.budget_overrun_count,
-            snapshot.xrun_count,
-            snapshot.scheduler_phase_count,
-            snapshot.scheduler_lane_count,
-            dispatch_summary,
-            snapshot.scheduler_dispatch_handoff_count,
-            topology_summary,
-            prework_summary,
-            snapshot.pending_prework_target_count,
-            snapshot.pending_prework_deferred_target_count,
-            snapshot.prework_queue_depth,
-            snapshot.prework_peak_queue_depth,
-            service_summary,
-            snapshot.prework_service_cycle_count,
-            snapshot.last_prework_service_budget_per_cycle,
-            snapshot.last_prework_service_effective_budget_per_cycle,
-            snapshot.last_prework_serviced_backlog_class,
-            snapshot.transport_gate_active,
-            snapshot.plugin_gate_active,
-            hot_node_summary,
-            hot_group_summary,
-            critical_lane_summary,
-            worker_lane_summary,
-            background_summary,
-            snapshot.background_service_priority_band,
-            snapshot.background_service_blocking_priority_band,
-            snapshot.background_service_backpressure_source,
-            snapshot.background_service_starved_work_item_count,
-            snapshot.background_service_cancelled_work_item_count,
-            snapshot.background_queued_work_item_count,
-            snapshot.background_deferred_work_item_count,
-            snapshot.background_pending_cleanup_work_item_count,
-            snapshot.background_pending_retry_work_item_count,
         );
         snapshot
     }

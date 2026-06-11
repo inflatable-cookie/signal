@@ -16,9 +16,6 @@ fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -31,9 +28,6 @@ fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Au,
@@ -45,7 +39,6 @@ fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
             linux_parity_band: RuntimePluginParityBand::Unsupported,
             linux_preferred_sandbox_outcome: None,
             linux_strict_sandbox_default: false,
-            summary: "platforms=MacOs linux=Unsupported unsupported=Linux/Windows".into(),
         },
     ]);
 
@@ -126,7 +119,6 @@ fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
                     supports_reset_while_active: true,
                 },
                 lv2_extension_capabilities: None,
-                summary: "plugin_type=plugin:clap:default plugin_id=com.signal.default format=Clap features=2 io=PluginIoLayout { audio_inputs: 2, audio_outputs: 2, midi_inputs: 1, midi_outputs: 1 } parameters=16".into(),
             },
             crate::RuntimePluginDiscoveredTypeRecord {
                 plugin_type_id: "plugin:vst3:instrument".into(),
@@ -191,7 +183,6 @@ fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
                     supports_reset_while_active: false,
                 },
                 lv2_extension_capabilities: None,
-                summary: "plugin_type=plugin:vst3:instrument plugin_id=com.signal.instrument format=Vst3 features=2 io=PluginIoLayout { audio_inputs: 0, audio_outputs: 2, midi_inputs: 1, midi_outputs: 0 } parameters=24".into(),
             },
         ],
     );
@@ -341,44 +332,4 @@ fn runtime_plugin_discovery_snapshot_and_reports_surface_typed_scan_filters() {
     assert_eq!(report.plugin_discovery_snapshot.scan_count, 2);
     assert_eq!(report.plugin_discovery_snapshot.discovered_type_count, 2);
     assert_eq!(report.plugin_discovery_snapshot.discovered_format_count, 2);
-    assert!(report
-        .render_json()
-        .contains("\"plugin_discovery_snapshot\":{"));
-    assert!(report
-        .render_json()
-        .contains("\"formats\":[\"Clap\",\"Vst3\"]"));
-    assert!(report.render_json().contains("\"discovered_type_count\":2"));
-    assert!(report
-        .render_json()
-        .contains("\"discovered_format_count\":2"));
-    assert!(report
-        .render_json()
-        .contains("\"plugin_type_id\":\"plugin:clap:default\""));
-    assert!(report
-        .render_json()
-        .contains("\"default_multichannel_io\":{"));
-    assert!(report
-        .render_json()
-        .contains("\"plugin_type_id\":\"plugin:vst3:instrument\""));
-    assert!(report
-        .render_json()
-        .contains("\"multi_format_catalog\":true"));
-    assert!(report
-        .render_json()
-        .contains("\"supports_activate_count\":1"));
-    assert!(report.render_json().contains("\"format_coverage\":["));
-    assert!(report.render_json().contains("\"parity_coverage\":["));
-    assert!(report
-        .render_json()
-        .contains("\"parity_band\":\"Portable\""));
-    assert!(report
-        .render_json()
-        .contains("\"linux_parity_band\":\"Portable\""));
-    assert!(report
-        .render_json()
-        .contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
-    assert!(report
-        .render_json()
-        .contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
-    assert!(report.render_json().contains("\"supports_snapshot\":true"));
 }

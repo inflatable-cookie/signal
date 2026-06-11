@@ -92,7 +92,7 @@ fn public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_re
     );
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
     let clap_stage = observation
         .plugin_chain_snapshot
         .chains
@@ -166,19 +166,6 @@ fn public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_re
             .map(|recall| recall.payload.interchange.portability_class),
         Some(RuntimePluginRecallPortabilityClass::Portable)
     );
-
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"interchange\":{"));
-    assert!(observation_json.contains("\"portability_class\":\"Portable\""));
-    assert!(observation_json.contains("\"portability_class\":\"ContextOnly\""));
-    assert!(observation_json.contains("\"preset_descriptor\":{"));
-    assert!(observation_json.contains("\"document_context\":{"));
-    assert!(observation_json.contains("\"region_id\":\"region:verse-a\""));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"plugin_chain_snapshot\":{"));
-    assert!(supervisor_json.contains("\"execution_topology_summary\":{"));
-    assert!(supervisor_json.contains("\"preset_id\":\"preset:factory:init\""));
 
     let handoff = runtime.get_plugin_recall_handoff_snapshot();
     let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(

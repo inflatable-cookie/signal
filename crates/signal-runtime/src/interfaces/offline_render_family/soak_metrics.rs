@@ -30,84 +30,10 @@ pub struct RuntimeOfflineRenderSoakReceipt {
     pub materialized_artifact_count: usize,
     /// Whether the render report file was materialized.
     pub report_materialized: bool,
-    /// Human-readable summary of this soak receipt.
-    pub summary: String,
 }
 
 impl RuntimeOfflineRenderSoakReceipt {
-    /// Renders a multi-line diagnostic string with one field per line.
-    pub fn render_multiline(&self) -> String {
-        format!(
-            concat!(
-                "request_id={}",
-                "\nclip_count={}",
-                "\nready_clip_count={}",
-                "\nfreeze_artifact_count={}",
-                "\nrecall_stage_count={}",
-                "\nrecovered_recall_stage_count={}",
-                "\nunavailable_recall_stage_count={}",
-                "\ndelegated_stage_count={}",
-                "\ndelegated_completed_stage_count={}",
-                "\ndelegated_rejected_stage_count={}",
-                "\ndelegated_unavailable_stage_count={}",
-                "\nmaterialized_artifact_count={}",
-                "\nreport_materialized={}",
-                "\nsummary={}",
-            ),
-            self.request_id,
-            self.clip_count,
-            self.ready_clip_count,
-            self.freeze_artifact_count,
-            self.recall_stage_count,
-            self.recovered_recall_stage_count,
-            self.unavailable_recall_stage_count,
-            self.delegated_stage_count,
-            self.delegated_completed_stage_count,
-            self.delegated_rejected_stage_count,
-            self.delegated_unavailable_stage_count,
-            self.materialized_artifact_count,
-            self.report_materialized,
-            self.summary,
-        )
-    }
 
-    /// Renders a JSON object of all soak receipt fields.
-    pub fn render_json(&self) -> String {
-        format!(
-            concat!(
-                "{{",
-                "\"request_id\":{},",
-                "\"clip_count\":{},",
-                "\"ready_clip_count\":{},",
-                "\"freeze_artifact_count\":{},",
-                "\"recall_stage_count\":{},",
-                "\"recovered_recall_stage_count\":{},",
-                "\"unavailable_recall_stage_count\":{},",
-                "\"delegated_stage_count\":{},",
-                "\"delegated_completed_stage_count\":{},",
-                "\"delegated_rejected_stage_count\":{},",
-                "\"delegated_unavailable_stage_count\":{},",
-                "\"materialized_artifact_count\":{},",
-                "\"report_materialized\":{},",
-                "\"summary\":{}",
-                "}}"
-            ),
-            json_string(&self.request_id),
-            self.clip_count,
-            self.ready_clip_count,
-            self.freeze_artifact_count,
-            self.recall_stage_count,
-            self.recovered_recall_stage_count,
-            self.unavailable_recall_stage_count,
-            self.delegated_stage_count,
-            self.delegated_completed_stage_count,
-            self.delegated_rejected_stage_count,
-            self.delegated_unavailable_stage_count,
-            self.materialized_artifact_count,
-            self.report_materialized,
-            json_option_string(Some(self.summary.as_str())),
-        )
-    }
 }
 
 impl RuntimeOfflineRenderResult {
@@ -140,28 +66,6 @@ impl RuntimeOfflineRenderResult {
                 .unwrap_or(0),
             materialized_artifact_count: self.manifest.artifact_count,
             report_materialized: self.manifest.report.is_some(),
-            summary: format!(
-                "request={} clips={}/{} freeze_artifacts={} recall={}/recovered={}/unavailable={} delegated={}/{}/{}/{} artifacts={} report={}",
-                self.request_id,
-                self.contract_preview.ready_clip_count,
-                self.contract_preview.clip_count,
-                self.freeze_artifacts.len(),
-                self.contract_preview.chain_contract.recall_stage_count,
-                self.contract_preview.chain_contract.recovered_recall_stage_count,
-                self.contract_preview.chain_contract.unavailable_recall_stage_count,
-                self.plugin_execution_boundary.host_delegate_stage_count,
-                delegated_receipt
-                    .map(|receipt| receipt.completed_stage_count)
-                    .unwrap_or(0),
-                delegated_receipt
-                    .map(|receipt| receipt.rejected_stage_count)
-                    .unwrap_or(0),
-                delegated_receipt
-                    .map(|receipt| receipt.unavailable_stage_count)
-                    .unwrap_or(0),
-                self.manifest.artifact_count,
-                self.manifest.report.is_some(),
-            ),
         }
     }
 }

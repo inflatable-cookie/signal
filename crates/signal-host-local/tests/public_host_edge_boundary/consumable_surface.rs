@@ -52,12 +52,4 @@ fn local_shared_host_edge_is_consumable_without_private_helpers() {
         None
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"fault_status\":{"));
-    assert!(rendered.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(rendered.contains("\"interruption_summary\":{"));
-    assert!(rendered.contains("\"recording_capture_snapshot\":{"));
-    assert!(rendered.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(rendered.contains("\"plugin_type_id\":\"plugin:vst3:instrument\""));
-    assert!(rendered.contains("\"event_stream\":"));
 }

@@ -84,19 +84,6 @@ impl RuntimeMeteringStateModel {
             auxiliary_path_count: 0,
             bus_connections: Vec::new(),
             auxiliary_paths: Vec::new(),
-            summary: format!(
-                "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={}",
-                meters.len(),
-                main_output.map(|meter| meter.peak_level),
-                main_output.map(|meter| meter.rms_level),
-                Self::lufs_from_weighted_sum(self.momentary_sum, self.momentary_sample_count),
-                Self::lufs_from_weighted_sum(self.short_term_sum, self.short_term_sample_count),
-                Self::lufs_from_weighted_sum_u64(
-                    self.integrated_sum,
-                    self.integrated_sample_count,
-                ),
-                self.clipped_sample_count,
-            ),
             meters,
         };
     }
@@ -167,7 +154,6 @@ impl Default for RuntimeMeteringStateModel {
                 auxiliary_path_count: 0,
                 bus_connections: Vec::new(),
                 auxiliary_paths: Vec::new(),
-                summary: "meters=0 main_peak=None main_rms=None momentary_lufs=None short_term_lufs=None integrated_lufs=None clipped=0".to_string(),
             },
             momentary_blocks: VecDeque::new(),
             short_term_blocks: VecDeque::new(),

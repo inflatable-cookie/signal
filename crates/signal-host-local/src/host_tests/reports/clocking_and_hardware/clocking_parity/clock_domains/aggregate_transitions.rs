@@ -77,14 +77,6 @@ fn local_host_shared_report_surfaces_aggregate_clock_domain() {
     );
     assert!(!report.observation.host_io.clocking.partial_availability);
     assert!(report.observation.host_io.clocking.crossing_required);
-    assert!(report.render_json().contains("\"clock_domain\":\"Aggregate\""));
-    assert!(report
-        .render_json()
-        .contains("\"transition_state\":\"EnteredAggregateClock\""));
-    assert!(report
-        .render_json()
-        .contains("\"drift_state\":\"AggregateManaged\""));
-    assert!(report.render_json().contains("\"endpoint_topology\":\"Aggregate\""));
 }
 
 #[test]
@@ -171,10 +163,4 @@ fn local_host_shared_report_tracks_return_to_direct_after_cross_clock_fallback()
         recovered.observation.host_io.clocking.discontinuity_state,
         RuntimeHostClockDiscontinuityState::Reconfigured
     );
-    assert!(recovered
-        .render_json()
-        .contains("\"transition_state\":\"ReturnedToDirect\""));
-    assert!(recovered
-        .render_json()
-        .contains("\"discontinuity_state\":\"Reconfigured\""));
 }

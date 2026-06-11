@@ -136,29 +136,10 @@ impl SignalRuntime {
             chain.stages.push(stage);
         }
 
-        for chain in &mut chains {
-            chain.summary = format!(
-                "chain_id={} stages={} shared={} isolated={} in_process={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} rebindable={} terminal={} latency={}/{} tail={}",
-                chain.chain_id,
-                chain.stage_count,
-                chain.shared_sandbox_stage_count,
-                chain.isolated_sandbox_stage_count,
-                chain.in_process_stage_count,
-                chain.pending_render_stage_count,
-                chain.settling_stage_count,
-                chain.compensated_stage_count,
-                chain.degraded_stage_count,
-                chain.bypassed_stage_count,
-                chain.missing_binding_stage_count,
-                chain.rebindable_stage_count,
-                chain.terminal_stage_count,
-                chain.total_planned_latency_samples,
-                chain.total_realized_latency_samples,
-                chain.total_tail_samples,
-            );
+        for _chain in &mut chains {
         }
 
-        let mut snapshot = RuntimePluginChainSnapshot {
+        let snapshot = RuntimePluginChainSnapshot {
             chain_count: chains.len(),
             stage_count: chains.iter().map(|chain| chain.stage_count).sum(),
             shared_sandbox_stage_count: chains
@@ -205,25 +186,6 @@ impl SignalRuntime {
             chains,
             ..RuntimePluginChainSnapshot::default()
         };
-        snapshot.summary = format!(
-            "chains={} stages={} shared={} isolated={} in_process={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} rebindable={} terminal={} latency={}/{} tail={}",
-            snapshot.chain_count,
-            snapshot.stage_count,
-            snapshot.shared_sandbox_stage_count,
-            snapshot.isolated_sandbox_stage_count,
-            snapshot.in_process_stage_count,
-            snapshot.pending_render_stage_count,
-            snapshot.settling_stage_count,
-            snapshot.compensated_stage_count,
-            snapshot.degraded_stage_count,
-            snapshot.bypassed_stage_count,
-            snapshot.missing_binding_stage_count,
-            snapshot.rebindable_stage_count,
-            snapshot.terminal_stage_count,
-            snapshot.total_planned_latency_samples,
-            snapshot.total_realized_latency_samples,
-            snapshot.total_tail_samples,
-        );
         snapshot
     }
 }

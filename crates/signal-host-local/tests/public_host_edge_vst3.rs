@@ -69,7 +69,4 @@ fn local_shared_host_edge_exports_runtime_vst3_baseline_truth() {
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"plugin_type_id\":\"plugin:vst3:instrument\""));
-    assert!(rendered.contains("\"formats\":[\"Vst3\"]"));
 }

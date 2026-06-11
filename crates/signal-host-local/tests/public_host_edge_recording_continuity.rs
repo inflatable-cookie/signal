@@ -61,7 +61,4 @@ fn local_shared_host_edge_exports_resumable_recording_checkpoint_truth() {
         Some(RuntimeInterruptionClass::Resumable)
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"recording_capture_snapshot\":{"));
-    assert!(rendered.contains("\"interruption_class\":\"Resumable\""));
 }

@@ -57,7 +57,6 @@ pub(crate) fn sample_complex_multi_output_record() -> RuntimePluginDiscoveredTyp
             supports_reset_while_active: false,
         },
         lv2_extension_capabilities: None,
-        summary: "local complex multi-output instrument".into(),
     }
 }
 
@@ -118,7 +117,6 @@ pub(crate) fn sample_complex_bus_fx_record() -> RuntimePluginDiscoveredTypeRecor
             supports_reset_while_active: true,
         },
         lv2_extension_capabilities: None,
-        summary: "local bus-capable fx".into(),
     }
 }
 
@@ -197,7 +195,6 @@ pub(crate) fn sample_host_preset_descriptor() -> RuntimePluginPresetDescriptor {
         preset_id: Some("preset:host-local:main".into()),
         label: Some("Host Local Main".into()),
         origin: RuntimePluginPresetOrigin::Factory,
-        summary: "local host preset".into(),
     }
 }
 
@@ -207,20 +204,16 @@ pub(crate) fn sample_host_ara_context() -> RuntimePluginAraContextSnapshot {
         document_context: Some(RuntimePluginAraDocumentContext {
             document_id: "document:host-local".into(),
             display_label: Some("Local Host Document".into()),
-            summary: "local host ara document".into(),
         }),
         source_context: Some(RuntimePluginAraSourceContext {
             source_id: "source:host-local".into(),
             display_label: Some("Local Host Source".into()),
-            summary: "local host ara source".into(),
         }),
         region_context: Some(RuntimePluginAraRegionContext {
             region_id: "region:host-local".into(),
             display_label: Some("Local Host Region".into()),
             timeline_start_samples: Some(0),
             duration_samples: Some(8_192),
-            summary: "local host ara region".into(),
         }),
-        summary: "local host ara context".into(),
     }
 }

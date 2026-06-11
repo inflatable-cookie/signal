@@ -127,8 +127,6 @@ fn runtime_offline_render_queue_executes_requests_in_order_and_tracks_queue_comp
             .0,
         24_000
     );
-    assert!(queue_result.summary.contains("queue_count=2"));
-    assert!(queue_result.summary.contains("completed_job_count=2"));
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime
@@ -227,7 +225,6 @@ fn runtime_offline_render_with_checkpoints_reports_runtime_owned_progress_stages
             .map(|checkpoint| checkpoint.checkpoint_count),
         Some(execution.checkpoint_count)
     );
-    assert!(execution.summary.contains("checkpoints="));
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime

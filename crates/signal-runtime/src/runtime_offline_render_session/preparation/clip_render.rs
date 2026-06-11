@@ -24,10 +24,6 @@ impl SignalRuntime {
                 stretch_engine_class: RuntimeStretchEngineClass::Disabled,
                 stretch_readiness: RuntimeStretchReadiness::Disabled,
                 marker_analysis_readiness: RuntimeMarkerAnalysisReadiness::Unsupported,
-                summary: format!(
-                    "clip={} readiness=Unsupported invalidation=None reuse=Unavailable cached_media_ready=false stretch=Disabled/Disabled analysis=Unsupported",
-                    request.clip_id
-                ),
             });
         let preview_transform_clip = preview_transform_snapshot
             .clips
@@ -44,10 +40,6 @@ impl SignalRuntime {
                 artifact_reuse_state: RuntimeTransformArtifactReuseState::Unavailable,
                 audition_active: false,
                 scrub_supported: false,
-                summary: format!(
-                    "clip={} class=Unavailable readiness=Unsupported degraded=UnsupportedScope fallback=OfflineOnly artifact_reuse=Unavailable audition_active=false scrub_supported=false",
-                    request.clip_id
-                ),
             });
         self.clip_processing_pipeline.render_clip(
             request,

@@ -58,13 +58,6 @@ fn local_host_shared_report_surfaces_runtime_media_service_baseline() {
         1
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"media_pipeline_snapshot\":{"));
-    assert!(rendered.contains("\"media_service_snapshot\":{"));
-    assert!(rendered.contains("\"media_library_snapshot\":{"));
-    assert!(rendered.contains("\"preview_state\":\"Previewing\""));
-    assert!(rendered.contains("\"ready_descriptor_count\":1"));
-
     let _ = fs::remove_file(&imported_path);
     if let Some(path) = host
         .runtime
@@ -224,14 +217,4 @@ fn local_host_shared_report_surfaces_runtime_spatial_execution_baseline() {
                         )
             })));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"spatial_node_count\":2"));
-    assert!(rendered.contains("\"active_spatial_node_count\":1"));
-    assert!(rendered.contains("\"fallback_spatial_node_count\":1"));
-    assert!(rendered.contains("\"surround_bed_spatial_node_count\":1"));
-    assert!(rendered.contains("\"expanded_fallback_spatial_node_count\":1"));
-    assert!(rendered.contains("\"adapter_class\":\"Balance\""));
-    assert!(rendered.contains("\"bed_class\":\"CanonicalSurroundBed\""));
-    assert!(rendered.contains("\"mix_policy\":\"CollapseToBaselineSpatial\""));
-    assert!(rendered.contains("\"execution_mode\":\"Bypassed\""));
 }

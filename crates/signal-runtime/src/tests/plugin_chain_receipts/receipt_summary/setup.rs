@@ -73,7 +73,6 @@ pub(super) fn build_plugin_chain_receipt_runtime() -> SignalRuntime {
                     supports_reset_while_active: false,
                 },
                 lv2_extension_capabilities: None,
-                summary: "plugin_type=plugin:vst3:multiout-instrument".into(),
             },
             crate::RuntimePluginDiscoveredTypeRecord {
                 plugin_type_id: "plugin:vst3:bus-fx".into(),
@@ -138,7 +137,6 @@ pub(super) fn build_plugin_chain_receipt_runtime() -> SignalRuntime {
                     supports_reset_while_active: true,
                 },
                 lv2_extension_capabilities: None,
-                summary: "plugin_type=plugin:vst3:bus-fx".into(),
             },
         ],
     );

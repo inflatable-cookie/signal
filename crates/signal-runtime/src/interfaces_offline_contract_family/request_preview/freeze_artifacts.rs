@@ -49,16 +49,6 @@ pub(super) fn build_offline_freeze_artifact_previews(
                 .iter()
                 .map(|stage| stage.recall_state)
                 .collect(),
-            summary: format!(
-                "artifact={} source_stem={} recall_stages={} recall_states={:?}",
-                artifact.artifact_id,
-                artifact.source_stem_id,
-                resolved_selection.len(),
-                resolved_selection
-                    .iter()
-                    .map(|stage| stage.recall_state)
-                    .collect::<Vec<_>>(),
-            ),
         });
     }
     Ok(freeze_artifacts)

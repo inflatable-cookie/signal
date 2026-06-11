@@ -90,7 +90,6 @@ fn local_shared_host_edge_exports_runtime_recall_portability_truth() {
                 supports_reset_while_active: true,
             },
             lv2_extension_capabilities: None,
-            summary: "local host recall portability type".into(),
         }],
     );
     apply_public_plugin_continuity_graph(
@@ -141,9 +140,4 @@ fn local_shared_host_edge_exports_runtime_recall_portability_truth() {
         Some("region:chorus")
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"interchange\":{"));
-    assert!(rendered.contains("\"portability_class\":\"Portable\""));
-    assert!(rendered.contains("\"preset_id\":\"preset:user:local-lead\""));
-    assert!(rendered.contains("\"document_id\":\"doc:host-local\""));
 }

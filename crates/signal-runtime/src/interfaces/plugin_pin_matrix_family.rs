@@ -95,8 +95,6 @@ pub struct RuntimePluginComplexIoSummary {
     pub attachment_policy: RuntimePluginTopologyAttachmentPolicy,
     /// Fallback outcome when the topology cannot be fully satisfied.
     pub fallback_outcome: RuntimePluginTopologyFallbackOutcome,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Identity of a resolved plugin pin group within the runtime graph.
@@ -183,8 +181,6 @@ pub struct RuntimePluginPinMatrixRecord {
     pub stage_count: usize,
     /// Number of chain stages with an active transport session.
     pub active_stage_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Aggregate pin matrix snapshot across all plugin types: counts by posture and the full record list.
@@ -204,8 +200,6 @@ pub struct RuntimePluginPinMatrixSnapshot {
     pub dynamic_guarded_type_count: usize,
     /// Per-type pin matrix records.
     pub records: Vec<RuntimePluginPinMatrixRecord>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 fn div_ceil_u16(value: u16, divisor: u16) -> u16 {
@@ -349,7 +343,7 @@ impl RuntimePluginComplexIoSummary {
             + instrument_output_group_count
             + analysis_output_group_count;
 
-        let summary = format!(
+        let _summary = format!(
             "complex={} classes={:?} groups={} main_in={} main_out={} secondary_in={} aux_in={} aux_out={} instrument_out={} analysis_out={} multi_output_instrument={} fx_class={:?} attachment={:?} fallback={:?}",
             has_complex_topology,
             declared_port_classes,
@@ -382,7 +376,6 @@ impl RuntimePluginComplexIoSummary {
             bus_capable_fx_class,
             attachment_policy,
             fallback_outcome,
-            summary,
         }
     }
 }

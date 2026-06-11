@@ -71,11 +71,6 @@ fn local_host_shared_report_surfaces_runtime_marker_analysis_baseline() {
         1
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"marker_analysis_snapshot\":{"));
-    assert!(rendered.contains("\"clip_count\":1"));
-    assert!(rendered.contains("\"tempo_assist_ready_clip_count\":1"));
-
     let _ = fs::remove_file(&imported_path);
     if let Some(path) = host
         .runtime
@@ -157,11 +152,6 @@ fn local_host_shared_report_surfaces_runtime_transform_artifact_baseline() {
         report.observation.transform_artifact_snapshot.reusable_clip_count,
         1
     );
-
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"transform_artifact_snapshot\":{"));
-    assert!(rendered.contains("\"clip_count\":1"));
-    assert!(rendered.contains("\"reusable_clip_count\":1"));
 
     let _ = fs::remove_file(&imported_path);
     if let Some(path) = host

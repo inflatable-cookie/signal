@@ -67,8 +67,6 @@ pub struct RuntimeMediaAssetSnapshot {
     pub rebuild_count: u32,
     /// Last error message if the asset pipeline encountered a problem, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of this asset's state.
-    pub summary: String,
 }
 
 /// Aggregate snapshot of all assets in the media pipeline.
@@ -90,8 +88,6 @@ pub struct RuntimeMediaPipelineSnapshot {
     pub rebuilding_asset_count: usize,
     /// Per-asset snapshots.
     pub assets: Vec<RuntimeMediaAssetSnapshot>,
-    /// Human-readable summary of the media pipeline state.
-    pub summary: String,
 }
 
 /// State of the media asset index.
@@ -152,8 +148,6 @@ pub struct RuntimeMediaServiceSnapshot {
     pub last_invalidation_error: Option<String>,
     /// Last error encountered during preview/audition, if any.
     pub last_preview_error: Option<String>,
-    /// Human-readable summary of the media service state.
-    pub summary: String,
 }
 
 /// State of a media asset's analysis descriptor (metadata).
@@ -199,8 +193,6 @@ pub struct RuntimeMediaLoudnessDescriptor {
     pub peak_to_loudness_lu: f32,
     /// Confidence score for the loudness measurement (0–1).
     pub confidence: f32,
-    /// Human-readable summary of the loudness descriptor.
-    pub summary: String,
 }
 
 /// Spectral and dynamic character descriptor for a media asset.
@@ -226,8 +218,6 @@ pub struct RuntimeMediaCharacterDescriptor {
     pub dynamic_range: f32,
     /// Confidence score for the character measurement (0–1).
     pub confidence: f32,
-    /// Human-readable summary of the character descriptor.
-    pub summary: String,
 }
 
 /// Full descriptor for a media library asset: all analysis family states and
@@ -260,8 +250,6 @@ pub struct RuntimeMediaLibraryAssetDescriptor {
     pub character: Option<RuntimeMediaCharacterDescriptor>,
     /// Last error message if library analysis encountered a problem, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of this asset's library descriptor state.
-    pub summary: String,
 }
 
 /// Aggregate snapshot of the media library service: descriptor counts by
@@ -290,6 +278,4 @@ pub struct RuntimeMediaLibraryServiceSnapshot {
     pub embedding_deferred_descriptor_count: usize,
     /// Per-asset library descriptors.
     pub descriptors: Vec<RuntimeMediaLibraryAssetDescriptor>,
-    /// Human-readable summary of the media library service state.
-    pub summary: String,
 }

@@ -16,7 +16,6 @@ impl RuntimePreviewTransformServiceSnapshot {
                     RuntimeLowLatencyDevicePolicyClass::NoLowLatencyDevicePolicy,
                 low_latency_device_policy_outcome:
                     RuntimeLowLatencyDevicePolicyOutcome::ObserveOnlyPreview,
-                summary: "preview_route=NoPreviewOutputRouting sink=NoAuditionSink authority=RuntimeDefault policy=NoLowLatencyDevicePolicy outcome=ObserveOnlyPreview".into(),
             };
         }
 
@@ -28,7 +27,6 @@ impl RuntimePreviewTransformServiceSnapshot {
                 RuntimeLowLatencyDevicePolicyClass::GuardedLowLatencyDevicePolicy,
             low_latency_device_policy_outcome:
                 RuntimeLowLatencyDevicePolicyOutcome::ObserveOnlyPreview,
-            summary: "preview_route=GuardedPreviewOutputRouting sink=GuardedPreviewSink authority=RuntimeDefault policy=GuardedLowLatencyDevicePolicy outcome=ObserveOnlyPreview".into(),
         }
     }
 
@@ -164,24 +162,6 @@ impl RuntimePreviewTransformServiceSnapshot {
             pending_transform_clip_count: pending_clip_count,
             ready_transform_clip_count: ready_clip_count,
             fallback_transform_clip_count: fallback_clip_count,
-            summary: format!(
-                "queue={:?}/{:?}/{:?} queue_requests={} previewable_assets={} audition={:?}/{:?}/{:?} active_audition={} scheduling={:?}/{:?}/{:?} ready_transforms={} pending_transforms={} fallback_transforms={}",
-                queue_posture,
-                queue_class,
-                queue_outcome,
-                queued_preview_request_count,
-                previewable_asset_count,
-                audition_posture,
-                audition_authority,
-                audition_continuity_outcome,
-                active_audition_clip_count,
-                transform_scheduling_posture,
-                transform_scheduling_authority,
-                transform_scheduling_outcome,
-                ready_clip_count,
-                pending_clip_count,
-                fallback_clip_count,
-            ),
         }
     }
 }

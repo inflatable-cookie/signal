@@ -139,17 +139,6 @@ pub(super) fn build_preview_transform_clip_snapshot(
         artifact_reuse_state,
         audition_active,
         scrub_supported,
-        summary: format!(
-            "clip={} class={:?} readiness={:?} degraded={:?} fallback={:?} artifact_reuse={:?} audition_active={} scrub_supported={}",
-            clip.clip_id,
-            service_class,
-            readiness,
-            degraded_state,
-            fallback_kind,
-            artifact_reuse_state,
-            audition_active,
-            scrub_supported,
-        ),
     }
 }
 

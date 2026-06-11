@@ -29,15 +29,6 @@ impl SignalRuntime {
                     target_id: stem_preview.target_id.clone(),
                     peak_level: peak_abs(output.samples()),
                     rms_level: rms(output.samples()),
-                    summary: format!(
-                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
-                        stem_preview.stem_id,
-                        stem_preview.target_kind,
-                        stem_preview.target_id,
-                        output.frames().0,
-                        peak_abs(output.samples()),
-                        rms(output.samples()),
-                    ),
                     output,
                 }
             })
@@ -69,15 +60,6 @@ impl SignalRuntime {
                     recall_states: artifact_preview.recall_states.clone(),
                     peak_level: peak_abs(source_output.samples()),
                     rms_level: rms(source_output.samples()),
-                    summary: format!(
-                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
-                        artifact_preview.artifact_id,
-                        artifact_preview.source_stem_id,
-                        artifact_preview.recall_stage_count,
-                        source_output.frames().0,
-                        peak_abs(source_output.samples()),
-                        rms(source_output.samples()),
-                    ),
                     output: source_output,
                 })
             })
@@ -95,15 +77,6 @@ impl SignalRuntime {
                 RuntimeOfflineRenderStemResult {
                     peak_level: peak_abs(output.samples()),
                     rms_level: rms(output.samples()),
-                    summary: format!(
-                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
-                        stem.stem_id,
-                        stem.target_kind,
-                        stem.target_id,
-                        output.frames().0,
-                        peak_abs(output.samples()),
-                        rms(output.samples()),
-                    ),
                     output,
                     ..stem
                 }
@@ -116,15 +89,6 @@ impl SignalRuntime {
                 RuntimeOfflineFreezeArtifactResult {
                     peak_level: peak_abs(output.samples()),
                     rms_level: rms(output.samples()),
-                    summary: format!(
-                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
-                        artifact.artifact_id,
-                        artifact.source_stem_id,
-                        artifact.recall_stage_count,
-                        output.frames().0,
-                        peak_abs(output.samples()),
-                        rms(output.samples()),
-                    ),
                     output,
                     ..artifact
                 }
@@ -165,16 +129,6 @@ impl SignalRuntime {
             ),
             plugin_execution_boundary: session.plugin_execution_boundary.clone(),
             contract_preview: preview.clone(),
-            summary: format!(
-                "request={} runtime_frames={} rendered_frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
-                request.request_id,
-                session.rendered_frames,
-                rendered_frame_count,
-                session.block_count,
-                request.include_main_mix,
-                preview.stem_count,
-                preview.freeze_artifact_count,
-            ),
         })
     }
 }

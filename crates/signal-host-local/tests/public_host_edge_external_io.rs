@@ -65,10 +65,6 @@ fn local_shared_host_edge_exports_runtime_clock_topology_truth() {
     );
     assert!(!faulted.observation.host_io.clocking.partial_availability);
 
-    let rendered = faulted.render_json();
-    assert!(rendered.contains("\"drift_state\":\"Resyncing\""));
-    assert!(rendered.contains("\"discontinuity_state\":\"Faulted\""));
-    assert!(rendered.contains("\"endpoint_topology\":\"OutputOnly\""));
 }
 
 #[test]
@@ -120,9 +116,4 @@ fn local_shared_host_edge_exports_runtime_external_io_truth() {
         RuntimeExternalIoLoopbackState::Faulted
     );
 
-    let rendered = faulted.render_json();
-    assert!(rendered.contains("\"external_io_snapshot\":{"));
-    assert!(rendered.contains("\"health_state\":\"Faulted\""));
-    assert!(rendered.contains("\"monitoring_state\":\"Faulted\""));
-    assert!(rendered.contains("\"loopback_state\":\"Faulted\""));
 }

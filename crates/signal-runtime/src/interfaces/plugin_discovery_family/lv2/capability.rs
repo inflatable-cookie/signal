@@ -44,8 +44,6 @@ pub struct RuntimeLv2ExtensionCapabilitySummary {
     pub patch_capability: RuntimeLv2PatchCapability,
     /// Total number of distinct extensions negotiated.
     pub negotiated_extension_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 impl RuntimeLv2ExtensionCapabilitySummary {
@@ -56,7 +54,6 @@ impl RuntimeLv2ExtensionCapabilitySummary {
             urid_capability: RuntimeLv2UridCapability::NotRequired,
             patch_capability: RuntimeLv2PatchCapability::Absent,
             negotiated_extension_count: 0,
-            summary: "worker=Absent urid=NotRequired patch=Absent extensions=0".into(),
         }
     }
 
@@ -107,20 +104,12 @@ impl RuntimeLv2ExtensionCapabilitySummary {
         } else {
             RuntimeLv2PatchCapability::Absent
         };
-        let mut summary = Self {
+        let summary = Self {
             worker_capability,
             urid_capability,
             patch_capability,
             negotiated_extension_count,
-            summary: String::new(),
         };
-        summary.summary = format!(
-            "worker={:?} urid={:?} patch={:?} extensions={}",
-            summary.worker_capability,
-            summary.urid_capability,
-            summary.patch_capability,
-            summary.negotiated_extension_count,
-        );
         summary
     }
 }
@@ -202,8 +191,6 @@ pub struct RuntimeLv2ExtensionRecord {
     pub active_sandbox_count: usize,
     /// Number of sandboxes in a faulted or quarantined state.
     pub faulted_sandbox_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Aggregate LV2 extension snapshot across all plugin types: counts by extension posture and the full record list.
@@ -229,8 +216,6 @@ pub struct RuntimeLv2ExtensionSnapshot {
     pub unavailable_type_count: usize,
     /// Per-type extension negotiation records.
     pub records: Vec<RuntimeLv2ExtensionRecord>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Aggregate plugin capability coverage across the full catalog: format counts, I/O topology counts, and feature support counts.
@@ -294,8 +279,6 @@ pub struct RuntimePluginCapabilityCoverageSummary {
     pub max_audio_bus_count: usize,
     /// Maximum parameter count across all catalog types.
     pub max_parameter_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Full plugin discovery snapshot: scan history, discovered types, format/parity coverage, and aggregate capability coverage.
@@ -319,6 +302,4 @@ pub struct RuntimePluginDiscoverySnapshot {
     pub capability_coverage: RuntimePluginCapabilityCoverageSummary,
     /// Full list of discovered plugin type records.
     pub discovered_types: Vec<RuntimePluginDiscoveredTypeRecord>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

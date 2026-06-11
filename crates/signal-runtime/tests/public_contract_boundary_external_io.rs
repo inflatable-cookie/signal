@@ -81,10 +81,4 @@ fn public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopbac
         RuntimeExternalIoLoopbackState::Guarded
     );
 
-    let rendered = supervisor.render_json();
-    assert!(rendered.contains("\"external_io_snapshot\":{"));
-    assert!(rendered.contains("\"primary_role\":\"ProgramDuplex\""));
-    assert!(rendered.contains("\"monitoring_state\":\"Guarded\""));
-    assert!(rendered.contains("\"monitoring_tap_point\":\"PostHardwareOutput\""));
-    assert!(rendered.contains("\"loopback_state\":\"Guarded\""));
 }

@@ -59,7 +59,7 @@ impl SignalRuntime {
                 let latest_override = self.engine.latest_plugin_node_renders.get(&stage.node_id);
                 let host_delegate_required =
                     execution_owner == RuntimeOfflinePluginExecutionOwner::HostDelegated;
-                let mut boundary = RuntimeOfflinePluginExecutionStageBoundary {
+                let boundary = RuntimeOfflinePluginExecutionStageBoundary {
                     stage_id: stage.stage_id.clone(),
                     node_id: stage.node_id.clone(),
                     chain_id: stage.chain_id.clone(),
@@ -79,23 +79,12 @@ impl SignalRuntime {
                     latest_override_processing_epoch: latest_override
                         .map(|latest| latest.processing_epoch),
                     latest_override_block_sequence: latest_override.map(|latest| latest.block_sequence),
-                    summary: String::new(),
                 };
-                boundary.summary = format!(
-                    "stage={}:{} owner={:?} host_delegate={} override={:?} sandbox={:?} recall={:?}",
-                    boundary.chain_id,
-                    boundary.stage_index,
-                    boundary.execution_owner,
-                    boundary.host_delegate_required,
-                    boundary.override_state,
-                    boundary.sandbox_id.as_deref(),
-                    boundary.recall_state,
-                );
                 boundary
             })
             .collect::<Vec<_>>();
 
-        let mut boundary = RuntimeOfflinePluginExecutionBoundary {
+        let boundary = RuntimeOfflinePluginExecutionBoundary {
             request_id: request.request_id.clone(),
             timeline_start_samples: request.timeline_start_samples,
             duration_samples: request.duration_samples,
@@ -127,20 +116,7 @@ impl SignalRuntime {
                 })
                 .count(),
             stages,
-            summary: String::new(),
         };
-        boundary.summary = format!(
-            "request={} stages={} signal_stage_model={} host_delegate={} fresh_overrides={} stale_overrides={} blocks={} runtime_rate={} export_rate={}",
-            boundary.request_id,
-            boundary.stage_count,
-            boundary.signal_stage_model_stage_count,
-            boundary.host_delegate_stage_count,
-            boundary.fresh_override_stage_count,
-            boundary.stale_override_stage_count,
-            boundary.block_count,
-            boundary.runtime_sample_rate_hz,
-            boundary.export_sample_rate_hz,
-        );
         boundary
     }
 

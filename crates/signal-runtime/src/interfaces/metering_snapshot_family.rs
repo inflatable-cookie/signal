@@ -43,8 +43,6 @@ pub struct RuntimeMeterSourceSnapshot {
     pub latency_samples: u32,
     /// Tail length of the producing node in samples.
     pub tail_samples: u32,
-    /// Human-readable summary of this meter source.
-    pub summary: String,
 }
 
 /// Full metering snapshot: all bus meters plus per-route aggregates for track
@@ -84,8 +82,6 @@ pub struct RuntimeMeteringSnapshot {
     pub bus_connections: Vec<RuntimeBusConnectionSummary>,
     /// Auxiliary path summaries from the execution topology.
     pub auxiliary_paths: Vec<RuntimeAuxiliaryPathSummary>,
-    /// Human-readable summary of the metering snapshot.
-    pub summary: String,
 }
 
 /// Aggregated peak/RMS across all meters belonging to one routing group.
@@ -105,8 +101,6 @@ pub struct RuntimeRoutedMeterAggregate {
     pub latency_samples: u32,
     /// Maximum tail length in samples across all contributing meters.
     pub tail_samples: u32,
-    /// Human-readable summary of this aggregate.
-    pub summary: String,
 }
 
 /// Metering aggregate for a single track lane.
@@ -247,29 +241,13 @@ impl RuntimeMeteringSnapshot {
         self.auxiliary_path_count = topology.auxiliary_path_count;
         self.bus_connections = topology.bus_connections.clone();
         self.auxiliary_paths = topology.auxiliary_paths.clone();
-        self.summary = format!(
-            "meters={} main_peak={:?} main_rms={:?} momentary_lufs={:?} short_term_lufs={:?} integrated_lufs={:?} clipped={} routes={}/{}/{}/{} bus_connections={} auxiliary_paths={}",
-            self.meter_count,
-            self.main_output_peak_level,
-            self.main_output_rms_level,
-            self.momentary_loudness_lufs,
-            self.short_term_loudness_lufs,
-            self.integrated_loudness_lufs,
-            self.clipped_sample_count,
-            self.track_lanes.len(),
-            self.bus_groups.len(),
-            self.send_returns.len(),
-            self.console_groups.len(),
-            self.bus_connection_count,
-            self.auxiliary_path_count,
-        );
         self
     }
 }
 
 fn aggregate_runtime_meter_sources<'a>(
     meters: impl Iterator<Item = &'a RuntimeMeterSourceSnapshot>,
-    scope: String,
+    _scope: String,
 ) -> RuntimeRoutedMeterAggregate {
     let mut aggregate = RuntimeRoutedMeterAggregate::default();
 
@@ -295,13 +273,5 @@ fn aggregate_runtime_meter_sources<'a>(
         aggregate.tail_samples = aggregate.tail_samples.max(meter.tail_samples);
     }
 
-    aggregate.summary = format!(
-        "{scope} meters={} peak={:?} rms={:?} buses={:?} producers={}",
-        aggregate.meter_count,
-        aggregate.peak_level,
-        aggregate.rms_level,
-        aggregate.metered_bus_ids,
-        aggregate.producer_node_ids.len(),
-    );
     aggregate
 }

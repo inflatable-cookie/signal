@@ -74,8 +74,6 @@ pub struct RuntimeTempoMapSegmentSnapshot {
     pub interpolation: RuntimeTempoMapInterpolation,
     /// Whether this segment covers the current timeline playback position.
     pub covers_timeline_position: bool,
-    /// Human-readable summary of this segment's state.
-    pub summary: String,
 }
 
 /// Runtime snapshot of the full tempo map with the active segment and
@@ -98,8 +96,6 @@ pub struct RuntimeTempoMapSnapshot {
     pub timeline_position_samples: Option<i64>,
     /// All tempo map segment snapshots in order.
     pub segments: Vec<RuntimeTempoMapSegmentSnapshot>,
-    /// Human-readable summary of the tempo map state.
-    pub summary: String,
 }
 
 /// Warp readiness state for a clip.
@@ -161,8 +157,6 @@ pub struct RuntimeWarpClipSnapshot {
     pub readiness: RuntimeWarpReadiness,
     /// Last error message if the warp pipeline encountered a problem, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of this clip's warp state.
-    pub summary: String,
 }
 
 /// Aggregate warp pipeline snapshot: counts by readiness and resolved
@@ -187,6 +181,4 @@ pub struct RuntimeWarpPipelineSnapshot {
     pub resolved_project_tempo_segment_id: Option<String>,
     /// Per-clip warp snapshots.
     pub clips: Vec<RuntimeWarpClipSnapshot>,
-    /// Human-readable summary of the warp pipeline state.
-    pub summary: String,
 }

@@ -52,7 +52,4 @@ fn local_shared_host_edge_exports_resumable_offline_render_session_truth() {
             .map(|session| session.interruption_class),
         Some(RuntimeInterruptionClass::Resumable)
     );
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"offline_render_session_snapshot\":{"));
-    assert!(rendered.contains("\"interruption_class\":\"Resumable\""));
 }

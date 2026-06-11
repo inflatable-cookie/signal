@@ -54,43 +54,5 @@ pub(crate) fn runtime_plugin_capability_coverage(
         max_complex_io_port_group_count: discovered_types.iter().map(|record| record.complex_io_summary.port_group_count).max().unwrap_or(0),
         max_audio_bus_count: discovered_types.iter().map(|record| record.audio_bus_count).max().unwrap_or(0),
         max_parameter_count: discovered_types.iter().map(|record| record.parameter_count).max().unwrap_or(0),
-        summary: format!(
-            "formats={} multi_format={} types={} complex_io={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} features={}/{}/{}/{}/{} snapshot={} reset={} bypass={} latency={} tail={} sample_accurate={} midi_in={} note_in={} note_expression={} midi_out={} silence_aware={} main_thread_state={} prepare={} activate={} reset_while_active={} max_complex_io_groups={} max_audio_buses={} max_parameters={}",
-            discovered_format_count,
-            discovered_format_count > 1,
-            discovered_types.len(),
-            discovered_types.iter().filter(|record| record.complex_io_summary.has_complex_topology).count(),
-            discovered_types.iter().filter(|record| record.complex_io_summary.multi_output_instrument).count(),
-            discovered_types.iter().filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some()).count(),
-            discovered_types.iter().filter(|record| {
-                record.complex_io_summary.bus_capable_fx_class
-                    == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
-                    || record.complex_io_summary.bus_capable_fx_class
-                        == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
-            }).count(),
-            feature_count(PluginFeature::AudioEffect),
-            feature_count(PluginFeature::Instrument),
-            feature_count(PluginFeature::Analyzer),
-            feature_count(PluginFeature::Utility),
-            feature_count(PluginFeature::NoteEffect),
-            discovered_types.iter().filter(|record| record.state_contract.supports_snapshot).count(),
-            discovered_types.iter().filter(|record| record.state_contract.supports_reset).count(),
-            discovered_types.iter().filter(|record| record.state_contract.supports_bypass).count(),
-            discovered_types.iter().filter(|record| record.state_contract.exposes_latency).count(),
-            discovered_types.iter().filter(|record| record.state_contract.exposes_tail).count(),
-            discovered_types.iter().filter(|record| record.processing_contract.sample_accurate_automation).count(),
-            discovered_types.iter().filter(|record| record.processing_contract.accepts_midi).count(),
-            discovered_types.iter().filter(|record| record.processing_contract.accepts_note_events).count(),
-            discovered_types.iter().filter(|record| record.processing_contract.supports_note_expression).count(),
-            discovered_types.iter().filter(|record| record.processing_contract.produces_midi).count(),
-            discovered_types.iter().filter(|record| record.processing_contract.silence_aware).count(),
-            discovered_types.iter().filter(|record| record.lifecycle_contract.requires_main_thread_for_state).count(),
-            discovered_types.iter().filter(|record| record.lifecycle_contract.supports_prepare).count(),
-            discovered_types.iter().filter(|record| record.lifecycle_contract.supports_activate).count(),
-            discovered_types.iter().filter(|record| record.lifecycle_contract.supports_reset_while_active).count(),
-            discovered_types.iter().map(|record| record.complex_io_summary.port_group_count).max().unwrap_or(0),
-            discovered_types.iter().map(|record| record.audio_bus_count).max().unwrap_or(0),
-            discovered_types.iter().map(|record| record.parameter_count).max().unwrap_or(0),
-        ),
     }
 }

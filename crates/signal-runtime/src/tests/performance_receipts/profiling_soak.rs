@@ -51,12 +51,6 @@ fn runtime_supervisor_report_derives_profiling_and_soak_receipts() {
         diagnostics.graph_latency_ms
     );
     assert_eq!(profiling.host_callback_count, None);
-    assert!(profiling
-        .render_json()
-        .contains("\"runtime_cpu_load_percent\":"));
-    assert!(profiling
-        .render_json()
-        .contains("\"runtime_graph_latency_ms\":"));
 
     assert_eq!(soak.event_stream_count, 1);
     assert!(!soak.readiness_degraded);
@@ -68,5 +62,4 @@ fn runtime_supervisor_report_derives_profiling_and_soak_receipts() {
         Some(RecoveryRestartIntent::WatchdogRecovery)
     );
     assert_eq!(soak.last_stop_reason, None);
-    assert!(soak.render_json().contains("\"recovery_event_count\":1"));
 }

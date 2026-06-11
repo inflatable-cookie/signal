@@ -20,14 +20,6 @@ impl SignalRuntime {
                 })?;
             session.state = RuntimeOfflineRenderExecutionState::Paused;
             session.interruption_class_override = None;
-            session.last_state_summary = format!(
-                "request={} state=paused checkpoints={}/{} rendered_frames={} rendered_blocks={}",
-                request_id,
-                session.emitted_checkpoint_count,
-                session.checkpoint_count,
-                session.rendered_frames,
-                session.block_count
-            );
             (
                 Self::offline_render_session_state_snapshot(session),
                 Self::offline_render_execution_status_receipt(session),
@@ -54,13 +46,6 @@ impl SignalRuntime {
                 })?;
             session.state = RuntimeOfflineRenderExecutionState::Running;
             session.interruption_class_override = None;
-            session.last_state_summary = format!(
-                "request={} state=running checkpoints={}/{} interruption_count={}",
-                request_id,
-                session.emitted_checkpoint_count,
-                session.checkpoint_count,
-                session.interruption_count
-            );
             (
                 Self::offline_render_session_state_snapshot(session),
                 Self::offline_render_execution_status_receipt(session),
@@ -96,14 +81,6 @@ impl SignalRuntime {
             session.state = RuntimeOfflineRenderExecutionState::Recoverable;
             session.interruption_count = session.interruption_count.saturating_add(1);
             session.interruption_class_override = None;
-            session.last_state_summary = format!(
-                "request={} state=recoverable checkpoints={}/{} interruptions={} reason={}",
-                request_id,
-                session.emitted_checkpoint_count,
-                session.checkpoint_count,
-                session.interruption_count,
-                reason
-            );
             (
                 Self::offline_render_session_state_snapshot(session),
                 Self::offline_render_execution_status_receipt(session),
@@ -133,21 +110,12 @@ impl SignalRuntime {
             checkpoint_count: session.checkpoint_count,
             rendered_frame_count: session.rendered_frames,
             rendered_block_count: session.block_count,
-            summary: format!(
-                "request={} state=cancelled checkpoints={}/{} rendered_frames={} rendered_blocks={}",
-                request_id,
-                session.emitted_checkpoint_count,
-                session.checkpoint_count,
-                session.rendered_frames,
-                session.block_count
-            ),
         };
         self.last_offline_render_cancellation_receipt
             .replace(Some(receipt.clone()));
         let mut cancelled_session = session;
         cancelled_session.state = RuntimeOfflineRenderExecutionState::Cancelled;
         cancelled_session.interruption_class_override = None;
-        cancelled_session.last_state_summary = receipt.summary.clone();
         self.record_last_offline_render_session_snapshot(
             Self::offline_render_session_state_snapshot(&cancelled_session),
         );

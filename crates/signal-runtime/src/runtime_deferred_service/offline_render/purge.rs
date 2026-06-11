@@ -39,7 +39,7 @@ impl SignalRuntime {
             self.record_deferred_service_receipt(orchestration.clone());
             let decision = orchestration.decision;
             let reason = orchestration.reason;
-            let summary = format!(
+            let _summary = format!(
                 "request={} deferred decision={:?} reason={:?}",
                 request_id, decision, reason
             );
@@ -53,7 +53,6 @@ impl SignalRuntime {
                 purged_artifact_byte_count: 0,
                 purged_report: false,
                 purged_report_byte_count: 0,
-                summary,
             };
             self.last_offline_render_purge_receipt
                 .replace(Some(receipt.clone()));
@@ -75,7 +74,6 @@ impl SignalRuntime {
             .unwrap_or_default();
         orchestration.completed_work_item_count = 1;
         orchestration.deferred_work_item_count = 0;
-        orchestration.summary = summarize_deferred_service_receipt(&orchestration);
         self.record_deferred_service_receipt(orchestration.clone());
         let receipt = RuntimeOfflineRenderPurgeReceipt {
             request_id: request_id.clone(),
@@ -87,15 +85,6 @@ impl SignalRuntime {
             purged_artifact_byte_count: purged_artifact_root.byte_count,
             purged_report: purged_report.removed,
             purged_report_byte_count: purged_report.byte_count,
-            summary: format!(
-                "request={} purged_report={} report_bytes={} purged_artifact_root={} artifact_files={} artifact_bytes={}",
-                request_id,
-                purged_report.removed,
-                purged_report.byte_count,
-                purged_artifact_root.removed,
-                purged_artifact_root.file_count,
-                purged_artifact_root.byte_count
-            ),
         };
         self.last_offline_render_purge_receipt
             .replace(Some(receipt.clone()));

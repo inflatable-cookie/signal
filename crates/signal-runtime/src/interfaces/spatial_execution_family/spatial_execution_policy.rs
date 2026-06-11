@@ -112,10 +112,6 @@ pub fn runtime_immersive_room_policy_summary_for_spatial(
         room_policy_class,
         room_policy_authority,
         room_outcome,
-        summary: format!(
-            "objects={:?} room_class={:?} authority={:?} outcome={:?}",
-            object_rendering_posture, room_policy_class, room_policy_authority, room_outcome,
-        ),
     })
 }
 
@@ -238,14 +234,6 @@ pub fn runtime_deployment_monitoring_summary_for_spatial(
         monitoring_scene_class,
         monitoring_scene_authority,
         monitoring_outcome,
-        summary: format!(
-            "deployment={:?} fold_down={:?} scene={:?} authority={:?} outcome={:?}",
-            deployment_class,
-            fold_down_policy,
-            monitoring_scene_class,
-            monitoring_scene_authority,
-            monitoring_outcome,
-        ),
     })
 }
 
@@ -362,13 +350,5 @@ pub fn runtime_renderer_immersive_export_summary_for_spatial(
         immersive_export_class,
         export_authority,
         export_outcome,
-        summary: format!(
-            "renderer={:?} capability_authority={:?} export={:?} export_authority={:?} outcome={:?}",
-            renderer_capability_posture,
-            capability_authority,
-            immersive_export_class,
-            export_authority,
-            export_outcome,
-        ),
     })
 }

@@ -78,8 +78,6 @@ fn runtime_offline_render_renders_main_mix_stem_and_freeze_from_runtime_owned_st
     assert!((rendered[0] + 0.5).abs() < 1.0e-6);
     assert!((rendered[1] + 0.5).abs() < 1.0e-6);
     assert!((rendered[2] + 0.492_187_5).abs() < 1.0e-6);
-    assert!(result.summary.contains("stems=1"));
-    assert!(result.summary.contains("freeze_artifacts=1"));
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime

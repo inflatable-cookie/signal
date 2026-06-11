@@ -135,7 +135,7 @@ impl RuntimePluginPinMatrixSnapshot {
                 RuntimeDynamicBusNegotiationPosture::Static
                 | RuntimeDynamicBusNegotiationPosture::Unavailable => {}
             }
-            let mut pin_record = RuntimePluginPinMatrixRecord {
+            let pin_record = RuntimePluginPinMatrixRecord {
                 plugin_type_id: record.plugin_type_id.clone(),
                 plugin_id: record.plugin_id.clone(),
                 pin_group_identities,
@@ -145,24 +145,12 @@ impl RuntimePluginPinMatrixSnapshot {
                 strongest_lifecycle_state,
                 stage_count,
                 active_stage_count,
-                summary: String::new(),
             };
-            pin_record.summary = format!(
-                "plugin_type={} pin_groups={:?} matrix={:?} dynamic={:?} fallback={:?} stages={}/active={} lifecycle={:?}",
-                pin_record.plugin_type_id,
-                pin_record.pin_group_identities,
-                pin_record.pin_matrix_posture,
-                pin_record.dynamic_bus_negotiation_posture,
-                pin_record.fallback_outcome,
-                pin_record.stage_count,
-                pin_record.active_stage_count,
-                pin_record.strongest_lifecycle_state,
-            );
             records.push(pin_record);
         }
 
         let plugin_type_count = records.len();
-        let mut snapshot = Self {
+        let snapshot = Self {
             plugin_type_count,
             negotiated_type_count,
             guarded_type_count,
@@ -170,17 +158,7 @@ impl RuntimePluginPinMatrixSnapshot {
             dynamic_negotiated_type_count,
             dynamic_guarded_type_count,
             records,
-            summary: String::new(),
         };
-        snapshot.summary = format!(
-            "plugin_types={} negotiated={} guarded={} unavailable={} dynamic_negotiated={} dynamic_guarded={}",
-            snapshot.plugin_type_count,
-            snapshot.negotiated_type_count,
-            snapshot.guarded_type_count,
-            snapshot.unavailable_type_count,
-            snapshot.dynamic_negotiated_type_count,
-            snapshot.dynamic_guarded_type_count,
-        );
         snapshot
     }
 }

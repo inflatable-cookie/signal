@@ -18,9 +18,6 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
                 RuntimePluginIsolationOutcome::IsolatedSandbox,
             ),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -35,9 +32,6 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
                 RuntimePluginIsolationOutcome::IsolatedSandbox,
             ),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Lv2,
@@ -51,9 +45,6 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
                 RuntimePluginIsolationOutcome::IsolatedSandbox,
             ),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
-                    .into(),
         },
     ]);
     runtime
@@ -128,7 +119,6 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
                     &["http://lv2plug.in/ns/ext/patch#Message".into()],
                 )
             }),
-            summary: format!("plugin_type={plugin_type_id} format={format:?}"),
         }
     };
     runtime.record_plugin_scan_results(
@@ -306,12 +296,4 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
         crate::RuntimeLv2ExtensionNegotiationState::Unavailable
     );
 
-    let rendered = observation.render_json();
-    assert!(rendered.contains("\"linux_parity_band\":\"Portable\""));
-    assert!(rendered.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
-    assert!(rendered.contains("\"linux_strict_sandbox_default\":true"));
-    assert!(rendered.contains("\"restarting_sandbox_count\":1"));
-    assert!(rendered.contains("\"faulted_sandbox_count\":1"));
-    assert!(rendered.contains("\"lv2_extension_snapshot\":{"));
-    assert!(rendered.contains("\"urid_negotiation_posture\":\"Unavailable\""));
 }

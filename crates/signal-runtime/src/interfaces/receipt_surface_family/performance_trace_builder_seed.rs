@@ -48,7 +48,6 @@ pub(super) fn empty_runtime_performance_trace_receipt() -> RuntimePerformanceTra
         peak_critical_path_lane_node_count: 0,
         peak_critical_path_lane_plugin_backed_node_count: 0,
         peak_critical_path_lane_total_latency_samples: 0,
-        summary: "observations=0".to_string(),
     }
 }
 
@@ -106,6 +105,5 @@ pub(super) fn seed_runtime_performance_trace_receipt(
             .critical_path_lane_plugin_backed_node_count,
         peak_critical_path_lane_total_latency_samples: first_snapshot
             .critical_path_lane_total_latency_samples,
-        summary: String::new(),
     }
 }

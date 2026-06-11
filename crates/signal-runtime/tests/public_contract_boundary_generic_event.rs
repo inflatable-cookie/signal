@@ -47,7 +47,7 @@ fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capabil
     );
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
 
     let snapshot = &observation.plugin_event_snapshot;
     assert_eq!(snapshot.last_processing_epoch, Some(7));
@@ -77,13 +77,4 @@ fn public_runtime_generic_event_boundary_reports_runtime_owned_event_and_capabil
         2
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"plugin_events\":{"));
-    assert!(observation_json.contains("\"note_expression_events\":2"));
-    assert!(observation_json.contains("\"supports_note_expression_count\":2"));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"plugin_events\":{"));
-    assert!(supervisor_json.contains("\"last_generated_event_bytes\":144"));
-    assert!(supervisor_json.contains("\"supports_note_expression_count\":2"));
 }

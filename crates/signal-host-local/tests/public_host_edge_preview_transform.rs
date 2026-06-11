@@ -147,14 +147,6 @@ fn local_shared_host_edge_exports_runtime_preview_transform_truth() {
         RuntimePreviewTransformServiceClass::ArtifactBacked
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"preview_transform_snapshot\":{"));
-    assert!(rendered.contains("\"active_audition_clip_count\":1"));
-    assert!(rendered.contains("\"artifact_backed_clip_count\":1"));
-    assert!(rendered.contains("\"service_class\":\"ArtifactBacked\""));
-    assert!(rendered.contains("\"routing_posture\":\"GuardedPreviewOutputRouting\""));
-    assert!(rendered.contains("\"queue_posture\":\"SingleActivePreviewQueue\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
         .runtime()

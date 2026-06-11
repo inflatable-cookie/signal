@@ -29,14 +29,6 @@ impl RuntimeOfflineRenderContractPreview {
                             stage_index: stage.stage_index,
                             plugin_type_id: stage.recall.payload.plugin_type_id.clone(),
                             topology: stage.complex_io_summary.clone(),
-                            summary: format!(
-                                "chain={} node={} stage={} plugin_type={:?} complex_io={}",
-                                chain.chain_id,
-                                stage.node_id,
-                                stage.stage_index,
-                                stage.recall.payload.plugin_type_id,
-                                stage.complex_io_summary.summary
-                            ),
                         })
                     } else {
                         None
@@ -74,14 +66,6 @@ impl RuntimeOfflineRenderContractPreview {
                             stage_index: stage.stage_index,
                             plugin_type_id: stage.recall.payload.plugin_type_id.clone(),
                             spatial: spatial.clone(),
-                            summary: format!(
-                                "chain={} node={} stage={} plugin_type={:?} spatial={}",
-                                chain.chain_id,
-                                stage.node_id,
-                                stage.stage_index,
-                                stage.recall.payload.plugin_type_id,
-                                spatial.summary
-                            ),
                         }
                     })
                 })
@@ -273,17 +257,6 @@ impl RuntimeOfflineRenderContractPreview {
                 .map(|mut route| {
                     route.target_kind = RuntimeSecondaryInputTargetKind::RenderInput;
                     route.target_id = "offline-render".into();
-                    route.summary = format!(
-                        "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
-                        route.source_kind,
-                        route.source_id,
-                        route.source_bus_id.as_deref().unwrap_or("none"),
-                        route.target_kind,
-                        route.target_id,
-                        route.target_bus_id,
-                        route.attachment_policy,
-                        route.fallback_outcome,
-                    );
                     route
                 })
                 .collect(),
@@ -291,54 +264,6 @@ impl RuntimeOfflineRenderContractPreview {
             auxiliary_paths: topology.auxiliary_paths.clone(),
             complex_io_stages,
             spatial_stages,
-            summary: format!(
-                "chains={} stages={} pending={} settling={} compensated={} degraded={} bypassed={} missing={} latency={}/{} tail={} recall={}/unbound={} cold={} warm={} recovered={} unavailable={} secondary_inputs={}/required={}/optional={}/disabled={}/terminal={} bus_connections={} auxiliary_paths={} complex_io_stages={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} spatial_stages={}/active={}/bypassed={}/fallback={} surround_beds={} object_aware={} expanded_fallbacks={} immersive={} room_policy_aware={} fallback_room_policy={} deployment={} folded_down={} fallback_monitoring_scene={} renderer_capability={} negotiated_renderer={} immersive_export={} fallback_immersive_export={}",
-                plugin_chain.chain_count,
-                plugin_chain.stage_count,
-                plugin_chain.pending_render_stage_count,
-                plugin_chain.settling_stage_count,
-                plugin_chain.compensated_stage_count,
-                plugin_chain.degraded_stage_count,
-                plugin_chain.bypassed_stage_count,
-                plugin_chain.missing_binding_stage_count,
-                plugin_chain.total_planned_latency_samples,
-                plugin_chain.total_realized_latency_samples,
-                plugin_chain.total_tail_samples,
-                recall_handoff.stage_count,
-                recall_handoff.unbound_stage_count,
-                recall_handoff.cold_stage_count,
-                recall_handoff.warm_stage_count,
-                recall_handoff.recovered_stage_count,
-                recall_handoff.unavailable_stage_count,
-                topology.secondary_input_count,
-                topology.required_secondary_input_count,
-                topology.optional_secondary_input_count,
-                topology.disabled_secondary_input_count,
-                topology.terminal_fallback_secondary_input_count,
-                topology.bus_connection_count,
-                topology.auxiliary_path_count,
-                complex_io_stage_count,
-                multi_output_instrument_stage_count,
-                bus_capable_fx_stage_count,
-                sidechain_capable_fx_stage_count,
-                spatial_stage_count,
-                active_spatial_stage_count,
-                bypassed_spatial_stage_count,
-                fallback_spatial_stage_count,
-                surround_bed_spatial_stage_count,
-                object_aware_spatial_stage_count,
-                expanded_fallback_spatial_stage_count,
-                immersive_spatial_stage_count,
-                room_policy_aware_spatial_stage_count,
-                fallback_room_policy_spatial_stage_count,
-                deployment_spatial_stage_count,
-                folded_down_spatial_stage_count,
-                fallback_monitoring_scene_spatial_stage_count,
-                renderer_capability_spatial_stage_count,
-                negotiated_renderer_spatial_stage_count,
-                immersive_export_spatial_stage_count,
-                fallback_immersive_export_spatial_stage_count,
-            ),
         })
     }
 }

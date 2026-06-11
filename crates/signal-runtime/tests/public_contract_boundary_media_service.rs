@@ -120,15 +120,6 @@ fn public_runtime_media_service_boundary_reports_runtime_owned_readiness_and_inv
         RuntimeMediaPreviewState::Previewing
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"media_pipeline_snapshot\":{"));
-    assert!(observation_json.contains("\"media_service_snapshot\":{"));
-    assert!(observation_json.contains("\"invalidated_asset_count\":1"));
-    assert!(observation_json.contains("\"preview_state\":\"Previewing\""));
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"media_pipeline_snapshot\":{"));
-    assert!(supervisor_json.contains("\"media_service_snapshot\":{"));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = runtime
         .get_media_pipeline_snapshot()

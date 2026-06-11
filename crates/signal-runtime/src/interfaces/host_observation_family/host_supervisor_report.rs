@@ -20,33 +20,6 @@ impl RuntimeHostSupervisorReport {
         }
     }
 
-    /// Renders a single-line summary including the observation and event count.
-    pub fn render_compact(&self) -> String {
-        format!(
-            "{} event_stream={}",
-            self.observation.render_compact(),
-            self.events.len()
-        )
-    }
-
-    /// Renders a multi-line diagnostic string with one field per line.
-    pub fn render_multiline(&self) -> String {
-        format!(
-            "{}\nevent_stream={}",
-            self.observation.render_multiline(),
-            self.events.len()
-        )
-    }
-
-    /// Renders a JSON object containing the observation and event stream count.
-    pub fn render_json(&self) -> String {
-        format!(
-            "{{\"observation\":{},\"event_stream\":{}}}",
-            self.observation.render_json(),
-            self.events.len()
-        )
-    }
-
     /// Returns a profiling receipt including host hardware fields.
     pub fn profiling_receipt(&self) -> RuntimeProfilingReceipt {
         build_runtime_profiling_receipt(

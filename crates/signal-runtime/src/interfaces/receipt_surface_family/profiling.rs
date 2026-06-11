@@ -92,8 +92,6 @@ pub struct RuntimeProfilingReceipt {
     pub host_dropped_output_samples: Option<u64>,
     /// Fault diagnostic receipt for the current observation.
     pub fault_diagnostic_receipt: RuntimeFaultDiagnosticReceipt,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 impl RuntimeObservationReport {
@@ -123,7 +121,7 @@ pub(crate) fn build_runtime_profiling_receipt(
         observation.last_deferred_service_receipt.as_ref(),
         host_io,
     );
-    let fault_diagnostic_primary_family = fault_diagnostic_receipt.primary_family;
+    let _fault_diagnostic_primary_family = fault_diagnostic_receipt.primary_family;
     RuntimeProfilingReceipt {
         sample_rate_hz: observation.effective_config.sample_rate.0,
         block_size: observation.effective_config.block_size,
@@ -174,24 +172,5 @@ pub(crate) fn build_runtime_profiling_receipt(
         host_dropped_output_samples: host_io
             .map(|host_io| host_io.audio_pump.dropped_output_samples),
         fault_diagnostic_receipt,
-        summary: format!(
-            "sample_rate={} block_size={} engine_blocks={} cpu_load={:.3} xruns={} host_callbacks={:?} degraded={} gates={}/{} plugin_chain={}/degraded={}/missing={} sessions={}/{}/{} primary_family={:?}",
-            observation.effective_config.sample_rate.0,
-            observation.effective_config.block_size,
-            observation.engine_block_snapshot.processed_blocks,
-            observation.diagnostics_snapshot.cpu_load_percent,
-            observation.diagnostics_snapshot.xruns,
-            host_io.map(|host_io| host_io.audio_pump.callback_count),
-            observation.degradation_summary.readiness_degraded,
-            observation.degradation_summary.transport_gate_active,
-            observation.degradation_summary.plugin_gate_active,
-            plugin_chain.stage_count,
-            plugin_chain.degraded_stage_count,
-            plugin_chain.missing_binding_stage_count,
-            observation.degradation_summary.recovery_overlap_sessions,
-            observation.degradation_summary.lingering_sessions,
-            observation.degradation_summary.detach_faulted_sessions,
-            fault_diagnostic_primary_family,
-        ),
     }
 }

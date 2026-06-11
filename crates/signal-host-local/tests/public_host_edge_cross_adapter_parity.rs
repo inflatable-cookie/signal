@@ -97,11 +97,6 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     assert_eq!(lifecycle_vst3.ready_sandbox_count, 1);
     assert_eq!(lifecycle_vst3.active_transport_count, 1);
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"parity_coverage\":["));
-    assert!(rendered.contains("\"parity_band\":\"Portable\""));
-    assert!(rendered.contains("\"parity_band\":\"Guarded\""));
-    assert!(rendered.contains("\"unsupported_platforms\":[\"Linux\",\"Windows\"]"));
 }
 
 #[test]
@@ -163,9 +158,4 @@ fn local_shared_host_edge_exports_bounded_clap_sandbox_lifecycle_truth() {
     assert!(sandbox.active_lease_id.is_some());
     assert!(sandbox.active_region_id.is_some());
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"formats\":[\"Clap\"]"));
-    assert!(rendered.contains("\"plugin_type_id\":\"plugin:clap:default\""));
-    assert!(rendered.contains("\"lifecycle_stage\":\"TransportAttached\""));
-    assert!(rendered.contains("\"active_transport\":true"));
 }

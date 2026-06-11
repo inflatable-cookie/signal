@@ -54,14 +54,6 @@ fn public_runtime_fault_diagnostic_boundary_reports_canonical_runtime_receipts()
         observation.fault_diagnostic_receipt.primary_family
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(observation_json.contains("\"primary_family\":\"DeferredWorkPressure\""));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(supervisor_json.contains("\"primary_family\":\"DeferredWorkPressure\""));
-
     let failure = RuntimeError::new(
         RuntimeErrorKind::HardwareFailure,
         "public runtime diagnostic sentinel",

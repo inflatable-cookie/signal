@@ -105,10 +105,4 @@ fn public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_rece
             .partial_availability
     );
 
-    let rendered = host_supervisor.render_json();
-    assert!(rendered.contains("\"drift_state\":\"Stable\""));
-    assert!(rendered.contains("\"discontinuity_state\":\"Continuous\""));
-    assert!(rendered.contains("\"duplex_mismatch_state\":\"PartialAvailability\""));
-    assert!(rendered.contains("\"endpoint_topology\":\"Duplex\""));
-    assert!(rendered.contains("\"partial_availability\":true"));
 }

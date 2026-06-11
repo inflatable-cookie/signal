@@ -226,8 +226,6 @@ pub struct RuntimeImmersiveRoomPolicySummary {
     pub room_policy_authority: RuntimeRoomPolicyAuthority,
     /// Resolved immersive room policy outcome.
     pub room_outcome: RuntimeImmersiveRoomOutcome,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Speaker deployment class: source layout, reference speaker, monitoring speaker, portable fold-down, or fallback.
@@ -321,8 +319,6 @@ pub struct RuntimeDeploymentMonitoringSummary {
     pub monitoring_scene_authority: RuntimeMonitoringSceneAuthority,
     /// Resolved monitoring outcome.
     pub monitoring_outcome: RuntimeMonitoringOutcome,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Renderer capability negotiation posture: not requested, declared/negotiated compatible, fallback negotiation, or unavailable.
@@ -414,8 +410,6 @@ pub struct RuntimeRendererImmersiveExportSummary {
     pub export_authority: RuntimeImmersiveExportAuthority,
     /// Resolved immersive export outcome.
     pub export_outcome: RuntimeImmersiveExportOutcome,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Full spatial execution summary for a graph node: adapter class, execution mode, target environment, control family, bed/object layout, mix policy, render scope, and optional immersive sub-summaries.
@@ -459,6 +453,4 @@ pub struct RuntimeSpatialExecutionSummary {
     pub input_layout: RuntimeMultichannelLayoutSummary,
     /// Multichannel output layout summary.
     pub output_layout: RuntimeMultichannelLayoutSummary,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

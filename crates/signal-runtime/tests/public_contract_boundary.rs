@@ -111,49 +111,6 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
         Some(PluginFormat::Clap)
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"sample_rate\":48000"));
-    assert!(observation_json.contains("\"block_size\":512"));
-    assert!(observation_json.contains("\"engine_block_snapshot\":{"));
-    assert!(observation_json.contains("\"fault_status\":{"));
-    assert!(observation_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(observation_json.contains("\"interruption_summary\":{"));
-    assert!(observation_json.contains("\"recording_capture_snapshot\":{"));
-    assert!(observation_json.contains("\"class\":\"Steady\""));
-    assert!(observation_json.contains("\"execution_topology_summary\":{"));
-    assert!(observation_json.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(observation_json.contains("\"plugin_type_id\":\"plugin:clap:public-boundary\""));
-    assert!(observation_json.contains("\"plugin_type_id\":\"plugin:vst3:public-instrument\""));
-    assert!(observation_json.contains("\"discovered_format_count\":2"));
-    assert!(observation_json.contains("\"multi_format_catalog\":true"));
-    assert!(observation_json.contains("\"supports_snapshot\":true"));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"sample_rate\":48000"));
-    assert!(supervisor_json.contains("\"block_size\":512"));
-    assert!(supervisor_json.contains("\"event_stream\":0"));
-    assert!(supervisor_json.contains("\"fault_status\":{"));
-    assert!(supervisor_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(supervisor_json.contains("\"interruption_summary\":{"));
-    assert!(supervisor_json.contains("\"recording_capture_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(supervisor_json.contains("\"discovered_type_count\":2"));
-    assert!(supervisor_json.contains("\"format_coverage\":["));
-
-    let profiling_json = profiling.render_json();
-    assert!(profiling_json.contains("\"sample_rate_hz\":48000"));
-    assert!(profiling_json.contains("\"block_size\":512"));
-    assert!(profiling_json.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(profiling_json.contains("\"summary\":"));
-
-    let soak_json = soak.render_json();
-    assert!(soak_json.contains("\"event_stream_count\":0"));
-    assert!(soak_json.contains("\"summary\":"));
-
-    assert!(profiling
-        .render_multiline()
-        .contains("sample_rate_hz=48000"));
-    assert!(soak.render_multiline().contains("event_stream_count=0"));
 }
 
 #[test]
@@ -192,9 +149,4 @@ fn public_runtime_plugin_discovery_coverage_is_consumable_from_reexports() {
     assert_eq!(format_coverage[1].format, PluginFormat::Vst3);
     assert_eq!(format_coverage[1].instrument_count, 1);
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"discovered_format_count\":2"));
-    assert!(observation_json.contains("\"format_coverage\":["));
-    assert!(observation_json.contains("\"multi_format_catalog\":true"));
-    assert!(observation_json.contains("\"requires_main_thread_for_state_count\":1"));
 }

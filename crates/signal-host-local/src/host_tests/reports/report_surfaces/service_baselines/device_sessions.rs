@@ -19,8 +19,4 @@ fn local_host_shared_report_surfaces_runtime_stretch_engine_baseline() {
         .clips
         .is_empty());
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"stretch_engine_snapshot\":{"));
-    assert!(rendered.contains("\"clip_count\":0"));
-    assert!(rendered.contains("\"sample_domain_clip_count\":0"));
 }

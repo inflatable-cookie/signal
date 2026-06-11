@@ -120,15 +120,6 @@ fn local_shared_host_edge_exports_runtime_analysis_metadata_truth() {
         RuntimeMediaAnalysisDescriptorState::Invalidated
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"media_library_snapshot\":{"));
-    assert!(rendered.contains("\"ready_descriptor_count\":1"));
-    assert!(rendered.contains("\"invalidated_descriptor_count\":1"));
-    assert!(rendered.contains("\"loudness_ready_descriptor_count\":1"));
-    assert!(rendered.contains("\"character_ready_descriptor_count\":1"));
-    assert!(rendered.contains("\"metadata_state\":\"Ready\""));
-    assert!(rendered.contains("\"metadata_state\":\"Invalidated\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
         .runtime()

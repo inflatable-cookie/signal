@@ -183,7 +183,7 @@ impl RuntimeLv2ExtensionSnapshot {
             }
 
             sandbox_count += sandboxes.len();
-            let mut lv2_record = RuntimeLv2ExtensionRecord {
+            let lv2_record = RuntimeLv2ExtensionRecord {
                 plugin_type_id: record.plugin_type_id.clone(),
                 plugin_id: record.plugin_id.clone(),
                 worker_posture,
@@ -194,25 +194,12 @@ impl RuntimeLv2ExtensionSnapshot {
                 sandbox_count: sandboxes.len(),
                 active_sandbox_count,
                 faulted_sandbox_count,
-                summary: String::new(),
             };
-            lv2_record.summary = format!(
-                "plugin_type={} worker={:?} urid={:?} patch={:?} negotiation={:?} sandboxes={}/active={} faulted={} lifecycle={:?}",
-                lv2_record.plugin_type_id,
-                lv2_record.worker_posture,
-                lv2_record.urid_negotiation_posture,
-                lv2_record.patch_exchange_posture,
-                lv2_record.extension_negotiation_state,
-                lv2_record.sandbox_count,
-                lv2_record.active_sandbox_count,
-                lv2_record.faulted_sandbox_count,
-                lv2_record.strongest_lifecycle_state,
-            );
             records.push(lv2_record);
         }
 
         let plugin_type_count = records.len();
-        let mut snapshot = Self {
+        let snapshot = Self {
             plugin_type_count,
             sandbox_count,
             worker_required_type_count,
@@ -223,20 +210,7 @@ impl RuntimeLv2ExtensionSnapshot {
             guarded_type_count,
             unavailable_type_count,
             records,
-            summary: String::new(),
         };
-        snapshot.summary = format!(
-            "plugin_types={} sandboxes={} worker_required={} worker_guarded={} urid_negotiated={} patch_supported={} negotiated={} guarded={} unavailable={}",
-            snapshot.plugin_type_count,
-            snapshot.sandbox_count,
-            snapshot.worker_required_type_count,
-            snapshot.worker_guarded_type_count,
-            snapshot.urid_negotiated_type_count,
-            snapshot.patch_supported_type_count,
-            snapshot.negotiated_type_count,
-            snapshot.guarded_type_count,
-            snapshot.unavailable_type_count,
-        );
         snapshot
     }
 }

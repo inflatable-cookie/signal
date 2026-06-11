@@ -73,9 +73,6 @@ fn runtime_block_timing_pressure_rolls_into_performance_snapshot_and_trace_recei
     assert_eq!(performance.budget_overrun_count, 1);
     assert_eq!(performance.peak_block_execution_time_ns, 1_250_000);
     assert_eq!(performance.peak_block_budget_overrun_ns, 250_000);
-    assert!(performance
-        .render_json()
-        .contains("\"last_block_deadline_pressure\":\"Overrun\""));
 
     let trace = RuntimeSupervisorReport::build_performance_trace_receipt(&[
         normal.clone(),
@@ -89,13 +86,4 @@ fn runtime_block_timing_pressure_rolls_into_performance_snapshot_and_trace_recei
     assert_eq!(trace.budget_overrun_count_delta, 1);
     assert_eq!(trace.peak_block_execution_time_ns, 1_250_000);
     assert_eq!(trace.peak_block_budget_overrun_ns, 250_000);
-    assert!(trace
-        .render_json()
-        .contains("\"budget_overrun_count_delta\":1"));
-    assert!(overrun
-        .render_json()
-        .contains("\"last_block_deadline_pressure\":\"Overrun\""));
-    assert!(overrun
-        .render_json()
-        .contains("\"last_block_deadline_budget_ns\":1000000"));
 }

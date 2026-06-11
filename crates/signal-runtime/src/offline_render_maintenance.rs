@@ -131,29 +131,11 @@ pub(super) fn purge_offline_render_directory(
 fn refresh_offline_render_stem_result(stem: &mut RuntimeOfflineRenderStemResult) {
     stem.peak_level = peak_abs(stem.output.samples());
     stem.rms_level = rms(stem.output.samples());
-    stem.summary = format!(
-        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
-        stem.stem_id,
-        stem.target_kind,
-        stem.target_id,
-        stem.output.frames().0,
-        stem.peak_level,
-        stem.rms_level,
-    );
 }
 
 fn refresh_offline_freeze_artifact_result(artifact: &mut RuntimeOfflineFreezeArtifactResult) {
     artifact.peak_level = peak_abs(artifact.output.samples());
     artifact.rms_level = rms(artifact.output.samples());
-    artifact.summary = format!(
-        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
-        artifact.artifact_id,
-        artifact.source_stem_id,
-        artifact.recall_stage_count,
-        artifact.output.frames().0,
-        artifact.peak_level,
-        artifact.rms_level,
-    );
 }
 
 pub(super) fn refresh_offline_render_result(result: &mut RuntimeOfflineRenderResult) {
@@ -182,14 +164,4 @@ pub(super) fn refresh_offline_render_result(result: &mut RuntimeOfflineRenderRes
                 .map(|artifact| artifact.output.frames().0)
         })
         .unwrap_or(0);
-    result.summary = format!(
-        "request={} runtime_frames={} rendered_frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
-        result.request_id,
-        result.runtime_frame_count,
-        result.rendered_frame_count,
-        result.block_count,
-        result.main_mix.is_some(),
-        result.stems.len(),
-        result.freeze_artifacts.len(),
-    );
 }

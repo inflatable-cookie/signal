@@ -234,6 +234,4 @@ pub struct RuntimeFaultContributionReceipt {
     pub event_count: u64,
     /// Optional detail message for this contribution.
     pub detail: Option<String>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

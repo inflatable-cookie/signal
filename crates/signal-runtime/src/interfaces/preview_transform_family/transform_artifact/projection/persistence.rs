@@ -89,19 +89,5 @@ pub(super) fn derive_transform_persistence(
         persistent_clip_count,
         guarded_persistence_clip_count,
         invalidated_persistence_clip_count,
-        summary: format!(
-            "persistence={:?} retention={:?}/{:?}/{:?} cache={:?}/{:?}/{:?} persistent={} guarded={} invalidated={} cache_root={}",
-            persistence_posture,
-            retention_policy_class,
-            retention_authority,
-            retention_outcome,
-            cache_placement_posture,
-            cache_placement_authority,
-            cache_placement_outcome,
-            persistent_clip_count,
-            guarded_persistence_clip_count,
-            invalidated_persistence_clip_count,
-            media_pipeline.cache_root_path,
-        ),
     }
 }

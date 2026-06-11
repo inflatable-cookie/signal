@@ -86,7 +86,6 @@ fn local_shared_host_edge_exports_runtime_multichannel_truth() {
                 supports_reset_while_active: true,
             },
             lv2_extension_capabilities: None,
-            summary: "local multichannel boundary plugin".into(),
         }],
     );
 
@@ -127,8 +126,4 @@ fn local_shared_host_edge_exports_runtime_multichannel_truth() {
         Some(RuntimeCanonicalChannelLayout::Surround5_1)
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"canonical_layout\":\"Surround5_1\""));
-    assert!(rendered.contains("\"output_bus_intent\":\"MainProgram\""));
-    assert!(rendered.contains("\"default_multichannel_io\":{"));
 }

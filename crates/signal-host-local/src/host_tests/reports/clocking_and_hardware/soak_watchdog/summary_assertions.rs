@@ -77,10 +77,4 @@ pub(super) fn assert_mixed_watchdog_summary(
         Some(signal_runtime::RuntimeWatchdogTrigger::HeartbeatMisses)
     );
     assert!(summary.transport.shared_memory_lease_id.contains("epoch-4"));
-    let rendered = supervisor.render_compact();
-    assert!(rendered.contains("readiness=Degraded"));
-    assert!(rendered.contains("supervision_updates=3"));
-    assert!(rendered.contains("plugin_faults=3"));
-    assert!(rendered.contains("last_watchdog=HeartbeatMisses"));
-    assert!(rendered.contains(&format!("event_stream={}", supervisor.event_count())));
 }

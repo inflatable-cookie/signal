@@ -72,31 +72,15 @@ impl SignalRuntime {
                     );
                     let rendered_frames = session.rendered_frames;
                     let block_count = session.block_count;
-                    let total_block_count = session.total_block_count;
-                    let total_frames = session.total_frames;
-                    let rendering_summary = format!(
-                        "request={} stage=rendering-graph blocks={}/{} frames={}/{}",
-                        session.request.request_id,
-                        block_count,
-                        total_block_count,
-                        rendered_frames,
-                        total_frames,
-                    );
                     let checkpoint = Self::emit_offline_render_session_checkpoint(
                         session,
                         RuntimeOfflineRenderCheckpointStage::RenderingGraph,
                         rendered_frames,
                         block_count,
                         progress_percent,
-                        rendering_summary,
                     );
                     let emitted_checkpoint_count = session.emitted_checkpoint_count;
                     let checkpoint_count = session.checkpoint_count;
-                    let summary = format!(
-                        "request={} state=running checkpoints={}/{} stage=rendering-graph",
-                        session.request.request_id, emitted_checkpoint_count, checkpoint_count
-                    );
-                    session.last_state_summary = summary.clone();
                     self.record_last_offline_render_session_snapshot(
                         Self::offline_render_session_state_snapshot(session),
                     );
@@ -114,7 +98,6 @@ impl SignalRuntime {
                         checkpoint_count,
                         checkpoint: Some(checkpoint),
                         result: None,
-                        summary,
                     }));
                 }
             }

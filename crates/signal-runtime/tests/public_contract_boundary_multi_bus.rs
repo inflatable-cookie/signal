@@ -73,9 +73,4 @@ fn public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth() {
             connection.connection_id == "return-fx:bus:mix:master->output-main:bus:mix:master"
         }));
 
-    let rendered = observation.render_json();
-    assert!(rendered.contains("\"bus_connection_count\":5"));
-    assert!(rendered.contains("\"auxiliary_path_count\":3"));
-    assert!(rendered.contains("\"connection_id\":\"send-fx:bus:fx:plate->return-fx:bus:fx:plate\""));
-    assert!(rendered.contains("\"auxiliary_path_id\":\"send_return:fx:plate\""));
 }

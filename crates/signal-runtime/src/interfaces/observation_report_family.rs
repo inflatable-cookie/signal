@@ -246,20 +246,4 @@ impl RuntimeObservationReport {
         self.external_io_snapshot = host_io.build_external_io_snapshot();
         self
     }
-
-    /// Renders a single-line compact summary of the observation report.
-    pub fn render_compact(&self) -> String {
-        render_runtime_observation_report_compact(self)
-    }
-}
-
-impl RuntimeObservationReport {
-    /// Renders a JSON representation of the observation report via a zero-event supervisor report.
-    pub fn render_json(&self) -> String {
-        RuntimeSupervisorReport {
-            observation: self.clone(),
-            events: Vec::new(),
-        }
-        .render_json()
-    }
 }

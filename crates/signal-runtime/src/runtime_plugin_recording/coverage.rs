@@ -23,15 +23,6 @@ pub(super) fn runtime_plugin_parity_band(
     }
 }
 
-pub(super) fn runtime_plugin_platform_scope_summary(
-    coverage: Option<&RuntimePluginFormatPlatformCoverageRecord>,
-) -> String {
-    if let Some(coverage) = coverage {
-        return coverage.summary.clone();
-    }
-    "platforms=unknown unsupported=unknown".into()
-}
-
 pub(crate) fn plugin_format_sort_key(format: PluginFormat) -> u8 {
     match format {
         PluginFormat::Clap => 0,

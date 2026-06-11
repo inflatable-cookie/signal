@@ -78,7 +78,6 @@ pub fn sample_lv2_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
                 &["http://lv2plug.in/ns/ext/patch#Message".into()],
             ),
         ),
-        summary: "public lv2 boundary plugin".into(),
     }
 }
 

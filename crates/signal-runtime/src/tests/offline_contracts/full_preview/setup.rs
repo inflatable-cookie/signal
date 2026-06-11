@@ -76,7 +76,6 @@ pub(crate) fn build_runtime_offline_render_contract_preview() -> (
                     supports_reset_while_active: false,
                 },
                 lv2_extension_capabilities: None,
-                summary: "plugin_type=plugin:vst3:multiout-instrument".into(),
             },
             crate::RuntimePluginDiscoveredTypeRecord {
                 plugin_type_id: "plugin:vst3:bus-fx".into(),
@@ -141,7 +140,6 @@ pub(crate) fn build_runtime_offline_render_contract_preview() -> (
                     supports_reset_while_active: true,
                 },
                 lv2_extension_capabilities: None,
-                summary: "plugin_type=plugin:vst3:bus-fx".into(),
             },
         ],
     );

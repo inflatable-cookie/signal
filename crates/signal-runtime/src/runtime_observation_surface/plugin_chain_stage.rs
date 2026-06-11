@@ -40,7 +40,7 @@ impl SignalRuntime {
         let degraded_reasons = sandbox
             .map(|sandbox| sandbox.degraded_reasons.clone())
             .unwrap_or_default();
-        let summary = format!(
+        let _summary = format!(
             "node={} sandbox={:?} group={:?} placement={:?} rule={:?} members={} continuity={:?} rebindable={} lifecycle={:?}/{:?} transport={:?} recall={:?} compensation={:?} planned_latency={} realized_latency={:?} tail={:?} bypassed={} active_transport={}",
             node.node_id,
             sandbox_id,
@@ -109,17 +109,6 @@ impl SignalRuntime {
                     target_bus_id: route.target_bus_id.clone(),
                     attachment_policy: route.attachment_policy,
                     fallback_outcome: route.fallback_outcome,
-                    summary: format!(
-                        "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
-                        route.source_kind,
-                        route.source_id,
-                        route.source_bus_id.as_deref().unwrap_or("none"),
-                        RuntimeSecondaryInputTargetKind::PluginInput,
-                        node.node_id,
-                        route.target_bus_id,
-                        route.attachment_policy,
-                        route.fallback_outcome,
-                    ),
                 }
             }),
             spatial_execution: node.spatial_execution.clone(),
@@ -135,7 +124,6 @@ impl SignalRuntime {
             bypassed,
             active_transport,
             degraded_reasons,
-            summary,
         }
     }
 }

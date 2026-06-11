@@ -124,26 +124,6 @@ pub(super) fn runtime_plugin_sandbox_snapshot(
             | RuntimeInterruptionClass::Restartable
             | RuntimeInterruptionClass::Recoverable
     );
-    snapshot.summary = format!(
-        "group={} placement={:?} rule={:?} members={} continuity={:?} rebindable={} state={:?} format={:?} lifecycle={:?} transport={:?} restarts={} recoveries={} faults={} active={} transport_active={} instance={} fault={}",
-        snapshot.sandbox_group_key,
-        snapshot.placement_outcome,
-        snapshot.placement_rule_id,
-        snapshot.shared_boundary_member_count,
-        snapshot.continuity_class,
-        snapshot.rebindable,
-        snapshot.state,
-        snapshot.plugin_format,
-        snapshot.lifecycle_stage,
-        snapshot.transport_stage,
-        snapshot.restart_count,
-        snapshot.recovery_count,
-        snapshot.fault_count,
-        snapshot.active,
-        snapshot.active_transport,
-        snapshot.instance_id.as_deref().unwrap_or("none"),
-        snapshot.last_fault_detail.as_deref().unwrap_or("none"),
-    );
     snapshot
 }
 

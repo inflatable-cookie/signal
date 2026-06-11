@@ -55,14 +55,6 @@ fn local_host_shared_report_tracks_device_loss_recovery() {
             .track_lane_node_count,
         2
     );
-    assert!(report
-        .render_compact()
-        .contains("host_backend_device_losses=1"));
-    assert!(report.render_json().contains("\"restart_attempt_count\":1"));
-    assert!(report
-        .render_json()
-        .contains("\"device_supervision_snapshot\":{"));
-    assert!(report.render_json().contains("\"restart_state\":\"Recovered\""));
 }
 
 #[test]
@@ -146,19 +138,4 @@ fn local_host_shared_report_tracks_device_loss_restart_failure() {
         report.observation.observation.control_snapshot.last_stop_reason,
         Some(StopReason::DeviceReconfigure)
     );
-    assert!(report
-        .render_compact()
-        .contains("host_backend_restart_failures=1"));
-    assert!(report.render_json().contains("\"device_loss_count\":1"));
-    assert!(report
-        .render_json()
-        .contains("\"device_supervision_snapshot\":{"));
-    assert!(report.render_json().contains("\"fault_boundary\":\"Exhausted\""));
-    assert!(report.render_json().contains("\"clock_domain\":\"Degraded\""));
-    assert!(report
-        .render_json()
-        .contains("\"fallback_state\":\"RecoveryConstrained\""));
-    assert!(report.render_json().contains("\"transition_state\":\"Stable\""));
-    assert!(report.render_json().contains("\"drift_state\":\"Resyncing\""));
-    assert!(report.render_json().contains("\"discontinuity_state\":\"Faulted\""));
 }

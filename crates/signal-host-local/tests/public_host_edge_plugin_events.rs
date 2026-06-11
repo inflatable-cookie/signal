@@ -54,10 +54,6 @@ fn local_shared_host_edge_exports_runtime_generic_event_truth() {
         2
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"plugin_events\":{"));
-    assert!(rendered.contains("\"note_expression_events\":3"));
-    assert!(rendered.contains("\"supports_note_expression_count\":2"));
 }
 
 #[test]
@@ -107,10 +103,4 @@ fn local_shared_host_edge_exports_runtime_controller_expression_truth() {
         signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"note_expression_pressure_events\":1"));
-    assert!(rendered.contains("\"note_expression_timbre_events\":1"));
-    assert!(rendered.contains("\"note_expression_tuning_events\":2"));
-    assert!(rendered.contains("\"mpe_posture\":\"Guarded\""));
-    assert!(rendered.contains("\"midi2_posture\":\"Guarded\""));
 }

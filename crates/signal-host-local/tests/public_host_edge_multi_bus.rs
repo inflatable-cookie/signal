@@ -51,9 +51,4 @@ fn local_shared_host_edge_exports_runtime_multi_bus_truth() {
     assert_eq!(report.observation.metering_snapshot.bus_connection_count, 5);
     assert_eq!(report.observation.metering_snapshot.auxiliary_path_count, 3);
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"bus_connection_count\":5"));
-    assert!(rendered.contains("\"auxiliary_path_count\":3"));
-    assert!(rendered.contains("\"connection_id\":\"send-fx:bus:fx:plate->return-fx:bus:fx:plate\""));
-    assert!(rendered.contains("\"auxiliary_path_id\":\"send_return:fx:plate\""));
 }

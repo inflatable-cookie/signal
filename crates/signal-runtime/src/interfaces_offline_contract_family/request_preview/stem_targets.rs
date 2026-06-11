@@ -164,21 +164,13 @@ fn resolve_offline_render_stem_target(
         }
     };
 
-    let resolved_node_count = resolved_node_ids.len();
-    let resolved_output_bus_count = resolved_output_bus_ids.len();
+    let _resolved_node_count = resolved_node_ids.len();
+    let _resolved_output_bus_count = resolved_output_bus_ids.len();
     Ok(RuntimeOfflineRenderStemPreview {
         stem_id: stem.stem_id.clone(),
         target_kind: stem.target_kind,
         target_id,
         resolved_node_ids,
         resolved_output_bus_ids,
-        summary: format!(
-            "stem={} target={:?}/{:?} nodes={} output_buses={}",
-            stem.stem_id,
-            stem.target_kind,
-            stem.target_id,
-            resolved_node_count,
-            resolved_output_bus_count,
-        ),
     })
 }

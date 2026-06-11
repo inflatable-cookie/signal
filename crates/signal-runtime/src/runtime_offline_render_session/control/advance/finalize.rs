@@ -21,28 +21,15 @@ impl SignalRuntime {
             session.materialized_result = Some(result);
             let rendered_frames = session.rendered_frames;
             let block_count = session.block_count;
-            let materializing_summary = format!(
-                "request={} stage=materializing-outputs main_mix={} stems={} freeze_artifacts={}",
-                session.request.request_id,
-                session.request.include_main_mix,
-                session.preview.stem_count,
-                session.preview.freeze_artifact_count,
-            );
             let checkpoint = Self::emit_offline_render_session_checkpoint(
                 &mut session,
                 RuntimeOfflineRenderCheckpointStage::MaterializingOutputs,
                 rendered_frames,
                 block_count,
                 95,
-                materializing_summary,
             );
             let emitted_checkpoint_count = session.emitted_checkpoint_count;
             let checkpoint_count = session.checkpoint_count;
-            let summary = format!(
-                "request={} state=running checkpoints={}/{} stage=materializing-outputs",
-                request_id, emitted_checkpoint_count, checkpoint_count
-            );
-            session.last_state_summary = summary.clone();
             self.record_last_offline_render_session_snapshot(
                 Self::offline_render_session_state_snapshot(&session),
             );
@@ -59,7 +46,6 @@ impl SignalRuntime {
                 checkpoint_count,
                 checkpoint: Some(checkpoint),
                 result: None,
-                summary,
             });
         }
 
@@ -67,30 +53,15 @@ impl SignalRuntime {
             session.finalizing_checkpoint_emitted = true;
             let rendered_frames = session.rendered_frames;
             let block_count = session.block_count;
-            let finalizing_summary = format!(
-                "request={} stage=finalizing-artifacts artifact_root={} pending_delivery=true",
-                session.request.request_id,
-                session
-                    .request
-                    .artifact_root_path
-                    .as_deref()
-                    .unwrap_or("none"),
-            );
             let checkpoint = Self::emit_offline_render_session_checkpoint(
                 &mut session,
                 RuntimeOfflineRenderCheckpointStage::FinalizingArtifacts,
                 rendered_frames,
                 block_count,
                 99,
-                finalizing_summary,
             );
             let emitted_checkpoint_count = session.emitted_checkpoint_count;
             let checkpoint_count = session.checkpoint_count;
-            let summary = format!(
-                "request={} state=running checkpoints={}/{} stage=finalizing-artifacts",
-                request_id, emitted_checkpoint_count, checkpoint_count
-            );
-            session.last_state_summary = summary.clone();
             self.record_last_offline_render_session_snapshot(
                 Self::offline_render_session_state_snapshot(&session),
             );
@@ -107,7 +78,6 @@ impl SignalRuntime {
                 checkpoint_count,
                 checkpoint: Some(checkpoint),
                 result: None,
-                summary,
             });
         }
 
@@ -132,14 +102,6 @@ impl SignalRuntime {
         };
         session.state = RuntimeOfflineRenderExecutionState::Completed;
         session.interruption_class_override = None;
-        session.last_state_summary = format!(
-            "request={} state=completed checkpoints={}/{} artifacts={} report={}",
-            request_id,
-            session.emitted_checkpoint_count,
-            session.checkpoint_count,
-            result.manifest.artifact_count,
-            result.manifest.report.is_some(),
-        );
         session.materialized_result = Some(result.clone());
         self.record_last_offline_render_session_snapshot(
             Self::offline_render_session_state_snapshot(&session),
@@ -155,10 +117,6 @@ impl SignalRuntime {
             checkpoint_count: session.checkpoint_count,
             checkpoint: None,
             result: Some(result),
-            summary: format!(
-                "request={} state=completed checkpoints={}/{}",
-                request_id, session.emitted_checkpoint_count, session.checkpoint_count
-            ),
         })
     }
 }

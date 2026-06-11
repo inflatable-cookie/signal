@@ -117,13 +117,6 @@ fn local_shared_host_edge_exports_runtime_transform_artifact_truth() {
         RuntimeTransformArtifactReuseState::Reusable
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"transform_artifact_snapshot\":{"));
-    assert!(rendered.contains("\"clip_count\":1"));
-    assert!(rendered.contains("\"reusable_clip_count\":1"));
-    assert!(rendered.contains("\"reuse_state\":\"Reusable\""));
-    assert!(rendered.contains("\"persistence_posture\":\"AssetScopedTransformPersistence\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
         .runtime()

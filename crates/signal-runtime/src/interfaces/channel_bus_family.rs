@@ -152,8 +152,6 @@ pub struct RuntimeSecondaryInputRouteSummary {
     pub attachment_policy: RuntimeSecondaryInputAttachmentPolicy,
     /// Fallback outcome if the connection cannot be satisfied.
     pub fallback_outcome: RuntimeSecondaryInputFallbackOutcome,
-    /// Human-readable routing summary.
-    pub summary: String,
 }
 
 impl RuntimeSecondaryInputRouteSummary {
@@ -164,7 +162,7 @@ impl RuntimeSecondaryInputRouteSummary {
         target_id: impl Into<String>,
     ) -> Self {
         let target_id = target_id.into();
-        let summary = format!(
+        let _summary = format!(
             "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
             contract.source_kind,
             contract.source_id,
@@ -184,7 +182,6 @@ impl RuntimeSecondaryInputRouteSummary {
             target_bus_id: contract.target_bus_id.clone(),
             attachment_policy: contract.attachment_policy,
             fallback_outcome: contract.fallback_outcome,
-            summary,
         }
     }
 }
@@ -274,8 +271,6 @@ pub struct RuntimeBusConnectionSummary {
     pub attachment_class: RuntimeBusConnectionAttachmentClass,
     /// Fallback outcome if this connection cannot be satisfied.
     pub fallback_outcome: RuntimeBusConnectionFallbackOutcome,
-    /// Human-readable summary of this connection.
-    pub summary: String,
 }
 
 /// Summary of an auxiliary routing path: kind, bus role, source/target node IDs, and the bus and connection IDs it spans.
@@ -301,8 +296,6 @@ pub struct RuntimeAuxiliaryPathSummary {
     pub attachment_class: RuntimeBusConnectionAttachmentClass,
     /// Fallback outcome if this path cannot be satisfied.
     pub fallback_outcome: RuntimeBusConnectionFallbackOutcome,
-    /// Human-readable summary of this auxiliary path.
-    pub summary: String,
 }
 
 /// Resolved multichannel layout summary: canonical layout, per-channel roles, and whether a custom discrete fallback is used.
@@ -316,8 +309,6 @@ pub struct RuntimeMultichannelLayoutSummary {
     pub channel_roles: Vec<RuntimeChannelRole>,
     /// Whether discrete (non-canonical) channel roles are used as a fallback.
     pub uses_custom_fallback: bool,
-    /// Human-readable layout summary.
-    pub summary: String,
 }
 
 impl Default for RuntimeMultichannelLayoutSummary {
@@ -413,7 +404,7 @@ impl RuntimeMultichannelLayoutSummary {
                 true,
             ),
         };
-        let summary = match canonical_layout {
+        let _summary = match canonical_layout {
             Some(layout) => format!(
                 "channels={} canonical={layout:?} roles={:?}",
                 channel_count, channel_roles
@@ -429,7 +420,6 @@ impl RuntimeMultichannelLayoutSummary {
             canonical_layout,
             channel_roles,
             uses_custom_fallback,
-            summary,
         }
     }
 }
@@ -445,8 +435,6 @@ pub struct RuntimeMultichannelIoSummary {
     pub input_bus_intent: RuntimeBusIntent,
     /// Bus intent for the output direction.
     pub output_bus_intent: RuntimeBusIntent,
-    /// Human-readable I/O summary.
-    pub summary: String,
 }
 
 impl Default for RuntimeMultichannelIoSummary {

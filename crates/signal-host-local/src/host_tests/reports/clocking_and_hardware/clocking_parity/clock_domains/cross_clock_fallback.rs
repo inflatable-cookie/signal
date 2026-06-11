@@ -83,17 +83,4 @@ fn local_host_shared_report_surfaces_cross_clock_runtime_resampling_state() {
     assert!(report.observation.host_io.clocking.crossing_required);
     assert_eq!(report.observation.host_io.clocking.processing_sample_rate_hz, 44_100);
     assert_eq!(report.observation.host_io.clocking.hardware_sample_rate_hz, 48_000);
-    assert!(report.render_compact().contains("host_clock_domain=CrossClock"));
-    assert!(report
-        .render_json()
-        .contains("\"fallback_state\":\"RuntimeResampled\""));
-    assert!(report
-        .render_json()
-        .contains("\"transition_state\":\"EnteredCrossClockFallback\""));
-    assert!(report
-        .render_json()
-        .contains("\"drift_state\":\"CrossClockManaged\""));
-    assert!(report
-        .render_json()
-        .contains("\"discontinuity_state\":\"Reconfigured\""));
 }

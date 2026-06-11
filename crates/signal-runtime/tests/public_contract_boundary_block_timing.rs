@@ -102,20 +102,4 @@ fn public_runtime_block_timing_boundary_reports_bounded_runtime_measurements() {
             .expect("trace should preserve public budget utilization")
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"engine_block_snapshot\":{"));
-    assert!(observation_json.contains("\"last_block_execution_time_ns\":"));
-    assert!(observation_json.contains("\"last_block_deadline_pressure\":"));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"engine_block_snapshot\":{"));
-    assert!(supervisor_json.contains("\"last_block_deadline_budget_ns\":1000000"));
-
-    let performance_json = performance.render_json();
-    assert!(performance_json.contains("\"last_block_execution_time_ns\":"));
-    assert!(performance_json.contains("\"last_block_deadline_pressure\":"));
-
-    let trace_json = trace.render_json();
-    assert!(trace_json.contains("\"peak_block_execution_time_ns\":"));
-    assert!(trace_json.contains("\"peak_block_budget_utilization_percent\":"));
 }

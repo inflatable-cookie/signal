@@ -109,11 +109,4 @@ fn public_runtime_plugin_continuity_boundary_reports_shared_boundary_and_policy_
     );
     assert_eq!(isolated.continuity_class, RuntimeInterruptionClass::Steady);
 
-    let rendered = supervisor.render_json();
-    assert!(rendered.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(rendered.contains("\"placement_outcome\":\"SharedSandbox\""));
-    assert!(rendered.contains("\"placement_rule_id\":\"share-verified-clap\""));
-    assert!(rendered.contains("\"sandbox_group_key\":\"shared:public\""));
-    assert!(rendered.contains("\"shared_boundary_member_count\":2"));
-    assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
 }

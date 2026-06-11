@@ -62,8 +62,6 @@ pub struct RuntimePluginChainStageSnapshot {
     pub active_transport: bool,
     /// Reasons this stage is currently degraded.
     pub degraded_reasons: Vec<String>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Summary of all stages in one plugin execution chain, including latency and
@@ -112,8 +110,6 @@ pub struct RuntimePluginExecutionChainSummary {
     pub total_tail_samples: u32,
     /// Per-stage snapshots.
     pub stages: Vec<RuntimePluginChainStageSnapshot>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Aggregate snapshot of all plugin execution chains and their combined stage counts.
@@ -153,6 +149,4 @@ pub struct RuntimePluginChainSnapshot {
     pub total_tail_samples: u32,
     /// Per-chain execution summaries.
     pub chains: Vec<RuntimePluginExecutionChainSummary>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }

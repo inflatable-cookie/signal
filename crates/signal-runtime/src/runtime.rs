@@ -192,7 +192,7 @@ use runtime_plugin_lifecycle::{
     RuntimePluginLifecycleStateModel,
 };
 use runtime_plugin_recording::{
-    plugin_format_sort_key, runtime_plugin_capability_coverage, runtime_plugin_format_coverage,
+    runtime_plugin_capability_coverage, runtime_plugin_format_coverage,
 };
 use runtime_recording_capture::RuntimeRecordingCaptureStateModel;
 pub(crate) use runtime_support_models::{

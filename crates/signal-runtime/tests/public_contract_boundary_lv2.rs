@@ -29,9 +29,6 @@ fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_tru
         linux_parity_band: RuntimePluginParityBand::Portable,
         linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
         linux_strict_sandbox_default: true,
-        summary:
-            "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
-                .into(),
     }],
     );
     let scan_handle = runtime.record_plugin_scan_request(&PluginScanRequest {
@@ -48,8 +45,6 @@ fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_tru
             manifest_path: Some("/usr/lib/lv2/Broken Public LV2.lv2/manifest.ttl".into()),
             plugin_type_id: Some("plugin:lv2:unsupported-public".into()),
             kind: RuntimePluginScanDiagnosticKind::UnsupportedRequiredFeature,
-            detail: "unsupported required features: http://lv2plug.in/ns/ext/atom#sequence".into(),
-            summary: "format=Lv2 kind=UnsupportedRequiredFeature root=/usr/lib/lv2 bundle=/usr/lib/lv2/Broken Public LV2.lv2 plugin_type=plugin:lv2:unsupported-public detail=unsupported required features: http://lv2plug.in/ns/ext/atom#sequence".into(),
         }],
     );
     runtime.record_plugin_sandbox_spec(&PluginSandboxSpec {
@@ -91,9 +86,6 @@ fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_tru
             urid_negotiation_posture: RuntimeLv2UridNegotiationPosture::Negotiated,
             patch_exchange_posture: RuntimeLv2PatchExchangePosture::Supported,
             extension_negotiation_state: RuntimeLv2ExtensionNegotiationState::Negotiated,
-            summary:
-                "worker=WorkerRequiredAvailable urid=Negotiated patch=Supported negotiation=Negotiated"
-                    .into(),
         },
     );
     runtime.record_plugin_sandbox_transport(
@@ -106,7 +98,7 @@ fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_tru
     );
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
 
     assert_eq!(
         observation.plugin_discovery_snapshot.discovered_type_count,
@@ -223,21 +215,4 @@ fn public_runtime_lv2_boundary_reports_runtime_owned_discovery_and_lifecycle_tru
         RuntimeLv2ExtensionNegotiationState::Negotiated
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"formats\":[\"Lv2\"]"));
-    assert!(observation_json.contains("\"discovery_diagnostic_count\":1"));
-    assert!(observation_json.contains("\"kind\":\"UnsupportedRequiredFeature\""));
-    assert!(observation_json.contains("\"plugin_type_id\":\"plugin:lv2:public-linux-synth\""));
-    assert!(observation_json.contains("\"transport_stage\":\"Attached\""));
-    assert!(observation_json.contains("\"supported_platforms\":[\"Linux\"]"));
-    assert!(observation_json.contains("\"lv2_extension_snapshot\":{"));
-    assert!(observation_json.contains("\"lv2_prepared_negotiation\":{"));
-    assert!(observation_json.contains("\"worker_posture\":\"WorkerRequiredAvailable\""));
-    assert!(observation_json.contains("\"patch_exchange_posture\":\"Supported\""));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_type_id\":\"plugin:lv2:public-linux-synth\""));
-    assert!(supervisor_json.contains("\"lv2_extension_snapshot\":{"));
 }

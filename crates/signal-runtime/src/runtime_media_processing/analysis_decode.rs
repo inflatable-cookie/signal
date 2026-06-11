@@ -114,15 +114,6 @@ fn loudness_descriptor_from_result(
         target_offset_lu: result.dynamics.target_offset_lu,
         peak_to_loudness_lu: result.dynamics.peak_to_loudness_lu,
         confidence: result.confidence.0,
-        summary: format!(
-            "integrated_lufs={:.3} true_peak_dbtp={:.3} loudness_range_lu={:.3} target_offset_lu={:.3} peak_to_loudness_lu={:.3} confidence={:.3}",
-            result.integrated_lufs,
-            result.true_peak_dbtp,
-            result.loudness_range_lu,
-            result.dynamics.target_offset_lu,
-            result.dynamics.peak_to_loudness_lu,
-            result.confidence.0,
-        ),
     }
 }
 
@@ -140,18 +131,5 @@ fn character_descriptor_from_result(
         rms_energy: result.dynamics.rms_energy,
         dynamic_range: result.dynamics.dynamic_range,
         confidence: result.confidence.0,
-        summary: format!(
-            "centroid_hz={:.3} rolloff_95_hz={:.3} flatness={:.3} contrast_db={:.3} onset_density={:.3} transient_density={:.3} sustain_ratio={:.3} rms_energy={:.3} dynamic_range={:.3} confidence={:.3}",
-            result.spectral_shape.centroid_hz,
-            result.spectral_shape.rolloff_95_hz,
-            result.spectral_shape.flatness,
-            result.spectral_contrast.contrast_db,
-            result.temporal.onset_density,
-            result.temporal.transient_density,
-            result.temporal.sustain_ratio,
-            result.dynamics.rms_energy,
-            result.dynamics.dynamic_range,
-            result.confidence.0,
-        ),
     }
 }

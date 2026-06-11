@@ -110,12 +110,6 @@ fn runtime_degraded_bound_plugin_session_gates_prework_lane() {
     assert_eq!(profiling.degraded_bound_plugin_sandboxes, 1);
     assert_eq!(profiling.missing_bound_plugin_sandboxes, 0);
     assert_eq!(profiling.plugin_chain_stage_count, 1);
-    assert!(profiling
-        .render_json()
-        .contains("\"plugin_gate_active\":true"));
-    assert!(profiling
-        .render_json()
-        .contains("\"degraded_bound_plugin_sandboxes\":1"));
     assert_eq!(soak.plugin_fault_count, 0);
     assert_eq!(soak.plugin_quarantined_sandbox_count, 0);
 }
@@ -263,12 +257,6 @@ fn runtime_compatible_schedule_projection_widens_normal_prework_service_scope() 
             .last_prework_service_effective_budget_per_cycle,
         Some(3)
     );
-    assert!(observation
-        .render_json()
-        .contains("\"last_prework_service_requested_cycles\":3"));
-    assert!(observation
-        .render_json()
-        .contains("\"last_prework_service_effective_budget_per_cycle\":3"));
 }
 
 #[test]

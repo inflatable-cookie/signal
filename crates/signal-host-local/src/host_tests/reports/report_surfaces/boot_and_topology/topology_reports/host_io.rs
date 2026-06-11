@@ -109,15 +109,4 @@ fn local_host_shared_report_surfaces_topology_aware_host_io() {
     );
     assert_eq!(report.observation.host_io.audio_pump.callback_count, 8);
     assert!(report.observation.host_io.runtime_graph_id_matches_pump);
-    assert!(report.render_multiline().contains("host_backend=coreaudio"));
-    assert!(report.render_json().contains("\"clock_source\":\"Internal\""));
-    assert!(report.render_json().contains("\"clock_domain\":\"SameClock\""));
-    assert!(report.render_json().contains("\"fallback_state\":\"Direct\""));
-    assert!(report.render_json().contains("\"transition_state\":\"Stable\""));
-    assert!(report.render_json().contains("\"drift_state\":\"Stable\""));
-    assert!(report.render_json().contains("\"discontinuity_state\":\"Continuous\""));
-    assert!(report.render_json().contains("\"endpoint_topology\":\"OutputOnly\""));
-    assert!(report
-        .render_json()
-        .contains("\"estimated_output_latency_samples\":536"));
 }

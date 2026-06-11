@@ -206,7 +206,4 @@ fn runtime_tracks_plugin_lifecycle_recovery_and_quarantine_state() {
         soak.last_recovery_intent,
         Some(RecoveryRestartIntent::CrashRecovery)
     );
-    assert!(soak
-        .render_json()
-        .contains("\"plugin_quarantined_sandbox_count\":1"));
 }

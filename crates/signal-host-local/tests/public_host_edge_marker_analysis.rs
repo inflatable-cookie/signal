@@ -123,12 +123,6 @@ fn local_shared_host_edge_exports_runtime_marker_analysis_truth() {
         RuntimeTempoAssistPosture::Ready
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"marker_analysis_snapshot\":{"));
-    assert!(rendered.contains("\"tempo_assist_ready_clip_count\":1"));
-    assert!(rendered.contains("\"tempo_assist_posture\":\"Ready\""));
-    assert!(rendered.contains("\"tempo_assist_hint_source\":\"SourceTempo\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
         .runtime()

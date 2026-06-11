@@ -13,8 +13,6 @@ pub struct RuntimeOfflineRenderQueueProgressReceipt {
     pub completed_job_count: usize,
     /// Overall queue progress as a percentage (0–100).
     pub progress_percent: u8,
-    /// Human-readable summary of the queue progress.
-    pub summary: String,
 }
 
 /// Stage reached by a render checkpoint.
@@ -51,8 +49,6 @@ pub struct RuntimeOfflineRenderCheckpointReceipt {
     pub total_block_count: usize,
     /// Render progress as a percentage (0–100).
     pub progress_percent: u8,
-    /// Human-readable summary of this checkpoint.
-    pub summary: String,
 }
 
 /// Final execution receipt for a completed offline render: all checkpoints and result.
@@ -66,8 +62,6 @@ pub struct RuntimeOfflineRenderExecutionReceipt {
     pub checkpoints: Vec<RuntimeOfflineRenderCheckpointReceipt>,
     /// Final render result.
     pub result: RuntimeOfflineRenderResult,
-    /// Human-readable summary of this execution receipt.
-    pub summary: String,
 }
 
 /// Current execution state of an offline render session.
@@ -106,8 +100,6 @@ pub struct RuntimeOfflineRenderExecutionProgressReceipt {
     pub checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
     /// Final render result, available only once the session completes.
     pub result: Option<RuntimeOfflineRenderResult>,
-    /// Human-readable summary of this progress receipt.
-    pub summary: String,
 }
 
 /// Receipt confirming an offline render session was cancelled.
@@ -123,8 +115,6 @@ pub struct RuntimeOfflineRenderExecutionCancellationReceipt {
     pub rendered_frame_count: usize,
     /// Number of audio blocks that had been processed before cancellation.
     pub rendered_block_count: usize,
-    /// Human-readable summary of the cancellation receipt.
-    pub summary: String,
 }
 
 /// Full state snapshot for one active or completed offline render session.
@@ -166,8 +156,6 @@ pub struct RuntimeOfflineRenderSessionStateSnapshot {
     pub active_checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
     /// The most recently completed checkpoint, if any.
     pub last_checkpoint: Option<RuntimeOfflineRenderCheckpointReceipt>,
-    /// Human-readable summary of this session state.
-    pub summary: String,
 }
 
 /// Aggregate snapshot of the offline render session queue: active, paused,
@@ -188,8 +176,6 @@ pub struct RuntimeOfflineRenderSessionSnapshot {
     pub last_cancellation: Option<RuntimeOfflineRenderExecutionCancellationReceipt>,
     /// Most recent purge receipt, if any.
     pub last_purge: Option<RuntimeOfflineRenderPurgeReceipt>,
-    /// Human-readable summary of the session queue state.
-    pub summary: String,
 }
 
 /// Result of processing the offline render queue: completed jobs, progress
@@ -208,8 +194,6 @@ pub struct RuntimeOfflineRenderQueueResult {
     pub results: Vec<RuntimeOfflineRenderResult>,
     /// Requests that were deferred to the next processing cycle.
     pub deferred_requests: Vec<RuntimeOfflineRenderRequest>,
-    /// Human-readable summary of the queue result.
-    pub summary: String,
 }
 
 /// Request to delete render artifacts and/or the report file for a prior render.
@@ -244,6 +228,4 @@ pub struct RuntimeOfflineRenderPurgeReceipt {
     pub purged_report: bool,
     /// Bytes reclaimed from the report file.
     pub purged_report_byte_count: u64,
-    /// Human-readable summary of the purge receipt.
-    pub summary: String,
 }

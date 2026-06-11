@@ -63,7 +63,6 @@ pub fn sample_discovered_type_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_reset_while_active: true,
         },
         lv2_extension_capabilities: None,
-        summary: "public boundary discovered plugin".into(),
     }
 }
 
@@ -124,7 +123,6 @@ pub fn sample_backend_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_reset_while_active: false,
         },
         lv2_extension_capabilities: None,
-        summary: "public boundary backend breadth plugin".into(),
     }
 }
 
@@ -185,6 +183,5 @@ pub fn sample_au_breadth_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_reset_while_active: false,
         },
         lv2_extension_capabilities: None,
-        summary: "public boundary au breadth plugin".into(),
     }
 }

@@ -181,14 +181,6 @@ impl RuntimeEngineState {
                     rms_level: level.rms,
                     latency_samples: level.latency_samples,
                     tail_samples: level.tail_samples,
-                    summary: format!(
-                        "bus={} role={:?} peak={:.3} rms={:.3} producers={}",
-                        bus_id,
-                        topology_role,
-                        level.peak,
-                        level.rms,
-                        producer_node_ids.len(),
-                    ),
                 }
             })
             .collect()

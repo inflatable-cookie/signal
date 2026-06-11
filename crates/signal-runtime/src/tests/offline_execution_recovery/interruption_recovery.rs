@@ -35,7 +35,6 @@ fn runtime_offline_render_execution_becomes_recoverable_and_resumes_after_interr
         recoverable.interruption_class,
         RuntimeInterruptionClass::Resumable
     );
-    assert!(recoverable.summary.contains("state=recoverable"));
     assert!(!artifact_dir.exists());
 
     let still_recoverable = runtime

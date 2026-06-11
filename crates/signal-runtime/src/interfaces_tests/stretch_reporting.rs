@@ -30,7 +30,6 @@ fn runtime_stretch_engine_snapshot_derives_from_clip_processing_baselines() {
                 project_tempo_segment_id: None,
                 readiness: RuntimeClipProcessingReadiness::Ready,
                 last_error: None,
-                summary: "disabled clip".into(),
             },
             RuntimeClipProcessingSnapshot {
                 clip_id: "clip:stretch-ratio".into(),
@@ -49,7 +48,6 @@ fn runtime_stretch_engine_snapshot_derives_from_clip_processing_baselines() {
                 project_tempo_segment_id: None,
                 readiness: RuntimeClipProcessingReadiness::Ready,
                 last_error: None,
-                summary: "ratio clip".into(),
             },
             RuntimeClipProcessingSnapshot {
                 clip_id: "clip:stretch-sample-domain".into(),
@@ -68,7 +66,6 @@ fn runtime_stretch_engine_snapshot_derives_from_clip_processing_baselines() {
                 project_tempo_segment_id: None,
                 readiness: RuntimeClipProcessingReadiness::Ready,
                 last_error: None,
-                summary: "sample-domain clip".into(),
             },
             RuntimeClipProcessingSnapshot {
                 clip_id: "clip:stretch-fallback".into(),
@@ -87,10 +84,8 @@ fn runtime_stretch_engine_snapshot_derives_from_clip_processing_baselines() {
                 project_tempo_segment_id: None,
                 readiness: RuntimeClipProcessingReadiness::Invalid,
                 last_error: Some("outside baseline support".into()),
-                summary: "fallback clip".into(),
             },
         ],
-        summary: "clip processing stretch baseline".into(),
     };
 
     let stretch = RuntimeStretchEngineSnapshot::from_clip_processing_pipeline(&pipeline);
@@ -130,6 +125,4 @@ fn runtime_stretch_engine_snapshot_derives_from_clip_processing_baselines() {
         stretch.clips[3].fallback_kind,
         RuntimeStretchFallbackKind::RatioOnly
     );
-    assert!(stretch.summary.contains("sample_domain=1"));
-    assert!(stretch.summary.contains("fallback=1"));
 }

@@ -1,7 +1,4 @@
-use super::coverage::{
-    runtime_plugin_host_platform_sort_key, runtime_plugin_parity_band,
-    runtime_plugin_platform_scope_summary,
-};
+use super::coverage::{runtime_plugin_host_platform_sort_key, runtime_plugin_parity_band};
 use super::*;
 
 fn runtime_plugin_format_rule_count(
@@ -93,26 +90,6 @@ pub(crate) fn runtime_plugin_parity_coverage(
                 terminal_sandbox_count,
                 active_transport_count,
                 explicit_placement_rule_count,
-                summary: format!(
-                    "format={format:?} parity={parity_band:?} linux={linux_parity_band:?} linux_supported={linux_supported} linux_policy={linux_preferred_sandbox_outcome:?} linux_strict_default={linux_strict_sandbox_default} {} discovered_types={} prepare_capable={} activate_capable={} sandboxes={} in_process={} shared={} isolated={} ready={} restarting={} rebindable={} degraded={} faulted={} quarantined={} terminal={} active_transport={} placement_rules={}",
-                    runtime_plugin_platform_scope_summary(coverage),
-                    discovered_type_count,
-                    prepare_capable_type_count,
-                    activate_capable_type_count,
-                    sandbox_count,
-                    in_process_sandbox_count,
-                    shared_sandbox_count,
-                    isolated_sandbox_count,
-                    ready_sandbox_count,
-                    restarting_sandbox_count,
-                    rebindable_sandbox_count,
-                    degraded_sandbox_count,
-                    faulted_sandbox_count,
-                    quarantined_sandbox_count,
-                    terminal_sandbox_count,
-                    active_transport_count,
-                    explicit_placement_rule_count,
-                ),
             }
         })
         .collect()

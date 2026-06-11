@@ -64,9 +64,4 @@ fn local_shared_host_edge_exports_runtime_deferred_work_policy_truth() {
         Some(RuntimeDeferredServiceReason::SafeMode)
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"last_deferred_service\":{"));
-    assert!(rendered.contains("\"decision\":\"Defer\""));
-    assert!(rendered.contains("\"reason\":\"SafeMode\""));
-    assert!(rendered.contains("\"starved_work_item_count\":1"));
 }

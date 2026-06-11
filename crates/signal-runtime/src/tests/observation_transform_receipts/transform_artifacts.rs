@@ -145,15 +145,6 @@ fn runtime_transform_artifact_snapshot_derives_from_stretch_and_marker_analysis_
             .persistence_posture,
         RuntimeTransformPersistencePosture::AssetScopedTransformPersistence
     );
-    assert!(observation
-        .render_compact()
-        .contains("transform_artifacts=1/1/0/0/0"));
-    assert!(observation
-        .render_json()
-        .contains("\"transform_artifact_snapshot\":{\"clip_count\":1"));
-    assert!(observation.render_json().contains(
-        "\"transform_persistence\":{\"persistence_posture\":\"AssetScopedTransformPersistence\""
-    ));
 
     let rendered = runtime
         .render_clip_processing_buffer(RuntimeClipRenderRequest {
@@ -176,9 +167,6 @@ fn runtime_transform_artifact_snapshot_derives_from_stretch_and_marker_analysis_
         RuntimeTransformArtifactReuseState::Reusable
     );
     assert!(rendered.transform_artifact_snapshot.cached_media_ready);
-    assert!(rendered
-        .summary
-        .contains("transform=Ready/Reusable/cached_media=true"));
 
     let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
         &RuntimeOfflineRenderRequest {
@@ -209,7 +197,6 @@ fn runtime_transform_artifact_snapshot_derives_from_stretch_and_marker_analysis_
             .retention_outcome,
         RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
     );
-    assert!(preview.summary.contains("transform_artifacts=1/reusable=1"));
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime

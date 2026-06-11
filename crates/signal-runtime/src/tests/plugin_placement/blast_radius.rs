@@ -188,10 +188,4 @@ fn runtime_shared_sandbox_blast_radius_stays_boundary_local_across_recovery_and_
         .filter(|stage| stage.sandbox_id.as_deref() == Some("sandbox-steady"))
         .all(|stage| stage.continuity_class == RuntimeInterruptionClass::Steady));
 
-    let terminal_json =
-        RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default()).render_json();
-    assert!(terminal_json.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(terminal_json.contains("\"sandbox_group_key\":\"shared:verified\""));
-    assert!(terminal_json.contains("\"shared_boundary_member_count\":3"));
-    assert!(terminal_json.contains("\"continuity_class\":\"Terminal\""));
 }

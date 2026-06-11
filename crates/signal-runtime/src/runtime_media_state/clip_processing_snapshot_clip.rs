@@ -16,10 +16,10 @@ impl RuntimeClipProcessingPipelineStateModel {
                 .saturating_sub(registration.fade_out.duration_samples),
         ));
         let treatment_stages = self.treatment_stages(registration);
-        let treatment_stages_summary = treatment_stages.clone();
+        let _treatment_stages_summary = treatment_stages.clone();
         let (realized_warp_ratio, project_tempo_source, project_tempo_segment_id) =
             self.warp_context(registration, warp_clips);
-        let project_tempo_segment_id_summary = project_tempo_segment_id.clone();
+        let _project_tempo_segment_id_summary = project_tempo_segment_id.clone();
         let (readiness, last_error) = if let Some(error) = self.validate_registration(registration)
         {
             (RuntimeClipProcessingReadiness::Invalid, Some(error))
@@ -101,25 +101,6 @@ impl RuntimeClipProcessingPipelineStateModel {
             project_tempo_segment_id,
             readiness,
             last_error: last_error.clone(),
-            summary: format!(
-                "clip={} readiness={:?} gain={:.3}->{:.3}/{:?} fade_in={}/{:?} fade_out={}/{:?} stages={:?} media={} warp={:?} warp_ratio={:?} tempo={:?}/{:?} error={}",
-                registration.clip_id,
-                readiness,
-                registration.clip_gain.start_linear,
-                registration.clip_gain.end_linear,
-                registration.clip_gain.shape,
-                registration.fade_in.duration_samples,
-                registration.fade_in.shape,
-                registration.fade_out.duration_samples,
-                registration.fade_out.shape,
-                treatment_stages_summary,
-                registration.media_asset_id.as_deref().unwrap_or("none"),
-                registration.warp_mode,
-                realized_warp_ratio,
-                project_tempo_source,
-                project_tempo_segment_id_summary,
-                last_error.as_deref().unwrap_or("none"),
-            ),
         }
     }
 }

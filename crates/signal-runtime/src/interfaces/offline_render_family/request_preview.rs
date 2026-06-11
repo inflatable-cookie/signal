@@ -72,8 +72,6 @@ pub struct RuntimeOfflineRenderStemPreview {
     pub resolved_node_ids: Vec<String>,
     /// Output bus IDs resolved for this stem target.
     pub resolved_output_bus_ids: Vec<String>,
-    /// Human-readable summary of this stem preview.
-    pub summary: String,
 }
 
 /// Preview of which recall stages will be captured in a freeze artifact render.
@@ -89,8 +87,6 @@ pub struct RuntimeOfflineFreezeArtifactPreview {
     pub recall_stage_ids: Vec<RuntimePluginRecallHandoffStageId>,
     /// Recall state for each stage to be captured.
     pub recall_states: Vec<RuntimePluginRecallState>,
-    /// Human-readable summary of this freeze artifact preview.
-    pub summary: String,
 }
 
 /// Dependency preview for the plugin chain involved in an offline render:
@@ -197,8 +193,6 @@ pub struct RuntimeOfflineRenderChainDependencyPreview {
     pub complex_io_stages: Vec<RuntimeOfflineRenderComplexIoStageSummary>,
     /// Spatial stage summaries.
     pub spatial_stages: Vec<RuntimeOfflineRenderSpatialStageSummary>,
-    /// Human-readable summary of the chain dependency preview.
-    pub summary: String,
 }
 
 /// Summary of a complex-I/O plugin stage involved in an offline render.
@@ -214,8 +208,6 @@ pub struct RuntimeOfflineRenderComplexIoStageSummary {
     pub plugin_type_id: Option<String>,
     /// Complex I/O topology summary for this stage.
     pub topology: RuntimePluginComplexIoSummary,
-    /// Human-readable summary of this complex-I/O stage.
-    pub summary: String,
 }
 
 /// Summary of a spatial plugin stage involved in an offline render.
@@ -231,8 +223,6 @@ pub struct RuntimeOfflineRenderSpatialStageSummary {
     pub plugin_type_id: Option<String>,
     /// Spatial execution summary for this stage.
     pub spatial: RuntimeSpatialExecutionSummary,
-    /// Human-readable summary of this spatial stage.
-    pub summary: String,
 }
 
 /// Full contract preview for a pending offline render request: resolved tempo,
@@ -275,8 +265,6 @@ pub struct RuntimeOfflineRenderContractPreview {
     pub stem_targets: Vec<RuntimeOfflineRenderStemPreview>,
     /// Per-freeze-artifact previews.
     pub freeze_artifacts: Vec<RuntimeOfflineFreezeArtifactPreview>,
-    /// Human-readable summary of this contract preview.
-    pub summary: String,
 }
 
 /// Rendered audio result for a single stem including peak/RMS levels.
@@ -294,8 +282,6 @@ pub struct RuntimeOfflineRenderStemResult {
     pub peak_level: f32,
     /// RMS level of the rendered stem in linear scale.
     pub rms_level: f32,
-    /// Human-readable summary of this stem result.
-    pub summary: String,
 }
 
 /// Rendered audio result for a single freeze artifact including peak/RMS levels.
@@ -317,8 +303,6 @@ pub struct RuntimeOfflineFreezeArtifactResult {
     pub peak_level: f32,
     /// RMS level of the rendered artifact in linear scale.
     pub rms_level: f32,
-    /// Human-readable summary of this freeze artifact result.
-    pub summary: String,
 }
 
 /// Complete result of an offline render job: frame counts, main mix,
@@ -351,6 +335,4 @@ pub struct RuntimeOfflineRenderResult {
     pub plugin_execution_boundary: RuntimeOfflinePluginExecutionBoundary,
     /// Contract preview resolved at render time.
     pub contract_preview: RuntimeOfflineRenderContractPreview,
-    /// Human-readable summary of the render result.
-    pub summary: String,
 }

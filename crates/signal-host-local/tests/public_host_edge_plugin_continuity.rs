@@ -105,10 +105,4 @@ fn local_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuit
         .expect("isolated host-local boundary should remain visible");
     assert_eq!(isolated.continuity_class, RuntimeInterruptionClass::Steady);
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(rendered.contains("\"placement_outcome\":\"SharedSandbox\""));
-    assert!(rendered.contains("\"sandbox_group_key\":\"shared:host-local\""));
-    assert!(rendered.contains("\"shared_boundary_member_count\":2"));
-    assert!(rendered.contains("\"continuity_class\":\"Terminal\""));
 }

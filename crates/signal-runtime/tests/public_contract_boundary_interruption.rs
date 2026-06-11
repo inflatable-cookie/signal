@@ -44,11 +44,6 @@ fn public_runtime_interruption_boundary_reports_restartable_runtime_state() {
     );
     assert!(!observation.interruption_summary.rebindable);
 
-    let rendered = observation.render_json();
-    assert!(rendered.contains("\"fault_status\":{"));
-    assert!(rendered.contains("\"interruption_summary\":{"));
-    assert!(rendered.contains("\"class\":\"Restartable\""));
-    assert!(rendered.contains("\"primary_fault_cause\":\"WatchdogRestart\""));
 }
 
 #[test]

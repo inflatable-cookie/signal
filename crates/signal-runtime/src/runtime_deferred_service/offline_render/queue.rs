@@ -52,25 +52,15 @@ impl SignalRuntime {
                 queue_count,
                 completed_job_count,
                 progress_percent,
-                summary: format!(
-                    "request={} queue={}/{} progress={}% blocks={} rendered_frames={}",
-                    result.request_id,
-                    completed_job_count,
-                    queue_count,
-                    progress_percent,
-                    result.block_count,
-                    result.rendered_frame_count,
-                ),
             });
             results.push(result);
         }
         orchestration.completed_work_item_count = results.len();
         orchestration.deferred_work_item_count = deferred_requests.len();
-        orchestration.summary = summarize_deferred_service_receipt(&orchestration);
         let completed_job_count = progress.len();
         let deferred_job_count = deferred_requests.len();
         let decision = orchestration.decision;
-        let summary = format!(
+        let _summary = format!(
             "queue_count={} completed_job_count={} deferred_job_count={} decision={:?}",
             queue_count, completed_job_count, deferred_job_count, decision
         );
@@ -99,12 +89,6 @@ impl SignalRuntime {
                     report_materialized: last_result.manifest.report.is_some(),
                     active_checkpoint: None,
                     last_checkpoint: None,
-                    summary: format!(
-                        "request={} state=completed queue_result=true artifacts={} report={}",
-                        last_result.request_id,
-                        last_result.manifest.artifact_count,
-                        last_result.manifest.report.is_some(),
-                    ),
                 },
             );
         }
@@ -116,7 +100,6 @@ impl SignalRuntime {
             progress,
             results,
             deferred_requests,
-            summary,
         })
     }
 }

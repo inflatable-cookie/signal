@@ -71,8 +71,6 @@ pub struct RuntimeSoakReceipt {
     pub last_recovery_intent: Option<RecoveryRestartIntent>,
     /// Reason for the most recent runtime stop, if any.
     pub last_stop_reason: Option<StopReason>,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 /// Multi-lane acceptance check for a configured runtime.
@@ -104,8 +102,6 @@ pub struct RuntimeAcceptanceReceipt {
     pub minimum_trace_observation_count: usize,
     /// Minimum number of soak events required for acceptance.
     pub minimum_soak_event_count: usize,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 impl RuntimeAcceptanceReceipt {
@@ -203,23 +199,6 @@ pub(crate) fn build_runtime_soak_receipt(input: RuntimeSoakReceiptInput<'_>) -> 
             .last_recovery_event()
             .map(|record| record.intent),
         last_stop_reason: observation.control_snapshot.last_stop_reason,
-        summary: format!(
-            "events={} restarts={} watchdog_restarts={} safe_mode={} degraded={} recoveries={} transport_faults={} sandboxes={}/{}/{}/{} recall={}/{}/{}",
-            event_stream_count,
-            observation.control_snapshot.restart_count,
-            observation.supervision_snapshot.watchdog_restart_count,
-            observation.supervision_snapshot.safe_mode_enabled,
-            observation.degradation_summary.readiness_degraded,
-            observation.observation.recovery_event_count(),
-            observation.observation.transport_fault_event_count(),
-            observation.plugin_lifecycle_snapshot.ready_sandbox_count,
-            observation.plugin_lifecycle_snapshot.degraded_sandbox_count,
-            observation.plugin_lifecycle_snapshot.faulted_sandbox_count,
-            observation.plugin_lifecycle_snapshot.quarantined_sandbox_count,
-            recall_handoff.stage_count,
-            recall_handoff.recovered_stage_count,
-            recall_handoff.unavailable_stage_count,
-        ),
     }
 }
 
@@ -283,18 +262,5 @@ pub(crate) fn build_runtime_acceptance_receipt(
         recovery_ready,
         minimum_trace_observation_count: RUNTIME_ACCEPTANCE_MIN_TRACE_OBSERVATIONS,
         minimum_soak_event_count: RUNTIME_ACCEPTANCE_MIN_SOAK_EVENTS,
-        summary: format!(
-            "runtime_lanes={}/{} playback={} recording={} media={} clip_processing={} plugin={} recovery={} trace_target={} soak_target={}",
-            runtime_ready_lane_count,
-            6,
-            playback_ready,
-            recording_ready,
-            media_ready,
-            clip_processing_ready,
-            plugin_ready,
-            recovery_ready,
-            RUNTIME_ACCEPTANCE_MIN_TRACE_OBSERVATIONS,
-            RUNTIME_ACCEPTANCE_MIN_SOAK_EVENTS,
-        ),
     }
 }

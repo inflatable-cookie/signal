@@ -151,8 +151,4 @@ fn public_runtime_offline_render_continuity_boundary_reports_resumable_restartab
             .map(|session| session.interruption_class),
         Some(RuntimeInterruptionClass::Terminal)
     );
-    let rendered = terminal_report.render_json();
-    assert!(rendered.contains("\"offline_render_session_snapshot\":{"));
-    assert!(rendered.contains("\"state\":\"Failed\""));
-    assert!(rendered.contains("\"interruption_class\":\"Terminal\""));
 }

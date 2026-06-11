@@ -78,11 +78,6 @@ fn local_host_shared_report_surfaces_runtime_preview_transform_baseline() {
         1
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"preview_transform_snapshot\":{"));
-    assert!(rendered.contains("\"active_audition_clip_count\":1"));
-    assert!(rendered.contains("\"artifact_backed_clip_count\":1"));
-
     let _ = fs::remove_file(&imported_path);
     if let Some(path) = host
         .runtime

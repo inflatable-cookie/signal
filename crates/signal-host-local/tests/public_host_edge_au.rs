@@ -79,15 +79,6 @@ fn local_shared_host_edge_exports_runtime_au_baseline_truth() {
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"plugin_type_id\":\"plugin:au:instrument\""));
-    assert!(rendered.contains("\"formats\":[\"Au\"]"));
-    assert!(rendered.contains("broker:lease_attached|au:instance="));
-    assert!(rendered.contains("state_stored=1"));
-    assert!(rendered.contains("activation=ready"));
-    assert!(rendered.contains("component_type=aumu"));
-    assert!(rendered.contains("component_subtype=sigi"));
-    assert!(rendered.contains("manufacturer=sigl"));
 }
 
 #[test]
@@ -130,9 +121,4 @@ fn local_shared_host_edge_exports_runtime_au_fault_truth_alongside_coreaudio_tru
         .device_id
         .starts_with("coreaudio:"));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"device_id\":\"coreaudio:"));
-    assert!(rendered.contains("\"plugin_type_id\":\"plugin:au:render-context-fault\""));
-    assert!(rendered.contains("unsupported_sample_rate"));
-    assert!(rendered.contains("\"readiness_state\":\"Faulted\""));
 }

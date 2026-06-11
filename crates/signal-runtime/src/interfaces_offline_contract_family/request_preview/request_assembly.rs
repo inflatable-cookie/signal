@@ -61,14 +61,13 @@ impl RuntimeOfflineRenderContractPreview {
                     last_invalidated_asset_id: None,
                     last_invalidation_error: None,
                     last_preview_error: None,
-                    summary: "offline preview derived from runtime media pipeline".into(),
                 },
                 &stretch_engine_snapshot,
                 marker_analysis,
                 &transform_artifact_snapshot,
             );
 
-        let mut preview = Self {
+        let preview = Self {
             request_id: request.request_id.clone(),
             timeline_start_samples: request.timeline_start_samples,
             timeline_end_samples,
@@ -87,30 +86,7 @@ impl RuntimeOfflineRenderContractPreview {
             chain_contract,
             stem_targets,
             freeze_artifacts,
-            summary: String::new(),
         };
-        preview.summary = format!(
-            "request={} timeline={}..{} duration={} export_sample_rate={} clips={}/{} stretch={}/fallback={} preview_transform={}/artifact_backed={}/fallback={} transform_artifacts={}/reusable={} stems={} freeze_artifacts={} tempo={:.3}/{:?} chain_contract={}",
-            preview.request_id,
-            preview.timeline_start_samples,
-            preview.timeline_end_samples,
-            preview.duration_samples,
-            preview.export_sample_rate_hz,
-            preview.ready_clip_count,
-            preview.clip_count,
-            preview.stretch_engine_snapshot.ready_clip_count,
-            preview.stretch_engine_snapshot.fallback_clip_count,
-            preview.preview_transform_snapshot.ready_clip_count,
-            preview.preview_transform_snapshot.artifact_backed_clip_count,
-            preview.preview_transform_snapshot.fallback_clip_count,
-            preview.transform_artifact_snapshot.ready_clip_count,
-            preview.transform_artifact_snapshot.reusable_clip_count,
-            preview.stem_count,
-            preview.freeze_artifact_count,
-            preview.resolved_tempo_bpm,
-            preview.resolved_tempo_source,
-            preview.chain_contract.summary,
-        );
         Ok(preview)
     }
 }

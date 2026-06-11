@@ -122,10 +122,4 @@ fn local_shared_host_edge_exports_runtime_complex_io_truth() {
         .iter()
         .any(|record| record.plugin_type_id == "plugin:vst3:host-local-bus-fx"));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(rendered.contains("\"plugin_pin_matrix_snapshot\":{"));
-    assert!(rendered.contains("\"complex_io_summary\":{"));
-    assert!(rendered.contains("\"multi_output_instrument\":true"));
-    assert!(rendered.contains("\"bus_capable_fx_class\":\"SendReturnCapableFx\""));
 }

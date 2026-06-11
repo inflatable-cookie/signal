@@ -31,10 +31,6 @@ fn local_host_shared_report_derives_profiling_and_soak_receipts() {
                 && entry.authority
                     == signal_runtime::RuntimeFaultDiagnosticAuthority::HostAdvisory
         }));
-    assert!(profiling.render_json().contains("\"host_callback_count\":14"));
-    assert!(profiling
-        .render_json()
-        .contains("\"fault_diagnostic_receipt\":{"));
 
     assert_eq!(soak.watchdog_restart_count, 3);
     assert!(soak.safe_mode_enabled);
@@ -49,7 +45,6 @@ fn local_host_shared_report_derives_profiling_and_soak_receipts() {
     assert_eq!(soak.event_stream_count, report.events.len());
     assert!(soak.recovery_event_count >= 3);
     assert!(soak.heartbeat_event_count >= 4);
-    assert!(soak.render_json().contains("\"watchdog_restart_count\":3"));
 }
 
 #[test]
@@ -86,14 +81,4 @@ fn local_host_shared_report_tracks_timeout_recovery_without_losing_topology() {
             .console_node_count,
         1
     );
-    assert!(report.render_json().contains("\"node_id\":\"plugin-insert\""));
-    assert!(report
-        .render_json()
-        .contains("\"plugin_sandbox_id\":\"local-default-sandbox\""));
-    assert!(report.render_json().contains("\"track_lane_id\":\"track:lead\""));
-    assert!(report.render_json().contains("\"bus_group_id\":\"mix:tracks\""));
-    assert!(report.render_compact().contains("xruns=1"));
-    assert!(report
-        .render_json()
-        .contains("\"runtime_graph_id_matches_pump\":true"));
 }

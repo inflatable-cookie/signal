@@ -80,33 +80,6 @@ pub(crate) fn runtime_plugin_format_coverage(
                 max_complex_io_port_group_count,
                 max_audio_bus_count,
                 max_parameter_count,
-                summary: format!(
-                    "format={format:?} types={} complex_io={} multi_output_instruments={} bus_capable_fx={} sidechain_capable_fx={} features={}/{}/{}/{}/{} snapshot={} prepare={} activate={} midi_in={} note_expression={} midi_out={} max_complex_io_groups={} max_audio_buses={} max_parameters={}",
-                    records.len(),
-                    records.iter().filter(|record| record.complex_io_summary.has_complex_topology).count(),
-                    records.iter().filter(|record| record.complex_io_summary.multi_output_instrument).count(),
-                    records.iter().filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some()).count(),
-                    records.iter().filter(|record| {
-                        record.complex_io_summary.bus_capable_fx_class
-                            == Some(RuntimePluginBusCapableFxClass::SidechainCapableFx)
-                            || record.complex_io_summary.bus_capable_fx_class
-                                == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
-                    }).count(),
-                    feature_count(PluginFeature::AudioEffect),
-                    feature_count(PluginFeature::Instrument),
-                    feature_count(PluginFeature::Analyzer),
-                    feature_count(PluginFeature::Utility),
-                    feature_count(PluginFeature::NoteEffect),
-                    supports_snapshot_count,
-                    supports_prepare_count,
-                    supports_activate_count,
-                    accepts_midi_count,
-                    supports_note_expression_count,
-                    produces_midi_count,
-                    max_complex_io_port_group_count,
-                    max_audio_bus_count,
-                    max_parameter_count,
-                ),
             }
         })
         .collect()

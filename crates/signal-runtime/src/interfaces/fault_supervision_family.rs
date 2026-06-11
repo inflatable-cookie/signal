@@ -1,6 +1,5 @@
 use super::*;
 
-mod fault_supervision_render;
 
 /// Human-readable reason string included in a `Degraded` readiness state.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -197,8 +196,6 @@ pub struct RuntimeRecordingCaptureCheckpointSnapshot {
     pub pressure_event_count: u64,
     /// Most recent error string, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of this checkpoint.
-    pub summary: String,
 }
 
 /// Request to begin recording to a file path.
@@ -280,8 +277,6 @@ pub struct RuntimeRecordingCaptureSnapshot {
     pub last_committed_duration_samples: Option<u32>,
     /// Most recent error string, if any.
     pub last_error: Option<String>,
-    /// Human-readable summary of the capture subsystem state.
-    pub summary: String,
 }
 
 /// Type of deferred background work.
@@ -405,6 +400,32 @@ pub struct RuntimeDeferredServiceReceipt {
     pub pending_deferred_retry_work_items: usize,
     /// Number of concurrent recovery overlap sessions.
     pub recovery_overlap_session_count: usize,
-    /// Human-readable summary of this receipt.
-    pub summary: String,
+}
+impl Default for RuntimeDeferredServiceReceipt {
+    fn default() -> Self {
+        Self {
+            work_class: RuntimeDeferredServiceClass::OfflineRenderQueue,
+            decision: RuntimeDeferredServiceDecision::Abort,
+            reason: RuntimeDeferredServiceReason::InvalidRequest,
+            priority_band: RuntimeDeferredServicePriorityBand::UserVisible,
+            blocking_priority_band: None,
+            backpressure_source: None,
+            starvation_risk: false,
+            starved_work_item_count: 0,
+            cancellation_cause: Some(RuntimeDeferredServiceCancellationCause::InvalidRequest),
+            cancelled_work_item_count: 0,
+            interruption_class: RuntimeInterruptionClass::Terminal,
+            interruption_rebindable: false,
+            queued_work_item_count: 0,
+            admitted_work_item_count: 0,
+            completed_work_item_count: 0,
+            deferred_work_item_count: 0,
+            runtime_running: false,
+            safe_mode_enabled: false,
+            readiness_degraded: false,
+            pending_cleanup_work_items: 0,
+            pending_deferred_retry_work_items: 0,
+            recovery_overlap_session_count: 0,
+        }
+    }
 }

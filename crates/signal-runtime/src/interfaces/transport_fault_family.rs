@@ -103,8 +103,6 @@ pub struct TransportFaultRecord {
     pub operation: String,
     /// Error kind string from the underlying failure.
     pub error_kind: Option<String>,
-    /// Detailed fault description.
-    pub detail: String,
 }
 
 /// Scoping policy for transport fault aggregation.

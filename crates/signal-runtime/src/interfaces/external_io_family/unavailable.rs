@@ -62,37 +62,6 @@ impl RuntimeHostIoSummary {
             device_loss_count: device_supervision_snapshot.device_loss_count,
             restart_attempt_count: device_supervision_snapshot.restart_attempt_count.unwrap_or(0),
             restart_failure_count: device_supervision_snapshot.restart_failure_count.unwrap_or(0),
-            summary: format!(
-                "health={:?} device_change={:?} role={:?} monitor={:?}/{:?} loopback={:?} backend=runtime-unavailable device={} stream={:?} endpoint={:?}",
-                if faulted {
-                    RuntimeExternalIoHealthState::Faulted
-                } else {
-                    RuntimeExternalIoHealthState::Unavailable
-                },
-                RuntimeExternalIoDeviceChangeState::Unavailable,
-                RuntimeExternalIoPrimaryRole::Unavailable,
-                if faulted {
-                    RuntimeExternalIoMonitoringState::Faulted
-                } else {
-                    RuntimeExternalIoMonitoringState::Unavailable
-                },
-                RuntimeExternalIoMonitoringTapPoint::Unavailable,
-                if faulted {
-                    RuntimeExternalIoLoopbackState::Faulted
-                } else {
-                    RuntimeExternalIoLoopbackState::Unavailable
-                },
-                effective_config
-                    .active_output_device
-                    .as_deref()
-                    .unwrap_or("runtime:unavailable"),
-                if faulted {
-                    RuntimeHostAudioStreamState::Faulted
-                } else {
-                    RuntimeHostAudioStreamState::Stopped
-                },
-                RuntimeHostEndpointTopology::Unconfigured,
-            ),
         }
     }
 }

@@ -44,9 +44,6 @@ fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_polic
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Vst3,
@@ -59,9 +56,6 @@ fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_polic
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=MacOs/Linux/Windows linux=Portable linux_policy=IsolatedSandbox unsupported=none"
-                    .into(),
         },
         RuntimePluginFormatPlatformCoverageRecord {
             format: PluginFormat::Lv2,
@@ -73,9 +67,6 @@ fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_polic
             linux_parity_band: RuntimePluginParityBand::Portable,
             linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
-            summary:
-                "platforms=Linux linux=Portable linux_policy=IsolatedSandbox unsupported=MacOs/Windows"
-                    .into(),
         },
     ]);
     runtime
@@ -160,7 +151,7 @@ fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_polic
     );
 
     let observation = RuntimeObservationReport::capture(&runtime, &recorder);
-    let supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
+    let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
 
     let clap_discovery = observation
         .plugin_discovery_snapshot
@@ -215,15 +206,4 @@ fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_polic
         ]
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"linux_parity_band\":\"Portable\""));
-    assert!(observation_json.contains("\"linux_supported\":true"));
-    assert!(observation_json.contains("\"linux_preferred_sandbox_outcome\":\"IsolatedSandbox\""));
-    assert!(observation_json.contains("\"restarting_sandbox_count\":1"));
-    assert!(observation_json.contains("\"faulted_sandbox_count\":1"));
-
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"plugin_discovery_snapshot\":{"));
-    assert!(supervisor_json.contains("\"plugin_lifecycle_snapshot\":{"));
-    assert!(supervisor_json.contains("\"linux_strict_sandbox_default\":true"));
 }

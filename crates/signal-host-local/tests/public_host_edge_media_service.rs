@@ -116,12 +116,6 @@ fn local_shared_host_edge_exports_runtime_media_service_truth() {
             .invalidation_active
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"media_pipeline_snapshot\":{"));
-    assert!(rendered.contains("\"media_service_snapshot\":{"));
-    assert!(rendered.contains("\"invalidated_asset_count\":1"));
-    assert!(rendered.contains("\"preview_state\":\"Previewing\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
         .runtime()

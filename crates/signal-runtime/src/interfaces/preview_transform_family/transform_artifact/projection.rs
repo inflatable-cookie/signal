@@ -85,9 +85,9 @@ impl RuntimeTransformArtifactSnapshot {
             invalidated_clip_count,
             unsupported_clip_count,
         );
-        let persistence_posture = transform_persistence.persistence_posture;
-        let retention_outcome = transform_persistence.retention_outcome;
-        let cache_placement_outcome = transform_persistence.cache_placement_outcome;
+        let _persistence_posture = transform_persistence.persistence_posture;
+        let _retention_outcome = transform_persistence.retention_outcome;
+        let _cache_placement_outcome = transform_persistence.cache_placement_outcome;
 
         RuntimeTransformArtifactSnapshot {
             clip_count: clips.len(),
@@ -102,22 +102,6 @@ impl RuntimeTransformArtifactSnapshot {
             guarded_reuse_clip_count,
             transform_persistence,
             clips,
-            summary: format!(
-                "transform_artifacts clips={} ready={} pending_media={} degraded={} invalidated={} unsupported={} cached_media_ready={} reusable={} requires_render={} guarded_reuse={} persistence={:?} retention_outcome={:?} cache_outcome={:?}",
-                clip_processing.clip_count,
-                ready_clip_count,
-                pending_media_clip_count,
-                degraded_clip_count,
-                invalidated_clip_count,
-                unsupported_clip_count,
-                cached_media_ready_clip_count,
-                reusable_clip_count,
-                requires_render_clip_count,
-                guarded_reuse_clip_count,
-                persistence_posture,
-                retention_outcome,
-                cache_placement_outcome,
-            ),
         }
     }
 }

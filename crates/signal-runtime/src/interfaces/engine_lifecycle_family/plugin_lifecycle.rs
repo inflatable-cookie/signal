@@ -12,8 +12,6 @@ pub struct RuntimeLv2PreparedNegotiationRecord {
     pub patch_exchange_posture: RuntimeLv2PatchExchangePosture,
     /// Overall extension negotiation state.
     pub extension_negotiation_state: RuntimeLv2ExtensionNegotiationState,
-    /// Human-readable summary of the negotiation outcome.
-    pub summary: String,
 }
 
 /// Lifecycle state of a plugin sandbox from the runtime's perspective.
@@ -99,8 +97,6 @@ pub struct RuntimePluginSandboxSnapshot {
     pub active_region_id: Option<String>,
     /// LV2 extension negotiation record from sandbox preparation, if applicable.
     pub lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
-    /// Human-readable summary of this sandbox's current state.
-    pub summary: String,
 }
 
 /// Aggregate lifecycle snapshot for all plugin sandboxes managed by the runtime.
@@ -136,6 +132,4 @@ pub struct RuntimePluginLifecycleSnapshot {
     pub parity_coverage: Vec<RuntimePluginFormatParityRecord>,
     /// Snapshot for each individual sandbox.
     pub sandboxes: Vec<RuntimePluginSandboxSnapshot>,
-    /// Human-readable aggregate summary.
-    pub summary: String,
 }

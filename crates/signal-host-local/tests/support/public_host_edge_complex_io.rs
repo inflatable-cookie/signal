@@ -65,7 +65,6 @@ pub fn sample_complex_multi_output_record() -> RuntimePluginDiscoveredTypeRecord
             supports_reset_while_active: false,
         },
         lv2_extension_capabilities: None,
-        summary: "local complex multi-output record".into(),
     }
 }
 
@@ -126,7 +125,6 @@ pub fn sample_complex_bus_fx_record() -> RuntimePluginDiscoveredTypeRecord {
             supports_reset_while_active: true,
         },
         lv2_extension_capabilities: None,
-        summary: "local complex bus-fx record".into(),
     }
 }
 

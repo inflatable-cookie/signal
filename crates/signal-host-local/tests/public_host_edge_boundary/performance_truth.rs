@@ -67,10 +67,6 @@ fn local_shared_host_edge_exports_runtime_block_timing_truth() {
             | RuntimeBlockDeadlinePressure::Overrun
     ));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"engine_block_snapshot\":{"));
-    assert!(rendered.contains("\"last_block_execution_time_ns\":"));
-    assert!(rendered.contains("\"last_block_deadline_pressure\":"));
 }
 
 #[test]
@@ -126,7 +122,4 @@ fn local_shared_host_edge_exports_runtime_critical_path_truth() {
         critical_lane_summary.total_latency_samples
     );
 
-    let rendered = performance.render_json();
-    assert!(rendered.contains("\"critical_path_lane\":"));
-    assert!(rendered.contains("\"worker_lane_summaries\":["));
 }

@@ -46,7 +46,4 @@ fn local_shared_host_edge_exports_runtime_fault_diagnostic_truth() {
             entry.family == RuntimeFaultDiagnosticFamily::DeferredWorkPressure && entry.active
         }));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"fault_diagnostic_receipt\":{"));
-    assert!(rendered.contains("\"primary_family\":\"DeferredWorkPressure\""));
 }

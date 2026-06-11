@@ -209,15 +209,6 @@ fn runtime_preview_transform_snapshot_derives_from_stretch_and_artifact_baseline
             .queue_posture,
         RuntimePreviewBrowserQueuePosture::SingleActivePreviewQueue
     );
-    assert!(observation
-        .render_json()
-        .contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
-    assert!(observation.render_json().contains(
-        "\"preview_device_policy\":{\"routing_posture\":\"GuardedPreviewOutputRouting\""
-    ));
-    assert!(observation
-        .render_json()
-        .contains("\"preview_workflow\":{\"queue_posture\":\"SingleActivePreviewQueue\""));
 
     let rendered = runtime
         .render_clip_processing_buffer(RuntimeClipRenderRequest {
@@ -240,9 +231,6 @@ fn runtime_preview_transform_snapshot_derives_from_stretch_and_artifact_baseline
         RuntimePreviewTransformReadiness::Ready
     );
     assert!(rendered.preview_transform_snapshot.audition_active);
-    assert!(rendered
-        .summary
-        .contains("preview=ArtifactBacked/Ready/None/None"));
 
     let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
         &RuntimeOfflineRenderRequest {
@@ -319,9 +307,6 @@ fn runtime_preview_transform_snapshot_derives_from_stretch_and_artifact_baseline
             .transform_scheduling_outcome,
         RuntimePreviewTransformSchedulingOutcome::PreferArtifactBackedPreview
     );
-    assert!(preview
-        .summary
-        .contains("preview_transform=1/artifact_backed=1/fallback=0"));
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime

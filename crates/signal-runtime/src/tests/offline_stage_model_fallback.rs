@@ -72,9 +72,7 @@ fn runtime_applies_delegated_execution_outcome_into_runtime_owned_finalization()
             override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
             latest_override_processing_epoch: Some(4),
             latest_override_block_sequence: Some(9),
-            summary: "delegated".into(),
         }],
-        summary: "boundary".into(),
     };
 
     let updated = runtime
@@ -99,9 +97,7 @@ fn runtime_applies_delegated_execution_outcome_into_runtime_owned_finalization()
                         status: RuntimeOfflinePluginDelegatedExecutionStatus::Completed,
                         delegate_label: Some("host:offline-sandbox".into()),
                         detail: Some("rendered by delegated sandbox".into()),
-                        summary: "completed".into(),
                     }],
-                    summary: "receipt".into(),
                 },
                 merge: RuntimeOfflinePluginDelegatedExecutionMerge {
                     request_id: result.request_id.clone(),
@@ -109,16 +105,12 @@ fn runtime_applies_delegated_execution_outcome_into_runtime_owned_finalization()
                     stems: vec![RuntimeOfflinePluginDelegatedStemOutput {
                         stem_id: "stem:track:lead".into(),
                         output: filled_stereo_buffer(48_000, 64, 0.1),
-                        summary: "stem override".into(),
                     }],
                     freeze_artifacts: vec![RuntimeOfflinePluginDelegatedFreezeArtifactOutput {
                         artifact_id: "freeze:track:lead".into(),
                         output: filled_stereo_buffer(48_000, 64, 0.05),
-                        summary: "freeze override".into(),
                     }],
-                    summary: "merge".into(),
                 },
-                summary: "outcome".into(),
             },
         )
         .expect("delegated execution outcome should apply");

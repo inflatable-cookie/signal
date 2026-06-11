@@ -101,8 +101,6 @@ pub struct RuntimePerformanceTraceReceipt {
     pub peak_critical_path_lane_plugin_backed_node_count: usize,
     /// Total latency of the peak critical path lane in samples.
     pub peak_critical_path_lane_total_latency_samples: u32,
-    /// Human-readable one-line summary.
-    pub summary: String,
 }
 
 impl RuntimeObservationReport {

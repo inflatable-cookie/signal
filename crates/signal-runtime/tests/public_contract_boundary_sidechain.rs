@@ -106,9 +106,4 @@ fn public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth
     );
     assert_eq!(stage_secondary_input.target_id, "compressor");
 
-    let rendered = observation.render_json();
-    assert!(rendered.contains("\"secondary_input_count\":1"));
-    assert!(rendered.contains("\"target_kind\":\"NodeInput\""));
-    assert!(rendered.contains("\"target_kind\":\"PluginInput\""));
-    assert!(rendered.contains("\"fallback_outcome\":\"SafeModeDegradation\""));
 }

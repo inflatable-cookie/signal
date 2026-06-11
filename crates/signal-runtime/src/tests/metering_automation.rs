@@ -24,7 +24,6 @@ fn runtime_metering_snapshot_reports_loudness_for_non_silent_output() {
             rms_level: 0.4677072,
             latency_samples: 0,
             tail_samples: 0,
-            summary: "main output".into(),
         }],
     );
 

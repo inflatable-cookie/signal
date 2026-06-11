@@ -20,13 +20,6 @@ impl RuntimeMediaPipelineStateModel {
                 cache_byte_size: asset.cache_byte_size,
                 rebuild_count: asset.rebuild_count,
                 last_error: asset.last_error.clone(),
-                summary: format!(
-                    "state={:?} cache={} rebuilds={} error={}",
-                    asset.state,
-                    asset.cache_path.as_deref().unwrap_or("none"),
-                    asset.rebuild_count,
-                    asset.last_error.as_deref().unwrap_or("none"),
-                ),
             })
             .collect::<Vec<_>>();
         let ready_asset_count = assets
@@ -59,14 +52,6 @@ impl RuntimeMediaPipelineStateModel {
             conforming_asset_count,
             rebuilding_asset_count,
             assets,
-            summary: format!(
-                "assets={} ready={} invalid={} rebuilding={} cache_root={}",
-                self.assets.len(),
-                ready_asset_count,
-                invalid_asset_count,
-                rebuilding_asset_count,
-                self.policy.cache_root.display(),
-            ),
         }
     }
 
@@ -149,25 +134,6 @@ impl RuntimeMediaPipelineStateModel {
             last_invalidation_error: last_invalidated_asset
                 .and_then(|asset| asset.last_error.clone()),
             last_preview_error: self.last_preview_error.clone(),
-            summary: format!(
-                "indexed={} ready={} waveform_ready={} waveform_pending={} previewable={} invalidated={} indexing={:?} preview={:?} previewing={} last_invalidated={} invalidation_error={} preview_error={}",
-                indexed_asset_count,
-                analysis_ready_asset_count,
-                waveform_ready_asset_count,
-                waveform_pending_asset_count,
-                previewable_asset_count,
-                invalidated_asset_count,
-                indexing_state,
-                preview_state,
-                self.previewing_asset_id.as_deref().unwrap_or("none"),
-                last_invalidated_asset
-                    .map(|asset| asset.registration.asset_id.as_str())
-                    .unwrap_or("none"),
-                last_invalidated_asset
-                    .and_then(|asset| asset.last_error.as_deref())
-                    .unwrap_or("none"),
-                self.last_preview_error.as_deref().unwrap_or("none"),
-            ),
         }
     }
 }

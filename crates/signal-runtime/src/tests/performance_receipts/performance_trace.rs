@@ -142,22 +142,6 @@ fn runtime_performance_trace_receipt_summarizes_playback_recording_and_deferred_
         trace.peak_critical_path_lane_total_latency_samples,
         expected_peak_lane.critical_path_lane_total_latency_samples
     );
-    assert!(trace.summary.contains("recording_active="));
-    assert!(trace.summary.contains("deadline="));
-    assert!(trace.summary.contains("background="));
-    assert!(trace.summary.contains("backpressure="));
-    assert!(trace.summary.contains("starvation="));
-    assert!(trace.summary.contains("critical_lane="));
-    assert!(trace
-        .render_json()
-        .contains("\"peak_hot_latency_node_id\":\"latency\""));
-    assert!(trace.render_json().contains("\"peak_critical_path_lane\":"));
-    assert!(trace
-        .render_json()
-        .contains("\"peak_block_execution_time_ns\":"));
-    assert!(trace
-        .render_json()
-        .contains("\"peak_background_starved_work_item_count\":1"));
 
     runtime.cancel_recording_capture().unwrap();
     let _ = fs::remove_file(capture_path);

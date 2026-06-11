@@ -130,16 +130,4 @@ pub(crate) fn assert_preview_transform_observation(observation: &RuntimeObservat
         RuntimePreviewTransformReadiness::Ready
     );
     assert!(observation.preview_transform_snapshot.clips[0].audition_active);
-    assert!(observation
-        .render_json()
-        .contains("\"preview_transform_snapshot\":{\"clip_count\":1"));
-    assert!(observation
-        .render_json()
-        .contains("\"active_audition_clip_count\":1"));
-    assert!(observation.render_json().contains(
-        "\"preview_device_policy\":{\"routing_posture\":\"GuardedPreviewOutputRouting\""
-    ));
-    assert!(observation
-        .render_json()
-        .contains("\"preview_workflow\":{\"queue_posture\":\"SingleActivePreviewQueue\""));
 }

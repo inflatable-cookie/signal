@@ -50,10 +50,6 @@ impl SignalRuntime {
                 rendered_block_count: 0,
                 total_block_count,
                 progress_percent: 5,
-                summary: format!(
-                    "request={} stage=preparing-input total_frames={} blocks={} stems={} freeze_artifacts={}",
-                    request.request_id, total_frames, total_block_count, preview.stem_count, preview.freeze_artifact_count
-                ),
             });
         }
 
@@ -114,14 +110,6 @@ impl SignalRuntime {
                     rendered_block_count: block_count,
                     total_block_count,
                     progress_percent: Self::offline_render_checkpoint_progress(
-                        rendered_frames,
-                        total_frames,
-                    ),
-                    summary: format!(
-                        "request={} stage=rendering-graph blocks={}/{} frames={}/{}",
-                        request.request_id,
-                        block_count,
-                        total_block_count,
                         rendered_frames,
                         total_frames,
                     ),

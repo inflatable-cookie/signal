@@ -81,10 +81,6 @@ fn local_host_shared_report_surfaces_duplex_cross_clock_mismatch() {
         report.observation.observation.external_io_snapshot.loopback_state,
         signal_runtime::RuntimeExternalIoLoopbackState::Guarded
     );
-    assert!(report
-        .render_json()
-        .contains("\"duplex_mismatch_state\":\"CrossClockDiverged\""));
-    assert!(report.render_json().contains("\"endpoint_topology\":\"Duplex\""));
 }
 
 #[test]
@@ -148,7 +144,6 @@ fn local_host_shared_report_surfaces_duplex_partial_availability() {
         report.observation.observation.external_io_snapshot.loopback_state,
         signal_runtime::RuntimeExternalIoLoopbackState::Guarded
     );
-    assert!(report.render_json().contains("\"partial_availability\":true"));
 }
 
 #[test]

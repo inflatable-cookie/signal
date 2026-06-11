@@ -102,11 +102,6 @@ fn local_shared_host_edge_exports_runtime_stretch_truth() {
         RuntimeStretchEngineClass::SampleDomain
     );
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"stretch_engine_snapshot\":{"));
-    assert!(rendered.contains("\"sample_domain_clip_count\":1"));
-    assert!(rendered.contains("\"engine_class\":\"SampleDomain\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = host
         .runtime()

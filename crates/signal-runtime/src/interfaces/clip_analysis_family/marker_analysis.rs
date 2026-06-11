@@ -184,17 +184,6 @@ impl RuntimeMarkerAnalysisSnapshot {
                     tempo_assist_hint_bpm,
                     tempo_assist_hint_source,
                     last_error,
-                    summary: format!(
-                        "clip={} readiness={:?} invalidation={:?} markers={} anchors={} tempo_assist={:?}/{:?}/{:?}",
-                        clip.clip_id,
-                        readiness,
-                        invalidation_state,
-                        warp_marker_count,
-                        transient_anchor_count,
-                        tempo_assist_posture,
-                        tempo_assist_hint_source,
-                        tempo_assist_hint_bpm,
-                    ),
                 }
             })
             .collect::<Vec<_>>();
@@ -237,18 +226,6 @@ impl RuntimeMarkerAnalysisSnapshot {
             warp_marker_count,
             transient_anchor_count,
             clips,
-            summary: format!(
-                "marker_analysis clips={} ready={} pending_media={} degraded={} invalidated={} unsupported={} tempo_assist_ready={} markers={} anchors={}",
-                clip_processing.clip_count,
-                ready_clip_count,
-                pending_media_clip_count,
-                degraded_clip_count,
-                invalidated_clip_count,
-                unsupported_clip_count,
-                tempo_assist_ready_clip_count,
-                warp_marker_count,
-                transient_anchor_count,
-            ),
         }
     }
 }

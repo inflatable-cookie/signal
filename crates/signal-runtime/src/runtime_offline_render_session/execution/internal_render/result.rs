@@ -29,15 +29,6 @@ impl SignalRuntime {
                     target_id: stem_preview.target_id.clone(),
                     peak_level: peak_abs(output.samples()),
                     rms_level: rms(output.samples()),
-                    summary: format!(
-                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
-                        stem_preview.stem_id,
-                        stem_preview.target_kind,
-                        stem_preview.target_id,
-                        output.frames().0,
-                        peak_abs(output.samples()),
-                        rms(output.samples()),
-                    ),
                     output,
                 }
             })
@@ -70,15 +61,6 @@ impl SignalRuntime {
                     recall_states: artifact_preview.recall_states.clone(),
                     peak_level: peak_abs(source_output.samples()),
                     rms_level: rms(source_output.samples()),
-                    summary: format!(
-                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
-                        artifact_preview.artifact_id,
-                        artifact_preview.source_stem_id,
-                        artifact_preview.recall_stage_count,
-                        source_output.frames().0,
-                        peak_abs(source_output.samples()),
-                        rms(source_output.samples()),
-                    ),
                     output: source_output,
                 })
             })
@@ -95,15 +77,6 @@ impl SignalRuntime {
                 RuntimeOfflineRenderStemResult {
                     peak_level: peak_abs(output.samples()),
                     rms_level: rms(output.samples()),
-                    summary: format!(
-                        "stem={} target={:?}/{:?} frames={} peak={:.3} rms={:.3}",
-                        stem.stem_id,
-                        stem.target_kind,
-                        stem.target_id,
-                        output.frames().0,
-                        peak_abs(output.samples()),
-                        rms(output.samples()),
-                    ),
                     output,
                     ..stem
                 }
@@ -116,15 +89,6 @@ impl SignalRuntime {
                 RuntimeOfflineFreezeArtifactResult {
                     peak_level: peak_abs(output.samples()),
                     rms_level: rms(output.samples()),
-                    summary: format!(
-                        "artifact={} source_stem={} recall_stages={} frames={} peak={:.3} rms={:.3}",
-                        artifact.artifact_id,
-                        artifact.source_stem_id,
-                        artifact.recall_stage_count,
-                        output.frames().0,
-                        peak_abs(output.samples()),
-                        rms(output.samples()),
-                    ),
                     output,
                     ..artifact
                 }
@@ -151,13 +115,6 @@ impl SignalRuntime {
                 rendered_block_count: pass.block_count,
                 total_block_count: pass.total_block_count,
                 progress_percent: 95,
-                summary: format!(
-                    "request={} stage=materializing-outputs main_mix={} stems={} freeze_artifacts={}",
-                    request.request_id,
-                    request.include_main_mix,
-                    pass.preview.stem_count,
-                    pass.preview.freeze_artifact_count,
-                ),
             });
         }
         let mut result = RuntimeOfflineRenderResult {
@@ -181,16 +138,6 @@ impl SignalRuntime {
             ),
             plugin_execution_boundary: pass.plugin_execution_boundary,
             contract_preview: pass.preview.clone(),
-            summary: format!(
-                "request={} runtime_frames={} rendered_frames={} blocks={} main_mix={} stems={} freeze_artifacts={}",
-                request.request_id,
-                pass.rendered_frames,
-                rendered_frame_count,
-                pass.block_count,
-                request.include_main_mix,
-                pass.preview.stem_count,
-                pass.preview.freeze_artifact_count,
-            ),
         };
         result.manifest = materialize_offline_render_delivery(&result)?;
         if collect_checkpoints {
@@ -201,17 +148,6 @@ impl SignalRuntime {
                 rendered_block_count: pass.block_count,
                 total_block_count: pass.total_block_count,
                 progress_percent: 99,
-                summary: format!(
-                    "request={} stage=finalizing-artifacts artifacts={} report={}",
-                    request.request_id,
-                    result.manifest.artifact_count,
-                    result
-                        .manifest
-                        .report
-                        .as_ref()
-                        .map(|report| report.report_path.as_str())
-                        .unwrap_or("none"),
-                ),
             });
         }
         let checkpoints = if collect_checkpoints {
@@ -225,14 +161,6 @@ impl SignalRuntime {
             checkpoint_count,
             checkpoints,
             result,
-            summary: format!(
-                "request={} checkpoints={} runtime_frames={} rendered_frames={} blocks={}",
-                request.request_id,
-                checkpoint_count,
-                pass.rendered_frames,
-                rendered_frame_count,
-                pass.block_count,
-            ),
         })
     }
 }

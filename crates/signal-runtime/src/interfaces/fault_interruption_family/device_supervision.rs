@@ -86,8 +86,6 @@ pub struct RuntimeDeviceSupervisionSnapshot {
     pub watchdog_restart_count: u32,
     /// What triggered the last watchdog event, if any.
     pub last_watchdog_trigger: Option<RuntimeWatchdogTrigger>,
-    /// Human-readable summary of this snapshot.
-    pub summary: String,
 }
 
 impl Default for RuntimeDeviceSupervisionSnapshot {
@@ -112,7 +110,6 @@ impl Default for RuntimeDeviceSupervisionSnapshot {
             restart_failure_count: None,
             watchdog_restart_count: 0,
             last_watchdog_trigger: None,
-            summary: "state=Stable restart_state=Unneeded fault_boundary=Clear interruption_class=Steady recovery_state=Steady device_loss_active=false safe_mode=false device_loss_count=0".to_string(),
         }
     }
 }
@@ -197,7 +194,7 @@ impl RuntimeDeviceSupervisionSnapshot {
             _ => RuntimeDeviceFaultBoundaryState::Clear,
         };
 
-        let mut snapshot = Self {
+        let snapshot = Self {
             state,
             restart_state,
             fault_boundary,
@@ -217,25 +214,7 @@ impl RuntimeDeviceSupervisionSnapshot {
             restart_failure_count,
             watchdog_restart_count: supervision_snapshot.watchdog_restart_count,
             last_watchdog_trigger: supervision_snapshot.last_watchdog_trigger,
-            summary: String::new(),
         };
-        snapshot.summary = format!(
-            "state={:?} restart={:?} boundary={:?} recovery={:?} interruption={:?} primary={:?} safe_mode={} device_loss_active={} device_losses={} restart_attempts={:?} restart_failures={:?} watchdog_restarts={} backend_health={:?} stream_state={:?}",
-            snapshot.state,
-            snapshot.restart_state,
-            snapshot.fault_boundary,
-            snapshot.recovery_state,
-            snapshot.interruption_class,
-            snapshot.primary_fault_cause,
-            snapshot.safe_mode_enabled,
-            snapshot.device_loss_active,
-            snapshot.device_loss_count,
-            snapshot.restart_attempt_count,
-            snapshot.restart_failure_count,
-            snapshot.watchdog_restart_count,
-            snapshot.backend_health,
-            snapshot.stream_state,
-        );
         snapshot
     }
 }

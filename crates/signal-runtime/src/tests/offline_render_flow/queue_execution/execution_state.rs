@@ -169,7 +169,6 @@ fn runtime_offline_render_execution_pauses_and_resumes_without_early_delivery() 
         RuntimeInterruptionClass::Resumable
     );
     assert!(!paused.interruption_rebindable);
-    assert!(paused.summary.contains("state=paused"));
     assert!(!artifact_dir.exists());
 
     let still_paused = runtime

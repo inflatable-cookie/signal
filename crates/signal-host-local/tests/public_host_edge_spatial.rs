@@ -109,9 +109,4 @@ fn local_shared_host_edge_exports_runtime_spatial_truth() {
                 })
         }));
 
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"execution_topology_summary\":{"));
-    assert!(rendered.contains("\"spatial_node_count\":2"));
-    assert!(rendered.contains("\"fallback_spatial_node_count\":1"));
-    assert!(rendered.contains("\"immersive_export_spatial_node_count\":1"));
 }

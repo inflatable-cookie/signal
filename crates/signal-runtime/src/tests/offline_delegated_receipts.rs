@@ -56,9 +56,7 @@ fn runtime_applies_delegated_execution_receipt_into_manifest_bundle() {
             override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
             latest_override_processing_epoch: Some(4),
             latest_override_block_sequence: Some(9),
-            summary: "delegated".into(),
         }],
-        summary: "boundary".into(),
     };
 
     let updated = runtime
@@ -82,9 +80,7 @@ fn runtime_applies_delegated_execution_receipt_into_manifest_bundle() {
                     status: RuntimeOfflinePluginDelegatedExecutionStatus::Completed,
                     delegate_label: Some("host:offline-sandbox".into()),
                     detail: Some("rendered by delegated sandbox".into()),
-                    summary: "completed".into(),
                 }],
-                summary: "receipt".into(),
             },
         )
         .expect("delegated execution receipt should apply");
@@ -103,11 +99,6 @@ fn runtime_applies_delegated_execution_receipt_into_manifest_bundle() {
             .completed_stage_count,
         1
     );
-    assert!(updated
-        .manifest
-        .summary
-        .contains("delegated_request_stages=1"));
-    assert!(updated.manifest.summary.contains("delegated_receipt=true"));
     let report_receipt = updated
         .manifest
         .report
@@ -192,9 +183,7 @@ fn runtime_offline_render_receipts_pin_delegated_unavailable_boundary() {
             override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
             latest_override_processing_epoch: Some(4),
             latest_override_block_sequence: Some(9),
-            summary: "delegated".into(),
         }],
-        summary: "boundary".into(),
     };
 
     let updated = runtime
@@ -218,9 +207,7 @@ fn runtime_offline_render_receipts_pin_delegated_unavailable_boundary() {
                     status: RuntimeOfflinePluginDelegatedExecutionStatus::Unavailable,
                     delegate_label: Some("host:offline-sandbox".into()),
                     detail: Some("delegate not available during degraded recovery".into()),
-                    summary: "unavailable".into(),
                 }],
-                summary: "receipt".into(),
             },
         )
         .expect("delegated unavailable receipt should apply");
@@ -231,16 +218,10 @@ fn runtime_offline_render_receipts_pin_delegated_unavailable_boundary() {
     assert_eq!(profiling.stale_override_stage_count, 1);
     assert_eq!(profiling.artifact_count, 1);
     assert!(profiling.report_materialized);
-    assert!(profiling
-        .render_json()
-        .contains("\"delegated_stage_count\":1"));
     assert_eq!(soak.delegated_stage_count, 1);
     assert_eq!(soak.delegated_completed_stage_count, 0);
     assert_eq!(soak.delegated_rejected_stage_count, 0);
     assert_eq!(soak.delegated_unavailable_stage_count, 1);
-    assert!(soak
-        .render_json()
-        .contains("\"delegated_unavailable_stage_count\":1"));
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime

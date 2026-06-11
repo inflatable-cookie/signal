@@ -95,9 +95,7 @@ fn local_host_round_trips_delegated_offline_execution_through_runtime_finalizati
             override_state: RuntimeOfflinePluginOverrideState::StaleLatestBlock,
             latest_override_processing_epoch: Some(1),
             latest_override_block_sequence: Some(1),
-            summary: "local-host delegated boundary".into(),
         }],
-        summary: "local-host delegated boundary".into(),
     };
 
     let updated = host

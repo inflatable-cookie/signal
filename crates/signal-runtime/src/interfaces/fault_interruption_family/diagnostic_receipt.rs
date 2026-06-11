@@ -22,8 +22,6 @@ pub struct RuntimeFaultDiagnosticReceipt {
     pub rebindable: bool,
     /// Per-family contribution receipts.
     pub contributions: Vec<RuntimeFaultContributionReceipt>,
-    /// Human-readable summary of this receipt.
-    pub summary: String,
 }
 
 impl RuntimeFaultDiagnosticReceipt {
@@ -98,7 +96,6 @@ impl RuntimeFaultDiagnosticReceipt {
                     fault_status.safe_mode_enabled,
                     xrun_event_count
                 )),
-                summary: String::new(),
             },
             RuntimeFaultContributionReceipt {
                 family: RuntimeFaultDiagnosticFamily::PluginBoundaryFault,
@@ -116,7 +113,6 @@ impl RuntimeFaultDiagnosticReceipt {
                             || degradation_summary.missing_bound_plugin_sandboxes > 0
                     )
                 )),
-                summary: String::new(),
             },
             RuntimeFaultContributionReceipt {
                 family: RuntimeFaultDiagnosticFamily::DevicePathFault,
@@ -129,7 +125,6 @@ impl RuntimeFaultDiagnosticReceipt {
                     fault_status.device_loss_count,
                     fault_status.watchdog_restart_count
                 )),
-                summary: String::new(),
             },
             RuntimeFaultContributionReceipt {
                 family: RuntimeFaultDiagnosticFamily::DeferredWorkPressure,
@@ -149,7 +144,6 @@ impl RuntimeFaultDiagnosticReceipt {
                         .map(|receipt| receipt.deferred_work_item_count)
                         .unwrap_or(0)
                 )),
-                summary: String::new(),
             },
         ];
         if let Some(host_io) = host_io {
@@ -166,19 +160,10 @@ impl RuntimeFaultDiagnosticReceipt {
                     host_io.hardware.xrun_count,
                     host_io.hardware.restart_failure_count
                 )),
-                summary: String::new(),
             });
         }
 
-        for contribution in &mut contributions {
-            contribution.summary = format!(
-                "family={:?} authority={:?} active={} events={} detail={}",
-                contribution.family,
-                contribution.authority,
-                contribution.active,
-                contribution.event_count,
-                contribution.detail.as_deref().unwrap_or("none")
-            );
+        for _contribution in &mut contributions {
         }
 
         let primary_family = match fault_status.primary_fault_cause {
@@ -211,7 +196,7 @@ impl RuntimeFaultDiagnosticReceipt {
             None => None,
         };
 
-        let mut receipt = Self {
+        let receipt = Self {
             primary_family,
             primary_fault_cause: fault_status.primary_fault_cause,
             interruption_class: interruption_summary.class,
@@ -219,17 +204,7 @@ impl RuntimeFaultDiagnosticReceipt {
             safe_mode_enabled: fault_status.safe_mode_enabled,
             rebindable: interruption_summary.rebindable,
             contributions,
-            summary: String::new(),
         };
-        receipt.summary = format!(
-            "primary_family={:?} primary_cause={:?} interruption={:?} recovery={:?} rebindable={} contributions={}",
-            receipt.primary_family,
-            receipt.primary_fault_cause,
-            receipt.interruption_class,
-            receipt.recovery_state,
-            receipt.rebindable,
-            receipt.contributions.len()
-        );
         receipt
     }
 }

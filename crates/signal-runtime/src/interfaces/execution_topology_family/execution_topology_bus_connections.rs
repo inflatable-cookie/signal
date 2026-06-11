@@ -104,7 +104,7 @@ pub fn derive_runtime_bus_connections(
             );
             let attachment_class = RuntimeBusConnectionAttachmentClass::Required;
             let fallback_outcome = RuntimeBusConnectionFallbackOutcome::NoFallback;
-            let summary = format!(
+            let _summary = format!(
                 "connection={} source={}:{}/{:?} target={}:{}/{:?} path={:?} attachment={:?} fallback={:?}",
                 connection_id,
                 source.node_id,
@@ -131,7 +131,6 @@ pub fn derive_runtime_bus_connections(
                     .map(|(_, path_id, _, _)| path_id.clone()),
                 attachment_class,
                 fallback_outcome,
-                summary,
             });
 
             if let Some((path_kind, auxiliary_path_id, bus_role, material_bus_intent)) =
@@ -150,7 +149,6 @@ pub fn derive_runtime_bus_connections(
                         connection_ids: Vec::new(),
                         attachment_class,
                         fallback_outcome,
-                        summary: String::new(),
                     });
                 if !path.source_node_ids.contains(&source.node_id.to_string()) {
                     path.source_node_ids.push(source.node_id.to_string());
@@ -172,20 +170,7 @@ pub fn derive_runtime_bus_connections(
     }
 
     let mut auxiliary_paths = auxiliary_paths.into_values().collect::<Vec<_>>();
-    for path in &mut auxiliary_paths {
-        path.summary = format!(
-            "path={} kind={:?} role={:?} material={:?} sources={:?} targets={:?} buses={:?} connections={} attachment={:?} fallback={:?}",
-            path.auxiliary_path_id,
-            path.path_kind,
-            path.bus_role,
-            path.material_bus_intent,
-            path.source_node_ids,
-            path.target_node_ids,
-            path.bus_ids,
-            path.connection_ids.len(),
-            path.attachment_class,
-            path.fallback_outcome,
-        );
+    for _path in &mut auxiliary_paths {
     }
 
     (connections, auxiliary_paths)

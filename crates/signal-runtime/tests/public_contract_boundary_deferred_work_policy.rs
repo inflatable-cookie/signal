@@ -166,16 +166,4 @@ fn public_runtime_deferred_work_policy_boundary_reports_runtime_owned_scheduler_
     assert_eq!(trace.background_realtime_backpressure_observation_count, 0);
     assert_eq!(trace.background_recovery_backpressure_observation_count, 1);
 
-    let deferred_json = deferred_supervisor.render_json();
-    assert!(deferred_json.contains("\"last_deferred_service\":{"));
-    assert!(deferred_json.contains("\"backpressure_source\":\"SafeMode\""));
-    assert!(deferred_json.contains("\"starvation_risk\":true"));
-
-    let abort_json = abort_supervisor.render_json();
-    assert!(abort_json.contains("\"cancellation_cause\":\"InvalidRequest\""));
-    assert!(abort_json.contains("\"cancelled_work_item_count\":1"));
-
-    let trace_json = trace.render_json();
-    assert!(trace_json.contains("\"background_cancellation_observation_count\":1"));
-    assert!(trace_json.contains("\"peak_background_cancelled_work_item_count\":1"));
 }

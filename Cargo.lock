@@ -1066,6 +1066,8 @@ name = "signal-runtime"
 version = "0.1.0"
 dependencies = [
  "hound",
+ "serde",
+ "serde_json",
  "signal-analysis",
  "signal-analysis-character",
  "signal-analysis-loudness",

@@ -84,27 +84,6 @@ impl RuntimeClipProcessingPipelineStateModel {
             last_frame_gain,
             peak_applied_gain,
             output,
-            summary: format!(
-                "clip_render clip={} input_stage={:?} timeline={}..{} stretch={:?}/{:?}/{:?} transform={:?}/{:?}/cached_media={} preview={:?}/{:?}/{:?}/{:?} first_gain={:?} last_gain={:?} peak_gain={:?} stages={:?}",
-                clip_processing_snapshot.clip_id,
-                request.input_stage,
-                request.timeline_start_samples,
-                timeline_end_samples,
-                stretch_engine_snapshot.engine_class,
-                stretch_engine_snapshot.readiness,
-                stretch_engine_snapshot.fallback_kind,
-                transform_artifact_snapshot.readiness,
-                transform_artifact_snapshot.reuse_state,
-                transform_artifact_snapshot.cached_media_ready,
-                preview_transform_snapshot.service_class,
-                preview_transform_snapshot.readiness,
-                preview_transform_snapshot.degraded_state,
-                preview_transform_snapshot.fallback_kind,
-                first_frame_gain,
-                last_frame_gain,
-                peak_applied_gain,
-                clip_processing_snapshot.treatment_stages,
-            ),
         })
     }
 

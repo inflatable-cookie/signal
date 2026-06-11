@@ -126,17 +126,6 @@ fn public_runtime_analysis_metadata_boundary_reports_runtime_owned_library_descr
         library_snapshot.invalidated_descriptor_count
     );
 
-    let observation_json = observation.render_json();
-    assert!(observation_json.contains("\"media_library_snapshot\":{"));
-    assert!(observation_json.contains("\"ready_descriptor_count\":1"));
-    assert!(observation_json.contains("\"invalidated_descriptor_count\":1"));
-    assert!(observation_json.contains("\"loudness_ready_descriptor_count\":1"));
-    assert!(observation_json.contains("\"character_ready_descriptor_count\":1"));
-    let supervisor_json = supervisor.render_json();
-    assert!(supervisor_json.contains("\"media_library_snapshot\":{"));
-    assert!(supervisor_json.contains("\"metadata_state\":\"Ready\""));
-    assert!(supervisor_json.contains("\"metadata_state\":\"Invalidated\""));
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = runtime
         .get_media_pipeline_snapshot()
