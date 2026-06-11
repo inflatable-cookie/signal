@@ -176,7 +176,7 @@ pub(crate) fn render_runtime_observation_report_compact_engine(
         report.transport_concurrency_snapshot.pending_cleanup_waves.len()
     );
     format!(
-        "{compact}{}{}{}{}{}{}{}{}{}{}{}{}",
+        "{compact}{}{}{}{}{}{}{}{}{}",
         sections.recording_capture,
         sections.marker_analysis,
         sections.transform_artifact,
@@ -185,9 +185,6 @@ pub(crate) fn render_runtime_observation_report_compact_engine(
         sections.offline_render_session,
         sections.execution_topology_summary,
         sections.metering_summary,
-        sections.linux_backend_session_summary,
-        sections.pipewire_alsa_parity_summary,
-        sections.jack_coordination_summary,
         sections.deferred_service,
     )
 }

@@ -1,14 +1,7 @@
-use super::*;
 use signal_hardware::{
     AudioSampleFormat, BackendHealth, HardwareBackendIdentity, HardwareClockSource,
     HardwareClockTopology, HardwareLifecycleOwnership, HardwareRestartPolicy,
-    LinuxAudioBackendKind,
 };
-
-#[path = "interfaces_host_io_family/parity.rs"]
-mod parity;
-
-pub use parity::*;
 
 /// State of the host audio pump stream.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -171,7 +164,7 @@ pub enum RuntimeHostEndpointTopology {
 }
 
 /// Full clocking summary for the host audio stream: clock source, domain,
-/// Linux parity, and callback interval.
+/// and callback interval.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RuntimeHostClockingSummary {
     /// Clock source driving the hardware stream.
@@ -198,12 +191,6 @@ pub struct RuntimeHostClockingSummary {
     pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
     /// I/O endpoint topology of the active backend.
     pub endpoint_topology: RuntimeHostEndpointTopology,
-    /// Linux clocking parity band for portability classification.
-    pub linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand,
-    /// Linux duplex parity state.
-    pub linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState,
-    /// Linux endpoint topology parity state.
-    pub linux_endpoint_topology_parity: RuntimeLinuxAudioBackendEndpointTopologyParityState,
     /// Whether only partial I/O availability is present.
     pub partial_availability: bool,
     /// Whether clock crossing is required for this configuration.
@@ -246,10 +233,6 @@ pub struct RuntimeHostHardwareSummary {
     pub backend_identity: HardwareBackendIdentity,
     /// Human-readable name of the active audio backend.
     pub backend_name: String,
-    /// Linux-specific backend identity classification.
-    pub linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
-    /// Portability band for the Linux audio backend.
-    pub linux_backend_portability: RuntimeLinuxAudioBackendPortabilityBand,
     /// Stable identifier for the active audio device.
     pub device_id: String,
     /// Human-readable name of the active audio device.
@@ -278,59 +261,6 @@ pub struct RuntimeHostHardwareSummary {
     pub restart_attempt_count: u64,
     /// Number of backend restart attempts that failed.
     pub restart_failure_count: u64,
-}
-
-impl RuntimeHostHardwareSummary {
-    /// Maps a hardware backend identity to the runtime Linux backend identity enum.
-    pub fn classify_linux_backend_identity(
-        backend_identity: HardwareBackendIdentity,
-    ) -> RuntimeLinuxAudioBackendIdentity {
-        match backend_identity {
-            HardwareBackendIdentity::CoreAudio => RuntimeLinuxAudioBackendIdentity::NotLinux,
-            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Alsa) => {
-                RuntimeLinuxAudioBackendIdentity::Alsa
-            }
-            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::Jack) => {
-                RuntimeLinuxAudioBackendIdentity::Jack
-            }
-            HardwareBackendIdentity::Linux(LinuxAudioBackendKind::PipeWire) => {
-                RuntimeLinuxAudioBackendIdentity::PipeWire
-            }
-            HardwareBackendIdentity::Unsupported => RuntimeLinuxAudioBackendIdentity::Unsupported,
-        }
-    }
-
-    /// Classifies the Linux audio backend portability band from fault counters and health state.
-    pub fn classify_linux_backend_portability(
-        backend_identity: HardwareBackendIdentity,
-        simulated: bool,
-        backend_health: BackendHealth,
-        device_loss_count: u64,
-        restart_attempt_count: u64,
-        restart_failure_count: u64,
-    ) -> RuntimeLinuxAudioBackendPortabilityBand {
-        match Self::classify_linux_backend_identity(backend_identity) {
-            RuntimeLinuxAudioBackendIdentity::Alsa
-            | RuntimeLinuxAudioBackendIdentity::Jack
-            | RuntimeLinuxAudioBackendIdentity::PipeWire => {
-                if simulated
-                    || !matches!(backend_health, BackendHealth::Healthy)
-                    || device_loss_count > 0
-                    || restart_attempt_count > 0
-                    || restart_failure_count > 0
-                {
-                    RuntimeLinuxAudioBackendPortabilityBand::Guarded
-                } else {
-                    RuntimeLinuxAudioBackendPortabilityBand::Portable
-                }
-            }
-            RuntimeLinuxAudioBackendIdentity::NotLinux
-            | RuntimeLinuxAudioBackendIdentity::Unavailable
-            | RuntimeLinuxAudioBackendIdentity::Unsupported => {
-                RuntimeLinuxAudioBackendPortabilityBand::Unsupported
-            }
-        }
-    }
 }
 
 /// Audio pump statistics: callback count, frame totals, and per-sample

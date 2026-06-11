@@ -28,15 +28,9 @@ impl LocalRuntimeHost {
     ) -> (RuntimeObservationReport, RuntimeHostIoSummary) {
         let observation = RuntimeObservationReport::capture(&self.runtime, &self.events);
         let host_io = self.host_io_summary(&observation);
-        let external_midi_snapshot =
-            signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty("signal-host-local");
         let observation = observation
             .with_host_device_supervision(&host_io)
-            .with_host_external_io(&host_io)
-            .with_linux_backend_session_snapshot(&host_io)
-            .with_pipewire_alsa_parity_snapshot(&host_io)
-            .with_jack_coordination_snapshot(&host_io)
-            .with_external_midi_snapshot(external_midi_snapshot);
+            .with_host_external_io(&host_io);
         (observation, host_io)
     }
 
@@ -45,17 +39,11 @@ impl LocalRuntimeHost {
     ) -> (RuntimeSupervisorReport, RuntimeHostIoSummary) {
         let mut supervisor = RuntimeSupervisorReport::capture(&self.runtime, &self.events);
         let host_io = self.host_io_summary(&supervisor.observation);
-        let external_midi_snapshot =
-            signal_runtime::RuntimeExternalMidiEndpointGraphSnapshot::empty("signal-host-local");
         supervisor.observation = supervisor
             .observation
             .clone()
             .with_host_device_supervision(&host_io)
-            .with_host_external_io(&host_io)
-            .with_linux_backend_session_snapshot(&host_io)
-            .with_pipewire_alsa_parity_snapshot(&host_io)
-            .with_jack_coordination_snapshot(&host_io)
-            .with_external_midi_snapshot(external_midi_snapshot);
+            .with_host_external_io(&host_io);
         (supervisor, host_io)
     }
 }

@@ -329,24 +329,6 @@ impl RuntimeSupervisorReport {
         );
         let external_io_summary =
             format_runtime_external_io_snapshot_multiline(&self.observation.external_io_snapshot);
-        let linux_backend_session_summary = format_runtime_linux_backend_session_snapshot_multiline(
-            &self.observation.linux_backend_session_snapshot,
-        );
-        let pipewire_alsa_parity_summary = format_runtime_pipewire_alsa_parity_snapshot_multiline(
-            &self.observation.pipewire_alsa_parity_snapshot,
-        );
-        let jack_coordination_summary = format_runtime_jack_coordination_snapshot_multiline(
-            &self.observation.jack_coordination_snapshot,
-        );
-        let external_midi_summary = format_runtime_external_midi_snapshot_multiline(
-            &self.observation.external_midi_snapshot,
-        );
-        let control_surface_summary = format_runtime_control_surface_snapshot_multiline(
-            &self.observation.control_surface_snapshot,
-        );
-        let advanced_hardware_summary = format_runtime_advanced_hardware_snapshot_multiline(
-            &self.observation.advanced_hardware_snapshot,
-        );
         let execution_topology_summary = format_runtime_execution_topology_summary_multiline(
             &self.observation.execution_topology_summary,
         );
@@ -794,7 +776,7 @@ impl RuntimeSupervisorReport {
         ); */
         let multiline = self.observation.render_compact().replace(' ', "\n");
         format!(
-            "{multiline}{automation}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{lv2_extension}{plugin_pin_matrix}{plugin_chain}{device_supervision_summary}{external_io_summary}{linux_backend_session_summary}{pipewire_alsa_parity_summary}{jack_coordination_summary}{external_midi_summary}{control_surface_summary}{advanced_hardware_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
+            "{multiline}{automation}{tempo_map}{warp}{clip_processing}{stretch_engine}{marker_analysis}{transform_artifact}{media_pipeline}{media_service}{media_library}{recording_capture}{offline_render_session}{plugin_discovery}{plugin_lifecycle}{lv2_extension}{plugin_pin_matrix}{plugin_chain}{device_supervision_summary}{external_io_summary}{execution_topology_summary}{metering_summary}{deferred_service}"
         )
     }
 

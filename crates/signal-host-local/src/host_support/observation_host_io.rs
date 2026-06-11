@@ -75,10 +75,6 @@ impl LocalRuntimeHost {
             backend_diagnostics.health,
             audio_pump.stream_state.into(),
         );
-        let linux_backend_identity =
-            signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_identity(
-                self.coreaudio.backend_identity(),
-            );
         let duplex_mismatch_state = host_duplex_mismatch_state(
             active_stream,
             clock_domain,
@@ -86,66 +82,11 @@ impl LocalRuntimeHost {
             audio_pump.stream_state.into(),
             partial_availability,
         );
-        let linux_clocking_parity =
-            signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
-                signal_runtime::RuntimeLinuxHostIoParityInput {
-                    linux_backend_identity,
-                    backend_health: backend_diagnostics.health,
-                    stream_state: audio_pump.stream_state.into(),
-                    clock_domain,
-                    fallback_state,
-                    transition_state,
-                    drift_state,
-                    discontinuity_state,
-                    duplex_mismatch_state,
-                    endpoint_topology,
-                    partial_availability,
-                },
-            );
-        let linux_duplex_parity =
-            signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
-                signal_runtime::RuntimeLinuxHostIoParityInput {
-                    linux_backend_identity,
-                    backend_health: backend_diagnostics.health,
-                    stream_state: audio_pump.stream_state.into(),
-                    clock_domain,
-                    fallback_state,
-                    transition_state,
-                    drift_state,
-                    discontinuity_state,
-                    duplex_mismatch_state,
-                    endpoint_topology,
-                    partial_availability,
-                },
-            );
-        let linux_endpoint_topology_parity =
-            signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
-                linux_backend_identity,
-                backend_diagnostics.health,
-                transition_state,
-                discontinuity_state,
-                duplex_mismatch_state,
-                endpoint_topology,
-                partial_availability,
-            );
         let callback_interval_ms = samples_to_ms(buffer_size as u32, sample_rate);
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
                 backend_identity: self.coreaudio.backend_identity(),
                 backend_name: self.coreaudio.backend_name().into(),
-                linux_backend_identity,
-                linux_backend_portability:
-                    signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_portability(
-                        self.coreaudio.backend_identity(),
-                        active_stream
-                            .as_ref()
-                            .map(|stream| stream.simulated)
-                            .unwrap_or(false),
-                        backend_diagnostics.health,
-                        backend_diagnostics.device_loss_count,
-                        backend_diagnostics.restart_attempt_count,
-                        backend_diagnostics.restart_failure_count,
-                    ),
                 device_id: active_stream
                     .as_ref()
                     .map(|stream| stream.device.device_id.clone())
@@ -210,9 +151,6 @@ impl LocalRuntimeHost {
                 discontinuity_state,
                 duplex_mismatch_state,
                 endpoint_topology,
-                linux_clocking_parity,
-                linux_duplex_parity,
-                linux_endpoint_topology_parity,
                 partial_availability,
                 crossing_required: matches!(
                     clock_domain,

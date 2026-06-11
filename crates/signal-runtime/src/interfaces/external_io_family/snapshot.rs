@@ -22,7 +22,7 @@ impl RuntimeHostIoSummary {
         };
         let device_change_state = if self.audio_pump.stream_state
             == RuntimeHostAudioStreamState::Faulted
-            && self.restart_failure_count() > 0
+            && self.hardware.restart_failure_count > 0
         {
             RuntimeExternalIoDeviceChangeState::Failed
         } else if self.hardware.restart_attempt_count > 0
@@ -117,8 +117,6 @@ impl RuntimeHostIoSummary {
                 self.hardware.input_channels,
                 self.hardware.output_channels,
             ),
-            linux_backend_identity: self.hardware.linux_backend_identity,
-            linux_backend_portability: self.hardware.linux_backend_portability,
             backend_name: self.hardware.backend_name.clone(),
             active_output_device_id: self.hardware.device_id.clone(),
             active_output_device_name: self.hardware.device_name.clone(),
@@ -131,43 +129,6 @@ impl RuntimeHostIoSummary {
             discontinuity_state: self.clocking.discontinuity_state,
             duplex_mismatch_state: self.clocking.duplex_mismatch_state,
             endpoint_topology: self.clocking.endpoint_topology,
-            linux_clocking_parity: Self::classify_linux_clocking_parity(
-                RuntimeLinuxHostIoParityInput {
-                    linux_backend_identity: self.hardware.linux_backend_identity,
-                    backend_health: self.hardware.backend_health,
-                    stream_state: self.audio_pump.stream_state,
-                    clock_domain: self.clocking.clock_domain,
-                    fallback_state: self.clocking.fallback_state,
-                    transition_state: self.clocking.transition_state,
-                    drift_state: self.clocking.drift_state,
-                    discontinuity_state: self.clocking.discontinuity_state,
-                    duplex_mismatch_state: self.clocking.duplex_mismatch_state,
-                    endpoint_topology: self.clocking.endpoint_topology,
-                    partial_availability: self.clocking.partial_availability,
-                },
-            ),
-            linux_duplex_parity: Self::classify_linux_duplex_parity(RuntimeLinuxHostIoParityInput {
-                linux_backend_identity: self.hardware.linux_backend_identity,
-                backend_health: self.hardware.backend_health,
-                stream_state: self.audio_pump.stream_state,
-                clock_domain: self.clocking.clock_domain,
-                fallback_state: self.clocking.fallback_state,
-                transition_state: self.clocking.transition_state,
-                drift_state: self.clocking.drift_state,
-                discontinuity_state: self.clocking.discontinuity_state,
-                duplex_mismatch_state: self.clocking.duplex_mismatch_state,
-                endpoint_topology: self.clocking.endpoint_topology,
-                partial_availability: self.clocking.partial_availability,
-            }),
-            linux_endpoint_topology_parity: Self::classify_linux_endpoint_topology_parity(
-                self.hardware.linux_backend_identity,
-                self.hardware.backend_health,
-                self.clocking.transition_state,
-                self.clocking.discontinuity_state,
-                self.clocking.duplex_mismatch_state,
-                self.clocking.endpoint_topology,
-                self.clocking.partial_availability,
-            ),
             partial_availability: self.clocking.partial_availability,
             fallback_active,
             runtime_graph_id_matches_pump: self.runtime_graph_id_matches_pump,
@@ -179,12 +140,7 @@ impl RuntimeHostIoSummary {
             restart_attempt_count: self.hardware.restart_attempt_count,
             restart_failure_count: self.hardware.restart_failure_count,
             summary: format!(
-                "health={health_state:?} device_change={device_change_state:?} role={primary_role:?} monitor={monitoring_state:?}/{monitoring_tap_point:?} loopback={loopback_state:?} linux_backend={:?}/{:?}/{:?}/{:?}/{:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
-                self.hardware.linux_backend_identity,
-                self.hardware.linux_backend_portability,
-                self.clocking.linux_clocking_parity,
-                self.clocking.linux_duplex_parity,
-                self.clocking.linux_endpoint_topology_parity,
+                "health={health_state:?} device_change={device_change_state:?} role={primary_role:?} monitor={monitoring_state:?}/{monitoring_tap_point:?} loopback={loopback_state:?} backend={} device={} stream={:?} clock={:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{:?}/{} fallback={} graph_matches={} output_latency={} estimated_output_latency={} xruns={} overruns={} device_losses={} restart_attempts={} restart_failures={}",
                 self.hardware.backend_name,
                 self.hardware.device_id,
                 self.audio_pump.stream_state,

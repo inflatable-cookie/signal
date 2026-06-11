@@ -13,9 +13,6 @@ pub(crate) struct RuntimeObservationCompactSections {
     pub deferred_service: String,
     pub engine_transport: String,
     pub scheduler_topology: String,
-    pub linux_backend_session_summary: String,
-    pub pipewire_alsa_parity_summary: String,
-    pub jack_coordination_summary: String,
 }
 
 pub(crate) fn build_runtime_observation_report_compact_sections(
@@ -128,19 +125,10 @@ pub(crate) fn build_runtime_observation_report_compact_sections(
         format_runtime_device_supervision_snapshot_compact(&report.device_supervision_snapshot);
     let external_io_summary =
         format_runtime_external_io_snapshot_compact(&report.external_io_snapshot);
-    let linux_backend_session_summary = format_runtime_linux_backend_session_snapshot_compact(
-        &report.linux_backend_session_snapshot,
-    );
-    let pipewire_alsa_parity_summary =
-        format_runtime_pipewire_alsa_parity_snapshot_compact(&report.pipewire_alsa_parity_snapshot);
-    let jack_coordination_summary =
-        format_runtime_jack_coordination_snapshot_compact(&report.jack_coordination_snapshot);
-    let external_midi_summary =
-        format_runtime_external_midi_snapshot_compact(&report.external_midi_snapshot);
 
     RuntimeObservationCompactSections {
         runtime_surface_summaries: format!(
-            "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
+            "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
             tempo_map,
             warp,
             clip_processing,
@@ -165,10 +153,6 @@ pub(crate) fn build_runtime_observation_report_compact_sections(
             interruption_summary,
             device_supervision_summary,
             external_io_summary,
-            linux_backend_session_summary,
-            pipewire_alsa_parity_summary,
-            jack_coordination_summary,
-            external_midi_summary,
         ),
         execution_topology_summary: format_runtime_execution_topology_summary_compact(
             &report.execution_topology_summary,
@@ -207,8 +191,5 @@ pub(crate) fn build_runtime_observation_report_compact_sections(
         scheduler_topology: format_scheduler_topology_compact(
             &report.engine_block_snapshot.scheduler_topology,
         ),
-        linux_backend_session_summary,
-        pipewire_alsa_parity_summary,
-        jack_coordination_summary,
     }
 }

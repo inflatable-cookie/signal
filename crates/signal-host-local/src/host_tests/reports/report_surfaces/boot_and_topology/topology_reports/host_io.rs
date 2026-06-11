@@ -12,14 +12,6 @@ fn local_host_shared_report_surfaces_topology_aware_host_io() {
         report.observation.host_io.hardware.backend_identity,
         signal_hardware::HardwareBackendIdentity::CoreAudio
     );
-    assert_eq!(
-        report.observation.host_io.hardware.linux_backend_identity,
-        signal_runtime::RuntimeLinuxAudioBackendIdentity::NotLinux
-    );
-    assert_eq!(
-        report.observation.host_io.hardware.linux_backend_portability,
-        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
-    );
     assert!(report.observation.host_io.hardware.device_id.starts_with("coreaudio:"));
     assert_eq!(report.observation.host_io.hardware.sample_rate, 48_000);
     assert_eq!(report.observation.host_io.hardware.buffer_size, 512);
@@ -76,39 +68,7 @@ fn local_host_shared_report_surfaces_topology_aware_host_io() {
         report.observation.host_io.clocking.endpoint_topology,
         RuntimeHostEndpointTopology::OutputOnly
     );
-    assert_eq!(
-        report.observation.host_io.clocking.linux_clocking_parity,
-        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
-    );
-    assert_eq!(
-        report.observation.host_io.clocking.linux_duplex_parity,
-        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-    );
-    assert_eq!(
-        report.observation.host_io.clocking.linux_endpoint_topology_parity,
-        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
-    );
     assert!(!report.observation.host_io.clocking.partial_availability);
-    assert_eq!(
-        report.observation.observation.external_io_snapshot.linux_backend_identity,
-        signal_runtime::RuntimeLinuxAudioBackendIdentity::NotLinux
-    );
-    assert_eq!(
-        report.observation.observation.external_io_snapshot.linux_backend_portability,
-        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
-    );
-    assert_eq!(
-        report.observation.observation.external_io_snapshot.linux_clocking_parity,
-        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
-    );
-    assert_eq!(
-        report.observation.observation.external_io_snapshot.linux_duplex_parity,
-        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-    );
-    assert_eq!(
-        report.observation.observation.external_io_snapshot.linux_endpoint_topology_parity,
-        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
-    );
     assert_eq!(
         report.observation.observation.external_io_snapshot.primary_role,
         signal_runtime::RuntimeExternalIoPrimaryRole::ProgramOutput

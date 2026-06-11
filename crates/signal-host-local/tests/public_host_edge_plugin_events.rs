@@ -106,10 +106,6 @@ fn local_shared_host_edge_exports_runtime_controller_expression_truth() {
         snapshot.midi2_posture,
         signal_runtime::RuntimeControllerExpressionMidi2Posture::Guarded
     );
-    assert_eq!(
-        report.observation.external_midi_snapshot.graph_state,
-        signal_runtime::RuntimeExternalMidiGraphState::Empty
-    );
 
     let rendered = report.render_json();
     assert!(rendered.contains("\"note_expression_pressure_events\":1"));
@@ -117,6 +113,4 @@ fn local_shared_host_edge_exports_runtime_controller_expression_truth() {
     assert!(rendered.contains("\"note_expression_tuning_events\":2"));
     assert!(rendered.contains("\"mpe_posture\":\"Guarded\""));
     assert!(rendered.contains("\"midi2_posture\":\"Guarded\""));
-    assert!(rendered.contains("\"external_midi_snapshot\":{"));
-    assert!(rendered.contains("\"graph_state\":\"Empty\""));
 }

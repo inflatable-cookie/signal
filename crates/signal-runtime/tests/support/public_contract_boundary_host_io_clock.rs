@@ -22,24 +22,10 @@ pub struct PublicClockTopologyHostIoConfig {
 pub fn sample_public_clock_topology_host_io(
     config: PublicClockTopologyHostIoConfig,
 ) -> RuntimeHostIoSummary {
-    let linux_backend_identity =
-        signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_identity(
-            HardwareBackendIdentity::CoreAudio,
-        );
     RuntimeHostIoSummary {
         hardware: RuntimeHostHardwareSummary {
             backend_identity: HardwareBackendIdentity::CoreAudio,
             backend_name: "coreaudio".into(),
-            linux_backend_identity,
-            linux_backend_portability:
-                signal_runtime::RuntimeHostHardwareSummary::classify_linux_backend_portability(
-                    HardwareBackendIdentity::CoreAudio,
-                    false,
-                    BackendHealth::Healthy,
-                    0,
-                    0,
-                    0,
-                ),
             device_id: "device:public-clock-topology".into(),
             device_name: "Public Clock Topology".into(),
             sample_rate: 48_000,
@@ -84,47 +70,6 @@ pub fn sample_public_clock_topology_host_io(
             discontinuity_state: config.discontinuity_state,
             duplex_mismatch_state: config.duplex_mismatch_state,
             endpoint_topology: config.endpoint_topology,
-            linux_clocking_parity:
-                signal_runtime::RuntimeHostIoSummary::classify_linux_clocking_parity(
-                    signal_runtime::RuntimeLinuxHostIoParityInput {
-                        linux_backend_identity,
-                        backend_health: BackendHealth::Healthy,
-                        stream_state: RuntimeHostAudioStreamState::Running,
-                        clock_domain: config.clock_domain,
-                        fallback_state: config.fallback_state,
-                        transition_state: config.transition_state,
-                        drift_state: config.drift_state,
-                        discontinuity_state: config.discontinuity_state,
-                        duplex_mismatch_state: config.duplex_mismatch_state,
-                        endpoint_topology: config.endpoint_topology,
-                        partial_availability: config.partial_availability,
-                    },
-                ),
-            linux_duplex_parity: signal_runtime::RuntimeHostIoSummary::classify_linux_duplex_parity(
-                signal_runtime::RuntimeLinuxHostIoParityInput {
-                    linux_backend_identity,
-                    backend_health: BackendHealth::Healthy,
-                    stream_state: RuntimeHostAudioStreamState::Running,
-                    clock_domain: config.clock_domain,
-                    fallback_state: config.fallback_state,
-                    transition_state: config.transition_state,
-                    drift_state: config.drift_state,
-                    discontinuity_state: config.discontinuity_state,
-                    duplex_mismatch_state: config.duplex_mismatch_state,
-                    endpoint_topology: config.endpoint_topology,
-                    partial_availability: config.partial_availability,
-                },
-            ),
-            linux_endpoint_topology_parity:
-                signal_runtime::RuntimeHostIoSummary::classify_linux_endpoint_topology_parity(
-                    linux_backend_identity,
-                    BackendHealth::Healthy,
-                    config.transition_state,
-                    config.discontinuity_state,
-                    config.duplex_mismatch_state,
-                    config.endpoint_topology,
-                    config.partial_availability,
-                ),
             partial_availability: config.partial_availability,
             crossing_required: matches!(
                 config.clock_domain,

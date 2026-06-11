@@ -72,52 +72,6 @@ fn local_shared_host_edge_exports_runtime_clock_topology_truth() {
 }
 
 #[test]
-fn local_shared_host_edge_exports_runtime_linux_backend_clock_topology_truth() {
-    let scan_root = temp_public_local_au_scan_root();
-    let _guard = DemoPluginEnvGuard::enable_au(&scan_root, "plugin:au:instrument");
-    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
-    let mut host = LocalRuntimeHost::new(runtime);
-    host.boot_default()
-        .expect("public local linux backend clock topology default boot should succeed");
-    let report = host.host_supervisor_report();
-
-    assert_eq!(
-        report.observation.host_io.hardware.linux_backend_identity,
-        signal_runtime::RuntimeLinuxAudioBackendIdentity::NotLinux
-    );
-    assert_eq!(
-        report
-            .observation
-            .host_io
-            .hardware
-            .linux_backend_portability,
-        signal_runtime::RuntimeLinuxAudioBackendPortabilityBand::Unsupported
-    );
-    assert_eq!(
-        report.observation.host_io.clocking.linux_clocking_parity,
-        signal_runtime::RuntimeLinuxAudioBackendClockingParityBand::Unsupported
-    );
-    assert_eq!(
-        report.observation.host_io.clocking.linux_duplex_parity,
-        signal_runtime::RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-    );
-    assert_eq!(
-        report
-            .observation
-            .host_io
-            .clocking
-            .linux_endpoint_topology_parity,
-        signal_runtime::RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
-    );
-
-    let rendered = report.render_json();
-    assert!(rendered.contains("\"linux_backend_identity\":\"NotLinux\""));
-    assert!(rendered.contains("\"linux_clocking_parity\":\"Unsupported\""));
-    assert!(rendered.contains("\"linux_duplex_parity\":\"Unsupported\""));
-    assert!(rendered.contains("\"linux_endpoint_topology_parity\":\"Unsupported\""));
-}
-
-#[test]
 fn local_shared_host_edge_exports_runtime_external_io_truth() {
     let scan_root = temp_public_local_au_scan_root();
     let _guard = DemoPluginEnvGuard::enable_au(&scan_root, "plugin:au:instrument");

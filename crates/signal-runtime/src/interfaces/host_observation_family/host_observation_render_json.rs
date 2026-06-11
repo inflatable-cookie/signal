@@ -16,11 +16,6 @@ fn render_host_io_json(host_io: &RuntimeHostIoSummary) -> String {
         concat!(
             "{{",
             "\"backend_name\":{},",
-            "\"linux_backend_identity\":{},",
-            "\"linux_backend_portability\":{},",
-            "\"linux_clocking_parity\":{},",
-            "\"linux_duplex_parity\":{},",
-            "\"linux_endpoint_topology_parity\":{},",
             "\"device_id\":{},",
             "\"device_name\":{},",
             "\"sample_rate\":{},",
@@ -75,14 +70,6 @@ fn render_host_io_json(host_io: &RuntimeHostIoSummary) -> String {
             "}}"
         ),
         json_option_string(Some(host_io.hardware.backend_name.as_str())),
-        json_string(&format!("{:?}", host_io.hardware.linux_backend_identity)),
-        json_string(&format!("{:?}", host_io.hardware.linux_backend_portability)),
-        json_string(&format!("{:?}", host_io.clocking.linux_clocking_parity)),
-        json_string(&format!("{:?}", host_io.clocking.linux_duplex_parity)),
-        json_string(&format!(
-            "{:?}",
-            host_io.clocking.linux_endpoint_topology_parity
-        )),
         json_option_string(Some(host_io.hardware.device_id.as_str())),
         json_option_string(Some(host_io.hardware.device_name.as_str())),
         host_io.hardware.sample_rate,

@@ -1,6 +1,5 @@
 //! Typed runtime-host interfaces for embedded Signal assemblies.
 mod clip_analysis_family;
-mod device_linux_json_family;
 mod engine_block_surface_family;
 mod engine_lifecycle_family;
 mod event_recorder_family;
@@ -9,8 +8,8 @@ mod execution_metering_surface_family;
 mod external_io_family;
 mod fault_interruption_family;
 mod host_observation_family;
-#[path = "interfaces_host_platform_family.rs"]
-mod interfaces_host_platform_family;
+#[path = "interfaces_host_io_family.rs"]
+mod interfaces_host_io_family;
 mod interfaces_json_family;
 #[path = "interfaces_offline_contract_family.rs"]
 mod interfaces_offline_contract_family;
@@ -29,22 +28,6 @@ mod runtime_continuity_json_family;
 mod scheduler_surface_family;
 mod spatial_topology_json_family;
 pub(crate) use clip_analysis_family::*;
-use device_linux_json_family::{
-    format_runtime_advanced_hardware_snapshot_multiline,
-    format_runtime_control_surface_snapshot_multiline,
-    format_runtime_device_supervision_snapshot_compact,
-    format_runtime_device_supervision_snapshot_multiline,
-    format_runtime_external_midi_snapshot_compact, format_runtime_external_midi_snapshot_multiline,
-    format_runtime_jack_coordination_snapshot_compact,
-    format_runtime_jack_coordination_snapshot_multiline,
-    format_runtime_linux_backend_session_snapshot_compact,
-    format_runtime_linux_backend_session_snapshot_multiline,
-    format_runtime_pipewire_alsa_parity_snapshot_compact,
-    format_runtime_pipewire_alsa_parity_snapshot_multiline,
-    json_runtime_advanced_hardware_snapshot, json_runtime_control_surface_snapshot,
-    json_runtime_external_midi_snapshot, json_runtime_jack_coordination_snapshot,
-    json_runtime_linux_backend_session_snapshot, json_runtime_pipewire_alsa_parity_snapshot,
-};
 use engine_block_surface_family::json_runtime_engine_block_snapshot;
 pub use engine_lifecycle_family::*;
 pub use event_recorder_family::*;
@@ -67,7 +50,7 @@ use external_io_family::{
 };
 pub use fault_interruption_family::*;
 pub use host_observation_family::*;
-pub use interfaces_host_platform_family::*;
+pub use interfaces_host_io_family::*;
 use interfaces_json_family::{
     format_runtime_scheduler_snapshot_compact, format_runtime_scheduler_snapshot_multiline,
     format_scheduler_topology_compact, format_scheduler_topology_multiline, json_escape_string,
@@ -125,6 +108,8 @@ use preview_transform_family::{
 };
 pub use receipt_surface_family::*;
 use runtime_continuity_json_family::{
+    format_runtime_device_supervision_snapshot_compact,
+    format_runtime_device_supervision_snapshot_multiline,
     format_runtime_offline_render_session_snapshot_compact,
     format_runtime_offline_render_session_snapshot_multiline,
     format_runtime_recording_capture_snapshot_compact,

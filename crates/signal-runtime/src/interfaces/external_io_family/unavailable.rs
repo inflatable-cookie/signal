@@ -30,8 +30,6 @@ impl RuntimeHostIoSummary {
                 RuntimeExternalIoLoopbackState::Unavailable
             },
             io_layout: RuntimeMultichannelIoSummary::for_hardware(0, 0),
-            linux_backend_identity: RuntimeLinuxAudioBackendIdentity::Unavailable,
-            linux_backend_portability: RuntimeLinuxAudioBackendPortabilityBand::Unsupported,
             backend_name: "runtime-unavailable".into(),
             active_output_device_id: effective_config
                 .active_output_device
@@ -54,10 +52,6 @@ impl RuntimeHostIoSummary {
             discontinuity_state: RuntimeHostClockDiscontinuityState::LostConfiguration,
             duplex_mismatch_state: RuntimeHostDuplexMismatchState::NotApplicable,
             endpoint_topology: RuntimeHostEndpointTopology::Unconfigured,
-            linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand::Unsupported,
-            linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState::Unsupported,
-            linux_endpoint_topology_parity:
-                RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported,
             partial_availability: false,
             fallback_active: false,
             runtime_graph_id_matches_pump: false,

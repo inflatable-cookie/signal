@@ -108,10 +108,6 @@ pub struct RuntimeExternalIoSnapshot {
     pub loopback_state: RuntimeExternalIoLoopbackState,
     /// Multichannel I/O layout for the active device.
     pub io_layout: RuntimeMultichannelIoSummary,
-    /// Linux audio backend identity (ALSA, PipeWire, etc.) if applicable.
-    pub linux_backend_identity: RuntimeLinuxAudioBackendIdentity,
-    /// Portability band of the Linux audio backend.
-    pub linux_backend_portability: RuntimeLinuxAudioBackendPortabilityBand,
     /// Name of the active audio backend.
     pub backend_name: String,
     /// Device identifier string of the active output device.
@@ -136,12 +132,6 @@ pub struct RuntimeExternalIoSnapshot {
     pub duplex_mismatch_state: RuntimeHostDuplexMismatchState,
     /// Endpoint topology (output-only, duplex, aggregate, etc.).
     pub endpoint_topology: RuntimeHostEndpointTopology,
-    /// Linux-specific clocking parity assessment.
-    pub linux_clocking_parity: RuntimeLinuxAudioBackendClockingParityBand,
-    /// Linux-specific duplex parity assessment.
-    pub linux_duplex_parity: RuntimeLinuxAudioBackendDuplexParityState,
-    /// Linux-specific endpoint topology parity assessment.
-    pub linux_endpoint_topology_parity: RuntimeLinuxAudioBackendEndpointTopologyParityState,
     /// Whether only a subset of the requested I/O channels is available.
     pub partial_availability: bool,
     /// Whether a clock fallback is currently active.

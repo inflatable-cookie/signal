@@ -56,18 +56,6 @@ fn runtime_external_io_snapshot_marks_clock_fallback_active() {
         snapshot.endpoint_topology,
         RuntimeHostEndpointTopology::OutputOnly
     );
-    assert_eq!(
-        snapshot.linux_clocking_parity,
-        RuntimeLinuxAudioBackendClockingParityBand::Unsupported
-    );
-    assert_eq!(
-        snapshot.linux_duplex_parity,
-        RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-    );
-    assert_eq!(
-        snapshot.linux_endpoint_topology_parity,
-        RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
-    );
     assert!(!snapshot.partial_availability);
     assert!(snapshot.summary.contains("fallback=true"));
 }
@@ -177,18 +165,6 @@ fn runtime_external_io_snapshot_surfaces_duplex_and_topology_receipts() {
         RuntimeHostEndpointTopology::Duplex
     );
     assert_eq!(
-        snapshot.linux_clocking_parity,
-        RuntimeLinuxAudioBackendClockingParityBand::Unsupported
-    );
-    assert_eq!(
-        snapshot.linux_duplex_parity,
-        RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-    );
-    assert_eq!(
-        snapshot.linux_endpoint_topology_parity,
-        RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
-    );
-    assert_eq!(
         snapshot.primary_role,
         RuntimeExternalIoPrimaryRole::ProgramDuplex
     );
@@ -273,18 +249,6 @@ fn runtime_external_io_snapshot_defaults_to_unavailable_without_host_context() {
     assert_eq!(
         snapshot.endpoint_topology,
         RuntimeHostEndpointTopology::Unconfigured
-    );
-    assert_eq!(
-        snapshot.linux_clocking_parity,
-        RuntimeLinuxAudioBackendClockingParityBand::Unsupported
-    );
-    assert_eq!(
-        snapshot.linux_duplex_parity,
-        RuntimeLinuxAudioBackendDuplexParityState::Unsupported
-    );
-    assert_eq!(
-        snapshot.linux_endpoint_topology_parity,
-        RuntimeLinuxAudioBackendEndpointTopologyParityState::Unsupported
     );
     assert!(snapshot.summary.contains("runtime-unavailable"));
 }

@@ -32,18 +32,6 @@ pub struct RuntimeObservationReport {
     pub device_supervision_snapshot: RuntimeDeviceSupervisionSnapshot,
     /// External I/O snapshot (hardware backend state, clocking, latency).
     pub external_io_snapshot: RuntimeExternalIoSnapshot,
-    /// Linux audio backend session snapshot (ALSA/PipeWire/JACK session details).
-    pub linux_backend_session_snapshot: RuntimeLinuxBackendSessionSnapshot,
-    /// PipeWire/ALSA parity snapshot for Linux backend comparisons.
-    pub pipewire_alsa_parity_snapshot: RuntimePipeWireAlsaParitySnapshot,
-    /// JACK coordination snapshot.
-    pub jack_coordination_snapshot: RuntimeJackCoordinationSnapshot,
-    /// External MIDI endpoint graph snapshot.
-    pub external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
-    /// Control surface connectivity snapshot.
-    pub control_surface_snapshot: RuntimeControlSurfaceSnapshot,
-    /// Advanced hardware capabilities snapshot.
-    pub advanced_hardware_snapshot: RuntimeAdvancedHardwareSnapshot,
     /// Timeline playback/transport snapshot.
     pub timeline_snapshot: RuntimeTimelineSnapshot,
     /// Tempo map snapshot with resolved project tempo.
@@ -193,16 +181,6 @@ impl RuntimeObservationReport {
             &effective_config,
             &device_supervision_snapshot,
         );
-        let linux_backend_session_snapshot = RuntimeLinuxBackendSessionSnapshot::unavailable();
-        let pipewire_alsa_parity_snapshot = RuntimePipeWireAlsaParitySnapshot::unavailable();
-        let jack_coordination_snapshot = RuntimeJackCoordinationSnapshot::unavailable();
-        let external_midi_snapshot = RuntimeExternalMidiEndpointGraphSnapshot::unavailable();
-        let control_surface_snapshot =
-            RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(&external_midi_snapshot);
-        let advanced_hardware_snapshot =
-            RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
-                &control_surface_snapshot,
-            );
         Self {
             readiness: readiness.clone(),
             effective_config,
@@ -216,12 +194,6 @@ impl RuntimeObservationReport {
             interruption_summary,
             device_supervision_snapshot,
             external_io_snapshot,
-            linux_backend_session_snapshot,
-            pipewire_alsa_parity_snapshot,
-            jack_coordination_snapshot,
-            external_midi_snapshot,
-            control_surface_snapshot,
-            advanced_hardware_snapshot,
             timeline_snapshot,
             tempo_map_snapshot,
             warp_pipeline_snapshot,
@@ -272,52 +244,6 @@ impl RuntimeObservationReport {
     /// Replaces the external I/O snapshot using the host I/O summary.
     pub fn with_host_external_io(mut self, host_io: &RuntimeHostIoSummary) -> Self {
         self.external_io_snapshot = host_io.build_external_io_snapshot();
-        self
-    }
-
-    /// Replaces the Linux backend session snapshot derived from the host I/O summary.
-    pub fn with_linux_backend_session_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
-        self.linux_backend_session_snapshot =
-            RuntimeLinuxBackendSessionSnapshot::from_host_io(host_io);
-        self
-    }
-
-    /// Replaces the PipeWire/ALSA parity snapshot derived from host I/O and the Linux session.
-    pub fn with_pipewire_alsa_parity_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
-        self.pipewire_alsa_parity_snapshot =
-            RuntimePipeWireAlsaParitySnapshot::from_host_io_and_linux_session(
-                host_io,
-                &self.linux_backend_session_snapshot,
-            );
-        self
-    }
-
-    /// Replaces the JACK coordination snapshot derived from host I/O and the transport session.
-    pub fn with_jack_coordination_snapshot(mut self, host_io: &RuntimeHostIoSummary) -> Self {
-        self.jack_coordination_snapshot =
-            RuntimeJackCoordinationSnapshot::from_host_io_and_transport_session(
-                host_io,
-                &self.transport_session_summary,
-            );
-        self
-    }
-
-    /// Replaces the external MIDI, control surface, and advanced hardware snapshots.
-    pub fn with_external_midi_snapshot(
-        mut self,
-        external_midi_snapshot: RuntimeExternalMidiEndpointGraphSnapshot,
-    ) -> Self {
-        let external_midi_snapshot = external_midi_snapshot.with_live_ownership_summary(
-            &self.linux_backend_session_snapshot,
-            &self.interruption_summary,
-        );
-        self.control_surface_snapshot =
-            RuntimeControlSurfaceSnapshot::from_external_midi_snapshot(&external_midi_snapshot);
-        self.advanced_hardware_snapshot =
-            RuntimeAdvancedHardwareSnapshot::from_control_surface_snapshot(
-                &self.control_surface_snapshot,
-            );
-        self.external_midi_snapshot = external_midi_snapshot;
         self
     }
 
