@@ -48,9 +48,10 @@ impl std::fmt::Display for OutputStreamError {
 
 impl std::error::Error for OutputStreamError {}
 
-/// Requested shape for an output stream. The backend may negotiate the
-/// buffer size; sample rate and channel count are honoured or the open
-/// fails — silent resampling is not part of this contract.
+/// Requested shape for an output stream. The backend negotiates against the
+/// device's supported configurations and the handle reports the values the
+/// stream actually runs at; callers MUST read the negotiated rate/channels
+/// back from the handle rather than assuming the request was honoured.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OutputStreamSpec {
     /// Requested sample rate in hertz.

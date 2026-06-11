@@ -1,6 +1,6 @@
 # 003 - Output Stream Hardening And Real Device Enumeration
 
-Status: planned
+Status: active
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.002
@@ -29,19 +29,19 @@ contract changes that make those fixes possible land here.
 
 ## Goals
 
-- [ ] config negotiation in `CpalOutputBackend`: try requested spec, fall back
+- [x] config negotiation in `CpalOutputBackend`: try requested spec, fall back
       to nearest supported (rate, then channels), report the *negotiated*
       config on the handle
-- [ ] `OutputStreamHandle` exposes negotiated sample rate and channel count so
+- [x] `OutputStreamHandle` exposes negotiated sample rate and channel count so
       hosts can detect plan/stream mismatch
-- [ ] gate the `unsafe impl Send` to `target_os = "macos"` with a documented
+- [x] gate the `unsafe impl Send` to `target_os = "macos"` with a documented
       safety argument; provide a portable alternative (stream owned by a
       dedicated thread with a command channel) or a compile error on other
       platforms until one exists
-- [ ] device enumeration via cpal (names, supported configs, default device)
+- [x] device enumeration via cpal (names, supported configs, default device)
       replacing the system_profiler path
 - [ ] retire `signal-hardware-coreaudio` once no consumer needs it
-- [ ] smoke-test coverage for the backend (skippable when no device present)
+- [x] smoke-test coverage for the backend (skippable when no device present)
 
 ## Non-Goals
 
@@ -86,7 +86,32 @@ contract changes that make those fixes possible land here.
 
 - [ ] smoke test output on real hardware recorded in the progress log
 
+## Progress (2026-06-11)
+
+- Batches 3.1 + 3.2 + most of 3.3 landed: `negotiate_config` matches the
+  requested spec against the device's supported output configs (exact
+  channels + exact rate, then nearest rate, then device default) and the
+  handle reports the negotiated values, never echoes. The `unsafe impl Send`
+  is GONE entirely — each stream is owned by a dedicated thread that builds,
+  starts, parks, and drops it; the handle talks to it over channels, so the
+  crate is portable with zero unsafe. `enumerate_output_devices()` lists
+  real devices with default/supported rates and channel counts from cpal.
+  Two CI-skippable smoke tests (open+negotiate, enumerate) pass on real
+  hardware. Output-stream contract doc updated: negotiation replaces
+  honour-or-fail; callers must read negotiated values from the handle.
+- Host side (Loophole Aura, chorus g11 runway): plans now compile at the
+  stream's negotiated rate (`render_plan_spec(cache, sample_rate_hz)` in
+  pulse, default 48k before a stream exists; sync recompiles once when the
+  negotiated rate differs); `ensure_stream` reopens on fault or channel
+  mismatch and feeds `set_stream_channels`; seek-while-playing now reaches
+  the render plane (>100 ms authority/clock divergence treated as an
+  explicit declicked seek); transport command errors recorded instead of
+  discarded.
+- Remaining in this packet: retire `signal-hardware-coreaudio`. Deferred —
+  its only consumer is signal-host-local's boot path, which g10.005
+  collapses; deleting it rides that packet.
+
 ## Next Task
 
 g10.004 (hosting demolition) — with the real path hardened, remove the fake
-one.
+one. g10.005 finishes this packet's coreaudio retirement.
