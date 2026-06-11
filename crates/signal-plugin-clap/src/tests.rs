@@ -12,12 +12,17 @@ mod tests {
     };
 
     fn test_broker_root(name: &str) -> PathBuf {
+        // Nanosecond timestamps can collide across concurrently-starting
+        // tests (clock granularity); the counter keeps roots unique so
+        // fixture writes never interleave.
+        static SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let sequence = SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
         std::env::temp_dir().join(format!(
-            "signal-plugin-clap-tests-{}-{name}-{timestamp}",
+            "signal-plugin-clap-tests-{}-{name}-{timestamp}-{sequence}",
             process::id()
         ))
     }

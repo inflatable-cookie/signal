@@ -19,8 +19,8 @@ use signal_dsp::equal_power_pan_matrix;
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_output_cpal::CpalOutputBackend;
 use signal_render_plane::{
-    render_plane, ChannelFormat, RenderClipSpec, RenderInputSpec, RenderNodeKind, RenderNodeSpec,
-    RenderPlanSpec, RenderSource,
+    render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderPlanSpec, RenderSource,
+    RenderStageKind, RenderStageSpec,
 };
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
@@ -48,12 +48,12 @@ unsafe impl GlobalAlloc for CountingAllocator {
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
-fn tone_lane(node_id: u64, gain: f32, frequency_hz: f32) -> RenderNodeSpec {
-    RenderNodeSpec {
-        node_id,
+fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
+    RenderStageSpec {
+        stage_id,
         format: ChannelFormat::stereo(),
         gain,
-        kind: RenderNodeKind::Lane {
+        kind: RenderStageKind::Source {
             clips: vec![RenderClipSpec {
                 start_frames: 0,
                 end_frames: u64::MAX,
@@ -96,34 +96,34 @@ fn main() {
     let bussed_plan = RenderPlanSpec {
         sample_rate_hz,
         master_gain: 0.5,
-        nodes: vec![
+        stages: vec![
             tone_lane(1, 0.4, 440.0),
             tone_lane(2, 0.25, 660.0),
-            RenderNodeSpec {
-                node_id: 10,
+            RenderStageSpec {
+                stage_id: 10,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
-                kind: RenderNodeKind::Bus,
+                kind: RenderStageKind::Sum,
                 inputs: vec![
-                    RenderInputSpec {
-                        source_node_id: 1,
+                    RenderEdgeSpec {
+                        source_stage_id: 1,
                         gain: 1.0,
                         matrix: Some(equal_power_pan_matrix(-1.0).to_vec()),
                     },
-                    RenderInputSpec {
-                        source_node_id: 2,
+                    RenderEdgeSpec {
+                        source_stage_id: 2,
                         gain: 1.0,
                         matrix: Some(equal_power_pan_matrix(1.0).to_vec()),
                     },
                 ],
             },
-            RenderNodeSpec {
-                node_id: 100,
+            RenderStageSpec {
+                stage_id: 100,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
-                kind: RenderNodeKind::Master,
-                inputs: vec![RenderInputSpec {
-                    source_node_id: 10,
+                kind: RenderStageKind::Output,
+                inputs: vec![RenderEdgeSpec {
+                    source_stage_id: 10,
                     gain: 1.0,
                     matrix: None,
                 }],
@@ -151,15 +151,15 @@ fn main() {
         .install_plan(&RenderPlanSpec {
             sample_rate_hz,
             master_gain: 0.5,
-            nodes: vec![
+            stages: vec![
                 tone_lane(3, 0.5, 220.0),
-                RenderNodeSpec {
-                    node_id: 100,
+                RenderStageSpec {
+                    stage_id: 100,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Master,
-                    inputs: vec![RenderInputSpec {
-                        source_node_id: 3,
+                    kind: RenderStageKind::Output,
+                    inputs: vec![RenderEdgeSpec {
+                        source_stage_id: 3,
                         gain: 1.0,
                         matrix: None,
                     }],

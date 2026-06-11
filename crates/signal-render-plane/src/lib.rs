@@ -17,15 +17,15 @@
 //! channels whose send/receive operations neither allocate nor free.
 //!
 //! Plans are **graphs**, not lane lists: a spec is a set of format-typed
-//! nodes ([`RenderNodeSpec`] — lanes, busses, exactly one master) connected
+//! stages ([`RenderStageSpec`] — lanes, busses, exactly one master) connected
 //! by edges that each carry a gain and an N×M channel mix matrix. Compile
 //! topologically sorts the graph into a flat execution schedule, preallocates
-//! a per-node scratch buffer ([`MAX_BLOCK_FRAMES`] × node channels — the
+//! a per-stage scratch buffer ([`MAX_BLOCK_FRAMES`] × stage channels — the
 //! buffer pool *is* the plan), and resolves every edge's matrix (explicit
 //! coefficients, or a default adapter from `signal_dsp::default_adapter_matrix`
 //! when formats differ). Per chorus a14 the graph is channel-format-typed:
 //! nothing in it assumes stereo. The only forced collapse is the hardware
-//! boundary, where the master node's format is adapted to the negotiated
+//! boundary, where the master stage's format is adapted to the negotiated
 //! stream format (downmix matrix when the device is narrower, silence-filled
 //! extra channels when wider).
 
@@ -43,7 +43,7 @@ const RESAMPLE_TAPS: usize = 16;
 const RESAMPLE_PHASES: usize = 512;
 
 /// Largest callback quantum the plan's scratch buffers are sized for. Every
-/// node owns `MAX_BLOCK_FRAMES × channels` samples of scratch, preallocated
+/// stage owns `MAX_BLOCK_FRAMES × channels` samples of scratch, preallocated
 /// at compile; `render_block` clamps (and debug-asserts) the frame count.
 pub const MAX_BLOCK_FRAMES: usize = 4096;
 
@@ -81,7 +81,7 @@ const RETIRED_MAILBOX_CAPACITY: usize = COMMAND_MAILBOX_CAPACITY + 2;
 /// Transport edge ramp length: play, stop, and seek gate through this
 /// envelope instead of stepping, so transport actions never click.
 const EDGE_RAMP_SECONDS: f32 = 0.005;
-/// Full-swing time for node gain changes across plan swaps.
+/// Full-swing time for stage gain changes across plan swaps.
 const GAIN_SMOOTHING_SECONDS: f32 = 0.010;
 /// Declick fade applied inside each clip window edge (shortened for tiny
 /// windows so short clips stay audible).
@@ -104,7 +104,7 @@ pub enum ChannelLayout {
     Generic,
 }
 
-/// Channel format of a node's output: count plus layout semantics. Scratch
+/// Channel format of a stage's output: count plus layout semantics. Scratch
 /// sizing, matrix validation, and boundary adaptation all key off this.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChannelFormat {
@@ -148,7 +148,7 @@ pub enum RenderSource {
     Samples(RenderSampleBuffer),
 }
 
-/// One clip event in a lane node: a half-open stream-clock window
+/// One clip event in a lane stage: a half-open stream-clock window
 /// `[start_frames, end_frames)` and the source that plays inside it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderClipSpec {
@@ -163,28 +163,28 @@ pub struct RenderClipSpec {
     pub loop_source: bool,
 }
 
-/// What a node does with its inputs (and whether it generates content).
+/// What a stage does with its inputs (and whether it generates content).
 #[derive(Debug, Clone, PartialEq)]
-pub enum RenderNodeKind {
-    /// Source node: renders clip content at its format. May also sum inputs
+pub enum RenderStageKind {
+    /// Source stage: renders clip content at its format. May also sum inputs
     /// like a bus (clips render first, then edges add in).
-    Lane {
-        /// Clip events on this lane.
+    Source {
+        /// Clip events rendered by this source stage.
         clips: Vec<RenderClipSpec>,
     },
     /// Sums its inputs through their edge matrices.
-    Bus,
+    Sum,
     /// The output boundary: exactly one per plan. Its scratch is what the
-    /// hardware stage adapts onto the stream.
-    Master,
+    /// hardware boundary adapts onto the stream.
+    Output,
 }
 
-/// One input edge into a node: where the signal comes from, how loud, and
-/// how its channels map onto this node's channels.
+/// One input edge into a stage: where the signal comes from, how loud, and
+/// how its channels map onto this stage's channels.
 #[derive(Debug, Clone, PartialEq)]
-pub struct RenderInputSpec {
-    /// `node_id` of the upstream node feeding this edge.
-    pub source_node_id: u64,
+pub struct RenderEdgeSpec {
+    /// `stage_id` of the upstream stage feeding this edge.
+    pub source_stage_id: u64,
     /// Linear edge gain (static in v1: compiled into the matrix).
     pub gain: f32,
     /// Row-major `source_channels × dest_channels` mix matrix; `None` picks
@@ -194,43 +194,43 @@ pub struct RenderInputSpec {
     pub matrix: Option<Vec<f32>>,
 }
 
-/// One node in a render plan graph.
+/// One stage in a render plan graph.
 #[derive(Debug, Clone, PartialEq)]
-pub struct RenderNodeSpec {
+pub struct RenderStageSpec {
     /// Stable consumer-supplied identity; matches smoothed-gain and tone
     /// state across plan swaps. Never read in the render loop.
-    pub node_id: u64,
-    /// The node's output format.
+    pub stage_id: u64,
+    /// The stage's output format.
     pub format: ChannelFormat,
-    /// Linear node output gain, smoothed (10 ms full swing) and applied
-    /// where the node's output is consumed.
+    /// Linear stage output gain, smoothed (10 ms full swing) and applied
+    /// where the stage's output is consumed.
     pub gain: f32,
-    /// What the node does.
-    pub kind: RenderNodeKind,
-    /// Edges feeding this node.
-    pub inputs: Vec<RenderInputSpec>,
+    /// What the stage does.
+    pub kind: RenderStageKind,
+    /// Edges feeding this stage.
+    pub inputs: Vec<RenderEdgeSpec>,
 }
 
-/// Control-side description of a render plan: a format-typed node graph.
+/// Control-side description of a render plan: a format-typed stage graph.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderPlanSpec {
     /// Sample rate the plan renders at.
     pub sample_rate_hz: u32,
-    /// Linear master gain applied at the master node (kept for consumer
-    /// compatibility; multiplies the master node's own gain).
+    /// Linear master gain applied at the master stage (kept for consumer
+    /// compatibility; multiplies the master stage's own gain).
     pub master_gain: f32,
-    /// The node graph; any order, exactly one [`RenderNodeKind::Master`].
-    pub nodes: Vec<RenderNodeSpec>,
+    /// The stage graph; any order, exactly one [`RenderStageKind::Output`].
+    pub stages: Vec<RenderStageSpec>,
 }
 
 impl RenderPlanSpec {
-    /// Channel count of the master node (the format the plan mixes at), or
+    /// Channel count of the master stage (the format the plan mixes at), or
     /// 2 when the spec has no master (such a spec fails compile anyway).
-    pub fn master_channels(&self) -> u16 {
-        self.nodes
+    pub fn output_channels(&self) -> u16 {
+        self.stages
             .iter()
-            .find(|node| matches!(node.kind, RenderNodeKind::Master))
-            .map(|node| node.format.channels)
+            .find(|stage| matches!(stage.kind, RenderStageKind::Output))
+            .map(|stage| stage.format.channels)
             .unwrap_or(2)
     }
 }
@@ -238,27 +238,27 @@ impl RenderPlanSpec {
 /// Typed error rejecting a plan spec at compile.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RenderPlanCompileError {
-    /// Two nodes share a `node_id`.
+    /// Two stages share a `stage_id`.
     DuplicateNodeId(u64),
-    /// An edge references a `source_node_id` that does not exist.
+    /// An edge references a `source_stage_id` that does not exist.
     UnknownInputNode {
-        /// Node owning the edge.
-        node_id: u64,
+        /// Stage owning the edge.
+        stage_id: u64,
         /// Missing upstream id.
-        source_node_id: u64,
+        source_stage_id: u64,
     },
-    /// The graph must contain exactly one master node.
+    /// The graph must contain exactly one output stage.
     MasterCount(usize),
     /// The graph contains a cycle and cannot be scheduled.
     Cycle,
-    /// A node declared a zero-channel format.
+    /// A stage declared a zero-channel format.
     InvalidChannelCount(u64),
     /// An explicit edge matrix has the wrong number of coefficients.
     MatrixDimensions {
-        /// Node owning the edge.
-        node_id: u64,
-        /// Upstream node feeding the edge.
-        source_node_id: u64,
+        /// Stage owning the edge.
+        stage_id: u64,
+        /// Upstream stage feeding the edge.
+        source_stage_id: u64,
         /// `source_channels × dest_channels`.
         expected: usize,
         /// Length supplied.
@@ -269,34 +269,34 @@ pub enum RenderPlanCompileError {
 impl std::fmt::Display for RenderPlanCompileError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RenderPlanCompileError::DuplicateNodeId(node_id) => {
-                write!(formatter, "duplicate node id {node_id}")
+            RenderPlanCompileError::DuplicateNodeId(stage_id) => {
+                write!(formatter, "duplicate stage id {stage_id}")
             }
             RenderPlanCompileError::UnknownInputNode {
-                node_id,
-                source_node_id,
+                stage_id,
+                source_stage_id,
             } => write!(
                 formatter,
-                "node {node_id} references unknown input node {source_node_id}",
+                "stage {stage_id} references unknown input stage {source_stage_id}",
             ),
             RenderPlanCompileError::MasterCount(count) => write!(
                 formatter,
-                "plan must contain exactly one master node (found {count})",
+                "plan must contain exactly one output stage (found {count})",
             ),
             RenderPlanCompileError::Cycle => {
                 write!(formatter, "plan graph contains a cycle")
             }
-            RenderPlanCompileError::InvalidChannelCount(node_id) => {
-                write!(formatter, "node {node_id} declares zero channels")
+            RenderPlanCompileError::InvalidChannelCount(stage_id) => {
+                write!(formatter, "stage {stage_id} declares zero channels")
             }
             RenderPlanCompileError::MatrixDimensions {
-                node_id,
-                source_node_id,
+                stage_id,
+                source_stage_id,
                 expected,
                 actual,
             } => write!(
                 formatter,
-                "edge {source_node_id} -> {node_id} matrix has {actual} coefficients, expected {expected}",
+                "edge {source_stage_id} -> {stage_id} matrix has {actual} coefficients, expected {expected}",
             ),
         }
     }
@@ -333,8 +333,8 @@ struct CompiledClip {
 }
 
 /// One compiled input edge. `source_index` is a position in the plan's
-/// topologically-ordered node list and is always strictly less than the
-/// consuming node's position, so the executor can split-borrow.
+/// topologically-ordered stage list and is always strictly less than the
+/// consuming stage's position, so the executor can split-borrow.
 struct CompiledInput {
     source_index: usize,
     source_channels: usize,
@@ -343,22 +343,22 @@ struct CompiledInput {
 }
 
 struct CompiledNode {
-    /// Matches node state (smoothed gain, tone phase) across plan swaps.
-    node_id: u64,
+    /// Matches stage state (smoothed gain, tone phase) across plan swaps.
+    stage_id: u64,
     channels: usize,
-    /// Gain the node is moving toward (spec value).
+    /// Gain the stage is moving toward (spec value).
     gain_target: f32,
     /// Smoothed gain as currently applied; inherited across plan swaps so
     /// gain edits never step.
     gain_current: f32,
-    /// Per-block smoothed-gain interpolation, written when the node renders
+    /// Per-block smoothed-gain interpolation, written when the stage renders
     /// and read wherever its output is consumed (edges, boundary).
     block_gain_begin: f32,
     block_gain_slope: f32,
-    /// Clip content (lane nodes; empty for bus/master).
+    /// Clip content (lane stages; empty for bus/master).
     clips: Vec<CompiledClip>,
     inputs: Vec<CompiledInput>,
-    /// Interleaved scratch at the node's format: `MAX_BLOCK_FRAMES × channels`.
+    /// Interleaved scratch at the stage's format: `MAX_BLOCK_FRAMES × channels`.
     scratch: Vec<f32>,
 }
 
@@ -367,13 +367,13 @@ struct CompiledNode {
 /// stored in topological order (inputs strictly before consumers).
 pub struct RenderPlan {
     sample_rate_hz: u32,
-    nodes: Vec<CompiledNode>,
-    /// Position of the master node in `nodes`.
+    stages: Vec<CompiledNode>,
+    /// Position of the master stage in `stages`.
     master_index: usize,
     /// Stream channel count the boundary was compiled for (master channels
     /// when the stream is unknown at install time).
     stream_channels: usize,
-    /// Hardware-boundary downmix (row-major `master_channels ×
+    /// Hardware-boundary downmix (row-major `output_channels ×
     /// stream_channels`); empty unless the stream is narrower than the
     /// master format. Compiled at install time — the controller knows the
     /// stream's channel count then. Never applies inside the creative graph.
@@ -386,48 +386,48 @@ impl RenderPlan {
         stream_channels: Option<u16>,
     ) -> Result<Box<RenderPlan>, RenderPlanCompileError> {
         // Identity and shape validation.
-        for node in &spec.nodes {
-            if node.format.channels == 0 {
-                return Err(RenderPlanCompileError::InvalidChannelCount(node.node_id));
+        for stage in &spec.stages {
+            if stage.format.channels == 0 {
+                return Err(RenderPlanCompileError::InvalidChannelCount(stage.stage_id));
             }
             if spec
-                .nodes
+                .stages
                 .iter()
-                .filter(|candidate| candidate.node_id == node.node_id)
+                .filter(|candidate| candidate.stage_id == stage.stage_id)
                 .count()
                 > 1
             {
-                return Err(RenderPlanCompileError::DuplicateNodeId(node.node_id));
+                return Err(RenderPlanCompileError::DuplicateNodeId(stage.stage_id));
             }
         }
         let master_count = spec
-            .nodes
+            .stages
             .iter()
-            .filter(|node| matches!(node.kind, RenderNodeKind::Master))
+            .filter(|stage| matches!(stage.kind, RenderStageKind::Output))
             .count();
         if master_count != 1 {
             return Err(RenderPlanCompileError::MasterCount(master_count));
         }
-        let position_of = |node_id: u64| -> Option<usize> {
-            spec.nodes
+        let position_of = |stage_id: u64| -> Option<usize> {
+            spec.stages
                 .iter()
-                .position(|candidate| candidate.node_id == node_id)
+                .position(|candidate| candidate.stage_id == stage_id)
         };
-        for node in &spec.nodes {
-            for input in &node.inputs {
-                let Some(source_index) = position_of(input.source_node_id) else {
+        for stage in &spec.stages {
+            for input in &stage.inputs {
+                let Some(source_index) = position_of(input.source_stage_id) else {
                     return Err(RenderPlanCompileError::UnknownInputNode {
-                        node_id: node.node_id,
-                        source_node_id: input.source_node_id,
+                        stage_id: stage.stage_id,
+                        source_stage_id: input.source_stage_id,
                     });
                 };
-                let expected = spec.nodes[source_index].format.channels as usize
-                    * node.format.channels as usize;
+                let expected = spec.stages[source_index].format.channels as usize
+                    * stage.format.channels as usize;
                 if let Some(matrix) = &input.matrix {
                     if matrix.len() != expected {
                         return Err(RenderPlanCompileError::MatrixDimensions {
-                            node_id: node.node_id,
-                            source_node_id: input.source_node_id,
+                            stage_id: stage.stage_id,
+                            source_stage_id: input.source_stage_id,
                             expected,
                             actual: matrix.len(),
                         });
@@ -436,13 +436,13 @@ impl RenderPlan {
             }
         }
 
-        // Kahn topological sort (spec order preserved among ready nodes).
-        let node_count = spec.nodes.len();
-        let mut indegree: Vec<usize> = spec.nodes.iter().map(|node| node.inputs.len()).collect();
+        // Kahn topological sort (spec order preserved among ready stages).
+        let node_count = spec.stages.len();
+        let mut indegree: Vec<usize> = spec.stages.iter().map(|stage| stage.inputs.len()).collect();
         let mut consumers: Vec<Vec<usize>> = vec![Vec::new(); node_count];
-        for (index, node) in spec.nodes.iter().enumerate() {
-            for input in &node.inputs {
-                let source_index = position_of(input.source_node_id).expect("validated above");
+        for (index, stage) in spec.stages.iter().enumerate() {
+            for input in &stage.inputs {
+                let source_index = position_of(input.source_stage_id).expect("validated above");
                 consumers[source_index].push(index);
             }
         }
@@ -489,16 +489,16 @@ impl RenderPlan {
             Some(table)
         };
 
-        let mut nodes: Vec<CompiledNode> = Vec::with_capacity(node_count);
+        let mut stages: Vec<CompiledNode> = Vec::with_capacity(node_count);
         let mut master_index = 0usize;
         for (position, spec_index) in order.iter().enumerate() {
-            let node = &spec.nodes[*spec_index];
-            let dest_channels = node.format.channels as usize;
-            if matches!(node.kind, RenderNodeKind::Master) {
+            let stage = &spec.stages[*spec_index];
+            let dest_channels = stage.format.channels as usize;
+            if matches!(stage.kind, RenderStageKind::Output) {
                 master_index = position;
             }
-            let clips = match &node.kind {
-                RenderNodeKind::Lane { clips } => clips
+            let clips = match &stage.kind {
+                RenderStageKind::Source { clips } => clips
                     .iter()
                     .map(|clip| CompiledClip {
                         start_frames: clip.start_frames,
@@ -523,15 +523,15 @@ impl RenderPlan {
                         },
                     })
                     .collect(),
-                RenderNodeKind::Bus | RenderNodeKind::Master => Vec::new(),
+                RenderStageKind::Sum | RenderStageKind::Output => Vec::new(),
             };
-            let inputs = node
+            let inputs = stage
                 .inputs
                 .iter()
                 .map(|input| {
                     let source_spec_index =
-                        position_of(input.source_node_id).expect("validated above");
-                    let source_channels = spec.nodes[source_spec_index].format.channels as usize;
+                        position_of(input.source_stage_id).expect("validated above");
+                    let source_channels = spec.stages[source_spec_index].format.channels as usize;
                     // Explicit matrix or default adapter, with the static
                     // edge gain folded into the coefficients (v1: per-edge
                     // gain is compile-time data, not a smoothed parameter).
@@ -551,15 +551,15 @@ impl RenderPlan {
                     }
                 })
                 .collect();
-            // The plan's master_gain multiplies the master node's own gain
+            // The plan's master_gain multiplies the master stage's own gain
             // so the legacy single-knob master keeps working.
-            let gain = if matches!(node.kind, RenderNodeKind::Master) {
-                node.gain * spec.master_gain
+            let gain = if matches!(stage.kind, RenderStageKind::Output) {
+                stage.gain * spec.master_gain
             } else {
-                node.gain
+                stage.gain
             };
-            nodes.push(CompiledNode {
-                node_id: node.node_id,
+            stages.push(CompiledNode {
+                stage_id: stage.stage_id,
                 channels: dest_channels,
                 gain_target: gain,
                 gain_current: gain,
@@ -576,19 +576,19 @@ impl RenderPlan {
         // gets a standard downmix matrix; a wider stream gets the master's
         // channels copied and the extras silence-filled (no upmix policy is
         // invented at the hardware stage); equal formats copy through.
-        let master_channels = nodes[master_index].channels;
+        let output_channels = stages[master_index].channels;
         let stream_channels = stream_channels
             .map(|channels| channels.max(1) as usize)
-            .unwrap_or(master_channels);
-        let boundary_matrix = if stream_channels < master_channels {
-            default_adapter_matrix(master_channels as u16, stream_channels as u16)
+            .unwrap_or(output_channels);
+        let boundary_matrix = if stream_channels < output_channels {
+            default_adapter_matrix(output_channels as u16, stream_channels as u16)
         } else {
             Vec::new()
         };
 
         Ok(Box::new(RenderPlan {
             sample_rate_hz: stream_rate,
-            nodes,
+            stages,
             master_index,
             stream_channels,
             boundary_matrix,
@@ -597,20 +597,20 @@ impl RenderPlan {
 
     /// Carry smoothed gains and tone phases over from the plan being
     /// replaced, so a recompile (gain tweak, clip edit) never steps audio.
-    /// Nodes match by `node_id` (linear scan: O(n²) worst case, acceptable
+    /// Nodes match by `stage_id` (linear scan: O(n²) worst case, acceptable
     /// at current plan sizes; g10.011 owns the complexity fix). Runs on the
     /// audio thread: comparisons and copies only, no allocation.
     fn inherit_state(&mut self, previous: &RenderPlan) {
-        for node in self.nodes.iter_mut() {
+        for stage in self.stages.iter_mut() {
             let Some(previous_node) = previous
-                .nodes
+                .stages
                 .iter()
-                .find(|candidate| candidate.node_id == node.node_id)
+                .find(|candidate| candidate.stage_id == stage.stage_id)
             else {
                 continue;
             };
-            node.gain_current = previous_node.gain_current;
-            for (clip, previous_clip) in node.clips.iter_mut().zip(previous_node.clips.iter()) {
+            stage.gain_current = previous_node.gain_current;
+            for (clip, previous_clip) in stage.clips.iter_mut().zip(previous_node.clips.iter()) {
                 if let (
                     CompiledSource::Tone { phase, step },
                     CompiledSource::Tone {
@@ -641,9 +641,9 @@ fn clip_edge_gain(frame: u64, start_frames: u64, end_frames: u64, fade_frames: u
     (from_start / fade).min(to_end / fade).min(1.0)
 }
 
-/// Render a lane node's clips into its scratch at unity gain (node and edge
+/// Render a lane stage's clips into its scratch at unity gain (stage and edge
 /// gains apply downstream, where the scratch is consumed). Sources write
-/// `channels.min(2)` of the node's format: clip sources are mono/stereo
+/// `channels.min(2)` of the stage's format: clip sources are mono/stereo
 /// today; source-format handling generalizes when sources grow formats of
 /// their own.
 fn render_clips_into_scratch(
@@ -1025,18 +1025,18 @@ impl RenderPlaneExecutor {
         let gain_step =
             frame_count as f32 / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0);
 
-        // Walk the schedule: nodes are in topological order, so every edge's
+        // Walk the schedule: stages are in topological order, so every edge's
         // source sits strictly earlier and split-borrowing is safe.
-        for node_index in 0..plan.nodes.len() {
-            let (earlier, rest) = plan.nodes.split_at_mut(node_index);
-            let node = &mut rest[0];
+        for node_index in 0..plan.stages.len() {
+            let (earlier, rest) = plan.stages.split_at_mut(node_index);
+            let stage = &mut rest[0];
 
-            let gain_begin = node.gain_current;
+            let gain_begin = stage.gain_current;
             let gain_end =
-                gain_begin + (node.gain_target - gain_begin).clamp(-gain_step, gain_step);
-            node.block_gain_begin = gain_begin;
-            node.block_gain_slope = (gain_end - gain_begin) / frame_count.max(1) as f32;
-            node.gain_current = gain_end;
+                gain_begin + (stage.gain_target - gain_begin).clamp(-gain_step, gain_step);
+            stage.block_gain_begin = gain_begin;
+            stage.block_gain_slope = (gain_end - gain_begin) / frame_count.max(1) as f32;
+            stage.gain_current = gain_end;
 
             let CompiledNode {
                 channels,
@@ -1044,7 +1044,7 @@ impl RenderPlaneExecutor {
                 inputs,
                 scratch,
                 ..
-            } = node;
+            } = stage;
             let channels = *channels;
             let scratch = &mut scratch[..frame_count * channels];
             scratch.fill(0.0);
@@ -1057,7 +1057,7 @@ impl RenderPlaneExecutor {
                 let source_channels = input.source_channels;
                 let matrix = &input.matrix;
                 // Per-frame: dest[c_out] += src[c_in] * m[c_in][c_out] *
-                // source node's smoothed gain (edge gain is folded into the
+                // source stage's smoothed gain (edge gain is folded into the
                 // matrix at compile). Plain loops, alloc-free.
                 for frame_index in 0..frame_count {
                     let source_gain =
@@ -1075,24 +1075,24 @@ impl RenderPlaneExecutor {
             }
         }
 
-        // Hardware boundary: adapt the master node's scratch onto the stream
+        // Hardware boundary: adapt the master stage's scratch onto the stream
         // with the master's smoothed gain. Equal formats copy; a narrower
         // stream applies the install-time downmix matrix; a wider stream
         // carries the master's channels and leaves the extras silent (the
         // creative mix never upmixes at the hardware stage).
-        let master = &plan.nodes[plan.master_index];
-        let master_channels = master.channels;
+        let master = &plan.stages[plan.master_index];
+        let output_channels = master.channels;
         let boundary_matrix = &plan.boundary_matrix;
-        let boundary_matrix_valid = boundary_matrix.len() == master_channels * stream_channels;
+        let boundary_matrix_valid = boundary_matrix.len() == output_channels * stream_channels;
         for frame_index in 0..frame_count {
             let master_gain =
                 master.block_gain_begin + master.block_gain_slope * frame_index as f32;
-            let source_base = frame_index * master_channels;
+            let source_base = frame_index * output_channels;
             let dest_base = frame_index * stream_channels;
-            if stream_channels < master_channels && boundary_matrix_valid {
+            if stream_channels < output_channels && boundary_matrix_valid {
                 for dest_channel in 0..stream_channels {
                     let mut acc = 0.0f32;
-                    for source_channel in 0..master_channels {
+                    for source_channel in 0..output_channels {
                         acc += master.scratch[source_base + source_channel]
                             * boundary_matrix[source_channel * stream_channels + dest_channel];
                     }
@@ -1102,7 +1102,7 @@ impl RenderPlaneExecutor {
                 // Equal formats, a wider stream (extras stay zero-filled),
                 // or a stale boundary (stream changed without a reinstall):
                 // copy the overlapping channels.
-                for channel in 0..master_channels.min(stream_channels) {
+                for channel in 0..output_channels.min(stream_channels) {
                     frames[dest_base + channel] =
                         master.scratch[source_base + channel] * master_gain;
                 }
@@ -1179,29 +1179,29 @@ mod tests {
     const MASTER_ID: u64 = 1_000;
     const LANE_ID: u64 = 1;
 
-    fn lane_node(node_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderNodeSpec {
-        RenderNodeSpec {
-            node_id,
+    fn lane_node(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
+        RenderStageSpec {
+            stage_id,
             format: ChannelFormat::stereo(),
             gain,
-            kind: RenderNodeKind::Lane { clips },
+            kind: RenderStageKind::Source { clips },
             inputs: Vec::new(),
         }
     }
 
-    fn master_node(inputs: Vec<RenderInputSpec>) -> RenderNodeSpec {
-        RenderNodeSpec {
-            node_id: MASTER_ID,
+    fn master_node(inputs: Vec<RenderEdgeSpec>) -> RenderStageSpec {
+        RenderStageSpec {
+            stage_id: MASTER_ID,
             format: ChannelFormat::stereo(),
             gain: 1.0,
-            kind: RenderNodeKind::Master,
+            kind: RenderStageKind::Output,
             inputs,
         }
     }
 
-    fn identity_edge(source_node_id: u64) -> RenderInputSpec {
-        RenderInputSpec {
-            source_node_id,
+    fn identity_edge(source_stage_id: u64) -> RenderEdgeSpec {
+        RenderEdgeSpec {
+            source_stage_id,
             gain: 1.0,
             matrix: None,
         }
@@ -1212,7 +1212,7 @@ mod tests {
         RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
+            stages: vec![
                 lane_node(LANE_ID, lane_gain, clips),
                 master_node(vec![identity_edge(LANE_ID)]),
             ],
@@ -1458,7 +1458,7 @@ mod tests {
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 2);
 
-        // Same plan with lane gain doubled: swap mid-play. Node ids are
+        // Same plan with lane gain doubled: swap mid-play. Stage ids are
         // stable, so the smoothed gain carries over and ramps.
         let louder = lane_master_spec(1.0, vec![tone_clip(440.0)]);
         controller.install_plan(&louder).unwrap();
@@ -1567,19 +1567,19 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
-                RenderNodeSpec {
-                    node_id: 1,
+            stages: vec![
+                RenderStageSpec {
+                    stage_id: 1,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Bus,
+                    kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(2)],
                 },
-                RenderNodeSpec {
-                    node_id: 2,
+                RenderStageSpec {
+                    stage_id: 2,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Bus,
+                    kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(1)],
                 },
                 master_node(vec![identity_edge(1)]),
@@ -1595,7 +1595,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
+            stages: vec![
                 lane_node(7, 1.0, vec![]),
                 lane_node(7, 1.0, vec![]),
                 master_node(vec![identity_edge(7)]),
@@ -1611,25 +1611,25 @@ mod tests {
         let no_master = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![lane_node(1, 1.0, vec![])],
+            stages: vec![lane_node(1, 1.0, vec![])],
         };
         let error = controller.install_plan(&no_master).unwrap_err();
         assert!(
-            error.message.contains("exactly one master"),
+            error.message.contains("exactly one output stage"),
             "{}",
             error.message
         );
 
         let mut two_masters = master_node(vec![]);
-        two_masters.node_id = MASTER_ID + 1;
+        two_masters.stage_id = MASTER_ID + 1;
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![master_node(vec![]), two_masters],
+            stages: vec![master_node(vec![]), two_masters],
         };
         let error = controller.install_plan(&spec).unwrap_err();
         assert!(
-            error.message.contains("exactly one master"),
+            error.message.contains("exactly one output stage"),
             "{}",
             error.message
         );
@@ -1641,7 +1641,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![master_node(vec![identity_edge(99)])],
+            stages: vec![master_node(vec![identity_edge(99)])],
         };
         let error = controller.install_plan(&spec).unwrap_err();
         assert!(error.message.contains("unknown input"), "{}", error.message);
@@ -1649,10 +1649,10 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
+            stages: vec![
                 lane_node(1, 1.0, vec![]),
-                master_node(vec![RenderInputSpec {
-                    source_node_id: 1,
+                master_node(vec![RenderEdgeSpec {
+                    source_stage_id: 1,
                     gain: 1.0,
                     matrix: Some(vec![1.0, 0.0, 0.0]), // 2x2 edge needs 4.
                 }]),
@@ -1675,20 +1675,20 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
+            stages: vec![
                 master_node(vec![identity_edge(20)]),
-                RenderNodeSpec {
-                    node_id: 20,
+                RenderStageSpec {
+                    stage_id: 20,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
-                    kind: RenderNodeKind::Bus,
+                    kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(10)],
                 },
-                RenderNodeSpec {
-                    node_id: 10,
+                RenderStageSpec {
+                    stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
-                    kind: RenderNodeKind::Bus,
+                    kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(LANE_ID)],
                 },
                 lane_node(LANE_ID, 1.0, vec![tone_clip(440.0)]),
@@ -1725,10 +1725,10 @@ mod tests {
             let spec = RenderPlanSpec {
                 sample_rate_hz: 48_000,
                 master_gain: 1.0,
-                nodes: vec![
+                stages: vec![
                     lane_node(LANE_ID, 1.0, vec![tone_clip(440.0)]),
-                    master_node(vec![RenderInputSpec {
-                        source_node_id: LANE_ID,
+                    master_node(vec![RenderEdgeSpec {
+                        source_stage_id: LANE_ID,
                         gain: 1.0,
                         matrix: Some(equal_power_pan_matrix(pan).to_vec()),
                     }]),
@@ -1775,12 +1775,12 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
-                RenderNodeSpec {
-                    node_id: LANE_ID,
+            stages: vec![
+                RenderStageSpec {
+                    stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Lane {
+                    kind: RenderStageKind::Source {
                         clips: vec![tone_clip(440.0)],
                     },
                     inputs: Vec::new(),
@@ -1812,17 +1812,17 @@ mod tests {
         // Lane feeds bus A and bus B (a send); both feed the master. The
         // output must be exactly double the single-path render.
         let (controller, mut executor) = render_plane();
-        let bus = |node_id: u64| RenderNodeSpec {
-            node_id,
+        let bus = |stage_id: u64| RenderStageSpec {
+            stage_id,
             format: ChannelFormat::stereo(),
             gain: 1.0,
-            kind: RenderNodeKind::Bus,
+            kind: RenderStageKind::Sum,
             inputs: vec![identity_edge(LANE_ID)],
         };
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
+            stages: vec![
                 lane_node(LANE_ID, 0.25, vec![tone_clip(440.0)]),
                 bus(10),
                 bus(11),
@@ -1862,27 +1862,27 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
-                RenderNodeSpec {
-                    node_id: LANE_ID,
+            stages: vec![
+                RenderStageSpec {
+                    stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Lane {
+                    kind: RenderStageKind::Source {
                         clips: vec![tone_clip(440.0)],
                     },
                     inputs: Vec::new(),
                 },
-                RenderNodeSpec {
-                    node_id: MASTER_ID,
+                RenderStageSpec {
+                    stage_id: MASTER_ID,
                     format: ChannelFormat {
                         channels: 4,
                         layout: ChannelLayout::Generic,
                     },
                     gain: 1.0,
-                    kind: RenderNodeKind::Master,
+                    kind: RenderStageKind::Output,
                     // Distinct synthetic spread: [1.0, 0.5, 0.25, 0.75].
-                    inputs: vec![RenderInputSpec {
-                        source_node_id: LANE_ID,
+                    inputs: vec![RenderEdgeSpec {
+                        source_stage_id: LANE_ID,
                         gain: 1.0,
                         matrix: Some(vec![1.0, 0.5, 0.25, 0.75]),
                     }],
@@ -1925,21 +1925,21 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
-            nodes: vec![
-                RenderNodeSpec {
-                    node_id: LANE_ID,
+            stages: vec![
+                RenderStageSpec {
+                    stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Lane {
+                    kind: RenderStageKind::Source {
                         clips: vec![tone_clip(440.0)],
                     },
                     inputs: Vec::new(),
                 },
-                RenderNodeSpec {
-                    node_id: MASTER_ID,
+                RenderStageSpec {
+                    stage_id: MASTER_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
-                    kind: RenderNodeKind::Master,
+                    kind: RenderStageKind::Output,
                     inputs: vec![identity_edge(LANE_ID)],
                 },
             ],
@@ -1983,31 +1983,31 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 0.8,
-            nodes: vec![
+            stages: vec![
                 lane_node(1, 0.5, vec![tone_clip(440.0)]),
                 lane_node(2, 0.4, vec![tone_clip(660.0)]),
-                RenderNodeSpec {
-                    node_id: 3,
+                RenderStageSpec {
+                    stage_id: 3,
                     format: ChannelFormat::mono(),
                     gain: 0.3,
-                    kind: RenderNodeKind::Lane {
+                    kind: RenderStageKind::Source {
                         clips: vec![tone_clip(220.0)],
                     },
                     inputs: Vec::new(),
                 },
-                RenderNodeSpec {
-                    node_id: 10,
+                RenderStageSpec {
+                    stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.9,
-                    kind: RenderNodeKind::Bus,
+                    kind: RenderStageKind::Sum,
                     inputs: vec![
-                        RenderInputSpec {
-                            source_node_id: 1,
+                        RenderEdgeSpec {
+                            source_stage_id: 1,
                             gain: 1.0,
                             matrix: Some(equal_power_pan_matrix(-1.0).to_vec()),
                         },
-                        RenderInputSpec {
-                            source_node_id: 2,
+                        RenderEdgeSpec {
+                            source_stage_id: 2,
                             gain: 0.8,
                             matrix: Some(equal_power_pan_matrix(1.0).to_vec()),
                         },
