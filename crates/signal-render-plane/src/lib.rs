@@ -26,33 +26,64 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::Arc;
 
+/// Shared immutable sample data: interleaved stereo f32 at a source rate.
+///
+/// Equality is pointer-based so plan specs containing large buffers compare
+/// cheaply and a cached buffer keeps reinstalls idempotent.
+#[derive(Clone, Debug)]
+pub struct RenderSampleBuffer {
+    /// Source sample rate of the buffer.
+    pub sample_rate_hz: u32,
+    /// Interleaved stereo frames (length is even; frame count = len / 2).
+    pub frames: Arc<[f32]>,
+}
+
+impl PartialEq for RenderSampleBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        self.sample_rate_hz == other.sample_rate_hz
+            && Arc::ptr_eq(&self.frames, &other.frames)
+    }
+}
+
+impl RenderSampleBuffer {
+    /// Number of stereo frames in the buffer.
+    pub fn frame_count(&self) -> usize {
+        self.frames.len() / 2
+    }
+}
+
 const COMMAND_MAILBOX_CAPACITY: usize = 64;
 // Sized so that even a full command mailbox of plan installs can retire
 // without saturating; install_plan also reclaims eagerly. The executor's
 // single parked slot is belt-and-braces on top of this invariant.
 const RETIRED_MAILBOX_CAPACITY: usize = COMMAND_MAILBOX_CAPACITY + 2;
 
-/// Audio source for one render lane.
-#[derive(Debug, Clone, Copy, PartialEq)]
+/// Audio source for one render clip.
+#[derive(Debug, Clone, PartialEq)]
 pub enum RenderSource {
-    /// Lane renders silence (the default for lanes with no media yet).
+    /// Clip renders silence.
     Silence,
-    /// Lane renders a sine tone — the audible stand-in until clip audio
-    /// streaming lands, and the soak-test source.
+    /// Clip renders a sine tone — the audible stand-in for media-less clips
+    /// and the soak-test source.
     TestTone {
         /// Tone frequency in hertz.
         frequency_hz: f32,
     },
+    /// Clip plays shared sample data from its window start, with linear
+    /// interpolation when the source rate differs from the stream rate.
+    Samples(RenderSampleBuffer),
 }
 
-/// A half-open window `[start_frames, end_frames)` on the stream clock in
-/// which a lane is audible — the render-plane image of a clip.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RenderWindow {
+/// One clip event in a render lane: a half-open stream-clock window
+/// `[start_frames, end_frames)` and the source that plays inside it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderClipSpec {
     /// First audible frame.
     pub start_frames: u64,
     /// First frame past the audible range.
     pub end_frames: u64,
+    /// Source playing inside the window, anchored at `start_frames`.
+    pub source: RenderSource,
 }
 
 /// One lane in a render plan spec.
@@ -63,11 +94,8 @@ pub struct RenderLaneSpec {
     pub lane_id: String,
     /// Linear lane gain.
     pub gain: f32,
-    /// Lane source.
-    pub source: RenderSource,
-    /// Stream-clock windows in which the lane is audible. Empty means the
-    /// lane is always audible.
-    pub windows: Vec<RenderWindow>,
+    /// Clip events on this lane.
+    pub clips: Vec<RenderClipSpec>,
 }
 
 /// Control-side description of a render plan.
@@ -88,12 +116,22 @@ pub struct RenderPlanSpec {
 enum CompiledSource {
     Silence,
     Tone { phase: f32, step: f32 },
+    Samples {
+        buffer: RenderSampleBuffer,
+        /// Source frames advanced per stream frame (rate ratio).
+        step: f64,
+    },
+}
+
+struct CompiledClip {
+    start_frames: u64,
+    end_frames: u64,
+    source: CompiledSource,
 }
 
 struct CompiledLane {
     gain: f32,
-    source: CompiledSource,
-    windows: Vec<RenderWindow>,
+    clips: Vec<CompiledClip>,
     // Retained for control-side debugging when plans are retired; the render
     // loop never touches it.
     #[allow(dead_code)]
@@ -112,6 +150,7 @@ pub struct RenderPlan {
 impl RenderPlan {
     fn compile(spec: &RenderPlanSpec) -> Box<RenderPlan> {
         let tau = std::f32::consts::TAU;
+        let stream_rate = spec.sample_rate_hz.max(1);
         Box::new(RenderPlan {
             channels: spec.channels.max(1) as usize,
             master_gain: spec.master_gain,
@@ -120,15 +159,27 @@ impl RenderPlan {
                 .iter()
                 .map(|lane| CompiledLane {
                     gain: lane.gain,
-                    windows: lane.windows.clone(),
                     lane_id: lane.lane_id.clone(),
-                    source: match lane.source {
-                        RenderSource::Silence => CompiledSource::Silence,
-                        RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
-                            phase: 0.0,
-                            step: frequency_hz * tau / spec.sample_rate_hz.max(1) as f32,
-                        },
-                    },
+                    clips: lane
+                        .clips
+                        .iter()
+                        .map(|clip| CompiledClip {
+                            start_frames: clip.start_frames,
+                            end_frames: clip.end_frames,
+                            source: match &clip.source {
+                                RenderSource::Silence => CompiledSource::Silence,
+                                RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
+                                    phase: 0.0,
+                                    step: frequency_hz * tau / stream_rate as f32,
+                                },
+                                RenderSource::Samples(buffer) => CompiledSource::Samples {
+                                    step: buffer.sample_rate_hz.max(1) as f64
+                                        / stream_rate as f64,
+                                    buffer: buffer.clone(),
+                                },
+                            },
+                        })
+                        .collect(),
                 })
                 .collect(),
         })
@@ -337,37 +388,60 @@ impl RenderPlaneExecutor {
         let block_start_frame = self.position_frames;
 
         for lane in plan.lanes.iter_mut() {
-            let CompiledLane {
-                gain,
-                source,
-                windows,
-                ..
-            } = lane;
-            let audible_at = |frame: u64| -> bool {
-                windows.is_empty()
-                    || windows
-                        .iter()
-                        .any(|window| frame >= window.start_frames && frame < window.end_frames)
-            };
-            match source {
-                CompiledSource::Silence => {}
-                CompiledSource::Tone { phase, step } => {
-                    let gain = *gain * plan.master_gain;
-                    let mut local_phase = *phase;
-                    for frame_index in 0..frame_count {
-                        let sample = local_phase.sin() * gain;
-                        local_phase += *step;
-                        if local_phase >= std::f32::consts::TAU {
-                            local_phase -= std::f32::consts::TAU;
+            let lane_gain = lane.gain * plan.master_gain;
+            for clip in lane.clips.iter_mut() {
+                // Skip clips entirely outside this block.
+                let block_end_frame = block_start_frame + frame_count as u64;
+                if clip.end_frames <= block_start_frame || clip.start_frames >= block_end_frame
+                {
+                    continue;
+                }
+                match &mut clip.source {
+                    CompiledSource::Silence => {}
+                    CompiledSource::Tone { phase, step } => {
+                        let mut local_phase = *phase;
+                        for frame_index in 0..frame_count {
+                            let frame = block_start_frame + frame_index as u64;
+                            let sample = local_phase.sin() * lane_gain;
+                            local_phase += *step;
+                            if local_phase >= std::f32::consts::TAU {
+                                local_phase -= std::f32::consts::TAU;
+                            }
+                            if frame >= clip.start_frames && frame < clip.end_frames {
+                                let base = frame_index * channels;
+                                for channel in 0..channels {
+                                    frames[base + channel] += sample;
+                                }
+                            }
                         }
-                        if audible_at(block_start_frame + frame_index as u64) {
+                        *phase = local_phase;
+                    }
+                    CompiledSource::Samples { buffer, step } => {
+                        let source_frames = buffer.frame_count();
+                        let data = &buffer.frames;
+                        for frame_index in 0..frame_count {
+                            let frame = block_start_frame + frame_index as u64;
+                            if frame < clip.start_frames || frame >= clip.end_frames {
+                                continue;
+                            }
+                            // Source position via the rate ratio, anchored at
+                            // the clip's window start; linear interpolation.
+                            let source_position =
+                                (frame - clip.start_frames) as f64 * *step;
+                            let source_index = source_position as usize;
+                            if source_index + 1 >= source_frames {
+                                continue;
+                            }
+                            let fraction = (source_position - source_index as f64) as f32;
                             let base = frame_index * channels;
-                            for channel in 0..channels {
-                                frames[base + channel] += sample;
+                            for channel in 0..channels.min(2) {
+                                let a = data[source_index * 2 + channel];
+                                let b = data[(source_index + 1) * 2 + channel];
+                                frames[base + channel] +=
+                                    (a + (b - a) * fraction) * lane_gain;
                             }
                         }
                     }
-                    *phase = local_phase;
                 }
             }
         }
@@ -414,10 +488,11 @@ mod tests {
             lanes: vec![RenderLaneSpec {
                 lane_id: "lane:1".to_string(),
                 gain: 0.5,
-                source: RenderSource::TestTone {
-                    frequency_hz,
-                },
-                windows: Vec::new(),
+                clips: vec![RenderClipSpec {
+                    start_frames: 0,
+                    end_frames: u64::MAX,
+                    source: RenderSource::TestTone { frequency_hz },
+                }],
             }],
         }
     }
@@ -468,10 +543,8 @@ mod tests {
     fn windows_gate_lane_audibility_on_the_stream_clock() {
         let (controller, mut executor) = render_plane();
         let mut spec = tone_spec(440.0);
-        spec.lanes[0].windows = vec![RenderWindow {
-            start_frames: 128,
-            end_frames: 256,
-        }];
+        spec.lanes[0].clips[0].start_frames = 128;
+        spec.lanes[0].clips[0].end_frames = 256;
         controller.install_plan(&spec).unwrap();
         controller.set_playing(true).unwrap();
 
@@ -484,6 +557,64 @@ mod tests {
         let mut frames = [0.0f32; 256];
         executor.render_block(&mut frames);
         assert!(frames.iter().any(|sample| sample.abs() > 0.01));
+    }
+
+    #[test]
+    fn sample_clips_play_buffer_content_at_their_window() {
+        let (controller, mut executor) = render_plane();
+        // 4-frame stereo ramp at the stream rate: L/R identical.
+        let data: Arc<[f32]> = vec![
+            0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4,
+        ]
+        .into();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            channels: 2,
+            master_gain: 1.0,
+            lanes: vec![RenderLaneSpec {
+                lane_id: "lane:s".to_string(),
+                gain: 1.0,
+                clips: vec![RenderClipSpec {
+                    start_frames: 2,
+                    end_frames: 6,
+                    source: RenderSource::Samples(RenderSampleBuffer {
+                        sample_rate_hz: 48_000,
+                        frames: data,
+                    }),
+                }],
+            }],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = [0.0f32; 16];
+        executor.render_block(&mut frames);
+        // Frames 0..2 silent; frames 2.. play buffer from its start.
+        assert_eq!(frames[0], 0.0);
+        assert_eq!(frames[3], 0.0);
+        assert!((frames[4] - 0.1).abs() < 1e-6);
+        assert!((frames[6] - 0.2).abs() < 1e-6);
+        // Same-rate playback: equality on both channels.
+        assert_eq!(frames[4], frames[5]);
+    }
+
+    #[test]
+    fn sample_buffers_compare_by_pointer_for_cheap_spec_equality() {
+        let data: Arc<[f32]> = vec![0.0f32; 8].into();
+        let a = RenderSampleBuffer {
+            sample_rate_hz: 48_000,
+            frames: Arc::clone(&data),
+        };
+        let b = RenderSampleBuffer {
+            sample_rate_hz: 48_000,
+            frames: data,
+        };
+        let c = RenderSampleBuffer {
+            sample_rate_hz: 48_000,
+            frames: vec![0.0f32; 8].into(),
+        };
+        assert_eq!(a, b);
+        assert_ne!(a, c);
     }
 
     #[test]

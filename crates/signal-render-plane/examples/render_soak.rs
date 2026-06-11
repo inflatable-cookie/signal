@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_output_cpal::CpalOutputBackend;
-use signal_render_plane::{render_plane, RenderLaneSpec, RenderPlanSpec, RenderSource};
+use signal_render_plane::{render_plane, RenderClipSpec, RenderLaneSpec, RenderPlanSpec, RenderSource};
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
 static CALLBACK_ALLOCS: AtomicU64 = AtomicU64::new(0);
@@ -71,14 +71,20 @@ fn main() {
                 RenderLaneSpec {
                     lane_id: "lane:a".to_string(),
                     gain: 0.4,
-                    source: RenderSource::TestTone { frequency_hz: 440.0 },
-                    windows: Vec::new(),
+                    clips: vec![RenderClipSpec {
+                        start_frames: 0,
+                        end_frames: u64::MAX,
+                        source: RenderSource::TestTone { frequency_hz: 440.0 },
+                    }],
                 },
                 RenderLaneSpec {
                     lane_id: "lane:b".to_string(),
                     gain: 0.25,
-                    source: RenderSource::TestTone { frequency_hz: 660.0 },
-                    windows: Vec::new(),
+                    clips: vec![RenderClipSpec {
+                        start_frames: 0,
+                        end_frames: u64::MAX,
+                        source: RenderSource::TestTone { frequency_hz: 660.0 },
+                    }],
                 },
             ],
         })
@@ -103,8 +109,11 @@ fn main() {
             lanes: vec![RenderLaneSpec {
                 lane_id: "lane:c".to_string(),
                 gain: 0.5,
-                source: RenderSource::TestTone { frequency_hz: 220.0 },
-                windows: Vec::new(),
+                clips: vec![RenderClipSpec {
+                    start_frames: 0,
+                    end_frames: u64::MAX,
+                    source: RenderSource::TestTone { frequency_hz: 220.0 },
+                }],
             }],
         })
         .expect("swap plan");
