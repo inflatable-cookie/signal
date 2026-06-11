@@ -118,5 +118,6 @@ mod tests {
     }
 
     mod acceptance_and_diagnostics;
+    mod known_answer;
     mod meter_behavior;
 }

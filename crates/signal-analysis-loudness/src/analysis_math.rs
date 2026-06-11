@@ -149,6 +149,33 @@ pub(crate) fn window_mean_square(samples: &[f32], window_size: usize, hop_size: 
     energies
 }
 
+/// Mean-square energies over complete windows only.
+///
+/// BS.1770-4 gates integrated loudness over complete 400 ms blocks; a partial
+/// trailing window would bias the gated means, so it is excluded here. Trace
+/// surfaces keep using [`window_mean_square`], which clamps the final window
+/// to the buffer end instead.
+pub(crate) fn complete_window_mean_square(
+    samples: &[f32],
+    window_size: usize,
+    hop_size: usize,
+) -> Vec<f32> {
+    if window_size == 0 || hop_size == 0 || samples.len() < window_size {
+        return Vec::new();
+    }
+
+    let mut energies = Vec::new();
+    let mut start = 0usize;
+    while start + window_size <= samples.len() {
+        let window = &samples[start..start + window_size];
+        let mean_square =
+            window.iter().map(|sample| sample * sample).sum::<f32>() / window.len() as f32;
+        energies.push(mean_square);
+        start = start.saturating_add(hop_size);
+    }
+    energies
+}
+
 pub(crate) fn lufs_from_mean_square(mean_square: f32) -> f32 {
     if mean_square <= 0.0 {
         f32::NEG_INFINITY

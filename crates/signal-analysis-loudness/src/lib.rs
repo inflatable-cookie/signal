@@ -31,11 +31,12 @@ mod analysis_math;
 mod types;
 
 use analysis_math::{
-    aggregate_weighted_energies, apply_loudness_weighting, deinterleave_channels, dynamics_summary,
-    empty_loudness_result, gated_integrated_loudness, loudness_channel_weights,
-    loudness_confidence, loudness_range_from_energies, loudness_sample_rate_support,
-    loudness_trace_from_energies, seconds_to_frames, trace_latest_loudness, trace_tail,
-    true_peak_dbtp, true_peak_oversample_factor, window_mean_square,
+    aggregate_weighted_energies, apply_loudness_weighting, complete_window_mean_square,
+    deinterleave_channels, dynamics_summary, empty_loudness_result, gated_integrated_loudness,
+    loudness_channel_weights, loudness_confidence, loudness_range_from_energies,
+    loudness_sample_rate_support, loudness_trace_from_energies, seconds_to_frames,
+    trace_latest_loudness, trace_tail, true_peak_dbtp, true_peak_oversample_factor,
+    window_mean_square,
 };
 pub use types::{
     LoudnessAggregationSummary, LoudnessAnalysisResult, LoudnessChannelSummary,
@@ -133,6 +134,21 @@ impl LoudnessMeter {
             .iter()
             .map(|channel| window_mean_square(channel, block_size, hop_size))
             .collect();
+        // Integrated-loudness gating uses complete 400 ms blocks only
+        // (BS.1770-4); the clamped trailing window stays in the trace path.
+        // Buffers shorter than a single block fall back to the clamped
+        // window so very short inputs still report a finite estimate.
+        let gating_block_energies_by_channel: Vec<Vec<f32>> = weighted_channels
+            .iter()
+            .map(|channel| {
+                let complete = complete_window_mean_square(channel, block_size, hop_size);
+                if complete.is_empty() {
+                    window_mean_square(channel, block_size, hop_size)
+                } else {
+                    complete
+                }
+            })
+            .collect();
         let short_term_energies_by_channel: Vec<Vec<f32>> = weighted_channels
             .iter()
             .map(|channel| window_mean_square(channel, short_term_size, hop_size))
@@ -140,6 +156,8 @@ impl LoudnessMeter {
 
         let aggregated_block_energies =
             aggregate_weighted_energies(&block_energies_by_channel, &weights);
+        let aggregated_gating_block_energies =
+            aggregate_weighted_energies(&gating_block_energies_by_channel, &weights);
         let aggregated_short_term_energies =
             aggregate_weighted_energies(&short_term_energies_by_channel, &weights);
         let momentary_trace = loudness_trace_from_energies(
@@ -158,12 +176,12 @@ impl LoudnessMeter {
             .map(|(index, channel)| LoudnessChannelSummary {
                 index,
                 weight: *weights.get(index).unwrap_or(&1.0),
-                integrated_lufs: gated_integrated_loudness(&block_energies_by_channel[index]),
+                integrated_lufs: gated_integrated_loudness(&gating_block_energies_by_channel[index]),
                 true_peak_dbtp: true_peak_dbtp(channel, true_peak_oversample_factor),
             })
             .collect();
 
-        let integrated_lufs = gated_integrated_loudness(&aggregated_block_energies);
+        let integrated_lufs = gated_integrated_loudness(&aggregated_gating_block_energies);
         let loudness_range_lu = loudness_range_from_energies(&aggregated_short_term_energies);
         let true_peak_dbtp = channels
             .iter()
