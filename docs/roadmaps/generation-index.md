@@ -5,10 +5,16 @@ Updated: 2026-06-11
 
 ## Current generation posture
 
-- `g10` is the active generation: the 2026-06-11 deep-audit remediation
-  program (production-path fixes, demolition of simulated/narration mass,
-  consolidation, rebuild-on-demand backlog)
-- audit evidence base: `chorus/research/2026-06-11-signal-deep-audit.md`
+- `g10` is the active generation. Phase one (packets 001-009, complete):
+  the deep-audit remediation program — production-path fixes, ~98k LoC of
+  simulated/narration mass demolished, workspace consolidation + CI. Phase
+  two (packets 010-020, planned): build the real engine on the surviving
+  seed — graph-shaped plans, identity + parameter fast path, DSP kit,
+  metering, WYSIWYG bounce, DAC-time honesty, recording, disk streaming,
+  transport regions, runtime endgame.
+- audit evidence: `chorus/research/2026-06-11-signal-deep-audit.md` (phase
+  one) and `docs/research/2026-06-11-post-demolition-assessment.md` (phase
+  two)
 - rebuild queue: `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`
 - the earlier post-`g08` backlog item remains informative context in
   `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md`
@@ -44,5 +50,6 @@ If that cleanup has not happened, stay in the current generation and finish the 
 
 ## Next Task
 
-Execute `g10` in order: 002 (declick) → 003 (output hardening), then
-demolition lanes 004→005 with 006/007/008 parallel, 009 last.
+Phase two execution: g10.010 (graph-shaped plans) leads; 011→012 build the
+spine; 013/014 parallel after 010; 015 (bounce) after 010; 016→017→018 the
+recording arc; 019 after 012; 020 last.

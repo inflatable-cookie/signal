@@ -25,12 +25,17 @@ Use this section for:
 
 ## Current posture
 
-`g10` is active: the 2026-06-11 deep-audit remediation generation. Order:
-g10.002 production-path declick → g10.003 output hardening → demolition lanes
-(g10.004 hosting, g10.005 runtime re-scope, g10.006 analysis, g10.007
-plugins, g10.008 DSP/resampling) → g10.009 consolidation. Rebuilds (real
-plugin hosting, engine server, graph successor, beat tracking) are pulled
-from `backlog/post-g10-rebuild-on-demand.md` only on product demand.
+`g10` is active. Phase one complete (002-009): audit remediation —
+production-path declick + hardening, ~98k LoC demolition, consolidation +
+CI. Phase two planned (010-020): the engine build-out on the surviving seed
+— graph-shaped plans and mixer realization (010), stable identity (011),
+parameter fast path + automation (012), DSP kit (013), RT observability
+(014), WYSIWYG bounce (015), output-time honesty (016), recording (017),
+disk streaming (018), transport regions (019), runtime endgame (020).
+Assessment driving phase two:
+`docs/research/2026-06-11-post-demolition-assessment.md`. Plugin hosting,
+MIDI, stretch, PDC stay in `backlog/post-g10-rebuild-on-demand.md` until
+their prerequisites land.
 
 `g06`, `g07`, `g08`, and `g09` are complete. The earlier post-`g08` backlog
 note remains in
