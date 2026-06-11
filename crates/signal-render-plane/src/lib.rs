@@ -208,8 +208,15 @@ pub struct RenderStageSpec {
     /// The stage's output format.
     pub format: ChannelFormat,
     /// Linear stage output gain, smoothed (10 ms full swing) and applied
-    /// where the stage's output is consumed.
+    /// where the stage's output is consumed. When `gain_automation` is
+    /// present it replaces this value during playback.
     pub gain: f32,
+    /// Optional compiled automation: sorted `(frame, linear gain)`
+    /// breakpoints on the stream clock, linearly interpolated and sampled
+    /// per block into sample-accurate ramps. Stateless: the value is a pure
+    /// function of the stream position, so plan swaps stay continuous (the
+    /// block ramp always starts from the inherited smoothed gain).
+    pub gain_automation: Option<Vec<(u64, f32)>>,
     /// What the stage does.
     pub kind: RenderStageKind,
     /// Edges feeding this stage.
@@ -229,6 +236,35 @@ pub struct RenderPlanSpec {
 }
 
 impl RenderPlanSpec {
+    /// When `other` differs from `self` ONLY in stage gains (same stages,
+    /// formats, automation, clips, edges), return the changed
+    /// `(stage_id, new_gain)` pairs — hosts use this to take the parameter
+    /// fast path (`set_stage_gain`) instead of recompiling the plan.
+    /// Returns `None` when anything structural differs (install required).
+    pub fn differs_only_in_gains(&self, other: &RenderPlanSpec) -> Option<Vec<(u64, f32)>> {
+        if self.sample_rate_hz != other.sample_rate_hz
+            || self.master_gain != other.master_gain
+            || self.stages.len() != other.stages.len()
+        {
+            return None;
+        }
+        let mut changes = Vec::new();
+        for (old, new) in self.stages.iter().zip(other.stages.iter()) {
+            if old.stage_id != new.stage_id
+                || old.format != new.format
+                || old.gain_automation != new.gain_automation
+                || old.kind != new.kind
+                || old.inputs != new.inputs
+            {
+                return None;
+            }
+            if old.gain != new.gain {
+                changes.push((new.stage_id, new.gain));
+            }
+        }
+        Some(changes)
+    }
+
     /// Channel count of the master stage (the format the plan mixes at), or
     /// 2 when the spec has no master (such a spec fails compile anyway).
     pub fn output_channels(&self) -> u16 {
@@ -258,6 +294,8 @@ pub enum RenderPlanCompileError {
     Cycle,
     /// A stage declared a zero-channel format.
     InvalidChannelCount(u64),
+    /// A gain-automation envelope's breakpoints are not sorted by frame.
+    UnsortedAutomation(u64),
     /// An explicit edge matrix has the wrong number of coefficients.
     MatrixDimensions {
         /// Stage owning the edge.
@@ -294,6 +332,10 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::InvalidChannelCount(stage_id) => {
                 write!(formatter, "stage {stage_id} declares zero channels")
             }
+            RenderPlanCompileError::UnsortedAutomation(stage_id) => write!(
+                formatter,
+                "stage {stage_id} gain automation breakpoints are not sorted by frame",
+            ),
             RenderPlanCompileError::MatrixDimensions {
                 stage_id,
                 source_stage_id,
@@ -362,6 +404,9 @@ struct CompiledNode {
     /// and read wherever its output is consumed (edges, boundary).
     block_gain_begin: f32,
     block_gain_slope: f32,
+    /// Sorted automation breakpoints `(frame, gain)`; empty = no automation
+    /// (static `gain_target` smoothing applies).
+    gain_envelope: Vec<(u64, f32)>,
     /// Clip content (lane stages; empty for bus/master).
     clips: Vec<CompiledClip>,
     inputs: Vec<CompiledInput>,
@@ -569,10 +614,25 @@ impl RenderPlan {
                 .collect();
             // The plan's master_gain multiplies the master stage's own gain
             // so the legacy single-knob master keeps working.
-            let gain = if matches!(stage.kind, RenderStageKind::Output) {
-                stage.gain * spec.master_gain
+            let master_factor = if matches!(stage.kind, RenderStageKind::Output) {
+                spec.master_gain
             } else {
-                stage.gain
+                1.0
+            };
+            let gain = stage.gain * master_factor;
+            // Automation envelope: sorted, master factor folded in so the
+            // render path samples one curve.
+            let gain_envelope: Vec<(u64, f32)> = match &stage.gain_automation {
+                Some(points) => {
+                    if points.windows(2).any(|pair| pair[0].0 > pair[1].0) {
+                        return Err(RenderPlanCompileError::UnsortedAutomation(stage.stage_id));
+                    }
+                    points
+                        .iter()
+                        .map(|(frame, value)| (*frame, *value * master_factor))
+                        .collect()
+                }
+                None => Vec::new(),
             };
             stages.push(CompiledNode {
                 stage_id: stage.stage_id,
@@ -581,6 +641,7 @@ impl RenderPlan {
                 gain_current: gain,
                 block_gain_begin: gain,
                 block_gain_slope: 0.0,
+                gain_envelope,
                 clips,
                 inputs,
                 scratch: vec![0.0f32; MAX_BLOCK_FRAMES * dest_channels],
@@ -658,6 +719,25 @@ impl RenderPlan {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Sample a sorted `(frame, value)` automation envelope at `frame`: linear
+/// interpolation between breakpoints, clamped to the first/last values
+/// outside the span. Binary search + arithmetic only — audio-thread safe.
+#[inline]
+fn sample_envelope(points: &[(u64, f32)], frame: u64) -> f32 {
+    match points.binary_search_by(|(point_frame, _)| point_frame.cmp(&frame)) {
+        Ok(index) => points[index].1,
+        Err(0) => points[0].1,
+        Err(index) if index == points.len() => points[points.len() - 1].1,
+        Err(index) => {
+            let (start_frame, start_value) = points[index - 1];
+            let (end_frame, end_value) = points[index];
+            let span = (end_frame - start_frame).max(1) as f64;
+            let progress = (frame - start_frame) as f64 / span;
+            start_value + (end_value - start_value) * progress as f32
         }
     }
 }
@@ -798,6 +878,15 @@ enum RenderCommand {
     SetPlaying(bool),
     Seek(u64),
     SetStreamChannels(u16),
+    /// Parameter fast path: retarget one stage's smoothed gain without a
+    /// plan recompile. `stage_index` addresses the ACTIVE plan's topological
+    /// stage list; the controller resolves stage ids against the topology of
+    /// the most recent install, and the FIFO mailbox guarantees the command
+    /// lands after that plan.
+    SetStageGain {
+        stage_index: usize,
+        target: f32,
+    },
 }
 
 /// Counters shared between the two sides without locks.
@@ -918,6 +1007,32 @@ impl RenderPlaneController {
             })?;
         self.last_topology = Some(topology);
         Ok(())
+    }
+
+    /// Parameter fast path: retarget one stage's smoothed gain without a
+    /// plan recompile. Resolves `stage_id` against the topology of the most
+    /// recent successful install; the FIFO mailbox guarantees the command
+    /// reaches the executor after that plan. Returns an error when the
+    /// stage is unknown (callers should fall back to a plan install).
+    pub fn set_stage_gain(&self, stage_id: u64, target: f32) -> Result<(), RenderPlaneError> {
+        let Some(topology) = self.last_topology.as_ref() else {
+            return Err(RenderPlaneError {
+                message: "no plan installed; cannot set stage gain".to_string(),
+            });
+        };
+        let Some(stage_index) = topology.iter().position(|(id, _)| *id == stage_id) else {
+            return Err(RenderPlaneError {
+                message: format!("stage {stage_id} not present in the installed plan"),
+            });
+        };
+        self.commands
+            .try_send(RenderCommand::SetStageGain {
+                stage_index,
+                target,
+            })
+            .map_err(|error| RenderPlaneError {
+                message: format!("command mailbox rejected stage gain: {error}"),
+            })
     }
 
     /// Gate rendering on or off (transport play/stop).
@@ -1057,6 +1172,16 @@ impl RenderPlaneExecutor {
                         self.pending_seek = Some(position_frames);
                     }
                 }
+                Ok(RenderCommand::SetStageGain {
+                    stage_index,
+                    target,
+                }) => {
+                    if let Some(plan) = self.plan.as_mut() {
+                        if let Some(stage) = plan.stages.get_mut(stage_index) {
+                            stage.gain_target = target;
+                        }
+                    }
+                }
                 Ok(RenderCommand::SetStreamChannels(channels)) => {
                     self.stream_channels = Some(channels.max(1));
                 }
@@ -1117,8 +1242,15 @@ impl RenderPlaneExecutor {
             let stage = &mut rest[0];
 
             let gain_begin = stage.gain_current;
-            let gain_end =
-                gain_begin + (stage.gain_target - gain_begin).clamp(-gain_step, gain_step);
+            let gain_end = if stage.gain_envelope.is_empty() {
+                gain_begin + (stage.gain_target - gain_begin).clamp(-gain_step, gain_step)
+            } else {
+                // Automation: the target is the envelope's value at the
+                // block end. The ramp starts from the inherited smoothed
+                // gain, so plan swaps and seeks stay continuous while normal
+                // playback tracks the curve sample-accurately block-wise.
+                sample_envelope(&stage.gain_envelope, block_start_frame + frame_count as u64)
+            };
             stage.block_gain_begin = gain_begin;
             stage.block_gain_slope = (gain_end - gain_begin) / frame_count.max(1) as f32;
             stage.gain_current = gain_end;
@@ -1270,6 +1402,7 @@ mod tests {
             stage_id,
             format: ChannelFormat::stereo(),
             gain,
+            gain_automation: None,
             kind: RenderStageKind::Source { clips },
             inputs: Vec::new(),
         }
@@ -1280,6 +1413,7 @@ mod tests {
             stage_id: MASTER_ID,
             format: ChannelFormat::stereo(),
             gain: 1.0,
+            gain_automation: None,
             kind: RenderStageKind::Output,
             inputs,
         }
@@ -1547,6 +1681,93 @@ mod tests {
             .windows(2)
             .map(|pair| (pair[1] - pair[0]).abs())
             .fold(0.0f32, f32::max)
+    }
+
+    #[test]
+    fn set_stage_gain_retargets_without_recompile() {
+        let (mut controller, mut executor) = render_plane();
+        controller.install_plan(&tone_spec(440.0)).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        // Fast path: no install, just a retarget; the smoothing ramp keeps
+        // the transition step-free.
+        controller.set_stage_gain(LANE_ID, 1.0).unwrap();
+        let mut frames = [0.0f32; 1024];
+        executor.render_block(&mut frames);
+        let step = max_left_step(&frames);
+        assert!(step < 0.08, "fast-path gain stepped audio by {step}");
+
+        // Unknown stage: typed error, callers fall back to install.
+        assert!(controller.set_stage_gain(999, 0.5).is_err());
+    }
+
+    #[test]
+    fn gain_automation_follows_the_envelope_sample_accurately() {
+        let (mut controller, mut executor) = render_plane();
+        // Constant-amplitude source (DC-ish loopable samples) under a gain
+        // ramp envelope 0.0 -> 1.0 over 9600 frames, then hold.
+        let values = vec![0.5f32; 480];
+        let mut spec = samples_spec(&values, 0, u64::MAX, true);
+        spec.stages[0].gain_automation = Some(vec![(0, 0.0), (9_600, 1.0), (19_200, 0.25)]);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        // Render 19_200 frames in 256-frame blocks; spot-check the envelope.
+        let mut output = Vec::new();
+        let mut frames = [0.0f32; 512];
+        for _ in 0..75 {
+            executor.render_block(&mut frames);
+            output.extend(frames.chunks_exact(2).map(|frame| frame[0]));
+        }
+        // At frame 9_600 the gain is 1.0: sample value 0.5 * 1.0.
+        let mid = output[9_600];
+        assert!((mid - 0.5).abs() < 0.02, "envelope peak read {mid}");
+        // At frame 14_400 (halfway down to 0.25): gain ≈ 0.625.
+        let down = output[14_400];
+        assert!(
+            (down - 0.5 * 0.625).abs() < 0.02,
+            "envelope descent read {down}"
+        );
+        // Monotonic rise across the first segment (block-ramped).
+        assert!(output[2_000] < output[4_000] && output[4_000] < output[8_000]);
+    }
+
+    #[test]
+    fn envelope_swap_mid_play_stays_continuous() {
+        let (mut controller, mut executor) = render_plane();
+        let values = vec![0.5f32; 480];
+        let mut spec = samples_spec(&values, 0, u64::MAX, true);
+        spec.stages[0].gain_automation = Some(vec![(0, 1.0)]);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        // Swap to a very different envelope mid-play: the block ramp anchors
+        // at the inherited smoothed gain, so no step.
+        let mut louder = samples_spec(&values, 0, u64::MAX, true);
+        louder.stages[0].gain_automation = Some(vec![(0, 0.1)]);
+        controller.install_plan(&louder).unwrap();
+        let mut frames = [0.0f32; 1024];
+        executor.render_block(&mut frames);
+        let step = max_left_step(&frames);
+        assert!(step < 0.05, "envelope swap stepped audio by {step}");
+    }
+
+    #[test]
+    fn gain_only_spec_diffs_take_the_fast_path() {
+        let base = tone_spec(440.0);
+        let mut louder = base.clone();
+        louder.stages[0].gain = 0.9;
+        assert_eq!(
+            base.differs_only_in_gains(&louder),
+            Some(vec![(LANE_ID, 0.9)])
+        );
+        // Structural change: no fast path.
+        let mut reshaped = base.clone();
+        reshaped.stages[0].gain_automation = Some(vec![(0, 1.0)]);
+        assert_eq!(base.differs_only_in_gains(&reshaped), None);
+        assert_eq!(base.differs_only_in_gains(&base), Some(vec![]));
     }
 
     #[test]
@@ -1822,6 +2043,7 @@ mod tests {
                     stage_id: 1,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(2)],
                 },
@@ -1829,6 +2051,7 @@ mod tests {
                     stage_id: 2,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(1)],
                 },
@@ -1931,6 +2154,7 @@ mod tests {
                     stage_id: 20,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
+                    gain_automation: None,
                     kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(10)],
                 },
@@ -1938,6 +2162,7 @@ mod tests {
                     stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
+                    gain_automation: None,
                     kind: RenderStageKind::Sum,
                     inputs: vec![identity_edge(LANE_ID)],
                 },
@@ -2030,6 +2255,7 @@ mod tests {
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Source {
                         clips: vec![tone_clip(440.0)],
                     },
@@ -2066,6 +2292,7 @@ mod tests {
             stage_id,
             format: ChannelFormat::stereo(),
             gain: 1.0,
+            gain_automation: None,
             kind: RenderStageKind::Sum,
             inputs: vec![identity_edge(LANE_ID)],
         };
@@ -2117,6 +2344,7 @@ mod tests {
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Source {
                         clips: vec![tone_clip(440.0)],
                     },
@@ -2129,6 +2357,7 @@ mod tests {
                         layout: ChannelLayout::Generic,
                     },
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Output,
                     // Distinct synthetic spread: [1.0, 0.5, 0.25, 0.75].
                     inputs: vec![RenderEdgeSpec {
@@ -2180,6 +2409,7 @@ mod tests {
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Source {
                         clips: vec![tone_clip(440.0)],
                     },
@@ -2189,6 +2419,7 @@ mod tests {
                     stage_id: MASTER_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Output,
                     inputs: vec![identity_edge(LANE_ID)],
                 },
@@ -2240,6 +2471,7 @@ mod tests {
                     stage_id: 3,
                     format: ChannelFormat::mono(),
                     gain: 0.3,
+                    gain_automation: None,
                     kind: RenderStageKind::Source {
                         clips: vec![tone_clip(220.0)],
                     },
@@ -2249,6 +2481,7 @@ mod tests {
                     stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.9,
+                    gain_automation: None,
                     kind: RenderStageKind::Sum,
                     inputs: vec![
                         RenderEdgeSpec {

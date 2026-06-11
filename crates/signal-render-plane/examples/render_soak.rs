@@ -53,6 +53,7 @@ fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
         stage_id,
         format: ChannelFormat::stereo(),
         gain,
+        gain_automation: None,
         kind: RenderStageKind::Source {
             clips: vec![RenderClipSpec {
                 clip_id: 1001,
@@ -104,6 +105,7 @@ fn main() {
                 stage_id: 10,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
+                gain_automation: None,
                 kind: RenderStageKind::Sum,
                 inputs: vec![
                     RenderEdgeSpec {
@@ -122,6 +124,7 @@ fn main() {
                 stage_id: 100,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
+                gain_automation: None,
                 kind: RenderStageKind::Output,
                 inputs: vec![RenderEdgeSpec {
                     source_stage_id: 10,
@@ -158,6 +161,7 @@ fn main() {
                     stage_id: 100,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
+                    gain_automation: None,
                     kind: RenderStageKind::Output,
                     inputs: vec![RenderEdgeSpec {
                         source_stage_id: 3,
