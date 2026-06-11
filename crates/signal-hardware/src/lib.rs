@@ -16,8 +16,11 @@
 #![warn(missing_docs)]
 
 mod backend_contract;
+pub mod capture;
 mod diagnostics;
 pub mod fake_clocked;
+pub mod fake_input;
+mod input_stream;
 mod output_stream;
 
 pub mod simulated;
@@ -32,11 +35,17 @@ pub use backend_contract::{
     HardwareNegotiationErrorKind, HardwareRestartPolicy, HardwareStreamConfig,
     HardwareStreamRequest, LinuxAudioBackendKind,
 };
+pub use capture::{CaptureReport, CaptureSession, SpscRing};
 pub use diagnostics::{
     BackendHealth, HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
     HardwareDiagnosticsSnapshot,
 };
 pub use fake_clocked::FakeClockedBackend;
+pub use fake_input::FakeInputBackend;
+pub use input_stream::{
+    InputCaptureFn, InputStreamBackend, InputStreamError, InputStreamHandle, InputStreamSpec,
+    InputStreamState,
+};
 pub use output_stream::{
     OutputRenderFn, OutputStreamBackend, OutputStreamError, OutputStreamHandle, OutputStreamSpec,
     OutputStreamState,

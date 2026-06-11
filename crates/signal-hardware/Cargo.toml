@@ -12,3 +12,4 @@ workspace = true
 
 [dependencies]
 signal-primitives = { workspace = true }
+hound = { workspace = true }
