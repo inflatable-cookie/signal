@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active
-Updated: 2026-04-14
+Updated: 2026-06-11
 
 ## Why this section matters now
 
@@ -24,6 +24,13 @@ Use this section for:
 - `templates/`: roadmap authoring support
 
 ## Current posture
+
+`g10` is active: the 2026-06-11 deep-audit remediation generation. Order:
+g10.002 production-path declick → g10.003 output hardening → demolition lanes
+(g10.004 hosting, g10.005 runtime re-scope, g10.006 analysis, g10.007
+plugins, g10.008 DSP/resampling) → g10.009 consolidation. Rebuilds (real
+plugin hosting, engine server, graph successor, beat tracking) are pulled
+from `backlog/post-g10-rebuild-on-demand.md` only on product demand.
 
 `g06`, `g07`, `g08`, and `g09` are complete. The earlier post-`g08` backlog
 note remains in
