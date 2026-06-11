@@ -9,9 +9,12 @@
 //!   low-pass, and delay kernels
 //! - control ramps and segment playback for block-local automation
 //! - basic delay, filter, and level-tracking kernels
+//! - RBJ cookbook biquads ([`BiquadCoefficients`] + per-channel
+//!   [`BiquadState`]) and a soft-knee master limiter ([`LimiterState`])
 //! - stateless block mixing helpers and deterministic signal fixtures
 //! - [`flush_denormal`] and [`flush_denormals_in_place`] helpers for clearing
-//!   subnormal values from kernel state between blocks
+//!   subnormal values from kernel state between blocks, plus the scoped
+//!   hardware [`DenormalGuard`] for the audio callback
 //!
 //! ```no_run
 //! use signal_dsp::{DspKernel, Gain, SmoothedValue};
@@ -29,26 +32,32 @@
 
 #![warn(missing_docs)]
 
+mod biquad;
 mod block;
 mod control;
 mod delay;
+mod denormal;
 mod filter;
 mod fixtures;
 mod level;
+mod limiter;
 mod mix;
 mod mix_matrix;
 mod polyphase;
 pub mod ramp;
 
+pub use biquad::{BiquadCoefficients, BiquadState};
 pub use block::{
     apply_gain_control, process_delay_with_feedback_control, process_low_pass_with_cutoff_control,
 };
 pub use control::SmoothedValue;
 pub use control::{ControlPlan, ControlSegment, ControlSegmentPlayer, ControlSegmentShape};
 pub use delay::DelayLine;
+pub use denormal::DenormalGuard;
 pub use filter::OnePoleLowPass;
 pub use fixtures::SignalFixture;
 pub use level::{EnvelopeFollower, PeakMeter, RmsMeter};
+pub use limiter::{LimiterState, LIMITER_CEILING};
 pub use mix::{apply_gain_in_place, clear_block, mix_in_place, sum_in_place, Gain};
 pub use mix_matrix::{default_adapter_matrix, equal_power_pan_matrix};
 pub use polyphase::PolyphaseInterpolationTable;

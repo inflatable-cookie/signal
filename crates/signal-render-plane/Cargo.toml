@@ -19,3 +19,4 @@ workspace = true
 
 [dependencies]
 signal-dsp = { workspace = true }
+signal-primitives = { workspace = true }

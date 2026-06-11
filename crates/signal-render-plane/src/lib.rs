@@ -31,11 +31,14 @@
 
 #![warn(missing_docs)]
 
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::Arc;
+use std::time::Instant;
 
-use signal_dsp::{default_adapter_matrix, PolyphaseInterpolationTable};
+use signal_dsp::{
+    default_adapter_matrix, DenormalGuard, LimiterState, PolyphaseInterpolationTable,
+};
 
 /// Interpolation table shape for rate-converted media playback. 16 taps ×
 /// 512 phases ≈ 32 KB per distinct cutoff; built once per plan compile.
@@ -46,6 +49,17 @@ const RESAMPLE_PHASES: usize = 512;
 /// stage owns `MAX_BLOCK_FRAMES × channels` samples of scratch, preallocated
 /// at compile; `render_block` clamps (and debug-asserts) the frame count.
 pub const MAX_BLOCK_FRAMES: usize = 4096;
+
+/// Fixed capacity of the shared per-stage meter table. Plans with more
+/// stages than this render normally but stages past the capacity are
+/// silently unmetered (slot i meters topological stage i; there is no
+/// overflow signalling — meters are cosmetic).
+pub const METER_SLOT_CAPACITY: usize = 256;
+
+/// Callback-interval factor past which a missed deadline is inferred: an
+/// interval since the previous callback longer than `1.5 ×` the block
+/// duration at the plan rate counts as an xrun.
+const XRUN_INTERVAL_FACTOR: f64 = 1.5;
 
 /// Shared immutable sample data: interleaved stereo f32 at a source rate.
 ///
@@ -223,6 +237,18 @@ pub struct RenderStageSpec {
     pub inputs: Vec<RenderEdgeSpec>,
 }
 
+/// Optional soft limiter guarding the hardware boundary. Mechanism only —
+/// thresholds and whether to limit at all are consumer policy.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderLimiterSpec {
+    /// Linear level where limiting centers (clamped below 0 dBFS).
+    pub threshold: f32,
+    /// Linear soft-knee width centered on the threshold.
+    pub knee_width: f32,
+    /// One-pole gain-recovery time constant in seconds.
+    pub release_seconds: f32,
+}
+
 /// Control-side description of a render plan: a format-typed stage graph.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderPlanSpec {
@@ -231,6 +257,10 @@ pub struct RenderPlanSpec {
     /// Linear master gain applied at the master stage (kept for consumer
     /// compatibility; multiplies the master stage's own gain).
     pub master_gain: f32,
+    /// Optional soft limiter applied to the stream buffer after the
+    /// boundary write and before the transport edge envelope. `None` = no
+    /// limiting (bit-transparent master path).
+    pub master_limiter: Option<RenderLimiterSpec>,
     /// The stage graph; any order, exactly one [`RenderStageKind::Output`].
     pub stages: Vec<RenderStageSpec>,
 }
@@ -244,6 +274,7 @@ impl RenderPlanSpec {
     pub fn differs_only_in_gains(&self, other: &RenderPlanSpec) -> Option<Vec<(u64, f32)>> {
         if self.sample_rate_hz != other.sample_rate_hz
             || self.master_gain != other.master_gain
+            || self.master_limiter != other.master_limiter
             || self.stages.len() != other.stages.len()
         {
             return None;
@@ -438,6 +469,13 @@ pub struct RenderPlan {
     /// Per-stage, per-clip inheritance into the previous plan's clip list
     /// (by clip_id within the matched stage).
     inherit_clip_maps: Vec<Vec<Option<usize>>>,
+    /// Monotonic install stamp assigned by the controller. The executor
+    /// publishes it with the meter table so readers can map meter slots to
+    /// the stage ids of the matching topology.
+    generation: u64,
+    /// Optional master soft limiter guarding the hardware boundary; its
+    /// smoothed gain inherits across plan swaps.
+    limiter: Option<LimiterState>,
 }
 
 impl RenderPlan {
@@ -671,6 +709,15 @@ impl RenderPlan {
             boundary_matrix,
             inherit_stage_map: Vec::new(),
             inherit_clip_maps: Vec::new(),
+            generation: 0,
+            limiter: spec.master_limiter.as_ref().map(|limiter| {
+                LimiterState::new(
+                    signal_primitives::SampleRate(stream_rate),
+                    limiter.threshold,
+                    limiter.knee_width,
+                    signal_primitives::Seconds(limiter.release_seconds),
+                )
+            }),
         }))
     }
 
@@ -682,6 +729,13 @@ impl RenderPlan {
     /// the audio thread, and inserting a clip mid-lane no longer cross-wires
     /// its neighbours' state.
     fn inherit_state(&mut self, previous: &RenderPlan) {
+        // Limiter recovery gain carries over so a recompile mid-limiting
+        // does not snap the gain back to unity.
+        if let (Some(limiter), Some(previous_limiter)) =
+            (self.limiter.as_mut(), previous.limiter.as_ref())
+        {
+            limiter.set_gain(previous_limiter.gain());
+        }
         if self.inherit_stage_map.len() != self.stages.len() {
             // No map (first install or controller skipped): nothing carries.
             return;
@@ -889,8 +943,30 @@ enum RenderCommand {
     },
 }
 
+/// One shared meter slot: peak and RMS of the most recently rendered block
+/// for one stage, stored as `f32::to_bits` patterns.
+///
+/// All accesses are `Relaxed` and the peak/RMS pair is not read atomically
+/// as a unit: a reader can observe one field from block N and the other
+/// from block N+1. That tearing is tolerated by design — meters are
+/// cosmetic UI signal, never control flow.
+#[derive(Debug)]
+struct MeterSlot {
+    peak_bits: AtomicU32,
+    rms_bits: AtomicU32,
+}
+
+impl Default for MeterSlot {
+    fn default() -> Self {
+        MeterSlot {
+            peak_bits: AtomicU32::new(0),
+            rms_bits: AtomicU32::new(0),
+        }
+    }
+}
+
 /// Counters shared between the two sides without locks.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct SharedState {
     /// Stream-clock position in frames, written by the executor.
     position_frames: AtomicU64,
@@ -900,6 +976,42 @@ struct SharedState {
     /// retired mailbox was full (plan held in the parking slot instead —
     /// never dropped on the audio thread).
     retired_parked_blocks: AtomicU64,
+    /// Fixed-capacity per-stage meter table: slot `i` holds the meter for
+    /// the active plan's topological stage `i`. Stages past
+    /// [`METER_SLOT_CAPACITY`] are silently unmetered.
+    meter_slots: [MeterSlot; METER_SLOT_CAPACITY],
+    /// Generation stamp of the plan the meter slots currently describe
+    /// (assigned control-side per install, written by the executor alongside
+    /// the slots). Readers compare it against their last install to map
+    /// slots → stage ids; a mismatch means the executor has not switched to
+    /// the latest plan yet and the slots describe the previous topology.
+    meter_generation: AtomicU64,
+    /// Total render callbacks observed (incremented once per `render_block`).
+    callback_count: AtomicU64,
+    /// Wall-clock duration of the most recent callback, in microseconds.
+    last_callback_duration_micros: AtomicU64,
+    /// Maximum observed callback duration, in microseconds.
+    max_callback_duration_micros: AtomicU64,
+    /// Inferred missed deadlines: callbacks whose interval since the
+    /// previous callback exceeded [`XRUN_INTERVAL_FACTOR`] × the block
+    /// duration at the plan rate.
+    xrun_count: AtomicU64,
+}
+
+impl Default for SharedState {
+    fn default() -> Self {
+        SharedState {
+            position_frames: AtomicU64::new(0),
+            playing: AtomicBool::new(false),
+            retired_parked_blocks: AtomicU64::new(0),
+            meter_slots: std::array::from_fn(|_| MeterSlot::default()),
+            meter_generation: AtomicU64::new(0),
+            callback_count: AtomicU64::new(0),
+            last_callback_duration_micros: AtomicU64::new(0),
+            max_callback_duration_micros: AtomicU64::new(0),
+            xrun_count: AtomicU64::new(0),
+        }
+    }
 }
 
 /// Control-side handle: compiles and installs plans, drives transport, and
@@ -917,6 +1029,9 @@ pub struct RenderPlaneController {
     /// state-inheritance maps for the next install so the executor does pure
     /// index copies.
     last_topology: Option<Vec<(u64, Vec<u64>)>>,
+    /// Generation stamp of the most recent successful install; compared
+    /// against the shared meter generation when resolving meter slots.
+    plan_generation: u64,
 }
 
 /// Error installing a plan or sending a command.
@@ -1000,11 +1115,13 @@ impl RenderPlaneController {
                 .collect();
         }
 
+        plan.generation = self.plan_generation + 1;
         self.commands
             .try_send(RenderCommand::InstallPlan(plan))
             .map_err(|error| RenderPlaneError {
                 message: format!("command mailbox rejected plan install: {error}"),
             })?;
+        self.plan_generation += 1;
         self.last_topology = Some(topology);
         Ok(())
     }
@@ -1080,6 +1197,64 @@ impl RenderPlaneController {
     pub fn retired_parked_blocks(&self) -> u64 {
         self.shared.retired_parked_blocks.load(Ordering::Relaxed)
     }
+
+    /// Per-stage meters from the most recently rendered block:
+    /// `(stage_id, peak, rms)` in the installed plan's topological order.
+    ///
+    /// Slots are resolved against the topology of the controller's last
+    /// successful install (slot `i` = topological stage `i`). When the
+    /// executor has not yet switched to that plan (the shared meter table
+    /// still carries an older generation), this returns an empty vec rather
+    /// than mislabeling slots — the gap lasts at most a block. Stages past
+    /// [`METER_SLOT_CAPACITY`] are silently unmetered. Values are read with
+    /// relaxed ordering and may tear between peak and RMS of adjacent
+    /// blocks; meters are cosmetic.
+    pub fn meters(&self) -> Vec<(u64, f32, f32)> {
+        let Some(topology) = self.last_topology.as_ref() else {
+            return Vec::new();
+        };
+        if self.shared.meter_generation.load(Ordering::Relaxed) != self.plan_generation {
+            return Vec::new();
+        }
+        topology
+            .iter()
+            .take(METER_SLOT_CAPACITY)
+            .enumerate()
+            .map(|(index, (stage_id, _))| {
+                let slot = &self.shared.meter_slots[index];
+                (
+                    *stage_id,
+                    f32::from_bits(slot.peak_bits.load(Ordering::Relaxed)),
+                    f32::from_bits(slot.rms_bits.load(Ordering::Relaxed)),
+                )
+            })
+            .collect()
+    }
+
+    /// Total render callbacks observed by the executor.
+    pub fn callback_count(&self) -> u64 {
+        self.shared.callback_count.load(Ordering::Relaxed)
+    }
+
+    /// Wall-clock duration of the most recent render callback, microseconds.
+    pub fn last_callback_duration_micros(&self) -> u64 {
+        self.shared
+            .last_callback_duration_micros
+            .load(Ordering::Relaxed)
+    }
+
+    /// Maximum observed render-callback duration, microseconds.
+    pub fn max_callback_duration_micros(&self) -> u64 {
+        self.shared
+            .max_callback_duration_micros
+            .load(Ordering::Relaxed)
+    }
+
+    /// Inferred missed deadlines: callbacks arriving later than
+    /// 1.5 × the block duration after their predecessor.
+    pub fn xrun_count(&self) -> u64 {
+        self.shared.xrun_count.load(Ordering::Relaxed)
+    }
 }
 
 /// Render-side executor. Owns the active plan between blocks and renders it
@@ -1109,6 +1284,8 @@ pub struct RenderPlaneExecutor {
     /// Seek requested while audible: applied once `edge_gain` reaches zero.
     pending_seek: Option<u64>,
     position_frames: u64,
+    /// Start instant of the previous callback, for xrun inference.
+    last_callback_instant: Option<Instant>,
 }
 
 impl RenderPlaneExecutor {
@@ -1194,7 +1371,101 @@ impl RenderPlaneExecutor {
     /// stream's channel count).
     ///
     /// Safe on the audio thread: no allocation, no locks, no I/O.
+    /// (`Instant::now()` is the one syscall-shaped exception, used for
+    /// callback-health timing: it is `mach_absolute_time` on macOS and
+    /// `clock_gettime(CLOCK_MONOTONIC)` elsewhere — no allocation, no lock,
+    /// vDSO/commpage fast paths — and is the accepted way to observe
+    /// callback cadence.)
     pub fn render_block(&mut self, frames: &mut [f32]) {
+        let callback_start = Instant::now();
+        // Flush-to-zero for the whole callback: feedback DSP (limiter
+        // release, future filters) cannot decay into denormal range and burn
+        // CPU. RAII restores the FP control register on exit.
+        let _denormals = DenormalGuard::new();
+        self.render_block_inner(frames);
+        self.publish_callback_health(callback_start, frames.len());
+    }
+
+    /// Publish callback-health counters: count, duration (last/max), and
+    /// inferred xruns. An xrun is an interval since the previous callback
+    /// longer than [`XRUN_INTERVAL_FACTOR`] × the block duration at the
+    /// active plan's rate; without a plan no xrun can be inferred (the
+    /// expected cadence is unknown) but count and duration still publish.
+    fn publish_callback_health(&mut self, callback_start: Instant, samples_len: usize) {
+        let shared = &self.shared;
+        shared.callback_count.fetch_add(1, Ordering::Relaxed);
+        let duration_micros = callback_start.elapsed().as_micros() as u64;
+        shared
+            .last_callback_duration_micros
+            .store(duration_micros, Ordering::Relaxed);
+        shared
+            .max_callback_duration_micros
+            .fetch_max(duration_micros, Ordering::Relaxed);
+        if let (Some(previous), Some(plan)) = (self.last_callback_instant, self.plan.as_ref()) {
+            let stream_channels = self
+                .stream_channels
+                .map(|channels| channels as usize)
+                .unwrap_or(plan.stream_channels)
+                .max(1);
+            let frame_count = samples_len / stream_channels;
+            let block_seconds = frame_count as f64 / plan.sample_rate_hz.max(1) as f64;
+            let interval = callback_start.duration_since(previous).as_secs_f64();
+            if frame_count > 0 && interval > block_seconds * XRUN_INTERVAL_FACTOR {
+                shared.xrun_count.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        self.last_callback_instant = Some(callback_start);
+    }
+
+    /// Write per-stage peak/RMS for this block into the shared meter table
+    /// and stamp the plan generation. Levels are taken from each stage's
+    /// scratch (pre-consumption) and scaled by the stage's end-of-block
+    /// smoothed gain so fader moves read on the meters — a per-block
+    /// approximation of the post-fader level (the transport edge ramp is
+    /// not included). Cheap loops over already-rendered scratch: no
+    /// allocation. Stages past [`METER_SLOT_CAPACITY`] are unmetered.
+    fn publish_meters(shared: &SharedState, plan: &RenderPlan, frame_count: usize) {
+        for (index, stage) in plan.stages.iter().take(METER_SLOT_CAPACITY).enumerate() {
+            let samples = &stage.scratch[..frame_count * stage.channels];
+            let mut peak = 0.0f32;
+            let mut sum_squares = 0.0f32;
+            for sample in samples {
+                let magnitude = sample.abs();
+                if magnitude > peak {
+                    peak = magnitude;
+                }
+                sum_squares += sample * sample;
+            }
+            let gain = stage.gain_current.abs();
+            let rms = (sum_squares / samples.len().max(1) as f32).sqrt() * gain;
+            let slot = &shared.meter_slots[index];
+            slot.peak_bits
+                .store((peak * gain).to_bits(), Ordering::Relaxed);
+            slot.rms_bits.store(rms.to_bits(), Ordering::Relaxed);
+        }
+        shared
+            .meter_generation
+            .store(plan.generation, Ordering::Relaxed);
+    }
+
+    /// Zero the active plan's meter slots (silence: stopped or fully ramped
+    /// out) and stamp the generation so readers see live zeros, not stale
+    /// levels from the last audible block.
+    fn publish_silent_meters(shared: &SharedState, plan: &RenderPlan) {
+        for slot in shared
+            .meter_slots
+            .iter()
+            .take(plan.stages.len().min(METER_SLOT_CAPACITY))
+        {
+            slot.peak_bits.store(0, Ordering::Relaxed);
+            slot.rms_bits.store(0, Ordering::Relaxed);
+        }
+        shared
+            .meter_generation
+            .store(plan.generation, Ordering::Relaxed);
+    }
+
+    fn render_block_inner(&mut self, frames: &mut [f32]) {
         self.drain_commands();
 
         // Re-offer a parked retired plan without rendering work attached.
@@ -1214,6 +1485,9 @@ impl RenderPlaneExecutor {
         // Audible while the gate is open, while ramping out after a stop, or
         // while ramping around an in-flight seek.
         if !self.playing && self.edge_gain <= 0.0 {
+            // Silent block: meters read zero rather than holding the last
+            // audible level.
+            Self::publish_silent_meters(&self.shared, plan);
             return;
         }
 
@@ -1292,6 +1566,10 @@ impl RenderPlaneExecutor {
             }
         }
 
+        // Meters: every stage's scratch for this block is final now (the
+        // boundary write below only reads the master's scratch).
+        Self::publish_meters(&self.shared, plan, frame_count);
+
         // Hardware boundary: adapt the master stage's scratch onto the stream
         // with the master's smoothed gain. Equal formats copy; a narrower
         // stream applies the install-time downmix matrix; a wider stream
@@ -1323,6 +1601,16 @@ impl RenderPlaneExecutor {
                     frames[dest_base + channel] =
                         master.scratch[source_base + channel] * master_gain;
                 }
+            }
+        }
+
+        // Master soft limiter: guards the stream buffer after the boundary
+        // write so the creative graph stays untouched; linked gain across
+        // the stream's channels.
+        if let Some(limiter) = plan.limiter.as_mut() {
+            for frame_index in 0..frame_count {
+                let base = frame_index * stream_channels;
+                limiter.process_frame(&mut frames[base..base + stream_channels]);
             }
         }
 
@@ -1373,6 +1661,7 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             shared: Arc::clone(&shared),
             stream_channels: None,
             last_topology: None,
+            plan_generation: 0,
         },
         RenderPlaneExecutor {
             commands: command_rx,
@@ -1385,6 +1674,7 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             edge_gain: 0.0,
             pending_seek: None,
             position_frames: 0,
+            last_callback_instant: None,
         },
     )
 }
@@ -1432,6 +1722,7 @@ mod tests {
         RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 lane_node(LANE_ID, lane_gain, clips),
                 master_node(vec![identity_edge(LANE_ID)]),
@@ -1684,6 +1975,46 @@ mod tests {
     }
 
     #[test]
+    fn master_limiter_caps_a_hot_mix_at_the_boundary() {
+        let (mut controller, mut executor) = render_plane();
+        // Two full-scale tones summed at unity: peaks near 2.0 unlimited.
+        let mut spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: Some(RenderLimiterSpec {
+                threshold: 0.7,
+                knee_width: 0.3,
+                release_seconds: 0.05,
+            }),
+            stages: vec![
+                lane_node(1, 1.0, vec![tone_clip(330.0)]),
+                lane_node(2, 1.0, vec![tone_clip(331.0)]),
+                master_node(vec![identity_edge(1), identity_edge(2)]),
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        let mut frames = [0.0f32; 1024];
+        for _ in 0..20 {
+            executor.render_block(&mut frames);
+            assert!(
+                frames.iter().all(|sample| sample.abs() <= 1.0),
+                "limited master exceeded 0 dBFS",
+            );
+        }
+        // Without the limiter the same mix clips past 1.0 — prove the test
+        // has teeth.
+        spec.master_limiter = None;
+        controller.install_plan(&spec).unwrap();
+        let mut hot = false;
+        for _ in 0..20 {
+            executor.render_block(&mut frames);
+            hot |= frames.iter().any(|sample| sample.abs() > 1.0);
+        }
+        assert!(hot, "unlimited reference mix never exceeded 1.0");
+    }
+
+    #[test]
     fn set_stage_gain_retargets_without_recompile() {
         let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
@@ -1822,6 +2153,7 @@ mod tests {
             .install_plan(&RenderPlanSpec {
                 sample_rate_hz: 48_000,
                 master_gain: 1.0,
+                master_limiter: None,
                 stages: vec![lane_a.clone(), lane_b.clone(), master.clone()],
             })
             .unwrap();
@@ -1832,6 +2164,7 @@ mod tests {
             .install_plan(&RenderPlanSpec {
                 sample_rate_hz: 48_000,
                 master_gain: 1.0,
+                master_limiter: None,
                 stages: vec![lane_b, lane_a, master],
             })
             .unwrap();
@@ -1891,6 +2224,7 @@ mod tests {
             RenderPlanSpec {
                 sample_rate_hz: 48_000,
                 master_gain: 1.0,
+                master_limiter: None,
                 stages,
             }
         };
@@ -2038,6 +2372,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 RenderStageSpec {
                     stage_id: 1,
@@ -2068,6 +2403,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 lane_node(7, 1.0, vec![]),
                 lane_node(7, 1.0, vec![]),
@@ -2084,6 +2420,7 @@ mod tests {
         let no_master = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![lane_node(1, 1.0, vec![])],
         };
         let error = controller.install_plan(&no_master).unwrap_err();
@@ -2098,6 +2435,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![master_node(vec![]), two_masters],
         };
         let error = controller.install_plan(&spec).unwrap_err();
@@ -2114,6 +2452,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![master_node(vec![identity_edge(99)])],
         };
         let error = controller.install_plan(&spec).unwrap_err();
@@ -2122,6 +2461,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 lane_node(1, 1.0, vec![]),
                 master_node(vec![RenderEdgeSpec {
@@ -2148,6 +2488,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 master_node(vec![identity_edge(20)]),
                 RenderStageSpec {
@@ -2200,6 +2541,7 @@ mod tests {
             let spec = RenderPlanSpec {
                 sample_rate_hz: 48_000,
                 master_gain: 1.0,
+                master_limiter: None,
                 stages: vec![
                     lane_node(LANE_ID, 1.0, vec![tone_clip(440.0)]),
                     master_node(vec![RenderEdgeSpec {
@@ -2250,6 +2592,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 RenderStageSpec {
                     stage_id: LANE_ID,
@@ -2299,6 +2642,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 lane_node(LANE_ID, 0.25, vec![tone_clip(440.0)]),
                 bus(10),
@@ -2339,6 +2683,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 RenderStageSpec {
                     stage_id: LANE_ID,
@@ -2404,6 +2749,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
+            master_limiter: None,
             stages: vec![
                 RenderStageSpec {
                     stage_id: LANE_ID,
@@ -2435,6 +2781,61 @@ mod tests {
         assert!(frames.chunks_exact(2).all(|frame| frame[1] == 0.0));
     }
 
+    #[test]
+    fn meters_publish_per_stage_levels_and_zero_when_silent() {
+        let (mut controller, mut executor) = render_plane();
+        // No install yet: nothing to resolve against.
+        assert!(controller.meters().is_empty());
+
+        controller.install_plan(&tone_spec(440.0)).unwrap();
+        // Installed but not yet rendered: the shared table still carries the
+        // previous generation, so the controller refuses to mislabel slots.
+        assert!(controller.meters().is_empty());
+
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let meters = controller.meters();
+        assert_eq!(meters.len(), 2);
+        let (lane_id, lane_peak, lane_rms) = meters[0];
+        let (master_id, master_peak, _) = meters[1];
+        assert_eq!(lane_id, LANE_ID);
+        assert_eq!(master_id, MASTER_ID);
+        assert!(lane_peak > 0.01, "lane peak {lane_peak}");
+        assert!(lane_rms > 0.001 && lane_rms <= lane_peak);
+        assert!(master_peak > 0.01, "master peak {master_peak}");
+
+        // Stop: after the ramp-out, silent blocks publish zeros.
+        controller.set_playing(false).unwrap();
+        warm_up(&mut executor, 4);
+        let meters = controller.meters();
+        assert!(meters
+            .iter()
+            .all(|(_, peak, rms)| *peak == 0.0 && *rms == 0.0));
+    }
+
+    #[test]
+    fn callback_health_counters_advance_and_infer_xruns() {
+        let (mut controller, mut executor) = render_plane();
+        controller.install_plan(&tone_spec(440.0)).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut frames = [0.0f32; 512]; // 256 frames ≈ 5.3 ms at 48 kHz.
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        assert_eq!(controller.callback_count(), 2);
+        assert!(
+            controller.max_callback_duration_micros() >= controller.last_callback_duration_micros()
+        );
+        // Back-to-back blocks are far faster than the deadline: no xruns.
+        assert_eq!(controller.xrun_count(), 0);
+
+        // Starve the callback past 1.5 × the block duration: one xrun.
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        executor.render_block(&mut frames);
+        assert_eq!(controller.xrun_count(), 1);
+    }
+
     /// FNV-1a 64 over the bit pattern of rendered samples.
     fn fnv1a_hash_pcm(frames: &[f32]) -> u64 {
         let mut hash = 0xcbf2_9ce4_8422_2325u64;
@@ -2464,6 +2865,7 @@ mod tests {
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 0.8,
+            master_limiter: None,
             stages: vec![
                 lane_node(1, 0.5, vec![tone_clip(440.0)]),
                 lane_node(2, 0.4, vec![tone_clip(660.0)]),

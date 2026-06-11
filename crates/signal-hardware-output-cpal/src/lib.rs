@@ -32,7 +32,7 @@
 
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use signal_hardware::{
@@ -176,6 +176,11 @@ fn negotiate_config(
 /// owner thread, which drops the stream on the thread that built it.
 struct CpalOutputStream {
     state: Arc<AtomicU8>,
+    /// Display detail of the most recent cpal stream error. cpal delivers
+    /// stream errors on a backend worker thread — NOT the audio callback —
+    /// so formatting the string (allocation) and taking this mutex there is
+    /// acceptable; the audio path never touches it.
+    last_error: Arc<Mutex<Option<String>>>,
     sample_rate_hz: u32,
     channels: u16,
     stop: Option<mpsc::Sender<()>>,
@@ -197,6 +202,13 @@ impl OutputStreamHandle for CpalOutputStream {
 
     fn channels(&self) -> u16 {
         self.channels
+    }
+
+    fn last_error(&self) -> Option<String> {
+        self.last_error
+            .lock()
+            .ok()
+            .and_then(|detail| detail.clone())
     }
 }
 
@@ -220,6 +232,8 @@ impl OutputStreamBackend for CpalOutputBackend {
     ) -> Result<Box<dyn OutputStreamHandle>, OutputStreamError> {
         let state = Arc::new(AtomicU8::new(STATE_RUNNING));
         let thread_state = Arc::clone(&state);
+        let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let thread_last_error = Arc::clone(&last_error);
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(u32, u16), OutputStreamError>>();
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
 
@@ -235,6 +249,7 @@ impl OutputStreamBackend for CpalOutputBackend {
                         .ok_or_else(|| OutputStreamError::new("no default output device"))?;
                     let config = negotiate_config(&device, &spec)?;
                     let error_state = Arc::clone(&thread_state);
+                    let error_detail = Arc::clone(&thread_last_error);
                     let stream = device
                         .build_output_stream(
                             &config,
@@ -242,9 +257,14 @@ impl OutputStreamBackend for CpalOutputBackend {
                                 render(frames);
                             },
                             move |error| {
-                                // Stream errors arrive on a backend thread;
-                                // record the fault without blocking.
-                                let _ = error;
+                                // Stream errors arrive on a cpal backend
+                                // worker thread, NOT the audio callback, so
+                                // allocating the Display string and taking
+                                // the mutex here is safe; capture the detail
+                                // instead of discarding it.
+                                if let Ok(mut detail) = error_detail.lock() {
+                                    *detail = Some(error.to_string());
+                                }
                                 error_state.store(STATE_FAULTED, Ordering::Relaxed);
                             },
                             None,
@@ -283,6 +303,7 @@ impl OutputStreamBackend for CpalOutputBackend {
         match negotiated {
             Ok((sample_rate_hz, channels)) => Ok(Box::new(CpalOutputStream {
                 state,
+                last_error,
                 sample_rate_hz,
                 channels,
                 stop: Some(stop_tx),

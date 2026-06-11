@@ -98,6 +98,7 @@ fn main() {
     let bussed_plan = RenderPlanSpec {
         sample_rate_hz,
         master_gain: 0.5,
+        master_limiter: None,
         stages: vec![
             tone_lane(1, 0.4, 440.0),
             tone_lane(2, 0.25, 660.0),
@@ -155,6 +156,7 @@ fn main() {
         .install_plan(&RenderPlanSpec {
             sample_rate_hz,
             master_gain: 0.5,
+            master_limiter: None,
             stages: vec![
                 tone_lane(3, 0.5, 220.0),
                 RenderStageSpec {

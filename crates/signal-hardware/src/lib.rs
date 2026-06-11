@@ -17,6 +17,7 @@
 
 mod backend_contract;
 mod diagnostics;
+pub mod fake_clocked;
 mod output_stream;
 
 pub mod simulated;
@@ -35,6 +36,7 @@ pub use diagnostics::{
     BackendHealth, HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
     HardwareDiagnosticsSnapshot,
 };
+pub use fake_clocked::FakeClockedBackend;
 pub use output_stream::{
     OutputRenderFn, OutputStreamBackend, OutputStreamError, OutputStreamHandle, OutputStreamSpec,
     OutputStreamState,

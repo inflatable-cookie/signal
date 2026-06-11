@@ -76,6 +76,13 @@ pub trait OutputStreamHandle: Send {
     fn sample_rate_hz(&self) -> u32;
     /// The channel count the stream actually runs with.
     fn channels(&self) -> u16;
+    /// Human-readable detail of the most recent backend-reported stream
+    /// error, when the backend captures one (typically alongside a
+    /// [`OutputStreamState::Faulted`] transition). Default: `None` for
+    /// backends without error capture.
+    fn last_error(&self) -> Option<String> {
+        None
+    }
 }
 
 /// A backend capable of opening real output streams.
