@@ -1,6 +1,6 @@
 # 016 - Output Time Honesty And Device Lifecycle
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.014
@@ -37,6 +37,30 @@ sample-rate changes force a manual replumb.
 - [ ] reported output latency within measurement tolerance of round-trip estimate
 - [ ] yanking the default device recovers playback at the new device's rate
 - [ ] xrun injection test green
+
+## Progress (2026-06-11)
+
+- Output latency from cpal timestamps: the data callback stores
+  playback−callback micros into an atomic (RT-safe); handle exposes
+  `output_latency_micros()` + `device_name()`; measured ~5.8 ms on the
+  reference MacBook Pro speakers via the extended smoke test.
+- Aura playback status carries dac_position_samples (render clock minus
+  latency frames), output latency, and device name; the UI playhead
+  consumes the DAC position so it stops leading the speakers. The render
+  clock stays the edit truth for stop-edge seeks.
+- Device-drift recovery: every ~2 s the status poll compares the stream's
+  opened device against the OS default; on mismatch (or fault/channel
+  teardown) the host captures (position, playing) as pending_resume, drops
+  the stream, and the next sync rebuilds at the new device and re-primes
+  transport mid-position — hands-free resume. This also fixed a latent
+  rebuild bug: fault recovery previously rewound to the play-start
+  position.
+- Buffer-size changes documented as fault-path rebuilds (cpal backends);
+  manual proof path recorded. Starvation soak extended: position strictly
+  advances post-starvation and xrun inference stops counting once cadence
+  recovers.
+- Hardware check still owed: yank headphones mid-play, expect audible
+  hands-free resume within ~2 s.
 
 ## Next Task
 

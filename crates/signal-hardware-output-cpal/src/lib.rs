@@ -30,7 +30,7 @@
 
 #![warn(missing_docs)]
 
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 
@@ -75,15 +75,22 @@ pub struct OutputDeviceDescription {
 
 const COMMON_RATES_HZ: [u32; 6] = [44_100, 48_000, 88_200, 96_000, 176_400, 192_000];
 
+/// Name of the host's current default output device, when one exists and
+/// reports a name. Hosts compare this against an open stream's
+/// [`OutputStreamHandle::device_name`] to detect that the OS default moved.
+pub fn default_output_device_name() -> Option<String> {
+    cpal::default_host()
+        .default_output_device()
+        .and_then(|device| device.name().ok())
+}
+
 /// Enumerate real output devices with their supported configurations.
 ///
 /// Replaces inventory-style device listings (system_profiler parsing) with
 /// the same source of truth the streams open against.
 pub fn enumerate_output_devices() -> Result<Vec<OutputDeviceDescription>, OutputStreamError> {
     let host = cpal::default_host();
-    let default_name = host
-        .default_output_device()
-        .and_then(|device| device.name().ok());
+    let default_name = default_output_device_name();
     let devices = host
         .output_devices()
         .map_err(|error| OutputStreamError::new(format!("enumerate output devices: {error}")))?;
@@ -181,8 +188,12 @@ struct CpalOutputStream {
     /// so formatting the string (allocation) and taking this mutex there is
     /// acceptable; the audio path never touches it.
     last_error: Arc<Mutex<Option<String>>>,
+    /// Most recent callback→DAC latency in µs, stored by the data callback
+    /// from cpal's `OutputCallbackInfo` timestamps. 0 = not yet observed.
+    latency_micros: Arc<AtomicU64>,
     sample_rate_hz: u32,
     channels: u16,
+    device_name: Option<String>,
     stop: Option<mpsc::Sender<()>>,
     owner: Option<std::thread::JoinHandle<()>>,
 }
@@ -210,6 +221,17 @@ impl OutputStreamHandle for CpalOutputStream {
             .ok()
             .and_then(|detail| detail.clone())
     }
+
+    fn output_latency_micros(&self) -> Option<u64> {
+        match self.latency_micros.load(Ordering::Relaxed) {
+            0 => None,
+            micros => Some(micros),
+        }
+    }
+
+    fn device_name(&self) -> Option<String> {
+        self.device_name.clone()
+    }
 }
 
 impl Drop for CpalOutputStream {
@@ -234,7 +256,10 @@ impl OutputStreamBackend for CpalOutputBackend {
         let thread_state = Arc::clone(&state);
         let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
         let thread_last_error = Arc::clone(&last_error);
-        let (ready_tx, ready_rx) = mpsc::channel::<Result<(u32, u16), OutputStreamError>>();
+        let latency_micros = Arc::new(AtomicU64::new(0));
+        let thread_latency = Arc::clone(&latency_micros);
+        type Negotiated = (u32, u16, Option<String>);
+        let (ready_tx, ready_rx) = mpsc::channel::<Result<Negotiated, OutputStreamError>>();
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
 
         // The stream lives and dies on this thread; cpal::Stream is not Send
@@ -247,13 +272,28 @@ impl OutputStreamBackend for CpalOutputBackend {
                     let device = host
                         .default_output_device()
                         .ok_or_else(|| OutputStreamError::new("no default output device"))?;
+                    let device_name = device.name().ok();
                     let config = negotiate_config(&device, &spec)?;
                     let error_state = Arc::clone(&thread_state);
                     let error_detail = Arc::clone(&thread_last_error);
+                    let callback_latency = Arc::clone(&thread_latency);
                     let stream = device
                         .build_output_stream(
                             &config,
-                            move |frames: &mut [f32], _info: &cpal::OutputCallbackInfo| {
+                            move |frames: &mut [f32], info: &cpal::OutputCallbackInfo| {
+                                // Output latency = when this buffer will hit
+                                // the DAC minus when the callback ran. RT-safe:
+                                // StreamInstant subtraction plus one atomic
+                                // store, no allocation. Early callbacks may
+                                // not have a usable pair (`None`): keep the
+                                // last observation (0 = never observed).
+                                let timestamp = info.timestamp();
+                                if let Some(latency) =
+                                    timestamp.playback.duration_since(&timestamp.callback)
+                                {
+                                    callback_latency
+                                        .store(latency.as_micros() as u64, Ordering::Relaxed);
+                                }
                                 render(frames);
                             },
                             move |error| {
@@ -275,7 +315,7 @@ impl OutputStreamBackend for CpalOutputBackend {
                     stream.play().map_err(|error| {
                         OutputStreamError::new(format!("start output stream: {error}"))
                     })?;
-                    Ok((stream, (config.sample_rate.0, config.channels)))
+                    Ok((stream, (config.sample_rate.0, config.channels, device_name)))
                 })();
 
                 match open {
@@ -301,11 +341,13 @@ impl OutputStreamBackend for CpalOutputBackend {
             .recv()
             .map_err(|_| OutputStreamError::new("stream thread exited before reporting"))?;
         match negotiated {
-            Ok((sample_rate_hz, channels)) => Ok(Box::new(CpalOutputStream {
+            Ok((sample_rate_hz, channels, device_name)) => Ok(Box::new(CpalOutputStream {
                 state,
                 last_error,
+                latency_micros,
                 sample_rate_hz,
                 channels,
+                device_name,
                 stop: Some(stop_tx),
                 owner: Some(owner),
             })),
@@ -345,6 +387,24 @@ mod tests {
         // Negotiated values are real device properties, never echoes.
         assert!(stream.sample_rate_hz() > 0);
         assert!(stream.channels() > 0);
+        // The opened device's identity is recorded for default-drift checks.
+        assert!(stream.device_name().is_some(), "device name recorded");
+        // Output latency comes from real callback timestamps; give the
+        // stream a few hundred ms of callbacks to observe one.
+        let mut measured = None;
+        for _ in 0..50 {
+            measured = stream.output_latency_micros();
+            if measured.is_some() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        let latency = measured.expect("output latency observed from callback timestamps");
+        assert!(latency > 0);
+        eprintln!(
+            "measured output latency: {latency} us on {:?}",
+            stream.device_name()
+        );
         drop(stream);
     }
 

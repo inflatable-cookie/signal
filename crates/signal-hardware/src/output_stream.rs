@@ -69,6 +69,14 @@ pub struct OutputStreamSpec {
 pub type OutputRenderFn = Box<dyn FnMut(&mut [f32]) + Send + 'static>;
 
 /// Handle to a running output stream. Dropping the handle stops the stream.
+///
+/// # Buffer-size changes
+///
+/// Backends do not renegotiate a live stream's buffer size. On cpal
+/// backends, an OS- or user-driven buffer-size change surfaces as a stream
+/// fault ([`OutputStreamState::Faulted`]): hosts recover through their
+/// existing fault path — drop the handle, reopen, and reinstall/replay. No
+/// special buffer-size handling exists or is needed.
 pub trait OutputStreamHandle: Send {
     /// Current lifecycle state of the stream.
     fn state(&self) -> OutputStreamState;
@@ -81,6 +89,22 @@ pub trait OutputStreamHandle: Send {
     /// [`OutputStreamState::Faulted`] transition). Default: `None` for
     /// backends without error capture.
     fn last_error(&self) -> Option<String> {
+        None
+    }
+    /// Most recently observed output latency in microseconds: the gap
+    /// between a render callback running and the first frame it produced
+    /// hitting the DAC, as reported by the backend's stream timestamps.
+    /// `None` until the backend has observed a usable timestamp pair (the
+    /// first callbacks may not carry one) or for backends without timestamp
+    /// support. Default: `None`.
+    fn output_latency_micros(&self) -> Option<u64> {
+        None
+    }
+    /// OS-reported name of the device this stream actually opened on, when
+    /// the backend records it. Hosts compare this against the current
+    /// default device to detect that the OS default moved. Default: `None`
+    /// for backends without device identity.
+    fn device_name(&self) -> Option<String> {
         None
     }
 }

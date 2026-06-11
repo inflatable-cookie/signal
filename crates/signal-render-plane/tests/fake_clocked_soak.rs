@@ -69,9 +69,12 @@ fn clocked_soak_advances_health_counters_and_meters() {
     let (mut controller, mut executor) = render_plane();
     let block_duration = Duration::from_secs_f64(BLOCK_FRAMES as f64 / SAMPLE_RATE_HZ as f64);
 
-    // Synthetic starvation: every 32nd callback sleeps for ~3 block
-    // durations before rendering, so the next callback arrives late and the
-    // executor's interval inference must count an xrun.
+    // Synthetic starvation: during a bounded early stretch, every 32nd
+    // callback sleeps for ~3 block durations before rendering, so the next
+    // callback arrives late and the executor's interval inference must count
+    // an xrun. Callbacks after the stretch run at clean cadence so the test
+    // can assert recovery.
+    const STARVED_LAST_CALLBACK: u64 = 160;
     let callback_index = Arc::new(AtomicU64::new(0));
     let render_callback_index = Arc::clone(&callback_index);
     let backend = FakeClockedBackend::new();
@@ -84,7 +87,7 @@ fn clocked_soak_advances_health_counters_and_meters() {
             },
             Box::new(move |frames| {
                 let index = render_callback_index.fetch_add(1, Ordering::Relaxed);
-                if index > 0 && index.is_multiple_of(32) {
+                if index > 0 && index <= STARVED_LAST_CALLBACK && index.is_multiple_of(32) {
                     std::thread::sleep(block_duration * 3);
                 }
                 executor.render_block(frames);
@@ -123,6 +126,29 @@ fn clocked_soak_advances_health_counters_and_meters() {
     assert!(
         controller.xrun_count() >= 1,
         "synthetic starvation must register as xruns",
+    );
+
+    // Starvation recovery: after the starved stretch (callbacks ≤160; ~1.5 s
+    // covers well past it) playback must keep advancing and the xrun counter
+    // must stop growing once cadence is clean again. Allow ≤1 straggler from
+    // the first clean interval after the final injected stall.
+    assert!(
+        callback_index.load(Ordering::Relaxed) > STARVED_LAST_CALLBACK,
+        "starved stretch should be over before sampling recovery",
+    );
+    let recovered_position = controller.position_frames();
+    let recovered_xruns = controller.xrun_count();
+    std::thread::sleep(Duration::from_millis(500));
+    assert!(
+        controller.position_frames() > recovered_position,
+        "playback must keep advancing after starvation: {} -> {}",
+        recovered_position,
+        controller.position_frames(),
+    );
+    let xrun_delta = controller.xrun_count() - recovered_xruns;
+    assert!(
+        xrun_delta <= 1,
+        "xruns must stop accruing once cadence recovers, saw +{xrun_delta}",
     );
 
     let meters = controller.meters();
