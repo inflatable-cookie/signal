@@ -11,7 +11,6 @@ pub(super) enum DropoutVariant {
     Light,
     Medium,
     Heavy,
-    ExtendedHeavy,
 }
 
 pub(super) fn build_fill_transition_preset(
@@ -69,15 +68,10 @@ pub(super) fn build_dropout_preset(
             16,
             None,
         ),
-        DropoutVariant::ExtendedHeavy => (None, &[1, 3, 5, 7, 9][..], &[CHORD_A][..], 24, None),
     };
     let mut fixture = FixtureBuilder::new();
     fixture.push_four_four_section(GrooveSection {
-        bars: if matches!(variant, DropoutVariant::ExtendedHeavy) {
-            10
-        } else {
-            6
-        },
+        bars: 6,
         beat_pattern: [0.48, 0.24, 0.36, 0.24],
         chord_cycle,
         chord_every_bars,

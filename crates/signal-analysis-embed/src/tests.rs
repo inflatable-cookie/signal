@@ -241,6 +241,5 @@ mod tests {
         }
     }
 
-    mod model_contract;
     mod semantic_behavior;
 }

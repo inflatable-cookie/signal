@@ -15,7 +15,6 @@ pub(super) enum HarmonicRhythmVariant {
 #[derive(Clone, Copy, Debug)]
 pub(super) enum BarTransitionVariant {
     Pickup,
-    PickupExtended,
     LateShift,
     MixedLength,
     Modulation,
@@ -32,7 +31,6 @@ pub(super) enum BarTransitionVariant {
     ReentryAcceleratingHarmonyReset,
     ReentryDeceleratingHarmonyReset,
     ReentryAcceleratingHarmonySustainedReset,
-    ReentryAcceleratingHarmonyLongSustainedReset,
     ReentryDeceleratingHarmonySustainedReset,
     ReentryAcceleratingHarmonyCadentialReanchor,
     ReentryDeceleratingHarmonyCadentialReanchor,

@@ -88,30 +88,3 @@ pub struct TempoInterpretation {
     pub profile: TempoInterpretationProfile,
 }
 
-/// Continuity-layer action for the tempo value across analysis passes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TempoStateAction {
-    /// Commit the current tempo and hold it across passes.
-    Lock,
-    /// Use tentatively while evidence continues to be evaluated.
-    Monitor,
-    /// Do not use; evidence is insufficient.
-    Defer,
-}
-
-/// Reason for the current tempo state action.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TempoStateReason {
-    /// A stable integer-snapped tempo was confirmed.
-    StableIntegerTempo,
-    /// Tempo is stable in the core despite edge instability.
-    StableTempoWithEdgeDamage,
-    /// A stable refined tempo estimate was produced.
-    StableRefinedTempo,
-    /// Only the core region is stable; edges are unreliable.
-    CoreStableTempo,
-    /// The core-window estimate was used as a fallback.
-    CoreWindowFallback,
-    /// Evidence is insufficient; tempo is deferred.
-    TempoDeferred,
-}

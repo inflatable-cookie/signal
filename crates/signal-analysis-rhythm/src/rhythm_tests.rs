@@ -6,34 +6,8 @@ use signal_analysis::{
     AnalysisCorpusCaseMetadata, AnalysisCorpusFamily, AnalysisMetricValue, AnalysisStage,
 };
 #[cfg(test)]
-use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate, Seconds};
+use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
 
-#[cfg(test)]
-fn default_tempo_stability_scope() -> TempoStabilityScopeSummary {
-    TempoStabilityScopeSummary {
-        scope: TempoStabilityScope::WholeTrackStable,
-        support: TempoStabilityScopeSupport {
-            edge_trimmed_coverage: Confidence::new(1.0),
-            contiguous_core_coverage: Confidence::new(1.0),
-            interior_stability: Confidence::new(1.0),
-            edge_locality: Confidence::new(0.0),
-        },
-    }
-}
-
-#[cfg(test)]
-pub(crate) fn tempo_state_recommendation(
-    interpretation: TempoInterpretation,
-    confidence: Confidence,
-    tempo_ambiguity: Confidence,
-) -> TempoStateRecommendation {
-    tempo_state_recommendation_with_scope(
-        interpretation,
-        confidence,
-        tempo_ambiguity,
-        default_tempo_stability_scope(),
-    )
-}
 #[cfg(test)]
 #[path = "tests/rhythm_test_bar_transition_basic.rs"]
 mod bar_transition_basic;
@@ -99,9 +73,6 @@ mod detection_patterns;
 #[path = "rhythm_tests/detection_sections.rs"]
 mod detection_sections;
 #[cfg(test)]
-#[path = "rhythm_tests/detection_tempo_consumption.rs"]
-mod detection_tempo_consumption;
-#[cfg(test)]
 #[path = "rhythm_tests/detection_tempo_drift.rs"]
 mod detection_tempo_drift;
 #[cfg(test)]
@@ -111,80 +82,11 @@ mod detection_tempo_metrics;
 #[path = "rhythm_tests/meter_confidence_dropouts.rs"]
 mod meter_confidence_dropouts;
 #[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_actions.rs"]
-mod meter_continuity_actions;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_arc_classification.rs"]
-mod meter_continuity_arc_classification;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_arc_support.rs"]
-mod meter_continuity_arc_support;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_causes.rs"]
-mod meter_continuity_causes;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_expiry.rs"]
-mod meter_continuity_expiry;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_history.rs"]
-mod meter_continuity_history;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_provenance.rs"]
-mod meter_continuity_provenance;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_reason.rs"]
-mod meter_continuity_reason;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_severity.rs"]
-mod meter_continuity_severity;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_continuity_triggers.rs"]
-mod meter_continuity_triggers;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_public_categories.rs"]
-mod meter_public_categories;
-#[cfg(test)]
-#[path = "rhythm_tests/meter_structure_fallback.rs"]
-mod meter_structure_fallback;
-#[cfg(test)]
-#[path = "rhythm_tests/rhythm_regression_corpus.rs"]
-mod rhythm_regression_corpus;
-#[cfg(test)]
 #[path = "rhythm_tests/stability_scope.rs"]
 mod stability_scope;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_continuity_arc_surface.rs"]
-mod tempo_continuity_arc_surface;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_continuity_calibration.rs"]
-mod tempo_continuity_calibration;
 #[cfg(test)]
 #[path = "rhythm_tests/tempo_interpretation.rs"]
 mod tempo_interpretation;
 #[cfg(test)]
 #[path = "rhythm_tests/tempo_refine_outliers.rs"]
 mod tempo_refine_outliers;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_state_core_window.rs"]
-mod tempo_state_core_window;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_state_deferred.rs"]
-mod tempo_state_deferred;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_state_guarded_refined.rs"]
-mod tempo_state_guarded_refined;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_state_policy_unification.rs"]
-mod tempo_state_policy_unification;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_state_scope_edges.rs"]
-mod tempo_state_scope_edges;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_state_stable_integer.rs"]
-mod tempo_state_stable_integer;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_structure_summary.rs"]
-mod tempo_structure_summary;
-#[cfg(test)]
-#[path = "rhythm_tests/tempo_structure_windows.rs"]
-mod tempo_structure_windows;

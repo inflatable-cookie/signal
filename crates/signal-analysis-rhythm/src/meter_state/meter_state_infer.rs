@@ -1,4 +1,4 @@
-use super::{MeterDecision, MeterSuppressionProfile};
+use super::MeterDecision;
 use crate::beat_tempo_core::beat_frames_to_seconds;
 use crate::rhythm_policy::*;
 use crate::{downbeat_frames_for_hypothesis, neighborhood_peak};
@@ -15,13 +15,6 @@ pub(crate) fn infer_meter(
     if onset_envelope.is_empty() || beat_frames.len() < 6 {
         return MeterDecision {
             estimate: None,
-            suppression_profile: MeterSuppressionProfile {
-                best_confidence: Confidence::new(0.0),
-                best_support: 0.0,
-                best_regularity: 0.0,
-                trailing_confidence: Confidence::new(0.0),
-                trailing_recent_stability: 0.0,
-            },
             ambiguity: RhythmStructureAmbiguitySummary {
                 kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
                 confidence: Confidence::new(0.0),
@@ -45,13 +38,6 @@ pub(crate) fn infer_meter(
     let Some(best) = hypotheses.first().copied() else {
         return MeterDecision {
             estimate: None,
-            suppression_profile: MeterSuppressionProfile {
-                best_confidence: Confidence::new(0.0),
-                best_support: 0.0,
-                best_regularity: 0.0,
-                trailing_confidence: Confidence::new(0.0),
-                trailing_recent_stability: 0.0,
-            },
             ambiguity: RhythmStructureAmbiguitySummary {
                 kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
                 confidence: Confidence::new(0.0),
@@ -183,19 +169,5 @@ pub(crate) fn infer_meter(
         (None, None) => None,
     };
 
-    MeterDecision {
-        estimate,
-        suppression_profile: MeterSuppressionProfile {
-            best_confidence: confidence,
-            best_support: best.support_ratio,
-            best_regularity: best.regularity,
-            trailing_confidence: trailing_candidate
-                .map(|candidate| candidate.confidence)
-                .unwrap_or(Confidence::new(0.0)),
-            trailing_recent_stability: trailing_candidate
-                .map(|candidate| candidate.hypothesis.recent_strength)
-                .unwrap_or(0.0),
-        },
-        ambiguity,
-    }
+    MeterDecision { estimate, ambiguity }
 }

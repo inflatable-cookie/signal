@@ -29,13 +29,8 @@ mod onset_features;
 mod rhythm_policy;
 mod tempo_interpretation_runtime;
 mod tempo_policy;
-mod tempo_state;
-mod tempo_state_continuity_basics;
-mod tempo_state_continuity_refresh;
-mod tempo_state_continuity_transition;
 mod tracker_config;
 mod tracker_support;
-pub use tempo_state::tempo_state_recommendation_with_scope;
 pub use tracker_config::{AnalysisProfile, BeatTrackerConfig};
 
 use beat_tempo_core::{
@@ -45,9 +40,7 @@ use beat_tempo_core::{
 pub use beat_utils::normalize;
 #[allow(unused_imports)]
 pub(crate) use beat_utils::{beat_phase_score, neighborhood_peak, refine_beat, select_beat_phase};
-use meter_state::{
-    infer_meter, meter_state_recommendation, MeterDecision, MeterSuppressionProfile,
-};
+use meter_state::{infer_meter, MeterDecision};
 use onset_features::{band_profile_change, low_band_flux, multifeature_onset_envelope};
 pub use rhythm_policy::*;
 use signal_analysis::{
@@ -58,7 +51,7 @@ use signal_dsp_spectral::Stft;
 use signal_primitives::{AudioBuffer, Sample, SampleRate, Seconds};
 use tempo_interpretation_runtime::interpret_tempo;
 pub use tempo_policy::*;
-use tempo_policy::{analyze_local_tempo, tempo_summary};
+use tempo_policy::analyze_local_tempo;
 use tracker_support::combine_meter_cues;
 pub(crate) use tracker_support::{
     beat_index_to_seconds, downbeat_frames_for_hypothesis, TempoEstimate, TempoHypothesis,
@@ -143,13 +136,6 @@ impl BeatTracker {
         let meter_decision = if matches!(profile, AnalysisProfile::Low) {
             MeterDecision {
                 estimate: None,
-                suppression_profile: MeterSuppressionProfile {
-                    best_confidence: Confidence::new(0.0),
-                    best_support: 0.0,
-                    best_regularity: 0.0,
-                    trailing_confidence: Confidence::new(0.0),
-                    trailing_recent_stability: 0.0,
-                },
                 ambiguity: RhythmStructureAmbiguitySummary {
                     kind: RhythmStructureAmbiguityKind::InsufficientEvidence,
                     confidence: Confidence::new(0.0),
@@ -180,20 +166,6 @@ impl BeatTracker {
         let tempo_diagnostics = analyze_local_tempo(&beat_positions_seconds);
         let tempo_interpretation =
             interpret_tempo(refined_bpm, confidence, tempo.ambiguity, &tempo_diagnostics);
-        let tempo_state = tempo_state_recommendation_with_scope(
-            tempo_interpretation,
-            confidence,
-            tempo.ambiguity,
-            tempo_diagnostics.stability_scope,
-        );
-        let meter_state = meter_state_recommendation(
-            meter_decision.estimate.as_ref(),
-            meter_decision.suppression_profile,
-            confidence,
-            tempo.ambiguity,
-            refined_bpm,
-            &beat_positions_seconds,
-        );
         let output_bpm = match profile {
             // Low and Medium use a simple integer snap whose tolerance is
             // appropriate for the reduced segment lengths.  The full
@@ -240,9 +212,7 @@ impl BeatTracker {
             tempo_candidates,
             tempo_diagnostics,
             tempo_interpretation,
-            tempo_state,
             tempo_ambiguity: tempo.ambiguity,
-            meter_state,
             meter: meter_decision.estimate,
             structure_ambiguity: meter_decision.ambiguity,
         }

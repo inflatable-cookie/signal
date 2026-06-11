@@ -117,28 +117,3 @@ fn rhythm_acceptance_cases() -> Vec<AnalysisCorpusCase> {
         ]),
     ]
 }
-
-fn trailing_window_audio(audio: &AudioBuffer, seconds: f32) -> AudioBuffer {
-    let sample_rate = audio.sample_rate();
-    let channel_count = audio.channel_count().0.max(1);
-    let requested_frames = sample_rate.seconds_to_frames(Seconds(seconds)).0.max(1);
-    let frames = requested_frames.min(audio.frames().0);
-    let start_frame = audio.frames().0.saturating_sub(frames);
-    let start_sample = start_frame.saturating_mul(channel_count);
-    AudioBuffer::from_interleaved(
-        sample_rate,
-        audio.channels(),
-        audio.samples()[start_sample..].to_vec(),
-    )
-}
-
-fn analyze_trailing_window(
-    audio: &AudioBuffer,
-    config: super::BeatTrackerConfig,
-    seconds: f32,
-) -> super::BeatAnalysisResult {
-    let window = trailing_window_audio(audio, seconds);
-    let mut tracker = super::BeatTracker::new(config);
-    tracker.analyze(&window)
-}
-

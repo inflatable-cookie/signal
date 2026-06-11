@@ -3,86 +3,7 @@ use signal_analysis_character::{CharacterAnalysisResult, CharacterAnalyzerConfig
 
 pub(crate) const DEFAULT_MAX_TAG_COUNT: usize = 3;
 
-/// Fallback behavior when the requested semantic model cannot be loaded.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ModelFallbackBehavior {
-    /// Fail the constructor if the requested model cannot be resolved.
-    FailClosed,
-    /// Use Signal's built-in deterministic descriptor model instead.
-    UseBuiltInDescriptorV1,
-}
-
-/// Source family for an inference model.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SemanticModelSource {
-    /// Model is compiled into the crate and requires no external resources.
-    BuiltIn,
-}
-
-/// Version triple for a semantic inference model contract.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SemanticModelVersion {
-    /// Major version; breaking changes increment this.
-    pub major: u16,
-    /// Minor version; backward-compatible additions increment this.
-    pub minor: u16,
-    /// Patch version; backward-compatible fixes increment this.
-    pub patch: u16,
-}
-
-impl SemanticModelVersion {
-    /// Construct a version triple.
-    pub const fn new(major: u16, minor: u16, patch: u16) -> Self {
-        Self {
-            major,
-            minor,
-            patch,
-        }
-    }
-}
-
-/// Resource and determinism expectations for an inference model.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SemanticModelResourceProfile {
-    /// Number of dimensions in the embedding vector this model produces.
-    pub embedding_dimensions: usize,
-    /// Whether the model produces identical output for identical inputs.
-    pub deterministic: bool,
-    /// Whether the model requires a network connection at inference time.
-    pub requires_network: bool,
-    /// Approximate heap allocation for the model and inference buffers, in bytes.
-    pub estimated_heap_bytes: usize,
-    /// Maximum duration the model will analyse; `None` means no cap.
-    pub analysis_duration_cap_seconds: Option<u32>,
-}
-
-/// Public semantic model contract surface.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SemanticModelSpec {
-    /// Stable string identifier for the resolved model.
-    pub model_id: &'static str,
-    /// Version of the resolved model.
-    pub version: SemanticModelVersion,
-    /// Source family of the resolved model.
-    pub source: SemanticModelSource,
-    /// Fallback policy that was in effect when the model was resolved.
-    pub fallback_behavior: ModelFallbackBehavior,
-    /// Resource and determinism profile for the resolved model.
-    pub resources: SemanticModelResourceProfile,
-    /// Human-readable notes about the model's design or limitations.
-    pub notes: &'static str,
-}
-
-/// Error returned when the requested model cannot be resolved.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModelLoadError {
-    /// The model ID that was requested but could not be resolved.
-    pub requested_model_id: String,
-    /// The fallback policy that was in effect; `FailClosed` is the typical cause.
-    pub fallback_behavior: ModelFallbackBehavior,
-}
-
-/// Semantic labels produced by the built-in descriptor model.
+/// Semantic labels produced by the descriptor projection.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SemanticTagLabel {
     /// Strong pitched/harmonic content dominates the signal.
@@ -125,17 +46,6 @@ pub struct SemanticTag {
     pub evidence: SemanticTagEvidence,
 }
 
-/// Deterministic embedding projected from the descriptor packs.
-#[derive(Clone, Debug, PartialEq)]
-pub struct DescriptorEmbedding {
-    /// Stable identifier of the model that produced this embedding.
-    pub model_id: &'static str,
-    /// Version of the model that produced this embedding.
-    pub version: SemanticModelVersion,
-    /// Embedding vector; length matches `SemanticModelResourceProfile::embedding_dimensions`.
-    pub values: Vec<f32>,
-}
-
 /// Component breakdown of the semantic confidence score.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SemanticConfidenceDiagnostics {
@@ -164,8 +74,6 @@ pub struct SemanticAnalysisDiagnostics {
     pub embedding_l2_norm: f32,
     /// Number of embedding dimensions with non-zero values.
     pub active_embedding_dimensions: usize,
-    /// Whether the built-in fallback model was used instead of the requested one.
-    pub fallback_used: bool,
 }
 
 /// Stable calibration evidence for one frozen semantic corpus case.
@@ -199,8 +107,8 @@ pub struct SemanticCalibrationReport {
 pub struct SemanticAnalysisResult {
     /// Character descriptor packs used as input to embedding.
     pub source_descriptors: CharacterAnalysisResult,
-    /// Projected embedding vector.
-    pub embedding: DescriptorEmbedding,
+    /// Projected embedding vector ([`EMBEDDING_DIMENSIONS`](crate::EMBEDDING_DIMENSIONS) values).
+    pub embedding: Vec<f32>,
     /// Ranked semantic tags, up to `SemanticEmbedderConfig::max_tag_count`.
     pub semantic_tags: Vec<SemanticTag>,
     /// Inference diagnostics and confidence breakdown.
@@ -212,10 +120,6 @@ pub struct SemanticAnalysisResult {
 pub struct SemanticEmbedderConfig {
     /// Configuration forwarded to the internal character analyzer.
     pub character: CharacterAnalyzerConfig,
-    /// Model identifier to resolve; `None` selects the built-in default.
-    pub requested_model_id: Option<String>,
-    /// Behavior when the requested model cannot be resolved.
-    pub fallback_behavior: ModelFallbackBehavior,
     /// Maximum number of semantic tags to include in results.
     pub max_tag_count: usize,
 }
@@ -224,8 +128,6 @@ impl Default for SemanticEmbedderConfig {
     fn default() -> Self {
         Self {
             character: CharacterAnalyzerConfig::default(),
-            requested_model_id: None,
-            fallback_behavior: ModelFallbackBehavior::UseBuiltInDescriptorV1,
             max_tag_count: DEFAULT_MAX_TAG_COUNT,
         }
     }

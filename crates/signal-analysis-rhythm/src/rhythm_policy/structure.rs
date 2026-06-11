@@ -1,9 +1,8 @@
 use signal_analysis::Confidence;
 
 use super::{
-    BeatAnalysisResult, MeterConfidenceBreakdown, MeterContinuityAction, MeterContinuitySource,
-    MeterDetectionKind, MeterEstimate, MeterRecommendation, MeterRecoveryContext, MeterStateAction,
-    MeterStateReason, MeterTrustLevel,
+    BeatAnalysisResult, MeterConfidenceBreakdown, MeterDetectionKind, MeterEstimate,
+    MeterRecommendation, MeterRecoveryContext, MeterTrustLevel,
 };
 
 /// How a bar's position was determined.
@@ -30,25 +29,6 @@ pub struct BarSpan {
     pub support: BarSupportKind,
 }
 
-/// Flattened meter continuity state for embedding in a structure summary.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RhythmStructureContinuitySummary {
-    /// High-level meter state action.
-    pub action: MeterStateAction,
-    /// Reason for the meter state action.
-    pub reason: MeterStateReason,
-    /// Overall meter confidence.
-    pub confidence: Confidence,
-    /// Continuity action for bar length.
-    pub bar_length_action: MeterContinuityAction,
-    /// Confidence in the bar-length continuity.
-    pub bar_length_confidence: Confidence,
-    /// Continuity action for downbeat phase.
-    pub downbeat_phase_action: MeterContinuityAction,
-    /// Confidence in the downbeat-phase continuity.
-    pub downbeat_phase_confidence: Confidence,
-}
-
 /// High-level rhythm structure description for a detected meter.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RhythmStructureSummary {
@@ -70,8 +50,6 @@ pub struct RhythmStructureSummary {
     pub recovered_bar_count: usize,
     /// Recovery context if a sub-segment recovery was used.
     pub recovery: Option<MeterRecoveryContext>,
-    /// Meter continuity state at the time of this summary.
-    pub continuity: RhythmStructureContinuitySummary,
 }
 
 /// Nature of any rhythmic structure ambiguity.
@@ -117,41 +95,6 @@ pub struct RhythmStructureAmbiguitySummary {
     pub runner_up: Option<RhythmStructureCandidate>,
     /// Confidence remaining in a recovery window from a prior pass.
     pub trailing_recovery_confidence: Confidence,
-}
-
-/// Fallback meter continuity information when no structure summary is available.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RhythmStructureFallbackSummary {
-    /// High-level meter state action at fallback time.
-    pub action: MeterStateAction,
-    /// Reason for the meter state action.
-    pub reason: MeterStateReason,
-    /// Overall meter confidence at fallback time.
-    pub confidence: Confidence,
-    /// Continuity action to apply for bar length.
-    pub bar_length_action: MeterContinuityAction,
-    /// Source of the bar-length value being carried.
-    pub bar_length_source: MeterContinuitySource,
-    /// Continuity action to apply for downbeat phase.
-    pub downbeat_phase_action: MeterContinuityAction,
-    /// Source of the downbeat-phase value being carried.
-    pub downbeat_phase_source: MeterContinuitySource,
-    /// Whether a recovery window is present and can be used.
-    pub recovery_window_available: bool,
-    /// Confidence remaining in any trailing recovery window.
-    pub trailing_recovery_confidence: Confidence,
-}
-
-/// Complete rhythm structure assessment returned by
-/// [`BeatAnalysisResult::rhythm_structure_assessment`].
-#[derive(Clone, Debug, PartialEq)]
-pub struct RhythmStructureAssessment {
-    /// Full structure summary, or `None` if no meter was detected.
-    pub structure: Option<RhythmStructureSummary>,
-    /// Ambiguity information regardless of whether a structure was found.
-    pub ambiguity: RhythmStructureAmbiguitySummary,
-    /// Fallback continuity state for use when `structure` is `None`.
-    pub fallback: RhythmStructureFallbackSummary,
 }
 
 pub(crate) fn meter_bar_spans(meter: &MeterEstimate) -> Vec<BarSpan> {
@@ -238,62 +181,6 @@ impl BeatAnalysisResult {
             bars,
             recovered_bar_count,
             recovery: meter.recovery.clone(),
-            continuity: RhythmStructureContinuitySummary {
-                action: self.meter_state.action,
-                reason: self.meter_state.reason,
-                confidence: self.meter_state.confidence,
-                bar_length_action: self.meter_state.continuity.bar_length.action,
-                bar_length_confidence: self.meter_state.continuity.bar_length.confidence,
-                downbeat_phase_action: self.meter_state.continuity.downbeat_phase.action,
-                downbeat_phase_confidence: self.meter_state.continuity.downbeat_phase.confidence,
-            },
         })
-    }
-
-    /// Build a complete [`RhythmStructureAssessment`] including ambiguity and
-    /// fallback continuity regardless of whether a meter was detected.
-    pub fn rhythm_structure_assessment(&self) -> RhythmStructureAssessment {
-        let structure = self.rhythm_structure_summary();
-        let fallback = RhythmStructureFallbackSummary {
-            action: self.meter_state.action,
-            reason: self.meter_state.reason,
-            confidence: self.meter_state.confidence,
-            bar_length_action: self.meter_state.continuity.bar_length.action,
-            bar_length_source: self.meter_state.continuity.bar_length.source,
-            downbeat_phase_action: self.meter_state.continuity.downbeat_phase.action,
-            downbeat_phase_source: self.meter_state.continuity.downbeat_phase.source,
-            recovery_window_available: self
-                .meter
-                .as_ref()
-                .and_then(|estimate| estimate.recovery.as_ref())
-                .is_some()
-                || self.structure_ambiguity.trailing_recovery_confidence.0 > 0.0,
-            trailing_recovery_confidence: self.structure_ambiguity.trailing_recovery_confidence,
-        };
-        let mut ambiguity = self.structure_ambiguity;
-
-        if structure.is_some()
-            && matches!(
-                ambiguity.kind,
-                RhythmStructureAmbiguityKind::RecoveryWindowFallback
-            )
-            && matches!(
-                fallback.bar_length_source,
-                MeterContinuitySource::CurrentMeter
-            )
-        {
-            ambiguity.kind = RhythmStructureAmbiguityKind::WeakAccent;
-        } else if structure.is_none()
-            && fallback.recovery_window_available
-            && !matches!(ambiguity.kind, RhythmStructureAmbiguityKind::CompetingMeter)
-        {
-            ambiguity.kind = RhythmStructureAmbiguityKind::RecoveryWindowFallback;
-        }
-
-        RhythmStructureAssessment {
-            structure,
-            ambiguity,
-            fallback,
-        }
     }
 }

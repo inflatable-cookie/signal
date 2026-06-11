@@ -127,7 +127,7 @@ fn beat_tracker_classifies_whole_track_stable_scope_for_click_track() {
     );
     assert!(
         result
-            .tempo_consumption(None)
+            .tempo_diagnostics
             .stability_scope
             .support
             .edge_trimmed_coverage

@@ -145,9 +145,13 @@ fn analyze_preset(preset: RhythmPreset) -> (f32, super::BeatAnalysisResult) {
 }
 
 fn rhythm_metrics(result: &super::BeatAnalysisResult) -> Vec<AnalysisMetricValue> {
-    let assessment = result.rhythm_structure_assessment();
+    let structure = result.rhythm_structure_summary();
     let meter = result.meter.as_ref();
-    let structure = assessment.structure.as_ref();
+    let structure = structure.as_ref();
+    let recovery_window_available = meter
+        .and_then(|estimate| estimate.recovery.as_ref())
+        .is_some()
+        || result.structure_ambiguity.trailing_recovery_confidence.0 > 0.0;
 
     vec![
         AnalysisMetricValue::new("bpm", result.bpm),
@@ -178,7 +182,7 @@ fn rhythm_metrics(result: &super::BeatAnalysisResult) -> Vec<AnalysisMetricValue
         ),
         AnalysisMetricValue::new(
             "recovery_window_available",
-            if assessment.fallback.recovery_window_available {
+            if recovery_window_available {
                 1.0
             } else {
                 0.0

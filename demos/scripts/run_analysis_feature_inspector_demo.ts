@@ -83,8 +83,8 @@ const operatorChecks = [
     id: "operator.analysis-feature.rhythm-posture",
     status: hasAllTokens(rhythmResult.stdout, [
       "estimated_bpm=",
-      "tempo_state=action:",
-      "tempo_consumption=",
+      "tempo_interpretation=trust:",
+      "tempo_candidates=",
     ])
       ? "passed"
       : "failed",
@@ -190,11 +190,11 @@ writeText(
       {
         title: "Rhythm posture",
         subtitle:
-          "Current tempo and meter-consumption summary from the offline rhythm example.",
+          "Current tempo and meter summary from the offline rhythm example.",
         items: [
           ["Estimated BPM", rhythm.estimated_bpm ?? "n/a"],
-          ["Tempo state", rhythm.tempo_state ?? "n/a"],
-          ["Tempo consumption", rhythm.tempo_consumption ?? "n/a"],
+          ["Tempo interpretation", rhythm.tempo_interpretation ?? "n/a"],
+          ["Tempo candidates", rhythm.tempo_candidates ?? "n/a"],
           ["Beats per bar", rhythm.beats_per_bar ?? "n/a"],
           ["Meter confidence", rhythm.meter_confidence ?? "n/a"],
           ["Meter detection", rhythm.meter_detection ?? "n/a"],

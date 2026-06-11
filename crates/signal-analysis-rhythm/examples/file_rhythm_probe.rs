@@ -45,10 +45,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         result.tempo_interpretation.profile.stability_score.0,
         result.tempo_interpretation.profile.boundary_edge_gap_ms
     );
-    println!(
-        "tempo_state={:?}/{:?}@{:.3}",
-        result.tempo_state.action, result.tempo_state.reason, result.tempo_state.confidence.0
-    );
     println!("tempo_candidates={}", result.tempo_candidates.len());
     for candidate in result.tempo_candidates.iter().take(6) {
         println!(
@@ -56,15 +52,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             candidate.bpm, candidate.confidence.0
         );
     }
-    println!(
-        "tempo_consumption=current:{:?}@{:?}/fallback:{:?}@{:?}/after:{}/scope:{:?}",
-        result.tempo_consumption(None).current.source,
-        result.tempo_consumption(None).current.bpm,
-        result.tempo_consumption(None).fallback.source,
-        result.tempo_consumption(None).fallback.bpm,
-        result.tempo_consumption(None).fallback_after_beats,
-        result.tempo_consumption(None).stability_scope.scope
-    );
     println!("tempo_ambiguity={:.3}", result.tempo_ambiguity.0);
     println!("beats={}", result.beat_positions_seconds.len());
     print_tempo_diagnostics(&result.tempo_diagnostics);

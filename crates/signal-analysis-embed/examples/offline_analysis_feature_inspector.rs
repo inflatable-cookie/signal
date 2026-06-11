@@ -16,8 +16,7 @@ fn main() {
     let mut character = CharacterAnalyzer::new(CharacterAnalyzerConfig::default());
     let character_result = character.analyze(&audio);
 
-    let mut semantic = SemanticEmbedder::new(SemanticEmbedderConfig::default())
-        .expect("built-in semantic model should load");
+    let mut semantic = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let semantic_result = semantic.analyze(&audio);
     let top_tag = &semantic_result.semantic_tags[0];
 

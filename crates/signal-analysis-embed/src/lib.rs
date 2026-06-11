@@ -1,11 +1,13 @@
-//! Descriptor-based embedding and semantic inference for Signal.
+//! Descriptor-based semantic projection for Signal.
 //!
-//! The crate owns a first host-neutral semantic-analysis boundary built on top
-//! of shared descriptor packs rather than app-local feature extraction.
+//! The crate projects shared character descriptor packs into a small
+//! deterministic descriptor vector and matches it against hand-written
+//! semantic tag prototypes. There is no learned model here — just explicit,
+//! explainable descriptor arithmetic.
 //!
 //! ```no_run
 //! use signal_analysis::AnalysisStage;
-//! use signal_analysis_embed::{ModelFallbackBehavior, SemanticEmbedder, SemanticEmbedderConfig};
+//! use signal_analysis_embed::{SemanticEmbedder, SemanticEmbedderConfig, EMBEDDING_DIMENSIONS};
 //! use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
 //!
 //! let audio = AudioBuffer::from_interleaved(
@@ -13,15 +15,11 @@
 //!     ChannelLayout::Mono,
 //!     vec![0.0; 48_000],
 //! );
-//! let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig {
-//!     fallback_behavior: ModelFallbackBehavior::UseBuiltInDescriptorV1,
-//!     ..SemanticEmbedderConfig::default()
-//! })
-//! .expect("built-in semantic model should load");
+//! let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
 //! let result = embedder.analyze(&audio);
 //!
 //! assert_eq!(embedder.mode(), signal_analysis::AnalysisMode::Offline);
-//! assert_eq!(result.embedding.values.len(), 8);
+//! assert_eq!(result.embedding.len(), EMBEDDING_DIMENSIONS);
 //! ```
 
 #![warn(missing_docs)]
@@ -30,18 +28,15 @@ use signal_analysis::{AnalysisMode, AnalysisStage};
 use signal_analysis_character::{CharacterAnalysisResult, CharacterAnalyzer};
 use signal_primitives::AudioBuffer;
 
-mod builtin_model;
+mod projection;
 mod types;
 
+pub use projection::{descriptor_embedding, semantic_tags, EMBEDDING_DIMENSIONS};
 pub use types::{
-    DescriptorEmbedding, ModelFallbackBehavior, ModelLoadError, SemanticAnalysisDiagnostics,
-    SemanticAnalysisResult, SemanticCalibrationCaseReport, SemanticCalibrationReport,
-    SemanticConfidenceDiagnostics, SemanticEmbedderConfig, SemanticModelResourceProfile,
-    SemanticModelSource, SemanticModelSpec, SemanticModelVersion, SemanticTag, SemanticTagEvidence,
-    SemanticTagLabel,
+    SemanticAnalysisDiagnostics, SemanticAnalysisResult, SemanticCalibrationCaseReport,
+    SemanticCalibrationReport, SemanticConfidenceDiagnostics, SemanticEmbedderConfig, SemanticTag,
+    SemanticTagEvidence, SemanticTagLabel,
 };
-
-use builtin_model::{BuiltInDescriptorSemanticModel, BUILTIN_DESCRIPTOR_MODEL_ID};
 
 /// Offline semantic embedder that projects shared descriptor packs into a
 /// deterministic embedding and ranked semantic tags.
@@ -49,32 +44,15 @@ use builtin_model::{BuiltInDescriptorSemanticModel, BUILTIN_DESCRIPTOR_MODEL_ID}
 pub struct SemanticEmbedder {
     config: SemanticEmbedderConfig,
     character_analyzer: CharacterAnalyzer,
-    model: BuiltInDescriptorSemanticModel,
-    fallback_used: bool,
 }
 
 impl SemanticEmbedder {
-    /// Resolve the requested model or configured fallback.
-    pub fn new(config: SemanticEmbedderConfig) -> Result<Self, ModelLoadError> {
-        let requested_model_id = config
-            .requested_model_id
-            .as_deref()
-            .unwrap_or(BUILTIN_DESCRIPTOR_MODEL_ID);
-        let (model, fallback_used) =
-            BuiltInDescriptorSemanticModel::resolve(requested_model_id, &config)?;
-
-        Ok(Self {
+    /// Create an embedder with the provided config.
+    pub fn new(config: SemanticEmbedderConfig) -> Self {
+        Self {
             character_analyzer: CharacterAnalyzer::new(config.character),
             config,
-            model,
-            fallback_used,
-        })
-    }
-
-    /// Return the resolved semantic model contract.
-    pub fn model_spec(&self) -> SemanticModelSpec {
-        self.model
-            .spec(self.config.character, self.config.fallback_behavior)
+        }
     }
 
     /// Project precomputed character descriptors into the embedding space.
@@ -82,8 +60,7 @@ impl SemanticEmbedder {
         &self,
         descriptors: CharacterAnalysisResult,
     ) -> SemanticAnalysisResult {
-        self.model
-            .build_analysis_result(descriptors, self.config.max_tag_count, self.fallback_used)
+        projection::build_analysis_result(descriptors, self.config.max_tag_count)
     }
 }
 

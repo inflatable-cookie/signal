@@ -1,10 +1,10 @@
 use super::*;
-use crate::builtin_model::EMBEDDING_DIMENSIONS;
+use crate::EMBEDDING_DIMENSIONS;
 
 #[test]
 fn tonal_audio_prefers_tonal_focus() {
     let audio = sine_audio(440.0, 2.0, 48_000, 1.0);
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let result = embedder.analyze(&audio);
 
     assert_eq!(top_label(&result), SemanticTagLabel::TonalFocus);
@@ -12,7 +12,7 @@ fn tonal_audio_prefers_tonal_focus() {
         result.diagnostics.top_tag_label,
         Some(SemanticTagLabel::TonalFocus)
     );
-    assert_eq!(result.embedding.values.len(), EMBEDDING_DIMENSIONS);
+    assert_eq!(result.embedding.len(), EMBEDDING_DIMENSIONS);
     assert!(result.source_descriptors.spectral_shape.flatness < 1e-4);
     assert_eq!(
         result.semantic_tags[0].evidence.primary_driver,
@@ -23,7 +23,7 @@ fn tonal_audio_prefers_tonal_focus() {
 #[test]
 fn noisy_audio_prefers_textural_noise() {
     let audio = noise_audio(2.0, 48_000, 0.5);
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let result = embedder.analyze(&audio);
 
     assert_eq!(top_label(&result), SemanticTagLabel::TexturalNoise);
@@ -41,7 +41,7 @@ fn noisy_audio_prefers_textural_noise() {
 #[test]
 fn pulse_audio_prefers_pulse_driven_or_dynamic_punch() {
     let audio = adsr_pulse_audio(5, 120, 100, 500, 6, 48_000, 0.9);
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let result = embedder.analyze(&audio);
 
     assert!(matches!(
@@ -65,8 +65,7 @@ fn max_tag_count_limits_ranked_output() {
     let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig {
         max_tag_count: 2,
         ..SemanticEmbedderConfig::default()
-    })
-    .unwrap();
+    });
     let result = embedder.analyze(&audio);
 
     assert_eq!(result.semantic_tags.len(), 2);
@@ -75,7 +74,7 @@ fn max_tag_count_limits_ranked_output() {
 #[test]
 fn semantic_diagnostics_are_bounded() {
     let audio = adsr_pulse_audio(5, 140, 120, 500, 6, 48_000, 0.9);
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let result = embedder.analyze(&audio);
 
     assert!(result.diagnostics.embedding_l2_norm.is_finite());
@@ -128,7 +127,7 @@ fn semantic_diagnostics_are_bounded() {
 
 #[test]
 fn frozen_semantic_calibration_report_has_expected_top_tag_and_confidence_posture() {
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let report = semantic_calibration_report(&mut embedder);
 
     println!("semantic_calibration_report={report:#?}");
@@ -169,7 +168,7 @@ fn frozen_semantic_cases_have_explicit_confidence_ordering() {
     let noise = noise_audio(2.0, 48_000, 0.5);
     let pulse = adsr_pulse_audio(5, 140, 120, 500, 6, 48_000, 0.9);
 
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let tone_result = embedder.analyze(&tone);
     let noise_result = embedder.analyze(&noise);
     let pulse_result = embedder.analyze(&pulse);
@@ -197,7 +196,7 @@ fn frozen_semantic_cases_have_explicit_confidence_ordering() {
 #[test]
 fn harness_semantic_cases_meet_frozen_acceptance_thresholds() {
     let cases = semantic_acceptance_cases();
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
 
     let report =
         run_audio_acceptance_harness(&cases, |audio| embedder.analyze(audio), semantic_metrics);
@@ -212,7 +211,7 @@ fn harness_semantic_cases_meet_frozen_acceptance_thresholds() {
 #[test]
 fn frozen_semantic_acceptance_report_remains_interpretable_for_closeout() {
     let cases = semantic_acceptance_cases();
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
 
     let report =
         run_audio_acceptance_harness(&cases, |audio| embedder.analyze(audio), semantic_metrics);
@@ -229,23 +228,14 @@ fn semantic_examples_remain_interpretable_for_closeout() {
     let noise = noise_audio(2.0, 48_000, 0.5);
     let pulse = adsr_pulse_audio(5, 140, 120, 500, 6, 48_000, 0.9);
 
-    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default()).unwrap();
+    let mut embedder = SemanticEmbedder::new(SemanticEmbedderConfig::default());
     let tone_result = embedder.analyze(&tone);
     let noise_result = embedder.analyze(&noise);
     let pulse_result = embedder.analyze(&pulse);
 
-    let mut fallback_embedder = SemanticEmbedder::new(SemanticEmbedderConfig {
-        requested_model_id: Some("signal:missing-model".to_string()),
-        fallback_behavior: ModelFallbackBehavior::UseBuiltInDescriptorV1,
-        ..SemanticEmbedderConfig::default()
-    })
-    .unwrap();
-    let fallback_result = fallback_embedder.analyze(&tone);
-
     println!("tone_semantic={:#?}", tone_result);
     println!("noise_semantic={:#?}", noise_result);
     println!("pulse_semantic={:#?}", pulse_result);
-    println!("fallback_semantic={:#?}", fallback_result);
 
     assert_eq!(top_label(&tone_result), SemanticTagLabel::TonalFocus);
     assert_eq!(top_label(&noise_result), SemanticTagLabel::TexturalNoise);
@@ -253,11 +243,6 @@ fn semantic_examples_remain_interpretable_for_closeout() {
         top_label(&pulse_result),
         SemanticTagLabel::PulseDriven | SemanticTagLabel::DynamicPunch
     ));
-    assert!(fallback_result.diagnostics.fallback_used);
-    assert_eq!(
-        fallback_result.embedding.model_id,
-        BUILTIN_DESCRIPTOR_MODEL_ID
-    );
     assert_eq!(
         tone_result.semantic_tags[0].evidence.primary_driver,
         "harmonic_focus"

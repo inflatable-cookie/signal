@@ -7,59 +7,6 @@ mod meter_cues;
 
 pub(crate) use meter_cues::{band_profile_change, low_band_flux};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum OnsetFeatureKind {
-    Flux,
-    BandFlux,
-    Complex,
-    HighFrequencyContent,
-    Energy,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum OnsetFeatureAvailability {
-    Ready,
-    WorkerPanicked,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct OnsetFeatureStatus {
-    kind: OnsetFeatureKind,
-    availability: OnsetFeatureAvailability,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-struct OnsetFeatureAvailabilityReport {
-    statuses: Vec<OnsetFeatureStatus>,
-}
-
-impl OnsetFeatureAvailabilityReport {
-    fn push(&mut self, status: OnsetFeatureStatus) {
-        self.statuses.push(status);
-    }
-
-    #[cfg(test)]
-    fn degraded_count(&self) -> usize {
-        self.statuses
-            .iter()
-            .filter(|status| status.availability != OnsetFeatureAvailability::Ready)
-            .count()
-    }
-}
-
-#[derive(Debug, Clone)]
-struct OnsetFeatureWorkerResult {
-    values: Vec<f32>,
-    status: OnsetFeatureStatus,
-}
-
-#[derive(Debug, Clone)]
-struct OnsetEnvelopeComputation {
-    envelope: Vec<f32>,
-    #[cfg_attr(not(test), allow(dead_code))]
-    availability: OnsetFeatureAvailabilityReport,
-}
-
 fn spectral_flux(spectrogram: &Spectrogram) -> Vec<f32> {
     let mut envelope = Vec::with_capacity(spectrogram.frames.len());
     let mut previous: Option<&[f32]> = None;
@@ -224,255 +171,6 @@ fn energy_flux(samples: &[f32], sample_rate: SampleRate, hop_size: usize) -> Vec
     flux
 }
 
-fn expected_energy_flux_len(samples: &[f32], sample_rate: SampleRate, hop_size: usize) -> usize {
-    if samples.is_empty() || sample_rate.0 == 0 || hop_size == 0 {
-        return 0;
-    }
-
-    let window_size = hop_size * 2;
-    let mut count = 0usize;
-    let mut start = 0usize;
-
-    while start < samples.len() {
-        let end = (start + window_size).min(samples.len());
-        if end <= start {
-            break;
-        }
-        count += 1;
-        if end == samples.len() {
-            break;
-        }
-        start = start.saturating_add(hop_size);
-    }
-
-    count
-}
-
-fn worker_result_from_join(
-    kind: OnsetFeatureKind,
-    expected_len: usize,
-    join_result: std::thread::Result<Vec<f32>>,
-) -> OnsetFeatureWorkerResult {
-    match join_result {
-        Ok(values) => OnsetFeatureWorkerResult {
-            values,
-            status: OnsetFeatureStatus {
-                kind,
-                availability: OnsetFeatureAvailability::Ready,
-            },
-        },
-        Err(_) => OnsetFeatureWorkerResult {
-            values: vec![0.0; expected_len],
-            status: OnsetFeatureStatus {
-                kind,
-                availability: OnsetFeatureAvailability::WorkerPanicked,
-            },
-        },
-    }
-}
-
-fn combine_reduced_feature_results(
-    flux: OnsetFeatureWorkerResult,
-    band_flux: OnsetFeatureWorkerResult,
-    energy: OnsetFeatureWorkerResult,
-) -> OnsetEnvelopeComputation {
-    let len = flux
-        .values
-        .len()
-        .max(band_flux.values.len())
-        .max(energy.values.len());
-    let mut combined = vec![0.0; len];
-    for (index, value) in combined.iter_mut().enumerate().take(len) {
-        let flux_value = flux.values.get(index).copied().unwrap_or(0.0);
-        let band_flux_value = band_flux.values.get(index).copied().unwrap_or(0.0);
-        let energy_value = energy.values.get(index).copied().unwrap_or(0.0);
-        *value = 0.48 * flux_value + 0.38 * band_flux_value + 0.14 * energy_value;
-    }
-
-    sharpen_onset_envelope(&mut combined);
-    normalize(&mut combined);
-
-    let mut availability = OnsetFeatureAvailabilityReport::default();
-    availability.push(flux.status);
-    availability.push(band_flux.status);
-    availability.push(energy.status);
-
-    OnsetEnvelopeComputation {
-        envelope: combined,
-        availability,
-    }
-}
-
-fn combine_full_feature_results(
-    flux: OnsetFeatureWorkerResult,
-    band_flux: OnsetFeatureWorkerResult,
-    complex: OnsetFeatureWorkerResult,
-    hfc: OnsetFeatureWorkerResult,
-    energy: OnsetFeatureWorkerResult,
-) -> OnsetEnvelopeComputation {
-    let len = flux
-        .values
-        .len()
-        .max(band_flux.values.len())
-        .max(complex.values.len())
-        .max(hfc.values.len())
-        .max(energy.values.len());
-
-    let mut combined = vec![0.0; len];
-    for (index, value) in combined.iter_mut().enumerate().take(len) {
-        let flux_value = flux.values.get(index).copied().unwrap_or(0.0);
-        let band_flux_value = band_flux.values.get(index).copied().unwrap_or(0.0);
-        let complex_value = complex.values.get(index).copied().unwrap_or(0.0);
-        let hfc_value = hfc.values.get(index).copied().unwrap_or(0.0);
-        let energy_value = energy.values.get(index).copied().unwrap_or(0.0);
-        *value = 0.28 * flux_value
-            + 0.22 * band_flux_value
-            + 0.30 * complex_value
-            + 0.12 * hfc_value
-            + 0.08 * energy_value;
-    }
-
-    sharpen_onset_envelope(&mut combined);
-    normalize(&mut combined);
-
-    let mut availability = OnsetFeatureAvailabilityReport::default();
-    availability.push(flux.status);
-    availability.push(band_flux.status);
-    availability.push(complex.status);
-    availability.push(hfc.status);
-    availability.push(energy.status);
-
-    OnsetEnvelopeComputation {
-        envelope: combined,
-        availability,
-    }
-}
-
-fn compute_reduced_onset_with_workers<FFlux, FBandFlux, FEnergy>(
-    spectral_feature_len: usize,
-    energy_feature_len: usize,
-    flux_worker: FFlux,
-    band_flux_worker: FBandFlux,
-    energy_worker: FEnergy,
-) -> OnsetEnvelopeComputation
-where
-    FFlux: FnOnce() -> Vec<f32> + Send,
-    FBandFlux: FnOnce() -> Vec<f32> + Send,
-    FEnergy: FnOnce() -> Vec<f32> + Send,
-{
-    let (flux, band_flux, energy) = std::thread::scope(|s| {
-        let flux_handle = s.spawn(flux_worker);
-        let band_flux_handle = s.spawn(band_flux_worker);
-        let energy_handle = s.spawn(energy_worker);
-
-        (
-            worker_result_from_join(
-                OnsetFeatureKind::Flux,
-                spectral_feature_len,
-                flux_handle.join(),
-            ),
-            worker_result_from_join(
-                OnsetFeatureKind::BandFlux,
-                spectral_feature_len,
-                band_flux_handle.join(),
-            ),
-            worker_result_from_join(
-                OnsetFeatureKind::Energy,
-                energy_feature_len,
-                energy_handle.join(),
-            ),
-        )
-    });
-
-    combine_reduced_feature_results(flux, band_flux, energy)
-}
-
-fn compute_full_onset_with_workers<FFlux, FBandFlux, FComplex, FHfc, FEnergy>(
-    spectral_feature_len: usize,
-    energy_feature_len: usize,
-    flux_worker: FFlux,
-    band_flux_worker: FBandFlux,
-    complex_worker: FComplex,
-    hfc_worker: FHfc,
-    energy_worker: FEnergy,
-) -> OnsetEnvelopeComputation
-where
-    FFlux: FnOnce() -> Vec<f32> + Send,
-    FBandFlux: FnOnce() -> Vec<f32> + Send,
-    FComplex: FnOnce() -> Vec<f32> + Send,
-    FHfc: FnOnce() -> Vec<f32> + Send,
-    FEnergy: FnOnce() -> Vec<f32> + Send,
-{
-    let (flux, band_flux, complex, hfc, energy) = std::thread::scope(|s| {
-        let flux_handle = s.spawn(flux_worker);
-        let band_flux_handle = s.spawn(band_flux_worker);
-        let complex_handle = s.spawn(complex_worker);
-        let hfc_handle = s.spawn(hfc_worker);
-        let energy_handle = s.spawn(energy_worker);
-
-        (
-            worker_result_from_join(
-                OnsetFeatureKind::Flux,
-                spectral_feature_len,
-                flux_handle.join(),
-            ),
-            worker_result_from_join(
-                OnsetFeatureKind::BandFlux,
-                spectral_feature_len,
-                band_flux_handle.join(),
-            ),
-            worker_result_from_join(
-                OnsetFeatureKind::Complex,
-                spectral_feature_len,
-                complex_handle.join(),
-            ),
-            worker_result_from_join(
-                OnsetFeatureKind::HighFrequencyContent,
-                spectral_feature_len,
-                hfc_handle.join(),
-            ),
-            worker_result_from_join(
-                OnsetFeatureKind::Energy,
-                energy_feature_len,
-                energy_handle.join(),
-            ),
-        )
-    });
-
-    combine_full_feature_results(flux, band_flux, complex, hfc, energy)
-}
-
-fn multifeature_onset_envelope_with_report(
-    spectrogram: &Spectrogram,
-    mono_samples: &[f32],
-    sample_rate: SampleRate,
-    hop_size: usize,
-    reduced_features: bool,
-) -> OnsetEnvelopeComputation {
-    let spectral_feature_len = spectrogram.frames.len();
-    let energy_feature_len = expected_energy_flux_len(mono_samples, sample_rate, hop_size);
-
-    if reduced_features {
-        return compute_reduced_onset_with_workers(
-            spectral_feature_len,
-            energy_feature_len,
-            || spectral_flux(spectrogram),
-            || bandwise_spectral_flux(spectrogram, 6),
-            || energy_flux(mono_samples, sample_rate, hop_size),
-        );
-    }
-
-    compute_full_onset_with_workers(
-        spectral_feature_len,
-        energy_feature_len,
-        || spectral_flux(spectrogram),
-        || bandwise_spectral_flux(spectrogram, 6),
-        || complex_domain_difference(spectrogram),
-        || high_frequency_content(spectrogram),
-        || energy_flux(mono_samples, sample_rate, hop_size),
-    )
-}
-
 pub(crate) fn multifeature_onset_envelope(
     spectrogram: &Spectrogram,
     mono_samples: &[f32],
@@ -480,14 +178,48 @@ pub(crate) fn multifeature_onset_envelope(
     hop_size: usize,
     reduced_features: bool,
 ) -> Vec<f32> {
-    multifeature_onset_envelope_with_report(
-        spectrogram,
-        mono_samples,
-        sample_rate,
-        hop_size,
-        reduced_features,
-    )
-    .envelope
+    let flux = spectral_flux(spectrogram);
+    let band_flux = bandwise_spectral_flux(spectrogram, 6);
+    let energy = energy_flux(mono_samples, sample_rate, hop_size);
+
+    let mut combined = if reduced_features {
+        let len = flux.len().max(band_flux.len()).max(energy.len());
+        let mut combined = vec![0.0; len];
+        for (index, value) in combined.iter_mut().enumerate() {
+            let flux_value = flux.get(index).copied().unwrap_or(0.0);
+            let band_flux_value = band_flux.get(index).copied().unwrap_or(0.0);
+            let energy_value = energy.get(index).copied().unwrap_or(0.0);
+            *value = 0.48 * flux_value + 0.38 * band_flux_value + 0.14 * energy_value;
+        }
+        combined
+    } else {
+        let complex = complex_domain_difference(spectrogram);
+        let hfc = high_frequency_content(spectrogram);
+        let len = flux
+            .len()
+            .max(band_flux.len())
+            .max(complex.len())
+            .max(hfc.len())
+            .max(energy.len());
+        let mut combined = vec![0.0; len];
+        for (index, value) in combined.iter_mut().enumerate() {
+            let flux_value = flux.get(index).copied().unwrap_or(0.0);
+            let band_flux_value = band_flux.get(index).copied().unwrap_or(0.0);
+            let complex_value = complex.get(index).copied().unwrap_or(0.0);
+            let hfc_value = hfc.get(index).copied().unwrap_or(0.0);
+            let energy_value = energy.get(index).copied().unwrap_or(0.0);
+            *value = 0.28 * flux_value
+                + 0.22 * band_flux_value
+                + 0.30 * complex_value
+                + 0.12 * hfc_value
+                + 0.08 * energy_value;
+        }
+        combined
+    };
+
+    sharpen_onset_envelope(&mut combined);
+    normalize(&mut combined);
+    combined
 }
 
 fn sharpen_onset_envelope(values: &mut [f32]) {
@@ -510,65 +242,5 @@ fn sharpen_onset_envelope(values: &mut [f32]) {
         let previous = index.checked_sub(1).map(|i| source[i]).unwrap_or(0.0);
         let rising_edge = (source[index] - previous).max(0.0);
         values[index] = (source[index] - 0.65 * local_mean).max(0.0) + 0.2 * rising_edge;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{
-        compute_full_onset_with_workers, compute_reduced_onset_with_workers,
-        OnsetFeatureAvailability, OnsetFeatureKind,
-    };
-
-    #[test]
-    fn reduced_onset_containment_recovers_from_worker_panic() {
-        let computation = compute_reduced_onset_with_workers(
-            4,
-            3,
-            || vec![0.0, 0.7, 0.2, 0.1],
-            || panic!("band flux worker lost"),
-            || vec![0.0, 0.2, 0.1],
-        );
-
-        assert_eq!(computation.envelope.len(), 4);
-        assert_eq!(computation.availability.degraded_count(), 1);
-        assert_eq!(
-            computation
-                .availability
-                .statuses
-                .iter()
-                .find(|status| status.kind == OnsetFeatureKind::BandFlux)
-                .map(|status| status.availability),
-            Some(OnsetFeatureAvailability::WorkerPanicked)
-        );
-        assert!(computation.envelope.iter().all(|value| value.is_finite()));
-        assert!(computation.envelope.iter().any(|value| *value > 0.0));
-    }
-
-    #[test]
-    fn full_onset_containment_zero_fills_multiple_failed_workers_deterministically() {
-        let computation = compute_full_onset_with_workers(
-            5,
-            2,
-            || vec![0.0, 0.3, 0.7, 0.1, 0.0],
-            || vec![0.0, 0.4, 0.1, 0.0, 0.0],
-            || panic!("complex worker lost"),
-            || panic!("hfc worker lost"),
-            || vec![0.0, 0.5],
-        );
-
-        assert_eq!(computation.envelope.len(), 5);
-        assert_eq!(computation.availability.degraded_count(), 2);
-        assert_eq!(
-            computation
-                .availability
-                .statuses
-                .iter()
-                .filter(|status| status.availability == OnsetFeatureAvailability::WorkerPanicked)
-                .count(),
-            2
-        );
-        assert!(computation.envelope.iter().all(|value| value.is_finite()));
-        assert!(computation.envelope.iter().any(|value| *value > 0.0));
     }
 }

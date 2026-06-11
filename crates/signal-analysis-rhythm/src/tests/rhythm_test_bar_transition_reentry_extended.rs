@@ -103,38 +103,6 @@ pub(super) fn build_bar_transition_reentry_extended(
                 dropout_bars: &[],
             },
         ]),
-        BarTransitionVariant::ReentryAcceleratingHarmonyLongSustainedReset => Some(vec![
-            GrooveSection {
-                bars: 2,
-                beat_pattern: [0.3, 0.64, 0.3, 0.58],
-                chord_cycle: CHORD_CYCLE_AB,
-                chord_every_bars: 2,
-                section_marker: Some((1, CHORD_B, 1.02)),
-                bar_patterns: Some(REENTRY_ACCELERATING_ACCENT_SHIFT_BAR_PATTERNS),
-                bar_chords: None,
-                dropout_bars: &[],
-            },
-            GrooveSection {
-                bars: 2,
-                beat_pattern: [0.28, 0.66, 0.3, 0.6],
-                chord_cycle: CHORD_CYCLE_ABCD,
-                chord_every_bars: 1,
-                section_marker: Some((1, CHORD_D, 1.12)),
-                bar_patterns: Some(REENTRY_DECELERATING_ACCENT_SHIFT_BAR_PATTERNS),
-                bar_chords: Some(REENTRY_ACCELERATING_STAGE_BAR_CHORDS),
-                dropout_bars: &[],
-            },
-            GrooveSection {
-                bars: 8,
-                beat_pattern: [0.64, 0.24, 0.44, 0.24],
-                chord_cycle: CHORD_CYCLE_AB,
-                chord_every_bars: 1,
-                section_marker: Some((0, CHORD_A, 1.14)),
-                bar_patterns: None,
-                bar_chords: None,
-                dropout_bars: &[],
-            },
-        ]),
         BarTransitionVariant::ReentryDeceleratingHarmonySustainedReset => Some(vec![
             GrooveSection {
                 bars: 2,

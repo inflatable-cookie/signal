@@ -60,49 +60,6 @@ fn beat_tracker_calibrates_local_tempo_drift_between_stable_and_irregular_fixtur
         slow.tempo_diagnostics.stability_scope.scope,
         super::TempoStabilityScope::CoreStableOnly
     );
-    assert_eq!(slow.tempo_state.action, super::TempoStateAction::Monitor);
-    assert_eq!(
-        slow.tempo_state.reason,
-        super::TempoStateReason::CoreStableTempo
-    );
-    assert_eq!(
-        slow.tempo_state.continuity.action,
-        super::TempoContinuityAction::Reacquire
-    );
-    assert_eq!(
-        slow.tempo_state.continuity.source,
-        super::TempoContinuitySource::CurrentTempo
-    );
-    assert_eq!(
-        slow.tempo_state.continuity.reason,
-        super::TempoContinuityReason::RevalidationDecay
-    );
-    assert_eq!(
-        slow.tempo_state.continuity.provenance,
-        super::TempoContinuityProvenance::GuardedRefinedEstimate
-    );
-    assert_eq!(
-        slow.tempo_state.continuity.severity,
-        super::TempoContinuitySeverity::Fragile
-    );
-    assert_eq!(
-        slow.tempo_state.continuity.history,
-        super::TempoContinuityHistory::Preserving
-    );
-    assert!(matches!(
-        slow.tempo_state.continuity.trigger,
-        super::TempoContinuityTrigger::StableRevalidation
-            | super::TempoContinuityTrigger::AmbiguityCarry
-    ));
-    assert!(slow.tempo_state.continuity.unresolved.beats >= 4);
-    assert!(matches!(
-        slow.tempo_state.continuity.causes.primary,
-        super::TempoContinuityCause::StableTempoEvidence
-            | super::TempoContinuityCause::TempoAmbiguity
-    ));
-    assert_eq!(slow.tempo_state.continuity.expiry.guaranteed_until_beats, 4);
-    assert_eq!(slow.tempo_state.continuity.expiry.downgrade_after_beats, 8);
-    assert_eq!(slow.tempo_state.continuity.expiry.clear_after_beats, 12);
     assert_eq!(
         weak_backbeat.tempo_interpretation.recommendation,
         super::TempoRecommendation::UseRefined
@@ -110,54 +67,6 @@ fn beat_tracker_calibrates_local_tempo_drift_between_stable_and_irregular_fixtur
     assert_eq!(
         weak_backbeat.tempo_interpretation.reason,
         super::TempoInterpretationReason::StableRefinedPulse
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.action,
-        super::TempoStateAction::Lock
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.reason,
-        super::TempoStateReason::StableRefinedTempo
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.action,
-        super::TempoContinuityAction::Lock
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.source,
-        super::TempoContinuitySource::CurrentTempo
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.reason,
-        super::TempoContinuityReason::StableTempo
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.provenance,
-        super::TempoContinuityProvenance::StableRefinedEstimate
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.severity,
-        super::TempoContinuitySeverity::Confirmed
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.history,
-        super::TempoContinuityHistory::Reinforcing
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.trigger,
-        super::TempoContinuityTrigger::StableRevalidation
-    );
-    assert_eq!(
-        weak_backbeat.tempo_state.continuity.causes.primary,
-        super::TempoContinuityCause::StableTempoEvidence
-    );
-    assert_eq!(
-        weak_backbeat
-            .tempo_state
-            .continuity
-            .expiry
-            .max_failed_revalidations,
-        3
     );
     assert!(matches!(
         ambiguous.tempo_interpretation.recommendation,
@@ -168,75 +77,4 @@ fn beat_tracker_calibrates_local_tempo_drift_between_stable_and_irregular_fixtur
         super::TempoTrustLevel::Guarded | super::TempoTrustLevel::Stable
     ));
     assert!(ambiguous.tempo_interpretation.profile.stability_score.0 < 0.85);
-    assert!(matches!(
-        ambiguous.tempo_state.action,
-        super::TempoStateAction::Monitor
-            | super::TempoStateAction::Lock
-            | super::TempoStateAction::Defer
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.reason,
-        super::TempoStateReason::CoreWindowFallback
-            | super::TempoStateReason::StableRefinedTempo
-            | super::TempoStateReason::CoreStableTempo
-            | super::TempoStateReason::StableTempoWithEdgeDamage
-            | super::TempoStateReason::TempoDeferred
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.action,
-        super::TempoContinuityAction::Retain
-            | super::TempoContinuityAction::Lock
-            | super::TempoContinuityAction::Clear
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.source,
-        super::TempoContinuitySource::CoreWindow
-            | super::TempoContinuitySource::CurrentTempo
-            | super::TempoContinuitySource::Cleared
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.reason,
-        super::TempoContinuityReason::CoreWindowCarry
-            | super::TempoContinuityReason::StableTempo
-            | super::TempoContinuityReason::InsufficientEvidence
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.provenance,
-        super::TempoContinuityProvenance::CoreWindowEstimate
-            | super::TempoContinuityProvenance::StableRefinedEstimate
-            | super::TempoContinuityProvenance::NoTempo
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.severity,
-        super::TempoContinuitySeverity::Guarded
-            | super::TempoContinuitySeverity::Confirmed
-            | super::TempoContinuitySeverity::Cleared
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.history,
-        super::TempoContinuityHistory::Preserving
-            | super::TempoContinuityHistory::Reinforcing
-            | super::TempoContinuityHistory::Degrading
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.trigger,
-        super::TempoContinuityTrigger::BoundaryDrift
-            | super::TempoContinuityTrigger::StableRevalidation
-            | super::TempoContinuityTrigger::EvidenceLoss
-    ));
-    assert!(matches!(
-        ambiguous.tempo_state.continuity.causes.primary,
-        super::TempoContinuityCause::BoundaryDrift
-            | super::TempoContinuityCause::StableTempoEvidence
-            | super::TempoContinuityCause::EvidenceLoss
-            | super::TempoContinuityCause::TempoAmbiguity
-    ));
-    assert!(matches!(
-        ambiguous
-            .tempo_state
-            .continuity
-            .expiry
-            .max_failed_revalidations,
-        0 | 3
-    ));
 }

@@ -19,19 +19,6 @@ pub(super) fn build_bar_transition_basic(
 
             Some(beat_sequence_track(sample_rate, bpm, &beats, &tone_events))
         }
-        BarTransitionVariant::PickupExtended => {
-            let mut beats = vec![0.32, 0.58, 0.38, 0.68, 0.42, 0.72];
-            for _ in 0..6 {
-                beats.extend_from_slice(&[1.0, 0.35, 0.55, 0.4]);
-            }
-
-            let mut tone_events = Vec::new();
-            for (bar_index, chord) in CHORD_CYCLE_ABCD.iter().copied().cycle().take(6).enumerate() {
-                tone_events.push((6 + bar_index * 4, chord, 0.84));
-            }
-
-            Some(beat_sequence_track(sample_rate, bpm, &beats, &tone_events))
-        }
         BarTransitionVariant::LateShift => {
             let mut fixture = FixtureBuilder::new();
             fixture.push_four_four_section(GrooveSection {

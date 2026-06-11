@@ -160,43 +160,4 @@ fn beat_tracker_exposes_stable_local_tempo_for_integer_click_track() {
     assert_eq!(result.tempo_interpretation.snapped_bpm, Some(120.0));
     assert!(result.tempo_interpretation.profile.snap_error_bpm < 0.12);
     assert!(result.tempo_interpretation.profile.stability_score.0 > 0.75);
-    assert_eq!(result.tempo_state.action, super::TempoStateAction::Lock);
-    assert_eq!(
-        result.tempo_state.reason,
-        super::TempoStateReason::StableIntegerTempo
-    );
-    assert_eq!(
-        result.tempo_state.continuity.action,
-        super::TempoContinuityAction::Lock
-    );
-    assert_eq!(
-        result.tempo_state.continuity.source,
-        super::TempoContinuitySource::CurrentTempo
-    );
-    assert_eq!(
-        result.tempo_state.continuity.reason,
-        super::TempoContinuityReason::IntegerTempoSnap
-    );
-    assert_eq!(
-        result.tempo_state.continuity.provenance,
-        super::TempoContinuityProvenance::IntegerSnap
-    );
-    assert_eq!(
-        result.tempo_state.continuity.severity,
-        super::TempoContinuitySeverity::Confirmed
-    );
-    assert_eq!(
-        result.tempo_state.continuity.history,
-        super::TempoContinuityHistory::Reinforcing
-    );
-    assert_eq!(
-        result.tempo_state.continuity.expiry.guaranteed_until_beats,
-        16
-    );
-    assert_eq!(
-        result.tempo_state.continuity.expiry.downgrade_after_beats,
-        20
-    );
-    assert_eq!(result.tempo_state.continuity.expiry.clear_after_beats, 28);
-    assert!(result.tempo_state.continuity.refresh_strength.0 > 0.9);
 }

@@ -72,14 +72,6 @@ fn tempo_interpretation_snaps_stable_near_integer_master_like_case() {
     assert!(interpretation.support.grid_stability.0 > 0.35);
     assert!(interpretation.support.boundary_pressure.0 < 0.3);
     assert!(interpretation.profile.stability_score.0 > 0.64);
-
-    let state = super::tempo_state_recommendation(
-        interpretation,
-        super::Confidence::new(0.666),
-        super::Confidence::new(1.0),
-    );
-    assert_eq!(state.action, super::TempoStateAction::Lock);
-    assert_eq!(state.reason, super::TempoStateReason::StableIntegerTempo);
 }
 
 #[test]
