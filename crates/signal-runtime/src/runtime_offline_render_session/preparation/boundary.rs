@@ -78,7 +78,8 @@ impl SignalRuntime {
                     override_state,
                     latest_override_processing_epoch: latest_override
                         .map(|latest| latest.processing_epoch),
-                    latest_override_block_sequence: latest_override.map(|latest| latest.block_sequence),
+                    latest_override_block_sequence: latest_override
+                        .map(|latest| latest.block_sequence),
                 };
                 boundary
             })

@@ -2,7 +2,7 @@ use super::*;
 
 /// Thread-shareable in-memory accumulator for [`RuntimeEvent`]s.
 ///
-/// Pass a clone to `SignalRuntime::subscribe` (via its [`RuntimeEventSink`]
+/// Pass a clone to `SignalRuntime::subscribe` (via its `RuntimeEventSink`
 /// impl) and read back events with `snapshot()` or the typed helpers.  Used
 /// as the standard event sink in tests and diagnostic harnesses.
 #[derive(Clone, Default)]

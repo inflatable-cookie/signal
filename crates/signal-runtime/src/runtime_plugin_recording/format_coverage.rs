@@ -44,19 +44,36 @@ pub(crate) fn runtime_plugin_format_coverage(
                 .iter()
                 .filter(|record| record.processing_contract.produces_midi)
                 .count();
-            let max_audio_bus_count = records.iter().map(|record| record.audio_bus_count).max().unwrap_or(0);
+            let max_audio_bus_count = records
+                .iter()
+                .map(|record| record.audio_bus_count)
+                .max()
+                .unwrap_or(0);
             let max_complex_io_port_group_count = records
                 .iter()
                 .map(|record| record.complex_io_summary.port_group_count)
                 .max()
                 .unwrap_or(0);
-            let max_parameter_count = records.iter().map(|record| record.parameter_count).max().unwrap_or(0);
+            let max_parameter_count = records
+                .iter()
+                .map(|record| record.parameter_count)
+                .max()
+                .unwrap_or(0);
             RuntimePluginFormatCoverageRecord {
                 format,
                 discovered_type_count: records.len(),
-                complex_io_type_count: records.iter().filter(|record| record.complex_io_summary.has_complex_topology).count(),
-                multi_output_instrument_count: records.iter().filter(|record| record.complex_io_summary.multi_output_instrument).count(),
-                bus_capable_fx_count: records.iter().filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some()).count(),
+                complex_io_type_count: records
+                    .iter()
+                    .filter(|record| record.complex_io_summary.has_complex_topology)
+                    .count(),
+                multi_output_instrument_count: records
+                    .iter()
+                    .filter(|record| record.complex_io_summary.multi_output_instrument)
+                    .count(),
+                bus_capable_fx_count: records
+                    .iter()
+                    .filter(|record| record.complex_io_summary.bus_capable_fx_class.is_some())
+                    .count(),
                 sidechain_capable_fx_count: records
                     .iter()
                     .filter(|record| {

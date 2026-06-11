@@ -5,6 +5,7 @@ use signal_runtime::{
 
 pub(crate) const WATCHDOG_TRIGGER_WINDOW_BLOCKS: u64 = 3;
 pub(crate) const STEADY_STATE_BLOCKS: u64 = 8;
+#[cfg(test)]
 pub(crate) const SOAK_RESTART_EPISODES: u32 = 3;
 pub(crate) const INTER_EPISODE_CONTINUITY_BLOCKS: u64 = 2;
 pub(crate) const LOCAL_DEMO_GRAPH_ID: &str = "signal.host.local.demo";
@@ -70,4 +71,30 @@ pub(crate) enum RecoveryFailureInjection {
     LingeringCleanupTeardown,
     ReplacementStart,
     CompetingOverlapAttach,
+}
+
+/// Plan for exercising retrying timeout recovery against the local host.
+///
+/// Describes a sequence of injected failures and whether to attempt a clean
+/// recovery after all failures have been exhausted.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct TimeoutRecoveryRetryPlan<'a> {
+    /// Sequence of failure modes to inject, applied in order.
+    pub(crate) failures: &'a [RecoveryFailureInjection],
+    /// Detail message used when the terminal failure is reached.
+    pub(crate) terminal_detail: &'a str,
+    /// Whether to attempt a clean recovery after all failures have been exhausted.
+    pub(crate) recover_after_failures: bool,
+}
+
+/// Plan for exercising repeated watchdog recovery cycles against the local host.
+///
+/// `restart_episodes` controls how many watchdog-trigger -> recover cycles to
+/// run; `mixed_faults` alternates between heartbeat-miss and timeout faults.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct RepeatedWatchdogRecoveryPlan {
+    /// Number of watchdog-trigger -> recover cycles to run.
+    pub(crate) restart_episodes: u32,
+    /// Whether to alternate between heartbeat-miss and timeout faults across episodes.
+    pub(crate) mixed_faults: bool,
 }

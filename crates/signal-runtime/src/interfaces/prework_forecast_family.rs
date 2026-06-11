@@ -338,11 +338,11 @@ pub enum RuntimePreworkForecastMode {
     #[default]
     /// Prework forecasting is disabled.
     Disabled,
-    /// Use the profile implied by [`RuntimeProfile`].
+    /// Use the profile implied by `RuntimeProfile`.
     RuntimeRoleDefault,
     /// Use a caller-selected [`RuntimePreworkForecastProfile`].
     ExplicitProfile,
-    /// Override with a raw [`RuntimePreworkForecastPolicy`].
+    /// Override with a raw `RuntimePreworkForecastPolicy`.
     RawPolicyOverride,
 }
 

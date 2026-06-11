@@ -50,7 +50,7 @@ workspace without overclaiming live demo coverage before `g09.012` and
   - crates: `signal-host-local`, `signal-host-server`
   - launch: `effigy demo:local-server-host-comparison`
 - `signal.demo.hardware.topology-diagnostics`
-  - crates: `signal-hardware`, `signal-hardware-coreaudio`
+  - crates: `signal-hardware`
   - launch: `effigy demo:hardware-topology-diagnostics`
 - `signal.demo.macos.au-coreaudio-boundary`
   - crates: `signal-plugin-au`

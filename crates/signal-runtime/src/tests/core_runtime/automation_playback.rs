@@ -113,7 +113,8 @@ fn runtime_linear_automation_projection_drives_multi_block_gain_playback() {
     assert_eq!(automation.last_timeline_position_samples, Some(8));
     assert_eq!(automation.transport_playing, Some(true));
 
-    let _observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+    let _observation =
+        RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
     let _supervisor = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
 }
 
@@ -198,5 +199,6 @@ fn runtime_hold_automation_projection_drives_plugin_backed_threshold_fixture() {
     assert_eq!(automation.mapped_lane_count, 1);
     assert_eq!(automation.projected_segment_count, 0);
 
-    let _observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+    let _observation =
+        RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
 }

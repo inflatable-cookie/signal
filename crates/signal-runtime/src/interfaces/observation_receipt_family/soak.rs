@@ -1,5 +1,3 @@
 use super::*;
 
-impl RuntimeSoakReceipt {
-
-}
+impl RuntimeSoakReceipt {}

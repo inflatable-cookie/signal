@@ -6,7 +6,7 @@
 //! request, and reports ongoing diagnostic health.
 //!
 //! Platform-specific realizations (e.g. CoreAudio) live in separate crates such
-//! as `signal-hardware-coreaudio` and depend on this crate for the shared types.
+//! as the host-local hardware backend and depend on this crate for the shared types.
 //!
 //! For testing and CI, use [`SimulatedHardwareBackend`], which implements
 //! [`HardwareBackend`] without requiring real audio hardware. It accepts an

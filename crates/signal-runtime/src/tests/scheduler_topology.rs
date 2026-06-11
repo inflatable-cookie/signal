@@ -314,5 +314,4 @@ fn runtime_scheduler_topology_projects_into_runtime_reports() {
     assert!(observation.metering_snapshot.send_returns.is_empty());
 
     let _supervisor = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
-
 }

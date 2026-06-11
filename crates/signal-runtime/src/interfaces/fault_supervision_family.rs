@@ -1,6 +1,5 @@
 use super::*;
 
-
 /// Human-readable reason string included in a `Degraded` readiness state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DegradedReason(pub &'static str);

@@ -1,7 +1,6 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use signal_hardware::HardwareStreamConfig;
-use signal_hardware_coreaudio::CoreAudioBackend;
 use signal_ipc::SharedMemoryBroker;
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
@@ -10,7 +9,7 @@ use signal_plugin_vst3::Vst3HostAdapter;
 use signal_runtime::{
     BackendPolicyOverride, PluginSandboxLifecycleStage, PluginSandboxSpec, PluginScanRequest,
     RuntimeClipProcessingRegistration, RuntimeError, RuntimeEventRecorder,
-    RuntimeHostObservationReport, RuntimeHostSupervisorReport, RuntimeMediaAssetRegistration,
+    RuntimeHostSupervisorReport, RuntimeMediaAssetRegistration,
     RuntimeObservationApi, RuntimeOfflineRenderExecutionCancellationReceipt,
     RuntimeOfflineRenderExecutionProgressReceipt, RuntimeOfflineRenderExecutionReceipt,
     RuntimeOfflineRenderPurgeReceipt, RuntimeOfflineRenderPurgeRequest,
@@ -27,7 +26,7 @@ use host_support::{
     discovered_plugins_for_scan, ensure_au_sandbox_session, ensure_clap_sandbox_session,
     ensure_vst3_sandbox_session, runtime_plugin_format_platform_coverage,
     teardown_broker_sandbox_session, LifecycleRunSummary, LocalAudioPumpState,
-    LocalClockTransitionMemory, LocalSupervisorState, SandboxBrokerSession,
+    LocalClockTransitionMemory, LocalHardwareBackend, LocalSupervisorState, SandboxBrokerSession,
 };
 pub use host_support::{
     ensure_default_demo_plugin_override, LocalAudioPumpSummary, LocalAudioStreamState,
@@ -38,18 +37,18 @@ pub use host_support::{
 pub(crate) use host_support::{
     FaultInjection, RecoveryFailureInjection, INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID,
     LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES, LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES,
-    SOAK_RESTART_EPISODES, STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
+    STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
 
 /// The local desktop runtime host.
 ///
-/// Owns the [`SignalRuntime`], the [`CoreAudioBackend`], CLAP/AU/VST3 plugin
+/// Owns the [`SignalRuntime`], the local hardware backend, CLAP/AU/VST3 plugin
 /// adapters, the shared-memory broker, and the audio pump. Construct with
 /// [`LocalRuntimeHost::new`] and drive via the [`RuntimeSupervisorApi`] and
 /// [`RuntimeObservationApi`] traits implemented in `host_api.rs`.
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
-    coreaudio: CoreAudioBackend,
+    hardware: LocalHardwareBackend,
     clap: ClapPluginHostAdapter,
     au: AuHostAdapter,
     vst3: Vst3HostAdapter,
@@ -69,7 +68,7 @@ pub struct LocalRuntimeHost {
 impl LocalRuntimeHost {
     /// Construct a new local host wrapping the given runtime.
     ///
-    /// Initialises the CoreAudio backend, all plugin format adapters, and the
+    /// Initialises the hardware backend, all plugin format adapters, and the
     /// shared-memory broker. The runtime is subscribed to an internal event
     /// recorder immediately.
     pub fn new(runtime: SignalRuntime) -> Self {
@@ -80,7 +79,7 @@ impl LocalRuntimeHost {
 
         Self {
             runtime,
-            coreaudio: CoreAudioBackend::default(),
+            hardware: LocalHardwareBackend::default(),
             clap: ClapPluginHostAdapter::default(),
             au: AuHostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
@@ -101,18 +100,6 @@ impl LocalRuntimeHost {
     /// Returns a reference to the underlying runtime.
     pub fn runtime(&self) -> &SignalRuntime {
         &self.runtime
-    }
-
-    /// Returns `true` if the CLAP plugin format is supported on this platform.
-    pub fn clap_supported(&self) -> bool {
-        self.clap.supports_format(PluginFormat::Clap)
-    }
-
-    /// Returns an observation report combining the current runtime state with
-    /// host I/O metrics (hardware, pump, transport).
-    pub fn host_observation_report(&self) -> RuntimeHostObservationReport {
-        let (observation, host_io) = self.observation_with_host_io();
-        RuntimeHostObservationReport::new(observation, host_io)
     }
 
     /// Returns a supervisor report combining the current runtime state with

@@ -14,9 +14,7 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
             ],
             unsupported_platforms: Vec::new(),
             linux_parity_band: RuntimePluginParityBand::Portable,
-            linux_preferred_sandbox_outcome: Some(
-                RuntimePluginIsolationOutcome::IsolatedSandbox,
-            ),
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
         },
         RuntimePluginFormatPlatformCoverageRecord {
@@ -28,9 +26,7 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
             ],
             unsupported_platforms: Vec::new(),
             linux_parity_band: RuntimePluginParityBand::Portable,
-            linux_preferred_sandbox_outcome: Some(
-                RuntimePluginIsolationOutcome::IsolatedSandbox,
-            ),
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
         },
         RuntimePluginFormatPlatformCoverageRecord {
@@ -41,9 +37,7 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
                 RuntimePluginHostPlatform::Windows,
             ],
             linux_parity_band: RuntimePluginParityBand::Portable,
-            linux_preferred_sandbox_outcome: Some(
-                RuntimePluginIsolationOutcome::IsolatedSandbox,
-            ),
+            linux_preferred_sandbox_outcome: Some(RuntimePluginIsolationOutcome::IsolatedSandbox),
             linux_strict_sandbox_default: true,
         },
     ]);
@@ -295,5 +289,4 @@ fn runtime_linux_plugin_parity_coverage_tracks_policy_render_failure_and_restart
         lv2_extension.extension_negotiation_state,
         crate::RuntimeLv2ExtensionNegotiationState::Unavailable
     );
-
 }

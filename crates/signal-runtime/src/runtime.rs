@@ -237,9 +237,9 @@ const BLOCK_DEADLINE_CRITICAL_UTILIZATION_PERCENT: f32 = 95.0;
 /// Construct with [`SignalRuntime::new`], then drive through the lifecycle with
 /// the [`RuntimeLifecycleApi`] trait methods (`handshake → configure → start →
 /// … → stop`).  Use [`RuntimeProjectionApi`] to feed the engine a graph and
-/// transport state, and [`RuntimeSupervisorApi`] to manage plugin sandboxes and
+/// transport state, and [`RuntimeSupervisorApi`](crate::RuntimeSupervisorApi) to manage plugin sandboxes and
 /// offline rendering.  Read state without mutating via [`RuntimeObservationApi`]
-/// and event subscriptions via [`RuntimeEventSink`].
+/// and event subscriptions via `RuntimeEventSink`.
 pub struct SignalRuntime {
     config: RuntimeConfig,
     readiness: RuntimeReadiness,

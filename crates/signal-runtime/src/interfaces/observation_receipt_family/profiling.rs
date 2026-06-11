@@ -1,5 +1,3 @@
 use super::*;
 
-impl RuntimeProfilingReceipt {
-
-}
+impl RuntimeProfilingReceipt {}

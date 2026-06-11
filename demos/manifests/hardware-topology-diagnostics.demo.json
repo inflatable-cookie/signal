@@ -11,8 +11,7 @@
     "notes": "Runs the existing local and server host binaries, captures their current hardware-facing summary fields, and emits a rendered operator companion without redesigning host output."
   },
   "covered_crates": [
-    "signal-hardware",
-    "signal-hardware-coreaudio"
+    "signal-hardware"
   ],
   "scenarios": [
     {
@@ -39,6 +38,6 @@
     "The server host reports simulated Linux backend session posture and explicit external-I/O/device-supervision truth.",
     "The receipt keeps native-versus-simulated differences explicit instead of flattening them.",
     "The rendered companion view makes native-versus-simulated posture visually inspectable without reading the raw receipt first.",
-    "signal-hardware and signal-hardware-coreaudio only move to live coverage because this manifest and receipt exist."
+    "signal-hardware only moves to live coverage because this manifest and receipt exist."
   ]
 }

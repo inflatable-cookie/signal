@@ -46,9 +46,7 @@ pub struct RuntimeOfflineRenderProfilingReceipt {
     pub report_materialized: bool,
 }
 
-impl RuntimeOfflineRenderProfilingReceipt {
-
-}
+impl RuntimeOfflineRenderProfilingReceipt {}
 
 impl RuntimeOfflineRenderResult {
     /// Constructs a profiling receipt summarising this render result.

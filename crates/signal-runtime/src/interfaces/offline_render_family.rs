@@ -5,10 +5,8 @@ mod request_preview;
 mod session_receipts;
 mod soak_metrics;
 
-pub use render_metrics::RuntimeOfflineRenderProfilingReceipt;
 pub use request_preview::*;
 pub use session_receipts::*;
-pub use soak_metrics::RuntimeOfflineRenderSoakReceipt;
 
 /// Kind of audio artifact produced by an offline render.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]

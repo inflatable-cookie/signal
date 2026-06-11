@@ -225,7 +225,8 @@ fn runtime_plugin_event_tracking_rolls_across_leases() {
     assert_eq!(snapshot.segment_epochs, vec![1, 2]);
     assert_eq!(snapshot.lease_rollovers, 1);
 
-    let _observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
+    let _observation =
+        RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
 }
 
 #[test]

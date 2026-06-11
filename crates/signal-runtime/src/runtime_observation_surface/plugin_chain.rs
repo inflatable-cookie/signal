@@ -136,8 +136,7 @@ impl SignalRuntime {
             chain.stages.push(stage);
         }
 
-        for _chain in &mut chains {
-        }
+        for _chain in &mut chains {}
 
         let snapshot = RuntimePluginChainSnapshot {
             chain_count: chains.len(),

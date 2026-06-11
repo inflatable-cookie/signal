@@ -74,7 +74,7 @@ pub struct HandshakeResponse {
 
 /// Dynamic configuration applied via `configure()`.
 ///
-/// Unlike [`RuntimeConfig`] this can be reapplied without restarting the
+/// Unlike `RuntimeConfig` this can be reapplied without restarting the
 /// runtime (when `supports_dynamic_reconfigure` is `true`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RuntimeConfigRequest {
@@ -141,7 +141,7 @@ pub struct SafeModeRequest {
     pub enabled: bool,
 }
 
-/// Per-node planning record embedded in [`RuntimeEngineBlockSnapshot`].
+/// Per-node planning record embedded in `RuntimeEngineBlockSnapshot`.
 ///
 /// Captures the scheduling shape (lane, group, latency) and bus contract of a
 /// node that the planner placed for the current block.
@@ -191,7 +191,7 @@ pub struct RuntimePlannedGraphNode {
 
 /// Output of one processed audio block.
 ///
-/// Contains the full [`RuntimeEngineBlockSnapshot`], the rendered output
+/// Contains the full `RuntimeEngineBlockSnapshot`, the rendered output
 /// `AudioBuffer`, and per-node metering data.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeEngineBlockResult {

@@ -176,12 +176,19 @@ pub(crate) fn build_runtime_soak_receipt(input: RuntimeSoakReceiptInput<'_>) -> 
         sandbox_operation_failure_event_count: observation
             .observation
             .sandbox_operation_failure_event_count(),
-        peak_attached_sessions: observation.transport_concurrency_snapshot.peak_attached_sessions,
+        peak_attached_sessions: observation
+            .transport_concurrency_snapshot
+            .peak_attached_sessions,
         peak_recovery_overlap_sessions: observation
             .transport_concurrency_snapshot
             .peak_recovery_overlap_sessions,
-        peak_lingering_sessions: observation.transport_concurrency_snapshot.peak_lingering_sessions,
-        pending_cleanup_waves: observation.transport_concurrency_snapshot.pending_cleanup_waves.len(),
+        peak_lingering_sessions: observation
+            .transport_concurrency_snapshot
+            .peak_lingering_sessions,
+        pending_cleanup_waves: observation
+            .transport_concurrency_snapshot
+            .pending_cleanup_waves
+            .len(),
         plugin_ready_sandbox_count: observation.plugin_lifecycle_snapshot.ready_sandbox_count,
         plugin_degraded_sandbox_count: observation.plugin_lifecycle_snapshot.degraded_sandbox_count,
         plugin_faulted_sandbox_count: observation.plugin_lifecycle_snapshot.faulted_sandbox_count,

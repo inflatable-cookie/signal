@@ -97,15 +97,15 @@ impl LocalRuntimeHost {
         &mut self,
         restart_should_fail: bool,
     ) -> Result<(), RuntimeError> {
-        self.coreaudio
+        self.hardware
             .simulate_device_loss("simulated CoreAudio device disconnect");
         self.stop_runtime_with_reason(StopReason::DeviceReconfigure)?;
         self.audio_pump.fault();
-        self.coreaudio
+        self.hardware
             .simulate_restart_attempt("simulated CoreAudio device restart attempt");
 
         if restart_should_fail {
-            self.coreaudio
+            self.hardware
                 .simulate_restart_failure("simulated CoreAudio device restart failure");
             return Err(RuntimeError::new(
                 signal_runtime::RuntimeErrorKind::HardwareFailure,
@@ -115,7 +115,7 @@ impl LocalRuntimeHost {
 
         self.prepare_default_output_hardware()?;
         self.runtime.start()?;
-        self.coreaudio.mark_recovered();
+        self.hardware.mark_recovered();
         Ok(())
     }
 

@@ -152,7 +152,6 @@ fn runtime_observation_report_surfaces_restartable_interruption_summary() {
     );
     assert!(observation.interruption_summary.active);
     assert!(!observation.interruption_summary.rebindable);
-
 }
 
 #[test]
@@ -190,7 +189,6 @@ fn runtime_fault_diagnostic_receipt_maps_xrun_pressure_into_runtime_owned_primar
         xrun.authority,
         crate::interfaces::RuntimeFaultDiagnosticAuthority::RuntimeCanonical
     );
-
 }
 
 #[test]

@@ -63,7 +63,7 @@ pub struct RuntimeTransportSessionAttachRequest {
 
 /// Live record of one active transport concurrency session.
 ///
-/// Included in [`RuntimeTransportConcurrencySnapshot::active_sessions`] for
+/// Included in `RuntimeTransportConcurrencySnapshot::active_sessions` for
 /// detailed per-session inspection.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ActiveTransportConcurrencySession {

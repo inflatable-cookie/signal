@@ -170,8 +170,7 @@ pub fn derive_runtime_bus_connections(
     }
 
     let mut auxiliary_paths = auxiliary_paths.into_values().collect::<Vec<_>>();
-    for _path in &mut auxiliary_paths {
-    }
+    for _path in &mut auxiliary_paths {}
 
     (connections, auxiliary_paths)
 }

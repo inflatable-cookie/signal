@@ -1,7 +1,7 @@
 use super::*;
 
 impl RuntimeHostIoSummary {
-    /// Derives a [`RuntimeExternalIoSnapshot`] from the current host I/O summary.
+    /// Derives a `RuntimeExternalIoSnapshot` from the current host I/O summary.
     pub fn build_external_io_snapshot(&self) -> RuntimeExternalIoSnapshot {
         let fallback_active = self.clocking.fallback_state != RuntimeHostClockFallbackState::Direct;
         let health_state = if self.audio_pump.stream_state == RuntimeHostAudioStreamState::Faulted {

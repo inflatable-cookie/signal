@@ -1,4 +1,4 @@
-use signal_hardware::{HardwareBackend, HardwareStreamConfig};
+use signal_hardware::HardwareStreamConfig;
 use signal_plugin_clap::ClapBlockProtocol;
 
 use super::super::{
@@ -22,7 +22,7 @@ impl LocalRuntimeHost {
         );
         let observation = self.observation_report();
         LocalRuntimeHostSummary {
-            backend_name: self.coreaudio.backend_name(),
+            backend_name: self.hardware.backend_name(),
             hardware: LocalHardwareSummary {
                 device_id: hardware_stream.device.device_id.clone(),
                 device_name: hardware_stream.device.name.clone(),
@@ -33,7 +33,7 @@ impl LocalRuntimeHost {
                 sample_format: hardware_stream.sample_format,
                 lifecycle: hardware_stream.lifecycle,
                 simulated: hardware_stream.simulated,
-                backend_diagnostics: self.coreaudio.diagnostics(),
+                backend_diagnostics: self.hardware.diagnostics(),
             },
             audio_pump: self.audio_pump.summary(),
             scan_roots: self.supervisor.last_scan_roots.clone(),

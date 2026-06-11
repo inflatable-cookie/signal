@@ -1,5 +1,3 @@
-
-
 /// Per-parameter automation snapshot: lane counts, batch statistics, event counts, and segment lease state.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RuntimeAutomationSnapshot {
@@ -151,4 +149,3 @@ pub enum RuntimeControllerExpressionMidi2Posture {
     /// MIDI 2.0 support is present but gated (may have compatibility caveats).
     Guarded,
 }
-

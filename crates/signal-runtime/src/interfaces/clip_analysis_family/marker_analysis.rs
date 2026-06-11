@@ -97,12 +97,14 @@ impl RuntimeMarkerAnalysisSnapshot {
                             }),
                         ),
                         RuntimeMediaAnalysisDescriptorState::Ready => {
-                            let degraded_by_stretch = matches!(
-                                clip.readiness,
-                                RuntimeClipProcessingReadiness::Invalid
-                            ) || stretch.is_some_and(|stretch| {
-                                matches!(stretch.readiness, RuntimeStretchReadiness::Degraded)
-                            });
+                            let degraded_by_stretch =
+                                matches!(clip.readiness, RuntimeClipProcessingReadiness::Invalid)
+                                    || stretch.is_some_and(|stretch| {
+                                        matches!(
+                                            stretch.readiness,
+                                            RuntimeStretchReadiness::Degraded
+                                        )
+                                    });
                             if degraded_by_stretch {
                                 (
                                     RuntimeMarkerAnalysisReadiness::Degraded,
@@ -110,7 +112,9 @@ impl RuntimeMarkerAnalysisSnapshot {
                                     0,
                                     0,
                                     clip.last_error.clone().or_else(|| {
-                                        Some("marker analysis is stale against stretch state".into())
+                                        Some(
+                                            "marker analysis is stale against stretch state".into(),
+                                        )
                                     }),
                                 )
                             } else if let Some(character) = descriptor.character.as_ref() {
@@ -146,7 +150,8 @@ impl RuntimeMarkerAnalysisSnapshot {
 
                 let (tempo_assist_posture, tempo_assist_hint_bpm, tempo_assist_hint_source) =
                     if readiness == RuntimeMarkerAnalysisReadiness::Ready {
-                        if let Some(source_tempo_bpm) = warp.and_then(|warp| warp.source_tempo_bpm) {
+                        if let Some(source_tempo_bpm) = warp.and_then(|warp| warp.source_tempo_bpm)
+                        {
                             (
                                 RuntimeTempoAssistPosture::Ready,
                                 Some(source_tempo_bpm),

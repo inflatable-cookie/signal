@@ -22,6 +22,8 @@ mod demo_graph;
 mod discovery;
 #[path = "host_support/faults.rs"]
 mod faults;
+#[path = "host_support/hardware.rs"]
+mod hardware;
 #[path = "host_support/host_types.rs"]
 mod host_types;
 #[path = "host_support/instance_state.rs"]
@@ -92,16 +94,17 @@ pub(crate) use faults::{
 };
 pub(crate) use host_types::{
     FaultInjection, LocalClockTransitionMemory, LocalSupervisorState, RecoveryFailureInjection,
+    RepeatedWatchdogRecoveryPlan, TimeoutRecoveryRetryPlan,
     INTER_EPISODE_CONTINUITY_BLOCKS, LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_LATENCY_SAMPLES,
-    LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES, SOAK_RESTART_EPISODES,
+    LOCAL_DEMO_PLUGIN_NODE_ID, LOCAL_DEMO_PLUGIN_TAIL_SAMPLES,
     STEADY_STATE_BLOCKS, WATCHDOG_TRIGGER_WINDOW_BLOCKS,
 };
+#[cfg(test)]
+pub(crate) use host_types::SOAK_RESTART_EPISODES;
+pub(crate) use hardware::LocalHardwareBackend;
 pub(crate) use instance_state::plugin_instance_state_record_from_response;
 pub(crate) use lifecycle_admission::LifecycleAdmissionRollback;
 pub(crate) use lifecycle_run::{LifecycleRunSummary, RecoveryHistory};
-pub(crate) use signal_runtime::RepeatedWatchdogRecoveryPlan;
-pub(crate) type TimeoutRecoveryRetryPlan<'a> =
-    signal_runtime::TimeoutRecoveryRetryPlan<'a, RecoveryFailureInjection>;
 pub(crate) use metadata::{
     runtime_au_discovered_type_record, runtime_plugin_discovered_type_record,
     runtime_plugin_format_platform_coverage, runtime_vst3_discovered_type_record,

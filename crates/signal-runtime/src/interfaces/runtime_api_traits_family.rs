@@ -120,7 +120,7 @@ pub trait RuntimeProjectionApi {
 /// Read-only observation surface for all runtime subsystems.
 ///
 /// All methods take `&self` — callers that only observe never need a mutable
-/// borrow.  Use `subscribe()` to register a [`RuntimeEventSink`] for push
+/// borrow.  Use `subscribe()` to register a `RuntimeEventSink` for push
 /// notifications.
 pub trait RuntimeObservationApi {
     /// Registers an event sink to receive push notifications from the runtime.

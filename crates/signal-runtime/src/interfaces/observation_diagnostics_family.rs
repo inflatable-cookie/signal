@@ -1,7 +1,6 @@
 use super::*;
 
-
-/// Push event emitted by the runtime to all registered [`RuntimeEventSink`]s.
+/// Push event emitted by the runtime to all registered `RuntimeEventSink`s.
 ///
 /// Variants cover state transitions (readiness, config), sandbox lifecycle
 /// stages, transport attach/detach, block dispatch, broker faults, and hardware

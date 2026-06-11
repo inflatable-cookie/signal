@@ -12,7 +12,6 @@
   },
   "covered_crates": [
     "signal-plugin-au",
-    "signal-hardware-coreaudio",
     "signal-host-local"
   ],
   "scenarios": [

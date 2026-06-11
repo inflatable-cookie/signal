@@ -1,5 +1,5 @@
 use signal_hardware::{
-    AudioSampleFormat, HardwareBackend, HardwareClockSource, HardwareLifecycleContract,
+    AudioSampleFormat, HardwareClockSource, HardwareLifecycleContract,
 };
 use signal_runtime::{
     RuntimeHostAudioPumpSummary, RuntimeHostClockDomain, RuntimeHostClockSource,
@@ -20,7 +20,7 @@ impl LocalRuntimeHost {
         observation: &RuntimeObservationReport,
     ) -> RuntimeHostIoSummary {
         let audio_pump = self.audio_pump.summary();
-        let backend_diagnostics = self.coreaudio.diagnostics();
+        let backend_diagnostics = self.hardware.diagnostics();
         let active_stream = self.active_output_stream.as_ref();
         let processing_sample_rate_hz = observation.effective_config.sample_rate.0;
         let sample_rate = active_stream
@@ -85,8 +85,8 @@ impl LocalRuntimeHost {
         let callback_interval_ms = samples_to_ms(buffer_size as u32, sample_rate);
         RuntimeHostIoSummary {
             hardware: RuntimeHostHardwareSummary {
-                backend_identity: self.coreaudio.backend_identity(),
-                backend_name: self.coreaudio.backend_name().into(),
+                backend_identity: self.hardware.backend_identity(),
+                backend_name: self.hardware.backend_name().into(),
                 device_id: active_stream
                     .as_ref()
                     .map(|stream| stream.device.device_id.clone())

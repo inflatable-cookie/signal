@@ -9,7 +9,7 @@ description = "Local desktop runtime host assembly for Signal."
 
 [dependencies]
 signal-hardware = { path = "../signal-hardware" }
-signal-hardware-coreaudio = { path = "../signal-hardware-coreaudio" }
+signal-hardware-output-cpal = { path = "../signal-hardware-output-cpal" }
 signal-graph = { path = "../signal-graph" }
 signal-ipc = { path = "../signal-ipc" }
 signal-plugin = { path = "../signal-plugin" }

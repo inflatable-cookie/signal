@@ -85,7 +85,8 @@ impl RuntimePreviewTransformServiceSnapshot {
             Self::derive_preview_device_policy(media_service, active_audition_clip_count);
         let _routing_posture = preview_device_policy.routing_posture;
         let _audition_sink_class = preview_device_policy.audition_sink_class;
-        let _low_latency_device_policy_class = preview_device_policy.low_latency_device_policy_class;
+        let _low_latency_device_policy_class =
+            preview_device_policy.low_latency_device_policy_class;
         let _low_latency_device_policy_outcome =
             preview_device_policy.low_latency_device_policy_outcome;
         let preview_workflow = Self::derive_preview_workflow(

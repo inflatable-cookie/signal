@@ -928,14 +928,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "signal-hardware-coreaudio"
-version = "0.1.0"
-dependencies = [
- "serde_json",
- "signal-hardware",
-]
-
-[[package]]
 name = "signal-hardware-output-cpal"
 version = "0.1.0"
 dependencies = [
@@ -952,7 +944,7 @@ dependencies = [
  "serde_json",
  "signal-graph",
  "signal-hardware",
- "signal-hardware-coreaudio",
+ "signal-hardware-output-cpal",
  "signal-ipc",
  "signal-plugin",
  "signal-plugin-au",

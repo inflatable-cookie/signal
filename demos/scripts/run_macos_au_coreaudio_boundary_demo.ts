@@ -26,7 +26,6 @@ const descriptorResult = runCommand(descriptorCommand);
 const descriptorPayload = JSON.parse(descriptorResult.stdout) as Record<string, any>;
 
 const acceptanceCommands = [
-  ["cargo", "test", "-p", "signal-hardware-coreaudio"],
   [
     "cargo",
     "test",

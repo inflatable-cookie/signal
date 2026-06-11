@@ -163,8 +163,7 @@ impl RuntimeFaultDiagnosticReceipt {
             });
         }
 
-        for _contribution in &mut contributions {
-        }
+        for _contribution in &mut contributions {}
 
         let primary_family = match fault_status.primary_fault_cause {
             Some(RuntimeFaultCause::XrunOverload) => {

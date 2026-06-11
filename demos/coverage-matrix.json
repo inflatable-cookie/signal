@@ -63,12 +63,6 @@
       "domain": "hardware"
     },
     {
-      "crate": "signal-hardware-coreaudio",
-      "status": "active",
-      "manifest_id": "signal.demo.hardware.topology-diagnostics",
-      "domain": "hardware"
-    },
-    {
       "crate": "signal-plugin",
       "status": "active",
       "manifest_id": "signal.demo.plugin.capability-browser",

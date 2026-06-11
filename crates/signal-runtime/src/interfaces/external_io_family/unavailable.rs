@@ -1,7 +1,7 @@
 use super::*;
 
 impl RuntimeHostIoSummary {
-    /// Builds an unavailable/faulted [`RuntimeExternalIoSnapshot`] when no host I/O data is present.
+    /// Builds an unavailable/faulted `RuntimeExternalIoSnapshot` when no host I/O data is present.
     pub fn unavailable_external_io_snapshot(
         effective_config: &EffectiveRuntimeConfig,
         device_supervision_snapshot: &RuntimeDeviceSupervisionSnapshot,
@@ -60,8 +60,12 @@ impl RuntimeHostIoSummary {
             xrun_count: 0,
             callback_overrun_count: 0,
             device_loss_count: device_supervision_snapshot.device_loss_count,
-            restart_attempt_count: device_supervision_snapshot.restart_attempt_count.unwrap_or(0),
-            restart_failure_count: device_supervision_snapshot.restart_failure_count.unwrap_or(0),
+            restart_attempt_count: device_supervision_snapshot
+                .restart_attempt_count
+                .unwrap_or(0),
+            restart_failure_count: device_supervision_snapshot
+                .restart_failure_count
+                .unwrap_or(0),
         }
     }
 }

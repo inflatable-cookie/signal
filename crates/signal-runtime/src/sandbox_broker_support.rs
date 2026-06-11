@@ -1,7 +1,13 @@
 use std::{
+    collections::VecDeque,
     io::{BufRead, BufReader, Write},
     path::PathBuf,
-    process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    process::{Child, ChildStdin, Command, Stdio},
+    sync::{
+        mpsc::{self, Receiver, RecvTimeoutError},
+        Arc, Mutex,
+    },
+    time::Duration,
 };
 
 use signal_plugin::PluginIoLayout;
@@ -30,9 +36,61 @@ pub struct SandboxBrokerAttachedSession {
     pub detail: String,
 }
 
+/// Broker receipt `state=` token, parsed into a typed value.
+///
+/// The wire format is unchanged: states travel as plain tokens
+/// (`starting`, `ready`, `attached`, `running`, `crashed`,
+/// `teardown_complete`). Unknown tokens are preserved in [`Self::Other`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SandboxBrokerReceiptState {
+    /// Broker process is starting up.
+    Starting,
+    /// Broker process is ready to accept commands.
+    Ready,
+    /// A sandbox session is attached.
+    Attached,
+    /// An execution stream block was processed.
+    Running,
+    /// The brokered sandbox crashed.
+    Crashed,
+    /// A teardown sequence completed.
+    TeardownComplete,
+    /// Any state token this client does not recognise.
+    Other(String),
+}
+
+impl SandboxBrokerReceiptState {
+    fn parse(token: &str) -> Self {
+        match token {
+            "starting" => Self::Starting,
+            "ready" => Self::Ready,
+            "attached" => Self::Attached,
+            "running" => Self::Running,
+            "crashed" => Self::Crashed,
+            "teardown_complete" => Self::TeardownComplete,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+impl std::fmt::Display for SandboxBrokerReceiptState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let token = match self {
+            Self::Starting => "starting",
+            Self::Ready => "ready",
+            Self::Attached => "attached",
+            Self::Running => "running",
+            Self::Crashed => "crashed",
+            Self::TeardownComplete => "teardown_complete",
+            Self::Other(other) => other.as_str(),
+        };
+        f.write_str(token)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct SandboxBrokerReceiptLine {
-    state: String,
+    state: SandboxBrokerReceiptState,
     sandbox_id: String,
     instance_id: Option<String>,
     processing_epoch: Option<u64>,
@@ -41,11 +99,49 @@ struct SandboxBrokerReceiptLine {
     detail: String,
 }
 
+/// Receipt returned by a broker teardown request.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SandboxBrokerTeardownReceipt {
+    /// Teardown receipt state reported by the broker.
+    pub state: SandboxBrokerReceiptState,
+    /// Instance identifier from the receipt, if present.
+    pub instance_id: Option<String>,
+    /// Processing epoch from the receipt, if present.
+    pub processing_epoch: Option<u64>,
+    /// Shared-memory lease identifier from the receipt, if present.
+    pub lease_id: Option<String>,
+    /// Shared-memory region identifier from the receipt, if present.
+    pub region_id: Option<String>,
+    /// Human-readable detail from the receipt.
+    pub detail: String,
+}
+
+/// Default receipt read timeout.
+///
+/// Generous because test harnesses spawn the broker via `cargo run`, which can
+/// pay a relink cost before the first `starting` receipt appears. Override per
+/// session with [`SandboxBrokerSpawnConfig::read_timeout_ms`] or globally with
+/// the `SIGNAL_PLUGIN_SANDBOX_BROKER_READ_TIMEOUT_MS` environment variable.
+const DEFAULT_BROKER_READ_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Number of trailing stderr lines retained for diagnostics.
+const STDERR_TAIL_LINES: usize = 16;
+
 /// Handle to a running sandbox broker child process.
+///
+/// Receipt lines are read on a dedicated thread and forwarded over a channel
+/// so every read observes [`Self::read_timeout`]; a second thread drains the
+/// child's stderr to EOF (keeping a bounded tail for diagnostics) so a chatty
+/// broker can never deadlock on a full stderr pipe. A timed-out or torn
+/// session is marked failed and its child process is killed; subsequent
+/// commands fail fast.
 pub struct SandboxBrokerClientSession {
     child: Child,
     stdin: ChildStdin,
-    stdout: BufReader<ChildStdout>,
+    receipts: Receiver<std::io::Result<String>>,
+    stderr_tail: Arc<Mutex<VecDeque<String>>>,
+    read_timeout: Duration,
+    failed: bool,
 }
 
 /// Plugin format served by a sandbox broker.
@@ -66,6 +162,11 @@ pub enum SandboxBrokerFlavor {
 pub struct SandboxBrokerSpawnConfig {
     /// Environment variable overrides to apply when spawning the broker process.
     pub env: Vec<(String, String)>,
+    /// Receipt read timeout in milliseconds for this session.
+    ///
+    /// Falls back to `SIGNAL_PLUGIN_SANDBOX_BROKER_READ_TIMEOUT_MS`, then to
+    /// the built-in default of ten seconds.
+    pub read_timeout_ms: Option<u64>,
 }
 
 /// Combines the live broker client session with the attached session record.
@@ -146,6 +247,21 @@ impl SandboxBrokerClientSession {
     }
 
     /// Spawns a sandbox broker child process using environment-variable configuration.
+    ///
+    /// Configuration environment variables:
+    ///
+    /// - `SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND` — executable to spawn
+    ///   (required; its presence enables the broker path).
+    /// - `SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS` — arguments for the command,
+    ///   split with shell-style quoting: whitespace separates arguments,
+    ///   single or double quotes group an argument containing whitespace
+    ///   (e.g. `--root "/Library/Audio/Plug-Ins/My Plugins"`), and a
+    ///   backslash escapes the next character outside single quotes.
+    /// - `SIGNAL_PLUGIN_SANDBOX_BROKER_WORKDIR` — working directory for the
+    ///   child process (optional).
+    /// - `SIGNAL_PLUGIN_SANDBOX_BROKER_READ_TIMEOUT_MS` — receipt read
+    ///   timeout in milliseconds (optional; default ten seconds; per-session
+    ///   [`SandboxBrokerSpawnConfig::read_timeout_ms`] takes precedence).
     pub fn spawn_from_env(config: &SandboxBrokerSpawnConfig) -> Result<Self, RuntimeError> {
         let command = std::env::var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND").map_err(|_| {
             RuntimeError::new(
@@ -155,13 +271,17 @@ impl SandboxBrokerClientSession {
         })?;
         let args = std::env::var("SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS")
             .ok()
-            .map(|value| {
-                value
-                    .split_whitespace()
-                    .map(str::to_string)
-                    .collect::<Vec<_>>()
-            })
+            .map(|value| split_broker_args(&value))
             .unwrap_or_default();
+        let read_timeout = config
+            .read_timeout_ms
+            .or_else(|| {
+                std::env::var("SIGNAL_PLUGIN_SANDBOX_BROKER_READ_TIMEOUT_MS")
+                    .ok()
+                    .and_then(|value| value.parse::<u64>().ok())
+            })
+            .map(Duration::from_millis)
+            .unwrap_or(DEFAULT_BROKER_READ_TIMEOUT);
 
         let mut process = Command::new(&command);
         process
@@ -189,19 +309,100 @@ impl SandboxBrokerClientSession {
                 "sandbox broker missing stdout pipe",
             )
         })?;
+        let stderr = child.stderr.take().ok_or_else(|| {
+            RuntimeError::new(
+                RuntimeErrorKind::ResourceUnavailable,
+                "sandbox broker missing stderr pipe",
+            )
+        })?;
+
+        // Receipt reader thread: forwards stdout lines over a channel so
+        // every receipt read can observe the configured timeout.
+        let (receipt_sender, receipts) = mpsc::channel::<std::io::Result<String>>();
+        std::thread::Builder::new()
+            .name("sandbox-broker-stdout".into())
+            .spawn(move || {
+                let mut reader = BufReader::new(stdout);
+                loop {
+                    let mut line = String::new();
+                    match reader.read_line(&mut line) {
+                        Ok(0) => break,
+                        Ok(_) => {
+                            if receipt_sender.send(Ok(line)).is_err() {
+                                break;
+                            }
+                        }
+                        Err(error) => {
+                            let _ = receipt_sender.send(Err(error));
+                            break;
+                        }
+                    }
+                }
+            })
+            .map_err(io_runtime_error)?;
+
+        // Stderr drain thread: reads to EOF so a chatty broker can never
+        // block on a full stderr pipe; retains a bounded tail for diagnostics.
+        let stderr_tail = Arc::new(Mutex::new(VecDeque::with_capacity(STDERR_TAIL_LINES)));
+        let drain_tail = Arc::clone(&stderr_tail);
+        std::thread::Builder::new()
+            .name("sandbox-broker-stderr".into())
+            .spawn(move || {
+                let reader = BufReader::new(stderr);
+                for line in reader.lines() {
+                    let Ok(line) = line else { break };
+                    if let Ok(mut tail) = drain_tail.lock() {
+                        if tail.len() == STDERR_TAIL_LINES {
+                            tail.pop_front();
+                        }
+                        tail.push_back(line);
+                    }
+                }
+            })
+            .map_err(io_runtime_error)?;
 
         Ok(Self {
             child,
             stdin,
-            stdout: BufReader::new(stdout),
+            receipts,
+            stderr_tail,
+            read_timeout,
+            failed: false,
         })
+    }
+
+    /// Returns the retained tail of the broker's stderr output for diagnostics.
+    pub fn stderr_tail(&self) -> Vec<String> {
+        self.stderr_tail
+            .lock()
+            .map(|tail| tail.iter().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    fn stderr_tail_suffix(&self) -> String {
+        let tail = self.stderr_tail();
+        if tail.is_empty() {
+            String::new()
+        } else {
+            format!("; broker stderr tail: {}", tail.join(" | "))
+        }
+    }
+
+    /// Marks the session failed and kills the child process so it cannot
+    /// linger after a timeout or torn pipe.
+    fn mark_failed(&mut self) {
+        self.failed = true;
+        let _ = self.child.kill();
+        let _ = self.child.wait();
     }
 
     /// Reads the initial `starting` and `ready` receipts from the broker process.
     pub fn read_startup_receipts(&mut self) -> Result<(), RuntimeError> {
         let starting = self.read_receipt().map_err(io_runtime_error)?;
         let ready = self.read_receipt().map_err(io_runtime_error)?;
-        if starting.state != "starting" || ready.state != "ready" {
+        if starting.state != SandboxBrokerReceiptState::Starting
+            || ready.state != SandboxBrokerReceiptState::Ready
+        {
             return Err(RuntimeError::new(
                 RuntimeErrorKind::ResourceUnavailable,
                 format!(
@@ -222,7 +423,7 @@ impl SandboxBrokerClientSession {
     ) -> std::io::Result<SandboxBrokerAttachedSession> {
         self.write_command(attach_command_for(flavor))?;
         let attached = self.read_receipt()?;
-        if attached.state != "attached" {
+        if attached.state != SandboxBrokerReceiptState::Attached {
             return Err(std::io::Error::other(format!(
                 "unexpected broker attach state: {} ({})",
                 attached.state, attached.detail
@@ -245,28 +446,21 @@ impl SandboxBrokerClientSession {
         })
     }
 
-    /// Sends a teardown command and returns the raw teardown receipt fields.
+    /// Sends a teardown command and returns the teardown receipt.
     pub fn request_teardown(
         &mut self,
         flavor: SandboxBrokerFlavor,
-    ) -> std::io::Result<(
-        String,
-        Option<String>,
-        Option<u64>,
-        Option<String>,
-        Option<String>,
-        String,
-    )> {
+    ) -> std::io::Result<SandboxBrokerTeardownReceipt> {
         self.write_command(teardown_command_for(flavor))?;
         let teardown = self.read_receipt()?;
-        Ok((
-            teardown.state,
-            teardown.instance_id,
-            teardown.processing_epoch,
-            teardown.lease_id,
-            teardown.region_id,
-            teardown.detail,
-        ))
+        Ok(SandboxBrokerTeardownReceipt {
+            state: teardown.state,
+            instance_id: teardown.instance_id,
+            processing_epoch: teardown.processing_epoch,
+            lease_id: teardown.lease_id,
+            region_id: teardown.region_id,
+            detail: teardown.detail,
+        })
     }
 
     /// Sends a `stream-vst3` command and collects the execution stream until the broker re-attaches.
@@ -278,17 +472,17 @@ impl SandboxBrokerClientSession {
 
         loop {
             let receipt = self.read_receipt()?;
-            match receipt.state.as_str() {
-                "running" => {
+            match receipt.state {
+                SandboxBrokerReceiptState::Running => {
                     processed_blocks += 1;
                 }
-                "attached" => {
+                SandboxBrokerReceiptState::Attached => {
                     return Ok(SandboxBrokerExecutionSummary {
                         processed_blocks,
                         detail: receipt.detail,
                     });
                 }
-                "crashed" => {
+                SandboxBrokerReceiptState::Crashed => {
                     return Err(std::io::Error::other(format!(
                         "sandbox broker execution stream crashed: {}",
                         receipt.detail
@@ -308,12 +502,12 @@ impl SandboxBrokerClientSession {
     pub fn request_vst3_refresh(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
         self.write_command("refresh-vst3")?;
         let receipt = self.read_receipt()?;
-        match receipt.state.as_str() {
-            "attached" => Ok(SandboxBrokerExecutionSummary {
+        match receipt.state {
+            SandboxBrokerReceiptState::Attached => Ok(SandboxBrokerExecutionSummary {
                 processed_blocks: 0,
                 detail: receipt.detail,
             }),
-            "crashed" => Err(std::io::Error::other(format!(
+            SandboxBrokerReceiptState::Crashed => Err(std::io::Error::other(format!(
                 "sandbox broker refresh crashed: {}",
                 receipt.detail
             ))),
@@ -328,12 +522,12 @@ impl SandboxBrokerClientSession {
     pub fn request_vst3_timeout(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
         self.write_command("timeout-vst3")?;
         let receipt = self.read_receipt()?;
-        match receipt.state.as_str() {
-            "attached" => Ok(SandboxBrokerExecutionSummary {
+        match receipt.state {
+            SandboxBrokerReceiptState::Attached => Ok(SandboxBrokerExecutionSummary {
                 processed_blocks: 0,
                 detail: receipt.detail,
             }),
-            "crashed" => Err(std::io::Error::other(format!(
+            SandboxBrokerReceiptState::Crashed => Err(std::io::Error::other(format!(
                 "sandbox broker timeout path crashed: {}",
                 receipt.detail
             ))),
@@ -353,17 +547,17 @@ impl SandboxBrokerClientSession {
 
         loop {
             let receipt = self.read_receipt()?;
-            match receipt.state.as_str() {
-                "running" => {
+            match receipt.state {
+                SandboxBrokerReceiptState::Running => {
                     processed_blocks += 1;
                 }
-                "attached" => {
+                SandboxBrokerReceiptState::Attached => {
                     return Ok(SandboxBrokerExecutionSummary {
                         processed_blocks,
                         detail: receipt.detail,
                     });
                 }
-                "crashed" => {
+                SandboxBrokerReceiptState::Crashed => {
                     return Err(std::io::Error::other(format!(
                         "sandbox broker lv2 execution stream crashed: {}",
                         receipt.detail
@@ -397,18 +591,43 @@ impl SandboxBrokerClientSession {
     }
 
     fn read_receipt(&mut self) -> std::io::Result<SandboxBrokerReceiptLine> {
-        let mut line = String::new();
-        let bytes = self.stdout.read_line(&mut line)?;
-        if bytes == 0 {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::UnexpectedEof,
-                "sandbox broker closed stdout",
+        if self.failed {
+            return Err(std::io::Error::other(
+                "sandbox broker session already failed",
             ));
         }
-        parse_broker_receipt_line(&line)
+        match self.receipts.recv_timeout(self.read_timeout) {
+            Ok(Ok(line)) => parse_broker_receipt_line(&line),
+            Ok(Err(error)) => {
+                self.mark_failed();
+                Err(error)
+            }
+            Err(RecvTimeoutError::Timeout) => {
+                let timeout = self.read_timeout;
+                let suffix = self.stderr_tail_suffix();
+                self.mark_failed();
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    format!("sandbox broker receipt read timed out after {timeout:?}{suffix}"),
+                ))
+            }
+            Err(RecvTimeoutError::Disconnected) => {
+                let suffix = self.stderr_tail_suffix();
+                self.mark_failed();
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    format!("sandbox broker closed stdout{suffix}"),
+                ))
+            }
+        }
     }
 
     fn write_command(&mut self, command: &str) -> std::io::Result<()> {
+        if self.failed {
+            return Err(std::io::Error::other(
+                "sandbox broker session already failed",
+            ));
+        }
         writeln!(self.stdin, "{command}")?;
         self.stdin.flush()
     }
@@ -1159,7 +1378,7 @@ pub fn teardown_broker_sandbox_session(
         "broker_teardown_requested",
     );
 
-    let (state, _instance_id, _epoch, _lease_id, _region_id, detail) = session
+    let teardown_receipt = session
         .client
         .request_teardown(session.flavor)
         .map_err(|error| {
@@ -1173,7 +1392,7 @@ pub fn teardown_broker_sandbox_session(
                 error,
             )
         })?;
-    if state != "teardown_complete" {
+    if teardown_receipt.state != SandboxBrokerReceiptState::TeardownComplete {
         return Err(record_broker_failure_and_convert(
             runtime,
             sandbox_id,
@@ -1182,14 +1401,15 @@ pub fn teardown_broker_sandbox_session(
             None,
             BrokerFailureStage::TransportTeardown,
             std::io::Error::other(format!(
-                "unexpected broker teardown state: {state} ({detail})"
+                "unexpected broker teardown state: {} ({})",
+                teardown_receipt.state, teardown_receipt.detail
             )),
         ));
     }
 
     let detail = match &session.teardown_summary {
-        Some(teardown_summary) => format!("{detail} | {teardown_summary}"),
-        None => detail,
+        Some(teardown_summary) => format!("{} | {teardown_summary}", teardown_receipt.detail),
+        None => teardown_receipt.detail,
     };
     record_broker_sandbox_detached(
         runtime,
@@ -1279,6 +1499,68 @@ pub fn finalize_brokered_recovery_transport_detach(
     }
 }
 
+/// Splits `SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS` with shell-style quoting.
+///
+/// Whitespace separates arguments; single or double quotes group an argument
+/// containing whitespace; a backslash escapes the next character outside
+/// single quotes. Unterminated quotes consume the rest of the input.
+fn split_broker_args(value: &str) -> Vec<String> {
+    let mut args = Vec::new();
+    let mut current = String::new();
+    let mut in_arg = false;
+    let mut chars = value.chars();
+
+    'outer: while let Some(ch) = chars.next() {
+        match ch {
+            c if c.is_whitespace() => {
+                if in_arg {
+                    args.push(std::mem::take(&mut current));
+                    in_arg = false;
+                }
+            }
+            '\\' => {
+                in_arg = true;
+                if let Some(escaped) = chars.next() {
+                    current.push(escaped);
+                }
+            }
+            '\'' => {
+                in_arg = true;
+                for inner in chars.by_ref() {
+                    if inner == '\'' {
+                        continue 'outer;
+                    }
+                    current.push(inner);
+                }
+                break;
+            }
+            '"' => {
+                in_arg = true;
+                while let Some(inner) = chars.next() {
+                    match inner {
+                        '"' => continue 'outer,
+                        '\\' => {
+                            if let Some(escaped) = chars.next() {
+                                current.push(escaped);
+                            }
+                        }
+                        other => current.push(other),
+                    }
+                }
+                break;
+            }
+            other => {
+                in_arg = true;
+                current.push(other);
+            }
+        }
+    }
+    if in_arg {
+        args.push(current);
+    }
+    args
+}
+
 fn parse_broker_receipt_line(line: &str) -> std::io::Result<SandboxBrokerReceiptLine> {
     let mut state = None;
     let mut sandbox_id = None;
@@ -1293,7 +1575,7 @@ fn parse_broker_receipt_line(line: &str) -> std::io::Result<SandboxBrokerReceipt
             continue;
         };
         match key {
-            "state" => state = Some(value.to_string()),
+            "state" => state = Some(SandboxBrokerReceiptState::parse(value)),
             "sandbox_id" => sandbox_id = Some(value.to_string()),
             "instance_id" if value != "-" => instance_id = Some(value.to_string()),
             "epoch" if value != "-" => processing_epoch = value.parse::<u64>().ok(),
@@ -1357,7 +1639,38 @@ fn record_broker_failure_and_convert(
 
 #[cfg(test)]
 mod tests {
-    use super::parse_broker_receipt_line;
+    use super::{parse_broker_receipt_line, split_broker_args, SandboxBrokerReceiptState};
+
+    #[test]
+    fn splits_plain_whitespace_args() {
+        assert_eq!(
+            split_broker_args("run -q -p signal-plugin-sandbox"),
+            vec!["run", "-q", "-p", "signal-plugin-sandbox"]
+        );
+        assert!(split_broker_args("   ").is_empty());
+        assert!(split_broker_args("").is_empty());
+    }
+
+    #[test]
+    fn splits_quoted_paths_with_spaces() {
+        assert_eq!(
+            split_broker_args("--root \"/Library/Audio/Plug-Ins/My Plugins\" -v"),
+            vec!["--root", "/Library/Audio/Plug-Ins/My Plugins", "-v"]
+        );
+        assert_eq!(
+            split_broker_args("--name 'demo plugin'"),
+            vec!["--name", "demo plugin"]
+        );
+        assert_eq!(
+            split_broker_args(r"--path /tmp/with\ space"),
+            vec!["--path", "/tmp/with space"]
+        );
+        assert_eq!(split_broker_args("''"), vec![""]);
+        assert_eq!(
+            split_broker_args(r#"--mix pre"fix mid"post"#),
+            vec!["--mix", "prefix midpost"]
+        );
+    }
 
     #[test]
     fn parses_broker_receipt_lines() {
@@ -1366,7 +1679,7 @@ mod tests {
         )
         .expect("receipt should parse");
 
-        assert_eq!(receipt.state, "attached");
+        assert_eq!(receipt.state, SandboxBrokerReceiptState::Attached);
         assert_eq!(receipt.sandbox_id, "plugin-sandbox-broker");
         assert_eq!(
             receipt.instance_id.as_deref(),

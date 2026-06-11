@@ -35,35 +35,131 @@ pub(crate) fn runtime_plugin_parity_coverage(
     formats
         .into_iter()
         .map(|format| {
-            let coverage = platform_coverage.iter().find(|record| record.format == format);
-            let mut supported_platforms = coverage.map(|coverage| coverage.supported_platforms.clone()).unwrap_or_default();
-            supported_platforms.sort_by_key(|platform| runtime_plugin_host_platform_sort_key(*platform));
+            let coverage = platform_coverage
+                .iter()
+                .find(|record| record.format == format);
+            let mut supported_platforms = coverage
+                .map(|coverage| coverage.supported_platforms.clone())
+                .unwrap_or_default();
+            supported_platforms
+                .sort_by_key(|platform| runtime_plugin_host_platform_sort_key(*platform));
             supported_platforms.dedup();
-            let mut unsupported_platforms = coverage.map(|coverage| coverage.unsupported_platforms.clone()).unwrap_or_default();
-            unsupported_platforms.sort_by_key(|platform| runtime_plugin_host_platform_sort_key(*platform));
+            let mut unsupported_platforms = coverage
+                .map(|coverage| coverage.unsupported_platforms.clone())
+                .unwrap_or_default();
+            unsupported_platforms
+                .sort_by_key(|platform| runtime_plugin_host_platform_sort_key(*platform));
             unsupported_platforms.dedup();
 
-            let discovered_type_count = discovered_types.iter().filter(|record| record.format == format).count();
-            let prepare_capable_type_count = discovered_types.iter().filter(|record| record.format == format && record.lifecycle_contract.supports_prepare).count();
-            let activate_capable_type_count = discovered_types.iter().filter(|record| record.format == format && record.lifecycle_contract.supports_activate).count();
-            let sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format)).count();
-            let in_process_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.placement_outcome == RuntimePluginIsolationOutcome::InProcess).count();
-            let shared_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.placement_outcome == RuntimePluginIsolationOutcome::SharedSandbox).count();
-            let isolated_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.placement_outcome == RuntimePluginIsolationOutcome::IsolatedSandbox).count();
-            let ready_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.state == RuntimePluginLifecycleState::Ready).count();
-            let restarting_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.state == RuntimePluginLifecycleState::Restarting).count();
-            let rebindable_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.rebindable).count();
-            let degraded_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.state == RuntimePluginLifecycleState::Degraded).count();
-            let faulted_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.state == RuntimePluginLifecycleState::Faulted).count();
-            let quarantined_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.state == RuntimePluginLifecycleState::Quarantined).count();
-            let terminal_sandbox_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.continuity_class == RuntimeInterruptionClass::Terminal).count();
-            let active_transport_count = sandboxes.iter().filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.active_transport).count();
+            let discovered_type_count = discovered_types
+                .iter()
+                .filter(|record| record.format == format)
+                .count();
+            let prepare_capable_type_count = discovered_types
+                .iter()
+                .filter(|record| {
+                    record.format == format && record.lifecycle_contract.supports_prepare
+                })
+                .count();
+            let activate_capable_type_count = discovered_types
+                .iter()
+                .filter(|record| {
+                    record.format == format && record.lifecycle_contract.supports_activate
+                })
+                .count();
+            let sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.plugin_format == Some(format))
+                .count();
+            let in_process_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.placement_outcome == RuntimePluginIsolationOutcome::InProcess
+                })
+                .count();
+            let shared_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.placement_outcome == RuntimePluginIsolationOutcome::SharedSandbox
+                })
+                .count();
+            let isolated_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.placement_outcome
+                            == RuntimePluginIsolationOutcome::IsolatedSandbox
+                })
+                .count();
+            let ready_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Ready
+                })
+                .count();
+            let restarting_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Restarting
+                })
+                .count();
+            let rebindable_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.rebindable)
+                .count();
+            let degraded_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Degraded
+                })
+                .count();
+            let faulted_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Faulted
+                })
+                .count();
+            let quarantined_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.state == RuntimePluginLifecycleState::Quarantined
+                })
+                .count();
+            let terminal_sandbox_count = sandboxes
+                .iter()
+                .filter(|sandbox| {
+                    sandbox.plugin_format == Some(format)
+                        && sandbox.continuity_class == RuntimeInterruptionClass::Terminal
+                })
+                .count();
+            let active_transport_count = sandboxes
+                .iter()
+                .filter(|sandbox| sandbox.plugin_format == Some(format) && sandbox.active_transport)
+                .count();
             let explicit_placement_rule_count = runtime_plugin_format_rule_count(policy, format);
             let parity_band = runtime_plugin_parity_band(coverage);
-            let linux_parity_band = coverage.map(|coverage| coverage.linux_parity_band).unwrap_or(RuntimePluginParityBand::Guarded);
-            let linux_supported = coverage.map(|coverage| coverage.supported_platforms.contains(&RuntimePluginHostPlatform::Linux)).unwrap_or(false);
-            let linux_preferred_sandbox_outcome = coverage.and_then(|coverage| coverage.linux_preferred_sandbox_outcome);
-            let linux_strict_sandbox_default = coverage.map(|coverage| coverage.linux_strict_sandbox_default).unwrap_or(false);
+            let linux_parity_band = coverage
+                .map(|coverage| coverage.linux_parity_band)
+                .unwrap_or(RuntimePluginParityBand::Guarded);
+            let linux_supported = coverage
+                .map(|coverage| {
+                    coverage
+                        .supported_platforms
+                        .contains(&RuntimePluginHostPlatform::Linux)
+                })
+                .unwrap_or(false);
+            let linux_preferred_sandbox_outcome =
+                coverage.and_then(|coverage| coverage.linux_preferred_sandbox_outcome);
+            let linux_strict_sandbox_default = coverage
+                .map(|coverage| coverage.linux_strict_sandbox_default)
+                .unwrap_or(false);
 
             RuntimePluginFormatParityRecord {
                 format,

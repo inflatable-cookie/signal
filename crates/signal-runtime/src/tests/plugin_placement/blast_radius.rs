@@ -187,5 +187,4 @@ fn runtime_shared_sandbox_blast_radius_stays_boundary_local_across_recovery_and_
         .iter()
         .filter(|stage| stage.sandbox_id.as_deref() == Some("sandbox-steady"))
         .all(|stage| stage.continuity_class == RuntimeInterruptionClass::Steady));
-
 }

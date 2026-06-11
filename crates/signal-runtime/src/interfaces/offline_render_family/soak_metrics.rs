@@ -32,9 +32,7 @@ pub struct RuntimeOfflineRenderSoakReceipt {
     pub report_materialized: bool,
 }
 
-impl RuntimeOfflineRenderSoakReceipt {
-
-}
+impl RuntimeOfflineRenderSoakReceipt {}
 
 impl RuntimeOfflineRenderResult {
     /// Constructs a soak receipt summarising this render result.

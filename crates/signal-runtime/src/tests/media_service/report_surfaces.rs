@@ -73,7 +73,6 @@ fn runtime_observation_and_supervisor_reports_surface_media_service_baseline() {
 
     let _supervisor = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
 
-
     let _ = fs::remove_file(&ready_path);
     if let Some(path) = runtime
         .get_media_pipeline_snapshot()

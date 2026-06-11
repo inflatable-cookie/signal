@@ -1,3 +1,4 @@
+#[cfg(test)]
 use signal_runtime::{
     RuntimeError, RuntimeOfflinePluginDelegatedExecutionMerge,
     RuntimeOfflinePluginDelegatedExecutionOutcome, RuntimeOfflinePluginDelegatedExecutionReceipt,
@@ -7,9 +8,14 @@ use signal_runtime::{
     RuntimeOfflineRenderRequest, RuntimeOfflineRenderResult,
 };
 
+#[cfg(test)]
 use super::super::LocalRuntimeHost;
+#[cfg(test)]
 use super::transfer::scale_audio_buffer;
 
+/// Locally-simulated delegated offline execution, consumed only by this
+/// crate's unit tests.
+#[cfg(test)]
 impl LocalRuntimeHost {
     fn local_delegated_execution_outcome(
         &self,
@@ -82,7 +88,7 @@ impl LocalRuntimeHost {
     }
 
     /// Applies a locally-simulated delegated execution outcome to a completed offline render result.
-    pub fn finalize_offline_render_with_local_delegated_executor(
+    pub(crate) fn finalize_offline_render_with_local_delegated_executor(
         &self,
         result: RuntimeOfflineRenderResult,
     ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
@@ -91,14 +97,5 @@ impl LocalRuntimeHost {
         };
         self.runtime
             .apply_offline_plugin_delegated_execution_outcome(&result, outcome)
-    }
-
-    /// Renders offline audio and applies the local delegated execution outcome in one call.
-    pub fn render_offline_with_local_delegated_executor(
-        &self,
-        request: RuntimeOfflineRenderRequest,
-    ) -> Result<RuntimeOfflineRenderResult, RuntimeError> {
-        let result = self.runtime.render_offline(request)?;
-        self.finalize_offline_render_with_local_delegated_executor(result)
     }
 }

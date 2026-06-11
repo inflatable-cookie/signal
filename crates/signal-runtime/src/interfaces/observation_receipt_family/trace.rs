@@ -1,4 +1,3 @@
 use super::*;
 
-impl RuntimePerformanceTraceReceipt {
-}
+impl RuntimePerformanceTraceReceipt {}
