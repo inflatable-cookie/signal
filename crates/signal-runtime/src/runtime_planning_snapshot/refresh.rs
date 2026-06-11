@@ -181,8 +181,6 @@ impl RuntimeEngineState {
                 })
                 .collect();
             self.snapshot.stage_count = graph.stage_count();
-            self.snapshot.dynamic_kernel_stage_count = graph.dynamic_kernel_stage_count();
-            self.snapshot.dynamic_stage_state_model = graph.dynamic_stage_state_model();
             self.snapshot.total_latency_samples = graph.total_latency_samples();
             self.snapshot.max_node_latency_samples = graph.max_node_latency_samples();
             self.snapshot.total_tail_samples = graph.total_tail_samples();
@@ -206,9 +204,6 @@ impl RuntimeEngineState {
             self.snapshot.realtime_dispatch_count = 0;
             self.snapshot.dispatch_handoff_count = 0;
             self.snapshot.stage_count = 0;
-            self.snapshot.dynamic_kernel_stage_count = 0;
-            self.snapshot.dynamic_stage_state_model =
-                signal_graph::GraphDynamicStageStateModel::RebuiltPerBlock;
             self.snapshot.total_latency_samples = 0;
             self.snapshot.max_node_latency_samples = 0;
             self.snapshot.total_tail_samples = 0;

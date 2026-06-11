@@ -21,8 +21,7 @@ pub fn apply_stage(
 ) {
     let strategy = strategy.unwrap_or_default();
     let (events, _) = bounded_stage_events(events, strategy);
-    let mut processor =
-        GraphStageProcessor::new(stage, buffer.sample_rate(), buffer.channel_count().0);
+    let mut processor = GraphStageProcessor::new(stage);
     let mut frame_cursor = 0;
     let mut event_cursor = 0;
 

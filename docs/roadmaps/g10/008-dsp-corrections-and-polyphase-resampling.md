@@ -1,6 +1,6 @@
 # 008 - DSP Corrections And Polyphase Resampling
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.002
@@ -21,16 +21,16 @@ aliasing on rate-mismatched media.
 
 ## Goals
 
-- [ ] fix `ExponentialRamp` sign handling (support negative targets or
+- [x] fix `ExponentialRamp` sign handling (support negative targets or
       reject them explicitly)
-- [ ] polyphase windowed-sinc table module in signal-dsp: precomputed
+- [x] polyphase windowed-sinc table module in signal-dsp: precomputed
       (≈16 taps × 512 phases, Kaiser β≈8-10), built control-side, cutoff
       scaled per clip ratio
-- [ ] render plane consumes the table: replace the lerp inner loop with a
+- [x] render plane consumes the table: replace the lerp inner loop with a
       tap dot-product; table ships inside the compiled plan like sample Arcs;
       zero-alloc soak stays green; linear stays as the cheap fallback tier
-- [ ] known-answer resampling test: resampled sine SNR above a stated floor
-- [ ] decide signal-graph's fate explicitly: demote to the telemetry slice
+- [x] known-answer resampling test: resampled sine SNR above a stated floor
+- [x] decide signal-graph's fate explicitly: demote to the telemetry slice
       Pulse consumes (documented as non-RT, offline-only) or delete after
       decoupling Pulse; fix or delete the broken stateful stages — no
       half-state
@@ -77,6 +77,32 @@ aliasing on rate-mismatched media.
 ## Evidence Requirements
 
 - [ ] SNR figures and soak output in the progress log
+
+## Progress (2026-06-11)
+
+- Batch 8.1: ExponentialRamp documented and enforced as magnitude-domain
+  (debug assert on negative targets, bogus copysign line removed; LinearRamp
+  is the signed option). DelayLine default-delay `min(1)` typo fixed to the
+  full capacity. Denormal threshold comment now states honestly that 1e-20
+  also flushes vanishing normals by design.
+- Batch 8.2: `PolyphaseInterpolationTable` in signal-dsp (16 taps × 512
+  phases, Kaiser β=9, unity-DC-normalised phases, cutoff = min(1, 1/ratio)).
+  Render plane builds one table per distinct cutoff at plan compile and the
+  Samples render path does a tap dot product for rate-converted clips (1:1
+  playback keeps the direct read). Loop wrap via rem_euclid across taps.
+  Known-answer gates: kernel test 44.1k→48k sine sinc SNR > 60 dB and
+  > linear + 20 dB; render-plane e2e test plays a 44.1k clip on a 48k
+  stream and asserts > 60 dB against the analytic sine. Soak still zero
+  callback allocations.
+- Batch 8.3: signal-graph demoted honestly — crate and ExecutableGraph docs
+  now state offline/simulation execution for the control plane, never the
+  audio callback; zero "realtime thread" claims remain. The broken stateful
+  stages (Delay/LowPass, rebuilt per block so state never survived a block
+  boundary) deleted along with their parameters, processors, metrics,
+  report fields, and runtime snapshot projections; nothing outside tests
+  ever constructed them. Pulse unaffected.
+- signal-dsp-resample comparison-report retirement folded into g10.009's
+  hygiene pass (crate untouched this packet).
 
 ## Next Task
 

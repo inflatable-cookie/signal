@@ -141,7 +141,7 @@ pub struct GraphCapturedBusOutput {
 }
 
 /// Prepared anticipative dispatch output that can be handed into the later
-/// realtime dispatch path.
+/// primary-lane ([`crate::GraphExecutionLane::Realtime`]) dispatch path.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GraphPreparedDispatch {
     /// Pre-computed bus buffers, one per bus touched by the anticipative lane.
@@ -165,10 +165,10 @@ pub struct GraphPreparedBus {
     pub tail_samples: u32,
 }
 
-/// Full input bundle for the realtime execution path.
+/// Full input bundle for the primary-lane execution path.
 ///
 /// Carries all pre-computed summaries (planning, contract, routing) plus the
-/// input buffer and any prepared anticipative output so the realtime path does
+/// input buffer and any prepared anticipative output so the primary lane does
 /// not need to re-derive them.
 #[derive(Clone, Debug)]
 pub struct GraphRealtimeExecutionRequest<'a> {

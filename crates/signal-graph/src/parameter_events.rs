@@ -149,14 +149,6 @@ impl GraphStageParameterExt for GraphStageParameter {
                     GraphStageParameter::HardClipThreshold,
                     GraphStageSpec::HardClip { .. }
                 )
-                | (
-                    GraphStageParameter::LowPassCutoffHz,
-                    GraphStageSpec::LowPass { .. }
-                )
-                | (
-                    GraphStageParameter::DelayFeedback,
-                    GraphStageSpec::Delay { .. }
-                )
         )
     }
 }

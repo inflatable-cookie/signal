@@ -26,6 +26,13 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::Arc;
 
+use signal_dsp::PolyphaseInterpolationTable;
+
+/// Interpolation table shape for rate-converted media playback. 16 taps ×
+/// 512 phases ≈ 32 KB per distinct cutoff; built once per plan compile.
+const RESAMPLE_TAPS: usize = 16;
+const RESAMPLE_PHASES: usize = 512;
+
 /// Shared immutable sample data: interleaved stereo f32 at a source rate.
 ///
 /// Equality is pointer-based so plan specs containing large buffers compare
@@ -134,6 +141,9 @@ enum CompiledSource {
         step: f64,
         /// Repeat from the source start once exhausted.
         loop_source: bool,
+        /// Polyphase windowed-sinc table for rate-converted playback; `None`
+        /// at 1:1, where samples are read directly.
+        table: Option<PolyphaseInterpolationTable>,
     },
 }
 
@@ -171,6 +181,22 @@ impl RenderPlan {
     fn compile(spec: &RenderPlanSpec) -> Box<RenderPlan> {
         let tau = std::f32::consts::TAU;
         let stream_rate = spec.sample_rate_hz.max(1);
+        // One table per distinct cutoff in the plan (typically zero or one).
+        let mut tables: Vec<(u64, PolyphaseInterpolationTable)> = Vec::new();
+        let mut table_for_step = |step: f64| -> Option<PolyphaseInterpolationTable> {
+            if step == 1.0 {
+                return None;
+            }
+            let cutoff = (1.0 / step).min(1.0);
+            let key = cutoff.to_bits();
+            if let Some((_, table)) = tables.iter().find(|(bits, _)| *bits == key) {
+                return Some(table.clone());
+            }
+            let table =
+                PolyphaseInterpolationTable::new(RESAMPLE_TAPS, RESAMPLE_PHASES, cutoff);
+            tables.push((key, table.clone()));
+            Some(table)
+        };
         Box::new(RenderPlan {
             channels: spec.channels.max(1) as usize,
             sample_rate_hz: stream_rate,
@@ -201,12 +227,16 @@ impl RenderPlan {
                                     phase: 0.0,
                                     step: frequency_hz * tau / stream_rate as f32,
                                 },
-                                RenderSource::Samples(buffer) => CompiledSource::Samples {
-                                    step: buffer.sample_rate_hz.max(1) as f64
-                                        / stream_rate as f64,
-                                    buffer: buffer.clone(),
-                                    loop_source: clip.loop_source,
-                                },
+                                RenderSource::Samples(buffer) => {
+                                    let step = buffer.sample_rate_hz.max(1) as f64
+                                        / stream_rate as f64;
+                                    CompiledSource::Samples {
+                                        table: table_for_step(step),
+                                        step,
+                                        buffer: buffer.clone(),
+                                        loop_source: clip.loop_source,
+                                    }
+                                }
                             },
                         })
                         .collect(),
@@ -558,6 +588,7 @@ impl RenderPlaneExecutor {
                         buffer,
                         step,
                         loop_source,
+                        table,
                     } => {
                         let source_frames = buffer.frame_count();
                         if source_frames == 0 {
@@ -570,7 +601,7 @@ impl RenderPlaneExecutor {
                                 continue;
                             }
                             // Source position via the rate ratio, anchored at
-                            // the clip's window start; linear interpolation.
+                            // the clip's window start.
                             let mut source_position =
                                 (frame - clip_start) as f64 * *step;
                             if *loop_source {
@@ -580,26 +611,56 @@ impl RenderPlaneExecutor {
                             if source_index >= source_frames {
                                 continue;
                             }
-                            // Clamp interpolation at the final frame (or wrap
-                            // to the start when looping) so the last frame
-                            // actually plays.
-                            let next_index = if source_index + 1 < source_frames {
-                                source_index + 1
-                            } else if *loop_source {
-                                0
-                            } else {
-                                source_index
-                            };
-                            let fraction = (source_position - source_index as f64) as f32;
+                            let fraction = source_position - source_index as f64;
                             let lane_gain = (gain_begin
                                 + gain_slope * frame_index as f32)
                                 * clip_edge_gain(frame, clip_start, clip_end, clip_fade);
                             let base = frame_index * channels;
-                            for channel in 0..channels.min(2) {
-                                let a = data[source_index * 2 + channel];
-                                let b = data[next_index * 2 + channel];
-                                frames[base + channel] +=
-                                    (a + (b - a) * fraction) * lane_gain;
+                            match table {
+                                // Rate conversion: polyphase windowed-sinc
+                                // tap dot product (table reads only — no
+                                // allocation, no transcendentals).
+                                Some(table) => {
+                                    let row = table.phase_row(fraction);
+                                    let first = table.first_tap_offset();
+                                    for channel in 0..channels.min(2) {
+                                        let mut acc = 0.0f32;
+                                        for (tap, coefficient) in row.iter().enumerate() {
+                                            let mut tap_index =
+                                                source_index as isize + first + tap as isize;
+                                            if *loop_source {
+                                                tap_index =
+                                                    tap_index.rem_euclid(source_frames as isize);
+                                            }
+                                            if tap_index >= 0
+                                                && (tap_index as usize) < source_frames
+                                            {
+                                                acc += data
+                                                    [tap_index as usize * 2 + channel]
+                                                    * coefficient;
+                                            }
+                                        }
+                                        frames[base + channel] += acc * lane_gain;
+                                    }
+                                }
+                                // 1:1 playback: direct read with last-frame
+                                // clamp (or wrap when looping).
+                                None => {
+                                    let next_index = if source_index + 1 < source_frames {
+                                        source_index + 1
+                                    } else if *loop_source {
+                                        0
+                                    } else {
+                                        source_index
+                                    };
+                                    let fraction = fraction as f32;
+                                    for channel in 0..channels.min(2) {
+                                        let a = data[source_index * 2 + channel];
+                                        let b = data[next_index * 2 + channel];
+                                        frames[base + channel] +=
+                                            (a + (b - a) * fraction) * lane_gain;
+                                    }
+                                }
                             }
                         }
                     }
@@ -947,6 +1008,63 @@ mod tests {
         // 440 Hz at 48k moves at most ~0.058/sample at unity; the gain ramp
         // must not add a visible step on top.
         assert!(max_step < 0.08, "gain swap produced a step of {max_step}");
+    }
+
+    #[test]
+    fn rate_converted_clips_play_through_the_sinc_path() {
+        // 1 kHz sine at 44.1k played on a 48k stream: after the edge ramp
+        // and clip fade, output must track the analytic sine to ~60 dB
+        // (linear interpolation fails this at ~35-40 dB).
+        let (controller, mut executor) = render_plane();
+        let source_rate = 44_100u32;
+        let frequency = 1_000.0f64;
+        let mut data = Vec::new();
+        for n in 0..44_100 {
+            let value = (std::f64::consts::TAU * frequency * n as f64
+                / source_rate as f64)
+                .sin() as f32;
+            data.push(value);
+            data.push(value);
+        }
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            channels: 2,
+            master_gain: 1.0,
+            lanes: vec![RenderLaneSpec {
+                lane_id: "lane:rc".to_string(),
+                gain: 1.0,
+                clips: vec![RenderClipSpec {
+                    start_frames: 0,
+                    end_frames: u64::MAX,
+                    source: RenderSource::Samples(RenderSampleBuffer {
+                        sample_rate_hz: source_rate,
+                        frames: data.into(),
+                    }),
+                    loop_source: false,
+                }],
+            }],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 4); // 1024 frames: ramp open, fades passed.
+
+        let mut frames = vec![0.0f32; 2048];
+        executor.render_block(&mut frames);
+        let step = source_rate as f64 / 48_000.0;
+        let mut error = 0.0f64;
+        let mut power = 0.0f64;
+        for frame_index in 0..1024usize {
+            let stream_frame = 1024 + frame_index as u64;
+            let position = stream_frame as f64 * step;
+            let expected = (std::f64::consts::TAU * frequency * position
+                / source_rate as f64)
+                .sin();
+            let actual = frames[frame_index * 2] as f64;
+            error += (actual - expected) * (actual - expected);
+            power += expected * expected;
+        }
+        let snr = 10.0 * (power / error.max(1e-30)).log10();
+        assert!(snr > 60.0, "rate-converted playback SNR {snr:.1} dB");
     }
 
     #[test]

@@ -36,6 +36,7 @@ mod filter;
 mod fixtures;
 mod level;
 mod mix;
+mod polyphase;
 pub mod ramp;
 
 pub use block::{
@@ -44,6 +45,7 @@ pub use block::{
 pub use control::SmoothedValue;
 pub use control::{ControlPlan, ControlSegment, ControlSegmentPlayer, ControlSegmentShape};
 pub use delay::DelayLine;
+pub use polyphase::PolyphaseInterpolationTable;
 pub use filter::OnePoleLowPass;
 pub use fixtures::SignalFixture;
 pub use level::{EnvelopeFollower, PeakMeter, RmsMeter};
@@ -52,7 +54,10 @@ pub use ramp::{ExponentialRamp, LinearRamp};
 
 use signal_primitives::Sample;
 
-/// Magnitude threshold below which a sample value is treated as a subnormal and flushed to zero.
+/// Magnitude threshold below which a sample value is flushed to zero between
+/// blocks. Deliberately far above the f32 subnormal boundary (~1.2e-38): it
+/// also clears vanishing-but-normal feedback tails that would otherwise decay
+/// for thousands of blocks at inaudible levels.
 pub const DENORMAL_THRESHOLD: Sample = 1.0e-20;
 
 /// Common trait for reusable in-place DSP processors.

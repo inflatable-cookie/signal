@@ -22,7 +22,7 @@ pub struct RuntimeEngineBlockSnapshot {
     pub plugin_backed_node_count: usize,
     /// Whether anticipative (prework) planning is enabled.
     pub anticipative_planning_enabled: bool,
-    /// Number of inline realtime nodes processed directly in the audio thread.
+    /// Number of nodes planned into the inline primary lane.
     pub inline_realtime_node_count: usize,
     /// Number of stateful realtime nodes.
     pub stateful_realtime_node_count: usize,
@@ -50,7 +50,7 @@ pub struct RuntimeEngineBlockSnapshot {
     pub dispatch_order: Vec<GraphExecutionLane>,
     /// Number of dispatches prepared (prework) before the block started.
     pub prepared_dispatch_count: usize,
-    /// Number of dispatches issued on the realtime thread.
+    /// Number of dispatches issued on the primary (non-prework) lane.
     pub realtime_dispatch_count: usize,
     /// Number of dispatch hand-offs from the prework service to realtime.
     pub dispatch_handoff_count: usize,
@@ -212,10 +212,6 @@ pub struct RuntimeEngineBlockSnapshot {
     pub planned_nodes: Vec<RuntimePlannedGraphNode>,
     /// Total number of stages in the execution plan.
     pub stage_count: usize,
-    /// Number of stages using dynamic kernel state.
-    pub dynamic_kernel_stage_count: usize,
-    /// Dynamic stage state model in effect for this block.
-    pub dynamic_stage_state_model: GraphDynamicStageStateModel,
     /// Accumulated latency in samples across all latency-compensated nodes.
     pub total_latency_samples: u32,
     /// Highest single-node latency in samples.

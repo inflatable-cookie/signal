@@ -1,9 +1,15 @@
-//! Graph model and execution semantics for Signal.
+//! Graph model and offline execution semantics for Signal.
 //!
-//! The crate owns the executable block path that sits between reusable DSP
-//! kernels and runtime orchestration. It models node contracts, routed buses,
-//! planning groups, execution lanes, and block-local parameter-event
-//! application.
+//! This crate is an offline/simulation graph execution engine for the control
+//! plane and diagnostic harnesses (notably signal-runtime's engine-block
+//! path). It models node contracts, routed buses, planning groups, execution
+//! lanes, and block-local parameter-event application, and produces detailed
+//! per-block reports for inspection.
+//!
+//! It is NOT suitable for the audio callback: execution allocates per block
+//! (summary recomputation, buffer clones, per-stage event collection). The
+//! production realtime audio path is `signal-render-plane`, which does not use
+//! this crate.
 //!
 //! ```no_run
 //! use signal_graph::{
@@ -48,12 +54,16 @@ use graph_summary::{classify_channel_adaptation, planning_group_for_node};
 use signal_primitives::{AudioBuffer, ChannelCount, ChannelLayout, FrameCount, SampleRate};
 use stage_processor::StageParameterEvent;
 
-/// A compiled, executable audio processing graph.
+/// A compiled, executable audio processing graph for offline/simulation use.
 ///
 /// Wraps a [`GraphExecutionPlan`] and exposes the block-processing entry
 /// points. Build one from a graph ID and a list of [`GraphNodeSpec`]s, then
-/// call [`ExecutableGraph::process_with_context`] each audio block from the
-/// realtime thread.
+/// call [`ExecutableGraph::process_with_context`] per simulated block.
+///
+/// Not realtime-safe: each call allocates (working-buffer clones, per-stage
+/// event vectors, report construction). Use it from the control plane or
+/// diagnostic harnesses, never from the audio callback — the production audio
+/// path is `signal-render-plane`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ExecutableGraph {
     plan: GraphExecutionPlan,

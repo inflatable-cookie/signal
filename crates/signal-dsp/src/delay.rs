@@ -17,7 +17,7 @@ impl DelayLine {
         Self {
             buffer: vec![0.0; max_delay_samples.saturating_add(1)],
             write_index: 0,
-            delay_samples: max_delay_samples.min(1),
+            delay_samples: max_delay_samples,
             feedback: 0.0,
             bypassed: false,
         }

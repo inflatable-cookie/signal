@@ -111,10 +111,20 @@ impl ExponentialRamp {
     }
 
     /// Set a new target value to reach over the given number of samples.
+    ///
+    /// The ramp is magnitude-domain: an exponential trajectory cannot cross
+    /// zero, so values are clamped to the positive domain
+    /// (`MIN_MAGNITUDE..`). Negative inputs are rejected in debug builds and
+    /// use their magnitude in release builds; use [`LinearRamp`] for signed
+    /// trajectories.
     pub fn set_target(&mut self, target: Sample, samples: usize) {
+        debug_assert!(
+            target >= 0.0,
+            "ExponentialRamp is magnitude-domain; got negative target {target}",
+        );
         let current = self.current.abs().max(Self::MIN_MAGNITUDE);
         let target = target.abs().max(Self::MIN_MAGNITUDE);
-        self.target = target.copysign(self.target.signum().max(1.0));
+        self.target = target;
 
         if samples == 0 {
             self.reset(target);

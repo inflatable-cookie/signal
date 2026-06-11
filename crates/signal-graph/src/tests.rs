@@ -1,8 +1,8 @@
 use super::{
     synthetic_stereo_block, AudioBuffer, ChannelLayout, ExecutableGraph, FrameCount,
-    GraphDynamicStageStateModel, GraphExecutionContext, GraphExecutionLane, GraphExecutionRequest,
-    GraphNodeBufferContract, GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodePlanningGroup,
-    GraphNodeSpec, GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec, SampleRate,
+    GraphExecutionContext, GraphExecutionLane, GraphExecutionRequest, GraphNodeBufferContract,
+    GraphNodeBusEndpoint, GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeSpec,
+    GraphNodeTopologyMetadata, GraphNodeTopologyRole, GraphStageSpec, SampleRate,
 };
 use signal_primitives::ChannelCount;
 
@@ -168,11 +168,6 @@ fn executable_graph_processes_buffer_and_reports_metrics() {
         ]
     );
     assert_eq!(report.stage_count, 5);
-    assert_eq!(report.dynamic_kernel_stage_count, 0);
-    assert_eq!(
-        report.dynamic_stage_state_model,
-        GraphDynamicStageStateModel::RebuiltPerBlock
-    );
     assert_eq!(report.total_latency_samples, 24);
     assert_eq!(report.max_node_latency_samples, 24);
     assert_eq!(report.total_tail_samples, 0);

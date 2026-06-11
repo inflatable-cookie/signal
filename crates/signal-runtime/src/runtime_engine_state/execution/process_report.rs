@@ -24,8 +24,6 @@ impl RuntimeEngineState {
             realtime_dispatch_count,
             dispatch_handoff_count,
             stage_count,
-            dynamic_kernel_stage_count,
-            dynamic_stage_state_model,
             total_latency_samples,
             max_node_latency_samples,
             total_tail_samples,
@@ -127,8 +125,6 @@ impl RuntimeEngineState {
             self.snapshot.last_prework_consumed_from_block_sequence = None;
         }
         self.snapshot.stage_count = stage_count;
-        self.snapshot.dynamic_kernel_stage_count = dynamic_kernel_stage_count;
-        self.snapshot.dynamic_stage_state_model = dynamic_stage_state_model;
         self.snapshot.total_latency_samples = total_latency_samples;
         self.snapshot.max_node_latency_samples = max_node_latency_samples;
         self.snapshot.total_tail_samples = total_tail_samples;

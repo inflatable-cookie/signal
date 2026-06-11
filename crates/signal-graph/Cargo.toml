@@ -8,5 +8,4 @@ publish = false
 description = "Graph model and execution semantics for Signal."
 
 [dependencies]
-signal-dsp = { path = "../signal-dsp" }
 signal-primitives = { path = "../signal-primitives" }

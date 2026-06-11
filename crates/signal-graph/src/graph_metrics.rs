@@ -1,7 +1,5 @@
 // Graph metrics and introspection for ExecutableGraph
-use crate::{
-    ExecutableGraph, GraphDynamicStageStateModel, GraphNodeExecutionClass, GraphStageSpec,
-};
+use crate::{ExecutableGraph, GraphNodeExecutionClass};
 
 impl ExecutableGraph {
     /// Returns the number of nodes in the graph.
@@ -12,26 +10,6 @@ impl ExecutableGraph {
     /// Returns the total number of stages across all nodes.
     pub fn stage_count(&self) -> usize {
         self.plan.nodes.iter().map(|node| node.stages.len()).sum()
-    }
-
-    /// Returns the count of dynamic kernel stages (LowPass, Delay, etc.).
-    pub fn dynamic_kernel_stage_count(&self) -> usize {
-        self.plan
-            .nodes
-            .iter()
-            .flat_map(|node| node.stages.iter())
-            .filter(|stage| {
-                matches!(
-                    stage,
-                    GraphStageSpec::LowPass { .. } | GraphStageSpec::Delay { .. }
-                )
-            })
-            .count()
-    }
-
-    /// Returns the dynamic stage state model used by the graph.
-    pub fn dynamic_stage_state_model(&self) -> GraphDynamicStageStateModel {
-        GraphDynamicStageStateModel::RebuiltPerBlock
     }
 
     /// Returns the number of stateful nodes.

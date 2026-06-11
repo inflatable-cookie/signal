@@ -179,8 +179,6 @@ fn graph_stage_parameter_from_runtime_parameter_id(
         "drive" => Some(GraphStageParameter::TanhDrive),
         "balance" => Some(GraphStageParameter::StereoBalance),
         "threshold" => Some(GraphStageParameter::HardClipThreshold),
-        "cutoff_hz" => Some(GraphStageParameter::LowPassCutoffHz),
-        "feedback" => Some(GraphStageParameter::DelayFeedback),
         _ => None,
     }
 }
@@ -206,12 +204,6 @@ fn graph_stage_parameter_applies_to(
         ) | (
             GraphStageParameter::HardClipThreshold,
             signal_graph::GraphStageSpec::HardClip { .. }
-        ) | (
-            GraphStageParameter::LowPassCutoffHz,
-            signal_graph::GraphStageSpec::LowPass { .. }
-        ) | (
-            GraphStageParameter::DelayFeedback,
-            signal_graph::GraphStageSpec::Delay { .. }
         )
     )
 }
@@ -223,7 +215,5 @@ pub(crate) fn graph_stage_parameter_sort_key(parameter: GraphStageParameter) -> 
         GraphStageParameter::TanhDrive => 2,
         GraphStageParameter::StereoBalance => 3,
         GraphStageParameter::HardClipThreshold => 4,
-        GraphStageParameter::LowPassCutoffHz => 5,
-        GraphStageParameter::DelayFeedback => 6,
     }
 }

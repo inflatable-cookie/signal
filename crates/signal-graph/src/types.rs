@@ -49,18 +49,6 @@ pub enum GraphStageSpec {
         /// Absolute sample value at which clipping occurs.
         threshold: f32,
     },
-    /// First-order low-pass filter.
-    LowPass {
-        /// -3 dB corner frequency in Hz.
-        cutoff_hz: f32,
-    },
-    /// Delay line with feedback.
-    Delay {
-        /// Integer delay length in samples.
-        delay_samples: usize,
-        /// Recirculation gain (0.0 = no feedback, 1.0 = infinite sustain).
-        feedback: f32,
-    },
 }
 
 /// Identifies which parameter of a stage a [`GraphParameterEvent`] targets.
@@ -80,10 +68,6 @@ pub enum GraphStageParameter {
     StereoBalance,
     /// Clip threshold on a [`GraphStageSpec::HardClip`] stage.
     HardClipThreshold,
-    /// Cutoff frequency on a [`GraphStageSpec::LowPass`] stage.
-    LowPassCutoffHz,
-    /// Feedback gain on a [`GraphStageSpec::Delay`] stage.
-    DelayFeedback,
 }
 
 /// Identifies the exact stage parameter that a parameter event should modify.
@@ -154,24 +138,31 @@ pub enum GraphNodeExecutionClass {
 }
 
 /// Planning group that controls which execution lane a node is scheduled into.
+///
+/// Lane names model the scheduling intent of a hypothetical realtime/anticipative
+/// split; in this engine all lanes execute synchronously on the calling thread.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GraphNodePlanningGroup {
-    /// Lightweight, stateless node that runs inline on the realtime thread.
+    /// Lightweight, stateless node scheduled inline on the primary lane.
     InlineRealtime,
-    /// Stateful node that must run on the realtime thread but in a dedicated phase.
+    /// Stateful node scheduled on the primary lane in a dedicated phase.
     StatefulRealtime,
-    /// Node that may be pre-computed on the anticipative lane before the
-    /// realtime deadline.
+    /// Node that may be pre-computed on the anticipative lane ahead of the
+    /// primary lane.
     AnticipativeEligible,
 }
 
-/// The thread lane on which a dispatch executes.
+/// The modeled lane on which a dispatch executes.
+///
+/// Lanes are a scheduling classification, not threads: both lanes run
+/// synchronously on the caller's thread during [`crate::ExecutableGraph`]
+/// execution.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GraphExecutionLane {
-    /// Executes on the realtime audio thread.
+    /// The primary lane, dispatched after any anticipative pre-work.
     Realtime,
-    /// Executes on the anticipative (pre-computation) thread before the
-    /// realtime deadline.
+    /// The anticipative (pre-computation) lane, dispatched before the
+    /// primary lane.
     Anticipative,
 }
 
@@ -222,17 +213,6 @@ pub enum GraphNodeTopologyRole {
     Return,
     /// Console-model node (e.g. strip or master bus in a console emulation).
     ConsoleNode,
-}
-
-/// Controls whether dynamic stage state (kernel parameters, coefficients) is
-/// recomputed each block or retained across blocks.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum GraphDynamicStageStateModel {
-    /// State is fully recomputed from the stage spec at the start of each block.
-    #[default]
-    RebuiltPerBlock,
-    /// State is initialised once and mutated incrementally by parameter events.
-    RetainedAcrossBlocks,
 }
 
 /// One side of a node's buffer contract — identifies the bus and its channel format.
@@ -335,7 +315,7 @@ pub struct GraphNodeSpec {
     pub buffer_contract: GraphNodeBufferContract,
     /// Optional topology role and grouping metadata.
     pub topology: GraphNodeTopologyMetadata,
-    /// Ordered list of DSP stages to run on each audio block.
+    /// Ordered list of DSP stages to run on each processed block.
     pub stages: Vec<GraphStageSpec>,
 }
 

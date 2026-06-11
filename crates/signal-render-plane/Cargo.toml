@@ -13,3 +13,6 @@ signal-hardware-output-cpal = { path = "../signal-hardware-output-cpal" }
 
 [[example]]
 name = "render_soak"
+
+[dependencies]
+signal-dsp = { path = "../signal-dsp" }

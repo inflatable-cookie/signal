@@ -86,10 +86,6 @@ pub struct GraphBlockReport {
     pub dispatch_handoff_count: usize,
     /// Total number of DSP stages across all nodes.
     pub stage_count: usize,
-    /// Number of stages backed by dynamically-constructed kernels.
-    pub dynamic_kernel_stage_count: usize,
-    /// State model used for dynamic stage kernels this block.
-    pub dynamic_stage_state_model: crate::GraphDynamicStageStateModel,
     /// Sum of all per-node latency values, in samples.
     pub total_latency_samples: u32,
     /// Highest per-node latency value, in samples.
@@ -242,8 +238,6 @@ pub(crate) fn build_block_report(
             prepared_dispatch_count > 0 && realtime_dispatch_count > 0,
         ),
         stage_count: graph.stage_count(),
-        dynamic_kernel_stage_count: graph.dynamic_kernel_stage_count(),
-        dynamic_stage_state_model: graph.dynamic_stage_state_model(),
         total_latency_samples: graph.total_latency_samples(),
         max_node_latency_samples: graph.max_node_latency_samples(),
         total_tail_samples: graph.total_tail_samples(),

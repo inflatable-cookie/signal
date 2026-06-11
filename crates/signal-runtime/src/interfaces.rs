@@ -57,7 +57,7 @@ use std::{
 };
 
 use signal_graph::{
-    GraphChannelAdaptationMode, GraphDynamicStageStateModel, GraphExecutionContext,
+    GraphChannelAdaptationMode, GraphExecutionContext,
     GraphExecutionLane, GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeResetPolicy,
     GraphNodeSilencePolicy, GraphNodeTopologyRole, GraphStageSpec,
 };
