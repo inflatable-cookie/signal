@@ -4,8 +4,8 @@
 //! Run with: `cargo run -p signal-render-plane --example render_soak`
 //!
 //! The plan is graph-shaped: two tone lanes panned hard left/right through a
-//! bus into the master — the full schedule walk (lane scratch → matrix edges
-//! → bus → boundary) runs inside the measured callback.
+//! Sum stage into the master — the full schedule walk (source scratch →
+//! matrix edges → Sum → boundary) runs inside the measured callback.
 //!
 //! A counting global allocator tracks every alloc/dealloc that happens while
 //! the callback flag is raised. The control thread parks during measurement
@@ -93,9 +93,9 @@ fn main() {
         .expect("record stream channels");
 
     // Bussed plan: lanes a (440 Hz, panned hard left) and b (660 Hz, hard
-    // right) feed a bus through equal-power pan matrices; the bus feeds the
+    // right) feed a Sum stage through equal-power pan matrices; it feeds the
     // master through an identity edge.
-    let bussed_plan = RenderPlanSpec {
+    let summed_plan = RenderPlanSpec {
         sample_rate_hz,
         master_gain: 0.5,
         master_limiter: None,
@@ -135,9 +135,9 @@ fn main() {
             },
         ],
     };
-    controller.install_plan(&bussed_plan).expect("install plan");
+    controller.install_plan(&summed_plan).expect("install plan");
 
-    println!("transport: play (1.5s, two tones panned hard left/right through a bus)");
+    println!("transport: play (1.5s, two tones panned hard left/right through a Sum stage)");
     controller.set_playing(true).expect("play");
     std::thread::sleep(Duration::from_millis(1_500));
     let position_after_play = controller.position_frames();
@@ -199,5 +199,5 @@ fn main() {
     println!("callback allocations: {allocs}, deallocations: {deallocs}");
     assert_eq!(allocs, 0, "render path must not allocate");
     assert_eq!(deallocs, 0, "render path must not deallocate");
-    println!("soak passed: audible, bussed, transport-gated, zero-alloc callback");
+    println!("soak passed: audible, summed, transport-gated, zero-alloc callback");
 }

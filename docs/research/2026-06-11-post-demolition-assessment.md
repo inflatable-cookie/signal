@@ -53,7 +53,7 @@ gestures stop recompiling the world).
 
 | Capability | Today | v1 scope |
 |---|---|---|
-| Mixer realization | flat lanes×gain→master; **no pan at all**, no busses/sends/solo/mute semantics | pan+mute/solo S; busses+sends M; inserts L (waits for plugins) |
+| Mixer realization | flat lanes×gain→master; **no pan at all**, Chain node graphs never reach audio | CORRECTED 2026-06-11: Loophole has no bus type — see the operator correction note below; chain-graph lowering is chorus g11.007 |
 | Bounce/export | simulation-graph offline render (≠ playback) | S — run the real executor offline, WYSIWYG |
 | Automation playback | pulse model real; engine has static gains | S–M — compiled breakpoint envelopes, gain first |
 | Recording | nothing (cpal input never wired); pulse take/arm model waits | M + latency reporting prerequisite |
@@ -63,6 +63,19 @@ gestures stop recompiling the world).
 | Time-stretch | readiness enums only | M offline varispeed first; RT stretch non-goal |
 | Musical time | pulse owns tempo (correct) | S — compile helper; never teach the executor BPM |
 | Device lifecycle | negotiation + enumeration; no hot-swap/rate-change recovery | S–M |
+
+## Operator correction (2026-06-11, after phase two)
+
+This assessment's mixer framing ("busses+sends", "flat lanes→master")
+leaked traditional-DAW vocabulary that does not match Loophole's model
+(b04/b06/b08): faders and pans ARE Nodes, sends are Nodes, returns are just
+Chains, free-standing Chains cover the bus use case without a bus type, and
+pre/post-fader is topology. The correct gap statement: pulse's compile is a
+flat interim projection bypassing the Chain/Node graph; the work is
+chain-graph lowering (Nodes → Stages 1:1, sends → edges, fader → stage
+gain, pan → edge matrix), specified in chorus g11.007 with the model audit
+at chorus/research/2026-06-11-pulse-chain-model-audit.md. The engine's
+Stage/Edge/matrix vocabulary needs nothing new.
 
 ## Operator direction adopted (2026-06-11, after this assessment)
 

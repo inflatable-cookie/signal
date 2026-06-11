@@ -17,7 +17,7 @@
 //! channels whose send/receive operations neither allocate nor free.
 //!
 //! Plans are **graphs**, not lane lists: a spec is a set of format-typed
-//! stages ([`RenderStageSpec`] — lanes, busses, exactly one master) connected
+//! stages ([`RenderStageSpec`] — Source, Sum, exactly one Output) connected
 //! by edges that each carry a gain and an N×M channel mix matrix. Compile
 //! topologically sorts the graph into a flat execution schedule, preallocates
 //! a per-stage scratch buffer ([`MAX_BLOCK_FRAMES`] × stage channels — the
@@ -481,7 +481,7 @@ pub struct RenderClipSpec {
 #[derive(Debug, Clone, PartialEq)]
 pub enum RenderStageKind {
     /// Source stage: renders clip content at its format. May also sum inputs
-    /// like a bus (clips render first, then edges add in).
+    /// (clips render first, then edges add in).
     Source {
         /// Clip events rendered by this source stage.
         clips: Vec<RenderClipSpec>,
@@ -747,7 +747,7 @@ struct CompiledNode {
     /// Sorted automation breakpoints `(frame, gain)`; empty = no automation
     /// (static `gain_target` smoothing applies).
     gain_envelope: Vec<(u64, f32)>,
-    /// Clip content (lane stages; empty for bus/master).
+    /// Clip content (Source stages; empty for Sum/Output).
     clips: Vec<CompiledClip>,
     inputs: Vec<CompiledInput>,
     /// Interleaved scratch at the stage's format: `MAX_BLOCK_FRAMES × channels`.
@@ -3540,9 +3540,10 @@ mod tests {
 
     #[test]
     fn bus_chain_renders_in_topological_order() {
-        // Nodes listed deliberately out of order: master first, then the bus
-        // chain, then the lane. The schedule must still run lane → bus A →
-        // bus B → master, with each stage's gain applied at consumption.
+        // Stages listed deliberately out of order: output first, then the
+        // Sum chain, then the source. The schedule must still run source →
+        // sum A → sum B → output, with each stage's gain applied at
+        // consumption.
         let (mut controller, mut executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
@@ -3687,10 +3688,11 @@ mod tests {
 
     #[test]
     fn send_topology_sums_both_paths() {
-        // Lane feeds bus A and bus B (a send); both feed the master. The
+        // Source feeds Sum A and Sum B (a send-like fan-out); both feed the
+        // output. The
         // output must be exactly double the single-path render.
         let (mut controller, mut executor) = render_plane();
-        let bus = |stage_id: u64| RenderStageSpec {
+        let sum_stage = |stage_id: u64| RenderStageSpec {
             stage_id,
             format: ChannelFormat::stereo(),
             gain: 1.0,
@@ -3704,8 +3706,8 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 lane_node(LANE_ID, 0.25, vec![tone_clip(440.0)]),
-                bus(10),
-                bus(11),
+                sum_stage(10),
+                sum_stage(11),
                 master_node(vec![identity_edge(10), identity_edge(11)]),
             ],
         };
@@ -3910,7 +3912,7 @@ mod tests {
     #[test]
     fn golden_render_hash_is_stable() {
         // Reference plan: two tone lanes panned hard left/right through a
-        // bus, summed with a centered mono lane at the master. Renders 8 ×
+        // Sum stage, mixed with a centered mono source at the output. Renders 8 ×
         // 256-frame blocks from transport start (edge ramp included) and
         // hashes the PCM. Gates every render-plane change: any behavioral
         // drift in declick, smoothing, scheduling, or matrix application
