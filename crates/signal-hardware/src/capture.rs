@@ -180,6 +180,22 @@ impl CaptureSession {
         spec: InputStreamSpec,
         wav_path: &Path,
     ) -> Result<Self, InputStreamError> {
+        Self::start_with_skip(backend, spec, wav_path, 0)
+    }
+
+    /// [`CaptureSession::start`] with a count-in style pre-roll discard: the
+    /// writer thread drops the first `skip_initial_frames` frames arriving
+    /// from the ring before writing anything, so the WAV's first frame is
+    /// the first post-pre-roll capture frame. `skip_initial_frames` is
+    /// interpreted at the *requested* `spec.sample_rate_hz` and rescaled to
+    /// the negotiated stream rate when they differ. The capture report
+    /// counts written frames only (skipped frames never reach the file).
+    pub fn start_with_skip(
+        backend: &dyn InputStreamBackend,
+        spec: InputStreamSpec,
+        wav_path: &Path,
+        skip_initial_frames: u64,
+    ) -> Result<Self, InputStreamError> {
         // Open with a placeholder ring sized for the request, then resize on
         // negotiation? No — the callback closure must own its ring before the
         // stream starts. Size generously off the *requested* spec; the
@@ -217,6 +233,16 @@ impl CaptureSession {
         let writer_ring = Arc::clone(&ring);
         let writer_stop_flag = Arc::clone(&writer_stop);
         let channels = u64::from(stream.channels().max(1));
+        // Pre-roll discard, rescaled from the requested to the negotiated
+        // rate (frames at the rate the audio actually arrives at), then
+        // expanded to interleaved samples for the writer's counter.
+        let skip_frames_negotiated = if stream.sample_rate_hz() == spec.sample_rate_hz {
+            skip_initial_frames
+        } else {
+            (u128::from(skip_initial_frames) * u128::from(stream.sample_rate_hz())
+                / u128::from(spec.sample_rate_hz.max(1))) as u64
+        };
+        let mut skip_samples = skip_frames_negotiated.saturating_mul(channels);
         let writer = std::thread::Builder::new()
             .name("signal-capture-writer".to_string())
             .spawn(move || -> Result<u64, String> {
@@ -225,12 +251,15 @@ impl CaptureSession {
                 loop {
                     let popped = writer_ring.pop_slice(&mut chunk);
                     if popped > 0 {
-                        for &sample in &chunk[..popped] {
+                        // Count-in pre-roll: discard before writing.
+                        let discard = (popped as u64).min(skip_samples) as usize;
+                        skip_samples -= discard as u64;
+                        for &sample in &chunk[discard..popped] {
                             wav_writer
                                 .write_sample(sample)
                                 .map_err(|error| format!("write capture wav: {error}"))?;
                         }
-                        samples_written += popped as u64;
+                        samples_written += (popped - discard) as u64;
                         continue;
                     }
                     // Empty ring: only exit once stop is flagged AND the
@@ -424,6 +453,66 @@ mod tests {
         for (index, &value) in received.iter().enumerate() {
             assert_eq!(value, index as f32, "sample {index} out of order");
         }
+    }
+
+    #[test]
+    fn capture_session_skips_initial_frames_before_writing() {
+        // Count-in pre-roll: the writer discards the first N frames from the
+        // ring, so the WAV begins at the fake tone's frame N — provable
+        // because the fake backend synthesizes sample(n) deterministically.
+        let dir = std::env::temp_dir().join(format!(
+            "signal-capture-skip-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let wav_path = dir.join("take.wav");
+        let backend = FakeInputBackend::new();
+        const SKIP_FRAMES: u64 = 480;
+        let session = CaptureSession::start_with_skip(
+            &backend,
+            InputStreamSpec {
+                sample_rate_hz: 48_000,
+                channels: 1,
+                buffer_frames: Some(256),
+            },
+            &wav_path,
+            SKIP_FRAMES,
+        )
+        .expect("start capture with skip");
+        std::thread::sleep(Duration::from_millis(500));
+        let report = session.stop().expect("stop capture");
+
+        // Report counts written frames only; ~0.5 s captured minus the skip.
+        assert!(
+            report.frames > 12_000 && report.frames < 48_000,
+            "expected ≈23_500 written frames, got {}",
+            report.frames
+        );
+        assert_eq!(report.overrun_samples, 0);
+
+        // Reproduce the fake backend's synthesis up to the skip point: the
+        // first written sample must be the tone at frame SKIP_FRAMES.
+        let mut reader = hound::WavReader::open(&wav_path).expect("open captured wav");
+        let first: f32 = reader
+            .samples::<f32>()
+            .next()
+            .expect("captured at least one sample")
+            .expect("read sample");
+        let phase_step = std::f32::consts::TAU * FAKE_INPUT_TONE_HZ / 48_000.0;
+        let mut phase = 0.0f32;
+        for _ in 0..SKIP_FRAMES {
+            phase += phase_step;
+            if phase >= std::f32::consts::TAU {
+                phase -= std::f32::consts::TAU;
+            }
+        }
+        let expected = 0.5 * phase.sin();
+        assert!(
+            (first - expected).abs() < 1e-4,
+            "first written sample {first} vs tone at frame {SKIP_FRAMES} = {expected}",
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

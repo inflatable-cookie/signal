@@ -383,6 +383,13 @@ const GAIN_SMOOTHING_SECONDS: f32 = 0.010;
 /// Declick fade applied inside each clip window edge (shortened for tiny
 /// windows so short clips stay audible).
 const CLIP_EDGE_FADE_FRAMES: u64 = 32;
+/// Micro-fade applied to the output buffer around a loop-region wrap point:
+/// a linear fade out over the frames before the wrap and in over the frames
+/// after it. Tones carry phase across the wrap and stay continuous; this
+/// guards sample/stream clips that wrap mid-waveform. Only active on blocks
+/// that actually wrap, so non-looping output is bit-identical (the golden
+/// render hash stays valid).
+const LOOP_WRAP_FADE_FRAMES: usize = 64;
 
 // ── Spec vocabulary (control-side description of a plan) ───────────────────
 
@@ -1189,12 +1196,17 @@ fn interpolate_source_frame(
 /// `channels.min(2)` of the stage's format: clip sources are mono/stereo
 /// today; source-format handling generalizes when sources grow formats of
 /// their own.
+/// `loop_end_frame` is the active loop region's end while the playhead is
+/// inside the region (`None` otherwise): stream clips use it to retire held
+/// chunks past the loop end, which would otherwise sit "ahead but within the
+/// lookahead" forever on short loops and starve the held slots after a wrap.
 fn render_clips_into_scratch(
     clips: &mut [CompiledClip],
     scratch: &mut [f32],
     channels: usize,
     block_start_frame: u64,
     frame_count: usize,
+    loop_end_frame: Option<u64>,
 ) {
     let block_end_frame = block_start_frame + frame_count as u64;
     for clip in clips.iter_mut() {
@@ -1307,7 +1319,16 @@ fn render_clips_into_scratch(
                 // the sinc tap margin) or stale past the seek window —
                 // returned to the feeder, never freed here.
                 let behind_cutoff = needed_start.saturating_sub(RESAMPLE_TAPS as u64);
-                let ahead_cutoff = needed_start.saturating_add(STREAM_RETIRE_LOOKAHEAD_FRAMES);
+                let mut ahead_cutoff = needed_start.saturating_add(STREAM_RETIRE_LOOKAHEAD_FRAMES);
+                // Looping: chunks past the loop end (in this clip's source
+                // frame space, plus the sinc tap margin) are useless until
+                // the loop clears — retire them so refed wrap-target chunks
+                // always find a held slot.
+                if let Some(loop_end) = loop_end_frame {
+                    let source_cap = ((loop_end.saturating_sub(clip_start)) as f64 * *step) as u64
+                        + RESAMPLE_TAPS as u64;
+                    ahead_cutoff = ahead_cutoff.min(source_cap.max(needed_start));
+                }
                 for slot in held.iter_mut() {
                     let stale = slot.as_ref().is_some_and(|chunk| {
                         chunk.end_frame() <= behind_cutoff || chunk.start_frame > ahead_cutoff
@@ -1330,6 +1351,35 @@ fn render_clips_into_scratch(
                         match handle.inner.chunks.try_pop() {
                             Some(chunk) => *slot = Some(chunk),
                             None => break,
+                        }
+                    }
+                }
+                // Backward jumps (loop wraps, seeks) can leave every held
+                // slot occupied by valid-but-ahead chunks while the chunk
+                // covering the read position waits in the mailbox. When
+                // nothing held covers `needed_start` and no slot is free,
+                // retire the furthest-ahead chunk so refed wrap-target
+                // chunks find a home within a block or two (transient
+                // underrun by design, never a permanent stall).
+                let covered = held.iter().flatten().any(|chunk| {
+                    needed_start >= chunk.start_frame && needed_start < chunk.end_frame()
+                });
+                if !covered {
+                    let furthest = (0..held.len())
+                        .filter(|index| held[*index].is_some())
+                        .max_by_key(|index| {
+                            held[*index]
+                                .as_ref()
+                                .map(|chunk| chunk.start_frame)
+                                .unwrap_or(0)
+                        });
+                    let all_full = held.iter().all(|slot| slot.is_some());
+                    if let (true, Some(index)) = (all_full, furthest) {
+                        let chunk = held[index].take().expect("occupied slot");
+                        if let Err(chunk) = handle.inner.retired.try_push(chunk) {
+                            // Retired mailbox full: keep holding (never drop
+                            // on the audio thread) and retry next block.
+                            held[index] = Some(chunk);
                         }
                     }
                 }
@@ -1397,6 +1447,9 @@ enum RenderCommand {
     InstallPlan(Box<RenderPlan>),
     SetPlaying(bool),
     Seek(u64),
+    /// Transport loop region `[start, end)` on the stream clock; `None`
+    /// clears it. Validated control-side (`start < end`).
+    SetLoopRegion(Option<(u64, u64)>),
     SetStreamChannels(u16),
     /// Parameter fast path: retarget one stage's smoothed gain without a
     /// plan recompile. `stage_index` addresses the ACTIVE plan's topological
@@ -1627,6 +1680,27 @@ impl RenderPlaneController {
             })
     }
 
+    /// Set (or clear, with `None`) the transport loop region `[start, end)`
+    /// on the stream clock. While playing, a block that crosses `end` wraps
+    /// to `start` sample-accurately inside the executor (a control-side seek
+    /// would jitter by a mailbox round-trip), with a short micro-fade around
+    /// the wrap point. Seeking outside the region is allowed; the loop only
+    /// triggers when playback crosses `end`. Rejects `start >= end`.
+    pub fn set_loop_region(&self, region: Option<(u64, u64)>) -> Result<(), RenderPlaneError> {
+        if let Some((start, end)) = region {
+            if start >= end {
+                return Err(RenderPlaneError {
+                    message: format!("loop region start {start} must be before end {end}"),
+                });
+            }
+        }
+        self.commands
+            .try_send(RenderCommand::SetLoopRegion(region))
+            .map_err(|error| RenderPlaneError {
+                message: format!("command mailbox rejected loop region: {error}"),
+            })
+    }
+
     /// Move the stream clock to `position_frames`.
     pub fn seek(&self, position_frames: u64) -> Result<(), RenderPlaneError> {
         self.commands
@@ -1749,6 +1823,9 @@ pub struct RenderPlaneExecutor {
     edge_gain: f32,
     /// Seek requested while audible: applied once `edge_gain` reaches zero.
     pending_seek: Option<u64>,
+    /// Transport loop region `[start, end)`; playback wraps to `start` when
+    /// a rendered block crosses `end` (see `render_block_inner`).
+    loop_region: Option<(u64, u64)>,
     position_frames: u64,
     /// Start instant of the previous callback, for xrun inference.
     last_callback_instant: Option<Instant>,
@@ -1835,6 +1912,9 @@ impl RenderPlaneExecutor {
                             stage.gain_target = target;
                         }
                     }
+                }
+                Ok(RenderCommand::SetLoopRegion(region)) => {
+                    self.loop_region = region;
                 }
                 Ok(RenderCommand::SetStreamChannels(channels)) => {
                     self.stream_channels = Some(channels.max(1));
@@ -1981,6 +2061,42 @@ impl RenderPlaneExecutor {
         let frame_count = frame_count.min(MAX_BLOCK_FRAMES);
         let block_start_frame = self.position_frames;
 
+        // Loop-region segmentation: while playing with a region set, a block
+        // whose span crosses `loop_end` renders as (up to) TWO timeline
+        // segments into one output buffer — `[pos, loop_end)` then the
+        // remainder from `loop_start`. Each segment is
+        // `(timeline_start, buffer_frame_offset, frame_count)`. Segments only
+        // change the timeline positions clips see; gain smoothing, automation
+        // sampling, meters, and the boundary/limiter/edge paths stay
+        // per-BLOCK. Seeks outside the region are allowed — the wrap only
+        // triggers when the block actually crosses `loop_end`.
+        let mut segments: [(u64, usize, usize); 2] =
+            [(block_start_frame, 0, frame_count), (0, 0, 0)];
+        let mut segment_count = 1usize;
+        // Buffer frame index where the wrap lands (first frame rendered from
+        // `loop_start`); drives the wrap micro-fade below.
+        let mut wrap_offset: Option<usize> = None;
+        let mut end_position = block_start_frame + frame_count as u64;
+        if let Some((loop_start, loop_end)) = self.loop_region {
+            let block_end_frame = block_start_frame + frame_count as u64;
+            if self.playing && block_start_frame < loop_end && block_end_frame >= loop_end {
+                let first = (loop_end - block_start_frame) as usize;
+                let remainder = frame_count - first;
+                segments[0] = (block_start_frame, 0, first);
+                segments[1] = (loop_start, first, remainder);
+                segment_count = 2;
+                wrap_offset = Some(first);
+                end_position = loop_start + remainder as u64;
+            }
+        }
+        // Stream chunk-retention cap (see `render_clips_into_scratch`):
+        // active only while the playhead is inside the loop region, so
+        // seeking past it never churns linear-playback prefetch.
+        let loop_end_frame = match self.loop_region {
+            Some((_, loop_end)) if self.playing && block_start_frame < loop_end => Some(loop_end),
+            _ => None,
+        };
+
         // Smoothed gains: move toward targets at a fixed full-swing rate and
         // interpolate across the block, so edits never step audio.
         let gain_step =
@@ -2017,8 +2133,26 @@ impl RenderPlaneExecutor {
             let scratch = &mut scratch[..frame_count * channels];
             scratch.fill(0.0);
 
-            // Lane content first (at unity), then summed inputs.
-            render_clips_into_scratch(clips, scratch, channels, block_start_frame, frame_count);
+            // Lane content first (at unity), then summed inputs. Rendered
+            // per loop segment: each segment writes its own buffer span with
+            // its own timeline start, so clips see wrapped positions while
+            // tone phases carry across the wrap (segments render in order).
+            for (segment_start, segment_offset, segment_frames) in
+                segments.iter().take(segment_count)
+            {
+                if *segment_frames == 0 {
+                    continue;
+                }
+                render_clips_into_scratch(
+                    clips,
+                    &mut scratch
+                        [segment_offset * channels..(segment_offset + segment_frames) * channels],
+                    channels,
+                    *segment_start,
+                    *segment_frames,
+                    loop_end_frame,
+                );
+            }
 
             for input in inputs.iter() {
                 let source = &earlier[input.source_index];
@@ -2081,6 +2215,33 @@ impl RenderPlaneExecutor {
             }
         }
 
+        // Loop-wrap declick: linear micro-fade out over the frames before
+        // the wrap point and in over the frames after it, applied to the
+        // output buffer only on blocks that wrap (cheap; never touches
+        // non-looping renders). When the wrap lands exactly on the block
+        // boundary only the fade-out applies — the next block starts from
+        // `loop_start` behind the still-open edge envelope.
+        if let Some(wrap_offset) = wrap_offset {
+            let fade_out = LOOP_WRAP_FADE_FRAMES.min(wrap_offset);
+            for step in 0..fade_out {
+                let frame_index = wrap_offset - fade_out + step;
+                let gain = (fade_out - 1 - step) as f32 / fade_out as f32;
+                let base = frame_index * stream_channels;
+                for channel in 0..stream_channels {
+                    frames[base + channel] *= gain;
+                }
+            }
+            let fade_in = LOOP_WRAP_FADE_FRAMES.min(frame_count - wrap_offset);
+            for step in 0..fade_in {
+                let frame_index = wrap_offset + step;
+                let gain = (step + 1) as f32 / fade_in as f32;
+                let base = frame_index * stream_channels;
+                for channel in 0..stream_channels {
+                    frames[base + channel] *= gain;
+                }
+            }
+        }
+
         // Master soft limiter: guards the stream buffer after the boundary
         // write so the creative graph stays untouched; linked gain across
         // the stream's channels.
@@ -2111,7 +2272,9 @@ impl RenderPlaneExecutor {
             }
         }
 
-        self.position_frames += frame_count as u64;
+        // After a wrap block the clock reads `loop_start + remainder`;
+        // otherwise it advances linearly by the block.
+        self.position_frames = end_position;
         self.shared
             .position_frames
             .store(self.position_frames, Ordering::Relaxed);
@@ -2150,6 +2313,7 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             playing: false,
             edge_gain: 0.0,
             pending_seek: None,
+            loop_region: None,
             position_frames: 0,
             last_callback_instant: None,
         },
@@ -2439,6 +2603,180 @@ mod tests {
         executor.render_block(&mut frames);
         assert!(frames.iter().any(|sample| sample.abs() > 0.01));
         assert_eq!(controller.position_frames(), 96_000 + 256);
+    }
+
+    #[test]
+    fn loop_region_rejects_inverted_or_empty_bounds() {
+        let (controller, _executor) = render_plane();
+        assert!(controller.set_loop_region(Some((100, 100))).is_err());
+        assert!(controller.set_loop_region(Some((200, 100))).is_err());
+        assert!(controller.set_loop_region(Some((0, 1))).is_ok());
+        assert!(controller.set_loop_region(None).is_ok());
+    }
+
+    #[test]
+    fn loop_region_wraps_sample_accurately_with_a_microfade() {
+        // Ramp content (value = frame / 1024) under loop region [480, 992).
+        // The block covering 768..1024 crosses 992 at buffer frame 224:
+        // frames 0..224 play 768..992, frames 224..256 play 480..512, with
+        // the 64-frame micro-fade out before the wrap and in after it.
+        let (mut controller, mut executor) = render_plane();
+        let values: Vec<f32> = (0..1024).map(|index| index as f32 / 1024.0).collect();
+        let spec = samples_spec(&values, 0, u64::MAX, false);
+        controller.install_plan(&spec).unwrap();
+        controller.set_loop_region(Some((480, 992))).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 3); // 768 frames: edge ramp open, no wrap yet.
+        assert_eq!(controller.position_frames(), 768);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        // Clock wrapped: 480 + (256 - 224) = 512.
+        assert_eq!(controller.position_frames(), 512);
+
+        let wrap = 224usize;
+        let fade = LOOP_WRAP_FADE_FRAMES;
+        // Before the fade-out window: linear playback of the pre-wrap span.
+        for index in [10usize, 100, wrap - fade - 1] {
+            let expected = (768 + index) as f32 / 1024.0;
+            assert!(
+                (frames[index * 2] - expected).abs() < 1e-5,
+                "pre-wrap frame {index}: {} vs {expected}",
+                frames[index * 2],
+            );
+        }
+        // Fade-out: content × linear ramp down to zero at the wrap point.
+        for step in 0..fade {
+            let index = wrap - fade + step;
+            let gain = (fade - 1 - step) as f32 / fade as f32;
+            let expected = (768 + index) as f32 / 1024.0 * gain;
+            assert!(
+                (frames[index * 2] - expected).abs() < 1e-5,
+                "fade-out frame {index}: {} vs {expected}",
+                frames[index * 2],
+            );
+        }
+        // Fade-in: wrapped content (from loop_start) × linear ramp up.
+        let fade_in = 256 - wrap; // 32 frames of post-wrap audio in the block.
+        for step in 0..fade_in {
+            let index = wrap + step;
+            let gain = (step + 1) as f32 / fade_in as f32;
+            let expected = (480 + step) as f32 / 1024.0 * gain;
+            assert!(
+                (frames[index * 2] - expected).abs() < 1e-5,
+                "fade-in frame {index}: {} vs {expected}",
+                frames[index * 2],
+            );
+        }
+
+        // The next block continues linearly from loop_start + remainder.
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert_eq!(controller.position_frames(), 768);
+        let expected = (512 + 100) as f32 / 1024.0;
+        assert!((frames[100 * 2] - expected).abs() < 1e-5);
+    }
+
+    #[test]
+    fn seeking_outside_the_loop_region_plays_without_wrapping() {
+        // Loop only triggers when crossing loop_end: a position past the
+        // region renders linearly.
+        let (mut controller, mut executor) = render_plane();
+        controller.install_plan(&tone_spec(440.0)).unwrap();
+        controller.set_loop_region(Some((0, 256))).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 1); // Wraps once: 0..256 crosses 256.
+        assert_eq!(controller.position_frames(), 0);
+
+        controller.seek(96_000).unwrap();
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames); // Ramp-out block; seek lands.
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        // Past the region: the clock advances linearly, no wrap.
+        assert_eq!(controller.position_frames(), 96_000 + 512);
+    }
+
+    #[test]
+    fn clearing_the_loop_region_restores_linear_playback() {
+        let (mut controller, mut executor) = render_plane();
+        controller.install_plan(&tone_spec(440.0)).unwrap();
+        controller.set_loop_region(Some((0, 256))).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 1);
+        assert_eq!(controller.position_frames(), 0);
+
+        controller.set_loop_region(None).unwrap();
+        warm_up(&mut executor, 2);
+        assert_eq!(controller.position_frames(), 512);
+    }
+
+    #[test]
+    fn looped_stream_clips_underrun_at_most_transiently_across_wraps() {
+        // A short loop over a streamed clip: the wrap jumps wanted_frame
+        // backwards, the feeder re-serves it like any seek, and underruns
+        // stay transient per the documented stream semantics. Lenient by
+        // design — the exact underrun count depends on chunk timing.
+        let (mut controller, mut executor) = render_plane();
+        let total = 48_000u64;
+        let (feeder, handle) = render_stream(48_000, total);
+        controller
+            .install_plan(&stream_spec(&handle, 0, total))
+            .unwrap();
+        controller.set_loop_region(Some((0, 4_096))).unwrap();
+        controller.set_playing(true).unwrap();
+        feed_ramp(&feeder, total, 0, 4_096, 512);
+
+        let mut frames = [0.0f32; 512];
+        let mut audible_blocks = 0usize;
+        let mut rendered_frames = 0u64;
+        // Cursor-based feeding mirroring the production feeder (pulse's
+        // `service_streams`): sequential decode toward wanted + lookahead,
+        // cursor reset on seek-shaped jumps, no duplicate re-sends.
+        let chunk_frames = 512u64;
+        let mut cursor = 4_096u64;
+        for _ in 0..64 {
+            executor.render_block(&mut frames);
+            rendered_frames += 256;
+            if frames.iter().any(|sample| sample.abs() > 1e-4) {
+                audible_blocks += 1;
+            }
+            drop(feeder.collect_retired());
+            let wanted = feeder.wanted_frame().min(total);
+            let aligned = wanted - wanted % chunk_frames;
+            let target = (wanted + 2_048).min(total);
+            if cursor < aligned || cursor > target + chunk_frames {
+                cursor = aligned;
+            }
+            while cursor < target {
+                let count = chunk_frames.min(total - cursor);
+                let mut data = Vec::with_capacity(count as usize * 2);
+                for frame in cursor..cursor + count {
+                    let value = frame as f32 / total as f32;
+                    data.push(value);
+                    data.push(value);
+                }
+                if feeder
+                    .try_send_chunk(StreamChunk {
+                        start_frame: cursor,
+                        frames: data.into(),
+                    })
+                    .is_err()
+                {
+                    break;
+                }
+                cursor += count;
+            }
+        }
+        // 64 × 256 = 16_384 frames over a 4_096-frame loop: four wraps.
+        // Most blocks must have been audible and underruns must stay a
+        // fraction of the rendered span (transient, not systemic).
+        assert!(audible_blocks > 48, "only {audible_blocks} audible blocks");
+        assert!(
+            handle.underrun_frames() < rendered_frames / 4,
+            "underruns not transient: {} of {rendered_frames}",
+            handle.underrun_frames(),
+        );
     }
 
     fn max_left_step(frames: &[f32]) -> f32 {

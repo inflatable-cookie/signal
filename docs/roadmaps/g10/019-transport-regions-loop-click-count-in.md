@@ -1,6 +1,6 @@
 # 019 - Transport Regions Loop Click Count-In
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.012
@@ -35,6 +35,30 @@ executor — a control-side seek would jitter by a mailbox round-trip.
 - [ ] loop region cycles sample-accurately without click
 - [ ] metronome lands on tempo-map beats
 - [ ] count-in precedes recording start by the configured bars
+
+## Progress (2026-06-11)
+
+- Loop region in the executor: SetLoopRegion command (typed error on
+  inverted bounds); blocks crossing loop_end render two segments into one
+  buffer (block-level gain/automation/meter/limiter math untouched) with a
+  64-frame micro-fade around the wrap — active only on wrap blocks, golden
+  hash unchanged. Clock lands at loop_start + remainder. Two stream-source
+  fixes the loop tests forced: held-chunk retention capped at loop end
+  while inside a region, and a furthest-ahead eviction when a backward
+  jump finds all slots full.
+- Metronome compiled by pulse (signal never sees BPM): reserved
+  "metronome" stage seed, per-beat TestTone clips (50 ms, 1760/1320 Hz
+  accents, 4/4) from the transport tempo across the extent plus one loop
+  pass; SetMetronomeEnabled command + transport snapshot exposure.
+- Count-in: CaptureSession::start_with_skip discards the first N ring
+  frames before writing (rescaled to the negotiated rate);
+  aura_start_recording(count_in_bars) seeks to anchor − bars·beat·4,
+  starts transport, and skips exactly the pre-roll in the take — placement
+  anchor and latency compensation unchanged. Metronome not auto-enabled.
+- Aura: loop state pushed through sync_transport (re-primed after stream
+  rebuilds); timer count-in toggle + music metronome toggle in the
+  timeline toolbar.
+- Owed: manual audition (loop a clip, click on, 1-bar count-in record).
 
 ## Next Task
 
