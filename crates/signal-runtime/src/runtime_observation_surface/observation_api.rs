@@ -107,7 +107,6 @@ impl RuntimeObservationApi for SignalRuntime {
         self.automation.snapshot()
     }
 
-
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot {
         self.engine.snapshot()
     }

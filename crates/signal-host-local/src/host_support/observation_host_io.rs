@@ -1,6 +1,4 @@
-use signal_hardware::{
-    AudioSampleFormat, HardwareClockSource, HardwareLifecycleContract,
-};
+use signal_hardware::{AudioSampleFormat, HardwareClockSource, HardwareLifecycleContract};
 use signal_runtime::{
     RuntimeHostAudioPumpSummary, RuntimeHostClockDomain, RuntimeHostClockSource,
     RuntimeHostClockingSummary, RuntimeHostHardwareSummary, RuntimeHostIoSummary,

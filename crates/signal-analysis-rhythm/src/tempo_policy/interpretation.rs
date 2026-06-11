@@ -87,4 +87,3 @@ pub struct TempoInterpretation {
     /// Key BPM values and stability metrics.
     pub profile: TempoInterpretationProfile,
 }
-

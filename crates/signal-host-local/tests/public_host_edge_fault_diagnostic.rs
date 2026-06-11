@@ -45,5 +45,4 @@ fn local_shared_host_edge_exports_runtime_fault_diagnostic_truth() {
         .any(|entry| {
             entry.family == RuntimeFaultDiagnosticFamily::DeferredWorkPressure && entry.active
         }));
-
 }

@@ -183,7 +183,6 @@ impl SignalRuntime {
                 .sum(),
             total_tail_samples: chains.iter().map(|chain| chain.total_tail_samples).sum(),
             chains,
-            ..RuntimePluginChainSnapshot::default()
         };
         snapshot
     }

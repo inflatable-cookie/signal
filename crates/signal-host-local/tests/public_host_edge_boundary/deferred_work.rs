@@ -63,5 +63,4 @@ fn local_shared_host_edge_exports_runtime_deferred_work_policy_truth() {
         performance.background_service_reason,
         Some(RuntimeDeferredServiceReason::SafeMode)
     );
-
 }

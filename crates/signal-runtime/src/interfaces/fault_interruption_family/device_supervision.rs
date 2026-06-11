@@ -194,7 +194,7 @@ impl RuntimeDeviceSupervisionSnapshot {
             _ => RuntimeDeviceFaultBoundaryState::Clear,
         };
 
-        let snapshot = Self {
+        Self {
             state,
             restart_state,
             fault_boundary,
@@ -214,7 +214,6 @@ impl RuntimeDeviceSupervisionSnapshot {
             restart_failure_count,
             watchdog_restart_count: supervision_snapshot.watchdog_restart_count,
             last_watchdog_trigger: supervision_snapshot.last_watchdog_trigger,
-        };
-        snapshot
+        }
     }
 }

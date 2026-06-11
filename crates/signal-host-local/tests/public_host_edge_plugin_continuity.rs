@@ -104,5 +104,4 @@ fn local_shared_host_edge_exports_plugin_placement_and_shared_boundary_continuit
         .find(|sandbox| sandbox.sandbox_id == "sandbox-isolated")
         .expect("isolated host-local boundary should remain visible");
     assert_eq!(isolated.continuity_class, RuntimeInterruptionClass::Steady);
-
 }

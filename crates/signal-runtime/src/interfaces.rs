@@ -57,9 +57,9 @@ use std::{
 };
 
 use signal_graph::{
-    GraphChannelAdaptationMode, GraphExecutionContext,
-    GraphExecutionLane, GraphNodeExecutionClass, GraphNodePlanningGroup, GraphNodeResetPolicy,
-    GraphNodeSilencePolicy, GraphNodeTopologyRole, GraphStageSpec,
+    GraphChannelAdaptationMode, GraphExecutionContext, GraphExecutionLane, GraphNodeExecutionClass,
+    GraphNodePlanningGroup, GraphNodeResetPolicy, GraphNodeSilencePolicy, GraphNodeTopologyRole,
+    GraphStageSpec,
 };
 use signal_hardware::{BackendHealth, BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{

@@ -147,7 +147,6 @@ impl LocalHardwareBackend {
             simulated: false,
         })
     }
-
 }
 
 struct LocalHardwareInventory {

@@ -7,7 +7,13 @@ repository.workspace = true
 publish = false
 description = "Descriptor-based embedding and semantic inference for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-analysis = { path = "../signal-analysis" }
-signal-analysis-character = { path = "../signal-analysis-character" }
-signal-primitives = { path = "../signal-primitives" }
+signal-analysis = { workspace = true }
+signal-analysis-character = { workspace = true }
+signal-primitives = { workspace = true }
+
+[dev-dependencies]
+signal-analysis = { workspace = true, features = ["test-support"] }

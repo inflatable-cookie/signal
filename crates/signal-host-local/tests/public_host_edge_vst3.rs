@@ -68,5 +68,4 @@ fn local_shared_host_edge_exports_runtime_vst3_baseline_truth() {
         Some(PluginSandboxTransportStage::Attached)
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
-
 }

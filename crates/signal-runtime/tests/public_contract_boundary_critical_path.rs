@@ -85,5 +85,4 @@ fn public_runtime_critical_path_boundary_reports_bounded_hotspot_receipts() {
         trace.peak_critical_path_lane_total_latency_samples,
         performance.critical_path_lane_total_latency_samples
     );
-
 }

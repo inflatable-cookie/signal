@@ -10,7 +10,8 @@ pub(super) fn offline_render_manifest(
 ) -> RuntimeOfflineRenderManifest {
     let materialized = !artifacts.is_empty() || report.is_some();
     let artifact_count = artifacts.len();
-    let manifest = RuntimeOfflineRenderManifest {
+
+    RuntimeOfflineRenderManifest {
         request_id: request_id.to_string(),
         artifact_root_path: artifact_root_path.map(str::to_string),
         materialized,
@@ -19,8 +20,7 @@ pub(super) fn offline_render_manifest(
         report,
         delegated_execution_request,
         delegated_execution_receipt,
-    };
-    manifest
+    }
 }
 
 fn offline_render_report_json(

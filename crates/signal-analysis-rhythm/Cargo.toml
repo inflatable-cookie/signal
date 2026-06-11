@@ -7,11 +7,15 @@ repository.workspace = true
 publish = false
 description = "Rhythm analysis surfaces for Signal, including onset, tempo, and beat tracking."
 
+[lints]
+workspace = true
+
 [dependencies]
-rayon = "1.10"
-signal-analysis = { path = "../signal-analysis" }
-signal-dsp-spectral = { path = "../signal-dsp-spectral" }
-signal-primitives = { path = "../signal-primitives" }
+rayon = { workspace = true }
+signal-analysis = { workspace = true }
+signal-dsp-spectral = { workspace = true }
+signal-primitives = { workspace = true }
 
 [dev-dependencies]
-hound = "3.5"
+signal-analysis = { workspace = true, features = ["test-support"] }
+hound = { workspace = true }

@@ -3,15 +3,13 @@ mod public_host_edge_plugins_support;
 #[path = "support/public_host_edge_sandbox_broker.rs"]
 mod public_host_edge_sandbox_broker_support;
 
-use public_host_edge_plugins_support::{
-    temp_public_local_au_scan_root, temp_public_local_faulty_au_scan_root,
-};
+use public_host_edge_plugins_support::temp_public_local_au_scan_root;
 use public_host_edge_sandbox_broker_support::SandboxBrokerEnvGuard;
 use signal_host_local::LocalRuntimeHost;
 use signal_plugin::PluginFormat;
 use signal_runtime::{
     PluginSandboxLifecycleStage, PluginSandboxSpec, PluginSandboxTransportStage, PluginScanRequest,
-    RuntimeConfig, RuntimeErrorKind, RuntimeSupervisorApi, SignalRuntime,
+    RuntimeConfig, RuntimeSupervisorApi, SignalRuntime,
 };
 
 #[test]
@@ -78,6 +76,4 @@ fn local_shared_host_edge_exports_runtime_au_baseline_truth() {
         Some(PluginSandboxTransportStage::Attached)
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
-
 }
-

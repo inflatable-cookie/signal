@@ -8,11 +8,14 @@ publish = false
 description = "Real-time render plane: compiled preallocated plans executed alloc-free on the audio thread."
 
 [dev-dependencies]
-signal-hardware = { path = "../signal-hardware" }
-signal-hardware-output-cpal = { path = "../signal-hardware-output-cpal" }
+signal-hardware = { workspace = true }
+signal-hardware-output-cpal = { workspace = true }
 
 [[example]]
 name = "render_soak"
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-dsp = { path = "../signal-dsp" }
+signal-dsp = { workspace = true }

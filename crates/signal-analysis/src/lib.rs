@@ -29,7 +29,9 @@
 
 #![warn(missing_docs)]
 
+#[cfg(any(test, feature = "test-support"))]
 pub mod corpus;
+#[cfg(any(test, feature = "test-support"))]
 pub mod harness;
 pub mod input;
 
@@ -64,7 +66,8 @@ pub trait AnalysisStage<Output> {
     fn analyze(&mut self, audio: &AudioBuffer) -> Output;
 }
 
-// Re-export corpus types.
+// Re-export corpus types (test-support only).
+#[cfg(any(test, feature = "test-support"))]
 pub use corpus::{
     AcceptanceSeverity, AcceptanceStatus, AcceptanceThreshold, AnalysisCorpusArtifactSize,
     AnalysisCorpusCaseMetadata, AnalysisCorpusFamily, AnalysisCorpusSource, AnalysisMetricValue,
@@ -78,6 +81,7 @@ pub use input::{
 };
 
 /// One shared corpus case with inline expectations and drift limits.
+#[cfg(any(test, feature = "test-support"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct AnalysisCorpusCase {
     /// Case identity, provenance, and tagging information.
@@ -90,6 +94,7 @@ pub struct AnalysisCorpusCase {
     pub regression_limits: Vec<RegressionDriftLimit>,
 }
 
+#[cfg(any(test, feature = "test-support"))]
 impl AnalysisCorpusCase {
     /// Create a corpus case with no thresholds or drift limits.
     pub fn new(metadata: AnalysisCorpusCaseMetadata, audio: AudioBuffer) -> Self {
@@ -115,6 +120,7 @@ impl AnalysisCorpusCase {
 }
 
 /// Acceptance result for one corpus case.
+#[cfg(any(test, feature = "test-support"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct AcceptanceCaseReport {
     /// Identifier of the corpus case.
@@ -128,6 +134,7 @@ pub struct AcceptanceCaseReport {
 }
 
 /// Acceptance result over a shared corpus slice.
+#[cfg(any(test, feature = "test-support"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct AcceptanceHarnessReport {
     /// Aggregated status across all cases — worst single-case status wins.
@@ -137,6 +144,7 @@ pub struct AcceptanceHarnessReport {
 }
 
 /// Delta for one metric between baseline and candidate analyzers.
+#[cfg(any(test, feature = "test-support"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct RegressionMetricDelta {
     /// Name of the metric being compared.
@@ -154,6 +162,7 @@ pub struct RegressionMetricDelta {
 }
 
 /// Regression result for one corpus case.
+#[cfg(any(test, feature = "test-support"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct RegressionCaseReport {
     /// Identifier of the corpus case.
@@ -169,6 +178,7 @@ pub struct RegressionCaseReport {
 }
 
 /// Regression comparison report across a shared corpus slice.
+#[cfg(any(test, feature = "test-support"))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct RegressionHarnessReport {
     /// Aggregated status across all cases — worst single-case status wins.
@@ -177,8 +187,10 @@ pub struct RegressionHarnessReport {
     pub cases: Vec<RegressionCaseReport>,
 }
 
-/// Re-export harness functions at crate root for backward compatibility.
+/// Re-export harness functions at crate root (test-support only).
+#[cfg(any(test, feature = "test-support"))]
 pub use harness::compare_audio_analyzers;
+#[cfg(any(test, feature = "test-support"))]
 pub use harness::run_audio_acceptance_harness;
 
 #[cfg(test)]

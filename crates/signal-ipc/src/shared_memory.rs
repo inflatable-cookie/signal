@@ -111,7 +111,7 @@ impl std::error::Error for SharedMemoryRegionLifecycleError {
 
 impl From<SharedMemoryRegionLifecycleError> for io::Error {
     fn from(error: SharedMemoryRegionLifecycleError) -> Self {
-        io::Error::new(io::ErrorKind::Other, error)
+        io::Error::other(error)
     }
 }
 

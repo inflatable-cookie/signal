@@ -111,8 +111,7 @@ pub(crate) fn assert_preview_transform_render_and_preview(runtime: &SignalRuntim
     );
 }
 
-pub(crate) fn assert_preview_transform_supervisor(_supervisor: &RuntimeSupervisorReport) {
-}
+pub(crate) fn assert_preview_transform_supervisor(_supervisor: &RuntimeSupervisorReport) {}
 
 pub(crate) fn cleanup_preview_transform_runtime(runtime: &SignalRuntime, ready_path: &PathBuf) {
     let _ = fs::remove_file(ready_path);

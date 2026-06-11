@@ -15,5 +15,4 @@ fn local_shared_host_edge_exports_runtime_lv2_extension_truth() {
     );
     assert_eq!(report.observation.lv2_extension_snapshot.sandbox_count, 0);
     assert!(report.observation.lv2_extension_snapshot.records.is_empty());
-
 }

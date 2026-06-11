@@ -183,8 +183,7 @@ impl ExecutableGraph {
                     if !bus::apply_node_contract(&mut working, node) {
                         if node.buffer_contract.silence_policy
                             == GraphNodeSilencePolicy::ClearOutput
-                        {
-                            if bus::mix_buffer_into_bus(
+                            && bus::mix_buffer_into_bus(
                                 state,
                                 node.buffer_contract.output.bus_id.as_str(),
                                 working,
@@ -192,9 +191,8 @@ impl ExecutableGraph {
                                 input_tail.saturating_add(node.tail_samples),
                             )
                             .is_err()
-                            {
-                                state.failed_channel_adaptation_count += 1;
-                            }
+                        {
+                            state.failed_channel_adaptation_count += 1;
                         }
                         continue;
                     }

@@ -1,6 +1,11 @@
 # Package Map
 
-Status: active
+> SUPERSEDED IN PART (g10, 2026-06-11): this map predates the g10 demolition
+> packets (002-008) and still lists deleted crates (supervisor-tools,
+> host-server, hardware-coreaudio, plugin-library/-store). The current crate
+> set lives in `docs/architecture/system-inventory.md` and the README.
+
+Status: active (pre-g10 sections superseded; see banner)
 Owner: core-product
 Updated: 2026-03-10
 Vision refs: `docs/vision/001-signal-vision.md`

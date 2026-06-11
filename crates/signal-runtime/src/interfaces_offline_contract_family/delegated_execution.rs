@@ -8,26 +8,24 @@ impl RuntimeOfflinePluginExecutionBoundary {
             .stages
             .iter()
             .filter(|stage| stage.host_delegate_required)
-            .map(|stage| {
-                let request = RuntimeOfflinePluginDelegatedExecutionStageRequest {
-                    stage_id: stage.stage_id.clone(),
-                    node_id: stage.node_id.clone(),
-                    chain_id: stage.chain_id.clone(),
-                    stage_index: stage.stage_index,
-                    sandbox_id: stage.sandbox_id.clone(),
-                    plugin_type_id: stage.plugin_type_id.clone(),
-                    plugin_format: stage.plugin_format,
-                    recall_state: stage.recall_state,
-                    recall_payload: stage.recall_payload.clone(),
-                    override_state: stage.override_state,
-                    latest_override_processing_epoch: stage.latest_override_processing_epoch,
-                    latest_override_block_sequence: stage.latest_override_block_sequence,
-                };
-                request
+            .map(|stage| RuntimeOfflinePluginDelegatedExecutionStageRequest {
+                stage_id: stage.stage_id.clone(),
+                node_id: stage.node_id.clone(),
+                chain_id: stage.chain_id.clone(),
+                stage_index: stage.stage_index,
+                sandbox_id: stage.sandbox_id.clone(),
+                plugin_type_id: stage.plugin_type_id.clone(),
+                plugin_format: stage.plugin_format,
+                recall_state: stage.recall_state,
+                recall_payload: stage.recall_payload.clone(),
+                override_state: stage.override_state,
+                latest_override_processing_epoch: stage.latest_override_processing_epoch,
+                latest_override_block_sequence: stage.latest_override_block_sequence,
             })
             .collect::<Vec<_>>();
         let stage_count = stages.len();
-        let request = RuntimeOfflinePluginDelegatedExecutionRequest {
+
+        RuntimeOfflinePluginDelegatedExecutionRequest {
             request_id: self.request_id.clone(),
             timeline_start_samples: self.timeline_start_samples,
             duration_samples: self.duration_samples,
@@ -37,8 +35,7 @@ impl RuntimeOfflinePluginExecutionBoundary {
             block_count: self.block_count,
             stage_count,
             stages,
-        };
-        request
+        }
     }
 }
 

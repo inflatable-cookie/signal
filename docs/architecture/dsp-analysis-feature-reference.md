@@ -1,8 +1,8 @@
 # DSP And Analysis Feature Reference
 
-Status: active
+Status: active (g10 truth pass applied to known-stale sections)
 Owner: core-product
-Updated: 2026-03-11
+Updated: 2026-06-11
 Vision refs: `docs/vision/001-signal-vision.md`
 Architecture refs: `docs/architecture/system-architecture.md`, `docs/architecture/package-map.md`
 
@@ -29,6 +29,12 @@ The implemented DSP and analysis surface currently lives in these crates:
 
 Everything in this document is based on the current crate implementations under
 `crates/`, not on roadmap intent.
+
+> g10 note (2026-06-11): g10.006 deleted the rhythm continuity taxonomy and
+> the embed model registry, and corrected loudness true-peak/LRA; g10.008
+> added `signal_dsp::PolyphaseInterpolationTable` as the RT-path resampler.
+> Sections below marked SUPERSEDED describe deleted machinery; the original
+> text survives in git history (pre-g10.006).
 
 ## Shared Foundations
 
@@ -356,6 +362,11 @@ This means the crate already implements three distinct tempo behaviors:
 
 ### Implemented Tempo State And Continuity Model
 
+> SUPERSEDED (g10.006): the tempo state/continuity machinery described here
+> (`TempoContinuityPlan`, tempo_state trees) was deleted; `BeatAnalysisResult`
+> now carries bpm, confidence, beats, onsets, candidates, diagnostics,
+> interpretation, ambiguity, and meter only. See git history for the original.
+
 Above tempo interpretation there is a state/recommendation surface for callers
 that want continuity semantics rather than just one BPM number.
 
@@ -466,6 +477,9 @@ The recovery context currently describes:
 - number of supporting windows
 
 ### Implemented Meter Continuity Model
+
+> SUPERSEDED (g10.006): meter continuity machinery (`meter_state` plans) was
+> deleted with the continuity taxonomy. Plain meter detection remains.
 
 `meter_state` is not just a wrapper around `meter`. It carries a full continuity
 recommendation with separate plans for bar length and downbeat phase.
@@ -648,6 +662,11 @@ Current features:
 
 ### Implemented Loudness Algorithm Behavior
 
+> CORRECTED (g10.006): true peak is now 4x polyphase windowed-sinc per
+> BS.1770-4 Annex 2 (12 taps/phase, Blackman), not linear interpolation; LRA
+> gained the -20 LU relative gate; integrated gating consumes complete 400 ms
+> blocks only. Known-answer tests pin these behaviors.
+
 Current loudness behavior includes:
 
 - channel-preserving analysis for mono, stereo, and counted multichannel
@@ -786,6 +805,10 @@ Current constraints:
 ## Embedding And Semantic Inference
 
 ### `signal-analysis-embed`
+
+> SUPERSEDED (g10.006): the model-registry surface described here
+> (`SemanticModelSpec`, `ModelFallbackBehavior`, model ids) was deleted. The
+> crate is now plain descriptor projection plus tag-matching functions.
 
 Primary surface:
 

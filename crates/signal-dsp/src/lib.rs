@@ -45,11 +45,11 @@ pub use block::{
 pub use control::SmoothedValue;
 pub use control::{ControlPlan, ControlSegment, ControlSegmentPlayer, ControlSegmentShape};
 pub use delay::DelayLine;
-pub use polyphase::PolyphaseInterpolationTable;
 pub use filter::OnePoleLowPass;
 pub use fixtures::SignalFixture;
 pub use level::{EnvelopeFollower, PeakMeter, RmsMeter};
 pub use mix::{apply_gain_in_place, clear_block, mix_in_place, sum_in_place, Gain};
+pub use polyphase::PolyphaseInterpolationTable;
 pub use ramp::{ExponentialRamp, LinearRamp};
 
 use signal_primitives::Sample;

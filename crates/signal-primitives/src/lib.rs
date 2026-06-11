@@ -284,7 +284,7 @@ impl AudioBuffer {
     ) -> Result<Self, AudioBufferConstructionError> {
         let channels = channels.validate()?;
         let channel_count = channels.channels().0;
-        if data.len() % channel_count != 0 {
+        if !data.len().is_multiple_of(channel_count) {
             return Err(AudioBufferConstructionError::LossyInterleavedSampleCount {
                 channel_count,
                 sample_count: data.len(),

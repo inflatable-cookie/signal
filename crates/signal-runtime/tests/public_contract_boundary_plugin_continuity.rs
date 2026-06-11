@@ -108,5 +108,4 @@ fn public_runtime_plugin_continuity_boundary_reports_shared_boundary_and_policy_
         RuntimePluginIsolationOutcome::IsolatedSandbox
     );
     assert_eq!(isolated.continuity_class, RuntimeInterruptionClass::Steady);
-
 }

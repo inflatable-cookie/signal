@@ -50,5 +50,4 @@ fn local_shared_host_edge_exports_runtime_multi_bus_truth() {
     }));
     assert_eq!(report.observation.metering_snapshot.bus_connection_count, 5);
     assert_eq!(report.observation.metering_snapshot.auxiliary_path_count, 3);
-
 }

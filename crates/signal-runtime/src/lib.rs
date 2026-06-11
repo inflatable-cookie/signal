@@ -81,9 +81,6 @@ mod sandbox_broker_support;
 
 #[cfg(test)]
 pub(crate) use interfaces::RuntimeMediaIndexingState;
-pub(crate) use interfaces::{
-    RuntimeMultichannelLayoutSummary, RuntimePreworkBacklogClass, RuntimePreworkForecastPolicy,
-};
 pub use interfaces::{
     ActiveTransportConcurrencySession, BackendPolicyOverride, BlockDispatchRecord,
     BlockDispatchStage, BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
@@ -178,11 +175,13 @@ pub use interfaces::{
     TransportSessionBoundaryMode, TransportSessionProvenance, TransportSessionState,
     TransportSessionSummary, WatchdogRestartRecord,
 };
+pub(crate) use interfaces::{
+    RuntimeMultichannelLayoutSummary, RuntimePreworkBacklogClass, RuntimePreworkForecastPolicy,
+};
 pub use runtime::{RuntimeConfig, SignalRuntime};
 pub use sandbox_broker_support::{
     ensure_prepared_sandbox_session, record_broker_attached_execution_summary,
-    record_broker_sandbox_prepared,
-    record_protocol_violation_prepare_failure, teardown_broker_sandbox_session,
-    PreparedBrokerSandboxSpec, PreparedSandboxSessionRecord, SandboxBrokerSession,
-    SandboxBrokerSpawnConfig,
+    record_broker_sandbox_prepared, record_protocol_violation_prepare_failure,
+    teardown_broker_sandbox_session, PreparedBrokerSandboxSpec, PreparedSandboxSessionRecord,
+    SandboxBrokerSession, SandboxBrokerSpawnConfig,
 };

@@ -1,6 +1,9 @@
 use super::introspection::{metadata_descriptor, metadata_io_layout, read_au_component_metadata};
 use super::*;
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 impl AuHostAdapter {
     /// Returns the default AU scan roots for the given platform.
@@ -37,7 +40,7 @@ impl AuHostAdapter {
     ) -> Vec<AuDiscoveredPluginType> {
         let mut discovered = Vec::new();
         for root in roots {
-            let expanded_root = expand_scan_root(&root);
+            let expanded_root = expand_scan_root(root);
             if expanded_root
                 .extension()
                 .and_then(|extension| extension.to_str())
@@ -65,7 +68,7 @@ impl AuHostAdapter {
     }
 }
 
-fn push_au_component_if_present(discovered: &mut Vec<AuDiscoveredPluginType>, path: &PathBuf) {
+fn push_au_component_if_present(discovered: &mut Vec<AuDiscoveredPluginType>, path: &Path) {
     let Ok(metadata) = read_au_component_metadata(path) else {
         return;
     };

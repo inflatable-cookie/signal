@@ -125,5 +125,4 @@ fn local_shared_host_edge_exports_runtime_multichannel_truth() {
             .canonical_layout,
         Some(RuntimeCanonicalChannelLayout::Surround5_1)
     );
-
 }

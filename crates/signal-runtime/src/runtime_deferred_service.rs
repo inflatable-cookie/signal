@@ -111,7 +111,8 @@ pub(super) fn deferred_service_receipt(
         | RuntimeDeferredServiceDecision::Defer
         | RuntimeDeferredServiceDecision::Throttle => 0,
     };
-    let receipt = RuntimeDeferredServiceReceipt {
+
+    RuntimeDeferredServiceReceipt {
         work_class: input.work_class,
         decision: input.decision,
         reason: input.reason,
@@ -134,6 +135,5 @@ pub(super) fn deferred_service_receipt(
         pending_cleanup_work_items: input.pending_cleanup_work_items,
         pending_deferred_retry_work_items: input.pending_deferred_retry_work_items,
         recovery_overlap_session_count: input.recovery_overlap_session_count,
-    };
-    receipt
+    }
 }

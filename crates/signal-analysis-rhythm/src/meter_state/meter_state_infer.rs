@@ -169,5 +169,8 @@ pub(crate) fn infer_meter(
         (None, None) => None,
     };
 
-    MeterDecision { estimate, ambiguity }
+    MeterDecision {
+        estimate,
+        ambiguity,
+    }
 }

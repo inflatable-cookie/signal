@@ -104,5 +104,4 @@ fn public_runtime_au_boundary_reports_runtime_owned_discovery_and_lifecycle_trut
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
     assert!(sandbox.active_transport);
-
 }

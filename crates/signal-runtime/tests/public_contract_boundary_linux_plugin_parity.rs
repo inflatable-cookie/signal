@@ -205,5 +205,4 @@ fn public_runtime_linux_plugin_parity_boundary_reports_runtime_owned_linux_polic
             RuntimePluginHostPlatform::Windows,
         ]
     );
-
 }

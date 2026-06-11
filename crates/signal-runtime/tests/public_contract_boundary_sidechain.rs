@@ -105,5 +105,4 @@ fn public_runtime_sidechain_boundary_reports_runtime_owned_secondary_input_truth
         RuntimeSecondaryInputTargetKind::PluginInput
     );
     assert_eq!(stage_secondary_input.target_id, "compressor");
-
 }

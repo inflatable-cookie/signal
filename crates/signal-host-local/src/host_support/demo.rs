@@ -5,7 +5,7 @@ use signal_runtime::{
 use std::{
     ffi::OsString,
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -199,7 +199,7 @@ fn temp_demo_scan_root(label: &str) -> PathBuf {
     root
 }
 
-fn write_demo_vst3_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
+fn write_demo_vst3_bundle(root: &Path, bundle: &str, plugin_type_id: &str) {
     let bundle_root = root.join(bundle);
     fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
         .expect("demo VST3 resources should be created");
@@ -227,7 +227,7 @@ fn demo_vst3_module_metadata(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn demo_vst3_info_plist_contents(metadata: &str, bundle_root: &PathBuf) -> String {
+fn demo_vst3_info_plist_contents(metadata: &str, bundle_root: &Path) -> String {
     let mut plugin_type_id = "";
     let mut name = "Signal VST3 Plugin";
     let mut version = "0.1.0";

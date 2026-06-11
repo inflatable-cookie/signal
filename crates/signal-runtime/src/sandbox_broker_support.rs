@@ -621,6 +621,7 @@ pub fn record_broker_sandbox_prepared(
 }
 
 /// Spawns a broker process, attaches a sandbox session, and records the prepared lifecycle events.
+#[allow(clippy::too_many_arguments)] // mirrors the broker attach wire contract one-to-one
 pub fn ensure_broker_sandbox_session(
     runtime: &mut SignalRuntime,
     request: &PluginSandboxSpec,
@@ -854,20 +855,17 @@ pub fn teardown_broker_sandbox_session(
         "broker_teardown_requested",
     );
 
-    let teardown_receipt = session
-        .client
-        .request_teardown()
-        .map_err(|error| {
-            record_broker_failure_and_convert(
-                runtime,
-                sandbox_id,
-                Some(session.attached.lease_id.clone()),
-                Some(session.attached.processing_epoch),
-                None,
-                BrokerFailureStage::TransportTeardown,
-                error,
-            )
-        })?;
+    let teardown_receipt = session.client.request_teardown().map_err(|error| {
+        record_broker_failure_and_convert(
+            runtime,
+            sandbox_id,
+            Some(session.attached.lease_id.clone()),
+            Some(session.attached.processing_epoch),
+            None,
+            BrokerFailureStage::TransportTeardown,
+            error,
+        )
+    })?;
     if teardown_receipt.state != SandboxBrokerReceiptState::TeardownComplete {
         return Err(record_broker_failure_and_convert(
             runtime,

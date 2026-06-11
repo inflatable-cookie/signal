@@ -121,5 +121,4 @@ fn public_runtime_device_supervision_boundary_reports_recovering_and_faulted_run
             .primary_fault_cause,
         Some(signal_runtime::RuntimeFaultCause::RuntimeError)
     );
-
 }

@@ -60,5 +60,4 @@ fn local_shared_host_edge_exports_resumable_recording_checkpoint_truth() {
             .map(|checkpoint| checkpoint.interruption_class),
         Some(RuntimeInterruptionClass::Resumable)
     );
-
 }

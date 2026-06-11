@@ -1,6 +1,9 @@
 use super::introspection::{metadata_descriptor, metadata_io_layout, read_vst3_bundle_snapshot};
 use super::*;
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 impl Vst3HostAdapter {
     /// Returns the default VST3 scan roots for the given platform.
@@ -61,7 +64,7 @@ impl Vst3HostAdapter {
     ) -> Vec<Vst3DiscoveredPluginType> {
         let mut discovered = Vec::new();
         for root in roots {
-            let expanded_root = expand_scan_root(&root);
+            let expanded_root = expand_scan_root(root);
             if expanded_root
                 .extension()
                 .and_then(|extension| extension.to_str())
@@ -91,7 +94,7 @@ impl Vst3HostAdapter {
 
 fn push_vst3_bundle_if_present(
     discovered: &mut Vec<Vst3DiscoveredPluginType>,
-    path: &PathBuf,
+    path: &Path,
     platform: Vst3HostPlatform,
 ) {
     let Ok(snapshot) = read_vst3_bundle_snapshot(path, platform) else {

@@ -50,8 +50,8 @@ use signal_analysis::{
 use signal_dsp_spectral::Stft;
 use signal_primitives::{AudioBuffer, Sample, SampleRate, Seconds};
 use tempo_interpretation_runtime::interpret_tempo;
-pub use tempo_policy::*;
 use tempo_policy::analyze_local_tempo;
+pub use tempo_policy::*;
 use tracker_support::combine_meter_cues;
 pub(crate) use tracker_support::{
     beat_index_to_seconds, downbeat_frames_for_hypothesis, TempoEstimate, TempoHypothesis,

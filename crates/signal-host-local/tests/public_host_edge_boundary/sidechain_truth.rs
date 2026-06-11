@@ -69,5 +69,4 @@ fn local_shared_host_edge_exports_runtime_sidechain_truth() {
         RuntimeSecondaryInputTargetKind::PluginInput
     );
     assert_eq!(stage_secondary_input.target_id, "compressor");
-
 }

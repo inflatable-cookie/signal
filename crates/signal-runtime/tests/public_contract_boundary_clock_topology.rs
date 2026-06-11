@@ -104,5 +104,4 @@ fn public_runtime_clock_topology_boundary_reports_drift_duplex_and_endpoint_rece
             .clocking
             .partial_availability
     );
-
 }

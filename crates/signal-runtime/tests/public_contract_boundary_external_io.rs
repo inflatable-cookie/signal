@@ -80,5 +80,4 @@ fn public_runtime_external_io_boundary_reports_runtime_owned_monitor_and_loopbac
         supervisor.observation.external_io_snapshot.loopback_state,
         RuntimeExternalIoLoopbackState::Guarded
     );
-
 }

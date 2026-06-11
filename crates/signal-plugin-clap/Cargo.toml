@@ -7,8 +7,11 @@ repository.workspace = true
 publish = false
 description = "CLAP plugin adapter surfaces for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-clap-sys = "0.5.0"
-libloading = "0.8.9"
-signal-ipc = { path = "../signal-ipc" }
-signal-plugin = { path = "../signal-plugin" }
+clap-sys = { workspace = true }
+libloading = { workspace = true }
+signal-ipc = { workspace = true }
+signal-plugin = { workspace = true }

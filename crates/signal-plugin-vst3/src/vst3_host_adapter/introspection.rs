@@ -731,7 +731,7 @@ fn plist_to_io_error(error: plist::Error) -> io::Error {
 }
 
 fn libloading_to_io(error: libloading::Error) -> io::Error {
-    io::Error::new(io::ErrorKind::Other, error.to_string())
+    io::Error::other(error.to_string())
 }
 
 impl Vst3FactoryClass {

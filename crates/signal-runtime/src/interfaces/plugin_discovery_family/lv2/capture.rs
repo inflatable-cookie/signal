@@ -199,7 +199,8 @@ impl RuntimeLv2ExtensionSnapshot {
         }
 
         let plugin_type_count = records.len();
-        let snapshot = Self {
+
+        Self {
             plugin_type_count,
             sandbox_count,
             worker_required_type_count,
@@ -210,7 +211,6 @@ impl RuntimeLv2ExtensionSnapshot {
             guarded_type_count,
             unavailable_type_count,
             records,
-        };
-        snapshot
+        }
     }
 }

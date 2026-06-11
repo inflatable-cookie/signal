@@ -13,7 +13,9 @@ use std::time::Duration;
 
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_output_cpal::CpalOutputBackend;
-use signal_render_plane::{render_plane, RenderClipSpec, RenderLaneSpec, RenderPlanSpec, RenderSource};
+use signal_render_plane::{
+    render_plane, RenderClipSpec, RenderLaneSpec, RenderPlanSpec, RenderSource,
+};
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
 static CALLBACK_ALLOCS: AtomicU64 = AtomicU64::new(0);
@@ -74,7 +76,9 @@ fn main() {
                     clips: vec![RenderClipSpec {
                         start_frames: 0,
                         end_frames: u64::MAX,
-                        source: RenderSource::TestTone { frequency_hz: 440.0 },
+                        source: RenderSource::TestTone {
+                            frequency_hz: 440.0,
+                        },
                         loop_source: false,
                     }],
                 },
@@ -84,7 +88,9 @@ fn main() {
                     clips: vec![RenderClipSpec {
                         start_frames: 0,
                         end_frames: u64::MAX,
-                        source: RenderSource::TestTone { frequency_hz: 660.0 },
+                        source: RenderSource::TestTone {
+                            frequency_hz: 660.0,
+                        },
                         loop_source: false,
                     }],
                 },
@@ -118,7 +124,9 @@ fn main() {
                 clips: vec![RenderClipSpec {
                     start_frames: 0,
                     end_frames: u64::MAX,
-                    source: RenderSource::TestTone { frequency_hz: 220.0 },
+                    source: RenderSource::TestTone {
+                        frequency_hz: 220.0,
+                    },
                     loop_source: false,
                 }],
             }],

@@ -43,7 +43,6 @@ fn public_runtime_interruption_boundary_reports_restartable_runtime_state() {
         RuntimeInterruptionClass::Restartable
     );
     assert!(!observation.interruption_summary.rebindable);
-
 }
 
 #[test]

@@ -60,12 +60,3 @@ pub(crate) fn transfer_runtime_output_to_host_buffer(
         output_peak,
     }
 }
-
-#[cfg(test)]
-pub(crate) fn scale_audio_buffer(buffer: &AudioBuffer, gain: f32) -> AudioBuffer {
-    let mut scaled = buffer.clone();
-    for sample in scaled.samples_mut() {
-        *sample *= gain;
-    }
-    scaled
-}

@@ -66,7 +66,6 @@ fn local_shared_host_edge_exports_runtime_block_timing_truth() {
             | RuntimeBlockDeadlinePressure::Critical
             | RuntimeBlockDeadlinePressure::Overrun
     ));
-
 }
 
 #[test]
@@ -121,5 +120,4 @@ fn local_shared_host_edge_exports_runtime_critical_path_truth() {
         performance.critical_path_lane_total_latency_samples,
         critical_lane_summary.total_latency_samples
     );
-
 }

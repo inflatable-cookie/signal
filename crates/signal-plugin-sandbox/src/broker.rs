@@ -421,9 +421,10 @@ mod tests {
         assert!(lines
             .iter()
             .any(|line| line.contains("execution_complete|processed_blocks=8")));
-        assert!(lines.iter().any(
-            |line| line.contains("state=teardown_complete") && line.contains("lease_cleanup_ok")
-        ));
+        assert!(lines
+            .iter()
+            .any(|line| line.contains("state=teardown_complete")
+                && line.contains("lease_cleanup_ok")));
     }
 
     #[test]

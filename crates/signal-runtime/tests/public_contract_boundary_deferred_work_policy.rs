@@ -165,5 +165,4 @@ fn public_runtime_deferred_work_policy_boundary_reports_runtime_owned_scheduler_
     assert_eq!(trace.peak_background_cancelled_work_item_count, 1);
     assert_eq!(trace.background_realtime_backpressure_observation_count, 0);
     assert_eq!(trace.background_recovery_backpressure_observation_count, 1);
-
 }

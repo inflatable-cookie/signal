@@ -32,3 +32,59 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/infinite-loop-audio/signal"
+
+[workspace.dependencies]
+# Internal crates
+signal-primitives = { path = "crates/signal-primitives" }
+signal-dsp = { path = "crates/signal-dsp" }
+signal-dsp-resample = { path = "crates/signal-dsp-resample" }
+signal-dsp-spectral = { path = "crates/signal-dsp-spectral" }
+signal-analysis = { path = "crates/signal-analysis" }
+signal-analysis-rhythm = { path = "crates/signal-analysis-rhythm" }
+signal-analysis-tonal = { path = "crates/signal-analysis-tonal" }
+signal-analysis-loudness = { path = "crates/signal-analysis-loudness" }
+signal-analysis-character = { path = "crates/signal-analysis-character" }
+signal-analysis-embed = { path = "crates/signal-analysis-embed" }
+signal-graph = { path = "crates/signal-graph" }
+signal-runtime = { path = "crates/signal-runtime" }
+signal-ipc = { path = "crates/signal-ipc" }
+signal-plugin = { path = "crates/signal-plugin" }
+signal-plugin-inventory = { path = "crates/signal-plugin-inventory" }
+signal-plugin-clap = { path = "crates/signal-plugin-clap" }
+signal-plugin-au = { path = "crates/signal-plugin-au" }
+signal-plugin-lv2 = { path = "crates/signal-plugin-lv2" }
+signal-plugin-vst3 = { path = "crates/signal-plugin-vst3" }
+signal-plugin-sandbox = { path = "crates/signal-plugin-sandbox" }
+signal-hardware = { path = "crates/signal-hardware" }
+signal-hardware-output-cpal = { path = "crates/signal-hardware-output-cpal" }
+signal-render-plane = { path = "crates/signal-render-plane" }
+signal-host-local = { path = "crates/signal-host-local" }
+
+# External crates
+clap-sys = "0.5"
+cpal = "0.16"
+hound = "3.5"
+json5 = "0.4"
+libloading = "0.8"
+memmap2 = "0.9"
+plist = "1"
+rayon = "1.10"
+rustfft = "6.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+symphonia = { version = "0.5", features = [
+  "aiff",
+  "aac",
+  "alac",
+  "isomp4",
+  "mp3",
+  "flac",
+  "ogg",
+  "vorbis",
+] }
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

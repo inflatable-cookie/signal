@@ -150,7 +150,8 @@ impl RuntimeFaultStatusSnapshot {
         } else {
             RuntimeRecoveryState::Steady
         };
-        let snapshot = Self {
+
+        Self {
             recovery_state,
             primary_fault_cause,
             active_fault_count,
@@ -166,8 +167,7 @@ impl RuntimeFaultStatusSnapshot {
             plugin_fault_count,
             transport_faulted_session_count,
             device_loss_count: input.device_loss_count,
-        };
-        snapshot
+        }
     }
 }
 
@@ -238,7 +238,8 @@ impl RuntimeInterruptionSummary {
                     | RuntimeFaultCause::MissingPluginBinding
             )
         );
-        let summary = Self {
+
+        Self {
             active: class != RuntimeInterruptionClass::Steady,
             class,
             rebindable,
@@ -248,7 +249,6 @@ impl RuntimeInterruptionSummary {
             deferred_service_class: last_deferred_service_receipt.map(|receipt| receipt.work_class),
             deferred_service_decision: last_deferred_service_receipt
                 .map(|receipt| receipt.decision),
-        };
-        summary
+        }
     }
 }

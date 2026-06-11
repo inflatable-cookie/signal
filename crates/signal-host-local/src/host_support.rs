@@ -26,8 +26,6 @@ mod observation;
 mod observation_clock_transition;
 #[path = "host_support/observation_host_io.rs"]
 mod observation_host_io;
-#[path = "host_support/offline_render.rs"]
-mod offline_render;
 #[path = "host_support/output_pump.rs"]
 mod output_pump;
 #[path = "host_support/sandbox_sessions.rs"]

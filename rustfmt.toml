@@ -1,0 +1,2 @@
+# Default rustfmt style, pinned so editors and CI agree.
+edition = "2021"

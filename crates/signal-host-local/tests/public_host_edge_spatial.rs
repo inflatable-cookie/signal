@@ -108,5 +108,4 @@ fn local_shared_host_edge_exports_runtime_spatial_truth() {
                         })
                 })
         }));
-
 }

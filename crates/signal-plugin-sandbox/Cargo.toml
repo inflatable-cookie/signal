@@ -7,5 +7,8 @@ repository.workspace = true
 publish = false
 description = "Out-of-process plugin container shell for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-ipc = { path = "../signal-ipc" }
+signal-ipc = { workspace = true }

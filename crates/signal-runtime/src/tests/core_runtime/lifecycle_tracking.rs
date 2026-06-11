@@ -63,4 +63,3 @@ fn runtime_timeline_tracks_sequences_across_leases() {
     let timeline = runtime.get_timeline_snapshot();
     assert_eq!(timeline.next_block_sequence, 3);
 }
-

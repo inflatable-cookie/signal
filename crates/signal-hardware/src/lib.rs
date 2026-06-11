@@ -31,13 +31,13 @@ pub use backend_contract::{
     HardwareNegotiationErrorKind, HardwareRestartPolicy, HardwareStreamConfig,
     HardwareStreamRequest, LinuxAudioBackendKind,
 };
-pub use output_stream::{
-    OutputRenderFn, OutputStreamBackend, OutputStreamError, OutputStreamHandle,
-    OutputStreamSpec, OutputStreamState,
-};
 pub use diagnostics::{
     BackendHealth, HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
     HardwareDiagnosticsSnapshot,
+};
+pub use output_stream::{
+    OutputRenderFn, OutputStreamBackend, OutputStreamError, OutputStreamHandle, OutputStreamSpec,
+    OutputStreamState,
 };
 
 // Re-export simulated backend at crate root for backward compatibility.

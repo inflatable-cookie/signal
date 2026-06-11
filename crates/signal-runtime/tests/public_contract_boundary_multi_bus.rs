@@ -72,5 +72,4 @@ fn public_runtime_multi_bus_boundary_reports_runtime_owned_connection_truth() {
         .any(|connection| {
             connection.connection_id == "return-fx:bus:mix:master->output-main:bus:mix:master"
         }));
-
 }

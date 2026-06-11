@@ -150,7 +150,8 @@ impl RuntimePluginPinMatrixSnapshot {
         }
 
         let plugin_type_count = records.len();
-        let snapshot = Self {
+
+        Self {
             plugin_type_count,
             negotiated_type_count,
             guarded_type_count,
@@ -158,7 +159,6 @@ impl RuntimePluginPinMatrixSnapshot {
             dynamic_negotiated_type_count,
             dynamic_guarded_type_count,
             records,
-        };
-        snapshot
+        }
     }
 }

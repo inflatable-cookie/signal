@@ -59,7 +59,8 @@ impl SignalRuntime {
                 let latest_override = self.engine.latest_plugin_node_renders.get(&stage.node_id);
                 let host_delegate_required =
                     execution_owner == RuntimeOfflinePluginExecutionOwner::HostDelegated;
-                let boundary = RuntimeOfflinePluginExecutionStageBoundary {
+
+                RuntimeOfflinePluginExecutionStageBoundary {
                     stage_id: stage.stage_id.clone(),
                     node_id: stage.node_id.clone(),
                     chain_id: stage.chain_id.clone(),
@@ -80,8 +81,7 @@ impl SignalRuntime {
                         .map(|latest| latest.processing_epoch),
                     latest_override_block_sequence: latest_override
                         .map(|latest| latest.block_sequence),
-                };
-                boundary
+                }
             })
             .collect::<Vec<_>>();
 

@@ -195,7 +195,7 @@ impl RuntimeFaultDiagnosticReceipt {
             None => None,
         };
 
-        let receipt = Self {
+        Self {
             primary_family,
             primary_fault_cause: fault_status.primary_fault_cause,
             interruption_class: interruption_summary.class,
@@ -203,7 +203,6 @@ impl RuntimeFaultDiagnosticReceipt {
             safe_mode_enabled: fault_status.safe_mode_enabled,
             rebindable: interruption_summary.rebindable,
             contributions,
-        };
-        receipt
+        }
     }
 }

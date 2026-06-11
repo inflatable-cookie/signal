@@ -173,8 +173,7 @@ impl SignalRuntime {
     }
 
     /// Resets all plugin event tracking state.
-    pub fn reset_plugin_event_tracking(&mut self) {
-    }
+    pub fn reset_plugin_event_tracking(&mut self) {}
 
     /// Processes one engine block and returns the block result including graph output.
     pub fn process_engine_block(

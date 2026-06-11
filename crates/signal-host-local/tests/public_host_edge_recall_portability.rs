@@ -139,5 +139,4 @@ fn local_shared_host_edge_exports_runtime_recall_portability_truth() {
             .map(|region| region.region_id.as_str()),
         Some("region:chorus")
     );
-
 }

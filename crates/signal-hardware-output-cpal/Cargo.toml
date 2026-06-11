@@ -7,9 +7,12 @@ repository.workspace = true
 publish = false
 description = "cpal-backed real output streams for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-hardware = { path = "../signal-hardware" }
-cpal = "0.16"
+signal-hardware = { workspace = true }
+cpal = { workspace = true }
 
 [[example]]
 name = "tone"

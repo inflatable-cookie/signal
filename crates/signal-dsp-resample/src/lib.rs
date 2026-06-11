@@ -11,6 +11,11 @@
 //!
 //! The output is deterministic for a given input sample stream, chunking
 //! pattern, and configuration.
+//!
+//! This crate is the offline/streaming resampler for analysis input
+//! preparation. It is NOT the real-time path: the audio-thread interpolator
+//! is `signal_dsp::PolyphaseInterpolationTable`, used by signal-render-plane
+//! for rate-converted clip playback.
 
 #![warn(missing_docs)]
 
@@ -47,38 +52,6 @@ impl ResampleConfig {
             quality,
         }
     }
-}
-
-/// Summary metrics for one resampled output stream.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ResampleArtifactMetrics {
-    /// Number of samples in the resampled output.
-    pub output_len: usize,
-    /// Absolute peak amplitude of the output.
-    pub peak_amplitude: f32,
-    /// Root-mean-square amplitude of the output.
-    pub rms_amplitude: f32,
-    /// Mean absolute difference between adjacent output samples.
-    pub mean_abs_step: f32,
-    /// Mean squared difference between adjacent output samples.
-    pub step_energy: f32,
-}
-
-/// Frozen comparison surface for the crate's three quality tiers.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ResampleQualityComparisonReport {
-    /// Sample rate of the input signal used for the comparison.
-    pub input_rate: SampleRate,
-    /// Target sample rate used for the comparison.
-    pub output_rate: SampleRate,
-    /// Number of input samples used for the comparison.
-    pub input_len: usize,
-    /// Artifact metrics for the [`ResampleQuality::Nearest`] tier.
-    pub nearest: ResampleArtifactMetrics,
-    /// Artifact metrics for the [`ResampleQuality::Linear`] tier.
-    pub linear: ResampleArtifactMetrics,
-    /// Artifact metrics for the [`ResampleQuality::BandLimited`] tier.
-    pub band_limited: ResampleArtifactMetrics,
 }
 
 /// Stateful chunked mono resampler.
@@ -210,36 +183,6 @@ pub fn resample_mono(config: ResampleConfig, input: &[Sample]) -> Vec<Sample> {
     output
 }
 
-/// Compare the artifact posture of the crate's quality tiers for one mono
-/// input and rate conversion pair.
-pub fn compare_quality_tiers(
-    input_rate: SampleRate,
-    output_rate: SampleRate,
-    input: &[Sample],
-) -> ResampleQualityComparisonReport {
-    let nearest = resample_mono(
-        ResampleConfig::new(input_rate, output_rate, ResampleQuality::Nearest),
-        input,
-    );
-    let linear = resample_mono(
-        ResampleConfig::new(input_rate, output_rate, ResampleQuality::Linear),
-        input,
-    );
-    let band_limited = resample_mono(
-        ResampleConfig::new(input_rate, output_rate, ResampleQuality::BandLimited),
-        input,
-    );
-
-    ResampleQualityComparisonReport {
-        input_rate,
-        output_rate,
-        input_len: input.len(),
-        nearest: artifact_metrics(&nearest),
-        linear: artifact_metrics(&linear),
-        band_limited: artifact_metrics(&band_limited),
-    }
-}
-
 fn sample_at_with_step(
     samples: &[Sample],
     source_index: f64,
@@ -264,44 +207,6 @@ fn sample_at_with_step(
             left + (right - left) * fraction
         }
         ResampleQuality::BandLimited => band_limited_sample(samples, source_index, step),
-    }
-}
-
-fn artifact_metrics(samples: &[Sample]) -> ResampleArtifactMetrics {
-    let peak_amplitude = samples
-        .iter()
-        .copied()
-        .fold(0.0f32, |peak, sample| peak.max(sample.abs()));
-    let rms_amplitude = if samples.is_empty() {
-        0.0
-    } else {
-        let sum = samples
-            .iter()
-            .copied()
-            .map(|sample| sample * sample)
-            .sum::<f32>();
-        (sum / samples.len() as f32).sqrt()
-    };
-    let step_count = samples.len().saturating_sub(1);
-    let (mean_abs_step, step_energy) = if step_count == 0 {
-        (0.0, 0.0)
-    } else {
-        let mut abs_sum = 0.0f32;
-        let mut energy_sum = 0.0f32;
-        for pair in samples.windows(2) {
-            let step = pair[1] - pair[0];
-            abs_sum += step.abs();
-            energy_sum += step * step;
-        }
-        (abs_sum / step_count as f32, energy_sum / step_count as f32)
-    };
-
-    ResampleArtifactMetrics {
-        output_len: samples.len(),
-        peak_amplitude,
-        rms_amplitude,
-        mean_abs_step,
-        step_energy,
     }
 }
 
@@ -505,41 +410,26 @@ mod tests {
         let input: Vec<f32> = (0..128)
             .map(|index| if index % 2 == 0 { 1.0 } else { -1.0 })
             .collect();
-        let report = compare_quality_tiers(SampleRate(48_000), SampleRate(12_000), &input);
+        let config = |quality| ResampleConfig::new(SampleRate(48_000), SampleRate(12_000), quality);
+        let linear = resample_mono(config(ResampleQuality::Linear), &input);
+        let band_limited = resample_mono(config(ResampleQuality::BandLimited), &input);
+
+        let peak = |samples: &[f32]| samples.iter().fold(0.0f32, |p: f32, s| p.max(s.abs()));
+        let rms = |samples: &[f32]| {
+            (samples.iter().map(|s| s * s).sum::<f32>() / samples.len() as f32).sqrt()
+        };
 
         assert!(
-            report.band_limited.peak_amplitude < report.linear.peak_amplitude * 0.6,
+            peak(&band_limited) < peak(&linear) * 0.6,
             "expected band-limited attenuation, got linear_peak={} band_limited_peak={}",
-            report.linear.peak_amplitude,
-            report.band_limited.peak_amplitude
+            peak(&linear),
+            peak(&band_limited)
         );
         assert!(
-            report.band_limited.rms_amplitude < report.linear.rms_amplitude * 0.6,
+            rms(&band_limited) < rms(&linear) * 0.6,
             "expected band-limited rms attenuation, got linear={} band_limited={}",
-            report.linear.rms_amplitude,
-            report.band_limited.rms_amplitude
+            rms(&linear),
+            rms(&band_limited)
         );
-    }
-
-    #[test]
-    fn quality_comparison_report_is_stable_and_machine_readable() {
-        let input: Vec<f32> = (0..160)
-            .map(|index| {
-                ((index as f32 * 0.13).sin() * 0.65)
-                    + ((index as f32 * 0.79).sin() * 0.25)
-                    + ((index as f32 * 1.83).sin() * 0.10)
-            })
-            .collect();
-        let report = compare_quality_tiers(SampleRate(48_000), SampleRate(16_000), &input);
-
-        println!("resample_quality_report={report:#?}");
-
-        assert_eq!(report.input_rate, SampleRate(48_000));
-        assert_eq!(report.output_rate, SampleRate(16_000));
-        assert_eq!(report.input_len, 160);
-        assert_eq!(report.nearest.output_len, report.linear.output_len);
-        assert_eq!(report.linear.output_len, report.band_limited.output_len);
-        assert!(report.band_limited.step_energy <= report.linear.step_energy);
-        assert!(report.linear.step_energy <= report.nearest.step_energy);
     }
 }

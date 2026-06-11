@@ -47,8 +47,7 @@ pub struct RenderSampleBuffer {
 
 impl PartialEq for RenderSampleBuffer {
     fn eq(&self, other: &Self) -> bool {
-        self.sample_rate_hz == other.sample_rate_hz
-            && Arc::ptr_eq(&self.frames, &other.frames)
+        self.sample_rate_hz == other.sample_rate_hz && Arc::ptr_eq(&self.frames, &other.frames)
     }
 }
 
@@ -134,7 +133,10 @@ pub struct RenderPlanSpec {
 
 enum CompiledSource {
     Silence,
-    Tone { phase: f32, step: f32 },
+    Tone {
+        phase: f32,
+        step: f32,
+    },
     Samples {
         buffer: RenderSampleBuffer,
         /// Source frames advanced per stream frame (rate ratio).
@@ -166,7 +168,6 @@ struct CompiledLane {
     lane_id: String,
 }
 
-
 /// A compiled, immutable-topology render plan. Source state (tone phase,
 /// smoothed gains) mutates during rendering; structure never does.
 pub struct RenderPlan {
@@ -192,8 +193,7 @@ impl RenderPlan {
             if let Some((_, table)) = tables.iter().find(|(bits, _)| *bits == key) {
                 return Some(table.clone());
             }
-            let table =
-                PolyphaseInterpolationTable::new(RESAMPLE_TAPS, RESAMPLE_PHASES, cutoff);
+            let table = PolyphaseInterpolationTable::new(RESAMPLE_TAPS, RESAMPLE_PHASES, cutoff);
             tables.push((key, table.clone()));
             Some(table)
         };
@@ -215,12 +215,8 @@ impl RenderPlan {
                         .map(|clip| CompiledClip {
                             start_frames: clip.start_frames,
                             end_frames: clip.end_frames,
-                            edge_fade_frames: CLIP_EDGE_FADE_FRAMES.min(
-                                clip.end_frames
-                                    .saturating_sub(clip.start_frames)
-                                    .max(2)
-                                    / 2,
-                            ),
+                            edge_fade_frames: CLIP_EDGE_FADE_FRAMES
+                                .min(clip.end_frames.saturating_sub(clip.start_frames).max(2) / 2),
                             source: match &clip.source {
                                 RenderSource::Silence => CompiledSource::Silence,
                                 RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
@@ -228,8 +224,8 @@ impl RenderPlan {
                                     step: frequency_hz * tau / stream_rate as f32,
                                 },
                                 RenderSource::Samples(buffer) => {
-                                    let step = buffer.sample_rate_hz.max(1) as f64
-                                        / stream_rate as f64;
+                                    let step =
+                                        buffer.sample_rate_hz.max(1) as f64 / stream_rate as f64;
                                     CompiledSource::Samples {
                                         table: table_for_step(step),
                                         step,
@@ -259,9 +255,7 @@ impl RenderPlan {
                 continue;
             };
             lane.gain_current = previous_lane.gain_current;
-            for (clip, previous_clip) in
-                lane.clips.iter_mut().zip(previous_lane.clips.iter())
-            {
+            for (clip, previous_clip) in lane.clips.iter_mut().zip(previous_lane.clips.iter()) {
                 if let (
                     CompiledSource::Tone { phase, step },
                     CompiledSource::Tone {
@@ -538,14 +532,14 @@ impl RenderPlaneExecutor {
         for lane in plan.lanes.iter_mut() {
             // Smoothed gains: move toward targets at a fixed full-swing rate
             // and interpolate across the block, so edits never step audio.
-            let gain_step = frame_count as f32
-                / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0);
+            let gain_step =
+                frame_count as f32 / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0);
             let master_start = plan.master_gain_current;
             let master_end = master_start
                 + (plan.master_gain_target - master_start).clamp(-gain_step, gain_step);
             let lane_start = lane.gain_current;
-            let lane_end = lane_start
-                + (lane.gain_target - lane_start).clamp(-gain_step, gain_step);
+            let lane_end =
+                lane_start + (lane.gain_target - lane_start).clamp(-gain_step, gain_step);
             let gain_begin = lane_start * master_start;
             let gain_finish = lane_end * master_end;
             let gain_slope = (gain_finish - gain_begin) / frame_count.max(1) as f32;
@@ -554,8 +548,7 @@ impl RenderPlaneExecutor {
             for clip in lane.clips.iter_mut() {
                 // Skip clips entirely outside this block.
                 let block_end_frame = block_start_frame + frame_count as u64;
-                if clip.end_frames <= block_start_frame || clip.start_frames >= block_end_frame
-                {
+                if clip.end_frames <= block_start_frame || clip.start_frames >= block_end_frame {
                     continue;
                 }
                 let clip_start = clip.start_frames;
@@ -602,8 +595,7 @@ impl RenderPlaneExecutor {
                             }
                             // Source position via the rate ratio, anchored at
                             // the clip's window start.
-                            let mut source_position =
-                                (frame - clip_start) as f64 * *step;
+                            let mut source_position = (frame - clip_start) as f64 * *step;
                             if *loop_source {
                                 source_position %= source_frames as f64;
                             }
@@ -612,8 +604,7 @@ impl RenderPlaneExecutor {
                                 continue;
                             }
                             let fraction = source_position - source_index as f64;
-                            let lane_gain = (gain_begin
-                                + gain_slope * frame_index as f32)
+                            let lane_gain = (gain_begin + gain_slope * frame_index as f32)
                                 * clip_edge_gain(frame, clip_start, clip_end, clip_fade);
                             let base = frame_index * channels;
                             match table {
@@ -635,8 +626,7 @@ impl RenderPlaneExecutor {
                                             if tap_index >= 0
                                                 && (tap_index as usize) < source_frames
                                             {
-                                                acc += data
-                                                    [tap_index as usize * 2 + channel]
+                                                acc += data[tap_index as usize * 2 + channel]
                                                     * coefficient;
                                             }
                                         }
@@ -671,8 +661,7 @@ impl RenderPlaneExecutor {
             + (plan.master_gain_target - plan.master_gain_current).clamp(
                 -(frame_count as f32
                     / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0)),
-                frame_count as f32
-                    / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0),
+                frame_count as f32 / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0),
             );
 
         // Transport edge envelope over the mixed block: ramps toward the
@@ -685,11 +674,9 @@ impl RenderPlaneExecutor {
             0.0
         };
         if self.edge_gain != edge_target || edge_target < 1.0 {
-            let edge_step =
-                1.0 / (EDGE_RAMP_SECONDS * plan.sample_rate_hz as f32).max(1.0);
+            let edge_step = 1.0 / (EDGE_RAMP_SECONDS * plan.sample_rate_hz as f32).max(1.0);
             for frame_index in 0..frame_count {
-                self.edge_gain +=
-                    (edge_target - self.edge_gain).clamp(-edge_step, edge_step);
+                self.edge_gain += (edge_target - self.edge_gain).clamp(-edge_step, edge_step);
                 let base = frame_index * channels;
                 for channel in 0..channels {
                     frames[base + channel] *= self.edge_gain;
@@ -1020,9 +1007,8 @@ mod tests {
         let frequency = 1_000.0f64;
         let mut data = Vec::new();
         for n in 0..44_100 {
-            let value = (std::f64::consts::TAU * frequency * n as f64
-                / source_rate as f64)
-                .sin() as f32;
+            let value =
+                (std::f64::consts::TAU * frequency * n as f64 / source_rate as f64).sin() as f32;
             data.push(value);
             data.push(value);
         }
@@ -1056,9 +1042,8 @@ mod tests {
         for frame_index in 0..1024usize {
             let stream_frame = 1024 + frame_index as u64;
             let position = stream_frame as f64 * step;
-            let expected = (std::f64::consts::TAU * frequency * position
-                / source_rate as f64)
-                .sin();
+            let expected =
+                (std::f64::consts::TAU * frequency * position / source_rate as f64).sin();
             let actual = frames[frame_index * 2] as f64;
             error += (actual - expected) * (actual - expected);
             power += expected * expected;

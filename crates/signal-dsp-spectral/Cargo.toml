@@ -7,6 +7,9 @@ repository.workspace = true
 publish = false
 description = "Spectral DSP helpers such as windows and STFT config for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-rustfft = "6.2"
-signal-primitives = { path = "../signal-primitives" }
+rustfft = { workspace = true }
+signal-primitives = { workspace = true }

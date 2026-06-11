@@ -7,19 +7,22 @@ repository.workspace = true
 publish = false
 description = "Local desktop runtime host assembly for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-hardware = { path = "../signal-hardware" }
-signal-hardware-output-cpal = { path = "../signal-hardware-output-cpal" }
-signal-graph = { path = "../signal-graph" }
-signal-ipc = { path = "../signal-ipc" }
-signal-plugin = { path = "../signal-plugin" }
-signal-plugin-clap = { path = "../signal-plugin-clap" }
-signal-plugin-au = { path = "../signal-plugin-au" }
-signal-plugin-vst3 = { path = "../signal-plugin-vst3" }
-signal-primitives = { path = "../signal-primitives" }
-signal-runtime = { path = "../signal-runtime" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+signal-hardware = { workspace = true }
+signal-hardware-output-cpal = { workspace = true }
+signal-graph = { workspace = true }
+signal-ipc = { workspace = true }
+signal-plugin = { workspace = true }
+signal-plugin-clap = { workspace = true }
+signal-plugin-au = { workspace = true }
+signal-plugin-vst3 = { workspace = true }
+signal-primitives = { workspace = true }
+signal-runtime = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [dev-dependencies]
-hound = "3.5"
+hound = { workspace = true }

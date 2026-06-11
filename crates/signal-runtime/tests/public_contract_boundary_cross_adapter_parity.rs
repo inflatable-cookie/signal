@@ -196,5 +196,4 @@ fn public_runtime_cross_adapter_parity_boundary_reports_runtime_owned_portabilit
     assert_eq!(vst3_parity.sandbox_count, 1);
     assert_eq!(vst3_parity.ready_sandbox_count, 1);
     assert_eq!(vst3_parity.active_transport_count, 1);
-
 }

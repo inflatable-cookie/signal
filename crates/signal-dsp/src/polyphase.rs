@@ -150,9 +150,7 @@ mod tests {
         let output_rate = 48_000.0f64;
         let frequency = 1_000.0f64;
         let source: Vec<f32> = (0..44_100)
-            .map(|n| {
-                (2.0 * std::f64::consts::PI * frequency * n as f64 / source_rate).sin() as f32
-            })
+            .map(|n| (2.0 * std::f64::consts::PI * frequency * n as f64 / source_rate).sin() as f32)
             .collect();
         let table = PolyphaseInterpolationTable::new(16, 512, 1.0);
         let step = source_rate / output_rate;
@@ -167,8 +165,7 @@ mod tests {
             let position = output_index as f64 * step;
             let index = position as usize;
             let fraction = position - index as f64;
-            let expected =
-                (2.0 * std::f64::consts::PI * frequency * position / source_rate).sin();
+            let expected = (2.0 * std::f64::consts::PI * frequency * position / source_rate).sin();
             signal_power += expected * expected;
 
             let row = table.phase_row(fraction);

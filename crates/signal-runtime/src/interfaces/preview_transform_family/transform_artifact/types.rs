@@ -117,6 +117,7 @@ pub enum RuntimeTransformPersistencePosture {
 
 /// Retention policy class for transform artifacts.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)] // frozen public names; shared postfix is intentional
 pub enum RuntimeTransformRetentionPolicyClass {
     #[default]
     /// No retention policy is active.
@@ -163,6 +164,7 @@ pub enum RuntimeTransformRetentionOutcome {
 
 /// Cache placement posture for transform artifacts.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)] // frozen public names; shared postfix is intentional
 pub enum RuntimeTransformCachePlacementPosture {
     #[default]
     /// No cache placement is configured.

@@ -148,6 +148,7 @@ pub(crate) struct GraphBusState {
     pub(crate) failed_channel_adaptation_count: usize,
 }
 
+#[allow(clippy::too_many_arguments)] // internal report assembly; a params struct adds no clarity here
 pub(crate) fn build_block_report(
     graph: &ExecutableGraph,
     request: &GraphRealtimeExecutionRequest<'_>,

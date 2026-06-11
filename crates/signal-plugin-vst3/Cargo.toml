@@ -7,9 +7,12 @@ repository.workspace = true
 publish = false
 description = "VST3 plugin adapter surfaces for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-json5 = "0.4"
-libloading = "0.8"
-plist = "1"
-serde = { version = "1", features = ["derive"] }
-signal-plugin = { path = "../signal-plugin" }
+json5 = { workspace = true }
+libloading = { workspace = true }
+plist = { workspace = true }
+serde = { workspace = true }
+signal-plugin = { workspace = true }

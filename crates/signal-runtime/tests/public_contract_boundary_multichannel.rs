@@ -81,5 +81,4 @@ fn public_runtime_multichannel_boundary_reports_runtime_owned_layout_and_role_tr
             .canonical_layout,
         Some(RuntimeCanonicalChannelLayout::Stereo)
     );
-
 }

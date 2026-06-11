@@ -2,7 +2,7 @@
 
 Status: active
 Owner: core-product
-Updated: 2026-04-08
+Updated: 2026-06-11
 Vision refs: `docs/vision/001-signal-vision.md`
 
 ## Purpose
@@ -11,154 +11,105 @@ Record the execution-relevant Signal surface so roadmap and contract work can
 sequence against explicit crate, boundary, and proof ownership instead of
 implicit repo context.
 
+This inventory reflects the post-`g10` workspace: the demolition packets
+(g10.002-008) removed `signal-supervisor-tools`, `signal-host-server`,
+`signal-hardware-coreaudio`, and `signal-plugin-library`/`-store`, and pruned
+runtime, analysis, and plugin crates to their real surfaces. The pre-g10
+inventory is in git history.
+
 ## Workspace Scope
 
-Signal's active implementation surface is the Rust workspace under `crates/`.
+Signal's active implementation surface is the Rust workspace under `crates/`
+(24 crates).
 
 ## Layer Inventory
+
+### Production audio path
+
+- `signal-render-plane`
+  - alloc-free realtime executor: compiled preallocated plans, declick
+    envelopes (transport edges, gain smoothing, clip micro-fades), polyphase
+    clip resampling, loop wrap
+- `signal-hardware`
+  - output stream contract: stream specs, negotiation types, device model
+- `signal-hardware-output-cpal`
+  - cpal-backed negotiated output streams and real device enumeration;
+    thread-owned streams, zero unsafe; smoke tests self-skip without a device
 
 ### Foundation and DSP substrate
 
 - `signal-primitives`
   - core sample, frame, transport, and channel-layout types
-  - weak invariant risk remains around zero-count layouts and lossy
-    interleaved-buffer construction
 - `signal-dsp`
-  - reusable control, automation, and DSP kernels
+  - DSP kernels: ramps, smoothing, delay, and `PolyphaseInterpolationTable`
+    (the RT-path interpolator used by the render plane)
+- `signal-dsp-spectral`
+  - FFT/STFT windows and spectral transforms
 - `signal-dsp-resample`
-  - deterministic nearest and linear resampling substrate
-  - currently lacks higher-fidelity anti-aliasing and quality-mode selection
+  - deterministic offline/streaming mono resampler for analysis input prep;
+    not the realtime path
 
 ### Analysis substrate
 
+- `signal-analysis`
+  - shared analysis traits, result types, and input preparation; the
+    corpus/acceptance harness is test infrastructure behind the
+    `test-support` feature
 - `signal-analysis-rhythm`
-  - onset, beat, meter, and tempo continuity substrate
-  - currently carries duplicated state-policy arms and panic-on-worker-failure
-    risk
+  - onset, tempo, and beat tracking
 - `signal-analysis-tonal`
-  - tonal profile, key, ambiguity, and tuning analysis
+  - chroma and key detection
 - `signal-analysis-loudness`
-  - loudness, gating, weighting, range, and trace support
+  - LUFS, true peak (4x polyphase FIR), and LRA per BS.1770-4
 - `signal-analysis-character`
-  - temporal, transient, dynamics, and descriptor-oriented character analysis
+  - spectral, temporal, and dynamics descriptor packs
 - `signal-analysis-embed`
-  - descriptor embedding and semantic-tag scoring
-  - currently heuristic-weight driven rather than calibrated-model backed
+  - descriptor projection and tag matching
 
-### Graph and runtime substrate
+### Control plane
 
-- `signal-graph`
-  - executable graph topology, routing, buses, execution planning, and stage
-    processing
-  - currently allows silent zeroed-buffer adaptation for unsupported layout
-    mismatches
 - `signal-runtime`
-  - embeddable runtime shell, interfaces, lifecycle, scheduling, diagnostics,
-    receipts, and recovery policy
-  - still holds the largest remaining coupled public contract surface
+  - offline render orchestration and runtime diagnostics; control plane,
+    not the audio callback
+- `signal-graph`
+  - graph model executed offline/in simulation for the control plane, never
+    on the audio thread
+- `signal-host-local`
+  - Pulse-facing local host assembly (library crate; no binary)
+- `signal-ipc`
+  - shared-memory leases and the control/message model
 
-### Plugin, host, and hardware edge
+### Plugin foundations
+
+Discovery and cataloguing only; in-process hosting is a future rebuild
+program. Discovery roots are explicit configuration defaulting empty.
 
 - `signal-plugin`
-  - format-neutral plugin contracts, model, sandbox protocol, and lifecycle
-    vocabulary
+  - format-neutral plugin types and host abstractions
 - `signal-plugin-inventory`
   - shared plugin inventory domain for cross-product consumers
-  - currently bootstrap-level and not yet wired into runtime-owned discovery
-- `signal-plugin-library`
-  - canonical plugin library domain for cross-product organization semantics
-  - currently bootstrap-level and not yet adopted by downstream consumers
-- `signal-plugin-library-store`
-  - storage traits and mutation batch seam for shared plugin inventory/library
-    consumers
-  - currently defines trait boundaries only, not a shared concrete adapter
 - `signal-plugin-clap`
-  - CLAP-specific adapter and sandbox harness realization
-  - currently still contains panic-oriented `expect(...)` paths inside request
-    handling
+  - CLAP discovery via real `clap-sys`/`libloading` FFI;
+    factory-descriptor-only by default, instance probing opt-in
 - `signal-plugin-vst3`
-  - VST3 adapter crate
-  - current discovery path is scaffolded and not yet real module/class
-    introspection
+  - VST3 discovery and COM introspection
 - `signal-plugin-au`
-  - AU adapter crate
-  - current discovery and lifecycle path is scaffolded and not yet real
-    AudioComponent realization
+  - Audio Unit discovery with plist pre-filter
 - `signal-plugin-lv2`
-  - LV2 adapter crate
-  - current discovery path is scaffolded and not yet real manifest/bundle
-    traversal
+  - LV2 manifest scanning
 - `signal-plugin-sandbox`
-  - sandbox process crate
-  - currently demo-harness oriented rather than a hardened long-lived
-    production broker
-- `signal-hardware`
-  - backend-neutral hardware model and simulation surface
-- `signal-hardware-coreaudio`
-  - macOS backend crate
-  - currently simulated/default-device oriented rather than real CoreAudio
-    ownership
-- `signal-host-local`
-  - in-process host assembly over runtime
-- `signal-host-server`
-  - server-style host assembly over runtime
-  - local and server hosts still duplicate substantial execution and recovery
-    policy
-
-### IPC, tooling, and proof surfaces
-
-- `signal-ipc`
-  - runtime/plugin transport protocol and shared-memory broker
-  - current shared-memory lifecycle and permission hardening remain minimal
-- `signal-supervisor-tools`
-  - machine-readable acceptance, export, and grouped proof descriptors
-- `effigy`
-  - repo-owned validation, task, doctor, and acceptance front door
+  - out-of-process plugin container shell over verified shm leases
 
 ## Current Audit Hotspots
 
-### Product-facing realization gaps
-
-- plugin hosting is contract-rich but implementation-thin across VST3, AU, LV2,
-  sandbox bring-up, and CoreAudio device ownership
-- host-local and host-server still replicate too much runtime-block and recovery
-  behavior
-- interactive demo and proof binaries are not yet a first-class repo-owned
-  surface for crate claims
-
-### Structural design debt
-
-- `signal-runtime` still exposes oversized, multi-family public contract roots
-- `signal-runtime` test trees still depend on large shared fixture/import walls
-- `signal-analysis-rhythm` tempo and meter state policy remains branch-heavy and
-  difficult to evolve safely
-
-### Low-level correctness and safety debt
-
-- graph bus mismatch handling silently zeroes buffers instead of surfacing
-  explicit contract failure
-- CLAP harness request handling can still panic on internal-state mismatch
-- shared-memory broker ownership, cleanup, and permissions are under-specified
-- primitive buffer/layout constructors permit weak or lossy state
-
-### Fidelity and realism debt
-
-- resampling quality is intentionally minimal
-- semantic embedding remains heuristic and hand-tuned
-- rhythm worker failures still crash the path instead of degrading cleanly
-
-## Planning Implications
-
-- Roadmap work after `g08` should no longer optimize for breadth-first feature
-  expansion.
-- The next generation should concentrate on:
-  - replacing scaffolded adapter and backend implementations with real runtime
-    ownership
-  - decomposing oversized runtime and test surfaces
-  - hardening low-level correctness and protocol safety
-  - modernizing the rhythm and analysis fidelity hot paths
-  - adding interactive demos as repo-owned capability proof, not optional
-    polish
+- plugin hosting (instantiate/process) does not exist yet; rebuild-on-demand
+  items live in `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`
+- `signal-runtime` still carries a large public contract surface relative to
+  its consumers; integration-test-only exports flagged in g10.005 remain
+- shared-memory broker permissions/cleanup hardening remains minimal
+- `signal-plugin-clap` discovery FFI defers per-operation unsafe blocks to
+  the CLAP hosting rebuild (`unsafe_op_in_unsafe_fn` allowed crate-wide
+  with reason)
 
 ## Deferred Scope
 
@@ -168,6 +119,6 @@ Signal's active implementation surface is the Rust workspace under `crates/`.
 
 ## Next Task
 
-Use this inventory as the execution-relevant front door for the new post-`g08`
-audit-remediation generation, then keep it aligned with any new contracts and
-roadmaps opened under `docs/roadmaps/g09/`.
+Keep this inventory aligned with the g10 continuation packets
+(`docs/roadmaps/g10/`) and any rebuild-on-demand work pulled from the
+post-g10 backlog.

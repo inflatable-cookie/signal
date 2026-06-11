@@ -2,17 +2,16 @@
 #[allow(clippy::module_inception)]
 mod tests {
     use crate::{
-        AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, CompletionSlot, CompletionState, EventPacket, LoopRange,
-        MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
-        ParameterAutomationSummary, ParameterGestureEvent, ParameterGesturePhase,
-        ParameterModulationEvent, ParameterValueEvent, PluginDescriptor, PluginEvent,
-        PluginFaultKind, PluginFaultSeverity, PluginFormat, PluginInstanceId, PluginIoLayout,
-        PluginLifecycleState, PluginParameterDomain, PluginParameterFlags, PluginReadiness,
-        PluginRenderContext, PluginSandboxCapabilities, PluginSandboxError, PluginSandboxErrorKind,
-        RestartEscalationPolicy, RestartEscalationState, SandboxStateMachine, SandboxTransport,
-        SandboxWatchdogPolicy,
-        SandboxWatchdogState, SharedMemoryLayout, SharedMemoryLease, WatchdogOutcome,
-        WatchdogTriggerReason,
+        AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, CompletionSlot,
+        CompletionState, EventPacket, LoopRange, MidiEvent, NoteEvent, NoteEventKind,
+        NoteExpressionEvent, NoteExpressionKind, ParameterAutomationSummary, ParameterGestureEvent,
+        ParameterGesturePhase, ParameterModulationEvent, ParameterValueEvent, PluginDescriptor,
+        PluginEvent, PluginFaultKind, PluginFaultSeverity, PluginFormat, PluginInstanceId,
+        PluginIoLayout, PluginLifecycleState, PluginParameterDomain, PluginParameterFlags,
+        PluginReadiness, PluginRenderContext, PluginSandboxError, PluginSandboxErrorKind,
+        RestartEscalationPolicy, RestartEscalationState, SandboxStateMachine,
+        SandboxWatchdogPolicy, SandboxWatchdogState, SharedMemoryLayout, SharedMemoryLease,
+        WatchdogOutcome, WatchdogTriggerReason,
     };
     use signal_ipc::{SharedMemoryTransportKind, SharedMemoryTransportPayload};
 

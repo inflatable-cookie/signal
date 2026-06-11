@@ -7,6 +7,14 @@ repository.workspace = true
 publish = false
 description = "Shared analysis traits, result types, and confidence models for Signal."
 
+[features]
+# Corpus/acceptance/regression harness used by sibling analysis crates' tests.
+# Off by default so production consumers never compile test infrastructure.
+test-support = []
+
+[lints]
+workspace = true
+
 [dependencies]
-signal-dsp-resample = { path = "../signal-dsp-resample" }
-signal-primitives = { path = "../signal-primitives" }
+signal-dsp-resample = { workspace = true }
+signal-primitives = { workspace = true }

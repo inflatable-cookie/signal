@@ -104,13 +104,13 @@ impl RuntimeLv2ExtensionCapabilitySummary {
         } else {
             RuntimeLv2PatchCapability::Absent
         };
-        let summary = Self {
+
+        Self {
             worker_capability,
             urid_capability,
             patch_capability,
             negotiated_extension_count,
-        };
-        summary
+        }
     }
 }
 

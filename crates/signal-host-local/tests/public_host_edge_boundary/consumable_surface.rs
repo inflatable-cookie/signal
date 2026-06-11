@@ -51,5 +51,4 @@ fn local_shared_host_edge_is_consumable_without_private_helpers() {
         report.observation.fault_diagnostic_receipt.primary_family,
         None
     );
-
 }

@@ -282,12 +282,8 @@ fn default_audio_inputs(component_type: &str) -> u16 {
     }
 }
 
-fn default_audio_outputs(component_type: &str) -> u16 {
-    if component_type.eq_ignore_ascii_case("aumu") {
-        2
-    } else {
-        2
-    }
+fn default_audio_outputs(_component_type: &str) -> u16 {
+    2
 }
 
 fn default_midi_inputs(component_type: &str) -> u16 {

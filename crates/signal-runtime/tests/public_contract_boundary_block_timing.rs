@@ -101,5 +101,4 @@ fn public_runtime_block_timing_boundary_reports_bounded_runtime_measurements() {
             .last_block_budget_utilization_percent
             .expect("trace should preserve public budget utilization")
     );
-
 }

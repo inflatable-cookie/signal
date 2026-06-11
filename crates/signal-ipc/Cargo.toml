@@ -7,5 +7,8 @@ repository.workspace = true
 publish = false
 description = "Shared runtime control and message model for Signal hosts and consumers."
 
+[lints]
+workspace = true
+
 [dependencies]
-memmap2 = "0.9"
+memmap2 = { workspace = true }

@@ -52,7 +52,9 @@ fn clap_adapter_descriptor_only_scan_never_instantiates_plugins() {
     assert!(adapter
         .discover_plugin_type("com.signal.descriptor-scan-fixture")
         .is_some());
-    assert!(adapter.discover_plugin_type("plugin:clap:default").is_none());
+    assert!(adapter
+        .discover_plugin_type("plugin:clap:default")
+        .is_none());
 }
 
 #[test]
@@ -64,8 +66,7 @@ fn clap_adapter_opt_in_capability_probe_reads_full_plugin_shape() {
         1,
     );
 
-    let discovered =
-        adapter.discover_plugins_for_roots_with_options(&[scan_root.root()], true);
+    let discovered = adapter.discover_plugins_for_roots_with_options(&[scan_root.root()], true);
 
     assert_eq!(discovered.len(), 1);
     let discovered = &discovered[0];

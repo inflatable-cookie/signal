@@ -97,6 +97,7 @@ pub enum RuntimeSpatialBedClass {
 
 /// Role of an audio object within an immersive spatial mix.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)] // frozen public names; shared postfix is intentional
 pub enum RuntimeSpatialObjectRole {
     /// The primary foreground audio object.
     PrimaryObject,

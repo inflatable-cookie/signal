@@ -104,5 +104,4 @@ fn public_runtime_vst3_boundary_reports_runtime_owned_discovery_and_lifecycle_tr
     );
     assert_eq!(sandbox.readiness_state.as_deref(), Some("Ready"));
     assert!(sandbox.active_transport);
-
 }

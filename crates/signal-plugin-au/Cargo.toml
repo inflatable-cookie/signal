@@ -7,6 +7,9 @@ repository.workspace = true
 publish = false
 description = "Audio Unit plugin adapter surfaces for Signal."
 
+[lints]
+workspace = true
+
 [dependencies]
-plist = "1"
-signal-plugin = { path = "../signal-plugin" }
+plist = { workspace = true }
+signal-plugin = { workspace = true }

@@ -46,9 +46,8 @@ pub fn descriptor_embedding(descriptors: &CharacterAnalysisResult) -> Vec<f32> {
         normalize_unit(temporal.onset_density / 4.0) * 0.65
             + temporal_shape.peak_transient_strength * 0.35,
     );
-    let sustain_body = normalize_unit(
-        temporal.sustain_ratio * 0.55 + temporal_shape.sustain_plateau_ratio * 0.45,
-    );
+    let sustain_body =
+        normalize_unit(temporal.sustain_ratio * 0.55 + temporal_shape.sustain_plateau_ratio * 0.45);
     let dynamic_punch = normalize_unit(
         normalize_unit(dynamics.dynamic_range / 0.7) * 0.45
             + temporal_shape.peak_transient_strength * 0.35

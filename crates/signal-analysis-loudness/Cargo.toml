@@ -7,6 +7,12 @@ repository.workspace = true
 publish = false
 description = "Loudness analysis surfaces for Signal, including LUFS and true peak."
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-analysis = { path = "../signal-analysis" }
-signal-primitives = { path = "../signal-primitives" }
+signal-analysis = { workspace = true }
+signal-primitives = { workspace = true }
+
+[dev-dependencies]
+signal-analysis = { workspace = true, features = ["test-support"] }

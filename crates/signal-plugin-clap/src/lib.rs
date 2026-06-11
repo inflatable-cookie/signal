@@ -6,6 +6,10 @@
 //! here — those belong to the future sandboxed hosting program.
 
 #![warn(missing_docs)]
+// The discovery module is dense FFI where nearly every line is an unsafe
+// operation inside already-unsafe fns; per-operation unsafe blocks are
+// deferred to the CLAP hosting rebuild rather than churned mechanically here.
+#![allow(unsafe_op_in_unsafe_fn)]
 
 mod adapter;
 mod discovery;

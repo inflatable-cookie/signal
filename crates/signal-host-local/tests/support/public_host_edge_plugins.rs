@@ -3,7 +3,7 @@
 use std::{
     ffi::OsString,
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
     sync::{Mutex, MutexGuard, OnceLock},
     time::{SystemTime, UNIX_EPOCH},
@@ -164,7 +164,7 @@ fn demo_plugin_env_lock() -> MutexGuard<'static, ()> {
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-fn write_vst3_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
+fn write_vst3_bundle(root: &Path, bundle: &str, plugin_type_id: &str) {
     let bundle_root = root.join(bundle);
     fs::create_dir_all(bundle_root.join("Contents").join("Resources"))
         .expect("public local vst3 resources should be created");
@@ -184,7 +184,7 @@ fn write_vst3_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
 }
 
 fn write_clap_fixture_library(
-    root: &PathBuf,
+    root: &Path,
     file_name: &str,
     plugin_type_id: &str,
     plugin_name: &str,
@@ -258,11 +258,11 @@ unsafe extern "C" fn param_get_value(_plugin: *const clap_plugin, param_id: u32,
     )
 }
 
-fn write_au_bundle(root: &PathBuf, bundle: &str, plugin_type_id: &str) {
+fn write_au_bundle(root: &Path, bundle: &str, plugin_type_id: &str) {
     write_custom_au_bundle(root, bundle, au_metadata_contents(plugin_type_id));
 }
 
-fn write_custom_au_bundle(root: &PathBuf, bundle: &str, metadata: &str) {
+fn write_custom_au_bundle(root: &Path, bundle: &str, metadata: &str) {
     let bundle_root = root.join(bundle);
     fs::create_dir_all(bundle_root.join("Contents"))
         .expect("public local au contents should be created");
@@ -291,7 +291,7 @@ fn vst3_metadata_contents(plugin_type_id: &str) -> &'static str {
     }
 }
 
-fn vst3_info_plist_contents(metadata: &str, bundle_root: &PathBuf) -> String {
+fn vst3_info_plist_contents(metadata: &str, bundle_root: &Path) -> String {
     let mut plugin_type_id = "";
     let mut name = "Signal VST3 Plugin";
     let mut version = "0.1.0";

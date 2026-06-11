@@ -176,7 +176,9 @@ impl LoudnessMeter {
             .map(|(index, channel)| LoudnessChannelSummary {
                 index,
                 weight: *weights.get(index).unwrap_or(&1.0),
-                integrated_lufs: gated_integrated_loudness(&gating_block_energies_by_channel[index]),
+                integrated_lufs: gated_integrated_loudness(
+                    &gating_block_energies_by_channel[index],
+                ),
                 true_peak_dbtp: true_peak_dbtp(channel, true_peak_oversample_factor),
             })
             .collect();

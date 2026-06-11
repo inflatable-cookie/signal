@@ -110,7 +110,6 @@ fn public_runtime_contract_boundary_is_consumable_from_reexports() {
         observation.plugin_lifecycle_snapshot.sandboxes[0].plugin_format,
         Some(PluginFormat::Clap)
     );
-
 }
 
 #[test]
@@ -148,5 +147,4 @@ fn public_runtime_plugin_discovery_coverage_is_consumable_from_reexports() {
     assert_eq!(format_coverage[0].supports_activate_count, 1);
     assert_eq!(format_coverage[1].format, PluginFormat::Vst3);
     assert_eq!(format_coverage[1].instrument_count, 1);
-
 }

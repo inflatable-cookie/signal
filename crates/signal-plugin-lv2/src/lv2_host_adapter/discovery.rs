@@ -47,7 +47,7 @@ impl Lv2HostAdapter {
         let _ = platform;
         let mut batch = Lv2DiscoveryBatch::default();
         for root in roots {
-            let expanded_root = expand_scan_root(&root);
+            let expanded_root = expand_scan_root(root);
             let Ok(entries) = fs::read_dir(&expanded_root) else {
                 continue;
             };
@@ -64,7 +64,7 @@ impl Lv2HostAdapter {
                     Err(detail) => {
                         batch
                             .diagnostics
-                            .push(malformed_manifest_diagnostic(&root, &path, detail));
+                            .push(malformed_manifest_diagnostic(root, &path, detail));
                         continue;
                     }
                 };
@@ -74,7 +74,7 @@ impl Lv2HostAdapter {
                     batch
                         .diagnostics
                         .push(unsupported_required_feature_diagnostic(
-                            &root,
+                            root,
                             &path,
                             &metadata.plugin_type_id,
                             unsupported_required,

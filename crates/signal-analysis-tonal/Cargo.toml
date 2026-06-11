@@ -7,7 +7,13 @@ repository.workspace = true
 publish = false
 description = "Tonal analysis surfaces for Signal, including chroma and key detection."
 
+[lints]
+workspace = true
+
 [dependencies]
-signal-analysis = { path = "../signal-analysis" }
-signal-dsp-spectral = { path = "../signal-dsp-spectral" }
-signal-primitives = { path = "../signal-primitives" }
+signal-analysis = { workspace = true }
+signal-dsp-spectral = { workspace = true }
+signal-primitives = { workspace = true }
+
+[dev-dependencies]
+signal-analysis = { workspace = true, features = ["test-support"] }

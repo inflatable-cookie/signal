@@ -78,11 +78,10 @@ pub(super) fn runtime_plugin_recall_snapshot(
         (Some(_), Some(_)) => RuntimePluginRecallState::Cold,
     };
 
-    let snapshot = RuntimePluginRecallSnapshot {
+    RuntimePluginRecallSnapshot {
         state,
         payload: runtime_plugin_recall_payload(sandbox_id, sandbox, discovered_types),
-    };
-    snapshot
+    }
 }
 
 pub(super) fn runtime_plugin_recall_payload(

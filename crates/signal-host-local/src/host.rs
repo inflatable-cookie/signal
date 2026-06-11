@@ -21,6 +21,8 @@ use signal_runtime::{
 mod host_api;
 #[path = "host_support.rs"]
 mod host_support;
+#[cfg(test)]
+pub(crate) use host_support::STEADY_STATE_BLOCKS;
 use host_support::{
     discovered_plugins_for_scan, ensure_discovered_sandbox_session,
     runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session, LocalAudioPumpState,
@@ -30,8 +32,6 @@ pub use host_support::{
     ensure_default_demo_plugin_override, LocalAudioPumpSummary, LocalAudioStreamState,
     LocalAudioTransferPolicy, LocalEngineSummary, LocalHardwareSummary, LocalRuntimeHostSummary,
 };
-#[cfg(test)]
-pub(crate) use host_support::STEADY_STATE_BLOCKS;
 pub(crate) use host_support::{LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_NODE_ID};
 
 /// The local desktop runtime host.

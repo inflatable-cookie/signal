@@ -96,7 +96,6 @@ fn local_shared_host_edge_exports_runtime_cross_adapter_parity_truth() {
     assert_eq!(lifecycle_vst3.sandbox_count, 1);
     assert_eq!(lifecycle_vst3.ready_sandbox_count, 1);
     assert_eq!(lifecycle_vst3.active_transport_count, 1);
-
 }
 
 #[test]
@@ -157,5 +156,4 @@ fn local_shared_host_edge_exports_bounded_clap_sandbox_lifecycle_truth() {
     assert!(sandbox.last_fault_detail.is_none());
     assert!(sandbox.active_lease_id.is_some());
     assert!(sandbox.active_region_id.is_some());
-
 }

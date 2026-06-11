@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::module_inception)] // file is already included as `mod tests`
 mod tests {
     use crate::*;
     use signal_analysis::{

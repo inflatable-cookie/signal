@@ -121,5 +121,4 @@ fn local_shared_host_edge_exports_runtime_complex_io_truth() {
         .records
         .iter()
         .any(|record| record.plugin_type_id == "plugin:vst3:host-local-bus-fx"));
-
 }
