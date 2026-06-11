@@ -31,6 +31,12 @@
 
 #![warn(missing_docs)]
 
+mod offline;
+
+pub use offline::{
+    render_plan_to_pcm, write_wav, OfflineRenderOptions, OfflineRenderOutput, WavBitDepth,
+};
+
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::Arc;
@@ -1289,6 +1295,17 @@ pub struct RenderPlaneExecutor {
 }
 
 impl RenderPlaneExecutor {
+    /// Offline-bounce hook: snap the transport edge envelope to `gain`
+    /// without ramping. Realtime transport must NEVER use this — the 5 ms
+    /// edge ramp is what keeps play/stop/seek click-free on speakers — but
+    /// an offline export has no speaker and must start at full level, so
+    /// the offline driver (`offline::render_plan_to_pcm`) snaps the
+    /// envelope open after draining transport commands and before the first
+    /// rendered block. Crate-private on purpose: hosts cannot reach it.
+    pub(crate) fn set_edge_gain_immediate(&mut self, gain: f32) {
+        self.edge_gain = gain.clamp(0.0, 1.0);
+    }
+
     fn retire(&mut self, plan: Box<RenderPlan>) {
         // Re-offer any parked plan first to preserve retirement order.
         if let Some(parked) = self.parked_retired.take() {

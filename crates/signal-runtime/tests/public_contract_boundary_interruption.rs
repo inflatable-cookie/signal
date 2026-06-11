@@ -1,8 +1,7 @@
 use signal_runtime::{
     HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
-    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeObservationReport,
-    RuntimeOfflineRenderRequest, RuntimeRecoveryState, RuntimeWatchdogTrigger, SafeModeRequest,
-    SignalRuntime, WatchdogRestartRecord,
+    RuntimeInterruptionClass, RuntimeLifecycleApi, RuntimeObservationReport, RuntimeRecoveryState,
+    RuntimeWatchdogTrigger, SignalRuntime, WatchdogRestartRecord,
 };
 
 #[test]
@@ -43,41 +42,4 @@ fn public_runtime_interruption_boundary_reports_restartable_runtime_state() {
         RuntimeInterruptionClass::Restartable
     );
     assert!(!observation.interruption_summary.rebindable);
-}
-
-#[test]
-fn public_runtime_interruption_boundary_reports_resumable_deferred_state() {
-    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
-    runtime
-        .set_safe_mode(SafeModeRequest { enabled: true })
-        .expect("public interruption boundary safe mode should enable");
-
-    let queue = runtime
-        .render_offline_queue(vec![RuntimeOfflineRenderRequest {
-            request_id: "render:public-interruption:0001".into(),
-            timeline_start_samples: 0,
-            duration_samples: 64,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        }])
-        .expect("safe mode should defer public interruption boundary queue");
-
-    assert_eq!(
-        queue.orchestration.interruption_class,
-        RuntimeInterruptionClass::Resumable
-    );
-    assert!(!queue.orchestration.interruption_rebindable);
-
-    let observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
-    let deferred = observation
-        .last_deferred_service_receipt
-        .expect("deferred receipt should be exported on the public observation boundary");
-    assert_eq!(
-        deferred.interruption_class,
-        RuntimeInterruptionClass::Resumable
-    );
-    assert!(!deferred.interruption_rebindable);
 }

@@ -98,38 +98,6 @@ fn runtime_observation_clip_render_and_offline_render_preview_surface_stretch_en
         RuntimeStretchFallbackKind::None
     );
 
-    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
-        &RuntimeOfflineRenderRequest {
-            request_id: "render:stretch-engine-preview".into(),
-            timeline_start_samples: 0,
-            duration_samples: 24_000,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        },
-        &runtime.get_execution_topology_summary(),
-        &runtime.get_clip_processing_pipeline_snapshot(),
-        &runtime.get_media_pipeline_snapshot(),
-        &runtime.get_tempo_map_snapshot(),
-        &runtime.get_marker_analysis_snapshot(),
-        &runtime.get_plugin_recall_handoff_snapshot(),
-    )
-    .expect("build stretch engine offline render preview");
-    assert_eq!(preview.stretch_engine_snapshot.clip_count, 1);
-    assert_eq!(preview.stretch_engine_snapshot.ready_clip_count, 1);
-    assert_eq!(preview.stretch_engine_snapshot.sample_domain_clip_count, 1);
-    assert_eq!(preview.stretch_engine_snapshot.fallback_clip_count, 0);
-    assert_eq!(
-        preview.stretch_engine_snapshot.clips[0].engine_class,
-        RuntimeStretchEngineClass::SampleDomain
-    );
-    assert_eq!(
-        preview.stretch_engine_snapshot.clips[0].readiness,
-        RuntimeStretchReadiness::Ready
-    );
-
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime
         .get_media_pipeline_snapshot()

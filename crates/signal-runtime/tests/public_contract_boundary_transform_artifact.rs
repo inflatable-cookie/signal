@@ -9,8 +9,7 @@ use public_contract_boundary_media_support::{
 use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
 use signal_runtime::{
     HandshakeRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
-    RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport,
-    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderRequest, RuntimeProjectionApi,
+    RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport, RuntimeProjectionApi,
     RuntimeSupervisorReport, SignalRuntime,
 };
 
@@ -135,40 +134,6 @@ fn public_runtime_transform_artifact_boundary_reports_runtime_owned_artifact_tru
         signal_runtime::RuntimeTransformArtifactReuseState::Reusable
     );
     assert!(rendered.transform_artifact_snapshot.cached_media_ready);
-
-    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
-        &RuntimeOfflineRenderRequest {
-            request_id: "render:public-transform-artifact-preview".into(),
-            timeline_start_samples: 0,
-            duration_samples: 24_000,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        },
-        &runtime.get_execution_topology_summary(),
-        &runtime.get_clip_processing_pipeline_snapshot(),
-        &runtime.get_media_pipeline_snapshot(),
-        &runtime.get_tempo_map_snapshot(),
-        &runtime.get_marker_analysis_snapshot(),
-        &runtime.get_plugin_recall_handoff_snapshot(),
-    )
-    .expect("public transform-artifact preview should build");
-    assert_eq!(preview.transform_artifact_snapshot.clip_count, 1);
-    assert_eq!(preview.transform_artifact_snapshot.ready_clip_count, 1);
-    assert_eq!(preview.transform_artifact_snapshot.reusable_clip_count, 1);
-    assert_eq!(
-        preview
-            .transform_artifact_snapshot
-            .transform_persistence
-            .retention_outcome,
-        signal_runtime::RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
-    );
-    assert_eq!(
-        preview.transform_artifact_snapshot.clips[0].reuse_state,
-        signal_runtime::RuntimeTransformArtifactReuseState::Reusable
-    );
 
     let _supervisor = RuntimeSupervisorReport::capture(&runtime, &recorder);
 

@@ -192,58 +192,6 @@ fn runtime_fault_diagnostic_receipt_maps_xrun_pressure_into_runtime_owned_primar
 }
 
 #[test]
-fn runtime_fault_diagnostic_receipt_maps_deferred_work_pressure_without_faulting_runtime() {
-    let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
-    runtime
-        .set_safe_mode(SafeModeRequest { enabled: true })
-        .expect("enable safe mode");
-
-    let deferred = runtime
-        .render_offline_queue(vec![RuntimeOfflineRenderRequest {
-            request_id: "render:queue:fault-diagnostic:deferred".into(),
-            timeline_start_samples: 0,
-            duration_samples: 64,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        }])
-        .expect("safe mode should defer offline render queue");
-    assert_eq!(
-        deferred.orchestration.decision,
-        RuntimeDeferredServiceDecision::Defer
-    );
-
-    let observation = RuntimeObservationReport::capture(&runtime, &RuntimeEventRecorder::default());
-    let receipt = &observation.fault_diagnostic_receipt;
-    let deferred_entry = receipt
-        .contributions
-        .iter()
-        .find(|entry| {
-            entry.family == crate::interfaces::RuntimeFaultDiagnosticFamily::DeferredWorkPressure
-        })
-        .expect("deferred-work contribution should be present");
-
-    assert_eq!(
-        receipt.primary_family,
-        Some(crate::interfaces::RuntimeFaultDiagnosticFamily::DeferredWorkPressure)
-    );
-    assert_eq!(receipt.primary_fault_cause, None);
-    assert_eq!(
-        receipt.interruption_class,
-        crate::interfaces::RuntimeInterruptionClass::Recoverable
-    );
-    assert!(deferred_entry.active);
-    assert!(deferred_entry.event_count >= 1);
-    assert!(deferred_entry
-        .detail
-        .as_deref()
-        .unwrap_or_default()
-        .contains("decision=Some(Defer)"));
-}
-
-#[test]
 fn runtime_xrun_overload_escalates_into_safe_mode_and_clears_after_recovery() {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     handshake_and_configure(&mut runtime);

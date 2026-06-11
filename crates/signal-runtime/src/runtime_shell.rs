@@ -75,10 +75,6 @@ impl SignalRuntime {
             },
             supervision: RuntimeSupervisionState::default(),
             last_deferred_service_receipt: RefCell::new(None),
-            last_offline_render_session_snapshot: RefCell::new(None),
-            last_offline_render_cancellation_receipt: RefCell::new(None),
-            last_offline_render_purge_receipt: RefCell::new(None),
-            offline_render_executions: HashMap::new(),
             next_subscription: 1,
             sinks: Vec::new(),
         };

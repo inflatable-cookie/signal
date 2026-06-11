@@ -47,22 +47,6 @@ fn runtime_performance_trace_receipt_summarizes_playback_recording_and_deferred_
     runtime
         .set_safe_mode(SafeModeRequest { enabled: true })
         .expect("enable safe mode");
-    let deferred = runtime
-        .render_offline_queue(vec![RuntimeOfflineRenderRequest {
-            request_id: "render:queue:performance-trace:0001".into(),
-            timeline_start_samples: 0,
-            duration_samples: 128,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        }])
-        .expect("safe mode should defer offline render queue");
-    assert_eq!(
-        deferred.orchestration.decision,
-        RuntimeDeferredServiceDecision::Defer
-    );
     reports.push(RuntimeSupervisorReport::capture(
         &runtime,
         &RuntimeEventRecorder::default(),
@@ -105,17 +89,9 @@ fn runtime_performance_trace_receipt_summarizes_playback_recording_and_deferred_
     assert!(trace.peak_block_execution_time_ns > 0);
     assert!(trace.playback_active_observation_count >= 3);
     assert!(trace.recording_active_observation_count >= 3);
-    assert!(trace.background_service_defer_count >= 1);
-    assert!(trace.background_service_while_playing_count >= 1);
-    assert!(trace.background_service_while_recording_count >= 1);
-    assert!(trace.background_starvation_observation_count >= 1);
-    assert_eq!(trace.peak_background_starved_work_item_count, 1);
+    assert_eq!(trace.background_service_defer_count, 0);
     assert_eq!(trace.background_cancellation_observation_count, 0);
-    assert_eq!(trace.peak_background_cancelled_work_item_count, 0);
-    assert_eq!(trace.background_realtime_backpressure_observation_count, 0);
-    assert!(trace.background_recovery_backpressure_observation_count >= 1);
-    assert_eq!(trace.peak_background_queued_work_item_count, 1);
-    assert_eq!(trace.peak_background_deferred_work_item_count, 1);
+    assert_eq!(trace.peak_background_queued_work_item_count, 0);
     assert_eq!(trace.peak_hot_latency_node_id.as_deref(), Some("latency"));
     assert_eq!(trace.peak_hot_latency_node_samples, 24);
     let expected_peak_lane = performance_snapshots

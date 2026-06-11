@@ -142,12 +142,6 @@ impl RuntimeObservationApi for SignalRuntime {
         self.plugin_recall_handoff_snapshot()
     }
 
-    fn get_offline_render_session_snapshot(
-        &self,
-    ) -> crate::interfaces::RuntimeOfflineRenderSessionSnapshot {
-        self.offline_render_session_snapshot()
-    }
-
     fn get_last_deferred_service_receipt(&self) -> Option<RuntimeDeferredServiceReceipt> {
         self.last_deferred_service_receipt.borrow().clone()
     }

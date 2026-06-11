@@ -19,7 +19,6 @@ use signal_plugin::PluginFormat;
 use signal_runtime::{
     HandshakeRequest, PluginScanRequest, RuntimeConfig, RuntimeConfigRequest, RuntimeEventRecorder,
     RuntimeLifecycleApi, RuntimeObservationApi, RuntimeObservationReport,
-    RuntimeOfflineRenderContractPreview, RuntimeOfflineRenderRequest,
     RuntimePluginRecallPortabilityClass, RuntimeSupervisorReport, SignalRuntime,
 };
 
@@ -167,25 +166,5 @@ fn public_runtime_recall_interchange_and_ara_context_truth_is_consumable_from_re
         Some(RuntimePluginRecallPortabilityClass::Portable)
     );
 
-    let handoff = runtime.get_plugin_recall_handoff_snapshot();
-    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
-        &RuntimeOfflineRenderRequest {
-            request_id: "render:public:recall-portability".into(),
-            timeline_start_samples: 0,
-            duration_samples: 4_096,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        },
-        &runtime.get_execution_topology_summary(),
-        &runtime.get_clip_processing_pipeline_snapshot(),
-        &runtime.get_media_pipeline_snapshot(),
-        &runtime.get_tempo_map_snapshot(),
-        &runtime.get_marker_analysis_snapshot(),
-        &handoff,
-    )
-    .expect("public runtime recall preview should build");
-    assert_eq!(preview.chain_contract.recall_stage_count, 2);
+    let _handoff = runtime.get_plugin_recall_handoff_snapshot();
 }

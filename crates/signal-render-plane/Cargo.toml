@@ -18,5 +18,6 @@ name = "render_soak"
 workspace = true
 
 [dependencies]
+hound = { workspace = true }
 signal-dsp = { workspace = true }
 signal-primitives = { workspace = true }

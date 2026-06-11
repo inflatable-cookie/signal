@@ -56,8 +56,6 @@ pub struct RuntimeObservationReport {
     pub media_service_snapshot: RuntimeMediaServiceSnapshot,
     /// Media library service snapshot (analysis descriptor state).
     pub media_library_snapshot: RuntimeMediaLibraryServiceSnapshot,
-    /// Offline render session queue snapshot.
-    pub offline_render_session_snapshot: RuntimeOfflineRenderSessionSnapshot,
     /// Automation snapshot.
     pub automation_snapshot: RuntimeAutomationSnapshot,
     /// Engine block snapshot with per-block timing and scheduler state.
@@ -115,7 +113,6 @@ impl RuntimeObservationReport {
         let media_pipeline_snapshot = runtime.get_media_pipeline_snapshot();
         let media_service_snapshot = runtime.get_media_service_snapshot();
         let media_library_snapshot = runtime.get_media_library_service_snapshot();
-        let offline_render_session_snapshot = runtime.get_offline_render_session_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
         let engine_block_snapshot = runtime.get_engine_block_snapshot();
         let execution_topology_summary = runtime.get_execution_topology_summary();
@@ -203,7 +200,6 @@ impl RuntimeObservationReport {
             media_pipeline_snapshot,
             media_service_snapshot,
             media_library_snapshot,
-            offline_render_session_snapshot,
             automation_snapshot,
             engine_block_snapshot,
             transport_concurrency_snapshot,

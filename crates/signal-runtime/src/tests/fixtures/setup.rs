@@ -37,15 +37,6 @@ pub(crate) fn temp_capture_path(label: &str) -> PathBuf {
     temp_media_path(label, "wav")
 }
 
-pub(crate) fn temp_artifact_dir(label: &str) -> PathBuf {
-    let nonce = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("system time should be monotonic enough for temp dirs")
-        .as_nanos();
-    let sequence = TEMP_PATH_COUNTER.fetch_add(1, Ordering::Relaxed);
-    env::temp_dir().join(format!("signal-runtime-{label}-{nonce}-{sequence}"))
-}
-
 pub(crate) fn apply_plugin_continuity_graph(
     runtime: &mut SignalRuntime,
     graph_id: &str,

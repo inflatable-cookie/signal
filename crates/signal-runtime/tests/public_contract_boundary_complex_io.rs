@@ -13,8 +13,7 @@ use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 use signal_runtime::{
     HandshakeRequest, PluginScanRequest, RuntimeConfig, RuntimeConfigRequest,
     RuntimeDynamicBusNegotiationPosture, RuntimeEventRecorder, RuntimeLifecycleApi,
-    RuntimeObservationApi, RuntimeObservationReport, RuntimeOfflineRenderContractPreview,
-    RuntimeOfflineRenderRequest, RuntimePluginBusCapableFxClass,
+    RuntimeObservationReport, RuntimePluginBusCapableFxClass,
     RuntimePluginNegotiationFallbackOutcome, RuntimePluginPinGroupIdentity,
     RuntimePluginPinMatrixPosture, SignalRuntime,
 };
@@ -194,51 +193,6 @@ fn public_runtime_complex_io_boundary_reports_runtime_owned_topology_truth() {
         bus_fx_stage.complex_io_summary.secondary_input_group_count,
         1
     );
-
-    let handoff = runtime.get_plugin_recall_handoff_snapshot();
-    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
-        &RuntimeOfflineRenderRequest {
-            request_id: "render:public:complex-io".into(),
-            timeline_start_samples: 0,
-            duration_samples: 24_000,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        },
-        &runtime.get_execution_topology_summary(),
-        &runtime.get_clip_processing_pipeline_snapshot(),
-        &runtime.get_media_pipeline_snapshot(),
-        &runtime.get_tempo_map_snapshot(),
-        &runtime.get_marker_analysis_snapshot(),
-        &handoff,
-    )
-    .expect("public complex io offline preview should build");
-    assert_eq!(preview.chain_contract.complex_io_stage_count, 2);
-    assert_eq!(
-        preview.chain_contract.multi_output_instrument_stage_count,
-        1
-    );
-    assert_eq!(preview.chain_contract.bus_capable_fx_stage_count, 1);
-    assert_eq!(preview.chain_contract.sidechain_capable_fx_stage_count, 1);
-    assert!(preview
-        .chain_contract
-        .complex_io_stages
-        .iter()
-        .any(|stage| {
-            stage.plugin_type_id.as_deref() == Some("plugin:vst3:public-multiout")
-                && stage.topology.multi_output_instrument
-        }));
-    assert!(preview
-        .chain_contract
-        .complex_io_stages
-        .iter()
-        .any(|stage| {
-            stage.plugin_type_id.as_deref() == Some("plugin:vst3:public-bus-fx")
-                && stage.topology.bus_capable_fx_class
-                    == Some(RuntimePluginBusCapableFxClass::SendReturnCapableFx)
-        }));
 
     let _supervisor = signal_runtime::RuntimeSupervisorReport::capture(&runtime, &recorder);
 }

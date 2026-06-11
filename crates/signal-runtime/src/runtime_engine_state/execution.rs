@@ -1,5 +1,3 @@
-#[path = "execution/offline.rs"]
-mod offline;
 #[path = "execution/process.rs"]
 mod process;
 

@@ -34,48 +34,6 @@ pub(crate) fn write_transient_test_wav(path: &Path) {
     writer.finalize().expect("test wav should finalize");
 }
 
-pub(crate) fn write_test_aiff(path: &Path) {
-    use std::io::Write;
-
-    let frames = 128u32;
-    let sample_rate_extended = [0x40, 0x0E, 0xBB, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-    let samples = (0..frames)
-        .map(|frame| {
-            let sample = ((frame as f32 / 128.0) * 2.0) - 1.0;
-            (sample * i16::MAX as f32) as i16
-        })
-        .collect::<Vec<_>>();
-    let data_size = samples.len() as u32 * 2;
-    let ssnd_size = 8 + data_size;
-    let form_size = 4 + (8 + 18) + (8 + ssnd_size);
-    let mut file = fs::File::create(path).expect("test aiff should be created");
-    file.write_all(b"FORM").expect("write FORM");
-    file.write_all(&form_size.to_be_bytes())
-        .expect("write FORM size");
-    file.write_all(b"AIFF").expect("write AIFF signature");
-    file.write_all(b"COMM").expect("write COMM");
-    file.write_all(&18u32.to_be_bytes())
-        .expect("write COMM size");
-    file.write_all(&1u16.to_be_bytes())
-        .expect("write channel count");
-    file.write_all(&frames.to_be_bytes())
-        .expect("write frame count");
-    file.write_all(&16u16.to_be_bytes())
-        .expect("write sample size");
-    file.write_all(&sample_rate_extended)
-        .expect("write sample rate");
-    file.write_all(b"SSND").expect("write SSND");
-    file.write_all(&ssnd_size.to_be_bytes())
-        .expect("write SSND size");
-    file.write_all(&0u32.to_be_bytes()).expect("write offset");
-    file.write_all(&0u32.to_be_bytes())
-        .expect("write block size");
-    for sample in samples {
-        file.write_all(&sample.to_be_bytes())
-            .expect("write AIFF sample");
-    }
-}
-
 pub(crate) fn prepare_offline_render_engine_runtime() -> (SignalRuntime, PathBuf) {
     let mut runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 32));
     handshake_and_configure_with_disabled_forecast(&mut runtime, true);

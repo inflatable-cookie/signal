@@ -149,8 +149,6 @@ pub trait RuntimeObservationApi {
     fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot;
     /// Returns the current recording capture snapshot.
     fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot;
-    /// Returns the current offline render session snapshot.
-    fn get_offline_render_session_snapshot(&self) -> RuntimeOfflineRenderSessionSnapshot;
     /// Returns the current media pipeline snapshot.
     fn get_media_pipeline_snapshot(&self) -> RuntimeMediaPipelineSnapshot;
     /// Returns the current media service snapshot.
@@ -192,7 +190,7 @@ pub trait RuntimeObservationApi {
 }
 
 /// Supervisor-level operations: plugin sandbox management, recording capture,
-/// media asset reconciliation, and offline rendering.
+/// and media asset reconciliation.
 pub trait RuntimeSupervisorApi {
     /// Starts an asynchronous plugin scan with the given request parameters.
     fn start_plugin_scan(&mut self, request: PluginScanRequest)
@@ -232,57 +230,6 @@ pub trait RuntimeSupervisorApi {
         &mut self,
         clips: Vec<RuntimeClipProcessingRegistration>,
     ) -> Result<(), RuntimeError>;
-    /// Performs a synchronous offline render and returns the result.
-    fn render_offline(
-        &self,
-        request: RuntimeOfflineRenderRequest,
-    ) -> Result<RuntimeOfflineRenderResult, RuntimeError>;
-    /// Performs a synchronous offline render with checkpoint support.
-    fn render_offline_with_checkpoints(
-        &self,
-        request: RuntimeOfflineRenderRequest,
-    ) -> Result<RuntimeOfflineRenderExecutionReceipt, RuntimeError>;
-    /// Begins an asynchronous offline render execution.
-    fn begin_offline_render_execution(
-        &mut self,
-        request: RuntimeOfflineRenderRequest,
-    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError>;
-    /// Pauses an in-progress offline render execution.
-    fn pause_offline_render_execution(
-        &mut self,
-        request_id: &str,
-    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError>;
-    /// Resumes a paused offline render execution.
-    fn resume_offline_render_execution(
-        &mut self,
-        request_id: &str,
-    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError>;
-    /// Interrupts an in-progress offline render execution with the given reason.
-    fn interrupt_offline_render_execution(
-        &mut self,
-        request_id: &str,
-        reason: String,
-    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError>;
-    /// Advances an offline render execution by one step.
-    fn advance_offline_render_execution(
-        &mut self,
-        request_id: &str,
-    ) -> Result<RuntimeOfflineRenderExecutionProgressReceipt, RuntimeError>;
-    /// Cancels an in-progress offline render execution.
-    fn cancel_offline_render_execution(
-        &mut self,
-        request_id: &str,
-    ) -> Result<RuntimeOfflineRenderExecutionCancellationReceipt, RuntimeError>;
-    /// Renders a queue of offline render requests in sequence.
-    fn render_offline_queue(
-        &self,
-        requests: Vec<RuntimeOfflineRenderRequest>,
-    ) -> Result<RuntimeOfflineRenderQueueResult, RuntimeError>;
-    /// Purges offline render artifacts matching the given request.
-    fn purge_offline_render_artifacts(
-        &self,
-        request: RuntimeOfflineRenderPurgeRequest,
-    ) -> Result<RuntimeOfflineRenderPurgeReceipt, RuntimeError>;
     /// Tears down the plugin sandbox with the given ID.
     fn teardown_plugin_sandbox(&mut self, sandbox_id: &str) -> Result<(), RuntimeError>;
     /// Restarts the plugin sandbox with the given ID.

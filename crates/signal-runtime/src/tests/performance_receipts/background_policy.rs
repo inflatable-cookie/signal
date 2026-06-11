@@ -5,27 +5,6 @@ fn runtime_performance_snapshot_captures_scheduler_pressure_and_background_polic
     let (mut runtime, imported_path) = prepare_offline_render_engine_runtime();
     runtime.set_cpu_load_percent(11.5);
     runtime.set_graph_latency_ms(4.25);
-    runtime
-        .set_safe_mode(SafeModeRequest { enabled: true })
-        .expect("enable safe mode");
-
-    let deferred = runtime
-        .render_offline_queue(vec![RuntimeOfflineRenderRequest {
-            request_id: "render:queue:performance:0001".into(),
-            timeline_start_samples: 0,
-            duration_samples: 64,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        }])
-        .expect("safe mode should defer offline render queue");
-
-    assert_eq!(
-        deferred.orchestration.decision,
-        RuntimeDeferredServiceDecision::Defer
-    );
 
     let report = RuntimeSupervisorReport::capture(&runtime, &RuntimeEventRecorder::default());
     let performance = report.performance_snapshot();
@@ -189,40 +168,8 @@ fn runtime_performance_snapshot_captures_scheduler_pressure_and_background_polic
     assert!(performance.worker_lane_summaries.iter().all(|summary| {
         summary.node_count > 0 && summary.total_latency_samples >= summary.max_node_latency_samples
     }));
-    assert_eq!(
-        performance.background_service_class,
-        Some(RuntimeDeferredServiceClass::OfflineRenderQueue)
-    );
-    assert_eq!(
-        performance.background_service_decision,
-        Some(RuntimeDeferredServiceDecision::Defer)
-    );
-    assert_eq!(
-        performance.background_service_reason,
-        Some(RuntimeDeferredServiceReason::SafeMode)
-    );
-    assert_eq!(
-        performance.background_service_priority_band,
-        Some(RuntimeDeferredServicePriorityBand::UserVisible)
-    );
-    assert_eq!(
-        performance.background_service_blocking_priority_band,
-        Some(RuntimeDeferredServicePriorityBand::RecoveryCritical)
-    );
-    assert_eq!(
-        performance.background_service_backpressure_source,
-        Some(RuntimeDeferredServiceBackpressureSource::SafeMode)
-    );
-    assert!(performance.background_service_starvation_risk);
-    assert_eq!(performance.background_service_starved_work_item_count, 1);
-    assert_eq!(performance.background_service_cancellation_cause, None);
-    assert_eq!(performance.background_service_cancelled_work_item_count, 0);
-    assert_eq!(performance.background_queued_work_item_count, 1);
-    assert_eq!(performance.background_deferred_work_item_count, 1);
-
-    runtime
-        .set_safe_mode(SafeModeRequest { enabled: false })
-        .expect("disable safe mode");
+    assert_eq!(performance.background_service_class, None);
+    assert_eq!(performance.background_service_decision, None);
 
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime

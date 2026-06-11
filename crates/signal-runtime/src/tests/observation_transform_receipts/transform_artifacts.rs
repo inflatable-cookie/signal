@@ -168,36 +168,6 @@ fn runtime_transform_artifact_snapshot_derives_from_stretch_and_marker_analysis_
     );
     assert!(rendered.transform_artifact_snapshot.cached_media_ready);
 
-    let preview = RuntimeOfflineRenderContractPreview::from_runtime_state(
-        &RuntimeOfflineRenderRequest {
-            request_id: "render:transform-artifact-preview".into(),
-            timeline_start_samples: 0,
-            duration_samples: 24_000,
-            export_sample_rate_hz: 48_000,
-            include_main_mix: true,
-            artifact_root_path: None,
-            stem_targets: Vec::new(),
-            freeze_artifacts: Vec::new(),
-        },
-        &runtime.get_execution_topology_summary(),
-        &runtime.get_clip_processing_pipeline_snapshot(),
-        &runtime.get_media_pipeline_snapshot(),
-        &runtime.get_tempo_map_snapshot(),
-        &runtime.get_marker_analysis_snapshot(),
-        &runtime.get_plugin_recall_handoff_snapshot(),
-    )
-    .expect("build transform artifact offline render preview");
-    assert_eq!(preview.transform_artifact_snapshot.clip_count, 1);
-    assert_eq!(preview.transform_artifact_snapshot.ready_clip_count, 1);
-    assert_eq!(preview.transform_artifact_snapshot.reusable_clip_count, 1);
-    assert_eq!(
-        preview
-            .transform_artifact_snapshot
-            .transform_persistence
-            .retention_outcome,
-        RuntimeTransformRetentionOutcome::PreserveAssetScopedTransforms
-    );
-
     let _ = fs::remove_file(imported_path);
     if let Some(path) = runtime
         .get_media_pipeline_snapshot()

@@ -47,20 +47,6 @@ mod media_service;
 mod metering_automation;
 #[path = "tests/observation_transform_receipts.rs"]
 mod observation_transform_receipts;
-#[path = "tests/offline_contracts.rs"]
-mod offline_contracts;
-#[path = "tests/offline_delegated_boundary.rs"]
-mod offline_delegated_boundary;
-#[path = "tests/offline_delegated_receipts.rs"]
-mod offline_delegated_receipts;
-#[path = "tests/offline_execution_recovery.rs"]
-mod offline_execution_recovery;
-#[path = "tests/offline_queue_purge.rs"]
-mod offline_queue_purge;
-#[path = "tests/offline_render_flow.rs"]
-mod offline_render_flow;
-#[path = "tests/offline_stage_model_fallback.rs"]
-mod offline_stage_model_fallback;
 #[path = "tests/performance_receipts.rs"]
 mod performance_receipts;
 #[path = "tests/plugin_binding.rs"]

@@ -1,7 +1,6 @@
-use super::runtime_engine_state::RuntimePluginRenderedNodeState;
 use crate::interfaces::*;
 use signal_graph::GraphNodeTopologyRole;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 pub(crate) fn transport_session_provenance(
     intent: TransportAttachIntent,
@@ -9,35 +8,6 @@ pub(crate) fn transport_session_provenance(
     match intent {
         TransportAttachIntent::SteadyState => TransportSessionProvenance::SteadyOrigin,
         TransportAttachIntent::RecoveryOverlap => TransportSessionProvenance::RecoveryReplacement,
-    }
-}
-
-pub(crate) fn offline_render_plugin_override_status<'a>(
-    latest: Option<&'a RuntimePluginRenderedNodeState>,
-    bound_sandbox_id: Option<&String>,
-    sandboxes: &BTreeMap<String, RuntimePluginSandboxSnapshot>,
-    last_processing_epoch: Option<u64>,
-    last_block_sequence: Option<u64>,
-) -> (
-    RuntimeOfflinePluginOverrideState,
-    Option<&'a RuntimePluginRenderedNodeState>,
-) {
-    let Some(latest) = latest else {
-        return (RuntimeOfflinePluginOverrideState::NotAvailable, None);
-    };
-    let fresh = Some(latest.processing_epoch) == last_processing_epoch
-        && Some(latest.block_sequence) == last_block_sequence
-        && bound_sandbox_id.is_none_or(|sandbox_id| sandbox_id == &latest.sandbox_id)
-        && bound_sandbox_id
-            .and_then(|sandbox_id| sandboxes.get(sandbox_id))
-            .is_none_or(|sandbox| sandbox.state == RuntimePluginLifecycleState::Ready);
-    if fresh {
-        (
-            RuntimeOfflinePluginOverrideState::FreshLatestBlock,
-            Some(latest),
-        )
-    } else {
-        (RuntimeOfflinePluginOverrideState::StaleLatestBlock, None)
     }
 }
 

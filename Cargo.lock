@@ -1019,6 +1019,7 @@ version = "0.1.0"
 name = "signal-render-plane"
 version = "0.1.0"
 dependencies = [
+ "hound",
  "signal-dsp",
  "signal-hardware",
  "signal-hardware-output-cpal",

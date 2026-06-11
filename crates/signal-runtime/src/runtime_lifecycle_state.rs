@@ -59,7 +59,6 @@ impl SignalRuntime {
             "runtime reconfigured while capture active",
         );
         self.recording_capture.reset_for_runtime_reconfigure();
-        self.mark_offline_render_sessions_restartable("runtime reconfigured while render active");
         self.media_pipeline = RuntimeMediaPipelineStateModel::default();
         self.tempo_map = RuntimeTempoMapStateModel::default();
         self.warp_pipeline = RuntimeWarpPipelineStateModel::default();
@@ -113,7 +112,6 @@ impl SignalRuntime {
             RuntimeInterruptionClass::Restartable,
             "runtime stopped while capture active",
         );
-        self.mark_offline_render_sessions_restartable("runtime stopped while render active");
         self.engine
             .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.stop_count = self.control.stop_count.saturating_add(1);

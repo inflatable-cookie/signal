@@ -110,10 +110,6 @@ pub(super) struct RuntimeTransportConcurrencyState {
 }
 
 impl RuntimeTransportConcurrencyState {
-    pub(super) fn pending_work_item_count(&self) -> usize {
-        self.pending_cleanup_work.len()
-    }
-
     pub(super) fn active_states_for_sandbox(&self, sandbox_id: &str) -> Vec<TransportSessionState> {
         self.active_sessions
             .values()
