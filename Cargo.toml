@@ -25,6 +25,7 @@ members = [
   "crates/signal-plugin-sandbox",
   "crates/signal-hardware",
   "crates/signal-hardware-coreaudio",
+  "crates/signal-hardware-output-cpal",
   "crates/signal-host-local",
   "crates/signal-host-server",
   "crates/signal-supervisor-tools",

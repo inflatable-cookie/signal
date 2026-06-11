@@ -1,0 +1,15 @@
+[package]
+name = "signal-hardware-output-cpal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "cpal-backed real output streams for Signal."
+
+[dependencies]
+signal-hardware = { path = "../signal-hardware" }
+cpal = "0.16"
+
+[[example]]
+name = "tone"

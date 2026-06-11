@@ -17,6 +17,7 @@
 
 mod backend_contract;
 mod diagnostics;
+mod output_stream;
 
 pub mod simulated;
 
@@ -29,6 +30,10 @@ pub use backend_contract::{
     HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareNegotiationError,
     HardwareNegotiationErrorKind, HardwareRestartPolicy, HardwareStreamConfig,
     HardwareStreamRequest, LinuxAudioBackendKind,
+};
+pub use output_stream::{
+    OutputRenderFn, OutputStreamBackend, OutputStreamError, OutputStreamHandle,
+    OutputStreamSpec, OutputStreamState,
 };
 pub use diagnostics::{
     BackendHealth, HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
