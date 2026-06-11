@@ -45,6 +45,16 @@ pub enum RenderSource {
     },
 }
 
+/// A half-open window `[start_frames, end_frames)` on the stream clock in
+/// which a lane is audible — the render-plane image of a clip.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RenderWindow {
+    /// First audible frame.
+    pub start_frames: u64,
+    /// First frame past the audible range.
+    pub end_frames: u64,
+}
+
 /// One lane in a render plan spec.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderLaneSpec {
@@ -55,6 +65,9 @@ pub struct RenderLaneSpec {
     pub gain: f32,
     /// Lane source.
     pub source: RenderSource,
+    /// Stream-clock windows in which the lane is audible. Empty means the
+    /// lane is always audible.
+    pub windows: Vec<RenderWindow>,
 }
 
 /// Control-side description of a render plan.
@@ -80,11 +93,13 @@ enum CompiledSource {
 struct CompiledLane {
     gain: f32,
     source: CompiledSource,
+    windows: Vec<RenderWindow>,
     // Retained for control-side debugging when plans are retired; the render
     // loop never touches it.
     #[allow(dead_code)]
     lane_id: String,
 }
+
 
 /// A compiled, immutable-topology render plan. Source state (tone phase)
 /// mutates during rendering; structure never does.
@@ -105,6 +120,7 @@ impl RenderPlan {
                 .iter()
                 .map(|lane| CompiledLane {
                     gain: lane.gain,
+                    windows: lane.windows.clone(),
                     lane_id: lane.lane_id.clone(),
                     source: match lane.source {
                         RenderSource::Silence => CompiledSource::Silence,
@@ -318,12 +334,25 @@ impl RenderPlaneExecutor {
 
         let channels = plan.channels;
         let frame_count = frames.len() / channels;
+        let block_start_frame = self.position_frames;
 
         for lane in plan.lanes.iter_mut() {
-            match &mut lane.source {
+            let CompiledLane {
+                gain,
+                source,
+                windows,
+                ..
+            } = lane;
+            let audible_at = |frame: u64| -> bool {
+                windows.is_empty()
+                    || windows
+                        .iter()
+                        .any(|window| frame >= window.start_frames && frame < window.end_frames)
+            };
+            match source {
                 CompiledSource::Silence => {}
                 CompiledSource::Tone { phase, step } => {
-                    let gain = lane.gain * plan.master_gain;
+                    let gain = *gain * plan.master_gain;
                     let mut local_phase = *phase;
                     for frame_index in 0..frame_count {
                         let sample = local_phase.sin() * gain;
@@ -331,9 +360,11 @@ impl RenderPlaneExecutor {
                         if local_phase >= std::f32::consts::TAU {
                             local_phase -= std::f32::consts::TAU;
                         }
-                        let base = frame_index * channels;
-                        for channel in 0..channels {
-                            frames[base + channel] += sample;
+                        if audible_at(block_start_frame + frame_index as u64) {
+                            let base = frame_index * channels;
+                            for channel in 0..channels {
+                                frames[base + channel] += sample;
+                            }
                         }
                     }
                     *phase = local_phase;
@@ -386,6 +417,7 @@ mod tests {
                 source: RenderSource::TestTone {
                     frequency_hz,
                 },
+                windows: Vec::new(),
             }],
         }
     }
@@ -430,6 +462,28 @@ mod tests {
         let mut frames = [0.0f32; 128];
         executor.render_block(&mut frames);
         assert_eq!(controller.position_frames(), 96_000 + 64);
+    }
+
+    #[test]
+    fn windows_gate_lane_audibility_on_the_stream_clock() {
+        let (controller, mut executor) = render_plane();
+        let mut spec = tone_spec(440.0);
+        spec.lanes[0].windows = vec![RenderWindow {
+            start_frames: 128,
+            end_frames: 256,
+        }];
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        // Block 0 covers frames 0..128: outside the window, silent.
+        let mut frames = [0.0f32; 256];
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+
+        // Block 1 covers frames 128..256: inside the window, audible.
+        let mut frames = [0.0f32; 256];
+        executor.render_block(&mut frames);
+        assert!(frames.iter().any(|sample| sample.abs() > 0.01));
     }
 
     #[test]

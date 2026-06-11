@@ -72,11 +72,13 @@ fn main() {
                     lane_id: "lane:a".to_string(),
                     gain: 0.4,
                     source: RenderSource::TestTone { frequency_hz: 440.0 },
+                    windows: Vec::new(),
                 },
                 RenderLaneSpec {
                     lane_id: "lane:b".to_string(),
                     gain: 0.25,
                     source: RenderSource::TestTone { frequency_hz: 660.0 },
+                    windows: Vec::new(),
                 },
             ],
         })
@@ -102,6 +104,7 @@ fn main() {
                 lane_id: "lane:c".to_string(),
                 gain: 0.5,
                 source: RenderSource::TestTone { frequency_hz: 220.0 },
+                windows: Vec::new(),
             }],
         })
         .expect("swap plan");
