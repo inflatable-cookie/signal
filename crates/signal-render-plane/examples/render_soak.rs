@@ -55,6 +55,7 @@ fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
         gain,
         kind: RenderStageKind::Source {
             clips: vec![RenderClipSpec {
+                clip_id: 1001,
                 start_frames: 0,
                 end_frames: u64::MAX,
                 source: RenderSource::TestTone { frequency_hz },

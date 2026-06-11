@@ -152,6 +152,11 @@ pub enum RenderSource {
 /// `[start_frames, end_frames)` and the source that plays inside it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderClipSpec {
+    /// Stable clip identity (consumer-supplied). Used control-side to build
+    /// the state-inheritance map across plan swaps, so a clip keeps its
+    /// playback state (tone phase, later streaming cursors) when neighbours
+    /// are inserted or removed.
+    pub clip_id: u64,
     /// First audible frame.
     pub start_frames: u64,
     /// First frame past the audible range.
@@ -329,6 +334,8 @@ struct CompiledClip {
     end_frames: u64,
     /// Declick fade length at each window edge, shortened for tiny windows.
     edge_fade_frames: u64,
+    /// Stable identity, read control-side when building inheritance maps.
+    clip_id: u64,
     source: CompiledSource,
 }
 
@@ -378,6 +385,14 @@ pub struct RenderPlan {
     /// master format. Compiled at install time — the controller knows the
     /// stream's channel count then. Never applies inside the creative graph.
     boundary_matrix: Vec<f32>,
+    /// Per-stage inheritance: `inherit_stage_map[i]` is the index of the
+    /// matching stage in the PREVIOUS plan (by stage_id), precomputed by the
+    /// controller at install time so the executor never compares identities
+    /// on the audio thread.
+    inherit_stage_map: Vec<Option<usize>>,
+    /// Per-stage, per-clip inheritance into the previous plan's clip list
+    /// (by clip_id within the matched stage).
+    inherit_clip_maps: Vec<Vec<Option<usize>>>,
 }
 
 impl RenderPlan {
@@ -501,6 +516,7 @@ impl RenderPlan {
                 RenderStageKind::Source { clips } => clips
                     .iter()
                     .map(|clip| CompiledClip {
+                        clip_id: clip.clip_id,
                         start_frames: clip.start_frames,
                         end_frames: clip.end_frames,
                         edge_fade_frames: CLIP_EDGE_FADE_FRAMES
@@ -592,25 +608,43 @@ impl RenderPlan {
             master_index,
             stream_channels,
             boundary_matrix,
+            inherit_stage_map: Vec::new(),
+            inherit_clip_maps: Vec::new(),
         }))
     }
 
     /// Carry smoothed gains and tone phases over from the plan being
     /// replaced, so a recompile (gain tweak, clip edit) never steps audio.
-    /// Nodes match by `stage_id` (linear scan: O(n²) worst case, acceptable
-    /// at current plan sizes; g10.011 owns the complexity fix). Runs on the
-    /// audio thread: comparisons and copies only, no allocation.
+    /// Matching is precomputed by the controller into `inherit_stage_map` /
+    /// `inherit_clip_maps` at install time (by stage_id and clip_id), so this
+    /// is O(stages + clips) index copies — no identity comparisons run on
+    /// the audio thread, and inserting a clip mid-lane no longer cross-wires
+    /// its neighbours' state.
     fn inherit_state(&mut self, previous: &RenderPlan) {
-        for stage in self.stages.iter_mut() {
-            let Some(previous_node) = previous
-                .stages
-                .iter()
-                .find(|candidate| candidate.stage_id == stage.stage_id)
-            else {
+        if self.inherit_stage_map.len() != self.stages.len() {
+            // No map (first install or controller skipped): nothing carries.
+            return;
+        }
+        for (index, stage) in self.stages.iter_mut().enumerate() {
+            let Some(previous_index) = self.inherit_stage_map[index] else {
+                continue;
+            };
+            let Some(previous_node) = previous.stages.get(previous_index) else {
                 continue;
             };
             stage.gain_current = previous_node.gain_current;
-            for (clip, previous_clip) in stage.clips.iter_mut().zip(previous_node.clips.iter()) {
+            let clip_map = self
+                .inherit_clip_maps
+                .get(index)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
+            for (clip_index, clip) in stage.clips.iter_mut().enumerate() {
+                let Some(previous_clip_index) = clip_map.get(clip_index).copied().flatten() else {
+                    continue;
+                };
+                let Some(previous_clip) = previous_node.clips.get(previous_clip_index) else {
+                    continue;
+                };
                 if let (
                     CompiledSource::Tone { phase, step },
                     CompiledSource::Tone {
@@ -789,6 +823,11 @@ pub struct RenderPlaneController {
     /// hardware-boundary adaptation against this; before it is known, plans
     /// assume the stream matches their master format.
     stream_channels: Option<u16>,
+    /// Identity snapshot of the last successfully installed plan, in its
+    /// topological stage order: (stage_id, clip ids). Used to precompute the
+    /// state-inheritance maps for the next install so the executor does pure
+    /// index copies.
+    last_topology: Option<Vec<(u64, Vec<u64>)>>,
 }
 
 /// Error installing a plan or sending a command.
@@ -821,18 +860,64 @@ impl RenderPlaneController {
     }
 
     /// Compile `spec` and install it as the active plan. Eagerly reclaims
-    /// any plans the executor has retired.
-    pub fn install_plan(&self, spec: &RenderPlanSpec) -> Result<(), RenderPlaneError> {
+    /// any plans the executor has retired. State-inheritance maps (stage and
+    /// clip identity vs the previously installed plan) are precomputed here,
+    /// control-side, so the executor's hand-off is pure index copies.
+    pub fn install_plan(&mut self, spec: &RenderPlanSpec) -> Result<(), RenderPlaneError> {
         self.collect_retired();
-        let plan =
+        let mut plan =
             RenderPlan::compile(spec, self.stream_channels).map_err(|error| RenderPlaneError {
                 message: format!("plan rejected at compile: {error}"),
             })?;
+
+        // Topology of the freshly compiled plan (topo order).
+        let topology: Vec<(u64, Vec<u64>)> = plan
+            .stages
+            .iter()
+            .map(|stage| {
+                (
+                    stage.stage_id,
+                    stage.clips.iter().map(|clip| clip.clip_id).collect(),
+                )
+            })
+            .collect();
+
+        if let Some(previous) = self.last_topology.as_ref() {
+            plan.inherit_stage_map = topology
+                .iter()
+                .map(|(stage_id, _)| {
+                    previous
+                        .iter()
+                        .position(|(previous_id, _)| previous_id == stage_id)
+                })
+                .collect();
+            plan.inherit_clip_maps = topology
+                .iter()
+                .enumerate()
+                .map(|(index, (_, clip_ids))| {
+                    let Some(previous_index) = plan.inherit_stage_map[index] else {
+                        return Vec::new();
+                    };
+                    let previous_clips = &previous[previous_index].1;
+                    clip_ids
+                        .iter()
+                        .map(|clip_id| {
+                            previous_clips
+                                .iter()
+                                .position(|previous_id| previous_id == clip_id)
+                        })
+                        .collect()
+                })
+                .collect();
+        }
+
         self.commands
             .try_send(RenderCommand::InstallPlan(plan))
             .map_err(|error| RenderPlaneError {
                 message: format!("command mailbox rejected plan install: {error}"),
-            })
+            })?;
+        self.last_topology = Some(topology);
+        Ok(())
     }
 
     /// Gate rendering on or off (transport play/stop).
@@ -1155,6 +1240,7 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             retired: retired_rx,
             shared: Arc::clone(&shared),
             stream_channels: None,
+            last_topology: None,
         },
         RenderPlaneExecutor {
             commands: command_rx,
@@ -1221,6 +1307,7 @@ mod tests {
 
     fn tone_clip(frequency_hz: f32) -> RenderClipSpec {
         RenderClipSpec {
+            clip_id: 1003,
             start_frames: 0,
             end_frames: u64::MAX,
             source: RenderSource::TestTone { frequency_hz },
@@ -1234,7 +1321,7 @@ mod tests {
 
     #[test]
     fn renders_silence_without_plan_and_when_stopped() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let mut frames = [1.0f32; 256];
         executor.render_block(&mut frames);
         assert!(frames.iter().all(|sample| *sample == 0.0));
@@ -1248,7 +1335,7 @@ mod tests {
 
     #[test]
     fn renders_tone_and_advances_clock_when_playing() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         controller.set_playing(true).unwrap();
 
@@ -1264,7 +1351,7 @@ mod tests {
 
     #[test]
     fn seek_moves_the_stream_clock() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         controller.set_playing(true).unwrap();
         controller.seek(96_000).unwrap();
@@ -1276,7 +1363,7 @@ mod tests {
 
     #[test]
     fn windows_gate_lane_audibility_on_the_stream_clock() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let mut clip = tone_clip(440.0);
         clip.start_frames = 128;
         clip.end_frames = 256;
@@ -1310,6 +1397,7 @@ mod tests {
         lane_master_spec(
             1.0,
             vec![RenderClipSpec {
+                clip_id: 1004,
                 start_frames,
                 end_frames,
                 source: RenderSource::Samples(RenderSampleBuffer {
@@ -1331,7 +1419,7 @@ mod tests {
 
     #[test]
     fn sample_clips_play_buffer_content_at_their_window() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         // 1024 source frames: value = index / 1024.
         let values: Vec<f32> = (0..1024).map(|index| index as f32 / 1024.0).collect();
         // Window starts at frame 512, well past the edge ramp warm-up.
@@ -1354,7 +1442,7 @@ mod tests {
 
     #[test]
     fn sample_clips_play_their_final_frame() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         // 256 source frames of a constant; window longer than the source.
         let values = vec![0.5f32; 256];
         let spec = samples_spec(&values, 0, u64::MAX, false);
@@ -1369,7 +1457,7 @@ mod tests {
         assert!(frames.iter().all(|sample| *sample == 0.0));
 
         // Replay from the start and inspect the last in-range frame.
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&spec).unwrap();
         controller.set_playing(true).unwrap();
         let mut frames = [0.0f32; 512];
@@ -1380,7 +1468,7 @@ mod tests {
 
     #[test]
     fn looping_sample_clips_wrap_to_their_start() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         // 100 source frames: value = (index + 1) / 100, looped.
         let values: Vec<f32> = (0..100).map(|index| (index + 1) as f32 / 100.0).collect();
         let spec = samples_spec(&values, 0, u64::MAX, true);
@@ -1400,7 +1488,7 @@ mod tests {
 
     #[test]
     fn transport_stop_ramps_out_instead_of_stepping() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 2);
@@ -1432,7 +1520,7 @@ mod tests {
 
     #[test]
     fn seek_while_playing_ramps_out_then_jumps() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 2);
@@ -1451,9 +1539,170 @@ mod tests {
         assert_eq!(controller.position_frames(), 96_000 + 256);
     }
 
+    fn max_left_step(frames: &[f32]) -> f32 {
+        frames
+            .chunks_exact(2)
+            .map(|frame| frame[0])
+            .collect::<Vec<_>>()
+            .windows(2)
+            .map(|pair| (pair[1] - pair[0]).abs())
+            .fold(0.0f32, f32::max)
+    }
+
+    #[test]
+    fn mid_lane_clip_insert_preserves_neighbour_state() {
+        // A tone clip keeps its phase when a new clip is inserted BEFORE it
+        // in the lane's clip list — the clip-id inheritance map prevents the
+        // zip-index cross-wiring the old code had.
+        let (mut controller, mut executor) = render_plane();
+        let survivor = RenderClipSpec {
+            clip_id: 7,
+            start_frames: 0,
+            end_frames: u64::MAX,
+            source: RenderSource::TestTone {
+                frequency_hz: 440.0,
+            },
+            loop_source: false,
+        };
+        controller
+            .install_plan(&lane_master_spec(0.5, vec![survivor.clone()]))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        // Insert a silent clip at index 0; survivor moves to index 1.
+        let inserted = RenderClipSpec {
+            clip_id: 8,
+            start_frames: 0,
+            end_frames: u64::MAX,
+            source: RenderSource::Silence,
+            loop_source: false,
+        };
+        controller
+            .install_plan(&lane_master_spec(0.5, vec![inserted, survivor]))
+            .unwrap();
+        let mut frames = [0.0f32; 1024];
+        executor.render_block(&mut frames);
+        // Phase carried: the 440 Hz tone continues without a step.
+        let step = max_left_step(&frames);
+        assert!(step < 0.05, "clip insert stepped audio by {step}");
+        assert!(frames.iter().any(|sample| sample.abs() > 0.01));
+    }
+
+    #[test]
+    fn stage_reorder_preserves_state_through_the_identity_map() {
+        // Two tone lanes swap positions in the stage list across a plan
+        // swap; both keep phase and smoothed gain (no audible step).
+        let (mut controller, mut executor) = render_plane();
+        let lane_a = lane_node(10, 0.4, vec![tone_clip(330.0)]);
+        let lane_b = lane_node(11, 0.4, vec![tone_clip(550.0)]);
+        let master = master_node(vec![identity_edge(10), identity_edge(11)]);
+        controller
+            .install_plan(&RenderPlanSpec {
+                sample_rate_hz: 48_000,
+                master_gain: 1.0,
+                stages: vec![lane_a.clone(), lane_b.clone(), master.clone()],
+            })
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        controller
+            .install_plan(&RenderPlanSpec {
+                sample_rate_hz: 48_000,
+                master_gain: 1.0,
+                stages: vec![lane_b, lane_a, master],
+            })
+            .unwrap();
+        let mut frames = [0.0f32; 1024];
+        executor.render_block(&mut frames);
+        let step = max_left_step(&frames);
+        // Two tones at 0.4 gain: their combined slope stays well under this
+        // bound only if both phases carried.
+        assert!(step < 0.07, "stage reorder stepped audio by {step}");
+    }
+
+    #[test]
+    fn plan_churn_keeps_a_surviving_tone_continuous() {
+        // Property-style: a seeded LCG drives 24 plan installs mid-play —
+        // adding/removing extra lanes, inserting silent clips around the
+        // survivor, jittering other lanes' gains. The surviving tone lane
+        // must never step.
+        let (mut controller, mut executor) = render_plane();
+        let survivor_clip = RenderClipSpec {
+            clip_id: 1,
+            start_frames: 0,
+            end_frames: u64::MAX,
+            source: RenderSource::TestTone {
+                frequency_hz: 440.0,
+            },
+            loop_source: false,
+        };
+        let mut seed: u64 = 0x5EED_CAFE;
+        let mut next = move || {
+            seed = seed
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (seed >> 33) as u32
+        };
+        let build = |extra_lanes: u32, clips_before: u32, extra_gain: f32| -> RenderPlanSpec {
+            let mut clips = Vec::new();
+            for index in 0..clips_before {
+                clips.push(RenderClipSpec {
+                    clip_id: 100 + index as u64,
+                    start_frames: 0,
+                    end_frames: u64::MAX,
+                    source: RenderSource::Silence,
+                    loop_source: false,
+                });
+            }
+            clips.push(survivor_clip.clone());
+            let mut stages = vec![lane_node(LANE_ID, 0.5, clips)];
+            let mut edges = vec![identity_edge(LANE_ID)];
+            for index in 0..extra_lanes {
+                let stage_id = 50 + index as u64;
+                // Extra lanes are silent so the survivor's continuity is the
+                // only signal under test.
+                stages.push(lane_node(stage_id, extra_gain, vec![]));
+                edges.push(identity_edge(stage_id));
+            }
+            stages.push(master_node(edges));
+            RenderPlanSpec {
+                sample_rate_hz: 48_000,
+                master_gain: 1.0,
+                stages,
+            }
+        };
+        controller.install_plan(&build(0, 0, 0.3)).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let mut worst_step = 0.0f32;
+        let mut previous_tail = None::<f32>;
+        for _ in 0..24 {
+            let extra = next() % 4;
+            let before = next() % 3;
+            let gain = (next() % 100) as f32 / 100.0;
+            controller
+                .install_plan(&build(extra, before, gain))
+                .unwrap();
+            let mut frames = [0.0f32; 512];
+            executor.render_block(&mut frames);
+            if let Some(tail) = previous_tail {
+                worst_step = worst_step.max((frames[0] - tail).abs());
+            }
+            worst_step = worst_step.max(max_left_step(&frames));
+            previous_tail = Some(frames[frames.len() - 2]);
+        }
+        assert!(
+            worst_step < 0.05,
+            "plan churn stepped the surviving tone by {worst_step}",
+        );
+    }
+
     #[test]
     fn plan_swap_inherits_smoothed_gain_without_stepping() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 2);
@@ -1482,7 +1731,7 @@ mod tests {
         // 1 kHz sine at 44.1k played on a 48k stream: after the edge ramp
         // and clip fade, output must track the analytic sine to ~60 dB
         // (linear interpolation fails this at ~35-40 dB).
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let source_rate = 44_100u32;
         let frequency = 1_000.0f64;
         let mut data = Vec::new();
@@ -1495,6 +1744,7 @@ mod tests {
         let spec = lane_master_spec(
             1.0,
             vec![RenderClipSpec {
+                clip_id: 1005,
                 start_frames: 0,
                 end_frames: u64::MAX,
                 source: RenderSource::Samples(RenderSampleBuffer {
@@ -1547,7 +1797,7 @@ mod tests {
 
     #[test]
     fn retired_plans_return_to_the_control_side() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         controller.install_plan(&tone_spec(440.0)).unwrap();
         let mut frames = [0.0f32; 64];
         executor.render_block(&mut frames);
@@ -1563,7 +1813,7 @@ mod tests {
 
     #[test]
     fn compile_rejects_cycles() {
-        let (controller, _executor) = render_plane();
+        let (mut controller, _executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
@@ -1591,7 +1841,7 @@ mod tests {
 
     #[test]
     fn compile_rejects_duplicate_node_ids() {
-        let (controller, _executor) = render_plane();
+        let (mut controller, _executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
@@ -1607,7 +1857,7 @@ mod tests {
 
     #[test]
     fn compile_rejects_wrong_master_count() {
-        let (controller, _executor) = render_plane();
+        let (mut controller, _executor) = render_plane();
         let no_master = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
@@ -1637,7 +1887,7 @@ mod tests {
 
     #[test]
     fn compile_rejects_unknown_inputs_and_bad_matrices() {
-        let (controller, _executor) = render_plane();
+        let (mut controller, _executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
@@ -1671,7 +1921,7 @@ mod tests {
         // Nodes listed deliberately out of order: master first, then the bus
         // chain, then the lane. The schedule must still run lane → bus A →
         // bus B → master, with each stage's gain applied at consumption.
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
@@ -1700,7 +1950,7 @@ mod tests {
 
         // Reference: the same tone through a single lane at the chain's
         // composite gain (0.5 × 0.5 = 0.25).
-        let (reference_controller, mut reference_executor) = render_plane();
+        let (mut reference_controller, mut reference_executor) = render_plane();
         reference_controller
             .install_plan(&lane_master_spec(0.25, vec![tone_clip(440.0)]))
             .unwrap();
@@ -1721,7 +1971,7 @@ mod tests {
         // The pan primitive per chorus a14: an explicit 2×2 equal-power
         // matrix on the lane → master edge.
         let render_with_pan = |pan: f32| -> [f32; 512] {
-            let (controller, mut executor) = render_plane();
+            let (mut controller, mut executor) = render_plane();
             let spec = RenderPlanSpec {
                 sample_rate_hz: 48_000,
                 master_gain: 1.0,
@@ -1771,7 +2021,7 @@ mod tests {
 
     #[test]
     fn mono_lane_upmixes_to_stereo_through_the_default_adapter() {
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 1.0,
@@ -1811,7 +2061,7 @@ mod tests {
     fn send_topology_sums_both_paths() {
         // Lane feeds bus A and bus B (a send); both feed the master. The
         // output must be exactly double the single-path render.
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let bus = |stage_id: u64| RenderStageSpec {
             stage_id,
             format: ChannelFormat::stereo(),
@@ -1833,7 +2083,7 @@ mod tests {
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 2);
 
-        let (reference_controller, mut reference_executor) = render_plane();
+        let (mut reference_controller, mut reference_executor) = render_plane();
         reference_controller
             .install_plan(&lane_master_spec(0.25, vec![tone_clip(440.0)]))
             .unwrap();
@@ -1894,7 +2144,7 @@ mod tests {
         warm_up(&mut executor, 2);
 
         // Mono reference at unity for the same tone.
-        let (reference_controller, mut reference_executor) = render_plane();
+        let (mut reference_controller, mut reference_executor) = render_plane();
         reference_controller
             .install_plan(&lane_master_spec(1.0, vec![tone_clip(440.0)]))
             .unwrap();
@@ -1979,7 +2229,7 @@ mod tests {
         // relaxed (or print `hash`), paste the new value, and justify the
         // change in the commit. Never regenerate to silence a failure you
         // cannot explain.
-        let (controller, mut executor) = render_plane();
+        let (mut controller, mut executor) = render_plane();
         let spec = RenderPlanSpec {
             sample_rate_hz: 48_000,
             master_gain: 0.8,
