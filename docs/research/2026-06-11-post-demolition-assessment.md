@@ -64,6 +64,15 @@ gestures stop recompiling the world).
 | Musical time | pulse owns tempo (correct) | S — compile helper; never teach the executor BPM |
 | Device lifecycle | negotiation + enumeration; no hot-swap/rate-change recovery | S–M |
 
+## Operator direction adopted (2026-06-11, after this assessment)
+
+Channel-format freedom (chorus a14): the mix graph is format-typed; nodes
+up/downmix at will; spatial control is an N×M matrix primitive (pan = its
+stereo special case); stereo collapse happens only at the hardware stage
+when the device offers nothing wider. g10.010/013 amended accordingly —
+edge formats and the matrix primitive land with the first schedule compile,
+not as a retrofit.
+
 ## Sequencing (one line)
 
 Graph plans → identity → parameter fast path build the spine; DSP kit and

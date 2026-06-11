@@ -9,13 +9,13 @@ Vision tags: `DSP`, `CORRECTNESS`
 ## Problem
 
 signal-dsp has one filter: a one-pole lowpass. A credible engine needs the
-RBJ cookbook biquad family, a soft limiter guarding the master, and denormal
+RBJ cookbook biquad family, a soft limiter guarding the master (format-wide, per-channel detection with linked gain), and denormal
 protection before any feedback DSP ships (delay lines, reverbs, filter
 memories all decay into the denormal range and burn CPU).
 
 ## Goals
 
-- [ ] RBJ cookbook biquads in signal-dsp (LP/HP/BP/notch/shelf/peak), coefficient math verified against published known answers
+- [ ] RBJ cookbook biquads in signal-dsp (LP/HP/BP/notch/shelf/peak), coefficient math verified against published known answers; biquad state per channel, channel count from the edge format (a14: no stereo assumption)
 - [ ] stateless coefficient calc split from per-node state structs (slotting into g10.011's handoff)
 - [ ] soft limiter (lookahead-free soft knee) as a master-node option
 - [ ] denormal guard on the callback thread (FTZ/DAZ or DC-offset; measured, documented)
