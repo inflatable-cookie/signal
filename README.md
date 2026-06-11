@@ -12,6 +12,13 @@
 
 # Shared audio-systems runtime and DSP workspace
 
+Signal is a standalone, general-purpose realtime audio library. The Loophole
+DAW is its primary consumer, but Signal is *for* Loophole, not *owned* by it:
+it provides mechanism (typed channel formats, graph execution, honest
+realtime boundaries) and leaves mixing/layout policy to consuming
+applications.
+
+
 Signal is the shared audio-systems repo for Loophole, Finch, and future apps.
 Its active surface is the Rust library/runtime workspace under `crates/`.
 
