@@ -2,16 +2,15 @@
 #[allow(clippy::module_inception)]
 mod tests {
     use crate::{
-        AudioBlock, AutomationContinuityReport, BlockDispatch, BlockPayload, BlockProcessResult,
-        BlockSequenceContinuityReport, CompletionSlot, CompletionState, EventPacket, LoopRange,
+        AudioBlock, BlockDispatch, BlockPayload, BlockProcessResult, CompletionSlot, CompletionState, EventPacket, LoopRange,
         MidiEvent, NoteEvent, NoteEventKind, NoteExpressionEvent, NoteExpressionKind,
         ParameterAutomationSummary, ParameterGestureEvent, ParameterGesturePhase,
         ParameterModulationEvent, ParameterValueEvent, PluginDescriptor, PluginEvent,
         PluginFaultKind, PluginFaultSeverity, PluginFormat, PluginInstanceId, PluginIoLayout,
         PluginLifecycleState, PluginParameterDomain, PluginParameterFlags, PluginReadiness,
         PluginRenderContext, PluginSandboxCapabilities, PluginSandboxError, PluginSandboxErrorKind,
-        RestartEscalationPolicy, RestartEscalationState, SandboxControlRequest,
-        SandboxControlResponse, SandboxStateMachine, SandboxTransport, SandboxWatchdogPolicy,
+        RestartEscalationPolicy, RestartEscalationState, SandboxStateMachine, SandboxTransport,
+        SandboxWatchdogPolicy,
         SandboxWatchdogState, SharedMemoryLayout, SharedMemoryLease, WatchdogOutcome,
         WatchdogTriggerReason,
     };

@@ -16,8 +16,6 @@ members = [
   "crates/signal-ipc",
   "crates/signal-plugin",
   "crates/signal-plugin-inventory",
-  "crates/signal-plugin-library",
-  "crates/signal-plugin-library-store",
   "crates/signal-plugin-clap",
   "crates/signal-plugin-au",
   "crates/signal-plugin-lv2",

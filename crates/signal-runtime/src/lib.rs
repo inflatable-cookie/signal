@@ -98,8 +98,7 @@ pub use interfaces::{
     RuntimeAuxiliaryPathSummary, RuntimeBlockDeadlinePressure, RuntimeBusIntent, RuntimeBusRole,
     RuntimeCanonicalChannelLayout, RuntimeClipFadeEnvelope, RuntimeClipGainEnvelope,
     RuntimeClipProcessingRegistration, RuntimeClipRenderInputStage, RuntimeClipRenderRequest,
-    RuntimeConfigRequest, RuntimeControllerExpressionMidi2Posture,
-    RuntimeControllerExpressionMpePosture, RuntimeDeferredServiceBackpressureSource,
+    RuntimeConfigRequest, RuntimeDeferredServiceBackpressureSource,
     RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceDecision,
     RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason, RuntimeDeploymentClass,
     RuntimeDeviceFaultBoundaryState, RuntimeDeviceRestartState, RuntimeDeviceSupervisionState,
@@ -181,14 +180,9 @@ pub use interfaces::{
 };
 pub use runtime::{RuntimeConfig, SignalRuntime};
 pub use sandbox_broker_support::{
-    begin_brokered_recovery_cycle, begin_recovery_overlap, complete_broker_transport_detach,
-    complete_lingering_recovery_restart_or_rollback, complete_recovery_overlap_restart,
-    complete_recovery_overlap_restart_or_rollback, ensure_prepared_sandbox_session,
-    finalize_brokered_recovery_transport_detach, handle_overlap_prepare_contention,
-    handle_recovery_overlap_old_transport_teardown, record_broker_sandbox_prepared,
-    record_broker_transport_detach_failure, record_broker_transport_detach_requested,
-    record_protocol_violation_prepare_failure, rollback_recovery_overlap,
-    run_vst3_broker_execution_sequence, teardown_broker_sandbox_session, PreparedBrokerSandboxSpec,
-    PreparedSandboxSessionRecord, RecoveryOverlapOldTransportTeardownOutcome, SandboxBrokerFlavor,
-    SandboxBrokerSession, SandboxBrokerSpawnConfig,
+    ensure_prepared_sandbox_session, record_broker_attached_execution_summary,
+    record_broker_sandbox_prepared,
+    record_protocol_violation_prepare_failure, teardown_broker_sandbox_session,
+    PreparedBrokerSandboxSpec, PreparedSandboxSessionRecord, SandboxBrokerSession,
+    SandboxBrokerSpawnConfig,
 };

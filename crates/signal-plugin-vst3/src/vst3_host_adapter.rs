@@ -1,6 +1,6 @@
 use signal_plugin::{
-    PluginDescriptor, PluginFormat, PluginInstanceId, PluginIoLayout, PluginLifecycleContract,
-    PluginProcessingContract, PluginSandboxCapabilities, PluginTypeId, SandboxTransport,
+    PluginDescriptor, PluginFormat, PluginIoLayout, PluginSandboxCapabilities, PluginTypeId,
+    SandboxTransport,
 };
 
 mod discovery;
@@ -8,7 +8,6 @@ mod introspection;
 mod model;
 #[cfg(test)]
 mod scaffold;
-mod session;
 
 pub use model::*;
 #[cfg(test)]

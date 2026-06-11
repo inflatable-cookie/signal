@@ -22,7 +22,6 @@ pub(crate) struct RuntimeAutomationExecutionRecord {
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct RuntimeAutomationState {
-    continuity: AutomationContinuityReport,
     projection: Option<RuntimeAutomationProjection>,
     projected_segment_count: usize,
     mapped_lane_count: usize,
@@ -43,15 +42,6 @@ pub(crate) struct RuntimeAutomationState {
 }
 
 impl RuntimeAutomationState {
-    pub(crate) fn record_summary(
-        &mut self,
-        processing_epoch: u64,
-        lease_id: impl Into<String>,
-        summary: ParameterAutomationSummary,
-    ) {
-        self.continuity.record(processing_epoch, lease_id, summary);
-    }
-
     pub(crate) fn apply_projection(&mut self, mut projection: RuntimeAutomationProjection) {
         projection.lane_count = projection.lanes.len();
         projection.point_count = projection
@@ -109,7 +99,6 @@ impl RuntimeAutomationState {
     }
 
     pub(crate) fn snapshot(&self) -> RuntimeAutomationSnapshot {
-        let aggregate = self.continuity.aggregate();
         let lane_count = self
             .projection
             .as_ref()
@@ -137,19 +126,6 @@ impl RuntimeAutomationState {
             last_block_sequence: self.last_block_sequence,
             last_timeline_position_samples: self.last_timeline_position_samples,
             transport_playing: self.transport_playing,
-            parameter_id: aggregate.parameter_id,
-            value_events: aggregate.value_events,
-            modulation_events: aggregate.modulation_events,
-            gesture_begin_events: aggregate.gesture_begin_events,
-            gesture_end_events: aggregate.gesture_end_events,
-            first_value: aggregate.first_value,
-            last_value: aggregate.last_value,
-            last_modulation: aggregate.last_modulation,
-            first_epoch: self.continuity.first_epoch(),
-            last_epoch: self.continuity.last_epoch(),
-            segment_count: self.continuity.segment_count(),
-            segment_epochs: self.continuity.segment_epochs(),
-            lease_rollovers: self.continuity.lease_rollovers,
         }
     }
 }

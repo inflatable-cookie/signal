@@ -1,17 +1,15 @@
 use signal_plugin::{
-    PluginDescriptor, PluginFormat, PluginInstanceId, PluginIoLayout, PluginLifecycleContract,
-    PluginProcessingContract, PluginSandboxCapabilities, PluginTypeId, SandboxTransport,
+    PluginDescriptor, PluginFormat, PluginIoLayout, PluginSandboxCapabilities, PluginTypeId,
+    SandboxTransport,
 };
 
 mod discovery;
 mod introspection;
 mod model;
-mod scaffold;
-mod session;
 
 pub use model::*;
 
-/// Host-side adapter for LV2 plugins. Handles bundle discovery, instantiation, extension negotiation, and capability reporting.
+/// Host-side adapter for LV2 plugins. Performs manifest (`manifest.ttl`) bundle scanning only; no hosting surfaces exist yet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Lv2HostAdapter {
     strict_sandbox_default: bool,

@@ -63,8 +63,8 @@ use signal_graph::{
 };
 use signal_hardware::{BackendHealth, BackendPolicyTier, HardwareConfigRequest};
 use signal_plugin::{
-    BlockSequenceContinuityReport, CompletionState, PluginFeature, PluginFormat, PluginIoLayout,
-    PluginLifecycleContract, PluginProcessingContract, PluginStateContract,
+    CompletionState, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
+    PluginProcessingContract, PluginStateContract,
 };
 use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
 

@@ -1,17 +1,8 @@
 // Tests for signal-plugin-clap
 #[allow(clippy::module_inception)]
 mod tests {
-    use crate::{
-        classify_sandbox_failure, sandbox_failure_event, ClapBlockProtocol, ClapEvent,
-        ClapHostExtension, ClapNoteExpressionEvent, ClapNoteExpressionKind, ClapParamGestureEvent,
-        ClapParamGesturePhase, ClapPluginHostAdapter, ClapSandboxFailureInput,
-        ClapSandboxFailureStage, ClapSandboxLifecycleHarness,
-    };
-    use signal_ipc::{
-        PluginDescriptorPayload, PluginMessageName, PluginMessagePayload, SharedMemoryBroker,
-        SharedMemoryTransportKind,
-    };
-    use signal_plugin::{CompletionState, EventPacket, PluginFormat, PluginIoLayout};
+    use crate::{ClapHostExtension, ClapPluginHostAdapter};
+    use signal_plugin::PluginFormat;
     use std::{
         fs,
         path::PathBuf,
@@ -440,7 +431,4 @@ unsafe extern "C" fn param_get_value(
     }
 
     mod adapter;
-    mod block_processing;
-    mod failures;
-    mod lifecycle;
 }

@@ -26,20 +26,15 @@ impl AuHostAdapter {
         }
     }
 
-    /// Scans the given filesystem roots for AU component bundles and returns all discovered plugin types.
+    /// Scans the given filesystem roots for AU component bundles and returns
+    /// all discovered plugin types. An empty root list scans nothing —
+    /// system plugin directories are never scanned implicitly; pass
+    /// [`AuHostAdapter::default_scan_roots`] explicitly to opt in.
     pub fn discover_plugins_for_roots(
         &self,
-        platform: AuHostPlatform,
+        _platform: AuHostPlatform,
         roots: &[String],
     ) -> Vec<AuDiscoveredPluginType> {
-        let roots = if roots.is_empty() {
-            self.default_scan_roots(platform)
-                .into_iter()
-                .map(|root| root.root)
-                .collect::<Vec<_>>()
-        } else {
-            roots.to_vec()
-        };
         let mut discovered = Vec::new();
         for root in roots {
             let expanded_root = expand_scan_root(&root);
@@ -82,11 +77,6 @@ fn push_au_component_if_present(discovered: &mut Vec<AuDiscoveredPluginType>, pa
         bundle_root: path.to_string_lossy().into_owned(),
         descriptor: metadata_descriptor(&metadata),
         default_io_layout: metadata_io_layout(&metadata),
-        failure_contract: AuFailureContract {
-            init_failure: metadata.init_failure.clone(),
-            bus_layout_failure: metadata.bus_layout_failure.clone(),
-            render_context_failure: metadata.render_context_failure.clone(),
-        },
     };
     if !discovered
         .iter()

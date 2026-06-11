@@ -60,8 +60,6 @@ pub struct RuntimeObservationReport {
     pub offline_render_session_snapshot: RuntimeOfflineRenderSessionSnapshot,
     /// Automation snapshot.
     pub automation_snapshot: RuntimeAutomationSnapshot,
-    /// Plugin event snapshot.
-    pub plugin_event_snapshot: RuntimePluginEventSnapshot,
     /// Engine block snapshot with per-block timing and scheduler state.
     pub engine_block_snapshot: RuntimeEngineBlockSnapshot,
     /// Transport concurrency snapshot (session and lease counts).
@@ -119,7 +117,6 @@ impl RuntimeObservationReport {
         let media_library_snapshot = runtime.get_media_library_service_snapshot();
         let offline_render_session_snapshot = runtime.get_offline_render_session_snapshot();
         let automation_snapshot = runtime.get_automation_snapshot();
-        let plugin_event_snapshot = runtime.get_plugin_event_snapshot();
         let engine_block_snapshot = runtime.get_engine_block_snapshot();
         let execution_topology_summary = runtime.get_execution_topology_summary();
         let transport_concurrency_snapshot = runtime.get_transport_concurrency_snapshot();
@@ -208,7 +205,6 @@ impl RuntimeObservationReport {
             media_library_snapshot,
             offline_render_session_snapshot,
             automation_snapshot,
-            plugin_event_snapshot,
             engine_block_snapshot,
             transport_concurrency_snapshot,
             plugin_discovery_snapshot,

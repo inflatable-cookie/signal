@@ -1,16 +1,8 @@
-use signal_runtime::{
-    RuntimeHostIoSummary, RuntimeObservationDiagnostics, RuntimeObservationReport,
-    RuntimeSupervisorReport,
-};
+use signal_runtime::{RuntimeHostIoSummary, RuntimeObservationReport, RuntimeSupervisorReport};
 
 use super::super::LocalRuntimeHost;
 
 impl LocalRuntimeHost {
-    /// Returns raw observation diagnostics captured from the event log.
-    pub(crate) fn observation_diagnostics(&self) -> RuntimeObservationDiagnostics {
-        self.events.diagnostics()
-    }
-
     /// Returns a full observation report enriched with host I/O state.
     pub(crate) fn observation_report(&self) -> RuntimeObservationReport {
         self.observation_with_host_io().0

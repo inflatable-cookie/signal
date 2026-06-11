@@ -1,17 +1,18 @@
-use signal_plugin_clap::{ClapBlockProtocol, ClapSandboxLifecycleHarness};
 use signal_runtime::{
     HandshakeRequest, PluginScanRequest, RuntimeConfigRequest, RuntimeError, RuntimeLifecycleApi,
     RuntimeProjectionApi, RuntimeSupervisorApi,
 };
 
-use super::super::{FaultInjection, LocalRuntimeHost};
+use super::super::LocalRuntimeHost;
 use super::{local_demo_runtime_assembly, LocalRuntimeHostSummary, STEADY_STATE_BLOCKS};
 
 impl LocalRuntimeHost {
-    pub(crate) fn boot_with_fault_recovery(
-        &mut self,
-        fault: Option<FaultInjection>,
-    ) -> Result<LocalRuntimeHostSummary, RuntimeError> {
+    /// Boots the local host: handshake, configure, graph projection,
+    /// hardware negotiation, plugin scan over explicitly configured roots
+    /// (empty by default — no system plugin directories are touched),
+    /// optional sandbox sessions for explicitly configured fixture plugins,
+    /// and a bounded run of engine blocks through the output pump.
+    pub(crate) fn boot_local(&mut self) -> Result<LocalRuntimeHostSummary, RuntimeError> {
         let runtime_config = RuntimeConfigRequest::new(
             self.runtime.config().sample_rate.0,
             self.runtime.config().graph.block_size,
@@ -38,68 +39,24 @@ impl LocalRuntimeHost {
         for sandbox in &assembly.plugin_sandboxes {
             self.ensure_plugin_sandbox(sandbox.spec())?;
         }
-        self.runtime
-            .apply_plugin_backed_node_bindings(assembly.plugin_bindings())?;
+        if !assembly.plugin_sandboxes.is_empty() {
+            self.runtime
+                .apply_plugin_backed_node_bindings(assembly.plugin_bindings())?;
+        }
         self.runtime
             .set_active_plugin_sandboxes(assembly.active_plugin_sandbox_count());
-        let sandbox = assembly.primary_sandbox();
 
-        self.runtime.set_cpu_load_percent(4.5);
-        self.runtime.set_graph_latency_ms(2.7);
         self.runtime.start()?;
 
-        let protocol = ClapBlockProtocol::new(
-            "plugin:clap:default",
-            "instance:local:default",
-            signal_plugin::PluginIoLayout {
-                audio_inputs: 2,
-                audio_outputs: 2,
-                midi_inputs: 1,
-                midi_outputs: 1,
-            },
-            2048,
-        );
-        let mut lifecycle = ClapSandboxLifecycleHarness::default();
-        let mut run = self.run_lifecycle(
-            &protocol,
-            sandbox.request.sandbox_id.as_str(),
-            1,
-            &mut lifecycle,
-        )?;
-        let executed_steady_state_tail = if let Some(fault) = fault {
-            let executed_steady_state_tail = self.apply_boot_fault_recovery(
-                &protocol,
-                sandbox,
-                &mut run,
-                &mut lifecycle,
-                fault,
-            )?;
-            if !executed_steady_state_tail {
-                self.execute_block_sequence(
-                    &protocol,
-                    &mut run,
-                    STEADY_STATE_BLOCKS,
-                    &mut lifecycle,
-                    false,
-                )?;
-            }
-            executed_steady_state_tail
-        } else {
-            self.execute_block_sequence(
-                &protocol,
-                &mut run,
-                STEADY_STATE_BLOCKS,
-                &mut lifecycle,
-                false,
-            )?;
-            false
-        };
-        let _ = executed_steady_state_tail;
-        Ok(self.summarize_boot_outcome(
-            &hardware_stream,
-            &sandbox.request.sandbox_id,
-            &protocol,
-            run,
-        ))
+        let processing_epoch = 1;
+        let mut last_engine_result = None;
+        for _ in 0..STEADY_STATE_BLOCKS {
+            let block_sequence = self.runtime.allocate_block_sequence();
+            let result =
+                self.process_engine_block_through_output_pump(processing_epoch, block_sequence)?;
+            last_engine_result = Some((block_sequence, result));
+        }
+
+        Ok(self.summarize_boot_outcome(&hardware_stream, last_engine_result))
     }
 }

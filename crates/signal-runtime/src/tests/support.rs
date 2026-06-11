@@ -26,7 +26,6 @@ pub(super) use crate::interfaces::{
     RuntimeClipFadeShape, RuntimeClipGainEnvelope, RuntimeClipGainShape,
     RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration, RuntimeClipProcessingStage,
     RuntimeClipRenderInputStage, RuntimeClipRenderRequest, RuntimeConfigRequest,
-    RuntimeControllerExpressionMidi2Posture, RuntimeControllerExpressionMpePosture,
     RuntimeDeferredServiceBackpressureSource, RuntimeDeferredServiceCancellationCause,
     RuntimeDeferredServiceClass, RuntimeDeferredServiceDecision,
     RuntimeDeferredServicePriorityBand, RuntimeDeferredServiceReason, RuntimeError,

@@ -89,7 +89,7 @@ pub(crate) struct RuntimeEngineTransportAdvance {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct RuntimeTimelineState {
     pub(crate) next_block_sequence: u64,
-    pub(crate) continuity: BlockSequenceContinuityReport,
+    pub(crate) last_block_lease_id: Option<String>,
     pub(crate) transport_epoch: u64,
     pub(crate) last_transport_transition: Option<RuntimeTransportTransitionKind>,
     pub(crate) last_transport_transition_processing_epoch: Option<u64>,
@@ -120,13 +120,11 @@ impl RuntimeTimelineState {
         block_sequence: u64,
     ) -> Option<LeaseRolloverRecord> {
         let lease_id = lease_id.into();
-        let previous = self.continuity.segments.last().cloned();
-        self.continuity
-            .record(processing_epoch, lease_id.clone(), block_sequence);
-        previous.and_then(|segment| {
-            (segment.lease_id != lease_id).then(|| LeaseRolloverRecord {
+        let previous_lease_id = self.last_block_lease_id.replace(lease_id.clone());
+        previous_lease_id.and_then(|previous_lease_id| {
+            (previous_lease_id != lease_id).then(|| LeaseRolloverRecord {
                 sandbox_id: sandbox_id.to_string(),
-                previous_lease_id: segment.lease_id,
+                previous_lease_id,
                 lease_id,
                 processing_epoch,
                 first_block_sequence: block_sequence,
@@ -214,7 +212,6 @@ impl RuntimeTimelineState {
     pub(crate) fn snapshot(&self) -> RuntimeTimelineSnapshot {
         RuntimeTimelineSnapshot {
             next_block_sequence: self.next_block_sequence,
-            block_sequence_continuity: self.continuity.clone(),
             transport_epoch: self.transport_epoch,
             last_transport_transition: self.last_transport_transition,
             last_transport_transition_processing_epoch: self

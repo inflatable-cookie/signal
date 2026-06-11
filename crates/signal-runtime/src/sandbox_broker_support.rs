@@ -13,10 +13,8 @@ use std::{
 use signal_plugin::PluginIoLayout;
 
 use crate::{
-    BrokerFailureStage, BrokerInvalidationStage, CompletionSlotStage,
-    PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage, PluginSandboxSpec,
-    PluginSandboxTransportStage, RecoveryRestartIntent, RuntimeError, RuntimeErrorKind,
-    RuntimeLv2PreparedNegotiationRecord, SignalRuntime, StopReason,
+    BrokerFailureStage, PluginSandboxInstanceStateRecord, PluginSandboxLifecycleStage,
+    PluginSandboxSpec, PluginSandboxTransportStage, RuntimeError, RuntimeErrorKind, SignalRuntime,
 };
 
 /// Record of a successfully attached sandbox broker session.
@@ -39,7 +37,7 @@ pub struct SandboxBrokerAttachedSession {
 /// Broker receipt `state=` token, parsed into a typed value.
 ///
 /// The wire format is unchanged: states travel as plain tokens
-/// (`starting`, `ready`, `attached`, `running`, `crashed`,
+/// (`starting`, `ready`, `attached`, `running`, `crashed`, `timed_out`,
 /// `teardown_complete`). Unknown tokens are preserved in [`Self::Other`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SandboxBrokerReceiptState {
@@ -53,6 +51,8 @@ pub enum SandboxBrokerReceiptState {
     Running,
     /// The brokered sandbox crashed.
     Crashed,
+    /// A bounded deadline-miss (timeout) path was exercised.
+    TimedOut,
     /// A teardown sequence completed.
     TeardownComplete,
     /// Any state token this client does not recognise.
@@ -67,6 +67,7 @@ impl SandboxBrokerReceiptState {
             "attached" => Self::Attached,
             "running" => Self::Running,
             "crashed" => Self::Crashed,
+            "timed_out" => Self::TimedOut,
             "teardown_complete" => Self::TeardownComplete,
             other => Self::Other(other.to_string()),
         }
@@ -81,6 +82,7 @@ impl std::fmt::Display for SandboxBrokerReceiptState {
             Self::Attached => "attached",
             Self::Running => "running",
             Self::Crashed => "crashed",
+            Self::TimedOut => "timed_out",
             Self::TeardownComplete => "teardown_complete",
             Self::Other(other) => other.as_str(),
         };
@@ -144,19 +146,6 @@ pub struct SandboxBrokerClientSession {
     failed: bool,
 }
 
-/// Plugin format served by a sandbox broker.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SandboxBrokerFlavor {
-    /// Demo plugin sandbox broker.
-    Demo,
-    /// Audio Unit (AU) plugin sandbox broker.
-    Au,
-    /// LV2 plugin sandbox broker.
-    Lv2,
-    /// VST3 plugin sandbox broker.
-    Vst3,
-}
-
 /// Environment variable overrides for spawning a sandbox broker process.
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct SandboxBrokerSpawnConfig {
@@ -175,8 +164,6 @@ pub struct SandboxBrokerSession {
     pub client: SandboxBrokerClientSession,
     /// Attached session record returned by the broker.
     pub attached: SandboxBrokerAttachedSession,
-    /// Plugin format served by this broker session.
-    pub flavor: SandboxBrokerFlavor,
     /// Summary from the broker prepare phase, if completed.
     pub prepared_summary: Option<String>,
     /// Summary from the broker teardown phase, if completed.
@@ -217,8 +204,6 @@ pub struct PreparedSandboxSessionRecord {
     pub lease_id: String,
     /// Shared-memory region identifier for this session.
     pub region_id: String,
-    /// LV2-specific prepared negotiation record, if applicable.
-    pub lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
     /// Human-readable summary of the prepared session, if available.
     pub summary: Option<String>,
 }
@@ -232,12 +217,8 @@ pub struct PreparedBrokerSandboxSpec {
     pub default_io_layout: PluginIoLayout,
     /// Fallback instance identifier used if the broker does not assign one.
     pub fallback_instance_id: String,
-    /// Plugin format served by this broker.
-    pub flavor: SandboxBrokerFlavor,
     /// Environment configuration for spawning the broker process.
     pub spawn_config: SandboxBrokerSpawnConfig,
-    /// LV2-specific prepared negotiation record, if applicable.
-    pub lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
 }
 
 impl SandboxBrokerClientSession {
@@ -414,14 +395,13 @@ impl SandboxBrokerClientSession {
         Ok(())
     }
 
-    /// Sends an attach command for the given plugin flavor and reads the attached session receipt.
+    /// Sends the attach command and reads the attached session receipt.
     pub fn attach(
         &mut self,
-        flavor: SandboxBrokerFlavor,
         fallback_sandbox_id: &str,
         fallback_instance_id: &str,
     ) -> std::io::Result<SandboxBrokerAttachedSession> {
-        self.write_command(attach_command_for(flavor))?;
+        self.write_command("attach")?;
         let attached = self.read_receipt()?;
         if attached.state != SandboxBrokerReceiptState::Attached {
             return Err(std::io::Error::other(format!(
@@ -446,12 +426,9 @@ impl SandboxBrokerClientSession {
         })
     }
 
-    /// Sends a teardown command and returns the teardown receipt.
-    pub fn request_teardown(
-        &mut self,
-        flavor: SandboxBrokerFlavor,
-    ) -> std::io::Result<SandboxBrokerTeardownReceipt> {
-        self.write_command(teardown_command_for(flavor))?;
+    /// Sends the teardown command and returns the teardown receipt.
+    pub fn request_teardown(&mut self) -> std::io::Result<SandboxBrokerTeardownReceipt> {
+        self.write_command("teardown")?;
         let teardown = self.read_receipt()?;
         Ok(SandboxBrokerTeardownReceipt {
             state: teardown.state,
@@ -463,11 +440,10 @@ impl SandboxBrokerClientSession {
         })
     }
 
-    /// Sends a `stream-vst3` command and collects the execution stream until the broker re-attaches.
-    pub fn request_vst3_execution_stream(
-        &mut self,
-    ) -> std::io::Result<SandboxBrokerExecutionSummary> {
-        self.write_command("stream-vst3")?;
+    /// Sends the `run` command and collects the shared-memory block exercise
+    /// stream until the broker re-attaches.
+    pub fn request_execution_stream(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
+        self.write_command("run")?;
         let mut processed_blocks = 0usize;
 
         loop {
@@ -498,78 +474,31 @@ impl SandboxBrokerClientSession {
         }
     }
 
-    /// Sends a `refresh-vst3` command and reads the resulting receipt.
-    pub fn request_vst3_refresh(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
-        self.write_command("refresh-vst3")?;
-        let receipt = self.read_receipt()?;
-        match receipt.state {
-            SandboxBrokerReceiptState::Attached => Ok(SandboxBrokerExecutionSummary {
-                processed_blocks: 0,
-                detail: receipt.detail,
-            }),
-            SandboxBrokerReceiptState::Crashed => Err(std::io::Error::other(format!(
-                "sandbox broker refresh crashed: {}",
-                receipt.detail
-            ))),
-            other => Err(std::io::Error::other(format!(
-                "unexpected broker refresh state: {} ({})",
-                other, receipt.detail
-            ))),
+    /// Sends the `run-timeout` command, which exercises the broker's bounded
+    /// deadline-miss path: a `timed_out` receipt followed by re-attachment.
+    pub fn request_timeout_probe(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
+        self.write_command("run-timeout")?;
+        let timed_out = self.read_receipt()?;
+        if timed_out.state != SandboxBrokerReceiptState::TimedOut {
+            return Err(std::io::Error::other(format!(
+                "unexpected broker timeout state: {} ({})",
+                timed_out.state, timed_out.detail
+            )));
         }
-    }
-
-    /// Sends a `timeout-vst3` command and reads the resulting receipt.
-    pub fn request_vst3_timeout(&mut self) -> std::io::Result<SandboxBrokerExecutionSummary> {
-        self.write_command("timeout-vst3")?;
-        let receipt = self.read_receipt()?;
-        match receipt.state {
+        let reattached = self.read_receipt()?;
+        match reattached.state {
             SandboxBrokerReceiptState::Attached => Ok(SandboxBrokerExecutionSummary {
                 processed_blocks: 0,
-                detail: receipt.detail,
+                detail: format!("{} | {}", timed_out.detail, reattached.detail),
             }),
             SandboxBrokerReceiptState::Crashed => Err(std::io::Error::other(format!(
                 "sandbox broker timeout path crashed: {}",
-                receipt.detail
+                reattached.detail
             ))),
             other => Err(std::io::Error::other(format!(
                 "unexpected broker timeout state: {} ({})",
-                other, receipt.detail
+                other, reattached.detail
             ))),
-        }
-    }
-
-    /// Sends a `stream-lv2` command and collects the execution stream until the broker re-attaches.
-    pub fn request_lv2_execution_stream(
-        &mut self,
-    ) -> std::io::Result<SandboxBrokerExecutionSummary> {
-        self.write_command("stream-lv2")?;
-        let mut processed_blocks = 0usize;
-
-        loop {
-            let receipt = self.read_receipt()?;
-            match receipt.state {
-                SandboxBrokerReceiptState::Running => {
-                    processed_blocks += 1;
-                }
-                SandboxBrokerReceiptState::Attached => {
-                    return Ok(SandboxBrokerExecutionSummary {
-                        processed_blocks,
-                        detail: receipt.detail,
-                    });
-                }
-                SandboxBrokerReceiptState::Crashed => {
-                    return Err(std::io::Error::other(format!(
-                        "sandbox broker lv2 execution stream crashed: {}",
-                        receipt.detail
-                    )));
-                }
-                other => {
-                    return Err(std::io::Error::other(format!(
-                        "unexpected broker lv2 execution stream state: {} ({})",
-                        other, receipt.detail
-                    )));
-                }
-            }
         }
     }
 
@@ -633,24 +562,6 @@ impl SandboxBrokerClientSession {
     }
 }
 
-fn attach_command_for(flavor: SandboxBrokerFlavor) -> &'static str {
-    match flavor {
-        SandboxBrokerFlavor::Demo => "attach-demo",
-        SandboxBrokerFlavor::Au => "attach-au",
-        SandboxBrokerFlavor::Lv2 => "attach-lv2",
-        SandboxBrokerFlavor::Vst3 => "attach-vst3",
-    }
-}
-
-fn teardown_command_for(flavor: SandboxBrokerFlavor) -> &'static str {
-    match flavor {
-        SandboxBrokerFlavor::Demo => "teardown-demo",
-        SandboxBrokerFlavor::Au => "teardown-au",
-        SandboxBrokerFlavor::Lv2 => "teardown-lv2",
-        SandboxBrokerFlavor::Vst3 => "teardown-vst3",
-    }
-}
-
 /// Records lifecycle events and instance state for a successfully prepared broker sandbox.
 pub fn record_broker_sandbox_prepared(
     runtime: &mut SignalRuntime,
@@ -694,12 +605,6 @@ pub fn record_broker_sandbox_prepared(
         midi_outputs: Some(record.midi_outputs),
         last_fault: None,
     });
-    if let Some(negotiation) = record.lv2_prepared_negotiation {
-        runtime.record_plugin_sandbox_lv2_prepared_negotiation(
-            request.sandbox_id.as_str(),
-            negotiation,
-        );
-    }
     runtime.record_plugin_sandbox_lifecycle(
         request.sandbox_id.as_str(),
         PluginSandboxLifecycleStage::TransportAttached,
@@ -722,16 +627,14 @@ pub fn ensure_broker_sandbox_session(
     plugin_type_id: &str,
     default_io_layout: PluginIoLayout,
     fallback_instance_id: &str,
-    flavor: SandboxBrokerFlavor,
     spawn_config: SandboxBrokerSpawnConfig,
     prepared_summary: Option<String>,
     teardown_summary: Option<String>,
-    lv2_prepared_negotiation: Option<RuntimeLv2PreparedNegotiationRecord>,
 ) -> Result<SandboxBrokerSession, RuntimeError> {
     let mut client = SandboxBrokerClientSession::spawn_from_env(&spawn_config)?;
     client.read_startup_receipts()?;
     let attached = client
-        .attach(flavor, request.sandbox_id.as_str(), fallback_instance_id)
+        .attach(request.sandbox_id.as_str(), fallback_instance_id)
         .map_err(|error| {
             record_broker_failure_and_convert(
                 runtime,
@@ -759,7 +662,6 @@ pub fn ensure_broker_sandbox_session(
             processing_epoch: Some(attached.processing_epoch),
             lease_id: attached.lease_id.clone(),
             region_id: attached.region_id.clone(),
-            lv2_prepared_negotiation,
             summary: Some(match &prepared_summary {
                 Some(summary) => format!("broker:{} | {}", attached.detail, summary),
                 None => format!("broker:{}", attached.detail),
@@ -770,7 +672,6 @@ pub fn ensure_broker_sandbox_session(
     Ok(SandboxBrokerSession {
         client,
         attached,
-        flavor,
         prepared_summary,
         teardown_summary,
     })
@@ -804,11 +705,9 @@ where
             broker_spec.plugin_type_id.as_str(),
             broker_spec.default_io_layout,
             broker_spec.fallback_instance_id.as_str(),
-            broker_spec.flavor,
             broker_spec.spawn_config,
             prepared_summary,
             teardown_summary,
-            broker_spec.lv2_prepared_negotiation,
         )?;
         after_broker_attach(runtime, request, &mut broker_session)?;
         Ok(Some(broker_session))
@@ -889,358 +788,6 @@ pub fn record_broker_attached_execution_summary(
     });
 }
 
-/// Runs the full VST3 broker execution sequence: two streams, a refresh, a refreshed stream, and a timeout.
-pub fn run_vst3_broker_execution_sequence(
-    runtime: &mut SignalRuntime,
-    request: &PluginSandboxSpec,
-    session: &mut SandboxBrokerSession,
-) -> Result<(), RuntimeError> {
-    let first_execution = session
-        .client
-        .request_vst3_execution_stream()
-        .map_err(|error| {
-            record_broker_failure_and_convert(
-                runtime,
-                request.sandbox_id.as_str(),
-                Some(session.attached.lease_id.clone()),
-                Some(session.attached.processing_epoch),
-                None,
-                BrokerFailureStage::PreparePlanCreate,
-                error,
-            )
-        })?;
-    let second_execution = session
-        .client
-        .request_vst3_execution_stream()
-        .map_err(|error| {
-            record_broker_failure_and_convert(
-                runtime,
-                request.sandbox_id.as_str(),
-                Some(session.attached.lease_id.clone()),
-                Some(session.attached.processing_epoch),
-                None,
-                BrokerFailureStage::PreparePlanCreate,
-                error,
-            )
-        })?;
-    let refresh = session.client.request_vst3_refresh().map_err(|error| {
-        record_broker_failure_and_convert(
-            runtime,
-            request.sandbox_id.as_str(),
-            Some(session.attached.lease_id.clone()),
-            Some(session.attached.processing_epoch),
-            None,
-            BrokerFailureStage::PreparePlanCreate,
-            error,
-        )
-    })?;
-    let refreshed_execution = session
-        .client
-        .request_vst3_execution_stream()
-        .map_err(|error| {
-            record_broker_failure_and_convert(
-                runtime,
-                request.sandbox_id.as_str(),
-                Some(session.attached.lease_id.clone()),
-                Some(session.attached.processing_epoch),
-                None,
-                BrokerFailureStage::PreparePlanCreate,
-                error,
-            )
-        })?;
-    let timeout = session.client.request_vst3_timeout().map_err(|error| {
-        record_broker_failure_and_convert(
-            runtime,
-            request.sandbox_id.as_str(),
-            Some(session.attached.lease_id.clone()),
-            Some(session.attached.processing_epoch),
-            None,
-            BrokerFailureStage::PreparePlanCreate,
-            error,
-        )
-    })?;
-    record_broker_attached_execution_summary(
-        runtime,
-        request,
-        session,
-        format!(
-            "broker:{} | broker:{} | broker:{} | broker:{} | broker:{}",
-            first_execution.detail,
-            second_execution.detail,
-            refresh.detail,
-            refreshed_execution.detail,
-            timeout.detail
-        ),
-    );
-    Ok(())
-}
-
-/// Marks the start of a recovery overlap by setting the active sandbox count to two.
-pub fn begin_recovery_overlap(runtime: &mut SignalRuntime) {
-    runtime.set_active_plugin_sandboxes(2);
-}
-
-/// Completes a recovery overlap restart by resetting the sandbox count and optionally promoting the new transport session.
-pub fn complete_recovery_overlap_restart(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: Option<&str>,
-    region_id: Option<&str>,
-) {
-    runtime.set_active_plugin_sandboxes(1);
-    if let (Some(lease_id), Some(region_id)) = (lease_id, region_id) {
-        runtime.promote_transport_session_to_steady_state(sandbox_id, lease_id, region_id);
-    }
-}
-
-/// Rolls back a recovery overlap by setting the active sandbox count to zero.
-pub fn rollback_recovery_overlap(runtime: &mut SignalRuntime) {
-    runtime.set_active_plugin_sandboxes(0);
-}
-
-/// Records a recovery cycle and emits broker invalidation events for any invalidated completion or lease slots.
-pub fn begin_brokered_recovery_cycle<InvalidateFn>(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: &str,
-    processing_epoch: u64,
-    last_block_sequence: u64,
-    intent: RecoveryRestartIntent,
-    mut invalidate_active_epoch: InvalidateFn,
-) where
-    InvalidateFn: FnMut(u64) -> (bool, bool),
-{
-    runtime.record_recovery_cycle(
-        sandbox_id,
-        intent,
-        StopReason::DegradedModeRecovery,
-        Some(processing_epoch),
-    );
-    let (completion_invalidated, lease_invalidated) = invalidate_active_epoch(processing_epoch);
-    let recovery_reason = match intent {
-        RecoveryRestartIntent::CrashRecovery => "crash recovery teardown",
-        RecoveryRestartIntent::WatchdogRecovery => "watchdog recovery teardown",
-    };
-    if completion_invalidated {
-        runtime.record_completion_slot_transition(
-            sandbox_id,
-            lease_id,
-            processing_epoch,
-            last_block_sequence,
-            CompletionSlotStage::Invalidated,
-        );
-        runtime.record_broker_invalidation(
-            sandbox_id,
-            lease_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            BrokerInvalidationStage::CompletionRegionInvalidated,
-            recovery_reason,
-        );
-    }
-    if lease_invalidated {
-        runtime.record_broker_invalidation(
-            sandbox_id,
-            lease_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            BrokerInvalidationStage::LeaseEpochInvalidated,
-            recovery_reason,
-        );
-    }
-}
-
-/// Returns an error if the overlap was requested but the competing attach unexpectedly succeeded.
-pub fn handle_overlap_prepare_contention(
-    requested: bool,
-    competing_attach_result: Result<(), RuntimeError>,
-) -> Result<(), RuntimeError> {
-    if !requested {
-        return Ok(());
-    }
-
-    Err(match competing_attach_result {
-        Ok(()) => RuntimeError::new(
-            RuntimeErrorKind::ResourceUnavailable,
-            "expected overlapping replacement attach contention",
-        ),
-        Err(error) => error,
-    })
-}
-
-/// Commits a recovery overlap restart or rolls back on failure, propagating the first error encountered.
-pub fn complete_recovery_overlap_restart_or_rollback(
-    restart_result: Result<(), RuntimeError>,
-    inject_replacement_start_failure: bool,
-    start_result: Option<Result<(), RuntimeError>>,
-) -> Result<(), RuntimeError> {
-    if let Err(error) = restart_result {
-        return Err(error);
-    }
-
-    if inject_replacement_start_failure {
-        return Err(RuntimeError::new(
-            RuntimeErrorKind::ResourceUnavailable,
-            "injected replacement start failure during overlap recovery",
-        ));
-    }
-
-    if let Some(Err(error)) = start_result {
-        return Err(error);
-    }
-    Ok(())
-}
-
-/// Commits a lingering recovery restart, promotes the new transport session, or rolls back on failure.
-pub fn complete_lingering_recovery_restart_or_rollback(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    restart_result: Result<(), RuntimeError>,
-    replacement_transport: Option<(&str, &str)>,
-    start_result: Result<(), RuntimeError>,
-) -> Result<(), RuntimeError> {
-    restart_result?;
-    complete_recovery_overlap_restart(runtime, sandbox_id, None, None);
-
-    let (lease_id, region_id) = replacement_transport.unwrap_or_default();
-    complete_recovery_overlap_restart(
-        runtime,
-        sandbox_id,
-        (!lease_id.is_empty()).then_some(lease_id),
-        (!region_id.is_empty()).then_some(region_id),
-    );
-
-    if let Err(error) = start_result {
-        rollback_recovery_overlap(runtime);
-        return Err(error);
-    }
-
-    Ok(())
-}
-
-/// Outcome of tearing down the old transport session during a recovery overlap.
-pub enum RecoveryOverlapOldTransportTeardownOutcome {
-    /// Teardown succeeded; proceed with the replacement session.
-    Continue,
-    /// Teardown failed; keep the replacement session and roll back the overlap.
-    RollbackKeepReplacement(RuntimeError),
-    /// Teardown failed; clear the overlap and roll back entirely.
-    RollbackClearOverlap(RuntimeError),
-}
-
-/// Processes teardown of the old transport session during a recovery overlap, returning the appropriate outcome.
-pub fn handle_recovery_overlap_old_transport_teardown(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: &str,
-    region_id: &str,
-    processing_epoch: u64,
-    last_block_sequence: u64,
-    deferred_teardown_failure: bool,
-    destroy_result: Result<(), String>,
-    injected_old_transport_teardown_failure: bool,
-    transport_teardown_result: Result<(), String>,
-) -> RecoveryOverlapOldTransportTeardownOutcome {
-    let detail = "recovery overlap old transport teardown";
-    record_broker_transport_detach_requested(
-        runtime,
-        sandbox_id,
-        lease_id,
-        region_id,
-        processing_epoch,
-        detail,
-    );
-
-    if deferred_teardown_failure {
-        let error = std::io::Error::other("deferred old transport teardown during recovery retry");
-        record_broker_transport_detach_failure(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            crate::BrokerFailureStage::TransportTeardown,
-            error.to_string(),
-        );
-        return RecoveryOverlapOldTransportTeardownOutcome::RollbackKeepReplacement(
-            io_runtime_error(error),
-        );
-    }
-
-    if let Err(error) = destroy_result {
-        record_broker_transport_detach_failure(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            crate::BrokerFailureStage::TransportDestroy,
-            error,
-        );
-        runtime.end_transport_session(sandbox_id, lease_id, region_id);
-        return RecoveryOverlapOldTransportTeardownOutcome::RollbackClearOverlap(
-            RuntimeError::new(
-                RuntimeErrorKind::ResourceUnavailable,
-                "failed to destroy recovery overlap old transport region",
-            ),
-        );
-    }
-
-    if injected_old_transport_teardown_failure {
-        let error = std::io::Error::other(
-            "injected old transport teardown failure during overlap recovery",
-        );
-        record_broker_transport_detach_failure(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            crate::BrokerFailureStage::TransportTeardown,
-            error.to_string(),
-        );
-        runtime.end_transport_session(sandbox_id, lease_id, region_id);
-        return RecoveryOverlapOldTransportTeardownOutcome::RollbackClearOverlap(io_runtime_error(
-            error,
-        ));
-    }
-
-    if let Err(error) = transport_teardown_result {
-        record_broker_transport_detach_failure(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            crate::BrokerFailureStage::TransportTeardown,
-            error,
-        );
-        runtime.end_transport_session(sandbox_id, lease_id, region_id);
-        return RecoveryOverlapOldTransportTeardownOutcome::RollbackClearOverlap(
-            RuntimeError::new(
-                RuntimeErrorKind::ResourceUnavailable,
-                "failed to tear down recovery overlap old transport",
-            ),
-        );
-    }
-
-    record_broker_sandbox_detached(
-        runtime,
-        sandbox_id,
-        lease_id,
-        region_id,
-        processing_epoch,
-        detail,
-        false,
-    );
-    runtime.end_transport_session(sandbox_id, lease_id, region_id);
-    RecoveryOverlapOldTransportTeardownOutcome::Continue
-}
-
 /// Records a transport `DetachRequested` stage event for the given sandbox session.
 pub fn record_broker_transport_detach_requested(
     runtime: &mut SignalRuntime,
@@ -1257,55 +804,6 @@ pub fn record_broker_transport_detach_requested(
         PluginSandboxTransportStage::DetachRequested,
         Some(processing_epoch),
         Some(detail.into()),
-    );
-}
-
-/// Records a transport `DetachFault` stage event for the given sandbox session.
-pub fn record_broker_transport_detach_fault(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: &str,
-    region_id: &str,
-    processing_epoch: u64,
-    detail: impl Into<String>,
-) {
-    runtime.record_plugin_sandbox_transport(
-        sandbox_id,
-        lease_id,
-        region_id,
-        PluginSandboxTransportStage::DetachFault,
-        Some(processing_epoch),
-        Some(detail.into()),
-    );
-}
-
-/// Records a broker failure and the resulting transport detach fault for the given sandbox session.
-pub fn record_broker_transport_detach_failure(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: &str,
-    region_id: &str,
-    processing_epoch: u64,
-    last_block_sequence: Option<u64>,
-    stage: crate::BrokerFailureStage,
-    detail: impl Into<String>,
-) {
-    let detail = detail.into();
-    runtime.record_broker_failure(
-        sandbox_id,
-        Some(lease_id.to_string()),
-        Some(processing_epoch),
-        last_block_sequence,
-        stage,
-        detail.clone(),
-    );
-    record_broker_transport_detach_fault(
-        runtime,
-        sandbox_id,
-        lease_id,
-        region_id,
-        processing_epoch,
-        detail,
     );
 }
 
@@ -1341,28 +839,6 @@ pub fn record_broker_sandbox_detached(
     }
 }
 
-/// Records broker detach events and ends the transport session for the given sandbox.
-pub fn complete_broker_transport_detach(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: &str,
-    region_id: &str,
-    processing_epoch: u64,
-    detail: impl Into<String>,
-    record_instance_destroyed: bool,
-) {
-    record_broker_sandbox_detached(
-        runtime,
-        sandbox_id,
-        lease_id,
-        region_id,
-        processing_epoch,
-        detail,
-        record_instance_destroyed,
-    );
-    runtime.end_transport_session(sandbox_id, lease_id, region_id);
-}
-
 /// Requests teardown from the broker process, records the detach events, and shuts down the child.
 pub fn teardown_broker_sandbox_session(
     runtime: &mut SignalRuntime,
@@ -1380,7 +856,7 @@ pub fn teardown_broker_sandbox_session(
 
     let teardown_receipt = session
         .client
-        .request_teardown(session.flavor)
+        .request_teardown()
         .map_err(|error| {
             record_broker_failure_and_convert(
                 runtime,
@@ -1433,70 +909,6 @@ pub fn teardown_broker_sandbox_session(
         )
     })?;
     Ok(())
-}
-
-/// Finalises a brokered recovery transport detach, recording failures or completing cleanly as appropriate.
-pub fn finalize_brokered_recovery_transport_detach(
-    runtime: &mut SignalRuntime,
-    sandbox_id: &str,
-    lease_id: &str,
-    region_id: &str,
-    processing_epoch: u64,
-    last_block_sequence: u64,
-    detail: &str,
-    record_instance_destroyed: bool,
-    destroy_error: Option<String>,
-    teardown_error: Option<String>,
-) {
-    record_broker_transport_detach_requested(
-        runtime,
-        sandbox_id,
-        lease_id,
-        region_id,
-        processing_epoch,
-        detail,
-    );
-
-    let destroy_failed = destroy_error.is_some();
-    let teardown_failed = teardown_error.is_some();
-
-    if let Some(error) = destroy_error {
-        record_broker_transport_detach_failure(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            crate::BrokerFailureStage::TransportDestroy,
-            error,
-        );
-    }
-
-    if let Some(error) = teardown_error {
-        record_broker_transport_detach_failure(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            Some(last_block_sequence),
-            crate::BrokerFailureStage::TransportTeardown,
-            error,
-        );
-    }
-
-    if !destroy_failed && !teardown_failed {
-        complete_broker_transport_detach(
-            runtime,
-            sandbox_id,
-            lease_id,
-            region_id,
-            processing_epoch,
-            detail,
-            record_instance_destroyed,
-        );
-    }
 }
 
 /// Splits `SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS` with shell-style quoting.

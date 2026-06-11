@@ -53,35 +53,6 @@ impl SignalRuntime {
         }
     }
 
-    /// Records a parameter automation summary for the given epoch and lease.
-    pub fn record_automation_summary(
-        &mut self,
-        processing_epoch: u64,
-        lease_id: impl Into<String>,
-        summary: ParameterAutomationSummary,
-    ) {
-        self.automation
-            .record_summary(processing_epoch, lease_id, summary);
-    }
-
-    /// Records a plugin event packet summary for the given epoch, lease, and block sequence.
-    pub fn record_plugin_event_summary(
-        &mut self,
-        processing_epoch: u64,
-        lease_id: impl Into<String>,
-        block_sequence: u64,
-        generated_event_bytes: u32,
-        summary: EventPacketSummary,
-    ) {
-        self.plugin_events.record_summary(
-            processing_epoch,
-            lease_id,
-            block_sequence,
-            generated_event_bytes,
-            summary,
-        );
-    }
-
     pub(crate) fn current_graph_parameter_batch(
         &self,
         context: &GraphExecutionContext,

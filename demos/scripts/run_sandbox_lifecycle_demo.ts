@@ -8,9 +8,9 @@ import {
 import { renderOperatorView } from "./lib/operator-view.ts";
 
 const BROKER_RUNS: Array<[string, string[]]> = [
-  ["attach_status_teardown", ["status", "attach-demo", "status", "teardown-demo", "shutdown"]],
-  ["healthy_run", ["run-demo", "shutdown"]],
-  ["timeout_run", ["run-timeout-demo", "shutdown"]],
+  ["attach_status_teardown", ["status", "attach", "status", "teardown", "shutdown"]],
+  ["healthy_run", ["attach", "run", "teardown", "shutdown"]],
+  ["timeout_run", ["attach", "run-timeout", "teardown", "shutdown"]],
 ];
 
 const manifest = readJson<Record<string, any>>(
@@ -80,7 +80,7 @@ const operatorChecks = [
     id: "operator.sandbox-lifecycle.timeout-path",
     status:
       transcriptContains("timeout_run", "state=timed_out") &&
-      transcriptContains("timeout_run", "detail=lease_cleanup_ok_after_timeout")
+      transcriptContains("timeout_run", "detail=lease_cleanup_ok")
         ? "passed"
         : "failed",
     summary:
@@ -201,7 +201,7 @@ writeText(
           ],
           [
             "Timeout cleanup detail",
-            transcriptContains("timeout_run", "detail=lease_cleanup_ok_after_timeout")
+            transcriptContains("timeout_run", "detail=lease_cleanup_ok")
               ? "yes"
               : "no",
           ],

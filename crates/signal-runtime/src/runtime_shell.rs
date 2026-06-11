@@ -46,7 +46,6 @@ impl SignalRuntime {
             control: RuntimeControlSnapshot::default(),
             timeline: RuntimeTimelineState::default(),
             automation: RuntimeAutomationState::default(),
-            plugin_events: RuntimePluginEventState::default(),
             engine: RuntimeEngineState::default(),
             transport_concurrency: RuntimeTransportConcurrencyState::default(),
             plugin_discovery: RuntimePluginDiscoveryStateModel::default(),
@@ -175,7 +174,6 @@ impl SignalRuntime {
 
     /// Resets all plugin event tracking state.
     pub fn reset_plugin_event_tracking(&mut self) {
-        self.plugin_events.reset();
     }
 
     /// Processes one engine block and returns the block result including graph output.

@@ -148,62 +148,6 @@ impl LocalHardwareBackend {
         })
     }
 
-    /// Transition health back to `Healthy` (or `Degraded` if no default output
-    /// device is present) after a recovery sequence.
-    pub(crate) fn mark_recovered(&mut self) {
-        self.diagnostics.health = if self.default_output_device().is_some() {
-            BackendHealth::Healthy
-        } else {
-            BackendHealth::Degraded
-        };
-    }
-
-    /// Inject a simulated device-loss event. Records a
-    /// `DeviceDisconnected` event and sets health to `Degraded`.
-    pub(crate) fn simulate_device_loss(&mut self, detail: impl Into<String>) {
-        let device_id = self.default_output_device().map(|device| device.device_id);
-        self.diagnostics.health = BackendHealth::Degraded;
-        self.diagnostics.device_loss_count = self.diagnostics.device_loss_count.saturating_add(1);
-        self.diagnostics.last_event = Some(HardwareDiagnosticEvent {
-            kind: HardwareDiagnosticKind::DeviceDisconnected,
-            severity: HardwareDiagnosticSeverity::Critical,
-            device_id,
-            callback_index: None,
-            detail: detail.into(),
-        });
-    }
-
-    /// Inject a simulated restart-attempt event. Records a `RestartAttempted`
-    /// event and sets health to `Recovering`.
-    pub(crate) fn simulate_restart_attempt(&mut self, detail: impl Into<String>) {
-        let device_id = self.default_output_device().map(|device| device.device_id);
-        self.diagnostics.health = BackendHealth::Recovering;
-        self.diagnostics.restart_attempt_count =
-            self.diagnostics.restart_attempt_count.saturating_add(1);
-        self.diagnostics.last_event = Some(HardwareDiagnosticEvent {
-            kind: HardwareDiagnosticKind::RestartAttempted,
-            severity: HardwareDiagnosticSeverity::Info,
-            device_id,
-            callback_index: None,
-            detail: detail.into(),
-        });
-    }
-
-    /// Inject a simulated restart-failure event. Records a `RestartFailed`
-    /// event and sets health to `Degraded`.
-    pub(crate) fn simulate_restart_failure(&mut self, detail: impl Into<String>) {
-        let device_id = self.default_output_device().map(|device| device.device_id);
-        self.diagnostics.health = BackendHealth::Degraded;
-        self.diagnostics.restart_failure_count =
-            self.diagnostics.restart_failure_count.saturating_add(1);
-        self.diagnostics.last_event = Some(HardwareDiagnosticEvent {
-            kind: HardwareDiagnosticKind::RestartFailed,
-            severity: HardwareDiagnosticSeverity::Critical,
-            device_id,
-            callback_index: None,
-            detail: detail.into(),
-        });
-    }
 }
 
 struct LocalHardwareInventory {

@@ -2,7 +2,6 @@ use super::*;
 use crate::lv2_host_adapter::introspection::{
     discovered_plugin_from_manifest, parse_lv2_manifest, unsupported_required_features,
 };
-use crate::lv2_host_adapter::scaffold::lv2_scaffold_discovered_plugin_type;
 use std::{env, fs, path::PathBuf};
 
 impl Lv2HostAdapter {
@@ -29,11 +28,6 @@ impl Lv2HostAdapter {
         }
     }
 
-    /// Looks up a scaffold-registered LV2 plugin type by its type ID.
-    pub fn discover_plugin_type(&self, plugin_type_id: &str) -> Option<Lv2DiscoveredPluginType> {
-        lv2_scaffold_discovered_plugin_type(plugin_type_id)
-    }
-
     /// Scans the given filesystem roots for LV2 bundles and returns all successfully discovered plugin types.
     pub fn discover_plugins_for_roots(
         &self,
@@ -44,20 +38,13 @@ impl Lv2HostAdapter {
             .discovered
     }
 
-    /// Scans the given roots and returns a [`Lv2DiscoveryBatch`] containing both discovered plugins and any per-bundle diagnostics.
+    /// Scans the given roots and returns a [`Lv2DiscoveryBatch`] containing both discovered plugins and any per-bundle diagnostics. An empty root list scans nothing — system plugin directories are never scanned implicitly.
     pub fn discover_plugins_for_roots_with_diagnostics(
         &self,
         platform: Lv2HostPlatform,
         roots: &[String],
     ) -> Lv2DiscoveryBatch {
-        let roots = if roots.is_empty() {
-            self.default_scan_roots(platform)
-                .into_iter()
-                .map(|root| root.root)
-                .collect::<Vec<_>>()
-        } else {
-            roots.to_vec()
-        };
+        let _ = platform;
         let mut batch = Lv2DiscoveryBatch::default();
         for root in roots {
             let expanded_root = expand_scan_root(&root);

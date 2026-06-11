@@ -50,20 +50,15 @@ impl Vst3HostAdapter {
         }
     }
 
-    /// Scans the given filesystem roots for VST3 bundle directories and returns all discovered plugin types.
+    /// Scans the given filesystem roots for VST3 bundle directories and
+    /// returns all discovered plugin types. An empty root list scans
+    /// nothing — system plugin directories are never scanned implicitly;
+    /// pass [`Vst3HostAdapter::default_scan_roots`] explicitly to opt in.
     pub fn discover_plugins_for_roots(
         &self,
         platform: Vst3HostPlatform,
         roots: &[String],
     ) -> Vec<Vst3DiscoveredPluginType> {
-        let roots = if roots.is_empty() {
-            self.default_scan_roots(platform)
-                .into_iter()
-                .map(|root| root.root)
-                .collect::<Vec<_>>()
-        } else {
-            roots.to_vec()
-        };
         let mut discovered = Vec::new();
         for root in roots {
             let expanded_root = expand_scan_root(&root);

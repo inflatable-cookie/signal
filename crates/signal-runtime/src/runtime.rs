@@ -35,8 +35,6 @@ mod runtime_observation_surface;
 mod runtime_offline_render_session;
 #[path = "runtime_planning_snapshot.rs"]
 mod runtime_planning_snapshot;
-#[path = "runtime_plugin_event_state.rs"]
-mod runtime_plugin_event_state;
 #[path = "runtime_plugin_lifecycle.rs"]
 mod runtime_plugin_lifecycle;
 #[path = "runtime_plugin_recording.rs"]
@@ -92,8 +90,7 @@ use crate::interfaces::{
     RuntimeClipProcessingReadiness, RuntimeClipProcessingRegistration,
     RuntimeClipProcessingSnapshot, RuntimeClipProcessingStage, RuntimeClipRenderInputStage,
     RuntimeClipRenderRequest, RuntimeClipRenderResult, RuntimeConfigRequest,
-    RuntimeControlSnapshot, RuntimeControllerExpressionMidi2Posture,
-    RuntimeControllerExpressionMpePosture, RuntimeDeferredServiceBackpressureSource,
+    RuntimeControlSnapshot, RuntimeDeferredServiceBackpressureSource,
     RuntimeDeferredServiceCancellationCause, RuntimeDeferredServiceClass,
     RuntimeDeferredServiceDecision, RuntimeDeferredServicePriorityBand,
     RuntimeDeferredServiceReason, RuntimeDeferredServiceReceipt, RuntimeDiagnosticsSnapshot,
@@ -125,7 +122,7 @@ use crate::interfaces::{
     RuntimePluginCapabilityCoverageSummary, RuntimePluginChainSnapshot,
     RuntimePluginChainStageSnapshot, RuntimePluginCompensationState,
     RuntimePluginDiscoveredTypeRecord, RuntimePluginDiscoverySnapshot, RuntimePluginDispatchState,
-    RuntimePluginEventSnapshot, RuntimePluginExecutionChainSummary,
+    RuntimePluginExecutionChainSummary,
     RuntimePluginFormatCoverageRecord, RuntimePluginFormatParityRecord,
     RuntimePluginFormatPlatformCoverageRecord, RuntimePluginHostPlatform,
     RuntimePluginInterchangeSnapshot, RuntimePluginIsolationOutcome,
@@ -186,7 +183,6 @@ pub(crate) use runtime_media_state::{
     RuntimeMeterContractMetadata, RuntimeMeteringStateModel,
 };
 use runtime_offline_render_session::RuntimeOfflineRenderExecutionSession;
-use runtime_plugin_event_state::RuntimePluginEventState;
 use runtime_plugin_lifecycle::{
     runtime_plugin_boundary_counts, runtime_plugin_stage_assignment,
     RuntimePluginLifecycleStateModel,
@@ -217,10 +213,7 @@ use signal_graph::{
     GraphPreparedDispatch,
 };
 use signal_hardware::{BackendPolicyTier, HardwareConfigRequest};
-use signal_plugin::{
-    AutomationContinuityReport, BlockSequenceContinuityReport, EventPacketContinuityReport,
-    EventPacketSummary, ParameterAutomationSummary, PluginFeature, PluginFormat,
-};
+use signal_plugin::{PluginFeature, PluginFormat};
 use signal_primitives::{AudioBuffer, ChannelLayout, FrameCount, SampleRate};
 
 const PREWORK_LATENCY_FOCUSED_THRESHOLD_SAMPLES: u32 = 64;
@@ -260,7 +253,6 @@ pub struct SignalRuntime {
     control: RuntimeControlSnapshot,
     timeline: RuntimeTimelineState,
     automation: RuntimeAutomationState,
-    plugin_events: RuntimePluginEventState,
     engine: RuntimeEngineState,
     transport_concurrency: RuntimeTransportConcurrencyState,
     plugin_discovery: RuntimePluginDiscoveryStateModel,

@@ -11,28 +11,11 @@ fn clap_adapter_reports_supported_format_and_extensions() {
 }
 
 #[test]
-fn clap_adapter_discovers_concrete_plugin_type_metadata() {
-    let adapter = ClapPluginHostAdapter::default();
-    let discovered = adapter
-        .discover_plugin_type("plugin:clap:sandbox")
-        .expect("discovered sandbox plugin");
-
-    assert_eq!(discovered.plugin_type_id.0, "plugin:clap:sandbox");
-    assert_eq!(discovered.descriptor.plugin_id, "plugin:clap:sandbox");
-    assert_eq!(discovered.descriptor.name, "Signal Sandbox CLAP Plugin");
-    assert_eq!(discovered.descriptor.format, PluginFormat::Clap);
-    assert_eq!(discovered.default_io_layout.audio_inputs, 2);
-    assert_eq!(discovered.default_io_layout.audio_outputs, 2);
-    assert_eq!(discovered.default_io_layout.midi_inputs, 1);
-    assert_eq!(discovered.default_io_layout.midi_outputs, 1);
-}
-
-#[test]
-fn clap_adapter_scans_real_clap_libraries_from_roots() {
+fn clap_adapter_descriptor_only_scan_never_instantiates_plugins() {
     let adapter = ClapPluginHostAdapter::default();
     let scan_root = temp_real_clap_scan_root(
-        "com.signal.real-scan-fixture",
-        "Signal Real Scan Fixture",
+        "com.signal.descriptor-scan-fixture",
+        "Signal Descriptor Scan Fixture",
         1,
     );
 
@@ -40,13 +23,54 @@ fn clap_adapter_scans_real_clap_libraries_from_roots() {
 
     assert_eq!(discovered.len(), 1);
     let discovered = &discovered[0];
-    assert_eq!(discovered.plugin_type_id.0, "com.signal.real-scan-fixture");
+    assert_eq!(
+        discovered.plugin_type_id.0,
+        "com.signal.descriptor-scan-fixture"
+    );
     assert_eq!(
         discovered.descriptor.plugin_id,
-        "com.signal.real-scan-fixture"
+        "com.signal.descriptor-scan-fixture"
     );
-    assert_eq!(discovered.descriptor.name, "Signal Real Scan Fixture");
+    assert_eq!(discovered.descriptor.name, "Signal Descriptor Scan Fixture");
     assert_eq!(discovered.descriptor.vendor, "Signal");
+    assert_eq!(discovered.descriptor.version.as_deref(), Some("0.1.0"));
+    assert_eq!(discovered.descriptor.format, PluginFormat::Clap);
+    assert!(!discovered.descriptor.features.is_empty());
+    // Descriptor-only discovery must not create plugin instances, so the
+    // instance-derived shape stays empty/conservative.
+    assert_eq!(discovered.default_io_layout.audio_inputs, 0);
+    assert_eq!(discovered.default_io_layout.audio_outputs, 0);
+    assert_eq!(discovered.default_io_layout.midi_inputs, 0);
+    assert_eq!(discovered.default_io_layout.midi_outputs, 0);
+    assert!(discovered.descriptor.audio_buses.is_empty());
+    assert!(discovered.descriptor.parameters.is_empty());
+    assert!(!discovered.descriptor.state_contract.supports_snapshot);
+    assert!(!discovered.descriptor.state_contract.exposes_latency);
+    assert!(!discovered.descriptor.state_contract.exposes_tail);
+
+    // The catalog only resolves what the scan actually found.
+    assert!(adapter
+        .discover_plugin_type("com.signal.descriptor-scan-fixture")
+        .is_some());
+    assert!(adapter.discover_plugin_type("plugin:clap:default").is_none());
+}
+
+#[test]
+fn clap_adapter_opt_in_capability_probe_reads_full_plugin_shape() {
+    let adapter = ClapPluginHostAdapter::default();
+    let scan_root = temp_real_clap_scan_root(
+        "com.signal.probe-scan-fixture",
+        "Signal Probe Scan Fixture",
+        1,
+    );
+
+    let discovered =
+        adapter.discover_plugins_for_roots_with_options(&[scan_root.root()], true);
+
+    assert_eq!(discovered.len(), 1);
+    let discovered = &discovered[0];
+    assert_eq!(discovered.plugin_type_id.0, "com.signal.probe-scan-fixture");
+    assert_eq!(discovered.descriptor.name, "Signal Probe Scan Fixture");
     assert_eq!(discovered.default_io_layout.audio_inputs, 2);
     assert_eq!(discovered.default_io_layout.audio_outputs, 2);
     assert_eq!(discovered.default_io_layout.midi_inputs, 1);
@@ -56,29 +80,11 @@ fn clap_adapter_scans_real_clap_libraries_from_roots() {
     assert!(discovered.descriptor.state_contract.supports_snapshot);
     assert!(discovered.descriptor.state_contract.exposes_latency);
     assert!(discovered.descriptor.state_contract.exposes_tail);
+    assert!(discovered.descriptor.processing_contract.accepts_midi);
 }
 
 #[test]
-fn clap_protocol_descriptor_projects_plugin_neutral_contract_surface() {
-    let protocol = ClapBlockProtocol::new(
-        "plugin:clap:test",
-        "instance-a",
-        PluginIoLayout {
-            audio_inputs: 2,
-            audio_outputs: 2,
-            midi_inputs: 1,
-            midi_outputs: 1,
-        },
-        2048,
-    );
-
-    let descriptor = protocol.descriptor();
-    assert_eq!(descriptor.plugin_id, "plugin:clap:test");
-    assert_eq!(descriptor.version.as_deref(), Some("0.1.0"));
-    assert_eq!(descriptor.audio_buses.len(), 2);
-    assert_eq!(descriptor.parameters.len(), 2);
-    assert!(descriptor.processing_contract.sample_accurate_automation);
-    assert!(descriptor.processing_contract.accepts_midi);
-    assert!(descriptor.state_contract.supports_snapshot);
-    assert!(descriptor.lifecycle_contract.supports_reset_while_active);
+fn clap_adapter_scans_nothing_for_empty_roots() {
+    let adapter = ClapPluginHostAdapter::default();
+    assert!(adapter.discover_plugins_for_roots(&[]).is_empty());
 }

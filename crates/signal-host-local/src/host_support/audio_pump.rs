@@ -49,10 +49,6 @@ impl LocalAudioPumpState {
         };
     }
 
-    pub(crate) fn stop(&mut self) {
-        self.summary.stream_state = LocalAudioStreamState::Stopped;
-    }
-
     pub(crate) fn fault(&mut self) {
         self.summary.stream_state = LocalAudioStreamState::Faulted;
         self.summary.last_runtime_graph_id = None;

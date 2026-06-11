@@ -64,23 +64,31 @@ impl Default for DiscoveredPluginIoSummary {
     }
 }
 
-pub(crate) fn discover_clap_plugins_for_roots(roots: &[String]) -> Vec<ClapDiscoveredPluginType> {
-    roots.iter().flat_map(|root| scan_clap_root(root)).collect()
+pub(crate) fn discover_clap_plugins_for_roots(
+    roots: &[String],
+    probe_capabilities: bool,
+) -> Vec<ClapDiscoveredPluginType> {
+    roots
+        .iter()
+        .flat_map(|root| scan_clap_root(root, probe_capabilities))
+        .collect()
 }
 
-fn scan_clap_root(root: &str) -> Vec<ClapDiscoveredPluginType> {
+fn scan_clap_root(root: &str, probe_capabilities: bool) -> Vec<ClapDiscoveredPluginType> {
     let root = expand_home(root);
     let Ok(metadata) = std::fs::metadata(&root) else {
         return Vec::new();
     };
 
     if metadata.is_file() {
-        return discover_from_clap_library(&root).unwrap_or_default();
+        return discover_from_clap_library(&root, probe_capabilities).unwrap_or_default();
     }
 
     collect_clap_candidates(&root)
         .into_iter()
-        .flat_map(|candidate| discover_from_clap_library(&candidate).unwrap_or_default())
+        .flat_map(|candidate| {
+            discover_from_clap_library(&candidate, probe_capabilities).unwrap_or_default()
+        })
         .collect()
 }
 
@@ -126,7 +134,10 @@ fn clap_bundle_binary(bundle_root: &Path) -> Option<PathBuf> {
     None
 }
 
-fn discover_from_clap_library(library_path: &Path) -> Option<Vec<ClapDiscoveredPluginType>> {
+fn discover_from_clap_library(
+    library_path: &Path,
+    probe_capabilities: bool,
+) -> Option<Vec<ClapDiscoveredPluginType>> {
     let library = unsafe { Library::new(library_path).ok()? };
     let entry_symbol = unsafe {
         library
@@ -142,7 +153,7 @@ fn discover_from_clap_library(library_path: &Path) -> Option<Vec<ClapDiscoveredP
         }
     }
 
-    let discovered = unsafe { discover_from_entry(*entry, library_path) };
+    let discovered = unsafe { discover_from_entry(*entry, library_path, probe_capabilities) };
 
     if let Some(deinit) = entry.deinit {
         unsafe { deinit() };
@@ -154,6 +165,7 @@ fn discover_from_clap_library(library_path: &Path) -> Option<Vec<ClapDiscoveredP
 unsafe fn discover_from_entry(
     entry: clap_plugin_entry,
     library_path: &Path,
+    probe_capabilities: bool,
 ) -> Vec<ClapDiscoveredPluginType> {
     let Some(get_factory) = entry.get_factory else {
         return Vec::new();
@@ -176,7 +188,9 @@ unsafe fn discover_from_entry(
         if descriptor_ptr.is_null() {
             continue;
         }
-        if let Some(plugin) = build_discovered_plugin(factory, descriptor_ptr, library_path) {
+        if let Some(plugin) =
+            build_discovered_plugin(factory, descriptor_ptr, library_path, probe_capabilities)
+        {
             discovered.push(plugin);
         }
     }
@@ -187,6 +201,7 @@ unsafe fn build_discovered_plugin(
     factory: *const clap_plugin_factory,
     descriptor_ptr: *const clap_plugin_descriptor,
     library_path: &Path,
+    probe_capabilities: bool,
 ) -> Option<ClapDiscoveredPluginType> {
     let descriptor = &*descriptor_ptr;
     let plugin_id = cstr_ptr_to_string(descriptor.id)?;
@@ -194,7 +209,11 @@ unsafe fn build_discovered_plugin(
     let name = cstr_ptr_to_string(descriptor.name).unwrap_or_else(|| plugin_id.clone());
     let version = cstr_ptr_to_string(descriptor.version);
     let features = clap_features(descriptor.features);
-    let io_and_params = probe_plugin_shape(factory, &plugin_id);
+    let io_and_params = if probe_capabilities {
+        probe_plugin_shape(factory, &plugin_id)
+    } else {
+        DiscoveredPluginIoSummary::default()
+    };
 
     let mut plugin_descriptor =
         PluginDescriptor::new(plugin_id.clone(), vendor, name, PluginFormat::Clap);
@@ -204,10 +223,8 @@ unsafe fn build_discovered_plugin(
     for feature in &features {
         plugin_descriptor = plugin_descriptor.with_feature(*feature);
     }
-    plugin_descriptor = plugin_descriptor
-        .with_audio_buses(io_and_params.audio_buses.clone())
-        .with_parameters(io_and_params.parameters.clone())
-        .with_state_contract(PluginStateContract {
+    let state_contract = if probe_capabilities {
+        PluginStateContract {
             supports_snapshot: plugin_supports_extension(
                 factory,
                 &plugin_id,
@@ -224,7 +241,22 @@ unsafe fn build_discovered_plugin(
                 CLAP_EXT_LATENCY.as_ptr(),
             ),
             exposes_tail: plugin_supports_extension(factory, &plugin_id, CLAP_EXT_TAIL.as_ptr()),
-        })
+        }
+    } else {
+        // Without instantiating the plugin nothing about its state surface
+        // is known; report the conservative minimum.
+        PluginStateContract {
+            supports_snapshot: false,
+            supports_reset: false,
+            supports_bypass: false,
+            exposes_latency: false,
+            exposes_tail: false,
+        }
+    };
+    plugin_descriptor = plugin_descriptor
+        .with_audio_buses(io_and_params.audio_buses.clone())
+        .with_parameters(io_and_params.parameters.clone())
+        .with_state_contract(state_contract)
         .with_processing_contract(PluginProcessingContract {
             max_block_frames: 4096,
             sample_accurate_automation: !io_and_params.parameters.is_empty(),

@@ -25,12 +25,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.102"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
-
-[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -994,24 +988,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "signal-plugin-library"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
-]
-
-[[package]]
-name = "signal-plugin-library-store"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "signal-plugin-inventory",
- "signal-plugin-library",
-]
-
-[[package]]
 name = "signal-plugin-lv2"
 version = "0.1.0"
 dependencies = [
@@ -1023,11 +999,6 @@ name = "signal-plugin-sandbox"
 version = "0.1.0"
 dependencies = [
  "signal-ipc",
- "signal-plugin",
- "signal-plugin-au",
- "signal-plugin-clap",
- "signal-plugin-lv2",
- "signal-plugin-vst3",
 ]
 
 [[package]]

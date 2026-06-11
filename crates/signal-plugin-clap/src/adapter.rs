@@ -4,13 +4,11 @@ use std::{
 };
 
 use signal_plugin::{
-    BlockDispatch, BlockProcessResult, BlockProcessingHeader, PluginDescriptor, PluginFormat,
-    PluginInstanceId, PluginIoLayout, PluginLifecycleContract, PluginProcessingContract,
-    PluginSandboxCapabilities, PluginTypeId, SandboxTransport, SharedMemoryLayout,
-    SharedMemoryLease,
+    PluginDescriptor, PluginFormat, PluginIoLayout, PluginSandboxCapabilities, PluginTypeId,
+    SandboxTransport,
 };
 
-use crate::{clap_sandbox_harness, discovery::discover_clap_plugins_for_roots};
+use crate::discovery::discover_clap_plugins_for_roots;
 
 /// A CLAP host extension that the Signal host advertises to plugins.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,7 +48,13 @@ const MINIMUM_CLAP_EXTENSIONS: [ClapHostExtension; 4] = [
     ClapHostExtension::State,
 ];
 
-/// Host-side adapter for CLAP plugins. Handles discovery, instantiation, and capability negotiation.
+/// Host-side discovery adapter for CLAP plugins.
+///
+/// Scans explicitly provided filesystem roots and keeps a catalog of the
+/// plugin types found in the last scan. Default scans enumerate factory
+/// descriptors only; in-process capability probing (which instantiates
+/// plugins) must be requested explicitly via
+/// [`ClapPluginHostAdapter::discover_plugins_for_roots_with_options`].
 #[derive(Clone, Debug)]
 pub struct ClapPluginHostAdapter {
     strict_sandbox_default: bool,
@@ -92,23 +96,36 @@ impl ClapPluginHostAdapter {
         }
     }
 
-    /// Looks up a previously discovered plugin type by its type ID string.
+    /// Looks up a plugin type discovered in the most recent scan by its type ID string.
     pub fn discover_plugin_type(&self, plugin_type_id: &str) -> Option<ClapDiscoveredPluginType> {
-        if let Some(discovered) = self
-            .discovery_catalog
+        self.discovery_catalog
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .get(plugin_type_id)
             .cloned()
-        {
-            return Some(discovered);
-        }
-        clap_sandbox_harness::clap_discovered_plugin_type(plugin_type_id)
     }
 
-    /// Scans the given filesystem roots for CLAP plugins and updates the internal catalog.
+    /// Scans the given filesystem roots for CLAP plugins using factory
+    /// descriptor enumeration only (no plugin instantiation) and updates the
+    /// internal catalog. An empty root list scans nothing.
     pub fn discover_plugins_for_roots(&self, roots: &[String]) -> Vec<ClapDiscoveredPluginType> {
-        let discovered = discover_clap_plugins_for_roots(roots);
+        self.discover_plugins_for_roots_with_options(roots, false)
+    }
+
+    /// Scans the given filesystem roots for CLAP plugins and updates the
+    /// internal catalog.
+    ///
+    /// When `probe_capabilities` is `true`, each discovered plugin is
+    /// instantiated in-process to read its audio/note ports, parameters, and
+    /// extension support. Only enable this for trusted fixtures or once a
+    /// sandboxed scanner exists — instantiating arbitrary third-party plugins
+    /// in the control process is unsafe.
+    pub fn discover_plugins_for_roots_with_options(
+        &self,
+        roots: &[String],
+        probe_capabilities: bool,
+    ) -> Vec<ClapDiscoveredPluginType> {
+        let discovered = discover_clap_plugins_for_roots(roots, probe_capabilities);
         let mut catalog = self
             .discovery_catalog
             .lock()
@@ -122,21 +139,6 @@ impl ClapPluginHostAdapter {
         );
         discovered
     }
-
-    /// Creates a [`ClapInstanceControlSurface`] binding the discovered plugin type to a new instance ID.
-    pub fn instantiate_plugin(
-        &self,
-        discovered: &ClapDiscoveredPluginType,
-        instance_id: &str,
-    ) -> ClapInstanceControlSurface {
-        ClapInstanceControlSurface {
-            plugin_type_id: discovered.plugin_type_id.clone(),
-            instance_id: PluginInstanceId(instance_id.to_string()),
-            descriptor: discovered.descriptor.clone(),
-            lifecycle_contract: discovered.descriptor.lifecycle_contract,
-            processing_contract: discovered.descriptor.processing_contract,
-        }
-    }
 }
 
 /// A CLAP plugin type discovered during a scan, including its descriptor and default I/O layout.
@@ -148,64 +150,7 @@ pub struct ClapDiscoveredPluginType {
     pub library_path: String,
     /// Full plugin descriptor including contracts and metadata.
     pub descriptor: PluginDescriptor,
-    /// Default I/O layout reported by the plugin at scan time.
+    /// Default I/O layout reported by the plugin at scan time. All-zero
+    /// unless capability probing was enabled for the scan.
     pub default_io_layout: PluginIoLayout,
-}
-
-/// Live control surface for a CLAP plugin instance. Binds a discovered plugin type to a running instance ID and its contracts.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ClapInstanceControlSurface {
-    /// Unique identifier for the plugin type this instance was created from.
-    pub plugin_type_id: PluginTypeId,
-    /// Unique identifier for this running instance.
-    pub instance_id: PluginInstanceId,
-    /// Plugin descriptor including capabilities and contracts.
-    pub descriptor: PluginDescriptor,
-    /// Lifecycle contract for this instance.
-    pub lifecycle_contract: PluginLifecycleContract,
-    /// Processing contract for this instance.
-    pub processing_contract: PluginProcessingContract,
-}
-
-/// Shared-memory block header written before each audio block dispatch to a CLAP sandbox.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClapSharedMemoryHeader {
-    /// Plugin type this block targets.
-    pub plugin_type_id: PluginTypeId,
-    /// Instance this block targets.
-    pub instance_id: PluginInstanceId,
-    /// Processing header for the block.
-    pub block: BlockProcessingHeader,
-    /// Shared-memory region layout for the block.
-    pub layout: SharedMemoryLayout,
-}
-
-/// Parameters agreed upon during plugin prepare, used to size and allocate the shared-memory lease.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClapPreparePlan {
-    /// Plugin type being prepared.
-    pub plugin_type_id: PluginTypeId,
-    /// Instance being prepared.
-    pub instance_id: PluginInstanceId,
-    /// Sample rate negotiated for this session.
-    pub sample_rate_hz: u32,
-    /// Maximum audio block size in frames.
-    pub max_block_frames: u32,
-    /// I/O layout for this session.
-    pub io_layout: PluginIoLayout,
-    /// Allocated shared-memory lease for this session.
-    pub lease: SharedMemoryLease,
-}
-
-/// Outcome of a brokered block round-trip: the dispatch, the input and output payloads, and the process result.
-#[derive(Clone, Debug, PartialEq)]
-pub struct BrokeredBlockOutcome {
-    /// The block dispatch that was sent.
-    pub dispatch: BlockDispatch,
-    /// Input payload written into the shared-memory region.
-    pub input: signal_plugin::BlockPayload,
-    /// Output payload read back from the shared-memory region.
-    pub output: signal_plugin::BlockPayload,
-    /// Processing result reported by the sandbox.
-    pub result: BlockProcessResult,
 }

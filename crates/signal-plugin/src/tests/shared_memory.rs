@@ -62,27 +62,6 @@ fn completion_rejects_mismatched_epoch_or_sequence() {
 }
 
 #[test]
-fn handshake_request_and_response_capture_protocol_defaults() {
-    let request = SandboxControlRequest::handshake("sandbox-a", PluginFormat::Clap);
-    let response = SandboxControlResponse::HandshakeAccepted {
-        protocol_version: 1,
-        capabilities: PluginSandboxCapabilities {
-            transport: SandboxTransport::SharedMemory,
-            supports_state: true,
-            supports_midi: true,
-            max_block_frames: 2048,
-        },
-    };
-
-    assert_eq!(request.sandbox_id, "sandbox-a");
-    assert_eq!(request.format, PluginFormat::Clap);
-    assert!(matches!(
-        response,
-        SandboxControlResponse::HandshakeAccepted { .. }
-    ));
-}
-
-#[test]
 fn plugin_descriptor_carries_neutral_contract_metadata() {
     let descriptor =
         PluginDescriptor::new("plugin:test", "Signal", "Test Plugin", PluginFormat::Clap)

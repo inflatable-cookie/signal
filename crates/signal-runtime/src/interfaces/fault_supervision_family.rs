@@ -52,14 +52,11 @@ pub struct RuntimeSupervisionSnapshot {
     pub last_processing_epoch: Option<u64>,
 }
 
-/// Timeline and transport observation: block sequence continuity, transport
-/// epochs, and loop tracking.
+/// Timeline and transport observation: transport epochs and loop tracking.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RuntimeTimelineSnapshot {
     /// Next expected block sequence number.
     pub next_block_sequence: u64,
-    /// Continuity report for the block sequence.
-    pub block_sequence_continuity: BlockSequenceContinuityReport,
     /// Current transport epoch.
     pub transport_epoch: u64,
     /// Most recent transport transition kind, if any.

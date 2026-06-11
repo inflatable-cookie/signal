@@ -53,7 +53,6 @@ impl SignalRuntime {
         self.applied_parameter_batch = None;
         self.timeline.reset();
         self.automation.reset();
-        self.plugin_events.reset();
         self.transport_concurrency.reset();
         self.recording_capture.interrupt_active_capture(
             RuntimeInterruptionClass::Restartable,

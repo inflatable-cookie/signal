@@ -1,6 +1,6 @@
 # 007 - Plugin Domain Pruning To Real Foundations
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.001
@@ -31,19 +31,19 @@ must not scan real plugin directories. Fix lands in this packet.
 
 ## Goals
 
-- [ ] keep and isolate: CLAP discovery FFI, VST3 factory introspection,
+- [x] keep and isolate: CLAP discovery FFI, VST3 factory introspection,
       contracts vocabulary, block transport + watchdog, inventory data model
-- [ ] delete simulated lifecycle/process/state surfaces: CLAP passthrough
+- [x] delete simulated lifecycle/process/state surfaces: CLAP passthrough
       harness paths, VST3 fabricated sessions, AU and LV2 adapter fictions
       (retain plist/manifest scanning only as discovery pre-filters where
       real)
-- [ ] delete the sandbox broker's demo-flavor command set; keep the process
+- [x] delete the sandbox broker's demo-flavor command set; keep the process
       spawn + stdio + shared-memory plumbing as the seed for real brokering
-- [ ] delete `signal-plugin-library` and `signal-plugin-library-store`
+- [x] delete `signal-plugin-library` and `signal-plugin-library-store`
       (Pulse owns the product's plugin-library model)
-- [ ] delete plugin_event_reports continuity analyzers (premature
+- [x] delete plugin_event_reports continuity analyzers (premature
       observability for streams no plugin produces)
-- [ ] delete the parallel in-process "IPC protocol" envelope types or reduce
+- [x] delete the parallel in-process "IPC protocol" envelope types or reduce
       them to the contracts crate — one protocol, defined where the broker is
 
 ## Non-Goals
@@ -91,6 +91,30 @@ must not scan real plugin directories. Fix lands in this packet.
 ## Evidence Requirements
 
 - [ ] per-crate LoC deltas; surviving-API inventory in the progress log
+
+## Progress (2026-06-11)
+
+- Landed in one commit, −20,810 LoC net across the domain. Per-crate:
+  clap 4.9k→1.3k (sandbox harness/control surfaces/block protocol out;
+  discovery FFI + catalog kept), vst3 2.0k→1.3k (fabricated sessions out;
+  COM introspection kept), au 1.4k→0.8k (plist pre-filter kept), lv2
+  1.3k→0.7k (fictional scaffold dead; manifest scanning only), plugin
+  3.6k→3.0k (continuity analyzers + in-process envelope types out),
+  sandbox 2.5k→0.5k (broker rewritten: status/attach/run/run-timeout/
+  teardown/shutdown over real file-backed shm leases with verified block
+  round-trips; wire format compatible with the hardened
+  sandbox_broker_support), host-local 17.5k→7.5k (harness-driven
+  boot/recovery theatre out; honest boot path), library/-store deleted.
+- Live safety bug fixed both halves: discovery roots are explicit
+  configuration defaulting EMPTY (system-dir fallback removed from all
+  four adapters and the host-local demo assembly); CLAP discovery is
+  factory-descriptor-only by default — instance probing behind an explicit
+  probe_capabilities opt-in. Proof: pulse `cargo test --lib` PARALLEL
+  passes 122/122 with zero keepsake spawns (previously SIGABRT).
+- Evidence log: docs/logs/2026-06/11-144500-g10-007-plugin-domain-pruning-
+  to-real-foundations.md. Left for later: lv2 prepared-negotiation
+  observability has zero producers; richer runtime plugin state models
+  revisit during the CLAP-first rebuild program.
 
 ## Next Task
 

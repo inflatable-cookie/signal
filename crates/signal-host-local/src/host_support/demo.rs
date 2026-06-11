@@ -1,10 +1,6 @@
-use signal_plugin::{
-    BlockPayload, ParameterValueEvent, PluginEvent, PluginFormat, PluginSandboxRequest,
-    SandboxPolicy, WatchdogTriggerReason,
-};
+use signal_plugin::{PluginFormat, PluginSandboxRequest, SandboxPolicy};
 use signal_runtime::{
     PluginBackedNodeBinding, PluginBackedNodeBindingProjection, PluginSandboxSpec,
-    RuntimeWatchdogTrigger, TransportAttachIntent,
 };
 use std::{
     ffi::OsString,
@@ -44,12 +40,6 @@ pub(crate) struct LocalDemoRuntimeAssembly {
 }
 
 impl LocalDemoRuntimeAssembly {
-    pub(crate) fn primary_sandbox(&self) -> &LocalDemoPluginSandboxAssembly {
-        self.plugin_sandboxes
-            .first()
-            .expect("local demo assembly should define a primary sandbox")
-    }
-
     pub(crate) fn active_plugin_sandbox_count(&self) -> u32 {
         self.plugin_sandboxes.len() as u32
     }
@@ -74,17 +64,13 @@ impl LocalDemoRuntimeAssembly {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) enum DemoInteractionMode {
-    ParameterStep,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct DemoInteractionStep {
-    pub(crate) mode: DemoInteractionMode,
-    pub(crate) value: f32,
-}
-
+/// Assembles the local boot graph and plugin scan configuration.
+///
+/// Plugin scan roots default to EMPTY: the local host never scans the
+/// operator's real plugin directories implicitly. A scan root, format, and
+/// plugin type can be provided explicitly through the
+/// `SIGNAL_HOST_DEMO_PLUGIN_*` environment overrides (tests point these at
+/// fixture directories); only then is a plugin sandbox requested.
 pub(crate) fn local_demo_runtime_assembly() -> LocalDemoRuntimeAssembly {
     let broker_override = broker_demo_plugin_override();
     let graph = local_demo_graph_projection();
@@ -94,30 +80,26 @@ pub(crate) fn local_demo_runtime_assembly() -> LocalDemoRuntimeAssembly {
         scan_roots: broker_override
             .as_ref()
             .map(|override_spec| vec![override_spec.scan_root.clone()])
-            .unwrap_or_else(|| vec!["~/Library/Audio/Plug-Ins/CLAP".into()]),
-        scan_formats: vec![broker_override
+            .unwrap_or_default(),
+        scan_formats: broker_override
             .as_ref()
-            .map(|override_spec| override_spec.plugin_format)
-            .unwrap_or(PluginFormat::Clap)],
-        plugin_sandboxes: vec![LocalDemoPluginSandboxAssembly {
-            request: PluginSandboxRequest::new(
-                "local-default-sandbox",
-                broker_override
-                    .as_ref()
-                    .map(|override_spec| override_spec.plugin_format)
-                    .unwrap_or(PluginFormat::Clap),
-                SandboxPolicy::Strict,
-            ),
-            plugin_format: broker_override
-                .as_ref()
-                .map(|override_spec| override_spec.plugin_format)
-                .unwrap_or(PluginFormat::Clap),
-            plugin_type_id: broker_override
-                .as_ref()
-                .map(|override_spec| override_spec.plugin_type_id.clone())
-                .or_else(|| Some("plugin:clap:default".into())),
-            bound_node_ids: vec![LOCAL_DEMO_PLUGIN_NODE_ID],
-        }],
+            .map(|override_spec| vec![override_spec.plugin_format])
+            .unwrap_or_default(),
+        plugin_sandboxes: broker_override
+            .as_ref()
+            .map(|override_spec| {
+                vec![LocalDemoPluginSandboxAssembly {
+                    request: PluginSandboxRequest::new(
+                        "local-default-sandbox",
+                        override_spec.plugin_format,
+                        SandboxPolicy::Strict,
+                    ),
+                    plugin_format: override_spec.plugin_format,
+                    plugin_type_id: Some(override_spec.plugin_type_id.clone()),
+                    bound_node_ids: vec![LOCAL_DEMO_PLUGIN_NODE_ID],
+                }]
+            })
+            .unwrap_or_default(),
     }
 }
 
@@ -367,72 +349,5 @@ fn restore_demo_env(key: &str, value: Option<&OsString>) {
         } else {
             std::env::remove_var(key);
         }
-    }
-}
-
-pub(crate) fn plugin_automation_value_from_runtime_batch(
-    automation_parameter_id: u32,
-    parameter_batch: Option<&signal_runtime::ParameterBatch>,
-) -> Option<ParameterValueEvent> {
-    let parameter_batch = parameter_batch?;
-    let value = parameter_batch.events.last()?.normalized_value;
-    Some(ParameterValueEvent {
-        offset_frames: 0,
-        parameter_id: automation_parameter_id,
-        normalized_value: value,
-    })
-}
-
-pub(crate) fn demo_interaction_parameter_step(
-    automation_parameter_id: u32,
-) -> Option<ParameterValueEvent> {
-    let step = demo_interaction_step()?;
-    Some(ParameterValueEvent {
-        offset_frames: 0,
-        parameter_id: automation_parameter_id,
-        normalized_value: step.value,
-    })
-}
-
-pub(crate) fn demo_interaction_step() -> Option<DemoInteractionStep> {
-    let mode = std::env::var("SIGNAL_HOST_DEMO_INTERACTION_MODE").ok()?;
-    let value = std::env::var("SIGNAL_HOST_DEMO_INTERACTION_VALUE")
-        .ok()
-        .and_then(|value| value.parse::<f32>().ok())
-        .map(|value| value.clamp(0.0, 1.0))
-        .unwrap_or(0.75);
-    match mode.as_str() {
-        "parameter-step" => Some(DemoInteractionStep {
-            mode: DemoInteractionMode::ParameterStep,
-            value,
-        }),
-        _ => None,
-    }
-}
-
-pub(crate) fn payload_automation_value(
-    payload: &BlockPayload,
-    automation_parameter_id: u32,
-) -> Option<f32> {
-    payload.events.events.iter().find_map(|event| match event {
-        PluginEvent::ParameterValue(event) if event.parameter_id == automation_parameter_id => {
-            Some(event.normalized_value)
-        }
-        _ => None,
-    })
-}
-
-pub(crate) fn runtime_watchdog_trigger(reason: WatchdogTriggerReason) -> RuntimeWatchdogTrigger {
-    match reason {
-        WatchdogTriggerReason::DeadlineMisses => RuntimeWatchdogTrigger::DeadlineMisses,
-        WatchdogTriggerReason::HeartbeatMisses => RuntimeWatchdogTrigger::HeartbeatMisses,
-    }
-}
-
-pub(crate) fn transport_attach_intent(processing_epoch: u64) -> TransportAttachIntent {
-    if processing_epoch > 1 {
-        TransportAttachIntent::RecoveryOverlap
-    } else {
-        TransportAttachIntent::SteadyState
     }
 }

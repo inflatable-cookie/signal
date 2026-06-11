@@ -42,11 +42,7 @@ pub use plugin_block_transport::{
     BlockDispatch, BlockProcessResult, BlockProcessingHeader, CompletionSlot, CompletionState,
     SandboxStateMachine, SharedMemoryLayout, SharedMemoryLease, SharedMemoryRegion,
 };
-pub use plugin_event_reports::{
-    AutomationContinuityReport, AutomationContinuitySegment, BlockSequenceContinuityReport,
-    BlockSequenceContinuitySegment, EventPacketContinuityReport, EventPacketContinuitySegment,
-    EventPacketSummary, ParameterAutomationSummary,
-};
+pub use plugin_event_reports::{EventPacketSummary, ParameterAutomationSummary};
 pub use plugin_model::{
     PluginAudioBusDescriptor, PluginAudioBusDirection, PluginDegradedReason, PluginDescriptor,
     PluginFault, PluginFaultKind, PluginFaultSeverity, PluginFeature, PluginFormat,
@@ -58,8 +54,8 @@ pub use plugin_model::{
 pub use sandbox_protocol::{
     LoopRange, PluginRenderContext, PluginSandboxCapabilities, PluginSandboxError,
     PluginSandboxErrorKind, PluginSandboxRequest, RestartEscalationPolicy, RestartEscalationState,
-    SandboxControlCommand, SandboxControlRequest, SandboxControlResponse, SandboxTransport,
-    SandboxWatchdogPolicy, SandboxWatchdogState, WatchdogOutcome, WatchdogTriggerReason,
+    SandboxTransport, SandboxWatchdogPolicy, SandboxWatchdogState, WatchdogOutcome,
+    WatchdogTriggerReason,
 };
 
 #[cfg(test)]

@@ -173,8 +173,6 @@ pub trait RuntimeObservationApi {
     fn get_preview_transform_snapshot(&self) -> RuntimePreviewTransformServiceSnapshot;
     /// Returns the current automation snapshot.
     fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
-    /// Returns the current plugin event snapshot.
-    fn get_plugin_event_snapshot(&self) -> RuntimePluginEventSnapshot;
     /// Returns the current engine block snapshot.
     fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
     /// Returns the current execution topology summary.

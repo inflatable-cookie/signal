@@ -24,9 +24,6 @@ pub(crate) struct AuComponentMetadata {
     pub(crate) midi_inputs: u16,
     pub(crate) midi_outputs: u16,
     pub(crate) features: Vec<PluginFeature>,
-    pub(crate) init_failure: Option<String>,
-    pub(crate) bus_layout_failure: Option<String>,
-    pub(crate) render_context_failure: Option<String>,
 }
 
 pub(crate) fn read_au_component_metadata(bundle_root: &Path) -> io::Result<AuComponentMetadata> {
@@ -114,10 +111,6 @@ fn parse_au_component_metadata(metadata_path: &Path) -> io::Result<AuComponentMe
     let midi_outputs = optional_plist_u16(root, "SignalMidiOutputs").unwrap_or(0);
     let features = optional_feature_list(root, "SignalFeatures")
         .unwrap_or_else(|| default_features(&component_type));
-    let init_failure = optional_plist_string(root, "SignalInitFailure");
-    let bus_layout_failure = optional_plist_string(root, "SignalBusLayoutFailure");
-    let render_context_failure = optional_plist_string(root, "SignalRenderContextFailure");
-
     Ok(AuComponentMetadata {
         plugin_type_id,
         component_type,
@@ -131,9 +124,6 @@ fn parse_au_component_metadata(metadata_path: &Path) -> io::Result<AuComponentMe
         midi_inputs,
         midi_outputs,
         features,
-        init_failure,
-        bus_layout_failure,
-        render_context_failure,
     })
 }
 
