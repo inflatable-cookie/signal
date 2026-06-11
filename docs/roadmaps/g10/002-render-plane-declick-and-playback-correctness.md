@@ -1,6 +1,6 @@
 # 002 - Render Plane Declick And Playback Correctness
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.001
@@ -21,13 +21,13 @@ All fixes must preserve the crate's proven RT contract: zero allocation in
 
 ## Goals
 
-- [ ] short gain ramps (~2-10 ms) on play/stop edges — no click on transport
-- [ ] declick on seek (ramp out at old position, ramp in at new)
-- [ ] clip-edge micro-fades so trimmed clips do not click at their windows
-- [ ] lane/master gain changes smoothed instead of stepped on plan swap
-- [ ] `Samples` source plays its final frame (clamp interpolation at end)
-- [ ] clip looping support in the compiled plan (window repeats source)
-- [ ] executor validates plan channel count against stream channel count and
+- [x] short gain ramps (~2-10 ms) on play/stop edges — no click on transport
+- [x] declick on seek (ramp out at old position, ramp in at new)
+- [x] clip-edge micro-fades so trimmed clips do not click at their windows
+- [x] lane/master gain changes smoothed instead of stepped on plan swap
+- [x] `Samples` source plays its final frame (clamp interpolation at end)
+- [x] clip looping support in the compiled plan (window repeats source)
+- [x] executor validates plan channel count against stream channel count and
       fails the install rather than corrupting framing
 
 ## Non-Goals
@@ -77,6 +77,26 @@ All fixes must preserve the crate's proven RT contract: zero allocation in
 
 - [ ] soak output (zero alloc) recorded in the progress log
 - [ ] before/after test demonstrating click elimination
+
+## Progress (2026-06-11)
+
+- All batches landed in one pass: transport edge envelope (5 ms ramp on
+  play/stop, seek defers to the envelope zero-crossing then ramps back in);
+  per-lane + master gain smoothing (10 ms full swing) with state inheritance
+  across plan swaps (smoothed gains and tone phases carried by lane_id, so
+  recompiles never step audio); clip-edge micro-fades (32 frames, shortened
+  for tiny windows); `Samples` final-frame clamp; `loop_source` looping with
+  wrap interpolation; `set_stream_channels` + install-time channel mismatch
+  rejection. 13 unit tests (6 new: stop ramp step bound, seek ramp-out/jump,
+  gain-swap step bound, last frame, loop wrap, mismatch rejection). Soak
+  extended with a seek-while-playing cycle: still zero callback
+  allocations/deallocations on a real cpal stream. Pulse compile site adopts
+  `loop_source: false`; pulse render-plan tests and Aura host tests green.
+- Found while validating: pulse `embedded_authority_can_capture*` tests
+  crash under parallel test execution because signal-host-local boot runs
+  CLAP discovery over real plugin directories and instantiates third-party
+  plugins concurrently. Recorded as live evidence in g10.007; serial run is
+  green (122/122).
 
 ## Next Task
 

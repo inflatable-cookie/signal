@@ -75,6 +75,7 @@ fn main() {
                         start_frames: 0,
                         end_frames: u64::MAX,
                         source: RenderSource::TestTone { frequency_hz: 440.0 },
+                        loop_source: false,
                     }],
                 },
                 RenderLaneSpec {
@@ -84,6 +85,7 @@ fn main() {
                         start_frames: 0,
                         end_frames: u64::MAX,
                         source: RenderSource::TestTone { frequency_hz: 660.0 },
+                        loop_source: false,
                     }],
                 },
             ],
@@ -94,6 +96,10 @@ fn main() {
     controller.set_playing(true).expect("play");
     std::thread::sleep(Duration::from_millis(1_500));
     let position_after_play = controller.position_frames();
+
+    println!("transport: seek while playing (declick ramp)");
+    controller.seek(0).expect("seek");
+    std::thread::sleep(Duration::from_millis(300));
 
     println!("transport: stop (0.5s silence)");
     controller.set_playing(false).expect("stop");
@@ -113,6 +119,7 @@ fn main() {
                     start_frames: 0,
                     end_frames: u64::MAX,
                     source: RenderSource::TestTone { frequency_hz: 220.0 },
+                    loop_source: false,
                 }],
             }],
         })

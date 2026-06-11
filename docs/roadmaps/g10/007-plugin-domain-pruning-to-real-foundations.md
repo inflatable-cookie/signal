@@ -22,6 +22,13 @@ signal-plugin-library-store has traits with zero implementations anywhere.
 Pruning to the real foundations makes the eventual real-hosting program
 (backlog: CLAP-first) start from truth instead of theatre.
 
+Live evidence (2026-06-11): Pulse's `embedded_authority_can_capture*` tests
+crash (SIGABRT/SIGTRAP) when run in parallel because host boot runs CLAP
+discovery over the operator's real plugin directories and instantiates
+third-party plugins (Keepsake wrapper) concurrently in-process. Discovery
+must not instantiate arbitrary plugins in the control process, and tests
+must not scan real plugin directories. Fix lands in this packet.
+
 ## Goals
 
 - [ ] keep and isolate: CLAP discovery FFI, VST3 factory introspection,
