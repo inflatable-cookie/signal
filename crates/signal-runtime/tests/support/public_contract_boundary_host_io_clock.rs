@@ -1,11 +1,11 @@
 use signal_hardware::{AudioSampleFormat, BackendHealth, HardwareBackendIdentity};
 use signal_runtime::{
-    RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostAudioTransferPolicy,
-    RuntimeHostClockDiscontinuityState, RuntimeHostClockDomain, RuntimeHostClockDriftState,
-    RuntimeHostClockFallbackState, RuntimeHostClockSource, RuntimeHostClockTransitionState,
-    RuntimeHostClockingSummary, RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology,
-    RuntimeHostHardwareSummary, RuntimeHostIoSummary, RuntimeHostLatencySummary,
-    RuntimeHostLifecycleOwnership, RuntimeHostRestartPolicy,
+    RuntimeHostAudioPumpSummary, RuntimeHostAudioStreamState, RuntimeHostClockDiscontinuityState,
+    RuntimeHostClockDomain, RuntimeHostClockDriftState, RuntimeHostClockFallbackState,
+    RuntimeHostClockSource, RuntimeHostClockTransitionState, RuntimeHostClockingSummary,
+    RuntimeHostDuplexMismatchState, RuntimeHostEndpointTopology, RuntimeHostHardwareSummary,
+    RuntimeHostIoSummary, RuntimeHostLatencySummary, RuntimeHostLifecycleOwnership,
+    RuntimeHostRestartPolicy,
 };
 
 pub struct PublicClockTopologyHostIoConfig {
@@ -43,19 +43,6 @@ pub fn sample_public_clock_topology_host_io(
         },
         audio_pump: RuntimeHostAudioPumpSummary {
             stream_state: RuntimeHostAudioStreamState::Running,
-            transfer_policy: RuntimeHostAudioTransferPolicy {
-                max_callback_frames: 256,
-                max_transfer_channels: 2,
-                zero_fill_unwritten_output: true,
-            },
-            callback_count: 12,
-            total_callback_frames: 3_072,
-            total_runtime_output_frames: 3_072,
-            copied_output_samples: 6_144,
-            zero_filled_output_samples: 0,
-            dropped_output_samples: 0,
-            last_callback_output_peak: Some(0.35),
-            last_runtime_graph_id: Some("graph:public-clock-topology".into()),
         },
         clocking: RuntimeHostClockingSummary {
             clock_source: RuntimeHostClockSource::Internal,
@@ -89,6 +76,5 @@ pub fn sample_public_clock_topology_host_io(
             estimated_output_latency_ms: 5.833,
             estimated_round_trip_latency_ms: Some(8.5),
         },
-        runtime_graph_id_matches_pump: true,
     }
 }

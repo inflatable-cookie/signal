@@ -101,40 +101,6 @@ impl RuntimeRecordingCaptureStateModel {
         Ok(())
     }
 
-    pub(super) fn record_output_block(&mut self, output: &AudioBuffer) {
-        let Some(active) = self.active.as_mut() else {
-            return;
-        };
-
-        let channel_count = output.channel_count().0;
-        let frame_count = output.frames().0 as u64;
-        if active.channel_count == 0 {
-            active.channel_count = channel_count;
-        } else if active.channel_count != channel_count {
-            self.last_error = Some(format!(
-                "capture channel-count mismatch: expected {} got {}",
-                active.channel_count, channel_count
-            ));
-            self.interrupt_active_capture(
-                RuntimeInterruptionClass::Terminal,
-                "capture channel-count mismatch",
-            );
-            return;
-        }
-
-        active.samples.extend_from_slice(output.samples());
-        active.buffered_block_count = active.buffered_block_count.saturating_add(1);
-        active.buffered_frame_count = active.buffered_frame_count.saturating_add(frame_count);
-        let block_peak = output
-            .samples()
-            .iter()
-            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
-        active.peak_level = active.peak_level.max(block_peak);
-        if active.buffered_frame_count >= self.policy.pressure_threshold_frames {
-            active.pressure_event_count = active.pressure_event_count.saturating_add(1);
-        }
-    }
-
     pub(super) fn finish_capture(
         &mut self,
     ) -> Result<RuntimeRecordingCaptureCommitReceipt, RuntimeError> {

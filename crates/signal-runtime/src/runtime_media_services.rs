@@ -1,33 +1,6 @@
 use super::*;
 
 impl SignalRuntime {
-    /// Renders a clip processing buffer at the current runtime sample rate.
-    pub fn render_clip_processing_buffer(
-        &self,
-        request: RuntimeClipRenderRequest,
-    ) -> Result<RuntimeClipRenderResult, RuntimeError> {
-        if request.clip_id.is_empty() {
-            return Err(RuntimeError::new(
-                RuntimeErrorKind::InvalidRequest,
-                "clip processing render requests require a non-empty clip id",
-            ));
-        }
-        if request.buffer.sample_rate() != self.config.sample_rate {
-            return Err(RuntimeError::new(
-                RuntimeErrorKind::InvalidRequest,
-                format!(
-                    "clip processing render buffer sample rate {} does not match runtime sample rate {}",
-                    request.buffer.sample_rate().0,
-                    self.config.sample_rate.0,
-                ),
-            ));
-        }
-        self.render_clip_processing_buffer_with_resolved_tempo(
-            request,
-            &self.current_resolved_tempo(),
-        )
-    }
-
     /// Starts a new recording capture session with the given request parameters.
     pub fn start_recording_capture(
         &mut self,
@@ -88,55 +61,5 @@ impl SignalRuntime {
     ) -> Result<(), RuntimeError> {
         self.clip_processing_pipeline.reconcile_clips(clips);
         Ok(())
-    }
-
-    pub(crate) fn render_clip_processing_buffer_with_resolved_tempo(
-        &self,
-        request: RuntimeClipRenderRequest,
-        resolved_tempo: &RuntimeResolvedTempo,
-    ) -> Result<RuntimeClipRenderResult, RuntimeError> {
-        let preview_transform_snapshot = self.preview_transform_snapshot();
-        let transform_artifact_snapshot = self.transform_artifact_snapshot();
-        let transform_artifact_clip = transform_artifact_snapshot
-            .clips
-            .iter()
-            .find(|clip| clip.clip_id == request.clip_id)
-            .cloned()
-            .unwrap_or_else(|| RuntimeTransformArtifactClipSnapshot {
-                clip_id: request.clip_id.clone(),
-                media_asset_id: None,
-                artifact_identity: format!("artifact:missing:{}", request.clip_id),
-                readiness: RuntimeTransformArtifactReadiness::Unsupported,
-                invalidation_state: RuntimeTransformArtifactInvalidationState::None,
-                reuse_state: RuntimeTransformArtifactReuseState::Unavailable,
-                cached_media_ready: false,
-                stretch_engine_class: RuntimeStretchEngineClass::Disabled,
-                stretch_readiness: RuntimeStretchReadiness::Disabled,
-                marker_analysis_readiness: RuntimeMarkerAnalysisReadiness::Unsupported,
-            });
-        let preview_transform_clip = preview_transform_snapshot
-            .clips
-            .iter()
-            .find(|clip| clip.clip_id == request.clip_id)
-            .cloned()
-            .unwrap_or_else(|| RuntimePreviewTransformClipSnapshot {
-                clip_id: request.clip_id.clone(),
-                media_asset_id: None,
-                service_class: RuntimePreviewTransformServiceClass::Unavailable,
-                readiness: RuntimePreviewTransformReadiness::Unsupported,
-                degraded_state: RuntimePreviewTransformDegradedState::UnsupportedScope,
-                fallback_kind: RuntimePreviewTransformFallbackKind::OfflineOnly,
-                artifact_reuse_state: RuntimeTransformArtifactReuseState::Unavailable,
-                audition_active: false,
-                scrub_supported: false,
-            });
-        self.clip_processing_pipeline.render_clip(
-            request,
-            &self.media_pipeline,
-            &self.warp_pipeline,
-            resolved_tempo,
-            transform_artifact_clip,
-            preview_transform_clip,
-        )
     }
 }

@@ -39,21 +39,12 @@ impl SignalRuntime {
         self.config.sample_rate = request.sample_rate;
         self.config.graph.block_size = request.block_size;
         self.anticipative_enabled = request.anticipative_enabled;
-        self.engine
-            .invalidate_prework_cache(RuntimePreworkInvalidationReason::RuntimeReconfigured);
-        self.reconcile_prework_forecast_mode_state()?;
-        self.engine.refresh_planning(self.anticipative_enabled);
+        self.plan.refresh_planning(self.anticipative_enabled);
         self.safe_mode_enabled = request.realtime_safe_mode;
         self.control.configured = true;
         self.control.running = false;
-        self.engine
-            .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.configure_count = self.control.configure_count.saturating_add(1);
         self.control.last_reconfigure = Some(request);
-        self.applied_parameter_batch = None;
-        self.timeline.reset();
-        self.automation.reset();
-        self.transport_concurrency.reset();
         self.recording_capture.interrupt_active_capture(
             RuntimeInterruptionClass::Restartable,
             "runtime reconfigured while capture active",
@@ -64,11 +55,6 @@ impl SignalRuntime {
         self.warp_pipeline = RuntimeWarpPipelineStateModel::default();
         self.readiness = RuntimeReadiness::Starting;
         self.refresh_runtime_state();
-        self.refresh_prework_service_policy_and_state(None);
-        self.refresh_scheduler_topology_summary();
-        let _ = self.maybe_rebuild_prework_window_from_current_forecast_plan()?;
-        self.refresh_prework_service_policy_and_state(None);
-        self.refresh_scheduler_topology_summary();
         self.emit(RuntimeEvent::ReadinessChanged(self.readiness.clone()));
         self.emit(RuntimeEvent::EffectiveConfigChanged(
             self.get_effective_config(),
@@ -90,8 +76,6 @@ impl SignalRuntime {
         self.control.running = true;
         self.control.start_count = self.control.start_count.saturating_add(1);
         self.refresh_runtime_state();
-        let _ = self.maybe_rebuild_prework_window_from_current_forecast_plan()?;
-        self.refresh_prework_service_policy_and_state(None);
         self.emit(RuntimeEvent::ReadinessChanged(self.readiness.clone()));
         Ok(())
     }
@@ -104,19 +88,14 @@ impl SignalRuntime {
             ));
         }
 
-        self.engine
-            .invalidate_prework_cache(RuntimePreworkInvalidationReason::RuntimeStopped);
         self.readiness = RuntimeReadiness::Stopped;
         self.control.running = false;
         self.recording_capture.interrupt_active_capture(
             RuntimeInterruptionClass::Restartable,
             "runtime stopped while capture active",
         );
-        self.engine
-            .set_prework_service_pressure(RuntimePreworkServicePressure::Normal);
         self.control.stop_count = self.control.stop_count.saturating_add(1);
         self.control.last_stop_reason = Some(reason);
-        self.refresh_prework_service_policy_and_state(None);
         self.emit(RuntimeEvent::ReadinessChanged(self.readiness.clone()));
         Ok(())
     }

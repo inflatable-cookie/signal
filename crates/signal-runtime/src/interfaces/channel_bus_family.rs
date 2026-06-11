@@ -78,18 +78,6 @@ pub enum RuntimeSecondaryInputSourceKind {
     AnalysisTap,
 }
 
-/// Target kind for a secondary (sidechain/aux) input connection.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum RuntimeSecondaryInputTargetKind {
-    /// Secondary audio feeds into a graph node's input bus.
-    #[default]
-    NodeInput,
-    /// Secondary audio feeds directly into a plugin's input.
-    PluginInput,
-    /// Secondary audio feeds into a render stage input.
-    RenderInput,
-}
-
 /// Whether a secondary input connection is required, optional, or disabled.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum RuntimeSecondaryInputAttachmentPolicy {
@@ -131,171 +119,6 @@ pub struct RuntimeSecondaryInputContractProjection {
     pub attachment_policy: RuntimeSecondaryInputAttachmentPolicy,
     /// Fallback outcome if the connection cannot be satisfied.
     pub fallback_outcome: RuntimeSecondaryInputFallbackOutcome,
-}
-
-/// Resolved routing summary for a secondary input connection: source and target kinds, IDs, bus IDs, and attachment/fallback policy.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeSecondaryInputRouteSummary {
-    /// Kind of the source providing the secondary input.
-    pub source_kind: RuntimeSecondaryInputSourceKind,
-    /// Identifier of the source.
-    pub source_id: String,
-    /// Output bus ID on the source, if applicable.
-    pub source_bus_id: Option<String>,
-    /// Kind of the target receiving the secondary input.
-    pub target_kind: RuntimeSecondaryInputTargetKind,
-    /// Identifier of the target.
-    pub target_id: String,
-    /// Input bus ID on the target.
-    pub target_bus_id: String,
-    /// Attachment policy for this connection.
-    pub attachment_policy: RuntimeSecondaryInputAttachmentPolicy,
-    /// Fallback outcome if the connection cannot be satisfied.
-    pub fallback_outcome: RuntimeSecondaryInputFallbackOutcome,
-}
-
-impl RuntimeSecondaryInputRouteSummary {
-    /// Builds a resolved route summary from a contract projection and the resolved target kind and ID.
-    pub fn from_contract_for_target(
-        contract: &RuntimeSecondaryInputContractProjection,
-        target_kind: RuntimeSecondaryInputTargetKind,
-        target_id: impl Into<String>,
-    ) -> Self {
-        let target_id = target_id.into();
-        let _summary = format!(
-            "source={:?}:{}/{} target={:?}:{}/{} policy={:?} fallback={:?}",
-            contract.source_kind,
-            contract.source_id,
-            contract.source_bus_id.as_deref().unwrap_or("none"),
-            target_kind,
-            target_id,
-            contract.target_bus_id,
-            contract.attachment_policy,
-            contract.fallback_outcome,
-        );
-        Self {
-            source_kind: contract.source_kind,
-            source_id: contract.source_id.clone(),
-            source_bus_id: contract.source_bus_id.clone(),
-            target_kind,
-            target_id,
-            target_bus_id: contract.target_bus_id.clone(),
-            attachment_policy: contract.attachment_policy,
-            fallback_outcome: contract.fallback_outcome,
-        }
-    }
-}
-
-/// Resolved role of a bus within the signal flow graph (main program, submix, aux, analysis, hardware).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum RuntimeBusRole {
-    /// Primary program audio bus.
-    #[default]
-    ProgramMain,
-    /// Submix bus aggregating multiple sources.
-    Submix,
-    /// Auxiliary send bus.
-    AuxSend,
-    /// Auxiliary return bus.
-    AuxReturn,
-    /// Analysis tap bus (non-destructive metering).
-    AnalysisTap,
-    /// Hardware input ingress bus.
-    HardwareIngress,
-    /// Hardware output egress bus.
-    HardwareEgress,
-}
-
-/// Kind of auxiliary routing path: send/return, submix, or analysis tap.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum RuntimeAuxiliaryPathKind {
-    /// Send/return effects loop.
-    #[default]
-    SendReturn,
-    /// Submix grouping path.
-    Submix,
-    /// Analysis tap (metering, spectrum, etc.).
-    Analysis,
-}
-
-/// Whether a bus connection is required, optional, or disabled.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum RuntimeBusConnectionAttachmentClass {
-    /// Connection must be present; failure triggers the fallback outcome.
-    #[default]
-    Required,
-    /// Connection is attempted but failure is non-fatal.
-    Optional,
-    /// Connection is explicitly disabled.
-    Disabled,
-}
-
-/// Fallback outcome when a bus connection topology cannot be satisfied.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum RuntimeBusConnectionFallbackOutcome {
-    /// No fallback; topology failure is not expected.
-    #[default]
-    NoFallback,
-    /// Bypass the auxiliary path and continue.
-    BypassAuxiliaryPath,
-    /// Silence the path that depends on this connection.
-    MuteDependentPath,
-    /// Engage safe-mode degradation.
-    SafeModeDegradation,
-    /// Unrecoverable topology failure.
-    TerminalTopologyFailure,
-}
-
-/// Summary of a single bus connection edge: source/target node and bus IDs, roles, auxiliary path identity, and attachment/fallback policy.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeBusConnectionSummary {
-    /// Unique identifier for this connection edge.
-    pub connection_id: String,
-    /// Source node of the connection.
-    pub source_node_id: String,
-    /// Output bus ID on the source node.
-    pub source_bus_id: String,
-    /// Role of the source bus.
-    pub source_bus_role: RuntimeBusRole,
-    /// Target node of the connection.
-    pub target_node_id: String,
-    /// Input bus ID on the target node.
-    pub target_bus_id: String,
-    /// Role of the target bus.
-    pub target_bus_role: RuntimeBusRole,
-    /// Kind of auxiliary path this connection is part of, if any.
-    pub auxiliary_path_kind: Option<RuntimeAuxiliaryPathKind>,
-    /// Auxiliary path identifier, if applicable.
-    pub auxiliary_path_id: Option<String>,
-    /// Attachment class for this connection.
-    pub attachment_class: RuntimeBusConnectionAttachmentClass,
-    /// Fallback outcome if this connection cannot be satisfied.
-    pub fallback_outcome: RuntimeBusConnectionFallbackOutcome,
-}
-
-/// Summary of an auxiliary routing path: kind, bus role, source/target node IDs, and the bus and connection IDs it spans.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeAuxiliaryPathSummary {
-    /// Unique identifier for this auxiliary path.
-    pub auxiliary_path_id: String,
-    /// Kind of auxiliary path (send/return, submix, analysis).
-    pub path_kind: RuntimeAuxiliaryPathKind,
-    /// Role of the buses on this path.
-    pub bus_role: RuntimeBusRole,
-    /// Bus intent of the material signal on this path.
-    pub material_bus_intent: RuntimeBusIntent,
-    /// Source node IDs feeding into this path.
-    pub source_node_ids: Vec<String>,
-    /// Target node IDs receiving signal from this path.
-    pub target_node_ids: Vec<String>,
-    /// Bus IDs involved in this path.
-    pub bus_ids: Vec<String>,
-    /// Connection edge IDs that make up this path.
-    pub connection_ids: Vec<String>,
-    /// Attachment class for this auxiliary path.
-    pub attachment_class: RuntimeBusConnectionAttachmentClass,
-    /// Fallback outcome if this path cannot be satisfied.
-    pub fallback_outcome: RuntimeBusConnectionFallbackOutcome,
 }
 
 /// Resolved multichannel layout summary: canonical layout, per-channel roles, and whether a custom discrete fallback is used.
@@ -444,6 +267,43 @@ impl Default for RuntimeMultichannelIoSummary {
             RuntimeMultichannelLayoutSummary::default(),
             RuntimeBusIntent::MainProgram,
             RuntimeBusIntent::MainProgram,
+        )
+    }
+}
+
+impl RuntimeMultichannelIoSummary {
+    /// Constructs an I/O summary from explicit layout summaries and bus intents.
+    pub fn new(
+        input_layout: RuntimeMultichannelLayoutSummary,
+        output_layout: RuntimeMultichannelLayoutSummary,
+        input_bus_intent: RuntimeBusIntent,
+        output_bus_intent: RuntimeBusIntent,
+    ) -> Self {
+        Self {
+            input_layout,
+            output_layout,
+            input_bus_intent,
+            output_bus_intent,
+        }
+    }
+
+    /// Constructs an I/O summary for a plugin from its declared I/O layout.
+    pub fn for_plugin_io(layout: PluginIoLayout) -> Self {
+        Self::new(
+            RuntimeMultichannelLayoutSummary::from_channel_count(layout.audio_inputs),
+            RuntimeMultichannelLayoutSummary::from_channel_count(layout.audio_outputs),
+            RuntimeBusIntent::MainProgram,
+            RuntimeBusIntent::MainProgram,
+        )
+    }
+
+    /// Constructs an I/O summary for a hardware device with the given channel counts.
+    pub fn for_hardware(input_channels: u16, output_channels: u16) -> Self {
+        Self::new(
+            RuntimeMultichannelLayoutSummary::from_channel_count(input_channels),
+            RuntimeMultichannelLayoutSummary::from_channel_count(output_channels),
+            RuntimeBusIntent::HardwareInput,
+            RuntimeBusIntent::HardwareOutput,
         )
     }
 }

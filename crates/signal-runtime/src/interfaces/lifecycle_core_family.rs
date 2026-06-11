@@ -141,10 +141,9 @@ pub struct SafeModeRequest {
     pub enabled: bool,
 }
 
-/// Per-node planning record embedded in `RuntimeEngineBlockSnapshot`.
-///
-/// Captures the scheduling shape (lane, group, latency) and bus contract of a
-/// node that the planner placed for the current block.
+/// Per-node planning record derived from the applied graph projection and
+/// contracts. Captures the scheduling shape (lane, group, latency) and bus
+/// routing of each planned node.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuntimePlannedGraphNode {
     /// Unique identifier for this graph node.
@@ -169,48 +168,6 @@ pub struct RuntimePlannedGraphNode {
     pub input_bus_id: String,
     /// ID of the output bus for this node.
     pub output_bus_id: String,
-    /// Channel layout on the input bus.
-    pub input_channels: ChannelLayout,
-    /// Channel layout on the output bus.
-    pub output_channels: ChannelLayout,
-    /// Multichannel layout summary for the input bus.
-    pub input_layout: RuntimeMultichannelLayoutSummary,
-    /// Multichannel layout summary for the output bus.
-    pub output_layout: RuntimeMultichannelLayoutSummary,
-    /// Intent classification for the input bus.
-    pub input_bus_intent: RuntimeBusIntent,
-    /// Intent classification for the output bus.
-    pub output_bus_intent: RuntimeBusIntent,
-    /// Secondary (sidechain) input route summary, if applicable.
-    pub secondary_input: Option<RuntimeSecondaryInputRouteSummary>,
-    /// Spatial execution summary, if this node is a spatial processor.
-    pub spatial_execution: Option<RuntimeSpatialExecutionSummary>,
     /// ID of the plugin sandbox backing this node, if any.
     pub plugin_sandbox_id: Option<String>,
-}
-
-/// Output of one processed audio block.
-///
-/// Contains the full `RuntimeEngineBlockSnapshot`, the rendered output
-/// `AudioBuffer`, and per-node metering data.
-#[derive(Clone, Debug, PartialEq)]
-pub struct RuntimeEngineBlockResult {
-    /// Engine block snapshot captured after processing this block.
-    pub snapshot: RuntimeEngineBlockSnapshot,
-    /// Rendered audio output for this block.
-    pub output: AudioBuffer,
-    /// Per-bus metering data captured during this block.
-    pub meter_sources: Vec<RuntimeMeterSourceSnapshot>,
-}
-
-/// Declares the number of parallel streams in a schedule sent to the runtime.
-///
-/// Pass to `apply_schedule_projection()` to tell the scheduler how many
-/// concurrent anticipative lanes are available.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ScheduleProjection {
-    /// Unique identifier for the schedule being projected.
-    pub schedule_id: String,
-    /// Number of parallel anticipative streams available in this projection.
-    pub stream_count: usize,
 }

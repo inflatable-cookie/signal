@@ -13,10 +13,6 @@ impl RuntimeObservationApi for SignalRuntime {
         self.readiness.clone()
     }
 
-    fn get_acceptance_receipt(&self) -> RuntimeAcceptanceReceipt {
-        RuntimeAcceptanceReceipt::capture(self)
-    }
-
     fn get_effective_config(&self) -> EffectiveRuntimeConfig {
         EffectiveRuntimeConfig {
             sample_rate: self.config.sample_rate,
@@ -31,32 +27,12 @@ impl RuntimeObservationApi for SignalRuntime {
         self.control.clone()
     }
 
-    fn get_scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot {
-        self.scheduler_snapshot()
-    }
-
-    fn get_scheduler_topology_summary(&self) -> RuntimeSchedulerTopologySummary {
-        self.scheduler_topology_summary()
-    }
-
     fn get_diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot {
         self.diagnostics_snapshot()
     }
 
-    fn get_metering_snapshot(&self) -> RuntimeMeteringSnapshot {
-        self.metering_snapshot()
-    }
-
     fn get_supervision_snapshot(&self) -> RuntimeSupervisionSnapshot {
         self.supervision.snapshot(self.safe_mode_enabled)
-    }
-
-    fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot {
-        self.timeline.snapshot()
-    }
-
-    fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot {
-        self.transport_observation_snapshot()
     }
 
     fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot {
@@ -87,36 +63,13 @@ impl RuntimeObservationApi for SignalRuntime {
         self.clip_processing_pipeline_snapshot()
     }
 
-    fn get_stretch_engine_snapshot(&self) -> RuntimeStretchEngineSnapshot {
-        self.stretch_engine_snapshot()
-    }
-
-    fn get_marker_analysis_snapshot(&self) -> RuntimeMarkerAnalysisSnapshot {
-        self.marker_analysis_snapshot()
-    }
-
-    fn get_transform_artifact_snapshot(&self) -> RuntimeTransformArtifactSnapshot {
-        self.transform_artifact_snapshot()
-    }
-
-    fn get_preview_transform_snapshot(&self) -> RuntimePreviewTransformServiceSnapshot {
-        self.preview_transform_snapshot()
-    }
-
-    fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot {
-        self.automation.snapshot()
-    }
-
-    fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot {
-        self.engine.snapshot()
-    }
-
     fn get_execution_topology_summary(&self) -> RuntimeExecutionTopologySummary {
-        self.execution_topology_summary()
+        RuntimeExecutionTopologySummary::from_plan(&self.plan.lane_order, &self.plan.planned_nodes)
+            .with_plugin_chain_snapshot(&self.plugin_chain_snapshot())
     }
 
-    fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot {
-        self.transport_concurrency.snapshot()
+    fn get_graph_latency_samples(&self) -> u32 {
+        self.plan.total_latency_samples
     }
 
     fn get_plugin_discovery_snapshot(&self) -> RuntimePluginDiscoverySnapshot {
@@ -136,13 +89,5 @@ impl RuntimeObservationApi for SignalRuntime {
 
     fn get_plugin_chain_snapshot(&self) -> RuntimePluginChainSnapshot {
         self.plugin_chain_snapshot()
-    }
-
-    fn get_plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot {
-        self.plugin_recall_handoff_snapshot()
-    }
-
-    fn get_last_deferred_service_receipt(&self) -> Option<RuntimeDeferredServiceReceipt> {
-        self.last_deferred_service_receipt.borrow().clone()
     }
 }

@@ -2,13 +2,7 @@ use super::*;
 
 impl SignalRuntime {
     pub(crate) fn current_resolved_tempo(&self) -> RuntimeResolvedTempo {
-        self.tempo_map.resolve(
-            self.applied_transport
-                .map(|transport| transport.timeline_position_samples)
-                .or(self.timeline.last_transport_timeline_position_samples),
-            self.applied_transport,
-            self.timeline.last_transport_tempo_bpm,
-        )
+        self.tempo_map.resolve(None, None)
     }
 
     pub(crate) fn tempo_map_snapshot(&self) -> RuntimeTempoMapSnapshot {

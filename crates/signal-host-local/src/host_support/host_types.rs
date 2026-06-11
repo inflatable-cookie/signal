@@ -1,8 +1,6 @@
 use signal_hardware::BackendPolicyTier;
 use signal_runtime::{RuntimeHostClockDomain, RuntimeHostClockFallbackState};
 
-/// Number of engine blocks driven through the output pump during boot.
-pub(crate) const STEADY_STATE_BLOCKS: u64 = 8;
 pub(crate) const LOCAL_DEMO_GRAPH_ID: &str = "signal.host.local.demo";
 pub(crate) const LOCAL_DEMO_PLUGIN_NODE_ID: &str = "plugin-insert";
 

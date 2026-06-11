@@ -1,5 +1,5 @@
 // Core type definitions for signal-graph
-use signal_primitives::{AudioBuffer, ChannelLayout};
+use signal_primitives::ChannelLayout;
 
 mod contract_types;
 mod execution_types;
@@ -7,21 +7,9 @@ mod execution_types;
 pub use contract_types::*;
 pub use execution_types::*;
 
-/// Opaque identifier for a node within the graph.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct NodeId(pub u64);
-
-/// Trait implemented by any type that can process one audio block in-place.
-pub trait AudioNode {
-    /// Process one block of audio. Mutates `buffer` in place.
-    fn process(&mut self, buffer: &mut AudioBuffer);
-}
-
 /// Processing stage that can be chained inside a graph node.
 ///
-/// Each variant encodes the stage kind and its initial parameter values. At
-/// execution time the runtime may update these values via
-/// [`GraphParameterEvent`]s delivered in a [`GraphParameterBatch`].
+/// Each variant encodes the stage kind and its declared parameter values.
 #[derive(Clone, Debug, PartialEq)]
 pub enum GraphStageSpec {
     /// Linear gain stage.
@@ -49,79 +37,6 @@ pub enum GraphStageSpec {
         /// Absolute sample value at which clipping occurs.
         threshold: f32,
     },
-}
-
-/// Identifies which parameter of a stage a [`GraphParameterEvent`] targets.
-///
-/// Each variant maps 1:1 to the modifiable field of the corresponding
-/// [`GraphStageSpec`] variant. Use [`GraphStageParameterExt::applies_to`] to
-/// verify compatibility before dispatching an event.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GraphStageParameter {
-    /// Linear gain multiplier on a [`GraphStageSpec::Gain`] stage.
-    GainLinear,
-    /// Additive offset on a [`GraphStageSpec::Bias`] stage.
-    BiasAmount,
-    /// Drive coefficient on a [`GraphStageSpec::TanhDrive`] stage.
-    TanhDrive,
-    /// Balance value on a [`GraphStageSpec::StereoBalance`] stage.
-    StereoBalance,
-    /// Clip threshold on a [`GraphStageSpec::HardClip`] stage.
-    HardClipThreshold,
-}
-
-/// Identifies the exact stage parameter that a parameter event should modify.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GraphParameterTarget {
-    /// Node that owns the target stage.
-    pub node_id: String,
-    /// Zero-based index of the stage within the node's `stages` list.
-    pub stage_index: usize,
-    /// Which parameter on that stage to update.
-    pub parameter: GraphStageParameter,
-}
-
-/// Strategy for applying a batch of parameter events within a block.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GraphParameterApplicationStrategy {
-    /// Split the block at each event's sample offset, up to `max_sub_blocks`
-    /// sub-blocks. Events that would exceed the limit are coalesced.
-    SplitAtEvents {
-        /// Maximum number of sub-blocks permitted per stage per block.
-        /// Events beyond this limit are coalesced into the final sub-block.
-        max_sub_blocks: usize,
-    },
-}
-
-impl Default for GraphParameterApplicationStrategy {
-    fn default() -> Self {
-        Self::SplitAtEvents { max_sub_blocks: 8 }
-    }
-}
-
-/// A single parameter change to apply at a specific sample within the block.
-#[derive(Clone, Debug, PartialEq)]
-pub struct GraphParameterEvent {
-    /// Sample-accurate offset within the current block (0-based). Must be less
-    /// than the block's frame count or the event is ignored.
-    pub sample_offset: usize,
-    /// Which node/stage/parameter to update.
-    pub target: GraphParameterTarget,
-    /// New parameter value.
-    pub value: f32,
-}
-
-/// A set of parameter events to apply during a single processing block.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct GraphParameterBatch {
-    /// Runtime remains authoritative for `epoch` assignment and for deciding
-    /// which block the batch belongs to. Graph interprets `events` only as
-    /// block-local sample offsets relative to the current processing block.
-    pub epoch: u64,
-    /// Controls how events are applied within the block.
-    pub strategy: GraphParameterApplicationStrategy,
-    /// The individual parameter change events for this block.
-    pub events: Vec<GraphParameterEvent>,
 }
 
 /// Execution class assigned to a graph node, governing scheduler decisions.

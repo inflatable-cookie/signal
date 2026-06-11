@@ -12,6 +12,5 @@ mod host;
 
 pub use host::{
     ensure_default_demo_plugin_override, LocalAudioPumpSummary, LocalAudioStreamState,
-    LocalAudioTransferPolicy, LocalEngineSummary, LocalHardwareSummary, LocalRuntimeHost,
-    LocalRuntimeHostSummary,
+    LocalHardwareSummary, LocalRuntimeHost, LocalRuntimeHostSummary,
 };

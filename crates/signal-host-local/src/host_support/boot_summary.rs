@@ -1,15 +1,12 @@
 use signal_hardware::HardwareStreamConfig;
-use signal_runtime::RuntimeEngineBlockResult;
 
-use super::super::{
-    LocalEngineSummary, LocalHardwareSummary, LocalRuntimeHost, LocalRuntimeHostSummary,
-};
+use super::super::{LocalHardwareSummary, LocalRuntimeHost, LocalRuntimeHostSummary};
+use super::LocalAudioPumpSummary;
 
 impl LocalRuntimeHost {
     pub(crate) fn summarize_boot_outcome(
         &self,
         hardware_stream: &HardwareStreamConfig,
-        last_engine_result: Option<(u64, RuntimeEngineBlockResult)>,
     ) -> LocalRuntimeHostSummary {
         let observation = self.observation_report();
         LocalRuntimeHostSummary {
@@ -26,23 +23,10 @@ impl LocalRuntimeHost {
                 simulated: hardware_stream.simulated,
                 backend_diagnostics: self.hardware.diagnostics(),
             },
-            audio_pump: self.audio_pump.summary(),
-            scan_roots: self.supervisor.last_scan_roots.clone(),
-            engine: LocalEngineSummary {
-                processed_blocks: self.audio_pump.summary().callback_count,
-                last_block_sequence: last_engine_result
-                    .as_ref()
-                    .map(|(block_sequence, _)| *block_sequence),
-                last_graph_id: last_engine_result
-                    .as_ref()
-                    .and_then(|(_, result)| result.snapshot.graph_id.clone()),
-                last_output_peak: last_engine_result
-                    .as_ref()
-                    .and_then(|(_, result)| result.snapshot.last_output_peak),
-                last_output_rms: last_engine_result
-                    .as_ref()
-                    .and_then(|(_, result)| result.snapshot.last_output_rms),
+            audio_pump: LocalAudioPumpSummary {
+                stream_state: self.stream_state,
             },
+            scan_roots: self.supervisor.last_scan_roots.clone(),
             topology: observation.execution_topology_summary.clone(),
         }
     }

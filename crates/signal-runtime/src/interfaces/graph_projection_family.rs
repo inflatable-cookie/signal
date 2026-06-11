@@ -204,32 +204,11 @@ pub struct PluginBackedNodeBindingProjection {
     pub bindings: Vec<PluginBackedNodeBinding>,
 }
 
-/// Rendered output from a single plugin-backed graph node.
-#[derive(Clone, Debug, PartialEq)]
-pub struct PluginNodeRender {
-    /// Node that produced this render.
-    pub node_id: String,
-    /// Sandbox that processed this node.
-    pub sandbox_id: String,
-    /// Audio output buffer produced by the plugin.
-    pub output: AudioBuffer,
-    /// Latency introduced by the plugin in this render in samples.
-    pub latency_samples: u32,
-    /// Tail length reported by the plugin in samples.
-    pub tail_samples: u32,
-    /// Whether the plugin was bypassed for this render.
-    pub bypassed: bool,
-}
-
-/// Batch of per-node plugin renders for one processed block.
-#[derive(Clone, Debug, PartialEq)]
-pub struct PluginNodeRenderBatch {
-    /// Graph topology version these renders correspond to.
-    pub graph_id: String,
-    /// Processing epoch of the block these renders belong to.
-    pub processing_epoch: u64,
-    /// Block sequence number.
-    pub block_sequence: u64,
-    /// Per-node renders for this block.
-    pub renders: Vec<PluginNodeRender>,
+/// Acknowledgement returned when a projection is accepted by the runtime.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ProjectionReceipt {
+    /// Projection epoch assigned to the accepted projection.
+    pub accepted_epoch: u64,
+    /// Whether the projection is applied at the next block boundary.
+    pub applied_at_block_boundary: bool,
 }

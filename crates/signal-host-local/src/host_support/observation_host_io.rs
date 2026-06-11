@@ -17,7 +17,7 @@ impl LocalRuntimeHost {
         &self,
         observation: &RuntimeObservationReport,
     ) -> RuntimeHostIoSummary {
-        let audio_pump = self.audio_pump.summary();
+        let stream_state: signal_runtime::RuntimeHostAudioStreamState = self.stream_state.into();
         let backend_diagnostics = self.hardware.diagnostics();
         let active_stream = self.active_output_stream.as_ref();
         let processing_sample_rate_hz = observation.effective_config.sample_rate.0;
@@ -27,7 +27,7 @@ impl LocalRuntimeHost {
         let buffer_size = active_stream
             .map(|stream| stream.buffer_size)
             .unwrap_or(self.runtime.config().graph.block_size);
-        let graph_latency_samples = observation.engine_block_snapshot.total_latency_samples;
+        let graph_latency_samples = observation.graph_latency_samples;
         let output_latency_samples = active_stream
             .map(|stream| stream.latency.output_latency_samples)
             .unwrap_or(buffer_size as u32);
@@ -71,13 +71,13 @@ impl LocalRuntimeHost {
             active_stream.is_some(),
             transition_state,
             backend_diagnostics.health,
-            audio_pump.stream_state.into(),
+            stream_state,
         );
         let duplex_mismatch_state = host_duplex_mismatch_state(
             active_stream,
             clock_domain,
             backend_diagnostics.health,
-            audio_pump.stream_state.into(),
+            stream_state,
             partial_availability,
         );
         let callback_interval_ms = samples_to_ms(buffer_size as u32, sample_rate);
@@ -118,18 +118,7 @@ impl LocalRuntimeHost {
                 restart_attempt_count: backend_diagnostics.restart_attempt_count,
                 restart_failure_count: backend_diagnostics.restart_failure_count,
             },
-            audio_pump: RuntimeHostAudioPumpSummary {
-                stream_state: audio_pump.stream_state.into(),
-                transfer_policy: audio_pump.transfer_policy.into(),
-                callback_count: audio_pump.callback_count,
-                total_callback_frames: audio_pump.total_callback_frames,
-                total_runtime_output_frames: audio_pump.total_runtime_output_frames,
-                copied_output_samples: audio_pump.copied_output_samples,
-                zero_filled_output_samples: audio_pump.zero_filled_output_samples,
-                dropped_output_samples: audio_pump.dropped_output_samples,
-                last_callback_output_peak: audio_pump.last_callback_output_peak,
-                last_runtime_graph_id: audio_pump.last_runtime_graph_id.clone(),
-            },
+            audio_pump: RuntimeHostAudioPumpSummary { stream_state },
             clocking: RuntimeHostClockingSummary {
                 clock_source: active_stream
                     .map(|stream| RuntimeHostClockSource::from(stream.clock_source))
@@ -172,8 +161,6 @@ impl LocalRuntimeHost {
                 estimated_round_trip_latency_ms: estimated_round_trip_latency_samples
                     .map(|samples| samples_to_ms(samples, sample_rate)),
             },
-            runtime_graph_id_matches_pump: audio_pump.last_runtime_graph_id.as_deref()
-                == observation.engine_block_snapshot.graph_id.as_deref(),
         }
     }
 }

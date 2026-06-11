@@ -1,24 +1,13 @@
 use super::*;
 
 impl RuntimeTempoMapStateModel {
-    pub(crate) fn apply_projection(&mut self, mut projection: RuntimeTempoMapProjection) {
-        projection.segment_count = projection.segments.len();
-        projection
-            .segments
-            .sort_by_key(|segment| (segment.start_samples, segment.segment_id.clone()));
-        self.projection = Some(projection);
-    }
-
     pub(crate) fn resolve(
         &self,
         timeline_position_samples: Option<i64>,
-        projected_transport: Option<TransportProjection>,
         observed_tempo_bpm: Option<f64>,
     ) -> RuntimeResolvedTempo {
-        let projected_tempo_bpm = projected_transport
-            .map(|transport| transport.tempo_bpm)
-            .or(observed_tempo_bpm)
-            .filter(|tempo| tempo.is_finite() && *tempo > 0.0);
+        let projected_tempo_bpm =
+            observed_tempo_bpm.filter(|tempo| tempo.is_finite() && *tempo > 0.0);
         let mut resolved = RuntimeResolvedTempo {
             tempo_bpm: projected_tempo_bpm.unwrap_or(120.0),
             source: if projected_tempo_bpm.is_some() {

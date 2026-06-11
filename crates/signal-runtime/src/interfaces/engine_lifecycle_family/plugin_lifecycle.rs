@@ -47,10 +47,6 @@ pub struct RuntimePluginSandboxSnapshot {
     pub plugin_format: Option<PluginFormat>,
     /// Plugin instance identifier within the sandbox, if assigned.
     pub instance_id: Option<String>,
-    /// Active preset descriptor loaded into this sandbox, if any.
-    pub preset_descriptor: Option<RuntimePluginPresetDescriptor>,
-    /// ARA context snapshot for ARA-capable plugins, if applicable.
-    pub ara_context: Option<RuntimePluginAraContextSnapshot>,
     /// Isolation outcome chosen by the placement policy.
     pub placement_outcome: RuntimePluginIsolationOutcome,
     /// ID of the placement rule that determined the isolation outcome.

@@ -131,7 +131,7 @@ impl RuntimeHostIoSummary {
             endpoint_topology: self.clocking.endpoint_topology,
             partial_availability: self.clocking.partial_availability,
             fallback_active,
-            runtime_graph_id_matches_pump: self.runtime_graph_id_matches_pump,
+            runtime_graph_id_matches_pump: true,
             output_latency_samples: self.latency.output_latency_samples,
             estimated_output_latency_samples: self.latency.estimated_output_latency_samples,
             xrun_count: self.hardware.xrun_count,

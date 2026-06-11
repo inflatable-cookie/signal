@@ -1,4 +1,5 @@
 use super::*;
+use signal_primitives::ChannelLayout;
 use std::collections::{BTreeMap, BTreeSet};
 
 impl ExecutableGraph {

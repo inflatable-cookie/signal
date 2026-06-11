@@ -10,15 +10,21 @@ fn booted_host() -> (LocalRuntimeHost, LocalRuntimeHostSummary) {
 }
 
 #[test]
-fn boot_default_runs_engine_blocks_and_reports_running_stream() {
+fn boot_default_reports_running_stream_and_topology() {
     let (host, summary) = booted_host();
     assert_eq!(summary.audio_pump.stream_state, LocalAudioStreamState::Running);
-    assert_eq!(summary.engine.processed_blocks, STEADY_STATE_BLOCKS);
-    assert_eq!(summary.engine.last_graph_id.as_deref(), Some(LOCAL_DEMO_GRAPH_ID));
     assert!(summary.topology.node_count > 0);
     assert!(!summary.hardware.device_id.is_empty());
     let report = host.host_supervisor_report();
     assert!(!report.events.is_empty());
+    assert_eq!(
+        report
+            .observation
+            .observation
+            .execution_topology_summary
+            .node_count,
+        summary.topology.node_count
+    );
 }
 
 #[test]

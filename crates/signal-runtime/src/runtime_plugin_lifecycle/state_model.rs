@@ -31,22 +31,6 @@ impl RuntimePluginLifecycleStateModel {
         sandbox.plugin_type_id = spec.plugin_type_id.clone();
     }
 
-    pub(crate) fn record_preset_descriptor(
-        &mut self,
-        sandbox_id: &str,
-        descriptor: RuntimePluginPresetDescriptor,
-    ) {
-        self.sandbox_mut(sandbox_id).preset_descriptor = Some(descriptor);
-    }
-
-    pub(crate) fn record_ara_context(
-        &mut self,
-        sandbox_id: &str,
-        context: RuntimePluginAraContextSnapshot,
-    ) {
-        self.sandbox_mut(sandbox_id).ara_context = Some(context);
-    }
-
     pub(crate) fn set_active_sandbox_count(&mut self, count: u32) {
         self.active_sandbox_count = count;
     }

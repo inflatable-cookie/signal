@@ -42,34 +42,8 @@ pub trait RuntimeLifecycleApi {
     fn set_safe_mode(&mut self, request: SafeModeRequest) -> Result<(), RuntimeError>;
 }
 
-/// Graph, schedule, transport, parameter, automation, and hardware projection.
+/// Graph plan and hardware projection.
 pub trait RuntimeProjectionApi {
-    /// Sets the realtime pressure level signalled to the prework service.
-    fn set_prework_service_pressure(
-        &mut self,
-        pressure: RuntimePreworkServicePressure,
-    ) -> Result<(), RuntimeError>;
-    /// Sets the prework forecast operating mode.
-    fn set_prework_forecast_mode(
-        &mut self,
-        mode: RuntimePreworkForecastMode,
-    ) -> Result<(), RuntimeError>;
-    /// Sets the prework forecast profile selection.
-    fn set_prework_forecast_profile(
-        &mut self,
-        selection: RuntimePreworkForecastProfileSelection,
-    ) -> Result<(), RuntimeError>;
-    /// Sets a raw prework forecast policy override.
-    fn set_prework_forecast_policy(
-        &mut self,
-        policy: RuntimePreworkForecastPolicy,
-    ) -> Result<(), RuntimeError>;
-    /// Services the prework lane for the given processing epoch and cycle count.
-    fn service_prework_lane(
-        &mut self,
-        processing_epoch: u64,
-        cycles: usize,
-    ) -> Result<usize, RuntimeError>;
     /// Applies plugin-backed node bindings to the active graph.
     fn apply_plugin_backed_node_bindings(
         &mut self,
@@ -90,28 +64,6 @@ pub trait RuntimeProjectionApi {
         &mut self,
         projection: GraphProjection,
     ) -> Result<ProjectionReceipt, RuntimeError>;
-    /// Applies a schedule projection to the runtime.
-    fn apply_schedule_projection(
-        &mut self,
-        projection: ScheduleProjection,
-    ) -> Result<ProjectionReceipt, RuntimeError>;
-    /// Applies an automation projection to the runtime.
-    fn apply_automation_projection(
-        &mut self,
-        projection: RuntimeAutomationProjection,
-    ) -> Result<ProjectionReceipt, RuntimeError>;
-    /// Applies a tempo map projection to the runtime.
-    fn apply_tempo_map_projection(
-        &mut self,
-        projection: RuntimeTempoMapProjection,
-    ) -> Result<ProjectionReceipt, RuntimeError>;
-    /// Applies a transport state projection to the runtime.
-    fn apply_transport_projection(
-        &mut self,
-        projection: TransportProjection,
-    ) -> Result<(), RuntimeError>;
-    /// Applies a parameter batch to the runtime.
-    fn apply_parameter_batch(&mut self, batch: ParameterBatch) -> Result<(), RuntimeError>;
     /// Applies a hardware configuration request to the runtime.
     fn apply_hardware_config(&mut self, request: HardwareConfigRequest)
         -> Result<(), RuntimeError>;
@@ -127,26 +79,14 @@ pub trait RuntimeObservationApi {
     fn subscribe(&mut self, sink: Box<dyn RuntimeEventSink>) -> SubscriptionHandle;
     /// Returns the current overall readiness state of the runtime.
     fn get_readiness(&self) -> RuntimeReadiness;
-    /// Returns a multi-lane acceptance receipt for the current runtime state.
-    fn get_acceptance_receipt(&self) -> RuntimeAcceptanceReceipt;
     /// Returns the currently active runtime configuration values.
     fn get_effective_config(&self) -> EffectiveRuntimeConfig;
     /// Returns the current runtime control-plane snapshot.
     fn get_control_snapshot(&self) -> RuntimeControlSnapshot;
-    /// Returns the current graph scheduler snapshot.
-    fn get_scheduler_snapshot(&self) -> RuntimeSchedulerSnapshot;
-    /// Returns the current scheduler topology summary.
-    fn get_scheduler_topology_summary(&self) -> RuntimeSchedulerTopologySummary;
     /// Returns the current scalar diagnostics snapshot.
     fn get_diagnostics_snapshot(&self) -> RuntimeDiagnosticsSnapshot;
-    /// Returns the current metering snapshot.
-    fn get_metering_snapshot(&self) -> RuntimeMeteringSnapshot;
     /// Returns the current supervision snapshot.
     fn get_supervision_snapshot(&self) -> RuntimeSupervisionSnapshot;
-    /// Returns the current timeline snapshot.
-    fn get_timeline_snapshot(&self) -> RuntimeTimelineSnapshot;
-    /// Returns the current transport observation snapshot.
-    fn get_transport_observation_snapshot(&self) -> RuntimeTransportObservationSnapshot;
     /// Returns the current recording capture snapshot.
     fn get_recording_capture_snapshot(&self) -> RuntimeRecordingCaptureSnapshot;
     /// Returns the current media pipeline snapshot.
@@ -161,32 +101,16 @@ pub trait RuntimeObservationApi {
     fn get_warp_pipeline_snapshot(&self) -> RuntimeWarpPipelineSnapshot;
     /// Returns the current clip processing pipeline snapshot.
     fn get_clip_processing_pipeline_snapshot(&self) -> RuntimeClipProcessingPipelineSnapshot;
-    /// Returns the current stretch engine snapshot.
-    fn get_stretch_engine_snapshot(&self) -> RuntimeStretchEngineSnapshot;
-    /// Returns the current marker analysis snapshot.
-    fn get_marker_analysis_snapshot(&self) -> RuntimeMarkerAnalysisSnapshot;
-    /// Returns the current transform artifact snapshot.
-    fn get_transform_artifact_snapshot(&self) -> RuntimeTransformArtifactSnapshot;
-    /// Returns the current preview transform service snapshot.
-    fn get_preview_transform_snapshot(&self) -> RuntimePreviewTransformServiceSnapshot;
-    /// Returns the current automation snapshot.
-    fn get_automation_snapshot(&self) -> RuntimeAutomationSnapshot;
-    /// Returns the current engine block snapshot.
-    fn get_engine_block_snapshot(&self) -> RuntimeEngineBlockSnapshot;
     /// Returns the current execution topology summary.
     fn get_execution_topology_summary(&self) -> RuntimeExecutionTopologySummary;
-    /// Returns the current transport concurrency snapshot.
-    fn get_transport_concurrency_snapshot(&self) -> RuntimeTransportConcurrencySnapshot;
+    /// Returns the declared latency of the applied graph plan, in samples.
+    fn get_graph_latency_samples(&self) -> u32;
     /// Returns the current plugin discovery snapshot.
     fn get_plugin_discovery_snapshot(&self) -> RuntimePluginDiscoverySnapshot;
     /// Returns the current plugin lifecycle snapshot.
     fn get_plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot;
     /// Returns the current plugin chain snapshot.
     fn get_plugin_chain_snapshot(&self) -> RuntimePluginChainSnapshot;
-    /// Returns the current plugin recall handoff snapshot.
-    fn get_plugin_recall_handoff_snapshot(&self) -> RuntimePluginRecallHandoffSnapshot;
-    /// Returns the most recent deferred service receipt, if any.
-    fn get_last_deferred_service_receipt(&self) -> Option<RuntimeDeferredServiceReceipt>;
 }
 
 /// Supervisor-level operations: plugin sandbox management, recording capture,

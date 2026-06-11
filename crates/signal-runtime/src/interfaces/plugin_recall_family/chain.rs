@@ -34,10 +34,6 @@ pub struct RuntimePluginChainStageSnapshot {
     pub io_layout: RuntimeMultichannelIoSummary,
     /// Complex I/O topology summary for this stage.
     pub complex_io_summary: RuntimePluginComplexIoSummary,
-    /// Secondary (sidechain) input routing, if applicable.
-    pub secondary_input: Option<RuntimeSecondaryInputRouteSummary>,
-    /// Spatial execution configuration for this stage, if applicable.
-    pub spatial_execution: Option<RuntimeSpatialExecutionSummary>,
     /// Lifecycle state of the bound sandbox.
     pub lifecycle_state: Option<RuntimePluginLifecycleState>,
     /// Lifecycle stage of the bound sandbox.

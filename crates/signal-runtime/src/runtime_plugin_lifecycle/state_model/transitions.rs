@@ -19,7 +19,6 @@ impl RuntimePluginLifecycleStateModel {
         sandbox.transport_stage = Some(PluginSandboxTransportStage::DetachFault);
         sandbox.active_lease_id = None;
         sandbox.active_region_id = None;
-        sandbox.ara_context = None;
         sandbox.state = if sandbox.fault_count >= threshold {
             RuntimePluginLifecycleState::Quarantined
         } else {
@@ -43,7 +42,6 @@ impl RuntimePluginLifecycleStateModel {
         sandbox.active_transport = false;
         sandbox.active_lease_id = None;
         sandbox.active_region_id = None;
-        sandbox.ara_context = None;
         if sandbox.state != RuntimePluginLifecycleState::Quarantined {
             sandbox.state = RuntimePluginLifecycleState::Restarting;
         }
@@ -95,7 +93,6 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active_transport = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
-                sandbox.ara_context = None;
             }
             PluginSandboxLifecycleStage::SandboxRestarted => {
                 sandbox.restart_count = sandbox.restart_count.saturating_add(1);
@@ -103,7 +100,6 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active_transport = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
-                sandbox.ara_context = None;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined {
                     sandbox.state = RuntimePluginLifecycleState::Restarting;
                 }
@@ -171,7 +167,6 @@ impl RuntimePluginLifecycleStateModel {
             PluginSandboxTransportStage::DetachRequested => {
                 sandbox.active_transport = false;
                 sandbox.active = false;
-                sandbox.ara_context = None;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined
                     && sandbox.state != RuntimePluginLifecycleState::Faulted
                 {
@@ -183,7 +178,6 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
-                sandbox.ara_context = None;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined
                     && sandbox.state != RuntimePluginLifecycleState::Faulted
                     && sandbox.state != RuntimePluginLifecycleState::Stopped
@@ -196,7 +190,6 @@ impl RuntimePluginLifecycleStateModel {
                 sandbox.active = false;
                 sandbox.active_lease_id = None;
                 sandbox.active_region_id = None;
-                sandbox.ara_context = None;
                 sandbox.last_fault_detail = detail;
                 if sandbox.state != RuntimePluginLifecycleState::Quarantined {
                     sandbox.state = RuntimePluginLifecycleState::Degraded;

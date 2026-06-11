@@ -4,8 +4,6 @@ pub(super) fn runtime_plugin_interchange_snapshot_from_snapshot(
     sandbox: Option<&RuntimePluginSandboxSnapshot>,
     discovered_types: &[RuntimePluginDiscoveredTypeRecord],
 ) -> RuntimePluginInterchangeSnapshot {
-    let preset_descriptor = sandbox.and_then(|sandbox| sandbox.preset_descriptor.clone());
-    let ara_context = sandbox.and_then(|sandbox| sandbox.ara_context.as_ref());
     let discovered_type = runtime_plugin_discovered_type_for_recall(
         sandbox.and_then(|sandbox| sandbox.plugin_type_id.as_deref()),
         discovered_types,
@@ -21,13 +19,9 @@ pub(super) fn runtime_plugin_interchange_snapshot_from_snapshot(
                 Some(_) => RuntimePluginRecallPortabilityClass::Guarded,
                 None => RuntimePluginRecallPortabilityClass::Guarded,
             }
-        } else if ara_context.is_some() {
-            RuntimePluginRecallPortabilityClass::ContextOnly
         } else {
             RuntimePluginRecallPortabilityClass::NativeOnly
         }
-    } else if ara_context.is_some() {
-        RuntimePluginRecallPortabilityClass::ContextOnly
     } else {
         RuntimePluginRecallPortabilityClass::Unsupported
     };
@@ -45,7 +39,6 @@ pub(super) fn runtime_plugin_interchange_snapshot_from_snapshot(
         portability_class,
         shared_payload_available,
         native_supplement_required,
-        preset_descriptor,
     }
 }
 
@@ -108,32 +101,12 @@ pub(super) fn runtime_plugin_recall_payload(
             .map(|sandbox| sandbox.degraded_reasons.clone())
             .unwrap_or_default(),
         interchange: runtime_plugin_interchange_snapshot_from_snapshot(sandbox, discovered_types),
-        ara_context: sandbox.and_then(|sandbox| sandbox.ara_context.clone()),
     }
-}
-
-pub(super) fn runtime_plugin_tail_remaining_samples(
-    realized: &RuntimePluginRenderedNodeState,
-    current_block_sequence: Option<u64>,
-    frame_count: usize,
-) -> Option<u32> {
-    let current_block_sequence = current_block_sequence?;
-    let consumed_samples = current_block_sequence
-        .saturating_sub(realized.block_sequence)
-        .saturating_mul(frame_count.max(1) as u64);
-    Some(
-        realized
-            .tail_samples
-            .saturating_sub(consumed_samples.min(u64::from(u32::MAX)) as u32),
-    )
 }
 
 pub(super) fn runtime_plugin_compensation_observation(
     sandbox_id: Option<&str>,
     sandbox: Option<&RuntimePluginSandboxSnapshot>,
-    realized: Option<&RuntimePluginRenderedNodeState>,
-    current_block_sequence: Option<u64>,
-    current_frame_count: usize,
 ) -> RuntimePluginCompensationObservation {
     if sandbox_id.is_none() {
         return RuntimePluginCompensationObservation {
@@ -157,46 +130,9 @@ pub(super) fn runtime_plugin_compensation_observation(
             tail_samples: None,
         };
     }
-    match realized {
-        Some(realized) if realized.bypassed => RuntimePluginCompensationObservation {
-            state: RuntimePluginCompensationState::Bypassed,
-            realized_latency_samples: Some(realized.latency_samples),
-            tail_samples: Some(realized.tail_samples),
-        },
-        Some(realized) => {
-            let tail_remaining = runtime_plugin_tail_remaining_samples(
-                realized,
-                current_block_sequence,
-                current_frame_count,
-            );
-            let state = match current_block_sequence
-                .unwrap_or(realized.block_sequence)
-                .saturating_sub(realized.block_sequence)
-            {
-                0 => RuntimePluginCompensationState::Compensated,
-                _ if tail_remaining.unwrap_or(0) > 0 => RuntimePluginCompensationState::Settling,
-                _ => RuntimePluginCompensationState::PendingRender,
-            };
-            RuntimePluginCompensationObservation {
-                state,
-                realized_latency_samples: matches!(
-                    state,
-                    RuntimePluginCompensationState::Compensated
-                        | RuntimePluginCompensationState::Settling
-                )
-                .then_some(realized.latency_samples),
-                tail_samples: matches!(
-                    state,
-                    RuntimePluginCompensationState::Compensated
-                        | RuntimePluginCompensationState::Settling
-                )
-                .then_some(tail_remaining.unwrap_or(realized.tail_samples)),
-            }
-        }
-        None => RuntimePluginCompensationObservation {
-            state: RuntimePluginCompensationState::PendingRender,
-            realized_latency_samples: None,
-            tail_samples: None,
-        },
+    RuntimePluginCompensationObservation {
+        state: RuntimePluginCompensationState::PendingRender,
+        realized_latency_samples: None,
+        tail_samples: None,
     }
 }

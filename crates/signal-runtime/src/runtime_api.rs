@@ -62,45 +62,6 @@ impl RuntimeLifecycleApi for SignalRuntime {
 }
 
 impl RuntimeProjectionApi for SignalRuntime {
-    fn set_prework_service_pressure(
-        &mut self,
-        pressure: RuntimePreworkServicePressure,
-    ) -> Result<(), RuntimeError> {
-        self.require_configured()?;
-        self.engine.set_prework_service_pressure(pressure);
-        self.refresh_prework_service_policy_and_state(None);
-        Ok(())
-    }
-
-    fn set_prework_forecast_mode(
-        &mut self,
-        mode: RuntimePreworkForecastMode,
-    ) -> Result<(), RuntimeError> {
-        SignalRuntime::set_prework_forecast_mode(self, mode)
-    }
-
-    fn set_prework_forecast_profile(
-        &mut self,
-        selection: RuntimePreworkForecastProfileSelection,
-    ) -> Result<(), RuntimeError> {
-        SignalRuntime::set_prework_forecast_profile(self, selection)
-    }
-
-    fn set_prework_forecast_policy(
-        &mut self,
-        policy: RuntimePreworkForecastPolicy,
-    ) -> Result<(), RuntimeError> {
-        SignalRuntime::set_prework_forecast_policy(self, policy)
-    }
-
-    fn service_prework_lane(
-        &mut self,
-        processing_epoch: u64,
-        cycles: usize,
-    ) -> Result<usize, RuntimeError> {
-        SignalRuntime::service_prework_lane(self, processing_epoch, cycles)
-    }
-
     fn apply_plugin_backed_node_bindings(
         &mut self,
         projection: PluginBackedNodeBindingProjection,
@@ -129,50 +90,6 @@ impl RuntimeProjectionApi for SignalRuntime {
         projection: GraphProjection,
     ) -> Result<ProjectionReceipt, RuntimeError> {
         self.apply_graph_projection_state(projection)
-    }
-
-    fn apply_schedule_projection(
-        &mut self,
-        projection: ScheduleProjection,
-    ) -> Result<ProjectionReceipt, RuntimeError> {
-        self.apply_schedule_projection_state(projection)
-    }
-
-    fn apply_automation_projection(
-        &mut self,
-        projection: RuntimeAutomationProjection,
-    ) -> Result<ProjectionReceipt, RuntimeError> {
-        Self::validate_automation_projection_request(&projection)?;
-        self.projection_epoch = self.projection_epoch.saturating_add(1);
-        self.automation.apply_projection(projection);
-        Ok(ProjectionReceipt {
-            accepted_epoch: self.projection_epoch,
-            applied_at_block_boundary: true,
-        })
-    }
-
-    fn apply_tempo_map_projection(
-        &mut self,
-        projection: RuntimeTempoMapProjection,
-    ) -> Result<ProjectionReceipt, RuntimeError> {
-        Self::validate_tempo_map_projection_request(&projection)?;
-        self.projection_epoch = self.projection_epoch.saturating_add(1);
-        self.tempo_map.apply_projection(projection);
-        Ok(ProjectionReceipt {
-            accepted_epoch: self.projection_epoch,
-            applied_at_block_boundary: true,
-        })
-    }
-
-    fn apply_transport_projection(
-        &mut self,
-        projection: TransportProjection,
-    ) -> Result<(), RuntimeError> {
-        self.apply_transport_projection_state(projection)
-    }
-
-    fn apply_parameter_batch(&mut self, batch: ParameterBatch) -> Result<(), RuntimeError> {
-        self.apply_parameter_batch_state(batch)
     }
 
     fn apply_hardware_config(

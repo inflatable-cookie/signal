@@ -69,10 +69,11 @@ crates/
   signal-analysis-embed/       # Descriptor projection and tag matching
 
   # Control plane
-  signal-runtime/              # Offline render orchestration and runtime diagnostics
-  #                              (control plane, not the audio callback)
-  signal-graph/                # Graph model executed offline/in simulation for the
-  #                              control plane, never on the audio thread
+  signal-runtime/              # Thin control library: lifecycle, graph plan vocabulary,
+  #                              plugin discovery/sandbox records, media pipeline,
+  #                              observation reports (not the audio callback)
+  signal-graph/                # Graph plan model (specs, contracts, planning summaries)
+  #                              for the control plane, never on the audio thread
   signal-host-local/           # Pulse-facing local host assembly (library; no binary)
   signal-ipc/                  # Shared-memory leases and control/message model
 

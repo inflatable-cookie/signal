@@ -38,33 +38,6 @@ pub enum RuntimePluginRecallPortabilityClass {
     Unsupported,
 }
 
-/// Origin of a plugin preset.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum RuntimePluginPresetOrigin {
-    /// Preset shipped with the plugin.
-    Factory,
-    /// Preset created by the user.
-    User,
-    /// Preset embedded in a project or clip file.
-    Embedded,
-    /// Preset stored within the document.
-    Document,
-    #[default]
-    /// Preset exists only for the current session.
-    Transient,
-}
-
-/// Identifies a plugin preset by optional ID, display label, and origin.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RuntimePluginPresetDescriptor {
-    /// Stable preset identifier, if the format provides one.
-    pub preset_id: Option<String>,
-    /// Human-readable label for this preset.
-    pub label: Option<String>,
-    /// Where this preset originated.
-    pub origin: RuntimePluginPresetOrigin,
-}
-
 /// Portability and state-transfer snapshot for a plugin sandbox.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimePluginInterchangeSnapshot {
@@ -74,52 +47,6 @@ pub struct RuntimePluginInterchangeSnapshot {
     pub shared_payload_available: bool,
     /// Whether a native platform supplement is required for full state restoration.
     pub native_supplement_required: bool,
-    /// Preset descriptor for the currently loaded preset, if any.
-    pub preset_descriptor: Option<RuntimePluginPresetDescriptor>,
-}
-
-/// ARA document context associated with a plugin sandbox.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RuntimePluginAraDocumentContext {
-    /// Stable ARA document identifier.
-    pub document_id: String,
-    /// Human-readable display label for the document.
-    pub display_label: Option<String>,
-}
-
-/// ARA audio source context associated with a plugin sandbox.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RuntimePluginAraSourceContext {
-    /// Stable ARA audio source identifier.
-    pub source_id: String,
-    /// Human-readable display label for the audio source.
-    pub display_label: Option<String>,
-}
-
-/// ARA region context (timeline placement) associated with a plugin sandbox.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RuntimePluginAraRegionContext {
-    /// Stable ARA region identifier.
-    pub region_id: String,
-    /// Human-readable display label for the region.
-    pub display_label: Option<String>,
-    /// Region start position in samples on the timeline.
-    pub timeline_start_samples: Option<i64>,
-    /// Region duration in samples.
-    pub duration_samples: Option<u32>,
-}
-
-/// Combined ARA context snapshot (portability, document, source, region).
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct RuntimePluginAraContextSnapshot {
-    /// Cross-platform portability classification for the ARA context.
-    pub portability_class: RuntimePluginRecallPortabilityClass,
-    /// ARA document context, if available.
-    pub document_context: Option<RuntimePluginAraDocumentContext>,
-    /// ARA audio source context, if available.
-    pub source_context: Option<RuntimePluginAraSourceContext>,
-    /// ARA region context, if available.
-    pub region_context: Option<RuntimePluginAraRegionContext>,
 }
 
 /// Full recall payload for a plugin chain stage: sandbox identity, lifecycle
@@ -158,8 +85,6 @@ pub struct RuntimePluginRecallPayload {
     pub degraded_reasons: Vec<String>,
     /// State portability and interchange snapshot.
     pub interchange: RuntimePluginInterchangeSnapshot,
-    /// ARA document context, if applicable.
-    pub ara_context: Option<RuntimePluginAraContextSnapshot>,
 }
 
 /// Per-stage recall snapshot combining state and full payload.

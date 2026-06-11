@@ -2,7 +2,7 @@ use super::*;
 
 impl SignalRuntime {
     pub(crate) fn plugin_lifecycle_snapshot(&self) -> RuntimePluginLifecycleSnapshot {
-        let boundary_counts = runtime_plugin_boundary_counts(&self.engine.snapshot.planned_nodes);
+        let boundary_counts = runtime_plugin_boundary_counts(&self.plan.planned_nodes);
         self.plugin_lifecycle.snapshot(
             &self.plugin_placement_policy,
             &boundary_counts.sandbox_stage_counts,

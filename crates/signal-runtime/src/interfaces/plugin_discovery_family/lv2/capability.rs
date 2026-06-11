@@ -1,6 +1,4 @@
 use super::*;
-#[path = "capability/pin_matrix.rs"]
-mod pin_matrix;
 
 /// LV2 `worker:schedule` extension status: absent, supported, or required.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -116,6 +114,7 @@ impl RuntimeLv2ExtensionCapabilitySummary {
 
 /// Runtime posture for LV2 worker thread scheduling: absent, available, required-and-available, guarded, or unavailable.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(clippy::enum_variant_names)] // frozen public names; shared affix is intentional
 pub enum RuntimeLv2WorkerPosture {
     /// Plugin does not use the worker extension.
     WorkerAbsent,
@@ -166,56 +165,6 @@ pub enum RuntimeLv2ExtensionNegotiationState {
     PartiallySatisfied,
     /// One or more required extensions could not be negotiated.
     Unavailable,
-}
-
-/// LV2 extension negotiation record for one plugin type: per-extension postures, sandbox counts, and overall negotiation state.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeLv2ExtensionRecord {
-    /// Stable unique identifier for this plugin type.
-    pub plugin_type_id: String,
-    /// Shorter plugin identifier.
-    pub plugin_id: String,
-    /// Runtime worker thread scheduling posture.
-    pub worker_posture: RuntimeLv2WorkerPosture,
-    /// Runtime URID map negotiation posture.
-    pub urid_negotiation_posture: RuntimeLv2UridNegotiationPosture,
-    /// Runtime patch message exchange posture.
-    pub patch_exchange_posture: RuntimeLv2PatchExchangePosture,
-    /// Overall extension negotiation state.
-    pub extension_negotiation_state: RuntimeLv2ExtensionNegotiationState,
-    /// Highest-severity lifecycle state across all sandboxes for this type.
-    pub strongest_lifecycle_state: Option<RuntimePluginLifecycleState>,
-    /// Total sandboxes for this plugin type.
-    pub sandbox_count: usize,
-    /// Number of sandboxes currently active or transport-active.
-    pub active_sandbox_count: usize,
-    /// Number of sandboxes in a faulted or quarantined state.
-    pub faulted_sandbox_count: usize,
-}
-
-/// Aggregate LV2 extension snapshot across all plugin types: counts by extension posture and the full record list.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeLv2ExtensionSnapshot {
-    /// Total LV2 plugin types in this snapshot.
-    pub plugin_type_count: usize,
-    /// Total sandbox instances across all LV2 types.
-    pub sandbox_count: usize,
-    /// Number of types that require the worker extension.
-    pub worker_required_type_count: usize,
-    /// Number of types with a guarded worker posture.
-    pub worker_guarded_type_count: usize,
-    /// Number of types with a negotiated URID map posture.
-    pub urid_negotiated_type_count: usize,
-    /// Number of types with patch extension support.
-    pub patch_supported_type_count: usize,
-    /// Number of types fully negotiated across all extensions.
-    pub negotiated_type_count: usize,
-    /// Number of types with at least one guarded extension.
-    pub guarded_type_count: usize,
-    /// Number of types where extension negotiation is unavailable.
-    pub unavailable_type_count: usize,
-    /// Per-type extension negotiation records.
-    pub records: Vec<RuntimeLv2ExtensionRecord>,
 }
 
 /// Aggregate plugin capability coverage across the full catalog: format counts, I/O topology counts, and feature support counts.

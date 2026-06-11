@@ -17,16 +17,14 @@ use signal_runtime::{
 mod host_api;
 #[path = "host_support.rs"]
 mod host_support;
-#[cfg(test)]
-pub(crate) use host_support::STEADY_STATE_BLOCKS;
 use host_support::{
     discovered_plugins_for_scan, ensure_discovered_sandbox_session,
-    runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session, LocalAudioPumpState,
+    runtime_plugin_format_platform_coverage, teardown_broker_sandbox_session,
     LocalClockTransitionMemory, LocalHardwareBackend, LocalSupervisorState, SandboxBrokerSession,
 };
 pub use host_support::{
     ensure_default_demo_plugin_override, LocalAudioPumpSummary, LocalAudioStreamState,
-    LocalAudioTransferPolicy, LocalEngineSummary, LocalHardwareSummary, LocalRuntimeHostSummary,
+    LocalHardwareSummary, LocalRuntimeHostSummary,
 };
 pub(crate) use host_support::{LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_NODE_ID};
 
@@ -53,7 +51,7 @@ pub struct LocalRuntimeHost {
     sandbox_broker_sessions: HashMap<String, SandboxBrokerSession>,
     active_output_stream: Option<HardwareStreamConfig>,
     clock_transition_memory: RefCell<LocalClockTransitionMemory>,
-    audio_pump: LocalAudioPumpState,
+    stream_state: LocalAudioStreamState,
     supervisor: LocalSupervisorState,
     events: RuntimeEventRecorder,
 }
@@ -83,7 +81,7 @@ impl LocalRuntimeHost {
             sandbox_broker_sessions: HashMap::new(),
             active_output_stream: None,
             clock_transition_memory: RefCell::new(LocalClockTransitionMemory::default()),
-            audio_pump: LocalAudioPumpState::default(),
+            stream_state: LocalAudioStreamState::Stopped,
             supervisor: LocalSupervisorState::default(),
             events,
         }

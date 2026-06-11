@@ -17,7 +17,6 @@ impl SignalRuntime {
             detail.clone(),
             processing_epoch,
         );
-        self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
         self.emit(RuntimeEvent::PluginSandboxFault {
             sandbox_id,
             kind,
@@ -41,7 +40,6 @@ impl SignalRuntime {
             stop_reason,
             processing_epoch,
         );
-        self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
         self.emit(RuntimeEvent::RecoveryCycle {
             sandbox_id,
             intent,
@@ -60,17 +58,6 @@ impl SignalRuntime {
         let sandbox_id = sandbox_id.into();
         self.plugin_lifecycle
             .record_lifecycle(sandbox_id.as_str(), stage, processing_epoch);
-        if matches!(
-            stage,
-            PluginSandboxLifecycleStage::InstanceDeactivated
-                | PluginSandboxLifecycleStage::InstanceReset
-                | PluginSandboxLifecycleStage::InstanceDestroyed
-                | PluginSandboxLifecycleStage::SandboxTeardown
-                | PluginSandboxLifecycleStage::TransportTornDown
-                | PluginSandboxLifecycleStage::SandboxRestarted
-        ) {
-            self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
-        }
         self.emit(RuntimeEvent::PluginSandboxLifecycle {
             sandbox_id,
             stage,
@@ -99,49 +86,6 @@ impl SignalRuntime {
             processing_epoch,
             detail.clone(),
         );
-        if matches!(
-            stage,
-            PluginSandboxTransportStage::DetachRequested
-                | PluginSandboxTransportStage::Detached
-                | PluginSandboxTransportStage::DetachFault
-        ) {
-            self.invalidate_plugin_render_state_for_sandbox(sandbox_id.as_str());
-        }
-        match stage {
-            PluginSandboxTransportStage::Attached => {
-                self.transport_concurrency.mark_session_state(
-                    sandbox_id.as_str(),
-                    lease_id.as_str(),
-                    region_id.as_str(),
-                    TransportSessionState::AttachActive,
-                );
-            }
-            PluginSandboxTransportStage::DetachRequested => {
-                self.transport_concurrency.mark_session_state(
-                    sandbox_id.as_str(),
-                    lease_id.as_str(),
-                    region_id.as_str(),
-                    TransportSessionState::DetachRequested,
-                );
-            }
-            PluginSandboxTransportStage::DetachFault => {
-                self.transport_concurrency.mark_session_state(
-                    sandbox_id.as_str(),
-                    lease_id.as_str(),
-                    region_id.as_str(),
-                    TransportSessionState::DetachFaulted,
-                );
-            }
-            PluginSandboxTransportStage::Detached => {
-                self.transport_concurrency.mark_session_state(
-                    sandbox_id.as_str(),
-                    lease_id.as_str(),
-                    region_id.as_str(),
-                    TransportSessionState::Detached,
-                );
-            }
-        }
-        self.refresh_prework_service_policy_and_state(processing_epoch);
         self.emit(RuntimeEvent::PluginSandboxTransport {
             sandbox_id,
             lease_id,

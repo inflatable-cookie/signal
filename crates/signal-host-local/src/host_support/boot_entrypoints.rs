@@ -26,7 +26,6 @@ impl LocalRuntimeHost {
         })?;
         self.runtime
             .set_backend_policy_tier(hardware_request.backend_policy);
-        self.audio_pump.reset_for_stream(&stream);
         self.active_output_stream = Some(stream.clone());
         Ok(stream)
     }

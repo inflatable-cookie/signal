@@ -13,11 +13,8 @@ impl SignalRuntime {
         shared_boundary_member_count: usize,
         continuity_class: RuntimeInterruptionClass,
         rebindable: bool,
-        current_block_sequence: Option<u64>,
-        current_frame_count: usize,
         stage_index: usize,
     ) -> RuntimePluginChainStageSnapshot {
-        let realized = self.engine.latest_plugin_node_renders.get(&node.node_id);
         let lifecycle_state = sandbox.map(|sandbox| sandbox.state);
         let lifecycle_stage = sandbox.and_then(|sandbox| sandbox.lifecycle_stage);
         let transport_stage = sandbox.and_then(|sandbox| sandbox.transport_stage);
@@ -27,13 +24,7 @@ impl SignalRuntime {
             &self.plugin_discovery.discovered_types,
         );
         let recall_state = recall.state;
-        let compensation = runtime_plugin_compensation_observation(
-            sandbox_id.as_deref(),
-            sandbox,
-            realized,
-            current_block_sequence,
-            current_frame_count,
-        );
+        let compensation = runtime_plugin_compensation_observation(sandbox_id.as_deref(), sandbox);
         let compensation_state = compensation.state;
         let bypassed = matches!(compensation_state, RuntimePluginCompensationState::Bypassed);
         let active_transport = sandbox.is_some_and(|sandbox| sandbox.active_transport);
@@ -99,19 +90,6 @@ impl SignalRuntime {
                         .map(|record| record.complex_io_summary.clone())
                 })
                 .unwrap_or_default(),
-            secondary_input: node.secondary_input.as_ref().map(|route| {
-                RuntimeSecondaryInputRouteSummary {
-                    source_kind: route.source_kind,
-                    source_id: route.source_id.clone(),
-                    source_bus_id: route.source_bus_id.clone(),
-                    target_kind: RuntimeSecondaryInputTargetKind::PluginInput,
-                    target_id: node.node_id.clone(),
-                    target_bus_id: route.target_bus_id.clone(),
-                    attachment_policy: route.attachment_policy,
-                    fallback_outcome: route.fallback_outcome,
-                }
-            }),
-            spatial_execution: node.spatial_execution.clone(),
             lifecycle_state,
             lifecycle_stage,
             transport_stage,

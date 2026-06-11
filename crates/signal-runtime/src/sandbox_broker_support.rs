@@ -759,7 +759,7 @@ pub fn record_protocol_violation_prepare_failure(
         audio_outputs: Some(default_io_layout.audio_outputs),
         midi_inputs: Some(default_io_layout.midi_inputs),
         midi_outputs: Some(default_io_layout.midi_outputs),
-        last_fault: Some(crate::PluginSandboxInstanceFaultRecord {
+        last_fault: Some(crate::interfaces::PluginSandboxInstanceFaultRecord {
             kind: "ProtocolViolation".into(),
             severity: "Error".into(),
             message: detail.clone(),

@@ -69,11 +69,15 @@ Signal's active implementation surface is the Rust workspace under `crates/`
 ### Control plane
 
 - `signal-runtime`
-  - offline render orchestration and runtime diagnostics; control plane,
-    not the audio callback
+  - thin control library: lifecycle handshake, graph plan vocabulary, plugin
+    discovery and sandbox lifecycle records, media decode/analysis pipeline,
+    recording capture, and the supervisor/observation reports; control
+    plane, not the audio callback (engine-block simulation, prework
+    scheduler, and transport-session concurrency removed in g10.020)
 - `signal-graph`
-  - graph model executed offline/in simulation for the control plane, never
-    on the audio thread
+  - graph plan model (node specs, contracts, planning and contract
+    summaries) for the control plane, never on the audio thread; the
+    offline block-execution engine was removed in g10.020
 - `signal-host-local`
   - Pulse-facing local host assembly (library crate; no binary)
 - `signal-ipc`
@@ -104,8 +108,10 @@ program. Discovery roots are explicit configuration defaulting empty.
 
 - plugin hosting (instantiate/process) does not exist yet; rebuild-on-demand
   items live in `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md`
-- `signal-runtime` still carries a large public contract surface relative to
-  its consumers; integration-test-only exports flagged in g10.005 remain
+- `signal-runtime`'s public surface is now pruned to its consumers
+  (signal-host-local and pulse); anticipative rendering, when scheduled,
+  re-derives against the render plane
+  (`docs/architecture/prework-scheduler-design-note.md`)
 - shared-memory broker permissions/cleanup hardening remains minimal
 - `signal-plugin-clap` discovery FFI defers per-operation unsafe blocks to
   the CLAP hosting rebuild (`unsafe_op_in_unsafe_fn` allowed crate-wide

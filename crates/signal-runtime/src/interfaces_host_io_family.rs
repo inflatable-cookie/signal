@@ -14,17 +14,6 @@ pub enum RuntimeHostAudioStreamState {
     Faulted,
 }
 
-/// Transfer policy for moving audio frames from the runtime graph to the host callback.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RuntimeHostAudioTransferPolicy {
-    /// Maximum number of frames the host callback may request per call.
-    pub max_callback_frames: usize,
-    /// Maximum number of channels copied from the runtime graph to the host output.
-    pub max_transfer_channels: u16,
-    /// Whether unwritten output frames are zero-filled rather than left as-is.
-    pub zero_fill_unwritten_output: bool,
-}
-
 /// Who drives the audio callback lifecycle.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeHostLifecycleOwnership {
@@ -263,34 +252,15 @@ pub struct RuntimeHostHardwareSummary {
     pub restart_failure_count: u64,
 }
 
-/// Audio pump statistics: callback count, frame totals, and per-sample
-/// copy/zero-fill/drop counters.
+/// Output stream state reported by the host control surface.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostAudioPumpSummary {
     /// Current state of the host audio stream.
     pub stream_state: RuntimeHostAudioStreamState,
-    /// Active transfer policy governing frame copy behaviour.
-    pub transfer_policy: RuntimeHostAudioTransferPolicy,
-    /// Total number of host audio callbacks received.
-    pub callback_count: u64,
-    /// Total number of frames processed by the host callback.
-    pub total_callback_frames: u64,
-    /// Total number of runtime output frames produced.
-    pub total_runtime_output_frames: u64,
-    /// Total number of audio samples copied to the output buffer.
-    pub copied_output_samples: u64,
-    /// Total number of output samples zero-filled due to underrun.
-    pub zero_filled_output_samples: u64,
-    /// Total number of output samples dropped.
-    pub dropped_output_samples: u64,
-    /// Peak output level of the last callback, if available.
-    pub last_callback_output_peak: Option<f32>,
-    /// Graph ID of the last applied runtime graph, if known.
-    pub last_runtime_graph_id: Option<String>,
 }
 
 /// Complete host I/O summary: hardware, audio pump, clocking, and latency
-/// sub-summaries, plus the graph-ID match flag.
+/// sub-summaries.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostIoSummary {
     /// Hardware device and backend summary.
@@ -301,8 +271,6 @@ pub struct RuntimeHostIoSummary {
     pub clocking: RuntimeHostClockingSummary,
     /// Latency measurements for input, output, and round-trip.
     pub latency: RuntimeHostLatencySummary,
-    /// Whether the runtime's active graph ID matches the pump's last known graph ID.
-    pub runtime_graph_id_matches_pump: bool,
 }
 
 impl From<HardwareLifecycleOwnership> for RuntimeHostLifecycleOwnership {

@@ -78,16 +78,14 @@ pub struct RuntimeFaultStatusCaptureInput<'a> {
     pub diagnostics_snapshot: &'a RuntimeDiagnosticsSnapshot,
     /// Supervision snapshot.
     pub supervision_snapshot: &'a RuntimeSupervisionSnapshot,
-    /// Most recent engine block snapshot.
-    pub engine_block_snapshot: &'a RuntimeEngineBlockSnapshot,
-    /// Transport concurrency snapshot.
-    pub transport_concurrency_snapshot: &'a RuntimeTransportConcurrencySnapshot,
     /// Plugin lifecycle snapshot.
     pub plugin_lifecycle_snapshot: &'a RuntimePluginLifecycleSnapshot,
     /// Whether a device-loss event is currently active.
     pub device_loss_active: bool,
     /// Current device-loss event count.
     pub device_loss_count: u64,
+    /// Number of plugin-backed nodes with a missing sandbox binding.
+    pub missing_plugin_binding_count: usize,
 }
 
 impl RuntimeFaultStatusSnapshot {
@@ -101,14 +99,9 @@ impl RuntimeFaultStatusSnapshot {
         let plugin_fault_active = plugin_fault_count > 0;
         let watchdog_active = input.supervision_snapshot.safe_mode_enabled
             && input.supervision_snapshot.watchdog_restart_count > 0;
-        let transport_faulted_session_count = input
-            .transport_concurrency_snapshot
-            .current_detach_faulted_sessions;
-        let transport_fault_active = transport_faulted_session_count > 0;
-        let missing_plugin_binding_active = input
-            .engine_block_snapshot
-            .prework_service_missing_bound_plugin_sandboxes
-            > 0;
+        let transport_faulted_session_count = 0usize;
+        let transport_fault_active = false;
+        let missing_plugin_binding_active = input.missing_plugin_binding_count > 0;
         let runtime_error_active = matches!(input.readiness, RuntimeReadiness::Failed { .. });
         let primary_fault_cause = if input.device_loss_active {
             Some(RuntimeFaultCause::DeviceLoss)
@@ -187,18 +180,11 @@ pub struct RuntimeInterruptionSummary {
     pub primary_fault_cause: Option<RuntimeFaultCause>,
     /// Whether safe mode is engaged.
     pub safe_mode_enabled: bool,
-    /// Class of the most recent deferred service work item, if any.
-    pub deferred_service_class: Option<RuntimeDeferredServiceClass>,
-    /// Decision made for the most recent deferred service work item, if any.
-    pub deferred_service_decision: Option<RuntimeDeferredServiceDecision>,
 }
 
 impl RuntimeInterruptionSummary {
-    /// Captures an interruption summary from the current fault status and deferred service receipt.
-    pub fn capture(
-        fault_status: &RuntimeFaultStatusSnapshot,
-        last_deferred_service_receipt: Option<&RuntimeDeferredServiceReceipt>,
-    ) -> Self {
+    /// Captures an interruption summary from the current fault status.
+    pub fn capture(fault_status: &RuntimeFaultStatusSnapshot) -> Self {
         let class = match fault_status.recovery_state {
             RuntimeRecoveryState::Faulted => RuntimeInterruptionClass::Terminal,
             RuntimeRecoveryState::Recovering
@@ -216,17 +202,6 @@ impl RuntimeInterruptionSummary {
                 RuntimeInterruptionClass::Restartable
             }
             RuntimeRecoveryState::Recovering => RuntimeInterruptionClass::Recoverable,
-            RuntimeRecoveryState::Steady
-                if matches!(
-                    last_deferred_service_receipt.map(|receipt| receipt.decision),
-                    Some(
-                        RuntimeDeferredServiceDecision::Defer
-                            | RuntimeDeferredServiceDecision::Throttle
-                    )
-                ) =>
-            {
-                RuntimeInterruptionClass::Resumable
-            }
             RuntimeRecoveryState::Steady => RuntimeInterruptionClass::Steady,
         };
         let rebindable = matches!(
@@ -246,9 +221,6 @@ impl RuntimeInterruptionSummary {
             recovery_state: fault_status.recovery_state,
             primary_fault_cause: fault_status.primary_fault_cause,
             safe_mode_enabled: fault_status.safe_mode_enabled,
-            deferred_service_class: last_deferred_service_receipt.map(|receipt| receipt.work_class),
-            deferred_service_decision: last_deferred_service_receipt
-                .map(|receipt| receipt.decision),
         }
     }
 }

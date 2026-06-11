@@ -8,13 +8,11 @@ impl SignalRuntime {
             .iter()
             .map(|sandbox| (sandbox.sandbox_id.as_str(), sandbox))
             .collect::<HashMap<_, _>>();
-        let current_block_sequence = self.engine.snapshot.last_block_sequence;
-        let current_frame_count = self.engine.snapshot.last_frame_count.max(1);
         let mut chain_indexes = HashMap::new();
         let mut chains = Vec::<RuntimePluginExecutionChainSummary>::new();
 
         for node in
-            self.engine.snapshot.planned_nodes.iter().filter(|node| {
+            self.plan.planned_nodes.iter().filter(|node| {
                 matches!(node.execution_class, GraphNodeExecutionClass::PluginBacked)
             })
         {
@@ -63,8 +61,6 @@ impl SignalRuntime {
                 shared_boundary_member_count,
                 continuity_class,
                 rebindable,
-                current_block_sequence,
-                current_frame_count,
                 stage_index,
             );
 

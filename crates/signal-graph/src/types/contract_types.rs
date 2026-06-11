@@ -158,27 +158,3 @@ pub struct GraphContractSummary {
     /// Per-node resolved contracts, in graph node order.
     pub node_contracts: Vec<GraphNodeContractSummary>,
 }
-
-/// Aggregate result of analysing the routing topology for the graph.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct GraphRoutingSummary {
-    /// Total number of distinct buses in the graph.
-    pub routed_bus_count: usize,
-    /// Number of buses where exactly one node writes and one node reads
-    /// (simple serial edges).
-    pub direct_edge_count: usize,
-    /// Number of buses with more than one reader (fan-out from one writer).
-    pub fan_in_bus_count: usize,
-    /// Number of buses with more than one writer (fan-in to a summing bus).
-    pub fan_out_bus_count: usize,
-    /// Number of buses that are both fan-in and fan-out.
-    pub mixed_bus_count: usize,
-    /// Accumulated latency on the primary output bus (`"main:out"`), in samples.
-    pub output_latency_samples: u32,
-    /// Maximum latency across all buses in the graph, in samples.
-    pub max_bus_latency_samples: u32,
-    /// Tail time on the primary output bus, in samples.
-    pub output_tail_samples: u32,
-    /// Maximum tail time across all buses in the graph, in samples.
-    pub max_bus_tail_samples: u32,
-}

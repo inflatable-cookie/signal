@@ -1,6 +1,23 @@
-use super::super::super::*;
+use super::*;
 
-impl RuntimeEngineState {
+/// Planning-only execution state derived from the applied graph projection,
+/// contracts, and plugin bindings.
+///
+/// The block-processing engine simulation was removed in g10.020; production
+/// audio executes in `signal-render-plane`. What remains here is the plan
+/// vocabulary the control surface still reports: planned nodes, lane order,
+/// and declared latency.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub(crate) struct RuntimeExecutionPlanState {
+    pub(crate) graph: Option<ExecutableGraph>,
+    pub(crate) graph_id: Option<String>,
+    pub(crate) lane_order: Vec<signal_graph::GraphExecutionLane>,
+    pub(crate) planned_nodes: Vec<crate::interfaces::RuntimePlannedGraphNode>,
+    pub(crate) total_latency_samples: u32,
+    pub(crate) plugin_node_bindings: HashMap<String, String>,
+}
+
+impl RuntimeExecutionPlanState {
     pub(crate) fn apply_graph_projection(
         &mut self,
         projection: &GraphProjection,
@@ -60,10 +77,6 @@ impl RuntimeEngineState {
                 .collect(),
         ));
         self.plugin_node_bindings.clear();
-        self.secondary_input_contracts.clear();
-        self.pending_plugin_node_renders.clear();
-        self.latest_plugin_node_renders.clear();
-        self.invalidate_prework_cache(RuntimePreworkInvalidationReason::GraphProjectionChanged);
         self.refresh_planning(anticipative_enabled);
         Ok(())
     }
@@ -165,20 +178,109 @@ impl RuntimeEngineState {
                 })
                 .collect(),
         ));
-        self.secondary_input_contracts = projection
-            .nodes
-            .iter()
-            .filter_map(|node| {
-                node.buffer_contract
-                    .secondary_input
-                    .as_ref()
-                    .map(|secondary_input| (node.node_id.clone(), secondary_input.clone()))
-            })
-            .collect();
-        self.pending_plugin_node_renders.clear();
-        self.latest_plugin_node_renders.clear();
-        self.invalidate_prework_cache(RuntimePreworkInvalidationReason::GraphProjectionChanged);
         self.refresh_planning(anticipative_enabled);
         Ok(())
+    }
+
+    pub(crate) fn apply_plugin_backed_node_bindings(
+        &mut self,
+        projection: &PluginBackedNodeBindingProjection,
+        anticipative_enabled: bool,
+    ) -> Result<(), RuntimeError> {
+        let Some(graph) = self.graph.as_ref() else {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidState,
+                "cannot bind plugin-backed nodes before a graph is applied",
+            ));
+        };
+        if projection.graph_id != graph.graph_id() {
+            return Err(RuntimeError::new(
+                RuntimeErrorKind::InvalidRequest,
+                "plugin-backed node bindings must target the currently applied graph",
+            ));
+        }
+
+        let planning = graph.planning_summary(anticipative_enabled);
+        let mut bindings = HashMap::new();
+        for binding in &projection.bindings {
+            if !planning.planned_nodes.iter().any(|node| {
+                node.node_id == binding.node_id
+                    && matches!(node.execution_class, GraphNodeExecutionClass::PluginBacked)
+            }) {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "plugin-backed binding node '{}' does not resolve to a plugin-backed node",
+                        binding.node_id
+                    ),
+                ));
+            }
+            if bindings
+                .insert(binding.node_id.clone(), binding.sandbox_id.clone())
+                .is_some()
+            {
+                return Err(RuntimeError::new(
+                    RuntimeErrorKind::InvalidRequest,
+                    format!(
+                        "duplicate plugin-backed binding provided for node '{}'",
+                        binding.node_id
+                    ),
+                ));
+            }
+        }
+
+        self.plugin_node_bindings = bindings;
+        self.refresh_planning(anticipative_enabled);
+        Ok(())
+    }
+
+    pub(crate) fn refresh_planning(&mut self, anticipative_enabled: bool) {
+        let Some(graph) = self.graph.as_ref() else {
+            self.graph_id = None;
+            self.lane_order.clear();
+            self.planned_nodes.clear();
+            self.total_latency_samples = 0;
+            self.plugin_node_bindings.clear();
+            return;
+        };
+        let planning = graph.planning_summary(anticipative_enabled);
+        let contract = graph.contract_summary();
+        let contract_by_node = contract
+            .node_contracts
+            .iter()
+            .map(|node| (node.node_id.as_str(), node))
+            .collect::<BTreeMap<_, _>>();
+        self.graph_id = Some(graph.graph_id().to_string());
+        self.lane_order = planning.lane_order.clone();
+        self.total_latency_samples = graph.total_latency_samples();
+        self.planned_nodes = planning
+            .planned_nodes
+            .into_iter()
+            .map(|node| {
+                let contract = contract_by_node.get(node.node_id.as_str());
+                let topology_role = contract
+                    .map(|contract| contract.topology_role)
+                    .unwrap_or(GraphNodeTopologyRole::Utility);
+                crate::interfaces::RuntimePlannedGraphNode {
+                    topology_role,
+                    track_lane_id: contract.and_then(|contract| contract.track_lane_id.clone()),
+                    bus_group_id: contract.and_then(|contract| contract.bus_group_id.clone()),
+                    console_group_id: contract
+                        .and_then(|contract| contract.console_group_id.clone()),
+                    send_return_id: contract.and_then(|contract| contract.send_return_id.clone()),
+                    input_bus_id: contract
+                        .map(|contract| contract.input_bus_id.clone())
+                        .unwrap_or_else(|| "main:in".into()),
+                    output_bus_id: contract
+                        .map(|contract| contract.output_bus_id.clone())
+                        .unwrap_or_else(|| "main:out".into()),
+                    plugin_sandbox_id: self.plugin_node_bindings.get(&node.node_id).cloned(),
+                    node_id: node.node_id,
+                    execution_class: node.execution_class,
+                    group: node.group,
+                    latency_samples: node.latency_samples,
+                }
+            })
+            .collect();
     }
 }
