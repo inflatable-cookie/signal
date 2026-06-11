@@ -36,6 +36,7 @@ mod filter;
 mod fixtures;
 mod level;
 mod mix;
+mod mix_matrix;
 mod polyphase;
 pub mod ramp;
 
@@ -49,6 +50,7 @@ pub use filter::OnePoleLowPass;
 pub use fixtures::SignalFixture;
 pub use level::{EnvelopeFollower, PeakMeter, RmsMeter};
 pub use mix::{apply_gain_in_place, clear_block, mix_in_place, sum_in_place, Gain};
+pub use mix_matrix::{default_adapter_matrix, equal_power_pan_matrix};
 pub use polyphase::PolyphaseInterpolationTable;
 pub use ramp::{ExponentialRamp, LinearRamp};
 

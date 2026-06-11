@@ -16,9 +16,18 @@
 //! Both mailboxes are `std::sync::mpsc::sync_channel`s: bounded array-backed
 //! channels whose send/receive operations neither allocate nor free.
 //!
-//! Plan *content* starts deliberately small (silence and test-tone sources,
-//! per-lane gain, master gain): the substrate and its guarantees are the
-//! deliverable. Compiling plans from Pulse projections layers on top.
+//! Plans are **graphs**, not lane lists: a spec is a set of format-typed
+//! nodes ([`RenderNodeSpec`] — lanes, busses, exactly one master) connected
+//! by edges that each carry a gain and an N×M channel mix matrix. Compile
+//! topologically sorts the graph into a flat execution schedule, preallocates
+//! a per-node scratch buffer ([`MAX_BLOCK_FRAMES`] × node channels — the
+//! buffer pool *is* the plan), and resolves every edge's matrix (explicit
+//! coefficients, or a default adapter from `signal_dsp::default_adapter_matrix`
+//! when formats differ). Per chorus a14 the graph is channel-format-typed:
+//! nothing in it assumes stereo. The only forced collapse is the hardware
+//! boundary, where the master node's format is adapted to the negotiated
+//! stream format (downmix matrix when the device is narrower, silence-filled
+//! extra channels when wider).
 
 #![warn(missing_docs)]
 
@@ -26,12 +35,17 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::Arc;
 
-use signal_dsp::PolyphaseInterpolationTable;
+use signal_dsp::{default_adapter_matrix, PolyphaseInterpolationTable};
 
 /// Interpolation table shape for rate-converted media playback. 16 taps ×
 /// 512 phases ≈ 32 KB per distinct cutoff; built once per plan compile.
 const RESAMPLE_TAPS: usize = 16;
 const RESAMPLE_PHASES: usize = 512;
+
+/// Largest callback quantum the plan's scratch buffers are sized for. Every
+/// node owns `MAX_BLOCK_FRAMES × channels` samples of scratch, preallocated
+/// at compile; `render_block` clamps (and debug-asserts) the frame count.
+pub const MAX_BLOCK_FRAMES: usize = 4096;
 
 /// Shared immutable sample data: interleaved stereo f32 at a source rate.
 ///
@@ -67,11 +81,56 @@ const RETIRED_MAILBOX_CAPACITY: usize = COMMAND_MAILBOX_CAPACITY + 2;
 /// Transport edge ramp length: play, stop, and seek gate through this
 /// envelope instead of stepping, so transport actions never click.
 const EDGE_RAMP_SECONDS: f32 = 0.005;
-/// Full-swing time for lane/master gain changes across plan swaps.
+/// Full-swing time for node gain changes across plan swaps.
 const GAIN_SMOOTHING_SECONDS: f32 = 0.010;
 /// Declick fade applied inside each clip window edge (shortened for tiny
 /// windows so short clips stay audible).
 const CLIP_EDGE_FADE_FRAMES: u64 = 32;
+
+// ── Spec vocabulary (control-side description of a plan) ───────────────────
+
+/// Channel layout semantics carried alongside a channel count.
+///
+/// Extensible past stereo from day one; `Generic` means count-only semantics
+/// (no named speaker positions). Named multichannel layouts (5.1, 7.1.4, …)
+/// are added here as the engine grows layout-aware coefficient generators.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChannelLayout {
+    /// Single channel.
+    Mono,
+    /// Two channels, left/right semantics.
+    Stereo,
+    /// Count-only semantics: channels have no named positions.
+    Generic,
+}
+
+/// Channel format of a node's output: count plus layout semantics. Scratch
+/// sizing, matrix validation, and boundary adaptation all key off this.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ChannelFormat {
+    /// Number of interleaved channels.
+    pub channels: u16,
+    /// Layout semantics of those channels.
+    pub layout: ChannelLayout,
+}
+
+impl ChannelFormat {
+    /// Single mono channel.
+    pub fn mono() -> Self {
+        ChannelFormat {
+            channels: 1,
+            layout: ChannelLayout::Mono,
+        }
+    }
+
+    /// Two channels, left/right.
+    pub fn stereo() -> Self {
+        ChannelFormat {
+            channels: 2,
+            layout: ChannelLayout::Stereo,
+        }
+    }
+}
 
 /// Audio source for one render clip.
 #[derive(Debug, Clone, PartialEq)]
@@ -84,12 +143,12 @@ pub enum RenderSource {
         /// Tone frequency in hertz.
         frequency_hz: f32,
     },
-    /// Clip plays shared sample data from its window start, with linear
+    /// Clip plays shared sample data from its window start, with windowed-sinc
     /// interpolation when the source rate differs from the stream rate.
     Samples(RenderSampleBuffer),
 }
 
-/// One clip event in a render lane: a half-open stream-clock window
+/// One clip event in a lane node: a half-open stream-clock window
 /// `[start_frames, end_frames)` and the source that plays inside it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderClipSpec {
@@ -104,30 +163,146 @@ pub struct RenderClipSpec {
     pub loop_source: bool,
 }
 
-/// One lane in a render plan spec.
+/// What a node does with its inputs (and whether it generates content).
 #[derive(Debug, Clone, PartialEq)]
-pub struct RenderLaneSpec {
-    /// Stable lane identity (control-side bookkeeping only; never read in
-    /// the render loop).
-    pub lane_id: String,
-    /// Linear lane gain.
-    pub gain: f32,
-    /// Clip events on this lane.
-    pub clips: Vec<RenderClipSpec>,
+pub enum RenderNodeKind {
+    /// Source node: renders clip content at its format. May also sum inputs
+    /// like a bus (clips render first, then edges add in).
+    Lane {
+        /// Clip events on this lane.
+        clips: Vec<RenderClipSpec>,
+    },
+    /// Sums its inputs through their edge matrices.
+    Bus,
+    /// The output boundary: exactly one per plan. Its scratch is what the
+    /// hardware stage adapts onto the stream.
+    Master,
 }
 
-/// Control-side description of a render plan.
+/// One input edge into a node: where the signal comes from, how loud, and
+/// how its channels map onto this node's channels.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderInputSpec {
+    /// `node_id` of the upstream node feeding this edge.
+    pub source_node_id: u64,
+    /// Linear edge gain (static in v1: compiled into the matrix).
+    pub gain: f32,
+    /// Row-major `source_channels × dest_channels` mix matrix; `None` picks
+    /// the default adapter (identity when channel counts match; standard
+    /// up/downmix coefficients otherwise — see
+    /// `signal_dsp::default_adapter_matrix` for the exact rules).
+    pub matrix: Option<Vec<f32>>,
+}
+
+/// One node in a render plan graph.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RenderNodeSpec {
+    /// Stable consumer-supplied identity; matches smoothed-gain and tone
+    /// state across plan swaps. Never read in the render loop.
+    pub node_id: u64,
+    /// The node's output format.
+    pub format: ChannelFormat,
+    /// Linear node output gain, smoothed (10 ms full swing) and applied
+    /// where the node's output is consumed.
+    pub gain: f32,
+    /// What the node does.
+    pub kind: RenderNodeKind,
+    /// Edges feeding this node.
+    pub inputs: Vec<RenderInputSpec>,
+}
+
+/// Control-side description of a render plan: a format-typed node graph.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RenderPlanSpec {
     /// Sample rate the plan renders at.
     pub sample_rate_hz: u32,
-    /// Interleaved output channel count.
-    pub channels: u16,
-    /// Linear master gain applied after the lane sum.
+    /// Linear master gain applied at the master node (kept for consumer
+    /// compatibility; multiplies the master node's own gain).
     pub master_gain: f32,
-    /// Lanes mixed into the master.
-    pub lanes: Vec<RenderLaneSpec>,
+    /// The node graph; any order, exactly one [`RenderNodeKind::Master`].
+    pub nodes: Vec<RenderNodeSpec>,
 }
+
+impl RenderPlanSpec {
+    /// Channel count of the master node (the format the plan mixes at), or
+    /// 2 when the spec has no master (such a spec fails compile anyway).
+    pub fn master_channels(&self) -> u16 {
+        self.nodes
+            .iter()
+            .find(|node| matches!(node.kind, RenderNodeKind::Master))
+            .map(|node| node.format.channels)
+            .unwrap_or(2)
+    }
+}
+
+/// Typed error rejecting a plan spec at compile.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RenderPlanCompileError {
+    /// Two nodes share a `node_id`.
+    DuplicateNodeId(u64),
+    /// An edge references a `source_node_id` that does not exist.
+    UnknownInputNode {
+        /// Node owning the edge.
+        node_id: u64,
+        /// Missing upstream id.
+        source_node_id: u64,
+    },
+    /// The graph must contain exactly one master node.
+    MasterCount(usize),
+    /// The graph contains a cycle and cannot be scheduled.
+    Cycle,
+    /// A node declared a zero-channel format.
+    InvalidChannelCount(u64),
+    /// An explicit edge matrix has the wrong number of coefficients.
+    MatrixDimensions {
+        /// Node owning the edge.
+        node_id: u64,
+        /// Upstream node feeding the edge.
+        source_node_id: u64,
+        /// `source_channels × dest_channels`.
+        expected: usize,
+        /// Length supplied.
+        actual: usize,
+    },
+}
+
+impl std::fmt::Display for RenderPlanCompileError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RenderPlanCompileError::DuplicateNodeId(node_id) => {
+                write!(formatter, "duplicate node id {node_id}")
+            }
+            RenderPlanCompileError::UnknownInputNode {
+                node_id,
+                source_node_id,
+            } => write!(
+                formatter,
+                "node {node_id} references unknown input node {source_node_id}",
+            ),
+            RenderPlanCompileError::MasterCount(count) => write!(
+                formatter,
+                "plan must contain exactly one master node (found {count})",
+            ),
+            RenderPlanCompileError::Cycle => {
+                write!(formatter, "plan graph contains a cycle")
+            }
+            RenderPlanCompileError::InvalidChannelCount(node_id) => {
+                write!(formatter, "node {node_id} declares zero channels")
+            }
+            RenderPlanCompileError::MatrixDimensions {
+                node_id,
+                source_node_id,
+                expected,
+                actual,
+            } => write!(
+                formatter,
+                "edge {source_node_id} -> {node_id} matrix has {actual} coefficients, expected {expected}",
+            ),
+        }
+    }
+}
+
+impl std::error::Error for RenderPlanCompileError {}
 
 // ── Compiled plan (render-side data, preallocated at compile time) ─────────
 
@@ -157,29 +332,145 @@ struct CompiledClip {
     source: CompiledSource,
 }
 
-struct CompiledLane {
-    /// Gain the lane is moving toward (spec value).
+/// One compiled input edge. `source_index` is a position in the plan's
+/// topologically-ordered node list and is always strictly less than the
+/// consuming node's position, so the executor can split-borrow.
+struct CompiledInput {
+    source_index: usize,
+    source_channels: usize,
+    /// Row-major `source_channels × dest_channels`; edge gain folded in.
+    matrix: Vec<f32>,
+}
+
+struct CompiledNode {
+    /// Matches node state (smoothed gain, tone phase) across plan swaps.
+    node_id: u64,
+    channels: usize,
+    /// Gain the node is moving toward (spec value).
     gain_target: f32,
     /// Smoothed gain as currently applied; inherited across plan swaps so
     /// gain edits never step.
     gain_current: f32,
+    /// Per-block smoothed-gain interpolation, written when the node renders
+    /// and read wherever its output is consumed (edges, boundary).
+    block_gain_begin: f32,
+    block_gain_slope: f32,
+    /// Clip content (lane nodes; empty for bus/master).
     clips: Vec<CompiledClip>,
-    /// Matches lane state (smoothed gain, tone phase) across plan swaps.
-    lane_id: String,
+    inputs: Vec<CompiledInput>,
+    /// Interleaved scratch at the node's format: `MAX_BLOCK_FRAMES × channels`.
+    scratch: Vec<f32>,
 }
 
-/// A compiled, immutable-topology render plan. Source state (tone phase,
-/// smoothed gains) mutates during rendering; structure never does.
+/// A compiled, immutable-topology render plan. Source state (tone phases,
+/// smoothed gains) mutates during rendering; structure never does. Nodes are
+/// stored in topological order (inputs strictly before consumers).
 pub struct RenderPlan {
-    channels: usize,
     sample_rate_hz: u32,
-    master_gain_target: f32,
-    master_gain_current: f32,
-    lanes: Vec<CompiledLane>,
+    nodes: Vec<CompiledNode>,
+    /// Position of the master node in `nodes`.
+    master_index: usize,
+    /// Stream channel count the boundary was compiled for (master channels
+    /// when the stream is unknown at install time).
+    stream_channels: usize,
+    /// Hardware-boundary downmix (row-major `master_channels ×
+    /// stream_channels`); empty unless the stream is narrower than the
+    /// master format. Compiled at install time — the controller knows the
+    /// stream's channel count then. Never applies inside the creative graph.
+    boundary_matrix: Vec<f32>,
 }
 
 impl RenderPlan {
-    fn compile(spec: &RenderPlanSpec) -> Box<RenderPlan> {
+    fn compile(
+        spec: &RenderPlanSpec,
+        stream_channels: Option<u16>,
+    ) -> Result<Box<RenderPlan>, RenderPlanCompileError> {
+        // Identity and shape validation.
+        for node in &spec.nodes {
+            if node.format.channels == 0 {
+                return Err(RenderPlanCompileError::InvalidChannelCount(node.node_id));
+            }
+            if spec
+                .nodes
+                .iter()
+                .filter(|candidate| candidate.node_id == node.node_id)
+                .count()
+                > 1
+            {
+                return Err(RenderPlanCompileError::DuplicateNodeId(node.node_id));
+            }
+        }
+        let master_count = spec
+            .nodes
+            .iter()
+            .filter(|node| matches!(node.kind, RenderNodeKind::Master))
+            .count();
+        if master_count != 1 {
+            return Err(RenderPlanCompileError::MasterCount(master_count));
+        }
+        let position_of = |node_id: u64| -> Option<usize> {
+            spec.nodes
+                .iter()
+                .position(|candidate| candidate.node_id == node_id)
+        };
+        for node in &spec.nodes {
+            for input in &node.inputs {
+                let Some(source_index) = position_of(input.source_node_id) else {
+                    return Err(RenderPlanCompileError::UnknownInputNode {
+                        node_id: node.node_id,
+                        source_node_id: input.source_node_id,
+                    });
+                };
+                let expected = spec.nodes[source_index].format.channels as usize
+                    * node.format.channels as usize;
+                if let Some(matrix) = &input.matrix {
+                    if matrix.len() != expected {
+                        return Err(RenderPlanCompileError::MatrixDimensions {
+                            node_id: node.node_id,
+                            source_node_id: input.source_node_id,
+                            expected,
+                            actual: matrix.len(),
+                        });
+                    }
+                }
+            }
+        }
+
+        // Kahn topological sort (spec order preserved among ready nodes).
+        let node_count = spec.nodes.len();
+        let mut indegree: Vec<usize> = spec.nodes.iter().map(|node| node.inputs.len()).collect();
+        let mut consumers: Vec<Vec<usize>> = vec![Vec::new(); node_count];
+        for (index, node) in spec.nodes.iter().enumerate() {
+            for input in &node.inputs {
+                let source_index = position_of(input.source_node_id).expect("validated above");
+                consumers[source_index].push(index);
+            }
+        }
+        let mut order: Vec<usize> = Vec::with_capacity(node_count);
+        let mut ready: Vec<usize> = (0..node_count)
+            .filter(|index| indegree[*index] == 0)
+            .collect();
+        let mut next_ready = 0usize;
+        while next_ready < ready.len() {
+            let index = ready[next_ready];
+            next_ready += 1;
+            order.push(index);
+            for consumer in &consumers[index] {
+                indegree[*consumer] -= 1;
+                if indegree[*consumer] == 0 {
+                    ready.push(*consumer);
+                }
+            }
+        }
+        if order.len() != node_count {
+            return Err(RenderPlanCompileError::Cycle);
+        }
+        // Spec index → topological position, for edge re-indexing.
+        let mut topo_position = vec![0usize; node_count];
+        for (position, spec_index) in order.iter().enumerate() {
+            topo_position[*spec_index] = position;
+        }
+
         let tau = std::f32::consts::TAU;
         let stream_rate = spec.sample_rate_hz.max(1);
         // One table per distinct cutoff in the plan (typically zero or one).
@@ -197,65 +488,129 @@ impl RenderPlan {
             tables.push((key, table.clone()));
             Some(table)
         };
-        Box::new(RenderPlan {
-            channels: spec.channels.max(1) as usize,
-            sample_rate_hz: stream_rate,
-            master_gain_target: spec.master_gain,
-            master_gain_current: spec.master_gain,
-            lanes: spec
-                .lanes
-                .iter()
-                .map(|lane| CompiledLane {
-                    gain_target: lane.gain,
-                    gain_current: lane.gain,
-                    lane_id: lane.lane_id.clone(),
-                    clips: lane
-                        .clips
-                        .iter()
-                        .map(|clip| CompiledClip {
-                            start_frames: clip.start_frames,
-                            end_frames: clip.end_frames,
-                            edge_fade_frames: CLIP_EDGE_FADE_FRAMES
-                                .min(clip.end_frames.saturating_sub(clip.start_frames).max(2) / 2),
-                            source: match &clip.source {
-                                RenderSource::Silence => CompiledSource::Silence,
-                                RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
-                                    phase: 0.0,
-                                    step: frequency_hz * tau / stream_rate as f32,
-                                },
-                                RenderSource::Samples(buffer) => {
-                                    let step =
-                                        buffer.sample_rate_hz.max(1) as f64 / stream_rate as f64;
-                                    CompiledSource::Samples {
-                                        table: table_for_step(step),
-                                        step,
-                                        buffer: buffer.clone(),
-                                        loop_source: clip.loop_source,
-                                    }
-                                }
+
+        let mut nodes: Vec<CompiledNode> = Vec::with_capacity(node_count);
+        let mut master_index = 0usize;
+        for (position, spec_index) in order.iter().enumerate() {
+            let node = &spec.nodes[*spec_index];
+            let dest_channels = node.format.channels as usize;
+            if matches!(node.kind, RenderNodeKind::Master) {
+                master_index = position;
+            }
+            let clips = match &node.kind {
+                RenderNodeKind::Lane { clips } => clips
+                    .iter()
+                    .map(|clip| CompiledClip {
+                        start_frames: clip.start_frames,
+                        end_frames: clip.end_frames,
+                        edge_fade_frames: CLIP_EDGE_FADE_FRAMES
+                            .min(clip.end_frames.saturating_sub(clip.start_frames).max(2) / 2),
+                        source: match &clip.source {
+                            RenderSource::Silence => CompiledSource::Silence,
+                            RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
+                                phase: 0.0,
+                                step: frequency_hz * tau / stream_rate as f32,
                             },
-                        })
-                        .collect(),
+                            RenderSource::Samples(buffer) => {
+                                let step = buffer.sample_rate_hz.max(1) as f64 / stream_rate as f64;
+                                CompiledSource::Samples {
+                                    table: table_for_step(step),
+                                    step,
+                                    buffer: buffer.clone(),
+                                    loop_source: clip.loop_source,
+                                }
+                            }
+                        },
+                    })
+                    .collect(),
+                RenderNodeKind::Bus | RenderNodeKind::Master => Vec::new(),
+            };
+            let inputs = node
+                .inputs
+                .iter()
+                .map(|input| {
+                    let source_spec_index =
+                        position_of(input.source_node_id).expect("validated above");
+                    let source_channels = spec.nodes[source_spec_index].format.channels as usize;
+                    // Explicit matrix or default adapter, with the static
+                    // edge gain folded into the coefficients (v1: per-edge
+                    // gain is compile-time data, not a smoothed parameter).
+                    let mut matrix = match &input.matrix {
+                        Some(matrix) => matrix.clone(),
+                        None => {
+                            default_adapter_matrix(source_channels as u16, dest_channels as u16)
+                        }
+                    };
+                    for coefficient in matrix.iter_mut() {
+                        *coefficient *= input.gain;
+                    }
+                    CompiledInput {
+                        source_index: topo_position[source_spec_index],
+                        source_channels,
+                        matrix,
+                    }
                 })
-                .collect(),
-        })
+                .collect();
+            // The plan's master_gain multiplies the master node's own gain
+            // so the legacy single-knob master keeps working.
+            let gain = if matches!(node.kind, RenderNodeKind::Master) {
+                node.gain * spec.master_gain
+            } else {
+                node.gain
+            };
+            nodes.push(CompiledNode {
+                node_id: node.node_id,
+                channels: dest_channels,
+                gain_target: gain,
+                gain_current: gain,
+                block_gain_begin: gain,
+                block_gain_slope: 0.0,
+                clips,
+                inputs,
+                scratch: vec![0.0f32; MAX_BLOCK_FRAMES * dest_channels],
+            });
+        }
+
+        // Hardware boundary: compiled here, at install time, because the
+        // controller knows the stream's channel count now. A narrower stream
+        // gets a standard downmix matrix; a wider stream gets the master's
+        // channels copied and the extras silence-filled (no upmix policy is
+        // invented at the hardware stage); equal formats copy through.
+        let master_channels = nodes[master_index].channels;
+        let stream_channels = stream_channels
+            .map(|channels| channels.max(1) as usize)
+            .unwrap_or(master_channels);
+        let boundary_matrix = if stream_channels < master_channels {
+            default_adapter_matrix(master_channels as u16, stream_channels as u16)
+        } else {
+            Vec::new()
+        };
+
+        Ok(Box::new(RenderPlan {
+            sample_rate_hz: stream_rate,
+            nodes,
+            master_index,
+            stream_channels,
+            boundary_matrix,
+        }))
     }
 
     /// Carry smoothed gains and tone phases over from the plan being
     /// replaced, so a recompile (gain tweak, clip edit) never steps audio.
-    /// Runs on the audio thread: comparisons and copies only, no allocation.
+    /// Nodes match by `node_id` (linear scan: O(n²) worst case, acceptable
+    /// at current plan sizes; g10.011 owns the complexity fix). Runs on the
+    /// audio thread: comparisons and copies only, no allocation.
     fn inherit_state(&mut self, previous: &RenderPlan) {
-        self.master_gain_current = previous.master_gain_current;
-        for lane in self.lanes.iter_mut() {
-            let Some(previous_lane) = previous
-                .lanes
+        for node in self.nodes.iter_mut() {
+            let Some(previous_node) = previous
+                .nodes
                 .iter()
-                .find(|candidate| candidate.lane_id == lane.lane_id)
+                .find(|candidate| candidate.node_id == node.node_id)
             else {
                 continue;
             };
-            lane.gain_current = previous_lane.gain_current;
-            for (clip, previous_clip) in lane.clips.iter_mut().zip(previous_lane.clips.iter()) {
+            node.gain_current = previous_node.gain_current;
+            for (clip, previous_clip) in node.clips.iter_mut().zip(previous_node.clips.iter()) {
                 if let (
                     CompiledSource::Tone { phase, step },
                     CompiledSource::Tone {
@@ -286,10 +641,129 @@ fn clip_edge_gain(frame: u64, start_frames: u64, end_frames: u64, fade_frames: u
     (from_start / fade).min(to_end / fade).min(1.0)
 }
 
+/// Render a lane node's clips into its scratch at unity gain (node and edge
+/// gains apply downstream, where the scratch is consumed). Sources write
+/// `channels.min(2)` of the node's format: clip sources are mono/stereo
+/// today; source-format handling generalizes when sources grow formats of
+/// their own.
+fn render_clips_into_scratch(
+    clips: &mut [CompiledClip],
+    scratch: &mut [f32],
+    channels: usize,
+    block_start_frame: u64,
+    frame_count: usize,
+) {
+    let block_end_frame = block_start_frame + frame_count as u64;
+    for clip in clips.iter_mut() {
+        // Skip clips entirely outside this block.
+        if clip.end_frames <= block_start_frame || clip.start_frames >= block_end_frame {
+            continue;
+        }
+        let clip_start = clip.start_frames;
+        let clip_end = clip.end_frames;
+        let clip_fade = clip.edge_fade_frames;
+        match &mut clip.source {
+            CompiledSource::Silence => {}
+            CompiledSource::Tone { phase, step } => {
+                let mut local_phase = *phase;
+                for frame_index in 0..frame_count {
+                    let frame = block_start_frame + frame_index as u64;
+                    let sample = local_phase.sin();
+                    local_phase += *step;
+                    if local_phase >= std::f32::consts::TAU {
+                        local_phase -= std::f32::consts::TAU;
+                    }
+                    if frame >= clip_start && frame < clip_end {
+                        let sample =
+                            sample * clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                        let base = frame_index * channels;
+                        for channel in 0..channels.min(2) {
+                            scratch[base + channel] += sample;
+                        }
+                    }
+                }
+                *phase = local_phase;
+            }
+            CompiledSource::Samples {
+                buffer,
+                step,
+                loop_source,
+                table,
+            } => {
+                let source_frames = buffer.frame_count();
+                if source_frames == 0 {
+                    continue;
+                }
+                let data = &buffer.frames;
+                for frame_index in 0..frame_count {
+                    let frame = block_start_frame + frame_index as u64;
+                    if frame < clip_start || frame >= clip_end {
+                        continue;
+                    }
+                    // Source position via the rate ratio, anchored at the
+                    // clip's window start.
+                    let mut source_position = (frame - clip_start) as f64 * *step;
+                    if *loop_source {
+                        source_position %= source_frames as f64;
+                    }
+                    let source_index = source_position as usize;
+                    if source_index >= source_frames {
+                        continue;
+                    }
+                    let fraction = source_position - source_index as f64;
+                    let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                    let base = frame_index * channels;
+                    match table {
+                        // Rate conversion: polyphase windowed-sinc tap dot
+                        // product (table reads only — no allocation, no
+                        // transcendentals).
+                        Some(table) => {
+                            let row = table.phase_row(fraction);
+                            let first = table.first_tap_offset();
+                            for channel in 0..channels.min(2) {
+                                let mut acc = 0.0f32;
+                                for (tap, coefficient) in row.iter().enumerate() {
+                                    let mut tap_index =
+                                        source_index as isize + first + tap as isize;
+                                    if *loop_source {
+                                        tap_index = tap_index.rem_euclid(source_frames as isize);
+                                    }
+                                    if tap_index >= 0 && (tap_index as usize) < source_frames {
+                                        acc += data[tap_index as usize * 2 + channel] * coefficient;
+                                    }
+                                }
+                                scratch[base + channel] += acc * window_gain;
+                            }
+                        }
+                        // 1:1 playback: direct read with last-frame clamp
+                        // (or wrap when looping).
+                        None => {
+                            let next_index = if source_index + 1 < source_frames {
+                                source_index + 1
+                            } else if *loop_source {
+                                0
+                            } else {
+                                source_index
+                            };
+                            let fraction = fraction as f32;
+                            for channel in 0..channels.min(2) {
+                                let a = data[source_index * 2 + channel];
+                                let b = data[next_index * 2 + channel];
+                                scratch[base + channel] += (a + (b - a) * fraction) * window_gain;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 enum RenderCommand {
     InstallPlan(Box<RenderPlan>),
     SetPlaying(bool),
     Seek(u64),
+    SetStreamChannels(u16),
 }
 
 /// Counters shared between the two sides without locks.
@@ -311,8 +785,9 @@ pub struct RenderPlaneController {
     commands: SyncSender<RenderCommand>,
     retired: Receiver<Box<RenderPlan>>,
     shared: Arc<SharedState>,
-    /// Stream channel count as reported by the host; installs of plans with
-    /// a different channel count are rejected to protect output framing.
+    /// Stream channel count as reported by the host. Plans compile their
+    /// hardware-boundary adaptation against this; before it is known, plans
+    /// assume the stream matches their master format.
     stream_channels: Option<u16>,
 }
 
@@ -332,28 +807,27 @@ impl std::fmt::Display for RenderPlaneError {
 impl std::error::Error for RenderPlaneError {}
 
 impl RenderPlaneController {
-    /// Record the channel count of the opened output stream. Subsequent
-    /// installs of plans with a different channel count fail instead of
-    /// corrupting output framing and the stream clock.
-    pub fn set_stream_channels(&mut self, channels: u16) {
+    /// Record the channel count of the opened output stream and inform the
+    /// executor (output framing keys off the *stream*, not the plan's master
+    /// format). Subsequent installs compile their hardware-boundary
+    /// adaptation against this count.
+    pub fn set_stream_channels(&mut self, channels: u16) -> Result<(), RenderPlaneError> {
         self.stream_channels = Some(channels);
+        self.commands
+            .try_send(RenderCommand::SetStreamChannels(channels))
+            .map_err(|error| RenderPlaneError {
+                message: format!("command mailbox rejected stream channel update: {error}"),
+            })
     }
 
     /// Compile `spec` and install it as the active plan. Eagerly reclaims
     /// any plans the executor has retired.
     pub fn install_plan(&self, spec: &RenderPlanSpec) -> Result<(), RenderPlaneError> {
-        if let Some(stream_channels) = self.stream_channels {
-            if spec.channels != stream_channels {
-                return Err(RenderPlaneError {
-                    message: format!(
-                        "plan channel count {} does not match stream channel count {stream_channels}",
-                        spec.channels,
-                    ),
-                });
-            }
-        }
         self.collect_retired();
-        let plan = RenderPlan::compile(spec);
+        let plan =
+            RenderPlan::compile(spec, self.stream_channels).map_err(|error| RenderPlaneError {
+                message: format!("plan rejected at compile: {error}"),
+            })?;
         self.commands
             .try_send(RenderCommand::InstallPlan(plan))
             .map_err(|error| RenderPlaneError {
@@ -423,6 +897,10 @@ pub struct RenderPlaneExecutor {
     shared: Arc<SharedState>,
     plan: Option<Box<RenderPlan>>,
     parked_retired: Option<Box<RenderPlan>>,
+    /// Stream channel count as told by the controller; the active plan's
+    /// expectation (its master format when no stream was known at install)
+    /// applies until the first [`RenderCommand::SetStreamChannels`].
+    stream_channels: Option<u16>,
     /// Transport gate target. Audio follows through `edge_gain`.
     playing: bool,
     /// Transport edge envelope: ramps toward 1 when playing, 0 when stopped
@@ -494,12 +972,16 @@ impl RenderPlaneExecutor {
                         self.pending_seek = Some(position_frames);
                     }
                 }
+                Ok(RenderCommand::SetStreamChannels(channels)) => {
+                    self.stream_channels = Some(channels.max(1));
+                }
                 Err(TryRecvError::Empty) | Err(TryRecvError::Disconnected) => break,
             }
         }
     }
 
-    /// Render one callback quantum into `frames` (interleaved f32).
+    /// Render one callback quantum into `frames` (interleaved f32 at the
+    /// stream's channel count).
     ///
     /// Safe on the audio thread: no allocation, no locks, no I/O.
     pub fn render_block(&mut self, frames: &mut [f32]) {
@@ -525,144 +1007,107 @@ impl RenderPlaneExecutor {
             return;
         }
 
-        let channels = plan.channels;
-        let frame_count = frames.len() / channels;
+        let stream_channels = self
+            .stream_channels
+            .map(|channels| channels as usize)
+            .unwrap_or(plan.stream_channels)
+            .max(1);
+        let frame_count = frames.len() / stream_channels;
+        debug_assert!(
+            frame_count <= MAX_BLOCK_FRAMES,
+            "render_block called with {frame_count} frames; scratch holds {MAX_BLOCK_FRAMES}",
+        );
+        let frame_count = frame_count.min(MAX_BLOCK_FRAMES);
         let block_start_frame = self.position_frames;
 
-        for lane in plan.lanes.iter_mut() {
-            // Smoothed gains: move toward targets at a fixed full-swing rate
-            // and interpolate across the block, so edits never step audio.
-            let gain_step =
-                frame_count as f32 / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0);
-            let master_start = plan.master_gain_current;
-            let master_end = master_start
-                + (plan.master_gain_target - master_start).clamp(-gain_step, gain_step);
-            let lane_start = lane.gain_current;
-            let lane_end =
-                lane_start + (lane.gain_target - lane_start).clamp(-gain_step, gain_step);
-            let gain_begin = lane_start * master_start;
-            let gain_finish = lane_end * master_end;
-            let gain_slope = (gain_finish - gain_begin) / frame_count.max(1) as f32;
-            lane.gain_current = lane_end;
+        // Smoothed gains: move toward targets at a fixed full-swing rate and
+        // interpolate across the block, so edits never step audio.
+        let gain_step =
+            frame_count as f32 / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0);
 
-            for clip in lane.clips.iter_mut() {
-                // Skip clips entirely outside this block.
-                let block_end_frame = block_start_frame + frame_count as u64;
-                if clip.end_frames <= block_start_frame || clip.start_frames >= block_end_frame {
-                    continue;
-                }
-                let clip_start = clip.start_frames;
-                let clip_end = clip.end_frames;
-                let clip_fade = clip.edge_fade_frames;
-                match &mut clip.source {
-                    CompiledSource::Silence => {}
-                    CompiledSource::Tone { phase, step } => {
-                        let mut local_phase = *phase;
-                        for frame_index in 0..frame_count {
-                            let frame = block_start_frame + frame_index as u64;
-                            let lane_gain = gain_begin + gain_slope * frame_index as f32;
-                            let sample = local_phase.sin() * lane_gain;
-                            local_phase += *step;
-                            if local_phase >= std::f32::consts::TAU {
-                                local_phase -= std::f32::consts::TAU;
-                            }
-                            if frame >= clip_start && frame < clip_end {
-                                let sample =
-                                    sample * clip_edge_gain(frame, clip_start, clip_end, clip_fade);
-                                let base = frame_index * channels;
-                                for channel in 0..channels {
-                                    frames[base + channel] += sample;
-                                }
-                            }
-                        }
-                        *phase = local_phase;
-                    }
-                    CompiledSource::Samples {
-                        buffer,
-                        step,
-                        loop_source,
-                        table,
-                    } => {
-                        let source_frames = buffer.frame_count();
-                        if source_frames == 0 {
-                            continue;
-                        }
-                        let data = &buffer.frames;
-                        for frame_index in 0..frame_count {
-                            let frame = block_start_frame + frame_index as u64;
-                            if frame < clip_start || frame >= clip_end {
-                                continue;
-                            }
-                            // Source position via the rate ratio, anchored at
-                            // the clip's window start.
-                            let mut source_position = (frame - clip_start) as f64 * *step;
-                            if *loop_source {
-                                source_position %= source_frames as f64;
-                            }
-                            let source_index = source_position as usize;
-                            if source_index >= source_frames {
-                                continue;
-                            }
-                            let fraction = source_position - source_index as f64;
-                            let lane_gain = (gain_begin + gain_slope * frame_index as f32)
-                                * clip_edge_gain(frame, clip_start, clip_end, clip_fade);
-                            let base = frame_index * channels;
-                            match table {
-                                // Rate conversion: polyphase windowed-sinc
-                                // tap dot product (table reads only — no
-                                // allocation, no transcendentals).
-                                Some(table) => {
-                                    let row = table.phase_row(fraction);
-                                    let first = table.first_tap_offset();
-                                    for channel in 0..channels.min(2) {
-                                        let mut acc = 0.0f32;
-                                        for (tap, coefficient) in row.iter().enumerate() {
-                                            let mut tap_index =
-                                                source_index as isize + first + tap as isize;
-                                            if *loop_source {
-                                                tap_index =
-                                                    tap_index.rem_euclid(source_frames as isize);
-                                            }
-                                            if tap_index >= 0
-                                                && (tap_index as usize) < source_frames
-                                            {
-                                                acc += data[tap_index as usize * 2 + channel]
-                                                    * coefficient;
-                                            }
-                                        }
-                                        frames[base + channel] += acc * lane_gain;
-                                    }
-                                }
-                                // 1:1 playback: direct read with last-frame
-                                // clamp (or wrap when looping).
-                                None => {
-                                    let next_index = if source_index + 1 < source_frames {
-                                        source_index + 1
-                                    } else if *loop_source {
-                                        0
-                                    } else {
-                                        source_index
-                                    };
-                                    let fraction = fraction as f32;
-                                    for channel in 0..channels.min(2) {
-                                        let a = data[source_index * 2 + channel];
-                                        let b = data[next_index * 2 + channel];
-                                        frames[base + channel] +=
-                                            (a + (b - a) * fraction) * lane_gain;
-                                    }
-                                }
-                            }
+        // Walk the schedule: nodes are in topological order, so every edge's
+        // source sits strictly earlier and split-borrowing is safe.
+        for node_index in 0..plan.nodes.len() {
+            let (earlier, rest) = plan.nodes.split_at_mut(node_index);
+            let node = &mut rest[0];
+
+            let gain_begin = node.gain_current;
+            let gain_end =
+                gain_begin + (node.gain_target - gain_begin).clamp(-gain_step, gain_step);
+            node.block_gain_begin = gain_begin;
+            node.block_gain_slope = (gain_end - gain_begin) / frame_count.max(1) as f32;
+            node.gain_current = gain_end;
+
+            let CompiledNode {
+                channels,
+                clips,
+                inputs,
+                scratch,
+                ..
+            } = node;
+            let channels = *channels;
+            let scratch = &mut scratch[..frame_count * channels];
+            scratch.fill(0.0);
+
+            // Lane content first (at unity), then summed inputs.
+            render_clips_into_scratch(clips, scratch, channels, block_start_frame, frame_count);
+
+            for input in inputs.iter() {
+                let source = &earlier[input.source_index];
+                let source_channels = input.source_channels;
+                let matrix = &input.matrix;
+                // Per-frame: dest[c_out] += src[c_in] * m[c_in][c_out] *
+                // source node's smoothed gain (edge gain is folded into the
+                // matrix at compile). Plain loops, alloc-free.
+                for frame_index in 0..frame_count {
+                    let source_gain =
+                        source.block_gain_begin + source.block_gain_slope * frame_index as f32;
+                    let source_base = frame_index * source_channels;
+                    let dest_base = frame_index * channels;
+                    for source_channel in 0..source_channels {
+                        let sample = source.scratch[source_base + source_channel] * source_gain;
+                        let row = &matrix[source_channel * channels..][..channels];
+                        for (dest_channel, coefficient) in row.iter().enumerate() {
+                            scratch[dest_base + dest_channel] += sample * coefficient;
                         }
                     }
                 }
             }
         }
-        plan.master_gain_current = plan.master_gain_current
-            + (plan.master_gain_target - plan.master_gain_current).clamp(
-                -(frame_count as f32
-                    / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0)),
-                frame_count as f32 / (GAIN_SMOOTHING_SECONDS * plan.sample_rate_hz as f32).max(1.0),
-            );
+
+        // Hardware boundary: adapt the master node's scratch onto the stream
+        // with the master's smoothed gain. Equal formats copy; a narrower
+        // stream applies the install-time downmix matrix; a wider stream
+        // carries the master's channels and leaves the extras silent (the
+        // creative mix never upmixes at the hardware stage).
+        let master = &plan.nodes[plan.master_index];
+        let master_channels = master.channels;
+        let boundary_matrix = &plan.boundary_matrix;
+        let boundary_matrix_valid = boundary_matrix.len() == master_channels * stream_channels;
+        for frame_index in 0..frame_count {
+            let master_gain =
+                master.block_gain_begin + master.block_gain_slope * frame_index as f32;
+            let source_base = frame_index * master_channels;
+            let dest_base = frame_index * stream_channels;
+            if stream_channels < master_channels && boundary_matrix_valid {
+                for dest_channel in 0..stream_channels {
+                    let mut acc = 0.0f32;
+                    for source_channel in 0..master_channels {
+                        acc += master.scratch[source_base + source_channel]
+                            * boundary_matrix[source_channel * stream_channels + dest_channel];
+                    }
+                    frames[dest_base + dest_channel] = acc * master_gain;
+                }
+            } else {
+                // Equal formats, a wider stream (extras stay zero-filled),
+                // or a stale boundary (stream changed without a reinstall):
+                // copy the overlapping channels.
+                for channel in 0..master_channels.min(stream_channels) {
+                    frames[dest_base + channel] =
+                        master.scratch[source_base + channel] * master_gain;
+                }
+            }
+        }
 
         // Transport edge envelope over the mixed block: ramps toward the
         // gate target (zero while a seek is in flight) and never steps.
@@ -677,8 +1122,8 @@ impl RenderPlaneExecutor {
             let edge_step = 1.0 / (EDGE_RAMP_SECONDS * plan.sample_rate_hz as f32).max(1.0);
             for frame_index in 0..frame_count {
                 self.edge_gain += (edge_target - self.edge_gain).clamp(-edge_step, edge_step);
-                let base = frame_index * channels;
-                for channel in 0..channels {
+                let base = frame_index * stream_channels;
+                for channel in 0..stream_channels {
                     frames[base + channel] *= self.edge_gain;
                 }
             }
@@ -717,6 +1162,7 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
             shared,
             plan: None,
             parked_retired: None,
+            stream_channels: None,
             playing: false,
             edge_gain: 0.0,
             pending_seek: None,
@@ -728,23 +1174,62 @@ pub fn render_plane() -> (RenderPlaneController, RenderPlaneExecutor) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use signal_dsp::equal_power_pan_matrix;
 
-    fn tone_spec(frequency_hz: f32) -> RenderPlanSpec {
+    const MASTER_ID: u64 = 1_000;
+    const LANE_ID: u64 = 1;
+
+    fn lane_node(node_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderNodeSpec {
+        RenderNodeSpec {
+            node_id,
+            format: ChannelFormat::stereo(),
+            gain,
+            kind: RenderNodeKind::Lane { clips },
+            inputs: Vec::new(),
+        }
+    }
+
+    fn master_node(inputs: Vec<RenderInputSpec>) -> RenderNodeSpec {
+        RenderNodeSpec {
+            node_id: MASTER_ID,
+            format: ChannelFormat::stereo(),
+            gain: 1.0,
+            kind: RenderNodeKind::Master,
+            inputs,
+        }
+    }
+
+    fn identity_edge(source_node_id: u64) -> RenderInputSpec {
+        RenderInputSpec {
+            source_node_id,
+            gain: 1.0,
+            matrix: None,
+        }
+    }
+
+    /// The old flat shape: one stereo lane summed into a stereo master.
+    fn lane_master_spec(lane_gain: f32, clips: Vec<RenderClipSpec>) -> RenderPlanSpec {
         RenderPlanSpec {
             sample_rate_hz: 48_000,
-            channels: 2,
             master_gain: 1.0,
-            lanes: vec![RenderLaneSpec {
-                lane_id: "lane:1".to_string(),
-                gain: 0.5,
-                clips: vec![RenderClipSpec {
-                    start_frames: 0,
-                    end_frames: u64::MAX,
-                    source: RenderSource::TestTone { frequency_hz },
-                    loop_source: false,
-                }],
-            }],
+            nodes: vec![
+                lane_node(LANE_ID, lane_gain, clips),
+                master_node(vec![identity_edge(LANE_ID)]),
+            ],
         }
+    }
+
+    fn tone_clip(frequency_hz: f32) -> RenderClipSpec {
+        RenderClipSpec {
+            start_frames: 0,
+            end_frames: u64::MAX,
+            source: RenderSource::TestTone { frequency_hz },
+            loop_source: false,
+        }
+    }
+
+    fn tone_spec(frequency_hz: f32) -> RenderPlanSpec {
+        lane_master_spec(0.5, vec![tone_clip(frequency_hz)])
     }
 
     #[test]
@@ -792,9 +1277,10 @@ mod tests {
     #[test]
     fn windows_gate_lane_audibility_on_the_stream_clock() {
         let (controller, mut executor) = render_plane();
-        let mut spec = tone_spec(440.0);
-        spec.lanes[0].clips[0].start_frames = 128;
-        spec.lanes[0].clips[0].end_frames = 256;
+        let mut clip = tone_clip(440.0);
+        clip.start_frames = 128;
+        clip.end_frames = 256;
+        let spec = lane_master_spec(0.5, vec![clip]);
         controller.install_plan(&spec).unwrap();
         controller.set_playing(true).unwrap();
 
@@ -821,24 +1307,18 @@ mod tests {
             data.push(*value);
             data.push(*value);
         }
-        RenderPlanSpec {
-            sample_rate_hz: 48_000,
-            channels: 2,
-            master_gain: 1.0,
-            lanes: vec![RenderLaneSpec {
-                lane_id: "lane:s".to_string(),
-                gain: 1.0,
-                clips: vec![RenderClipSpec {
-                    start_frames,
-                    end_frames,
-                    source: RenderSource::Samples(RenderSampleBuffer {
-                        sample_rate_hz: 48_000,
-                        frames: data.into(),
-                    }),
-                    loop_source,
-                }],
+        lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                start_frames,
+                end_frames,
+                source: RenderSource::Samples(RenderSampleBuffer {
+                    sample_rate_hz: 48_000,
+                    frames: data.into(),
+                }),
+                loop_source,
             }],
-        }
+        )
     }
 
     /// Run blocks until the transport edge ramp has fully opened.
@@ -978,9 +1458,9 @@ mod tests {
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 2);
 
-        // Same plan with lane gain doubled: swap mid-play.
-        let mut louder = tone_spec(440.0);
-        louder.lanes[0].gain = 1.0;
+        // Same plan with lane gain doubled: swap mid-play. Node ids are
+        // stable, so the smoothed gain carries over and ramps.
+        let louder = lane_master_spec(1.0, vec![tone_clip(440.0)]);
         controller.install_plan(&louder).unwrap();
 
         let mut frames = [0.0f32; 1024];
@@ -1012,24 +1492,18 @@ mod tests {
             data.push(value);
             data.push(value);
         }
-        let spec = RenderPlanSpec {
-            sample_rate_hz: 48_000,
-            channels: 2,
-            master_gain: 1.0,
-            lanes: vec![RenderLaneSpec {
-                lane_id: "lane:rc".to_string(),
-                gain: 1.0,
-                clips: vec![RenderClipSpec {
-                    start_frames: 0,
-                    end_frames: u64::MAX,
-                    source: RenderSource::Samples(RenderSampleBuffer {
-                        sample_rate_hz: source_rate,
-                        frames: data.into(),
-                    }),
-                    loop_source: false,
-                }],
+        let spec = lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                start_frames: 0,
+                end_frames: u64::MAX,
+                source: RenderSource::Samples(RenderSampleBuffer {
+                    sample_rate_hz: source_rate,
+                    frames: data.into(),
+                }),
+                loop_source: false,
             }],
-        };
+        );
         controller.install_plan(&spec).unwrap();
         controller.set_playing(true).unwrap();
         warm_up(&mut executor, 4); // 1024 frames: ramp open, fades passed.
@@ -1050,18 +1524,6 @@ mod tests {
         }
         let snr = 10.0 * (power / error.max(1e-30)).log10();
         assert!(snr > 60.0, "rate-converted playback SNR {snr:.1} dB");
-    }
-
-    #[test]
-    fn install_rejects_stream_channel_mismatch() {
-        let (mut controller, _executor) = render_plane();
-        controller.set_stream_channels(2);
-        let mut spec = tone_spec(440.0);
-        spec.channels = 1;
-        let error = controller.install_plan(&spec).unwrap_err();
-        assert!(error.message.contains("channel count"));
-        spec.channels = 2;
-        controller.install_plan(&spec).unwrap();
     }
 
     #[test]
@@ -1096,4 +1558,483 @@ mod tests {
         assert_eq!(controller.collect_retired(), 1);
         assert_eq!(controller.retired_parked_blocks(), 0);
     }
+
+    // ── Graph-shaped plans ──────────────────────────────────────────────────
+
+    #[test]
+    fn compile_rejects_cycles() {
+        let (controller, _executor) = render_plane();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                RenderNodeSpec {
+                    node_id: 1,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Bus,
+                    inputs: vec![identity_edge(2)],
+                },
+                RenderNodeSpec {
+                    node_id: 2,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Bus,
+                    inputs: vec![identity_edge(1)],
+                },
+                master_node(vec![identity_edge(1)]),
+            ],
+        };
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(error.message.contains("cycle"), "{}", error.message);
+    }
+
+    #[test]
+    fn compile_rejects_duplicate_node_ids() {
+        let (controller, _executor) = render_plane();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                lane_node(7, 1.0, vec![]),
+                lane_node(7, 1.0, vec![]),
+                master_node(vec![identity_edge(7)]),
+            ],
+        };
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(error.message.contains("duplicate"), "{}", error.message);
+    }
+
+    #[test]
+    fn compile_rejects_wrong_master_count() {
+        let (controller, _executor) = render_plane();
+        let no_master = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![lane_node(1, 1.0, vec![])],
+        };
+        let error = controller.install_plan(&no_master).unwrap_err();
+        assert!(
+            error.message.contains("exactly one master"),
+            "{}",
+            error.message
+        );
+
+        let mut two_masters = master_node(vec![]);
+        two_masters.node_id = MASTER_ID + 1;
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![master_node(vec![]), two_masters],
+        };
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(
+            error.message.contains("exactly one master"),
+            "{}",
+            error.message
+        );
+    }
+
+    #[test]
+    fn compile_rejects_unknown_inputs_and_bad_matrices() {
+        let (controller, _executor) = render_plane();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![master_node(vec![identity_edge(99)])],
+        };
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(error.message.contains("unknown input"), "{}", error.message);
+
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                lane_node(1, 1.0, vec![]),
+                master_node(vec![RenderInputSpec {
+                    source_node_id: 1,
+                    gain: 1.0,
+                    matrix: Some(vec![1.0, 0.0, 0.0]), // 2x2 edge needs 4.
+                }]),
+            ],
+        };
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(
+            error.message.contains("matrix") && error.message.contains("expected 4"),
+            "{}",
+            error.message
+        );
+    }
+
+    #[test]
+    fn bus_chain_renders_in_topological_order() {
+        // Nodes listed deliberately out of order: master first, then the bus
+        // chain, then the lane. The schedule must still run lane → bus A →
+        // bus B → master, with each stage's gain applied at consumption.
+        let (controller, mut executor) = render_plane();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                master_node(vec![identity_edge(20)]),
+                RenderNodeSpec {
+                    node_id: 20,
+                    format: ChannelFormat::stereo(),
+                    gain: 0.5,
+                    kind: RenderNodeKind::Bus,
+                    inputs: vec![identity_edge(10)],
+                },
+                RenderNodeSpec {
+                    node_id: 10,
+                    format: ChannelFormat::stereo(),
+                    gain: 0.5,
+                    kind: RenderNodeKind::Bus,
+                    inputs: vec![identity_edge(LANE_ID)],
+                },
+                lane_node(LANE_ID, 1.0, vec![tone_clip(440.0)]),
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        // Reference: the same tone through a single lane at the chain's
+        // composite gain (0.5 × 0.5 = 0.25).
+        let (reference_controller, mut reference_executor) = render_plane();
+        reference_controller
+            .install_plan(&lane_master_spec(0.25, vec![tone_clip(440.0)]))
+            .unwrap();
+        reference_controller.set_playing(true).unwrap();
+        warm_up(&mut reference_executor, 2);
+
+        let mut chained = [0.0f32; 512];
+        let mut reference = [0.0f32; 512];
+        executor.render_block(&mut chained);
+        reference_executor.render_block(&mut reference);
+        for (a, b) in chained.iter().zip(reference.iter()) {
+            assert!((a - b).abs() < 1e-6, "chain diverged: {a} vs {b}");
+        }
+    }
+
+    #[test]
+    fn pan_matrix_places_a_lane_in_the_stereo_field() {
+        // The pan primitive per chorus a14: an explicit 2×2 equal-power
+        // matrix on the lane → master edge.
+        let render_with_pan = |pan: f32| -> [f32; 512] {
+            let (controller, mut executor) = render_plane();
+            let spec = RenderPlanSpec {
+                sample_rate_hz: 48_000,
+                master_gain: 1.0,
+                nodes: vec![
+                    lane_node(LANE_ID, 1.0, vec![tone_clip(440.0)]),
+                    master_node(vec![RenderInputSpec {
+                        source_node_id: LANE_ID,
+                        gain: 1.0,
+                        matrix: Some(equal_power_pan_matrix(pan).to_vec()),
+                    }]),
+                ],
+            };
+            controller.install_plan(&spec).unwrap();
+            controller.set_playing(true).unwrap();
+            warm_up(&mut executor, 2);
+            let mut frames = [0.0f32; 512];
+            executor.render_block(&mut frames);
+            frames
+        };
+
+        let hard_left = render_with_pan(-1.0);
+        assert!(hard_left.chunks_exact(2).any(|frame| frame[0].abs() > 0.1));
+        assert!(hard_left.chunks_exact(2).all(|frame| frame[1] == 0.0));
+
+        let hard_right = render_with_pan(1.0);
+        assert!(hard_right
+            .chunks_exact(2)
+            .all(|frame| frame[0].abs() < 1e-6));
+        assert!(hard_right.chunks_exact(2).any(|frame| frame[1].abs() > 0.1));
+
+        let center = render_with_pan(0.0);
+        let minus_3db = std::f32::consts::FRAC_1_SQRT_2;
+        for frame in center.chunks_exact(2) {
+            assert!((frame[0] - frame[1]).abs() < 1e-6);
+        }
+        // Center sits -3 dB against the hard-left reference.
+        let left_peak = hard_left
+            .chunks_exact(2)
+            .map(|frame| frame[0].abs())
+            .fold(0.0f32, f32::max);
+        let center_peak = center
+            .chunks_exact(2)
+            .map(|frame| frame[0].abs())
+            .fold(0.0f32, f32::max);
+        assert!((center_peak - left_peak * minus_3db).abs() < 1e-3);
+    }
+
+    #[test]
+    fn mono_lane_upmixes_to_stereo_through_the_default_adapter() {
+        let (controller, mut executor) = render_plane();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                RenderNodeSpec {
+                    node_id: LANE_ID,
+                    format: ChannelFormat::mono(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Lane {
+                        clips: vec![tone_clip(440.0)],
+                    },
+                    inputs: Vec::new(),
+                },
+                master_node(vec![identity_edge(LANE_ID)]),
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        let peak = frames
+            .chunks_exact(2)
+            .map(|frame| frame[0].abs())
+            .fold(0.0f32, f32::max);
+        assert!(peak > 0.1, "mono lane should be audible after upmix");
+        for frame in frames.chunks_exact(2) {
+            // Equal distribution at -3 dB: both channels identical.
+            assert_eq!(frame[0], frame[1]);
+        }
+        // -3 dB against a stereo lane at unity.
+        assert!((peak - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.05);
+    }
+
+    #[test]
+    fn send_topology_sums_both_paths() {
+        // Lane feeds bus A and bus B (a send); both feed the master. The
+        // output must be exactly double the single-path render.
+        let (controller, mut executor) = render_plane();
+        let bus = |node_id: u64| RenderNodeSpec {
+            node_id,
+            format: ChannelFormat::stereo(),
+            gain: 1.0,
+            kind: RenderNodeKind::Bus,
+            inputs: vec![identity_edge(LANE_ID)],
+        };
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                lane_node(LANE_ID, 0.25, vec![tone_clip(440.0)]),
+                bus(10),
+                bus(11),
+                master_node(vec![identity_edge(10), identity_edge(11)]),
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let (reference_controller, mut reference_executor) = render_plane();
+        reference_controller
+            .install_plan(&lane_master_spec(0.25, vec![tone_clip(440.0)]))
+            .unwrap();
+        reference_controller.set_playing(true).unwrap();
+        warm_up(&mut reference_executor, 2);
+
+        let mut sent = [0.0f32; 512];
+        let mut single = [0.0f32; 512];
+        executor.render_block(&mut sent);
+        reference_executor.render_block(&mut single);
+        for (doubled, reference) in sent.iter().zip(single.iter()) {
+            assert!(
+                (doubled - reference * 2.0).abs() < 1e-6,
+                "send sum diverged: {doubled} vs 2×{reference}",
+            );
+        }
+    }
+
+    #[test]
+    fn wider_master_downmixes_at_the_hardware_boundary() {
+        // 4-channel master on a 2-channel stream: the boundary matrix
+        // (compiled at install, when the stream is known) folds channels
+        // 0/2 onto left and 1/3 onto right at equal weight.
+        let (mut controller, mut executor) = render_plane();
+        controller.set_stream_channels(2).unwrap();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                RenderNodeSpec {
+                    node_id: LANE_ID,
+                    format: ChannelFormat::mono(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Lane {
+                        clips: vec![tone_clip(440.0)],
+                    },
+                    inputs: Vec::new(),
+                },
+                RenderNodeSpec {
+                    node_id: MASTER_ID,
+                    format: ChannelFormat {
+                        channels: 4,
+                        layout: ChannelLayout::Generic,
+                    },
+                    gain: 1.0,
+                    kind: RenderNodeKind::Master,
+                    // Distinct synthetic spread: [1.0, 0.5, 0.25, 0.75].
+                    inputs: vec![RenderInputSpec {
+                        source_node_id: LANE_ID,
+                        gain: 1.0,
+                        matrix: Some(vec![1.0, 0.5, 0.25, 0.75]),
+                    }],
+                },
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        // Mono reference at unity for the same tone.
+        let (reference_controller, mut reference_executor) = render_plane();
+        reference_controller
+            .install_plan(&lane_master_spec(1.0, vec![tone_clip(440.0)]))
+            .unwrap();
+        reference_controller.set_playing(true).unwrap();
+        warm_up(&mut reference_executor, 2);
+
+        let mut downmixed = [0.0f32; 512];
+        let mut reference = [0.0f32; 512];
+        executor.render_block(&mut downmixed);
+        reference_executor.render_block(&mut reference);
+        // Boundary fold (4→2): L = (c0 + c2)/2 = (1.0 + 0.25)/2 = 0.625×tone,
+        // R = (c1 + c3)/2 = (0.5 + 0.75)/2 = 0.625×tone.
+        for (frame, reference_frame) in downmixed.chunks_exact(2).zip(reference.chunks_exact(2)) {
+            let tone = reference_frame[0];
+            assert!((frame[0] - tone * 0.625).abs() < 1e-5);
+            assert!((frame[1] - tone * 0.625).abs() < 1e-5);
+        }
+        // Clock advances by stream frames (2-channel framing): 512+256.
+        assert_eq!(controller.position_frames(), 768);
+    }
+
+    #[test]
+    fn narrower_master_leaves_extra_stream_channels_silent() {
+        // Mono master on a stereo stream: the hardware stage never invents
+        // an upmix — channel 0 carries the master, channel 1 stays silent.
+        let (mut controller, mut executor) = render_plane();
+        controller.set_stream_channels(2).unwrap();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            nodes: vec![
+                RenderNodeSpec {
+                    node_id: LANE_ID,
+                    format: ChannelFormat::mono(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Lane {
+                        clips: vec![tone_clip(440.0)],
+                    },
+                    inputs: Vec::new(),
+                },
+                RenderNodeSpec {
+                    node_id: MASTER_ID,
+                    format: ChannelFormat::mono(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Master,
+                    inputs: vec![identity_edge(LANE_ID)],
+                },
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 2);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert!(frames.chunks_exact(2).any(|frame| frame[0].abs() > 0.1));
+        assert!(frames.chunks_exact(2).all(|frame| frame[1] == 0.0));
+    }
+
+    /// FNV-1a 64 over the bit pattern of rendered samples.
+    fn fnv1a_hash_pcm(frames: &[f32]) -> u64 {
+        let mut hash = 0xcbf2_9ce4_8422_2325u64;
+        for sample in frames {
+            for byte in sample.to_bits().to_le_bytes() {
+                hash ^= byte as u64;
+                hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+            }
+        }
+        hash
+    }
+
+    #[test]
+    fn golden_render_hash_is_stable() {
+        // Reference plan: two tone lanes panned hard left/right through a
+        // bus, summed with a centered mono lane at the master. Renders 8 ×
+        // 256-frame blocks from transport start (edge ramp included) and
+        // hashes the PCM. Gates every render-plane change: any behavioral
+        // drift in declick, smoothing, scheduling, or matrix application
+        // moves the hash.
+        //
+        // Regenerating after an INTENTIONAL change: run with the assert
+        // relaxed (or print `hash`), paste the new value, and justify the
+        // change in the commit. Never regenerate to silence a failure you
+        // cannot explain.
+        let (controller, mut executor) = render_plane();
+        let spec = RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 0.8,
+            nodes: vec![
+                lane_node(1, 0.5, vec![tone_clip(440.0)]),
+                lane_node(2, 0.4, vec![tone_clip(660.0)]),
+                RenderNodeSpec {
+                    node_id: 3,
+                    format: ChannelFormat::mono(),
+                    gain: 0.3,
+                    kind: RenderNodeKind::Lane {
+                        clips: vec![tone_clip(220.0)],
+                    },
+                    inputs: Vec::new(),
+                },
+                RenderNodeSpec {
+                    node_id: 10,
+                    format: ChannelFormat::stereo(),
+                    gain: 0.9,
+                    kind: RenderNodeKind::Bus,
+                    inputs: vec![
+                        RenderInputSpec {
+                            source_node_id: 1,
+                            gain: 1.0,
+                            matrix: Some(equal_power_pan_matrix(-1.0).to_vec()),
+                        },
+                        RenderInputSpec {
+                            source_node_id: 2,
+                            gain: 0.8,
+                            matrix: Some(equal_power_pan_matrix(1.0).to_vec()),
+                        },
+                    ],
+                },
+                master_node(vec![identity_edge(10), identity_edge(3)]),
+            ],
+        };
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut hash = 0xcbf2_9ce4_8422_2325u64;
+        let mut frames = [0.0f32; 512];
+        for _ in 0..8 {
+            executor.render_block(&mut frames);
+            // Chain the per-block hashes by re-seeding from the running value.
+            hash ^= fnv1a_hash_pcm(&frames);
+            hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+        }
+        // Recorded on first run (see regeneration note above).
+        assert_eq!(
+            hash, GOLDEN_RENDER_HASH,
+            "golden render drifted: {hash:#018x}"
+        );
+    }
+
+    /// Recorded output hash for `golden_render_hash_is_stable` (captured on
+    /// the test's first run; see the regeneration note in the test body).
+    const GOLDEN_RENDER_HASH: u64 = 0x494b_7128_ef17_1a6a;
 }

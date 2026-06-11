@@ -3,6 +3,10 @@
 //!
 //! Run with: `cargo run -p signal-render-plane --example render_soak`
 //!
+//! The plan is graph-shaped: two tone lanes panned hard left/right through a
+//! bus into the master — the full schedule walk (lane scratch → matrix edges
+//! → bus → boundary) runs inside the measured callback.
+//!
 //! A counting global allocator tracks every alloc/dealloc that happens while
 //! the callback flag is raised. The control thread parks during measurement
 //! windows so the count isolates the audio thread.
@@ -11,10 +15,12 @@ use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
 
+use signal_dsp::equal_power_pan_matrix;
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_output_cpal::CpalOutputBackend;
 use signal_render_plane::{
-    render_plane, RenderClipSpec, RenderLaneSpec, RenderPlanSpec, RenderSource,
+    render_plane, ChannelFormat, RenderClipSpec, RenderInputSpec, RenderNodeKind, RenderNodeSpec,
+    RenderPlanSpec, RenderSource,
 };
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
@@ -42,11 +48,28 @@ unsafe impl GlobalAlloc for CountingAllocator {
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
 
+fn tone_lane(node_id: u64, gain: f32, frequency_hz: f32) -> RenderNodeSpec {
+    RenderNodeSpec {
+        node_id,
+        format: ChannelFormat::stereo(),
+        gain,
+        kind: RenderNodeKind::Lane {
+            clips: vec![RenderClipSpec {
+                start_frames: 0,
+                end_frames: u64::MAX,
+                source: RenderSource::TestTone { frequency_hz },
+                loop_source: false,
+            }],
+        },
+        inputs: Vec::new(),
+    }
+}
+
 fn main() {
     let sample_rate_hz = 48_000u32;
     let channels = 2u16;
 
-    let (controller, mut executor) = render_plane();
+    let (mut controller, mut executor) = render_plane();
 
     let backend = CpalOutputBackend::new();
     let stream = backend
@@ -63,42 +86,53 @@ fn main() {
             }),
         )
         .expect("open output stream");
-
     controller
-        .install_plan(&RenderPlanSpec {
-            sample_rate_hz,
-            channels,
-            master_gain: 0.5,
-            lanes: vec![
-                RenderLaneSpec {
-                    lane_id: "lane:a".to_string(),
-                    gain: 0.4,
-                    clips: vec![RenderClipSpec {
-                        start_frames: 0,
-                        end_frames: u64::MAX,
-                        source: RenderSource::TestTone {
-                            frequency_hz: 440.0,
-                        },
-                        loop_source: false,
-                    }],
-                },
-                RenderLaneSpec {
-                    lane_id: "lane:b".to_string(),
-                    gain: 0.25,
-                    clips: vec![RenderClipSpec {
-                        start_frames: 0,
-                        end_frames: u64::MAX,
-                        source: RenderSource::TestTone {
-                            frequency_hz: 660.0,
-                        },
-                        loop_source: false,
-                    }],
-                },
-            ],
-        })
-        .expect("install plan");
+        .set_stream_channels(stream.channels())
+        .expect("record stream channels");
 
-    println!("transport: play (1.5s, two tones)");
+    // Bussed plan: lanes a (440 Hz, panned hard left) and b (660 Hz, hard
+    // right) feed a bus through equal-power pan matrices; the bus feeds the
+    // master through an identity edge.
+    let bussed_plan = RenderPlanSpec {
+        sample_rate_hz,
+        master_gain: 0.5,
+        nodes: vec![
+            tone_lane(1, 0.4, 440.0),
+            tone_lane(2, 0.25, 660.0),
+            RenderNodeSpec {
+                node_id: 10,
+                format: ChannelFormat::stereo(),
+                gain: 1.0,
+                kind: RenderNodeKind::Bus,
+                inputs: vec![
+                    RenderInputSpec {
+                        source_node_id: 1,
+                        gain: 1.0,
+                        matrix: Some(equal_power_pan_matrix(-1.0).to_vec()),
+                    },
+                    RenderInputSpec {
+                        source_node_id: 2,
+                        gain: 1.0,
+                        matrix: Some(equal_power_pan_matrix(1.0).to_vec()),
+                    },
+                ],
+            },
+            RenderNodeSpec {
+                node_id: 100,
+                format: ChannelFormat::stereo(),
+                gain: 1.0,
+                kind: RenderNodeKind::Master,
+                inputs: vec![RenderInputSpec {
+                    source_node_id: 10,
+                    gain: 1.0,
+                    matrix: None,
+                }],
+            },
+        ],
+    };
+    controller.install_plan(&bussed_plan).expect("install plan");
+
+    println!("transport: play (1.5s, two tones panned hard left/right through a bus)");
     controller.set_playing(true).expect("play");
     std::thread::sleep(Duration::from_millis(1_500));
     let position_after_play = controller.position_frames();
@@ -116,20 +150,21 @@ fn main() {
     controller
         .install_plan(&RenderPlanSpec {
             sample_rate_hz,
-            channels,
             master_gain: 0.5,
-            lanes: vec![RenderLaneSpec {
-                lane_id: "lane:c".to_string(),
-                gain: 0.5,
-                clips: vec![RenderClipSpec {
-                    start_frames: 0,
-                    end_frames: u64::MAX,
-                    source: RenderSource::TestTone {
-                        frequency_hz: 220.0,
-                    },
-                    loop_source: false,
-                }],
-            }],
+            nodes: vec![
+                tone_lane(3, 0.5, 220.0),
+                RenderNodeSpec {
+                    node_id: 100,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    kind: RenderNodeKind::Master,
+                    inputs: vec![RenderInputSpec {
+                        source_node_id: 3,
+                        gain: 1.0,
+                        matrix: None,
+                    }],
+                },
+            ],
         })
         .expect("swap plan");
     controller.set_playing(true).expect("play again");
@@ -157,5 +192,5 @@ fn main() {
     println!("callback allocations: {allocs}, deallocations: {deallocs}");
     assert_eq!(allocs, 0, "render path must not allocate");
     assert_eq!(deallocs, 0, "render path must not deallocate");
-    println!("soak passed: audible, transport-gated, zero-alloc callback");
+    println!("soak passed: audible, bussed, transport-gated, zero-alloc callback");
 }
