@@ -37,7 +37,9 @@ pub use offline::{
     render_plan_to_pcm, write_wav, OfflineRenderOptions, OfflineRenderOutput, WavBitDepth,
 };
 
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::cell::UnsafeCell;
+use std::mem::MaybeUninit;
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{sync_channel, Receiver, SyncSender, TryRecvError, TrySendError};
 use std::sync::Arc;
 use std::time::Instant;
@@ -90,6 +92,281 @@ impl RenderSampleBuffer {
     pub fn frame_count(&self) -> usize {
         self.frames.len() / 2
     }
+}
+
+// ── Disk-streaming clip sources (chunk mailbox) ─────────────────────────────
+//
+// Long media plays through [`RenderSource::Stream`]: a control-side feeder
+// decodes windows of the file into [`StreamChunk`]s and posts them through a
+// bounded lock-free mailbox; the executor drains them into a small fixed
+// array of held chunks and renders from those with the SAME interpolation
+// paths as in-memory `Samples`. Chunks the executor no longer needs travel
+// BACK through a retired mailbox and are deallocated control-side — exactly
+// the plan-swap ownership discipline, applied per chunk. The executor never
+// blocks, never allocates, and never frees: a missing source frame renders
+// silence and increments an underrun counter.
+
+/// Capacity of the feeder → executor chunk mailbox per stream handle.
+const STREAM_CHUNK_MAILBOX_CAPACITY: usize = 8;
+/// Chunks the executor holds per streaming clip while rendering.
+const STREAM_HELD_CHUNK_SLOTS: usize = 4;
+/// Retired-chunk mailbox capacity: sized so every in-flight chunk (mailbox
+/// plus held slots) can retire without saturating while the feeder drains.
+const STREAM_RETIRED_MAILBOX_CAPACITY: usize =
+    STREAM_CHUNK_MAILBOX_CAPACITY + STREAM_HELD_CHUNK_SLOTS + 2;
+/// Held or mailbox chunks starting further than this past the frame the
+/// executor currently needs are treated as stale (left over from before a
+/// backward seek) and retired. Feeders must keep their read-ahead window
+/// comfortably inside this bound or their prefetch gets churned.
+pub const STREAM_RETIRE_LOOKAHEAD_FRAMES: u64 = 262_144;
+
+/// One window of decoded media: interleaved stereo f32 at the stream
+/// handle's source rate, anchored at `start_frame` on the source clock.
+#[derive(Clone, Debug)]
+pub struct StreamChunk {
+    /// First source frame the chunk covers.
+    pub start_frame: u64,
+    /// Interleaved stereo frames (length is even; frame count = len / 2).
+    pub frames: Arc<[f32]>,
+}
+
+impl StreamChunk {
+    /// Number of stereo frames in the chunk.
+    pub fn frame_count(&self) -> u64 {
+        self.frames.len() as u64 / 2
+    }
+
+    /// One past the last source frame the chunk covers.
+    fn end_frame(&self) -> u64 {
+        self.start_frame + self.frame_count()
+    }
+}
+
+/// Bounded lock-free MPMC queue (Vyukov sequence-stamped ring). Used as the
+/// chunk and retired mailboxes inside a stream handle: `try_push`/`try_pop`
+/// neither allocate nor free nor block, so both ends are audio-thread safe.
+/// (mpsc channels cannot serve here — the handle lives inside clonable plan
+/// specs, and `Receiver` is neither clonable nor `Sync`.)
+struct ChunkQueueSlot<T> {
+    sequence: AtomicUsize,
+    value: UnsafeCell<MaybeUninit<T>>,
+}
+
+struct ChunkQueue<T> {
+    slots: Box<[ChunkQueueSlot<T>]>,
+    enqueue_position: AtomicUsize,
+    dequeue_position: AtomicUsize,
+}
+
+// Safety: access to each slot's value is serialized by its sequence stamp
+// (acquire/release): a slot is written only after winning the enqueue CAS
+// and read only after winning the dequeue CAS.
+unsafe impl<T: Send> Send for ChunkQueue<T> {}
+unsafe impl<T: Send> Sync for ChunkQueue<T> {}
+
+impl<T> ChunkQueue<T> {
+    fn new(capacity: usize) -> Self {
+        let slots = (0..capacity)
+            .map(|index| ChunkQueueSlot {
+                sequence: AtomicUsize::new(index),
+                value: UnsafeCell::new(MaybeUninit::uninit()),
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        ChunkQueue {
+            slots,
+            enqueue_position: AtomicUsize::new(0),
+            dequeue_position: AtomicUsize::new(0),
+        }
+    }
+
+    /// Push without blocking or allocating; returns the value when full.
+    fn try_push(&self, value: T) -> Result<(), T> {
+        let capacity = self.slots.len();
+        let mut position = self.enqueue_position.load(Ordering::Relaxed);
+        loop {
+            let slot = &self.slots[position % capacity];
+            let sequence = slot.sequence.load(Ordering::Acquire);
+            if sequence == position {
+                match self.enqueue_position.compare_exchange_weak(
+                    position,
+                    position + 1,
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                ) {
+                    Ok(_) => {
+                        unsafe { (*slot.value.get()).write(value) };
+                        slot.sequence.store(position + 1, Ordering::Release);
+                        return Ok(());
+                    }
+                    Err(current) => position = current,
+                }
+            } else if sequence < position {
+                return Err(value); // Full.
+            } else {
+                position = self.enqueue_position.load(Ordering::Relaxed);
+            }
+        }
+    }
+
+    /// Pop without blocking or allocating; `None` when empty.
+    fn try_pop(&self) -> Option<T> {
+        let capacity = self.slots.len();
+        let mut position = self.dequeue_position.load(Ordering::Relaxed);
+        loop {
+            let slot = &self.slots[position % capacity];
+            let sequence = slot.sequence.load(Ordering::Acquire);
+            if sequence == position + 1 {
+                match self.dequeue_position.compare_exchange_weak(
+                    position,
+                    position + 1,
+                    Ordering::Relaxed,
+                    Ordering::Relaxed,
+                ) {
+                    Ok(_) => {
+                        let value = unsafe { (*slot.value.get()).assume_init_read() };
+                        slot.sequence.store(position + capacity, Ordering::Release);
+                        return Some(value);
+                    }
+                    Err(current) => position = current,
+                }
+            } else if sequence <= position {
+                return None; // Empty.
+            } else {
+                position = self.dequeue_position.load(Ordering::Relaxed);
+            }
+        }
+    }
+}
+
+impl<T> Drop for ChunkQueue<T> {
+    fn drop(&mut self) {
+        while self.try_pop().is_some() {}
+    }
+}
+
+/// State shared between a stream handle (executor side) and its feeder.
+struct StreamInner {
+    source_sample_rate_hz: u32,
+    total_frames: u64,
+    /// Next source frame the executor needs (its read hint), published per
+    /// rendered block. Seeks read as jumps here.
+    wanted_frame: AtomicU64,
+    /// Output frames rendered as silence because the needed source frame was
+    /// not held (feeder behind, or seek not yet served).
+    underrun_frames: AtomicU64,
+    /// Feeder → executor chunk mailbox.
+    chunks: ChunkQueue<StreamChunk>,
+    /// Executor → feeder retired-chunk mailbox: chunks the executor no
+    /// longer needs, returned for control-side deallocation.
+    retired: ChunkQueue<StreamChunk>,
+}
+
+/// Executor-side handle to a disk-streamed media source. Arc-shared and
+/// pointer-equal (like [`RenderSampleBuffer`]): create one per streaming
+/// asset and reuse it across plan recompiles so specs stay idempotent.
+/// Clips reference the handle plus their own window/anchor, exactly as
+/// in-memory sample clips reference a shared buffer.
+#[derive(Clone)]
+pub struct RenderStreamHandle {
+    inner: Arc<StreamInner>,
+}
+
+impl std::fmt::Debug for RenderStreamHandle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RenderStreamHandle")
+            .field("source_sample_rate_hz", &self.inner.source_sample_rate_hz)
+            .field("total_frames", &self.inner.total_frames)
+            .finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for RenderStreamHandle {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
+impl RenderStreamHandle {
+    /// Source sample rate of the streamed media.
+    pub fn source_sample_rate_hz(&self) -> u32 {
+        self.inner.source_sample_rate_hz
+    }
+
+    /// Total source frames in the streamed media.
+    pub fn total_frames(&self) -> u64 {
+        self.inner.total_frames
+    }
+
+    /// Output frames rendered as silence because the needed source frame
+    /// was not available (cumulative).
+    pub fn underrun_frames(&self) -> u64 {
+        self.inner.underrun_frames.load(Ordering::Relaxed)
+    }
+}
+
+/// Control-side feeder for one stream handle: reads the executor's wanted
+/// frame, posts decoded chunks, and reclaims retired chunks for
+/// deallocation. Single producer by design — do not share one feeder across
+/// threads (the queue tolerates it, but interleaved feeding is meaningless).
+pub struct StreamFeeder {
+    inner: Arc<StreamInner>,
+}
+
+impl StreamFeeder {
+    /// Next source frame the executor needs, as last published. Feed chunks
+    /// covering `[wanted, wanted + read-ahead)`.
+    pub fn wanted_frame(&self) -> u64 {
+        self.inner.wanted_frame.load(Ordering::Relaxed)
+    }
+
+    /// Cumulative output frames the executor rendered as silence for want
+    /// of this stream's data.
+    pub fn underrun_frames(&self) -> u64 {
+        self.inner.underrun_frames.load(Ordering::Relaxed)
+    }
+
+    /// Post a chunk to the executor; returns the chunk when the mailbox is
+    /// full (try again after the executor drains).
+    pub fn try_send_chunk(&self, chunk: StreamChunk) -> Result<(), StreamChunk> {
+        self.inner.chunks.try_push(chunk)
+    }
+
+    /// Reclaim chunks the executor has retired; dropping the returned `Vec`
+    /// deallocates them here, on the control side.
+    pub fn collect_retired(&self) -> Vec<StreamChunk> {
+        let mut retired = Vec::new();
+        while let Some(chunk) = self.inner.retired.try_pop() {
+            retired.push(chunk);
+        }
+        retired
+    }
+}
+
+/// Create a connected feeder/handle pair for one streaming asset:
+/// interleaved stereo media at `source_sample_rate_hz`, `total_frames`
+/// frames long. The handle goes into [`RenderSource::Stream`] specs; the
+/// feeder stays control-side and must be pumped (post chunks toward
+/// [`StreamFeeder::wanted_frame`], collect retired) for audio to flow.
+pub fn render_stream(
+    source_sample_rate_hz: u32,
+    total_frames: u64,
+) -> (StreamFeeder, RenderStreamHandle) {
+    let inner = Arc::new(StreamInner {
+        source_sample_rate_hz,
+        total_frames,
+        wanted_frame: AtomicU64::new(0),
+        underrun_frames: AtomicU64::new(0),
+        chunks: ChunkQueue::new(STREAM_CHUNK_MAILBOX_CAPACITY),
+        retired: ChunkQueue::new(STREAM_RETIRED_MAILBOX_CAPACITY),
+    });
+    (
+        StreamFeeder {
+            inner: Arc::clone(&inner),
+        },
+        RenderStreamHandle { inner },
+    )
 }
 
 const COMMAND_MAILBOX_CAPACITY: usize = 64;
@@ -166,6 +443,11 @@ pub enum RenderSource {
     /// Clip plays shared sample data from its window start, with windowed-sinc
     /// interpolation when the source rate differs from the stream rate.
     Samples(RenderSampleBuffer),
+    /// Clip streams media from disk through a chunk mailbox (see
+    /// [`render_stream`]); same anchoring and interpolation as `Samples`,
+    /// but source data arrives in feeder-posted chunks and missing frames
+    /// render silence (counted on the handle). `loop_source` is ignored.
+    Stream(RenderStreamHandle),
 }
 
 /// One clip event in a lane stage: a half-open stream-clock window
@@ -406,6 +688,20 @@ enum CompiledSource {
         /// at 1:1, where samples are read directly.
         table: Option<PolyphaseInterpolationTable>,
     },
+    Stream {
+        handle: RenderStreamHandle,
+        /// Chunks currently held for rendering; drained from the handle's
+        /// mailbox between blocks, returned via the retired mailbox once
+        /// behind the playhead or outside the seek window. Moves across
+        /// plan swaps through the clip inheritance map so an identity
+        /// recompile never drops the read-ahead.
+        held: [Option<StreamChunk>; STREAM_HELD_CHUNK_SLOTS],
+        /// Source frames advanced per stream frame (rate ratio).
+        step: f64,
+        /// Polyphase windowed-sinc table for rate-converted playback; `None`
+        /// at 1:1.
+        table: Option<PolyphaseInterpolationTable>,
+    },
 }
 
 struct CompiledClip {
@@ -625,6 +921,16 @@ impl RenderPlan {
                                     loop_source: clip.loop_source,
                                 }
                             }
+                            RenderSource::Stream(handle) => {
+                                let step = handle.source_sample_rate_hz().max(1) as f64
+                                    / stream_rate as f64;
+                                CompiledSource::Stream {
+                                    table: table_for_step(step),
+                                    step,
+                                    handle: handle.clone(),
+                                    held: std::array::from_fn(|_| None),
+                                }
+                            }
                         },
                     })
                     .collect(),
@@ -734,7 +1040,7 @@ impl RenderPlan {
     /// is O(stages + clips) index copies — no identity comparisons run on
     /// the audio thread, and inserting a clip mid-lane no longer cross-wires
     /// its neighbours' state.
-    fn inherit_state(&mut self, previous: &RenderPlan) {
+    fn inherit_state(&mut self, previous: &mut RenderPlan) {
         // Limiter recovery gain carries over so a recompile mid-limiting
         // does not snap the gain back to unity.
         if let (Some(limiter), Some(previous_limiter)) =
@@ -750,7 +1056,7 @@ impl RenderPlan {
             let Some(previous_index) = self.inherit_stage_map[index] else {
                 continue;
             };
-            let Some(previous_node) = previous.stages.get(previous_index) else {
+            let Some(previous_node) = previous.stages.get_mut(previous_index) else {
                 continue;
             };
             stage.gain_current = previous_node.gain_current;
@@ -763,20 +1069,40 @@ impl RenderPlan {
                 let Some(previous_clip_index) = clip_map.get(clip_index).copied().flatten() else {
                     continue;
                 };
-                let Some(previous_clip) = previous_node.clips.get(previous_clip_index) else {
+                let Some(previous_clip) = previous_node.clips.get_mut(previous_clip_index) else {
                     continue;
                 };
-                if let (
-                    CompiledSource::Tone { phase, step },
-                    CompiledSource::Tone {
-                        phase: previous_phase,
-                        step: previous_step,
-                    },
-                ) = (&mut clip.source, &previous_clip.source)
-                {
-                    if *step == *previous_step {
+                match (&mut clip.source, &mut previous_clip.source) {
+                    (
+                        CompiledSource::Tone { phase, step },
+                        CompiledSource::Tone {
+                            phase: previous_phase,
+                            step: previous_step,
+                        },
+                    ) if *step == *previous_step => {
                         *phase = *previous_phase;
                     }
+                    // Streaming clips MOVE their held read-ahead chunks into
+                    // the new plan (same handle, same rate ratio), so an
+                    // identity recompile mid-stream never underruns. Chunks
+                    // that do not transfer ride the retired plan back to the
+                    // control side and drop there — never on this thread.
+                    (
+                        CompiledSource::Stream {
+                            handle, held, step, ..
+                        },
+                        CompiledSource::Stream {
+                            handle: previous_handle,
+                            held: previous_held,
+                            step: previous_step,
+                            ..
+                        },
+                    ) if handle == previous_handle && *step == *previous_step => {
+                        for (slot, previous_slot) in held.iter_mut().zip(previous_held.iter_mut()) {
+                            *slot = previous_slot.take();
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -813,6 +1139,49 @@ fn clip_edge_gain(frame: u64, start_frames: u64, end_frames: u64, fade_frames: u
     let from_start = (frame - start_frames + 1) as f32;
     let to_end = (end_frames - frame) as f32;
     (from_start / fade).min(to_end / fade).min(1.0)
+}
+
+/// Per-frame interpolated source read shared by the `Samples` and `Stream`
+/// paths: polyphase windowed-sinc when rate-converted, clamped lerp at 1:1.
+/// `fetch(source_frame, channel)` returns the source sample or `None` when
+/// that frame is unavailable (off the buffer for samples, not currently
+/// held for streams). Returns `None` — render silence, and for streams
+/// count an underrun — when the center frame itself is unavailable;
+/// unavailable outer sinc taps just contribute zero, matching the buffer
+/// path's edge behavior. Arithmetic and accumulation order are identical to
+/// the historical `Samples` implementation (golden-hash stable).
+#[inline]
+fn interpolate_source_frame(
+    fetch: &impl Fn(i64, usize) -> Option<f32>,
+    source_index: u64,
+    fraction: f64,
+    table: Option<&PolyphaseInterpolationTable>,
+    channel: usize,
+) -> Option<f32> {
+    match table {
+        // Rate conversion: polyphase windowed-sinc tap dot product (table
+        // reads only — no allocation, no transcendentals).
+        Some(table) => {
+            fetch(source_index as i64, channel)?;
+            let row = table.phase_row(fraction);
+            let first = table.first_tap_offset();
+            let mut acc = 0.0f32;
+            for (tap, coefficient) in row.iter().enumerate() {
+                let tap_index = source_index as i64 + first as i64 + tap as i64;
+                if let Some(value) = fetch(tap_index, channel) {
+                    acc += value * coefficient;
+                }
+            }
+            Some(acc)
+        }
+        // 1:1 playback: direct read with last-frame clamp (`fetch` wraps
+        // instead when the source loops).
+        None => {
+            let a = fetch(source_index as i64, channel)?;
+            let b = fetch(source_index as i64 + 1, channel).unwrap_or(a);
+            Some(a + (b - a) * fraction as f32)
+        }
+    }
 }
 
 /// Render a lane stage's clips into its scratch at unity gain (stage and edge
@@ -869,6 +1238,22 @@ fn render_clips_into_scratch(
                     continue;
                 }
                 let data = &buffer.frames;
+                let frame_total = source_frames as i64;
+                let loop_source = *loop_source;
+                // Loop folding lives in the fetch: wrapped taps and the
+                // wrapped lerp neighbour come out identical to the
+                // historical inline implementation.
+                let fetch = |source_frame: i64, channel: usize| -> Option<f32> {
+                    let source_frame = if loop_source {
+                        source_frame.rem_euclid(frame_total)
+                    } else {
+                        source_frame
+                    };
+                    if source_frame < 0 || source_frame >= frame_total {
+                        return None;
+                    }
+                    Some(data[source_frame as usize * 2 + channel])
+                };
                 for frame_index in 0..frame_count {
                     let frame = block_start_frame + frame_index as u64;
                     if frame < clip_start || frame >= clip_end {
@@ -877,7 +1262,7 @@ fn render_clips_into_scratch(
                     // Source position via the rate ratio, anchored at the
                     // clip's window start.
                     let mut source_position = (frame - clip_start) as f64 * *step;
-                    if *loop_source {
+                    if loop_source {
                         source_position %= source_frames as f64;
                     }
                     let source_index = source_position as usize;
@@ -887,46 +1272,121 @@ fn render_clips_into_scratch(
                     let fraction = source_position - source_index as f64;
                     let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
                     let base = frame_index * channels;
-                    match table {
-                        // Rate conversion: polyphase windowed-sinc tap dot
-                        // product (table reads only — no allocation, no
-                        // transcendentals).
-                        Some(table) => {
-                            let row = table.phase_row(fraction);
-                            let first = table.first_tap_offset();
-                            for channel in 0..channels.min(2) {
-                                let mut acc = 0.0f32;
-                                for (tap, coefficient) in row.iter().enumerate() {
-                                    let mut tap_index =
-                                        source_index as isize + first + tap as isize;
-                                    if *loop_source {
-                                        tap_index = tap_index.rem_euclid(source_frames as isize);
-                                    }
-                                    if tap_index >= 0 && (tap_index as usize) < source_frames {
-                                        acc += data[tap_index as usize * 2 + channel] * coefficient;
-                                    }
-                                }
-                                scratch[base + channel] += acc * window_gain;
-                            }
-                        }
-                        // 1:1 playback: direct read with last-frame clamp
-                        // (or wrap when looping).
-                        None => {
-                            let next_index = if source_index + 1 < source_frames {
-                                source_index + 1
-                            } else if *loop_source {
-                                0
-                            } else {
-                                source_index
-                            };
-                            let fraction = fraction as f32;
-                            for channel in 0..channels.min(2) {
-                                let a = data[source_index * 2 + channel];
-                                let b = data[next_index * 2 + channel];
-                                scratch[base + channel] += (a + (b - a) * fraction) * window_gain;
-                            }
+                    for channel in 0..channels.min(2) {
+                        if let Some(sample) = interpolate_source_frame(
+                            &fetch,
+                            source_index as u64,
+                            fraction,
+                            table.as_ref(),
+                            channel,
+                        ) {
+                            scratch[base + channel] += sample * window_gain;
                         }
                     }
+                }
+            }
+            CompiledSource::Stream {
+                handle,
+                held,
+                step,
+                table,
+            } => {
+                let total_frames = handle.inner.total_frames;
+                if total_frames == 0 {
+                    continue;
+                }
+                // Publish the read hint: clip-anchored source frame of the
+                // first audible frame in this block. Seeks read as jumps.
+                let first_audible = block_start_frame.max(clip_start);
+                let needed_start = ((first_audible - clip_start) as f64 * *step) as u64;
+                handle
+                    .inner
+                    .wanted_frame
+                    .store(needed_start, Ordering::Relaxed);
+                // Retire held chunks entirely behind the playhead (minus
+                // the sinc tap margin) or stale past the seek window —
+                // returned to the feeder, never freed here.
+                let behind_cutoff = needed_start.saturating_sub(RESAMPLE_TAPS as u64);
+                let ahead_cutoff = needed_start.saturating_add(STREAM_RETIRE_LOOKAHEAD_FRAMES);
+                for slot in held.iter_mut() {
+                    let stale = slot.as_ref().is_some_and(|chunk| {
+                        chunk.end_frame() <= behind_cutoff || chunk.start_frame > ahead_cutoff
+                    });
+                    if stale {
+                        let chunk = slot.take().expect("stale slot is occupied");
+                        if let Err(chunk) = handle.inner.retired.try_push(chunk) {
+                            // Retired mailbox full: hold the chunk and retry
+                            // next block (never drop on the audio thread).
+                            *slot = Some(chunk);
+                        }
+                    }
+                }
+                // Drain the chunk mailbox into free slots only — a popped
+                // chunk must always have a home on this thread. Stale
+                // arrivals occupy a slot for one block and retire on the
+                // next pass.
+                for slot in held.iter_mut() {
+                    if slot.is_none() {
+                        match handle.inner.chunks.try_pop() {
+                            Some(chunk) => *slot = Some(chunk),
+                            None => break,
+                        }
+                    }
+                }
+                let held: &[Option<StreamChunk>] = held;
+                // Locate a source frame in the held chunks: linear scan over
+                // a handful of slots, then an index.
+                let fetch = |source_frame: i64, channel: usize| -> Option<f32> {
+                    if source_frame < 0 {
+                        return None;
+                    }
+                    let source_frame = source_frame as u64;
+                    held.iter().flatten().find_map(|chunk| {
+                        (source_frame >= chunk.start_frame && source_frame < chunk.end_frame())
+                            .then(|| {
+                                chunk.frames
+                                    [(source_frame - chunk.start_frame) as usize * 2 + channel]
+                            })
+                    })
+                };
+                let mut underrun_frames = 0u64;
+                for frame_index in 0..frame_count {
+                    let frame = block_start_frame + frame_index as u64;
+                    if frame < clip_start || frame >= clip_end {
+                        continue;
+                    }
+                    let source_position = (frame - clip_start) as f64 * *step;
+                    let source_index = source_position as u64;
+                    if source_index >= total_frames {
+                        // Past the asset's end: silence by design, not an
+                        // underrun.
+                        continue;
+                    }
+                    let fraction = source_position - source_index as f64;
+                    let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                    let base = frame_index * channels;
+                    let mut missing = false;
+                    for channel in 0..channels.min(2) {
+                        match interpolate_source_frame(
+                            &fetch,
+                            source_index,
+                            fraction,
+                            table.as_ref(),
+                            channel,
+                        ) {
+                            Some(sample) => scratch[base + channel] += sample * window_gain,
+                            None => missing = true,
+                        }
+                    }
+                    if missing {
+                        underrun_frames += 1;
+                    }
+                }
+                if underrun_frames > 0 {
+                    handle
+                        .inner
+                        .underrun_frames
+                        .fetch_add(underrun_frames, Ordering::Relaxed);
                 }
             }
         }
@@ -1345,8 +1805,8 @@ impl RenderPlaneExecutor {
         loop {
             match self.commands.try_recv() {
                 Ok(RenderCommand::InstallPlan(mut next_plan)) => {
-                    if let Some(previous) = self.plan.take() {
-                        next_plan.inherit_state(&previous);
+                    if let Some(mut previous) = self.plan.take() {
+                        next_plan.inherit_state(&mut previous);
                         self.retire(previous);
                     }
                     self.plan = Some(next_plan);
@@ -2365,6 +2825,250 @@ mod tests {
         };
         assert_eq!(a, b);
         assert_ne!(a, c);
+    }
+
+    // ── Disk-streaming sources ──────────────────────────────────────────────
+
+    /// Spec with one stream clip windowed `[start, end)` at lane gain 1.
+    fn stream_spec(
+        handle: &RenderStreamHandle,
+        start_frames: u64,
+        end_frames: u64,
+    ) -> RenderPlanSpec {
+        lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 1006,
+                start_frames,
+                end_frames,
+                source: RenderSource::Stream(handle.clone()),
+                loop_source: false,
+            }],
+        )
+    }
+
+    /// Feed `[from, to)` of a ramp (value = frame / total) in fixed chunks.
+    fn feed_ramp(feeder: &StreamFeeder, total: u64, from: u64, to: u64, chunk_frames: u64) {
+        let mut start = from - from % chunk_frames;
+        while start < to.min(total) {
+            let count = chunk_frames.min(total - start);
+            let mut data = Vec::with_capacity(count as usize * 2);
+            for frame in start..start + count {
+                let value = frame as f32 / total as f32;
+                data.push(value);
+                data.push(value);
+            }
+            if feeder
+                .try_send_chunk(StreamChunk {
+                    start_frame: start,
+                    frames: data.into(),
+                })
+                .is_err()
+            {
+                return; // Mailbox full: enough read-ahead for the test.
+            }
+            start += count;
+        }
+    }
+
+    #[test]
+    fn stream_clips_play_fed_chunks_sample_accurately() {
+        let (mut controller, mut executor) = render_plane();
+        let total = 4_096u64;
+        let (feeder, handle) = render_stream(48_000, total);
+        // Window starts at frame 512, well past the edge ramp warm-up.
+        let spec = stream_spec(&handle, 512, 512 + total);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        feed_ramp(&feeder, total, 0, 1_024, 256);
+
+        // Two 256-frame blocks open the edge ramp and reach frame 512.
+        warm_up(&mut executor, 2);
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        // Frame 512+128 plays source frame 128, past the clip edge fade.
+        let index = 128usize;
+        let expected = 128.0 / total as f32;
+        assert!((frames[index * 2] - expected).abs() < 1e-6);
+        // 1:1 streaming: identical channels, zero underruns.
+        assert_eq!(frames[index * 2], frames[index * 2 + 1]);
+        assert_eq!(handle.underrun_frames(), 0);
+        // The next block starts past the clip anchor: the read hint follows.
+        executor.render_block(&mut frames);
+        assert_eq!(feeder.wanted_frame(), 256);
+    }
+
+    #[test]
+    fn stream_underruns_render_silence_and_count() {
+        let (mut controller, mut executor) = render_plane();
+        let (feeder, handle) = render_stream(48_000, 48_000);
+        controller
+            .install_plan(&stream_spec(&handle, 0, 48_000))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+
+        // Nothing fed: every in-window frame is an underrun, output silent.
+        let mut frames = [0.1f32; 512];
+        executor.render_block(&mut frames);
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+        assert_eq!(handle.underrun_frames(), 512);
+
+        // Feed the region the executor wants: audio resumes, count holds.
+        feed_ramp(
+            &feeder,
+            48_000,
+            feeder.wanted_frame(),
+            feeder.wanted_frame() + 2_048,
+            512,
+        );
+        let before = handle.underrun_frames();
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert!(frames.iter().any(|sample| sample.abs() > 0.001));
+        assert_eq!(handle.underrun_frames(), before);
+    }
+
+    #[test]
+    fn stream_seek_retires_stale_chunks_and_resumes_once_fed() {
+        let (mut controller, mut executor) = render_plane();
+        let total = 1_000_000u64;
+        let (feeder, handle) = render_stream(48_000, total);
+        controller
+            .install_plan(&stream_spec(&handle, 0, total))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        feed_ramp(&feeder, total, 0, 1_024, 256);
+        warm_up(&mut executor, 3);
+        assert_eq!(handle.underrun_frames(), 0);
+
+        // Seek far past the retire lookahead: held chunks for the old
+        // region must come back via the retired mailbox.
+        let target = 600_000u64;
+        controller.seek(target).unwrap();
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames); // Ramp-out block; seek lands.
+        executor.render_block(&mut frames); // First block at the new region.
+        assert!(feeder.wanted_frame() >= target);
+        // Old-region chunks retire within a few blocks (stale arrivals can
+        // sit one block in a held slot first).
+        let mut retired = Vec::new();
+        for _ in 0..4 {
+            retired.extend(feeder.collect_retired());
+            executor.render_block(&mut frames);
+        }
+        retired.extend(feeder.collect_retired());
+        assert!(
+            retired.iter().all(|chunk| chunk.start_frame < 1_024),
+            "only old-region chunks should retire",
+        );
+        assert!(!retired.is_empty(), "stale chunks should have retired");
+
+        // Feed the new region: playback resumes with the right content.
+        let wanted = feeder.wanted_frame();
+        feed_ramp(&feeder, total, wanted, wanted + 4_096, 512);
+        let before = handle.underrun_frames();
+        assert!(before > 0, "seek without data should have underrun");
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert_eq!(handle.underrun_frames(), before);
+        let position = controller.position_frames() - 256;
+        let expected = position as f32 / total as f32;
+        assert!(
+            (frames[0] - expected).abs() < 1e-5,
+            "resumed at the wrong content"
+        );
+    }
+
+    #[test]
+    fn rate_converted_streams_play_through_the_sinc_path() {
+        // 1 kHz sine at 44.1k streamed onto a 48k plan: same SNR bar as the
+        // in-memory rate-converted test — proof the stream path shares the
+        // polyphase interpolation.
+        let (mut controller, mut executor) = render_plane();
+        let source_rate = 44_100u32;
+        let total = 44_100u64;
+        let frequency = 1_000.0f64;
+        let (feeder, handle) = render_stream(source_rate, total);
+        controller
+            .install_plan(&stream_spec(&handle, 0, u64::MAX))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        // Feed the whole second up front in 8 large chunks.
+        let chunk_frames = total.div_ceil(8);
+        let mut start = 0u64;
+        while start < total {
+            let count = chunk_frames.min(total - start);
+            let mut data = Vec::with_capacity(count as usize * 2);
+            for n in start..start + count {
+                let value = (std::f64::consts::TAU * frequency * n as f64 / source_rate as f64)
+                    .sin() as f32;
+                data.push(value);
+                data.push(value);
+            }
+            feeder
+                .try_send_chunk(StreamChunk {
+                    start_frame: start,
+                    frames: data.into(),
+                })
+                .unwrap();
+            start += count;
+        }
+        warm_up(&mut executor, 4); // 1024 frames: ramp open, fades passed.
+
+        let mut frames = vec![0.0f32; 2048];
+        executor.render_block(&mut frames);
+        let step = source_rate as f64 / 48_000.0;
+        let mut error = 0.0f64;
+        let mut power = 0.0f64;
+        for frame_index in 0..1024usize {
+            let stream_frame = 1024 + frame_index as u64;
+            let position = stream_frame as f64 * step;
+            let expected =
+                (std::f64::consts::TAU * frequency * position / source_rate as f64).sin();
+            let actual = frames[frame_index * 2] as f64;
+            error += (actual - expected) * (actual - expected);
+            power += expected * expected;
+        }
+        let snr = 10.0 * (power / error.max(1e-30)).log10();
+        assert!(snr > 60.0, "rate-converted stream SNR {snr:.1} dB");
+        assert_eq!(handle.underrun_frames(), 0);
+    }
+
+    #[test]
+    fn plan_swap_mid_stream_keeps_held_chunks_without_underrun() {
+        let (mut controller, mut executor) = render_plane();
+        let total = 48_000u64;
+        let (feeder, handle) = render_stream(48_000, total);
+        let spec = stream_spec(&handle, 0, total);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+        // Feed only what fits in the mailbox + held slots; after the swap no
+        // further feeding happens, so continuity proves the held chunks
+        // moved across the plan boundary via the clip inheritance map.
+        feed_ramp(&feeder, total, 0, 2_048, 256);
+        warm_up(&mut executor, 2); // 512 frames consumed, chunks held.
+
+        // Identity recompile mid-stream (the handle is pointer-equal, so
+        // the spec is too — hosts would skip this install; force it).
+        controller.install_plan(&spec.clone()).unwrap();
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        assert_eq!(handle.underrun_frames(), 0, "swap dropped held chunks");
+        // Content continues exactly: frame 512 plays source frame 512.
+        let expected = 512.0 / total as f32;
+        assert!((frames[0] - expected).abs() < 1e-6);
+    }
+
+    #[test]
+    fn stream_handles_compare_by_pointer_for_cheap_spec_equality() {
+        let (_feeder_a, a) = render_stream(48_000, 1_000);
+        let b = a.clone();
+        let (_feeder_c, c) = render_stream(48_000, 1_000);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        assert_eq!(a.source_sample_rate_hz(), 48_000);
+        assert_eq!(a.total_frames(), 1_000);
     }
 
     #[test]
