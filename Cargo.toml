@@ -28,8 +28,6 @@ members = [
   "crates/signal-hardware-output-cpal",
   "crates/signal-render-plane",
   "crates/signal-host-local",
-  "crates/signal-host-server",
-  "crates/signal-supervisor-tools",
 ]
 
 [workspace.package]

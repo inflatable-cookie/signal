@@ -963,24 +963,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "signal-host-server"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "signal-graph",
- "signal-hardware",
- "signal-ipc",
- "signal-plugin",
- "signal-plugin-au",
- "signal-plugin-clap",
- "signal-plugin-lv2",
- "signal-plugin-vst3",
- "signal-primitives",
- "signal-runtime",
-]
-
-[[package]]
 name = "signal-ipc"
 version = "0.1.0"
 dependencies = [
@@ -1092,19 +1074,6 @@ dependencies = [
  "signal-plugin",
  "signal-primitives",
  "symphonia",
-]
-
-[[package]]
-name = "signal-supervisor-tools"
-version = "0.1.0"
-dependencies = [
- "signal-graph",
- "signal-hardware",
- "signal-host-local",
- "signal-host-server",
- "signal-plugin",
- "signal-primitives",
- "signal-runtime",
 ]
 
 [[package]]

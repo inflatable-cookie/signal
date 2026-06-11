@@ -1,5 +1,0 @@
-[manifest]
-include = [
-  "effigy.tasks.acceptance.lanes.integration.toml",
-  "effigy.tasks.acceptance.lanes.release.toml",
-]

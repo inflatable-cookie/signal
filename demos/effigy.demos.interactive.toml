@@ -12,7 +12,6 @@ covers = [
   "signal-plugin-au",
   "signal-plugin-lv2",
   "signal-host-local",
-  "signal-host-server",
 ]
 tags = ["plugin", "browser", "interactive"]
 run = [

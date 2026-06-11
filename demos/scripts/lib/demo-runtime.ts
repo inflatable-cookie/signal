@@ -238,7 +238,6 @@ export function runDescriptor(flag: string): {
     "run",
     "-q",
     "-p",
-    "signal-supervisor-tools",
     "--",
     flag,
     "--format=json",

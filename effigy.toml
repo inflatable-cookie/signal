@@ -5,8 +5,6 @@ alias = "signal"
 minimum_effigy_version = "0.7.0"
 include = [
   "docs/effigy.tasks.docs.toml",
-  "tests/effigy.tasks.acceptance.boundaries.toml",
-  "tests/effigy.tasks.acceptance.lanes.toml",
   "demos/effigy.demos.toml",
 ]
 

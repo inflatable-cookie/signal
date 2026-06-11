@@ -1,7 +1,0 @@
-[manifest]
-include = [
-  "effigy.tasks.acceptance.boundaries.core.toml",
-  "effigy.tasks.acceptance.boundaries.platform.toml",
-  "effigy.tasks.acceptance.boundaries.control-io.toml",
-  "effigy.tasks.acceptance.boundaries.analysis-graph-dsp.toml",
-]

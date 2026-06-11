@@ -1,6 +1,6 @@
 # 004 - Hosting Domain Demolition
 
-Status: planned
+Status: complete
 Owner: core-product
 Created: 2026-06-11
 Depends on: g10.001
@@ -21,13 +21,13 @@ broker and the real broker child-process spawn plumbing — stays.
 
 ## Goals
 
-- [ ] delete `signal-host-server` (crate, tests, workspace member, effigy
+- [x] delete `signal-host-server` (crate, tests, workspace member, effigy
       references)
-- [ ] delete `signal-supervisor-tools`; relocate any prose worth keeping into
+- [x] delete `signal-supervisor-tools`; relocate any prose worth keeping into
       `docs/architecture` as markdown before deletion
-- [ ] keep `signal-ipc` shared memory and the broker spawn path intact and
+- [x] keep `signal-ipc` shared memory and the broker spawn path intact and
       green
-- [ ] prune effigy tasks / acceptance manifests that ran the deleted binaries
+- [x] prune effigy tasks / acceptance manifests that ran the deleted binaries
 
 ## Non-Goals
 
@@ -67,6 +67,24 @@ broker and the real broker child-process spawn plumbing — stays.
 ## Evidence Requirements
 
 - [ ] LoC delta and test-count delta recorded per batch in the progress log
+
+## Progress (2026-06-11)
+
+- Both batches landed in one cut: `signal-supervisor-tools` and
+  `signal-host-server` deleted (crates, workspace members, mirrored test
+  suites). The acceptance boundary/lane manifest tree
+  (`tests/effigy.tasks.acceptance.*`) died with its subjects — it existed to
+  run the deleted crates' description tests against their own prose. Demo
+  entries covering the dead crates removed (supervisor boundary companion,
+  local/server comparison, linux lv2 backend boundary) with their scripts,
+  manifests, receipts, and scenarios; the plugin capability browser demo now
+  targets signal-host-local only. Still-true prose reduced to
+  `docs/architecture/retired-boundary-descriptions.md` (one page).
+- Verified before each cut: zero code consumers outside the crates
+  themselves (workspace, pulse, aura). Gates: `cargo build --workspace`
+  green, `cargo test --workspace` green serially (123 suite results; the
+  known Keepsake parallel-scan flake is documented in g10.002/g10.007).
+- signal-ipc shared memory and the broker spawn plumbing untouched.
 
 ## Next Task
 

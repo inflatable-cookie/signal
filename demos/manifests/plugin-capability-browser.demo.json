@@ -16,8 +16,7 @@
     "signal-plugin-vst3",
     "signal-plugin-au",
     "signal-plugin-lv2",
-    "signal-host-local",
-    "signal-host-server"
+    "signal-host-local"
   ],
   "scenarios": [
     {

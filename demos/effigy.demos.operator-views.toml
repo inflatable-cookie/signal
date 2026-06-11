@@ -46,54 +46,6 @@ artifacts = [
   "demos/scenarios/runtime-recovery-inspector.default.md",
 ]
 
-[demos.supervisor-runtime-boundary-companion]
-title = "Signal Runtime Supervisor Boundary Companion Demo"
-summary = "Wraps the existing supervisor boundary descriptors and acceptance proof as a companion to the runtime recovery inspector."
-proof = "Operator-visible proof that supervisor-owned interruption and fault-diagnostic truth is discoverable as a first-class demo surface."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-supervisor-tools"]
-tags = ["runtime", "supervisor", "boundary"]
-run = [
-  { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/manifests/runtime-supervisor-boundary-companion.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_runtime_supervisor_boundary_companion_demo.ts" },
-  { run = "bun -e \"await Bun.file('demos/receipts/runtime-supervisor-boundary-companion.receipt.json').json()\"" },
-]
-receipt = "demos/receipts/runtime-supervisor-boundary-companion.receipt.json"
-artifacts = [
-  "demos/receipts/runtime-supervisor-boundary-companion.view.html",
-  "demos/scenarios/runtime-supervisor-boundary-companion.default.md",
-]
-
-[demos.local-server-host-comparison]
-title = "Signal Local Server Host Comparison Demo"
-summary = "Compares the existing local and server host bootstrap surfaces through one bounded repo-owned proof task."
-proof = "Operator-visible proof that host lifecycle truth and local-versus-server differences stay inspectable through Effigy's demo browser."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-host-local", "signal-host-server"]
-tags = ["host", "comparison", "local-server"]
-run = [
-  { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/manifests/local-server-host-comparison.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_local_server_host_comparison_demo.ts" },
-  { run = "bun -e \"await Bun.file('demos/receipts/local-server-host-comparison.receipt.json').json()\"" },
-]
-receipt = "demos/receipts/local-server-host-comparison.receipt.json"
-artifacts = [
-  "demos/receipts/local-server-host-comparison.view.html",
-  "demos/scenarios/local-server-host-comparison.default.md",
-]
-
 [demos.hardware-topology-diagnostics]
 title = "Signal Hardware Topology Diagnostics Demo"
 summary = "Captures native local-host and simulated server-host hardware posture through the existing summary-driven demo task."

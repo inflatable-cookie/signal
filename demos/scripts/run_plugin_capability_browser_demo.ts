@@ -683,7 +683,7 @@ function executePrimaryLaunch(inventory: JsonObject[]): JsonObject | null {
   candidates.sort((left, right) => left[0] - right[0] || left[1] - right[1]);
   let firstResult: JsonObject | null = null;
   for (const [, , plugin, target] of candidates.slice(0, 6)) {
-    const pkg = target.host_surface === "local" ? "signal-host-local" : "signal-host-server";
+    const pkg = "signal-host-local";
     const result = runLaunch(pkg, target);
     const candidateResult = { plugin, target, ...result };
     if (!firstResult) {
@@ -962,7 +962,7 @@ async function handleRequest(state: BrowserHandlerState, req: IncomingMessage, r
       chunks.push(Buffer.from(chunk));
     }
     const payload = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}") as JsonObject;
-    const pkg = payload.host_surface === "local" ? "signal-host-local" : "signal-host-server";
+    const pkg = "signal-host-local";
     const result = runLaunch(pkg, payload);
     const body = Buffer.from(JSON.stringify(result, null, 2), "utf8");
     res.writeHead(200, {
@@ -1034,7 +1034,6 @@ async function main() {
     serverRootsByFormat = preferredServerRootsFromInventory(localFirstInventory);
   }
   const [serverScans, serverFailures] = await collectScans(
-    "signal-host-server",
     serverRootsByFormat,
     ["clap", "vst3", "au", "lv2"],
     scanTimeoutSeconds,
@@ -1066,15 +1065,14 @@ async function main() {
       ? preferredServerRootsFromInventory(localFirstInventory)
       : rootsByFormat;
     const [fallbackScans, fallbackFailures] = await collectScans(
-      "signal-host-server",
-      serverRootsByFormat,
+        serverRootsByFormat,
       ["clap", "vst3", "au", "lv2"],
       scanTimeoutSeconds,
       exactBatchMode,
     );
     scans.push(...fallbackScans);
     scanFailures.push(...fallbackFailures.map((failure) =>
-      failure.replace("signal-host-server ", "signal-host-server after fixture fallback ")));
+      failure));
     inventory = combineInventory(scans);
     localProbeSummary = await attachContainedLocalTargets(inventory);
     fixtureFallbackUsed = true;

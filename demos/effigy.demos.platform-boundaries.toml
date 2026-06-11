@@ -22,26 +22,3 @@ artifacts = [
   "demos/scenarios/macos-au-coreaudio-boundary.default.md",
 ]
 
-[demos.linux-lv2-and-backend-boundary]
-title = "Signal Linux LV2 And Backend Boundary Demo"
-summary = "Runs the existing Linux LV2 execution and backend identity proof lane through one dedicated demo entry."
-proof = "Operator-visible proof that Linux-specific LV2 and backend boundary truth is queryable and reviewable through Effigy's demo registry."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-plugin-lv2", "signal-host-server", "signal-supervisor-tools"]
-tags = ["plugin", "linux", "lv2", "backend"]
-run = [
-  { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
-  { run = "bun -e \"await Bun.file('demos/manifests/linux-lv2-backend-boundary.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_linux_lv2_and_backend_boundary_demo.ts" },
-  { run = "bun -e \"await Bun.file('demos/receipts/linux-lv2-backend-boundary.receipt.json').json()\"" },
-]
-receipt = "demos/receipts/linux-lv2-backend-boundary.receipt.json"
-artifacts = [
-  "demos/receipts/linux-lv2-backend-boundary.view.html",
-  "demos/scenarios/linux-lv2-backend-boundary.default.md",
-]
