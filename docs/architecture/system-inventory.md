@@ -32,7 +32,7 @@ Signal's active implementation surface is the Rust workspace under `crates/`
     clip resampling, loop wrap
 - `signal-hardware`
   - output stream contract: stream specs, negotiation types, device model
-- `signal-hardware-output-cpal`
+- `signal-hardware-cpal`
   - cpal-backed negotiated output streams and real device enumeration;
     thread-owned streams, zero unsafe; smoke tests self-skip without a device
 

@@ -12,7 +12,7 @@ workspace = true
 
 [dependencies]
 signal-hardware = { workspace = true }
-signal-hardware-output-cpal = { workspace = true }
+signal-hardware-cpal = { workspace = true }
 signal-graph = { workspace = true }
 signal-ipc = { workspace = true }
 signal-plugin = { workspace = true }

@@ -9,7 +9,7 @@ description = "Real-time render plane: compiled preallocated plans executed allo
 
 [dev-dependencies]
 signal-hardware = { workspace = true }
-signal-hardware-output-cpal = { workspace = true }
+signal-hardware-cpal = { workspace = true }
 
 [[example]]
 name = "render_soak"

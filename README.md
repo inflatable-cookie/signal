@@ -50,7 +50,7 @@ crates/
   signal-render-plane/         # Alloc-free realtime executor: compiled plans, declick
   #                              envelopes, polyphase clip resampling on the audio thread
   signal-hardware/             # Output stream contract: specs, negotiation types, device model
-  signal-hardware-output-cpal/ # cpal-backed negotiated output streams + real device enumeration
+  signal-hardware-cpal/        # cpal-backed negotiated input/output streams + real device enumeration
 
   # DSP substrate
   signal-primitives/           # Shared sample/frame/buffer/time primitives
@@ -110,7 +110,7 @@ cargo build --workspace
 cargo test --workspace
 cargo clippy --workspace --all-targets
 cargo fmt --all --check
-cargo run -p signal-hardware-output-cpal --example tone
+cargo run -p signal-hardware-cpal --example tone
 cargo run -p signal-render-plane --example render_soak
 ```
 

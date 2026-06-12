@@ -1,12 +1,12 @@
 //! First sound from the Signal stack: a two-second 440 Hz sine on the
 //! default output device.
 //!
-//! Run with: `cargo run -p signal-hardware-output-cpal --example tone`
+//! Run with: `cargo run -p signal-hardware-cpal --example tone`
 
 use std::f32::consts::TAU;
 
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
-use signal_hardware_output_cpal::CpalOutputBackend;
+use signal_hardware_cpal::CpalOutputBackend;
 
 fn main() {
     let sample_rate_hz = 48_000u32;

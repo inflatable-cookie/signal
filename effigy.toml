@@ -31,5 +31,5 @@ build = "cargo build --workspace"
 "check:docs" = "RUSTFLAGS='-D missing-docs' cargo check --workspace --lib"
 # No `dev` task: signal-host-local is a library (its binary died in g10.005).
 # Use the runnable examples instead:
-#   cargo run -p signal-hardware-output-cpal --example tone
+#   cargo run -p signal-hardware-cpal --example tone
 #   cargo run -p signal-render-plane --example render_soak

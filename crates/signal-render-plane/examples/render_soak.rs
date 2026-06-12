@@ -17,7 +17,7 @@ use std::time::Duration;
 
 use signal_dsp::equal_power_pan_matrix;
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
-use signal_hardware_output_cpal::CpalOutputBackend;
+use signal_hardware_cpal::CpalOutputBackend;
 use signal_render_plane::{
     render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderPlanSpec, RenderSource,
     RenderStageKind, RenderStageSpec,

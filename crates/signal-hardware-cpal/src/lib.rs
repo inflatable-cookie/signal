@@ -2,10 +2,6 @@
 //! output-device enumeration — and, since recording v1, the matching input
 //! side ([`CpalInputBackend`], [`enumerate_input_devices`]).
 //!
-//! NOTE: the crate name (`signal-hardware-output-cpal`) is historical now
-//! that it carries both directions; renaming it (e.g. to
-//! `signal-hardware-cpal`) is a hygiene item for a later packet.
-//!
 //! This is the first crate in the stack that actually produces sound: it
 //! opens a real output stream and pulls interleaved f32 frames from the
 //! caller's render callback.

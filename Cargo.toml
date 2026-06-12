@@ -22,7 +22,7 @@ members = [
   "crates/signal-plugin-vst3",
   "crates/signal-plugin-sandbox",
   "crates/signal-hardware",
-  "crates/signal-hardware-output-cpal",
+  "crates/signal-hardware-cpal",
   "crates/signal-render-plane",
   "crates/signal-host-local",
 ]
@@ -56,7 +56,7 @@ signal-plugin-lv2 = { path = "crates/signal-plugin-lv2" }
 signal-plugin-vst3 = { path = "crates/signal-plugin-vst3" }
 signal-plugin-sandbox = { path = "crates/signal-plugin-sandbox" }
 signal-hardware = { path = "crates/signal-hardware" }
-signal-hardware-output-cpal = { path = "crates/signal-hardware-output-cpal" }
+signal-hardware-cpal = { path = "crates/signal-hardware-cpal" }
 signal-render-plane = { path = "crates/signal-render-plane" }
 signal-host-local = { path = "crates/signal-host-local" }
 

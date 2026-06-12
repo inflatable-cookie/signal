@@ -36,7 +36,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      # Audio-device-dependent smoke tests (signal-hardware-output-cpal)
+      # Audio-device-dependent smoke tests (signal-hardware-cpal)
       # self-skip when no output device is present, so no gating is needed.
       - name: Test
         run: cargo test --workspace

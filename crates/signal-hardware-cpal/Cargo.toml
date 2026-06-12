@@ -1,11 +1,11 @@
 [package]
-name = "signal-hardware-output-cpal"
+name = "signal-hardware-cpal"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 publish = false
-description = "cpal-backed real output streams for Signal."
+description = "cpal-backed real input and output streams for Signal."
 
 [lints]
 workspace = true

@@ -2,7 +2,7 @@
 //!
 //! Replaces the retired `signal-hardware-coreaudio` crate (a `system_profiler`
 //! JSON parser). Device inventory comes from
-//! [`signal_hardware_output_cpal::enumerate_output_devices`] — the same source
+//! [`signal_hardware_cpal::enumerate_output_devices`] — the same source
 //! of truth the real output streams open against. Device identity stays in the
 //! `coreaudio:*` namespace because the cpal host on macOS is CoreAudio.
 //!
@@ -18,7 +18,7 @@ use signal_hardware::{
     HardwareNegotiationErrorKind, HardwareRestartPolicy, HardwareStreamConfig,
     HardwareStreamRequest, SampleRate,
 };
-use signal_hardware_output_cpal::enumerate_output_devices;
+use signal_hardware_cpal::enumerate_output_devices;
 
 /// Local hardware backend that owns the enumerated device inventory and a
 /// mutable diagnostics snapshot for the host's supervision surface.
