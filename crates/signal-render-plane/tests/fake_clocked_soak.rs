@@ -15,16 +15,28 @@ use std::time::Duration;
 
 use signal_hardware::{FakeClockedBackend, OutputStreamBackend, OutputStreamSpec};
 use signal_render_plane::{
-    render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderPlanSpec, RenderSource,
-    RenderStageKind, RenderStageSpec,
+    render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderNote, RenderNoteBuffer,
+    RenderPlanSpec, RenderSource, RenderStageKind, RenderStageSpec,
 };
 
 const SAMPLE_RATE_HZ: u32 = 48_000;
 const BLOCK_FRAMES: u32 = 256;
 const LANE_ID: u64 = 1;
+const NOTES_LANE_ID: u64 = 2;
 const MASTER_ID: u64 = 100;
 
 fn tone_plan() -> RenderPlanSpec {
+    // Notes lane (g11.011): overlapping stateless voices sound for the whole
+    // soak, so the note overlap scan and per-voice synthesis run under
+    // sustained clocked load alongside the tone.
+    let notes: Vec<RenderNote> = (0..240)
+        .map(|index| RenderNote {
+            start_frame: index * 12_000,
+            duration_frames: 18_000,
+            pitch: 57 + [0u8, 4, 7, 12][index as usize % 4],
+            velocity: 0.5,
+        })
+        .collect();
     RenderPlanSpec {
         sample_rate_hz: SAMPLE_RATE_HZ,
         master_gain: 0.5,
@@ -49,16 +61,41 @@ fn tone_plan() -> RenderPlanSpec {
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                stage_id: NOTES_LANE_ID,
+                format: ChannelFormat::stereo(),
+                gain: 0.3,
+                gain_automation: None,
+                kind: RenderStageKind::Source {
+                    clips: vec![RenderClipSpec {
+                        clip_id: 12,
+                        start_frames: 0,
+                        end_frames: u64::MAX,
+                        source: RenderSource::Notes(RenderNoteBuffer {
+                            notes: notes.into(),
+                        }),
+                        loop_source: false,
+                    }],
+                },
+                inputs: Vec::new(),
+            },
+            RenderStageSpec {
                 stage_id: MASTER_ID,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
                 gain_automation: None,
                 kind: RenderStageKind::Output,
-                inputs: vec![RenderEdgeSpec {
-                    source_stage_id: LANE_ID,
-                    gain: 1.0,
-                    matrix: None,
-                }],
+                inputs: vec![
+                    RenderEdgeSpec {
+                        source_stage_id: LANE_ID,
+                        gain: 1.0,
+                        matrix: None,
+                    },
+                    RenderEdgeSpec {
+                        source_stage_id: NOTES_LANE_ID,
+                        gain: 1.0,
+                        matrix: None,
+                    },
+                ],
             },
         ],
     }
@@ -152,11 +189,16 @@ fn clocked_soak_advances_health_counters_and_meters() {
     );
 
     let meters = controller.meters();
-    assert_eq!(meters.len(), 2, "one lane + one master metered");
+    assert_eq!(meters.len(), 3, "tone lane + notes lane + master metered");
     let lane = meters.iter().find(|(id, _, _)| *id == LANE_ID).unwrap();
+    let notes = meters
+        .iter()
+        .find(|(id, _, _)| *id == NOTES_LANE_ID)
+        .unwrap();
     let master = meters.iter().find(|(id, _, _)| *id == MASTER_ID).unwrap();
     assert!(lane.1 > 0.01, "lane peak should move, saw {}", lane.1);
     assert!(lane.2 > 0.001, "lane rms should move, saw {}", lane.2);
+    assert!(notes.1 > 0.01, "notes peak should move, saw {}", notes.1);
     assert!(
         master.1 > 0.001,
         "master peak should move, saw {}",

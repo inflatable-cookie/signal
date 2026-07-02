@@ -19,8 +19,9 @@ use signal_dsp::equal_power_pan_matrix;
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_cpal::CpalOutputBackend;
 use signal_render_plane::{
-    render_live_input, render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderPlanSpec,
-    RenderSource, RenderStageKind, RenderStageSpec, LIVE_INPUT_DEFAULT_CAPACITY_FRAMES,
+    render_live_input, render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderNote,
+    RenderNoteBuffer, RenderPlanSpec, RenderSource, RenderStageKind, RenderStageSpec,
+    LIVE_INPUT_DEFAULT_CAPACITY_FRAMES,
 };
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
@@ -60,6 +61,38 @@ fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
                 start_frames: 0,
                 end_frames: u64::MAX,
                 source: RenderSource::TestTone { frequency_hz },
+                loop_source: false,
+            }],
+        },
+        inputs: Vec::new(),
+    }
+}
+
+/// Notes lane (g11.011): a repeating arpeggio through the built-in
+/// stateless instrument, kept sounding for the whole soak so the note
+/// overlap scan and per-voice synthesis run inside the measured callback.
+fn notes_lane(stage_id: u64, gain: f32) -> RenderStageSpec {
+    let notes: Vec<RenderNote> = (0..240)
+        .map(|index| RenderNote {
+            start_frame: index * 12_000,
+            duration_frames: 18_000, // Overlapping voices: polyphony active.
+            pitch: 57 + [0u8, 4, 7, 12][index as usize % 4],
+            velocity: 0.5,
+        })
+        .collect();
+    RenderStageSpec {
+        stage_id,
+        format: ChannelFormat::stereo(),
+        gain,
+        gain_automation: None,
+        kind: RenderStageKind::Source {
+            clips: vec![RenderClipSpec {
+                clip_id: 1003,
+                start_frames: 0,
+                end_frames: u64::MAX,
+                source: RenderSource::Notes(RenderNoteBuffer {
+                    notes: notes.into(),
+                }),
                 loop_source: false,
             }],
         },
@@ -130,6 +163,9 @@ fn main() {
         stages: vec![
             tone_lane(1, 0.4, 440.0),
             tone_lane(2, 0.25, 660.0),
+            // Built-in instrument lane: stateless note voices render inside
+            // the measured callback (must stay alloc-free like every source).
+            notes_lane(5, 0.3),
             // Live monitor lane: drains the input feeder's ring inside the
             // measured callback (must stay alloc-free like every source).
             RenderStageSpec {
@@ -181,6 +217,11 @@ fn main() {
                     },
                     RenderEdgeSpec {
                         source_stage_id: 4,
+                        gain: 1.0,
+                        matrix: None,
+                    },
+                    RenderEdgeSpec {
+                        source_stage_id: 5,
                         gain: 1.0,
                         matrix: None,
                     },

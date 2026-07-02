@@ -95,6 +95,57 @@ impl RenderSampleBuffer {
     }
 }
 
+// ── Note sources (built-in instrument, stateless) ───────────────────────────
+
+/// Attack ramp length for note voices, in seconds (linear 0 → 1).
+const NOTE_ATTACK_SECONDS: f64 = 0.003;
+/// Release tail length after a note's end, in seconds (linear 1 → 0).
+const NOTE_RELEASE_SECONDS: f64 = 0.040;
+/// Most notes rendered simultaneously per block per clip. The overlap scan
+/// walks notes in start order, so when more than this many notes sound in
+/// one block the EARLIEST-STARTED ones render and the rest are skipped —
+/// deterministic, and counted per block (a block-granular approximation of
+/// true simultaneity).
+pub const NOTE_POLYPHONY_LIMIT: usize = 32;
+
+/// One note event: clip-relative timing on the stream clock, MIDI pitch,
+/// normalized velocity. Velocity is the voice's sustain amplitude.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RenderNote {
+    /// First frame of the note, relative to the owning clip's window start.
+    pub start_frame: u64,
+    /// Note length in frames (the release tail extends past this).
+    pub duration_frames: u64,
+    /// MIDI pitch (69 = A4 = 440 Hz).
+    pub pitch: u8,
+    /// Normalized velocity in `0..=1`, applied as the voice amplitude.
+    pub velocity: f32,
+}
+
+impl RenderNote {
+    /// Oscillator frequency in hertz: `440 · 2^((pitch − 69) / 12)`.
+    pub fn frequency_hz(&self) -> f64 {
+        440.0 * f64::powf(2.0, (f64::from(self.pitch) - 69.0) / 12.0)
+    }
+}
+
+/// Shared immutable note list for one clip, sorted by `start_frame`
+/// (compile validates and rejects unsorted buffers).
+///
+/// Equality is pointer-based (like [`RenderSampleBuffer`]): hosts cache one
+/// buffer per clip content so recompiled specs stay idempotent.
+#[derive(Clone, Debug)]
+pub struct RenderNoteBuffer {
+    /// Notes sorted by `start_frame`.
+    pub notes: Arc<[RenderNote]>,
+}
+
+impl PartialEq for RenderNoteBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.notes, &other.notes)
+    }
+}
+
 // ── Disk-streaming clip sources (chunk mailbox) ─────────────────────────────
 //
 // Long media plays through [`RenderSource::Stream`]: a control-side feeder
@@ -577,6 +628,15 @@ pub enum RenderSource {
     /// transport plays. Underrun (input behind) renders silence and counts
     /// on the handle; `loop_source` is ignored.
     LiveInput(RenderLiveInputHandle),
+    /// Clip synthesizes its note events through the built-in instrument: a
+    /// STATELESS additive sine voice per note (phase, attack/sustain/release
+    /// envelope all pure functions of the stream position), so seeks and
+    /// plan swaps are inherently sample-exact — there is no voice state to
+    /// inherit. Notes are clip-relative and must be sorted by `start_frame`
+    /// (compile rejects unsorted buffers). At most
+    /// [`NOTE_POLYPHONY_LIMIT`] notes render simultaneously per block
+    /// (earliest-started win). `loop_source` is ignored.
+    Notes(RenderNoteBuffer),
 }
 
 /// One clip event in a lane stage: a half-open stream-clock window
@@ -744,6 +804,13 @@ pub enum RenderPlanCompileError {
     InvalidChannelCount(u64),
     /// A gain-automation envelope's breakpoints are not sorted by frame.
     UnsortedAutomation(u64),
+    /// A clip's note buffer is not sorted by `start_frame`.
+    UnsortedNotes {
+        /// Stage owning the clip.
+        stage_id: u64,
+        /// Clip whose notes are unsorted.
+        clip_id: u64,
+    },
     /// An explicit edge matrix has the wrong number of coefficients.
     MatrixDimensions {
         /// Stage owning the edge.
@@ -783,6 +850,10 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::UnsortedAutomation(stage_id) => write!(
                 formatter,
                 "stage {stage_id} gain automation breakpoints are not sorted by frame",
+            ),
+            RenderPlanCompileError::UnsortedNotes { stage_id, clip_id } => write!(
+                formatter,
+                "stage {stage_id} clip {clip_id} notes are not sorted by start frame",
             ),
             RenderPlanCompileError::MatrixDimensions {
                 stage_id,
@@ -836,6 +907,24 @@ enum CompiledSource {
     /// swaps carry the feed inherently — nothing to migrate or reset.
     LiveInput {
         handle: RenderLiveInputHandle,
+    },
+    /// Built-in instrument: stateless additive sine voices. Everything a
+    /// voice needs is a pure function of the stream position, so there is
+    /// nothing to inherit across plan swaps or seeks.
+    Notes {
+        buffer: RenderNoteBuffer,
+        /// Per-note phase step in radians per stream frame, precomputed at
+        /// compile (parallel to `buffer.notes`) — no per-sample
+        /// transcendentals beyond `sin()`.
+        steps: Arc<[f64]>,
+        /// Attack ramp length at the plan rate.
+        attack_frames: u64,
+        /// Release tail length at the plan rate.
+        release_frames: u64,
+        /// Longest note duration in the buffer: bounds the sorted-scan
+        /// lookback window (a sounding note starts at most this many frames
+        /// plus the release tail before the block).
+        max_duration_frames: u64,
     },
 }
 
@@ -1035,13 +1124,8 @@ impl RenderPlan {
             let clips = match &stage.kind {
                 RenderStageKind::Source { clips } => clips
                     .iter()
-                    .map(|clip| CompiledClip {
-                        clip_id: clip.clip_id,
-                        start_frames: clip.start_frames,
-                        end_frames: clip.end_frames,
-                        edge_fade_frames: CLIP_EDGE_FADE_FRAMES
-                            .min(clip.end_frames.saturating_sub(clip.start_frames).max(2) / 2),
-                        source: match &clip.source {
+                    .map(|clip| {
+                        let source = match &clip.source {
                             RenderSource::Silence => CompiledSource::Silence,
                             RenderSource::TestTone { frequency_hz } => CompiledSource::Tone {
                                 phase: 0.0,
@@ -1069,9 +1153,56 @@ impl RenderPlan {
                             RenderSource::LiveInput(handle) => CompiledSource::LiveInput {
                                 handle: handle.clone(),
                             },
-                        },
+                            RenderSource::Notes(buffer) => {
+                                if buffer
+                                    .notes
+                                    .windows(2)
+                                    .any(|pair| pair[0].start_frame > pair[1].start_frame)
+                                {
+                                    return Err(RenderPlanCompileError::UnsortedNotes {
+                                        stage_id: stage.stage_id,
+                                        clip_id: clip.clip_id,
+                                    });
+                                }
+                                // Per-note phase steps precomputed here, on
+                                // the control side — the render loop does no
+                                // transcendentals beyond sin().
+                                let steps: Arc<[f64]> = buffer
+                                    .notes
+                                    .iter()
+                                    .map(|note| {
+                                        note.frequency_hz() * std::f64::consts::TAU
+                                            / stream_rate as f64
+                                    })
+                                    .collect();
+                                CompiledSource::Notes {
+                                    steps,
+                                    attack_frames: ((NOTE_ATTACK_SECONDS * stream_rate as f64)
+                                        as u64)
+                                        .max(1),
+                                    release_frames: ((NOTE_RELEASE_SECONDS * stream_rate as f64)
+                                        as u64)
+                                        .max(1),
+                                    max_duration_frames: buffer
+                                        .notes
+                                        .iter()
+                                        .map(|note| note.duration_frames)
+                                        .max()
+                                        .unwrap_or(0),
+                                    buffer: buffer.clone(),
+                                }
+                            }
+                        };
+                        Ok(CompiledClip {
+                            clip_id: clip.clip_id,
+                            start_frames: clip.start_frames,
+                            end_frames: clip.end_frames,
+                            edge_fade_frames: CLIP_EDGE_FADE_FRAMES
+                                .min(clip.end_frames.saturating_sub(clip.start_frames).max(2) / 2),
+                            source,
+                        })
                     })
-                    .collect(),
+                    .collect::<Result<Vec<_>, RenderPlanCompileError>>()?,
                 RenderStageKind::Sum | RenderStageKind::Output => Vec::new(),
             };
             let inputs = stage
@@ -1568,6 +1699,85 @@ fn render_clips_into_scratch(
                         .inner
                         .underrun_frames
                         .fetch_add(underrun_frames, Ordering::Relaxed);
+                }
+            }
+            CompiledSource::Notes {
+                buffer,
+                steps,
+                attack_frames,
+                release_frames,
+                max_duration_frames,
+            } => {
+                let notes = &buffer.notes;
+                if notes.is_empty() {
+                    continue;
+                }
+                // Audible span of this block inside the clip window, in
+                // clip-relative frames (notes are clip-relative).
+                let span_start = block_start_frame.max(clip_start);
+                let span_end = block_end_frame.min(clip_end);
+                if span_start >= span_end {
+                    continue;
+                }
+                let local_start = span_start - clip_start;
+                let local_end = span_end - clip_start;
+                let attack_frames = *attack_frames;
+                let release_frames = *release_frames;
+                // Sorted overlap scan: a note sounding in this block starts
+                // at most (longest duration + release tail) before it, so
+                // binary-search the first candidate and walk until starts
+                // pass the block end. Zero-alloc: search + arithmetic only.
+                let lookback = max_duration_frames.saturating_add(release_frames);
+                let window_lo = local_start.saturating_sub(lookback);
+                let first = notes.partition_point(|note| note.start_frame < window_lo);
+                let mut sounding = 0usize;
+                for (note, step) in notes[first..].iter().zip(steps[first..].iter()) {
+                    if note.start_frame >= local_end {
+                        break;
+                    }
+                    let note_end = note.start_frame.saturating_add(note.duration_frames);
+                    let tail_end = note_end.saturating_add(release_frames);
+                    if tail_end <= local_start {
+                        continue;
+                    }
+                    // Polyphony cap, per block: the scan runs in start
+                    // order, so the earliest-started notes render and the
+                    // rest skip deterministically.
+                    if sounding >= NOTE_POLYPHONY_LIMIT {
+                        break;
+                    }
+                    sounding += 1;
+                    let render_lo = local_start.max(note.start_frame);
+                    let render_hi = local_end.min(tail_end);
+                    let amplitude = note.velocity.clamp(0.0, 1.0);
+                    for local_frame in render_lo..render_hi {
+                        // STATELESS voice: phase and envelope are pure
+                        // functions of the note-relative position, so seeks
+                        // and plan swaps reproduce the exact same samples.
+                        let rel = local_frame - note.start_frame;
+                        let phase = (rel as f64 * step) % std::f64::consts::TAU;
+                        let attack_gain = if rel < attack_frames {
+                            (rel + 1) as f32 / attack_frames as f32
+                        } else {
+                            1.0
+                        };
+                        let release_gain = if rel >= note.duration_frames {
+                            1.0 - (rel - note.duration_frames) as f32 / release_frames as f32
+                        } else {
+                            1.0
+                        };
+                        let frame = clip_start + local_frame;
+                        let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                        let sample = phase.sin() as f32
+                            * amplitude
+                            * attack_gain
+                            * release_gain
+                            * window_gain;
+                        let base = (frame - block_start_frame) as usize * channels;
+                        for channel in 0..channels.min(2) {
+                            scratch[base + channel] += sample;
+                        }
+                    }
                 }
             }
             CompiledSource::LiveInput { handle } => {
@@ -3767,6 +3977,260 @@ mod tests {
         assert_ne!(a, c);
         assert_eq!(a.source_sample_rate_hz(), 48_000);
         assert_eq!(a.total_frames(), 1_000);
+    }
+
+    // ── Note sources (built-in instrument) ─────────────────────────────────
+
+    fn note(start_frame: u64, duration_frames: u64, pitch: u8, velocity: f32) -> RenderNote {
+        RenderNote {
+            start_frame,
+            duration_frames,
+            pitch,
+            velocity,
+        }
+    }
+
+    fn note_buffer(notes: Vec<RenderNote>) -> RenderNoteBuffer {
+        RenderNoteBuffer {
+            notes: notes.into(),
+        }
+    }
+
+    /// Spec with one notes clip windowed `[start, end)` at lane gain 1.
+    fn notes_spec(buffer: &RenderNoteBuffer, start_frames: u64, end_frames: u64) -> RenderPlanSpec {
+        lane_master_spec(
+            1.0,
+            vec![RenderClipSpec {
+                clip_id: 1008,
+                start_frames,
+                end_frames,
+                source: RenderSource::Notes(buffer.clone()),
+                loop_source: false,
+            }],
+        )
+    }
+
+    /// Offline-render `frame_count` frames of `spec` from `start_frame` and
+    /// return the LEFT channel (channels are identical for note sources).
+    fn render_notes_left(spec: &RenderPlanSpec, start_frame: u64, frame_count: u64) -> Vec<f32> {
+        let output = crate::render_plan_to_pcm(
+            spec,
+            &crate::OfflineRenderOptions {
+                start_frame,
+                frame_count,
+                ..crate::OfflineRenderOptions::default()
+            },
+        )
+        .expect("offline note render");
+        output
+            .master
+            .chunks_exact(2)
+            .map(|frame| frame[0])
+            .collect()
+    }
+
+    #[test]
+    fn note_clips_render_at_the_note_frequency() {
+        // A4 (pitch 69) sustained for one second: past the attack and clip
+        // edge fade, the output must be a 440 Hz sine at the velocity
+        // amplitude. Quadrature projection at 440 Hz recovers the amplitude
+        // and the residual bounds everything that is not that sine.
+        let buffer = note_buffer(vec![note(0, 48_000, 69, 1.0)]);
+        let spec = notes_spec(&buffer, 0, u64::MAX);
+        let left = render_notes_left(&spec, 0, 24_000);
+
+        let start = 4_800usize; // Past attack (144 frames) and edge fade.
+        let count = 14_400usize; // Whole periods of 440 at 48k every 300.
+        let mut in_phase = 0.0f64;
+        let mut quadrature = 0.0f64;
+        for index in 0..count {
+            let n = (start + index) as f64;
+            let angle = std::f64::consts::TAU * 440.0 * n / 48_000.0;
+            let sample = f64::from(left[start + index]);
+            in_phase += sample * angle.sin();
+            quadrature += sample * angle.cos();
+        }
+        let amplitude = 2.0 * (in_phase * in_phase + quadrature * quadrature).sqrt() / count as f64;
+        assert!(
+            (amplitude - 1.0).abs() < 0.01,
+            "440 Hz amplitude read {amplitude}",
+        );
+        // Residual after removing the projected 440 Hz component: > 60 dB
+        // below the tone (proof the output is that sine, not something else).
+        let sine_gain = 2.0 * in_phase / count as f64;
+        let cosine_gain = 2.0 * quadrature / count as f64;
+        let mut error = 0.0f64;
+        let mut power = 0.0f64;
+        for index in 0..count {
+            let n = (start + index) as f64;
+            let angle = std::f64::consts::TAU * 440.0 * n / 48_000.0;
+            let expected = sine_gain * angle.sin() + cosine_gain * angle.cos();
+            let actual = f64::from(left[start + index]);
+            error += (actual - expected) * (actual - expected);
+            power += expected * expected;
+        }
+        let snr = 10.0 * (power / error.max(1e-30)).log10();
+        assert!(snr > 60.0, "note tone SNR {snr:.1} dB");
+    }
+
+    #[test]
+    fn note_envelope_is_silent_before_attacks_and_releases() {
+        // Note at frame 4_800, 4_800 frames long: silence before the start,
+        // ramping attack (3 ms = 144 frames), full velocity through the
+        // sustain, and a 40 ms release tail that ends in exact silence.
+        let buffer = note_buffer(vec![note(4_800, 4_800, 69, 1.0)]);
+        let spec = notes_spec(&buffer, 0, u64::MAX);
+        let left = render_notes_left(&spec, 0, 24_000);
+
+        assert!(
+            left[..4_800].iter().all(|sample| *sample == 0.0),
+            "audio before the note start",
+        );
+        let peak = |range: std::ops::Range<usize>| {
+            left[range].iter().fold(0.0f32, |max, s| max.max(s.abs()))
+        };
+        // Attack: the first 72 frames stay under the half-ramped level.
+        assert!(peak(4_800..4_872) < 0.55, "attack did not ramp");
+        // Sustain: full velocity once the attack completes.
+        let sustain_peak = peak(5_200..9_000);
+        assert!(
+            (sustain_peak - 1.0).abs() < 0.05,
+            "sustain peak {sustain_peak}",
+        );
+        // Release: decaying after the note end...
+        let release_start = 4_800 + 4_800;
+        let release_end = release_start + 1_920; // 40 ms at 48 kHz.
+        assert!(peak(release_start + 960..release_end) < 0.6, "release flat");
+        // ...and exactly silent once the tail ends.
+        assert!(
+            left[release_end + 1..].iter().all(|sample| *sample == 0.0),
+            "audio after the release tail",
+        );
+    }
+
+    #[test]
+    fn chords_render_as_the_sum_of_their_notes() {
+        let pitches = [60u8, 64, 67];
+        let chord = note_buffer(pitches.iter().map(|p| note(0, 24_000, *p, 0.3)).collect());
+        let chord_left = render_notes_left(&notes_spec(&chord, 0, u64::MAX), 0, 12_000);
+
+        let mut summed = vec![0.0f32; 12_000];
+        for pitch in pitches {
+            let single = note_buffer(vec![note(0, 24_000, pitch, 0.3)]);
+            let left = render_notes_left(&notes_spec(&single, 0, u64::MAX), 0, 12_000);
+            for (accumulator, sample) in summed.iter_mut().zip(left.iter()) {
+                *accumulator += *sample;
+            }
+        }
+        for (index, (chord_sample, sum_sample)) in chord_left.iter().zip(summed.iter()).enumerate()
+        {
+            assert!(
+                (chord_sample - sum_sample).abs() < 1e-5,
+                "chord diverged from note sum at {index}: {chord_sample} vs {sum_sample}",
+            );
+        }
+    }
+
+    #[test]
+    fn seeking_into_a_sustained_note_reproduces_played_through_samples() {
+        // Statelessness proof: rendering from a mid-note seek must produce
+        // the SAME bits as playing through from zero — there is no voice
+        // state whose absence a seek could expose.
+        let buffer = note_buffer(vec![
+            note(0, 48_000, 57, 0.8),
+            note(6_000, 30_000, 64, 0.6),
+            note(12_000, 12_000, 72, 1.0),
+        ]);
+        let spec = notes_spec(&buffer, 0, u64::MAX);
+        let played_through = render_notes_left(&spec, 0, 48_000);
+        let seeked = render_notes_left(&spec, 24_000, 4_800);
+        for (index, (seek_sample, through_sample)) in seeked
+            .iter()
+            .zip(played_through[24_000..24_000 + 4_800].iter())
+            .enumerate()
+        {
+            assert_eq!(
+                seek_sample.to_bits(),
+                through_sample.to_bits(),
+                "seek diverged from play-through at offset {index}",
+            );
+        }
+    }
+
+    #[test]
+    fn note_polyphony_caps_at_the_limit_keeping_earliest_started() {
+        // 33 simultaneous notes: the render must equal the first 32 alone
+        // (the 33rd — latest in sorted order — is skipped), and dropping to
+        // 31 must change the output (the cap has teeth).
+        let make = |count: usize| {
+            note_buffer(
+                (0..count)
+                    .map(|index| note(index as u64, 24_000, 40 + index as u8, 0.02))
+                    .collect(),
+            )
+        };
+        let render =
+            |count: usize| render_notes_left(&notes_spec(&make(count), 0, u64::MAX), 0, 12_000);
+        let with_33 = render(33);
+        let with_32 = render(32);
+        let with_31 = render(31);
+        assert_eq!(
+            with_33
+                .iter()
+                .zip(with_32.iter())
+                .filter(|(a, b)| a.to_bits() != b.to_bits())
+                .count(),
+            0,
+            "the 33rd simultaneous note leaked past the polyphony cap",
+        );
+        assert!(
+            with_32
+                .iter()
+                .zip(with_31.iter())
+                .any(|(a, b)| a.to_bits() != b.to_bits()),
+            "32nd note should be audible (cap test has no teeth)",
+        );
+    }
+
+    #[test]
+    fn unsorted_note_buffers_are_rejected_at_compile() {
+        let (mut controller, _executor) = render_plane();
+        let buffer = note_buffer(vec![note(1_000, 100, 60, 1.0), note(0, 100, 62, 1.0)]);
+        let error = controller
+            .install_plan(&notes_spec(&buffer, 0, u64::MAX))
+            .unwrap_err();
+        assert!(error.message.contains("sorted"), "{}", error.message);
+    }
+
+    #[test]
+    fn note_buffers_compare_by_pointer_for_cheap_spec_equality() {
+        let notes: Arc<[RenderNote]> = vec![note(0, 100, 60, 1.0)].into();
+        let a = RenderNoteBuffer {
+            notes: Arc::clone(&notes),
+        };
+        let b = RenderNoteBuffer { notes };
+        let c = note_buffer(vec![note(0, 100, 60, 1.0)]);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        // Spec equality follows buffer equality: idempotent recompiles.
+        assert_eq!(notes_spec(&a, 0, 100), notes_spec(&b, 0, 100));
+        assert_ne!(notes_spec(&a, 0, 100), notes_spec(&c, 0, 100));
+    }
+
+    #[test]
+    fn note_clip_windows_gate_notes_on_the_stream_clock() {
+        // Clip windowed [1_000, 2_000): a clip-relative note at 0 sounds at
+        // stream frame 1_000, and nothing sounds past the window end even
+        // though the note's tail extends beyond it.
+        let buffer = note_buffer(vec![note(0, 48_000, 69, 1.0)]);
+        let spec = notes_spec(&buffer, 1_000, 2_000);
+        let left = render_notes_left(&spec, 0, 4_000);
+        assert!(left[..1_000].iter().all(|sample| *sample == 0.0));
+        assert!(
+            left[1_100..1_900].iter().any(|sample| sample.abs() > 0.5),
+            "windowed note inaudible",
+        );
+        assert!(left[2_000..].iter().all(|sample| *sample == 0.0));
     }
 
     #[test]
