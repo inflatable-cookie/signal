@@ -18,6 +18,10 @@
 
 #![warn(missing_docs)]
 
+mod spsc;
+
+pub use spsc::SpscRing;
+
 /// Floating-point audio sample value.
 pub type Sample = f32;
 

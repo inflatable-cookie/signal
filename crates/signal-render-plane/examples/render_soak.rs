@@ -19,8 +19,8 @@ use signal_dsp::equal_power_pan_matrix;
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_cpal::CpalOutputBackend;
 use signal_render_plane::{
-    render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderPlanSpec, RenderSource,
-    RenderStageKind, RenderStageSpec,
+    render_live_input, render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderPlanSpec,
+    RenderSource, RenderStageKind, RenderStageSpec, LIVE_INPUT_DEFAULT_CAPACITY_FRAMES,
 };
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
@@ -73,6 +73,34 @@ fn main() {
 
     let (mut controller, mut executor) = render_plane();
 
+    // Live-input monitor lane (g11.010): a feeder thread synthesizes a
+    // quiet tone into the live ring at input-callback cadence — no
+    // allocation inside its loop, because the counting allocator attributes
+    // any allocation that overlaps a render callback (the flag is global).
+    // The executor's drain runs inside the measured callback, extending the
+    // zero-alloc proof over the monitor path.
+    let (live_feeder, live_handle) = render_live_input(LIVE_INPUT_DEFAULT_CAPACITY_FRAMES);
+    let live_stop = std::sync::Arc::new(AtomicBool::new(false));
+    let feeder_stop = std::sync::Arc::clone(&live_stop);
+    let live_feeder_thread = std::thread::spawn(move || {
+        let mut chunk = [0.0f32; 256 * 2]; // Preallocated: the loop is alloc-free.
+        let phase_step = std::f32::consts::TAU * 330.0 / 48_000.0;
+        let mut phase = 0.0f32;
+        while !feeder_stop.load(Ordering::Relaxed) {
+            for frame in chunk.chunks_exact_mut(2) {
+                let sample = 0.2 * phase.sin();
+                frame[0] = sample;
+                frame[1] = sample;
+                phase += phase_step;
+                if phase >= std::f32::consts::TAU {
+                    phase -= std::f32::consts::TAU;
+                }
+            }
+            live_feeder.push_slice(&chunk);
+            std::thread::sleep(Duration::from_millis(5)); // ≈ 256 frames at 48 kHz.
+        }
+    });
+
     let backend = CpalOutputBackend::new();
     let stream = backend
         .open_output_stream(
@@ -102,6 +130,24 @@ fn main() {
         stages: vec![
             tone_lane(1, 0.4, 440.0),
             tone_lane(2, 0.25, 660.0),
+            // Live monitor lane: drains the input feeder's ring inside the
+            // measured callback (must stay alloc-free like every source).
+            RenderStageSpec {
+                stage_id: 4,
+                format: ChannelFormat::stereo(),
+                gain: 0.3,
+                gain_automation: None,
+                kind: RenderStageKind::Source {
+                    clips: vec![RenderClipSpec {
+                        clip_id: 1002,
+                        start_frames: 0,
+                        end_frames: u64::MAX,
+                        source: RenderSource::LiveInput(live_handle.clone()),
+                        loop_source: false,
+                    }],
+                },
+                inputs: Vec::new(),
+            },
             RenderStageSpec {
                 stage_id: 10,
                 format: ChannelFormat::stereo(),
@@ -127,11 +173,18 @@ fn main() {
                 gain: 1.0,
                 gain_automation: None,
                 kind: RenderStageKind::Output,
-                inputs: vec![RenderEdgeSpec {
-                    source_stage_id: 10,
-                    gain: 1.0,
-                    matrix: None,
-                }],
+                inputs: vec![
+                    RenderEdgeSpec {
+                        source_stage_id: 10,
+                        gain: 1.0,
+                        matrix: None,
+                    },
+                    RenderEdgeSpec {
+                        source_stage_id: 4,
+                        gain: 1.0,
+                        matrix: None,
+                    },
+                ],
             },
         ],
     };
@@ -180,6 +233,13 @@ fn main() {
 
     let retired = controller.collect_retired();
     drop(stream);
+    live_stop.store(true, Ordering::Relaxed);
+    live_feeder_thread.join().expect("live feeder joins");
+    println!(
+        "live input: {} underrun frames, {} buffered at teardown",
+        live_handle.underrun_frames(),
+        live_handle.buffered_frames(),
+    );
 
     let allocs = CALLBACK_ALLOCS.load(Ordering::Relaxed);
     let deallocs = CALLBACK_DEALLOCS.load(Ordering::Relaxed);

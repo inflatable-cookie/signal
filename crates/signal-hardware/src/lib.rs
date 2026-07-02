@@ -35,7 +35,7 @@ pub use backend_contract::{
     HardwareNegotiationErrorKind, HardwareRestartPolicy, HardwareStreamConfig,
     HardwareStreamRequest, LinuxAudioBackendKind,
 };
-pub use capture::{CaptureReport, CaptureSession, SpscRing};
+pub use capture::{CaptureReport, CaptureSession, MonitorSession, MonitorSink, SpscRing};
 pub use diagnostics::{
     BackendHealth, HardwareDiagnosticEvent, HardwareDiagnosticKind, HardwareDiagnosticSeverity,
     HardwareDiagnosticsSnapshot,

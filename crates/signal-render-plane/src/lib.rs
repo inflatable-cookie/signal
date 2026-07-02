@@ -47,6 +47,7 @@ use std::time::Instant;
 use signal_dsp::{
     default_adapter_matrix, DenormalGuard, LimiterState, PolyphaseInterpolationTable,
 };
+use signal_primitives::SpscRing;
 
 /// Interpolation table shape for rate-converted media playback. 16 taps ×
 /// 512 phases ≈ 32 KB per distinct cutoff; built once per plan compile.
@@ -369,6 +370,120 @@ pub fn render_stream(
     )
 }
 
+// ── Live input monitor sources (SPSC ring from the input callback) ─────────
+//
+// Monitoring plays "now", not "then": a live-input clip ignores the timeline
+// position entirely and drains whatever the input callback has pushed into
+// its ring each block. The ring is interleaved STEREO f32 at the STREAM rate
+// — the host feeds already-negotiated-rate audio (no resampling in v1; a
+// rate-mismatched input monitors off-pitch until the host reopens one side)
+// and duplicates mono to stereo on the feeder side (signal-hardware's
+// monitor tee does this). Underrun (input behind) renders silence and
+// counts; the executor never blocks and never allocates.
+
+/// Default live-input ring capacity in frames (~170 ms at 48 kHz). This is
+/// the MAXIMUM backlog, not the operating latency: steady-state fill is
+/// about one callback quantum, and the executor trims any deeper backlog to
+/// [`LIVE_INPUT_MAX_BACKLOG_FRAMES`] so monitoring latency stays bounded.
+pub const LIVE_INPUT_DEFAULT_CAPACITY_FRAMES: usize = 8_192;
+
+/// Deepest ring backlog the executor tolerates before discarding old input
+/// (~21 ms at 48 kHz). A feeder that pushed while the transport was stopped
+/// (the executor only renders while playing) would otherwise replay stale
+/// audio as extra monitoring latency on the next play.
+const LIVE_INPUT_MAX_BACKLOG_FRAMES: usize = 1_024;
+
+/// Stack scratch frames for live-input drain/discard loops (alloc-free).
+const LIVE_INPUT_CHUNK_FRAMES: usize = 256;
+
+struct LiveInputInner {
+    /// Interleaved stereo samples at the stream rate.
+    ring: SpscRing,
+    /// Output frames rendered as silence because the ring ran dry.
+    underrun_frames: AtomicU64,
+}
+
+/// Executor-side handle to a live input feed. Arc-shared and pointer-equal
+/// (like [`RenderStreamHandle`]): create one per monitored input and reuse
+/// it across plan recompiles so specs stay idempotent. The ring lives inside
+/// the shared handle, so plan swaps inherently keep the audio flowing —
+/// there is no per-plan state to migrate.
+#[derive(Clone)]
+pub struct RenderLiveInputHandle {
+    inner: Arc<LiveInputInner>,
+}
+
+impl std::fmt::Debug for RenderLiveInputHandle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RenderLiveInputHandle")
+            .field("capacity_frames", &(self.inner.ring.capacity() / 2))
+            .finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for RenderLiveInputHandle {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
+impl RenderLiveInputHandle {
+    /// Frames currently buffered (monitoring latency = this fill level).
+    pub fn buffered_frames(&self) -> usize {
+        self.inner.ring.len() / 2
+    }
+
+    /// Output frames rendered as silence because the input was behind
+    /// (cumulative).
+    pub fn underrun_frames(&self) -> u64 {
+        self.inner.underrun_frames.load(Ordering::Relaxed)
+    }
+}
+
+/// Producer side of a live input feed: the input callback pushes interleaved
+/// STEREO frames at the stream rate. `push_slice` is alloc-free, lock-free,
+/// and never blocks (a full ring drops the excess — the ring's overrun
+/// contract), so it is safe on the OS audio thread.
+///
+/// SPSC discipline: at most one thread may push at a time. Sequential
+/// hand-off between producers (monitor-only session → capture tee at record
+/// start) is safe; concurrent pushers are not.
+pub struct LiveInputFeeder {
+    inner: Arc<LiveInputInner>,
+}
+
+impl LiveInputFeeder {
+    /// Push interleaved stereo samples (`frames × 2` values). Returns the
+    /// number of FRAMES written; the rest were dropped against a full ring.
+    pub fn push_slice(&self, stereo_samples: &[f32]) -> usize {
+        self.inner.ring.push_slice(stereo_samples) / 2
+    }
+
+    /// Total samples dropped against a full ring (see [`SpscRing`]).
+    pub fn overrun_samples(&self) -> u64 {
+        self.inner.ring.overrun_samples()
+    }
+}
+
+/// Create a connected feeder/handle pair for one live input. The handle goes
+/// into [`RenderSource::LiveInput`] specs; the feeder goes to the input
+/// callback. `capacity_frames` bounds the ring (use
+/// [`LIVE_INPUT_DEFAULT_CAPACITY_FRAMES`]); keep it shallow — fill level is
+/// monitoring latency.
+pub fn render_live_input(capacity_frames: usize) -> (LiveInputFeeder, RenderLiveInputHandle) {
+    let inner = Arc::new(LiveInputInner {
+        ring: SpscRing::with_capacity(capacity_frames.max(2) * 2),
+        underrun_frames: AtomicU64::new(0),
+    });
+    (
+        LiveInputFeeder {
+            inner: Arc::clone(&inner),
+        },
+        RenderLiveInputHandle { inner },
+    )
+}
+
 const COMMAND_MAILBOX_CAPACITY: usize = 64;
 // Sized so that even a full command mailbox of plan installs can retire
 // without saturating; install_plan also reclaims eagerly. The executor's
@@ -455,6 +570,13 @@ pub enum RenderSource {
     /// but source data arrives in feeder-posted chunks and missing frames
     /// render silence (counted on the handle). `loop_source` is ignored.
     Stream(RenderStreamHandle),
+    /// Clip monitors a live input (see [`render_live_input`]): each block
+    /// drains whatever the input callback pushed into the handle's ring,
+    /// ignoring the timeline position entirely — live input renders "now".
+    /// Window a live clip `[0, u64::MAX)` so it is always audible while the
+    /// transport plays. Underrun (input behind) renders silence and counts
+    /// on the handle; `loop_source` is ignored.
+    LiveInput(RenderLiveInputHandle),
 }
 
 /// One clip event in a lane stage: a half-open stream-clock window
@@ -709,6 +831,12 @@ enum CompiledSource {
         /// at 1:1.
         table: Option<PolyphaseInterpolationTable>,
     },
+    /// Live input monitor: drains the handle's ring each block. All state
+    /// (ring, underrun counter) lives in the Arc-shared handle, so plan
+    /// swaps carry the feed inherently — nothing to migrate or reset.
+    LiveInput {
+        handle: RenderLiveInputHandle,
+    },
 }
 
 struct CompiledClip {
@@ -938,6 +1066,9 @@ impl RenderPlan {
                                     held: std::array::from_fn(|_| None),
                                 }
                             }
+                            RenderSource::LiveInput(handle) => CompiledSource::LiveInput {
+                                handle: handle.clone(),
+                            },
                         },
                     })
                     .collect(),
@@ -1437,6 +1568,65 @@ fn render_clips_into_scratch(
                         .inner
                         .underrun_frames
                         .fetch_add(underrun_frames, Ordering::Relaxed);
+                }
+            }
+            CompiledSource::LiveInput { handle } => {
+                // Position-independent: the clip window only gates WHETHER
+                // live input is audible in this block; the content is always
+                // the ring's "now". Frames pop in order across segments and
+                // blocks, so monitored audio is continuous.
+                let span_start = block_start_frame.max(clip_start);
+                let span_end = block_end_frame.min(clip_end);
+                let span = (span_end - span_start) as usize;
+                if span == 0 {
+                    continue;
+                }
+                let ring = &handle.inner.ring;
+                let mut chunk = [0.0f32; LIVE_INPUT_CHUNK_FRAMES * 2];
+                // Backlog trim: input pushed while the executor was not
+                // draining (transport stopped, plan absent) is stale — it
+                // would replay as added monitoring latency. Discard down to
+                // the bounded backlog before rendering. Alloc-free.
+                let buffered = ring.len() / 2;
+                let keep = span + LIVE_INPUT_MAX_BACKLOG_FRAMES;
+                if buffered > keep {
+                    let mut discard = buffered - keep;
+                    while discard > 0 {
+                        let take = discard.min(LIVE_INPUT_CHUNK_FRAMES);
+                        let popped = ring.pop_slice(&mut chunk[..take * 2]) / 2;
+                        if popped == 0 {
+                            break;
+                        }
+                        discard -= popped;
+                    }
+                }
+                // Drain up to `span` frames into the window's buffer span at
+                // unity (stage/edge gains apply downstream), with the same
+                // window edge declick as every other source.
+                let mut frame_offset = (span_start - block_start_frame) as usize;
+                let mut remaining = span;
+                while remaining > 0 {
+                    let take = remaining.min(LIVE_INPUT_CHUNK_FRAMES);
+                    let popped = ring.pop_slice(&mut chunk[..take * 2]) / 2;
+                    for index in 0..popped {
+                        let frame = block_start_frame + (frame_offset + index) as u64;
+                        let window_gain = clip_edge_gain(frame, clip_start, clip_end, clip_fade);
+                        let base = (frame_offset + index) * channels;
+                        for channel in 0..channels.min(2) {
+                            scratch[base + channel] += chunk[index * 2 + channel] * window_gain;
+                        }
+                    }
+                    frame_offset += popped;
+                    remaining -= popped;
+                    if popped < take {
+                        // Ring dry: the rest of the span is an underrun —
+                        // silence (scratch untouched) plus the counter.
+                        handle
+                            .inner
+                            .underrun_frames
+                            .fetch_add(remaining as u64, Ordering::Relaxed);
+                        break;
+                    }
                 }
             }
         }
@@ -3396,6 +3586,176 @@ mod tests {
         // Content continues exactly: frame 512 plays source frame 512.
         let expected = 512.0 / total as f32;
         assert!((frames[0] - expected).abs() < 1e-6);
+    }
+
+    // ── Live input monitor sources ──────────────────────────────────────────
+
+    /// Spec with one live-input clip windowed `[0, u64::MAX)` at `lane_gain`.
+    fn live_input_spec(handle: &RenderLiveInputHandle, lane_gain: f32) -> RenderPlanSpec {
+        lane_master_spec(
+            lane_gain,
+            vec![RenderClipSpec {
+                clip_id: 1007,
+                start_frames: 0,
+                end_frames: u64::MAX,
+                source: RenderSource::LiveInput(handle.clone()),
+                loop_source: false,
+            }],
+        )
+    }
+
+    /// Push `count` stereo frames of a ramp starting at `value_base`
+    /// (value = (value_base + i) / 10_000) and return the next base.
+    fn push_ramp(feeder: &LiveInputFeeder, value_base: u64, count: usize) -> u64 {
+        let mut data = Vec::with_capacity(count * 2);
+        for index in 0..count {
+            let value = (value_base + index as u64) as f32 / 10_000.0;
+            data.push(value);
+            data.push(value);
+        }
+        assert_eq!(feeder.push_slice(&data), count, "test ring overflowed");
+        value_base + count as u64
+    }
+
+    #[test]
+    fn live_input_clips_render_pushed_audio_through_the_chain() {
+        let (mut controller, mut executor) = render_plane();
+        let (feeder, handle) = render_live_input(LIVE_INPUT_DEFAULT_CAPACITY_FRAMES);
+        // Lane gain 0.5: the chain's fader applies to monitored input like
+        // any other source.
+        controller
+            .install_plan(&live_input_spec(&handle, 0.5))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+
+        // Feed exactly one block per render so content is deterministic.
+        let mut base = 0u64;
+        let mut frames = [0.0f32; 512];
+        // Warm-up: edge ramp opens, clip edge fade passes.
+        for _ in 0..2 {
+            base = push_ramp(&feeder, base, 256);
+            executor.render_block(&mut frames);
+        }
+        assert_eq!(handle.underrun_frames(), 0);
+
+        base = push_ramp(&feeder, base, 256);
+        executor.render_block(&mut frames);
+        // Block 2 renders pushed frames 512..768 at lane gain 0.5.
+        for index in [0usize, 100, 255] {
+            let expected = (512 + index) as f32 / 10_000.0 * 0.5;
+            assert!(
+                (frames[index * 2] - expected).abs() < 1e-6,
+                "frame {index}: {} vs {expected}",
+                frames[index * 2],
+            );
+            // Stereo feed: identical channels.
+            assert_eq!(frames[index * 2], frames[index * 2 + 1]);
+        }
+        assert_eq!(handle.underrun_frames(), 0);
+        let _ = base;
+    }
+
+    #[test]
+    fn live_input_underruns_render_silence_and_count() {
+        let (mut controller, mut executor) = render_plane();
+        let (feeder, handle) = render_live_input(LIVE_INPUT_DEFAULT_CAPACITY_FRAMES);
+        controller
+            .install_plan(&live_input_spec(&handle, 1.0))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+
+        // Nothing fed: the whole block underruns, output stays silent.
+        let mut frames = [0.1f32; 512];
+        executor.render_block(&mut frames);
+        assert!(frames.iter().all(|sample| *sample == 0.0));
+        assert_eq!(handle.underrun_frames(), 256);
+
+        // Half a block fed: 128 frames render, 128 count as underrun.
+        push_ramp(&feeder, 50_000, 128);
+        executor.render_block(&mut frames);
+        assert_eq!(handle.underrun_frames(), 256 + 128);
+        assert!(frames.iter().any(|sample| sample.abs() > 0.001));
+
+        // Fed again: audio resumes, the count holds.
+        push_ramp(&feeder, 50_128, 256);
+        executor.render_block(&mut frames);
+        assert_eq!(handle.underrun_frames(), 256 + 128);
+    }
+
+    #[test]
+    fn live_input_survives_plan_swaps_without_dropping_audio() {
+        let (mut controller, mut executor) = render_plane();
+        let (feeder, handle) = render_live_input(LIVE_INPUT_DEFAULT_CAPACITY_FRAMES);
+        let spec = live_input_spec(&handle, 1.0);
+        controller.install_plan(&spec).unwrap();
+        controller.set_playing(true).unwrap();
+
+        let mut base = 0u64;
+        let mut frames = [0.0f32; 512];
+        for _ in 0..2 {
+            base = push_ramp(&feeder, base, 256);
+            executor.render_block(&mut frames);
+        }
+
+        // Recompile mid-feed (identity spec — pointer-equal handle keeps the
+        // spec equal too; force the install). The ring lives in the shared
+        // handle, so the feed continues without a gap or reset.
+        controller.install_plan(&spec.clone()).unwrap();
+        base = push_ramp(&feeder, base, 256);
+        executor.render_block(&mut frames);
+        assert_eq!(handle.underrun_frames(), 0, "swap dropped live audio");
+        // Content continues exactly: first frame plays pushed frame 512.
+        let expected = 512.0 / 10_000.0;
+        assert!((frames[0] - expected).abs() < 1e-6);
+        let _ = base;
+    }
+
+    #[test]
+    fn live_input_trims_stale_backlog_to_bound_monitoring_latency() {
+        let (mut controller, mut executor) = render_plane();
+        let (feeder, handle) = render_live_input(LIVE_INPUT_DEFAULT_CAPACITY_FRAMES);
+        controller
+            .install_plan(&live_input_spec(&handle, 1.0))
+            .unwrap();
+
+        // Feeder ran while the executor was stopped: a deep stale backlog.
+        let mut base = 0u64;
+        for _ in 0..16 {
+            base = push_ramp(&feeder, base, 256); // 4_096 frames total.
+        }
+        controller.set_playing(true).unwrap();
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        // The executor discarded down to span + LIVE_INPUT_MAX_BACKLOG and
+        // rendered from there — near the END of the pushed data, not frame
+        // 0. Sample index 250 sits past both the transport edge ramp
+        // (240 frames at 48 kHz) and the clip edge fade, so the raw pushed
+        // value reads back unscaled.
+        let value = f64::from(frames[250 * 2]) * 10_000.0;
+        let cutoff = (4_096 - 256 - LIVE_INPUT_MAX_BACKLOG_FRAMES) as f64;
+        assert!(
+            value >= cutoff,
+            "stale backlog replayed pushed frame {value} (cutoff {cutoff})",
+        );
+        // What remains buffered is bounded (latency stays shallow).
+        assert!(
+            handle.buffered_frames() <= LIVE_INPUT_MAX_BACKLOG_FRAMES,
+            "backlog left at {} frames",
+            handle.buffered_frames(),
+        );
+        let _ = base;
+    }
+
+    #[test]
+    fn live_input_handles_compare_by_pointer_for_cheap_spec_equality() {
+        let (_feeder_a, a) = render_live_input(1_024);
+        let b = a.clone();
+        let (_feeder_c, c) = render_live_input(1_024);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        // Spec equality follows handle equality: idempotent recompiles.
+        assert_eq!(live_input_spec(&a, 1.0), live_input_spec(&b, 1.0));
+        assert_ne!(live_input_spec(&a, 1.0), live_input_spec(&c, 1.0));
     }
 
     #[test]
