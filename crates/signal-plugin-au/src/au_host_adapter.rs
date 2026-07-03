@@ -4,6 +4,7 @@ use signal_plugin::{
 };
 
 mod discovery;
+mod hosting;
 mod introspection;
 mod model;
 #[cfg(test)]
@@ -12,6 +13,10 @@ mod scaffold;
 #[cfg(test)]
 pub(crate) use scaffold::au_scaffold_component_metadata_contents;
 
+pub use hosting::{
+    current_au_platform, AuHostedInstance, AuHostedPortLayout, AuHostingError, AuProcessSession,
+    AU_REGISTRY_COMPONENT_PATH,
+};
 pub use model::*;
 
 /// Host-side adapter for Audio Units plugins. Handles discovery, instantiation, session planning, and capability negotiation on macOS.

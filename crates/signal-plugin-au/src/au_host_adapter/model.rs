@@ -47,3 +47,15 @@ pub struct AuDiscoveredPluginType {
     /// Default I/O layout reported at scan time.
     pub default_io_layout: PluginIoLayout,
 }
+
+impl AuDiscoveredPluginType {
+    /// Format-native load key handed to the hosting backends: the
+    /// colon-separated fourcc triple `{type}:{subtype}:{manufacturer}`
+    /// (colon-safe on the whitespace-separated broker wire).
+    pub fn load_key(&self) -> String {
+        format!(
+            "{}:{}:{}",
+            self.component_type, self.component_subtype, self.manufacturer_code
+        )
+    }
+}

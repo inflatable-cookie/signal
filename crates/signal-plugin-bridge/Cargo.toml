@@ -13,6 +13,7 @@ workspace = true
 [dependencies]
 signal-ipc = { workspace = true }
 signal-plugin = { workspace = true }
+signal-plugin-au = { workspace = true }
 signal-plugin-clap = { workspace = true }
 signal-plugin-vst3 = { workspace = true }
 signal-render-plane = { workspace = true }

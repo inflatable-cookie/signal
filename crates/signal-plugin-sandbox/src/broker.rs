@@ -4,9 +4,11 @@
 //! plumbing that out-of-process hosting needs — child-process spawn, a
 //! line-oriented stdio control protocol, file-backed shared-memory block
 //! transport — and REAL plugin instance hosting (CLAP per g11.012, VST3 per
-//! g11.031): `load-plugin` selects the format by library path extension
-//! (`.clap` → `signal-plugin-clap`'s hosting FFI, `.vst3` →
-//! `signal-plugin-vst3`'s COM FFI; second argument = format-native load
+//! g11.031, AU per g11.032): `load-plugin` selects the format by library
+//! path extension (`.clap` → `signal-plugin-clap`'s hosting FFI, `.vst3` →
+//! `signal-plugin-vst3`'s COM FFI, `.component` → `signal-plugin-au`'s
+//! AudioToolbox FFI, where the registry sentinel path is never opened;
+//! second argument = format-native load
 //! key), `activate` activates the instance and leases a shared-memory audio
 //! block region, and `start-processing` spawns the child's audio thread,
 //! which spin/yield-waits on the region's request stamp and runs the
@@ -35,6 +37,7 @@ use signal_ipc::{
     MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
 };
 use signal_plugin::PluginParameterDescriptor;
+use signal_plugin_au::{AuHostedInstance, AuProcessSession};
 use signal_plugin_clap::{ClapHostedInstance, ClapProcessSession};
 use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
 
@@ -240,20 +243,26 @@ struct ActivatedAudio {
     thread: Option<AudioThread>,
 }
 
-/// Format-selected hosted instance (g11.031): the broker infers the plugin
-/// format from the library path extension (`.clap` / `.vst3`), keeping the
-/// stdio wire format unchanged. `load-plugin`'s second argument is the
-/// format-native load key: the raw plugin id for CLAP, the component class
-/// CID hex for VST3.
+/// Format-selected hosted instance (g11.031, AU per g11.032): the broker
+/// infers the plugin format from the library path extension (`.clap` /
+/// `.vst3` / `.component`), keeping the stdio wire format unchanged.
+/// `load-plugin`'s second argument is the format-native load key: the raw
+/// plugin id for CLAP, the component class CID hex for VST3, the fourcc
+/// triple `{type}:{subtype}:{manufacturer}` for AU. AU registry entries
+/// carry the sentinel path `au-registry.component` — never opened; the
+/// child rebuilds the `AudioComponentDescription` from the load key and
+/// resolves it through the system registry.
 enum HostedPluginInstance {
     Clap(ClapHostedInstance),
     Vst3(Vst3HostedInstance),
+    Au(AuHostedInstance),
 }
 
 /// Format-selected raw process session for the child audio thread.
 enum HostedProcessSession {
     Clap(ClapProcessSession),
     Vst3(Vst3ProcessSession),
+    Au(AuProcessSession),
 }
 
 impl HostedPluginInstance {
@@ -273,6 +282,9 @@ impl HostedPluginInstance {
             Some("vst3") => Vst3HostedInstance::load(path, load_key)
                 .map(Self::Vst3)
                 .map_err(|error| error.token),
+            Some("component") => AuHostedInstance::load(path, load_key)
+                .map(Self::Au)
+                .map_err(|error| error.token),
             _ => Err("unsupported_library_extension".to_string()),
         }
     }
@@ -281,6 +293,7 @@ impl HostedPluginInstance {
         match self {
             Self::Clap(instance) => instance.parameters().to_vec(),
             Self::Vst3(instance) => instance.parameters().to_vec(),
+            Self::Au(instance) => instance.parameters().to_vec(),
         }
     }
 
@@ -295,6 +308,10 @@ impl HostedPluginInstance {
                 let layout = instance.port_layout();
                 (layout.main_input_channels, layout.main_output_channels)
             }
+            Self::Au(instance) => {
+                let layout = instance.port_layout();
+                (layout.main_input_channels, layout.main_output_channels)
+            }
         }
     }
 
@@ -303,6 +320,7 @@ impl HostedPluginInstance {
         match self {
             Self::Clap(instance) => instance.port_layout().is_stereo_effect(),
             Self::Vst3(instance) => instance.port_layout().is_stereo_effect(),
+            Self::Au(instance) => instance.port_layout().is_stereo_effect(),
         }
     }
 
@@ -319,6 +337,9 @@ impl HostedPluginInstance {
             Self::Vst3(instance) => instance
                 .activate(sample_rate_hz, min_frames, max_frames)
                 .map_err(|error| error.token),
+            Self::Au(instance) => instance
+                .activate(sample_rate_hz, min_frames, max_frames)
+                .map_err(|error| error.token),
         }
     }
 
@@ -326,6 +347,7 @@ impl HostedPluginInstance {
         match self {
             Self::Clap(instance) => instance.deactivate().map_err(|error| error.token),
             Self::Vst3(instance) => instance.deactivate().map_err(|error| error.token),
+            Self::Au(instance) => instance.deactivate().map_err(|error| error.token),
         }
     }
 
@@ -339,6 +361,10 @@ impl HostedPluginInstance {
                 .process_session()
                 .map(HostedProcessSession::Vst3)
                 .map_err(|error| error.token),
+            Self::Au(instance) => instance
+                .process_session()
+                .map(HostedProcessSession::Au)
+                .map_err(|error| error.token),
         }
     }
 }
@@ -348,6 +374,7 @@ impl HostedProcessSession {
         match self {
             Self::Clap(session) => session.start().map_err(|error| error.token),
             Self::Vst3(session) => session.start().map_err(|error| error.token),
+            Self::Au(session) => session.start().map_err(|error| error.token),
         }
     }
 
@@ -355,6 +382,7 @@ impl HostedProcessSession {
         match self {
             Self::Clap(session) => session.stop(),
             Self::Vst3(session) => session.stop(),
+            Self::Au(session) => session.stop(),
         }
     }
 
@@ -367,6 +395,7 @@ impl HostedProcessSession {
         match self {
             Self::Clap(session) => session.process_interleaved_stereo(input, output, frame_count),
             Self::Vst3(session) => session.process_interleaved_stereo(input, output, frame_count),
+            Self::Au(session) => session.process_interleaved_stereo(input, output, frame_count),
         }
     }
 }
