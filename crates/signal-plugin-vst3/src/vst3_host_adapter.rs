@@ -4,11 +4,16 @@ use signal_plugin::{
 };
 
 mod discovery;
+mod hosting;
 mod introspection;
 mod model;
 #[cfg(test)]
 mod scaffold;
 
+pub use hosting::{
+    current_vst3_platform, Vst3HostedInstance, Vst3HostedPortLayout, Vst3HostingError,
+    Vst3ProcessSession,
+};
 pub use model::*;
 #[cfg(test)]
 pub(crate) use scaffold::vst3_scaffold_module_metadata_contents;

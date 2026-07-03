@@ -3,12 +3,14 @@
 //! This binary is the plugin-hosting child process: it exercises the
 //! plumbing that out-of-process hosting needs — child-process spawn, a
 //! line-oriented stdio control protocol, file-backed shared-memory block
-//! transport — and, per g11.012, REAL CLAP instance hosting: `load-plugin`
-//! dlopens a CLAP library through `signal-plugin-clap`'s hosting FFI,
-//! `activate` activates the instance and leases a shared-memory audio block
-//! region, and `start-processing` spawns the child's audio thread, which
-//! spin/yield-waits on the region's request stamp and runs the plugin's
-//! `process()` for every block the parent posts.
+//! transport — and REAL plugin instance hosting (CLAP per g11.012, VST3 per
+//! g11.031): `load-plugin` selects the format by library path extension
+//! (`.clap` → `signal-plugin-clap`'s hosting FFI, `.vst3` →
+//! `signal-plugin-vst3`'s COM FFI; second argument = format-native load
+//! key), `activate` activates the instance and leases a shared-memory audio
+//! block region, and `start-processing` spawns the child's audio thread,
+//! which spin/yield-waits on the region's request stamp and runs the
+//! plugin's `process()` for every block the parent posts.
 //!
 //! Wire format: one receipt per line,
 //! `signal-plugin-sandbox state=<token> sandbox_id=... instance_id=... epoch=... lease_id=... region_id=... [key=value ...] detail=...`
@@ -33,7 +35,8 @@ use signal_ipc::{
     MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
 };
 use signal_plugin::PluginParameterDescriptor;
-use signal_plugin_clap::ClapHostedInstance;
+use signal_plugin_clap::{ClapHostedInstance, ClapProcessSession};
+use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
 
 /// Number of shared-memory block round-trips performed by the `run` command.
 const RUN_BLOCK_COUNT: u64 = 8;
@@ -237,9 +240,140 @@ struct ActivatedAudio {
     thread: Option<AudioThread>,
 }
 
+/// Format-selected hosted instance (g11.031): the broker infers the plugin
+/// format from the library path extension (`.clap` / `.vst3`), keeping the
+/// stdio wire format unchanged. `load-plugin`'s second argument is the
+/// format-native load key: the raw plugin id for CLAP, the component class
+/// CID hex for VST3.
+enum HostedPluginInstance {
+    Clap(ClapHostedInstance),
+    Vst3(Vst3HostedInstance),
+}
+
+/// Format-selected raw process session for the child audio thread.
+enum HostedProcessSession {
+    Clap(ClapProcessSession),
+    Vst3(Vst3ProcessSession),
+}
+
+impl HostedPluginInstance {
+    /// Load `load_key` from `library_path`, selecting the format by path
+    /// extension. Unknown extensions fail with a stable token.
+    fn load(library_path: &str, load_key: &str) -> Result<Self, String> {
+        let path = std::path::Path::new(library_path);
+        match path
+            .extension()
+            .and_then(|extension| extension.to_str())
+            .map(str::to_ascii_lowercase)
+            .as_deref()
+        {
+            Some("clap") => ClapHostedInstance::load(path, load_key)
+                .map(Self::Clap)
+                .map_err(|error| error.token),
+            Some("vst3") => Vst3HostedInstance::load(path, load_key)
+                .map(Self::Vst3)
+                .map_err(|error| error.token),
+            _ => Err("unsupported_library_extension".to_string()),
+        }
+    }
+
+    fn parameters(&self) -> Vec<PluginParameterDescriptor> {
+        match self {
+            Self::Clap(instance) => instance.parameters().to_vec(),
+            Self::Vst3(instance) => instance.parameters().to_vec(),
+        }
+    }
+
+    /// Main-bus channel counts (input, output).
+    fn main_ports(&self) -> (u16, u16) {
+        match self {
+            Self::Clap(instance) => {
+                let layout = instance.port_layout();
+                (layout.main_input_channels, layout.main_output_channels)
+            }
+            Self::Vst3(instance) => {
+                let layout = instance.port_layout();
+                (layout.main_input_channels, layout.main_output_channels)
+            }
+        }
+    }
+
+    /// Phase-1 gate: stereo main in + stereo main out effects only.
+    fn is_stereo_effect(&self) -> bool {
+        match self {
+            Self::Clap(instance) => instance.port_layout().is_stereo_effect(),
+            Self::Vst3(instance) => instance.port_layout().is_stereo_effect(),
+        }
+    }
+
+    fn activate(
+        &mut self,
+        sample_rate_hz: f64,
+        min_frames: u32,
+        max_frames: u32,
+    ) -> Result<(), String> {
+        match self {
+            Self::Clap(instance) => instance
+                .activate(sample_rate_hz, min_frames, max_frames)
+                .map_err(|error| error.token),
+            Self::Vst3(instance) => instance
+                .activate(sample_rate_hz, min_frames, max_frames)
+                .map_err(|error| error.token),
+        }
+    }
+
+    fn deactivate(&mut self) -> Result<(), String> {
+        match self {
+            Self::Clap(instance) => instance.deactivate().map_err(|error| error.token),
+            Self::Vst3(instance) => instance.deactivate().map_err(|error| error.token),
+        }
+    }
+
+    fn process_session(&self) -> Result<HostedProcessSession, String> {
+        match self {
+            Self::Clap(instance) => instance
+                .process_session()
+                .map(HostedProcessSession::Clap)
+                .map_err(|error| error.token),
+            Self::Vst3(instance) => instance
+                .process_session()
+                .map(HostedProcessSession::Vst3)
+                .map_err(|error| error.token),
+        }
+    }
+}
+
+impl HostedProcessSession {
+    fn start(&mut self) -> Result<(), String> {
+        match self {
+            Self::Clap(session) => session.start().map_err(|error| error.token),
+            Self::Vst3(session) => session.start().map_err(|error| error.token),
+        }
+    }
+
+    fn stop(&mut self) {
+        match self {
+            Self::Clap(session) => session.stop(),
+            Self::Vst3(session) => session.stop(),
+        }
+    }
+
+    fn process_interleaved_stereo(
+        &mut self,
+        input: &[f32],
+        output: &mut [f32],
+        frame_count: usize,
+    ) -> bool {
+        match self {
+            Self::Clap(session) => session.process_interleaved_stereo(input, output, frame_count),
+            Self::Vst3(session) => session.process_interleaved_stereo(input, output, frame_count),
+        }
+    }
+}
+
 /// A loaded (and possibly activated) hosted plugin instance.
 struct LoadedPlugin {
-    instance: ClapHostedInstance,
+    instance: HostedPluginInstance,
     plugin_id: String,
     audio: Option<ActivatedAudio>,
 }
@@ -387,21 +521,24 @@ impl SandboxBrokerProcess {
 
     // ── Plugin lifecycle (g11.012 batch 12.1) ──────────────────────────────
 
-    /// dlopen the CLAP library, create+init the plugin, and enumerate its
+    /// Load the plugin library (format inferred from the path extension:
+    /// `.clap` dlopens through the CLAP hosting FFI, `.vst3` through the
+    /// VST3 COM FFI), create+initialize the instance, and enumerate its
     /// parameter inventory (returned in the receipt's `params=` token).
+    /// `plugin_id` is the format-native load key (CLAP plugin id / VST3
+    /// component class CID hex).
     fn load_plugin(&mut self, library_path: &str, plugin_id: &str) -> SandboxBrokerReceipt {
         if self.plugin.is_some() {
             return self.crashed_receipt("plugin_already_loaded");
         }
-        let instance = match ClapHostedInstance::load(std::path::Path::new(library_path), plugin_id)
-        {
+        let instance = match HostedPluginInstance::load(library_path, plugin_id) {
             Ok(instance) => instance,
-            Err(error) => {
-                return self.crashed_receipt(&format!("load_plugin:{}", error.token));
+            Err(token) => {
+                return self.crashed_receipt(&format!("load_plugin:{token}"));
             }
         };
-        let parameters = instance.parameters().to_vec();
-        let layout = instance.port_layout();
+        let parameters = instance.parameters();
+        let (main_inputs, main_outputs) = instance.main_ports();
         self.plugin = Some(LoadedPlugin {
             instance,
             plugin_id: plugin_id.to_string(),
@@ -411,10 +548,8 @@ impl SandboxBrokerProcess {
         let mut receipt = self.receipt(
             SandboxBrokerState::PluginLoaded,
             &format!(
-                "plugin_loaded|plugin_id={plugin_id}|param_count={}|main_ports={}x{}",
+                "plugin_loaded|plugin_id={plugin_id}|param_count={}|main_ports={main_inputs}x{main_outputs}",
                 parameters.len(),
-                layout.main_input_channels,
-                layout.main_output_channels,
             ),
         );
         receipt
@@ -442,22 +577,21 @@ impl SandboxBrokerProcess {
         if sample_rate_hz <= 0.0 || max_frames == 0 || min_frames > max_frames {
             return self.crashed_receipt("activate_invalid_configuration");
         }
-        let layout_summary = plugin.instance.port_layout();
-        if !layout_summary.is_stereo_effect() {
+        let (main_inputs, main_outputs) = plugin.instance.main_ports();
+        if !plugin.instance.is_stereo_effect() {
             self.last_state = SandboxBrokerState::LayoutUnsupported;
             return self.receipt(
                 SandboxBrokerState::LayoutUnsupported,
                 &format!(
-                    "unsupported_port_layout|main_ports={}x{}|supported=2x2",
-                    layout_summary.main_input_channels, layout_summary.main_output_channels,
+                    "unsupported_port_layout|main_ports={main_inputs}x{main_outputs}|supported=2x2",
                 ),
             );
         }
-        if let Err(error) = plugin
+        if let Err(token) = plugin
             .instance
             .activate(sample_rate_hz, min_frames, max_frames)
         {
-            return self.crashed_receipt(&format!("activate:{}", error.token));
+            return self.crashed_receipt(&format!("activate:{token}"));
         }
         let block_layout = PluginAudioBlockLayout {
             max_frames,
@@ -527,8 +661,8 @@ impl SandboxBrokerProcess {
         }
         let mut session = match plugin.instance.process_session() {
             Ok(session) => session,
-            Err(error) => {
-                return self.crashed_receipt(&format!("process_session:{}", error.token));
+            Err(token) => {
+                return self.crashed_receipt(&format!("process_session:{token}"));
             }
         };
         let layout = audio.layout;
@@ -631,8 +765,8 @@ impl SandboxBrokerProcess {
         drop(audio.region);
         let destroy_result = self.broker.destroy_region(&metadata);
         let plugin = self.plugin.as_mut().expect("plugin checked above");
-        if let Err(error) = plugin.instance.deactivate() {
-            return self.crashed_receipt(&format!("deactivate:{}", error.token));
+        if let Err(token) = plugin.instance.deactivate() {
+            return self.crashed_receipt(&format!("deactivate:{token}"));
         }
         if let Err(error) = destroy_result {
             return self.crashed_receipt(&format!("shm_destroy:{}", error.detail()));

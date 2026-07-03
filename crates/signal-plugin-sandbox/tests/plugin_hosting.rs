@@ -14,6 +14,9 @@ use std::time::{Duration, Instant};
 
 use signal_plugin_bridge::ShmPluginProcessor;
 use signal_plugin_clap::fixture::{compile_clap_fixture, rustc_available, CLAP_FIXTURE_GAIN};
+use signal_plugin_vst3::fixture::{
+    compile_vst3_fixture, VST3_FIXTURE_CLASS_ID_HEX, VST3_FIXTURE_GAIN,
+};
 use signal_render_plane::{
     render_plan_to_pcm, ChannelFormat, OfflineRenderOptions, RenderClipSpec, RenderEdgeSpec,
     RenderPlanSpec, RenderPluginProcessor, RenderSampleBuffer, RenderSource, RenderStageKind,
@@ -53,10 +56,13 @@ fn unique_fixture_dir() -> FixtureDir {
 }
 
 /// Spawn the real broker binary, walk it through load → activate →
-/// start-processing for the fixture, and return the session plus the
-/// attached parent-side processor.
-fn spawn_processing_session(
+/// start-processing for a fixture (`load_key` is the format-native key:
+/// CLAP plugin id or VST3 class CID hex; the broker picks the format from
+/// the library path extension), and return the session plus the attached
+/// parent-side processor.
+fn spawn_processing_session_for(
     library_path: &std::path::Path,
+    load_key: &str,
 ) -> (SandboxBrokerClientSession, Arc<ShmPluginProcessor>) {
     let mut client = SandboxBrokerClientSession::spawn_command(
         env!("CARGO_BIN_EXE_signal-plugin-sandbox"),
@@ -69,7 +75,7 @@ fn spawn_processing_session(
         .expect("startup receipts should arrive");
 
     let inventory = client
-        .load_plugin(&library_path.display().to_string(), FIXTURE_PLUGIN_ID)
+        .load_plugin(&library_path.display().to_string(), load_key)
         .expect("fixture should load in the child");
     assert_eq!(inventory.parameters.len(), 2, "fixture exposes two params");
     let gain = inventory
@@ -110,6 +116,13 @@ fn spawn_processing_session(
         .expect("parent should attach the audio block region"),
     );
     (client, processor)
+}
+
+/// CLAP-fixture convenience wrapper around [`spawn_processing_session_for`].
+fn spawn_processing_session(
+    library_path: &std::path::Path,
+) -> (SandboxBrokerClientSession, Arc<ShmPluginProcessor>) {
+    spawn_processing_session_for(library_path, FIXTURE_PLUGIN_ID)
 }
 
 /// Drive one block through the handle, retrying misses (the child audio
@@ -218,6 +231,87 @@ fn killed_child_bypasses_within_budget_instead_of_hanging() {
     let start = Instant::now();
     assert!(!handle.process(&mut scratch, 128, 2));
     assert!(start.elapsed() < Duration::from_millis(2));
+}
+
+/// The VST3 mirror of the CLAP e2e (g11.031): rustc-compiled VST3 bundle →
+/// broker load (format picked from the `.vst3` extension, load key = class
+/// CID hex) → parameter receipt via IEditController → activate/shm lease →
+/// start-processing → wet = dry × gain byte-verified → kill child → bypass
+/// within the bounded budget.
+#[test]
+fn vst3_child_processes_blocks_and_killed_child_bypasses_within_budget() {
+    if !rustc_available() {
+        eprintln!("skipping: rustc unavailable for the VST3 fixture");
+        return;
+    }
+    let directory = unique_fixture_dir();
+    let bundle = compile_vst3_fixture(
+        &directory.path,
+        "plugin:vst3:sandbox-hosting-fixture",
+        "Signal Sandbox VST3 Fixture",
+    )
+    .expect("vst3 fixture should compile");
+
+    let (mut client, processor) = spawn_processing_session_for(&bundle, VST3_FIXTURE_CLASS_ID_HEX);
+    let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+
+    // Round-trip several blocks: output = input × fixture gain, exactly.
+    for block in 0..8u32 {
+        let frames = 128usize;
+        let mut scratch: Vec<f32> = (0..frames * 2)
+            .map(|index| (index as f32 + block as f32) / 512.0)
+            .collect();
+        let reference = scratch.clone();
+        process_with_retries(&handle, &mut scratch, frames);
+        for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
+            assert!(
+                (output - input * VST3_FIXTURE_GAIN).abs() < 1e-7,
+                "block {block} sample {index}: {output} vs {input} * {VST3_FIXTURE_GAIN}",
+            );
+        }
+    }
+    assert!(client.is_alive(), "child should still be alive");
+
+    // Kill the child mid-session (the crash the sandbox tier isolates).
+    client.kill();
+    assert!(!client.is_alive(), "killed child must read as dead");
+
+    // Un-served requests miss within the bounded budget and leave the
+    // scratch untouched — the engine callback would bypass, not block.
+    let mut scratch = vec![0.25f32; 256];
+    let reference = scratch.clone();
+    let misses_before = processor.miss_count();
+    let start = Instant::now();
+    let processed = handle.process(&mut scratch, 128, 2);
+    let elapsed = start.elapsed();
+    assert!(!processed, "dead child must bypass");
+    assert_eq!(scratch, reference, "bypass must leave scratch untouched");
+    assert!(processor.miss_count() > misses_before);
+    assert!(
+        elapsed < Duration::from_millis(20),
+        "bounded wait overran against a dead child: {elapsed:?}",
+    );
+}
+
+/// The broker rejects libraries whose extension names no hosted format.
+#[test]
+fn broker_rejects_unknown_library_extensions_with_typed_detail() {
+    let mut client = SandboxBrokerClientSession::spawn_command(
+        env!("CARGO_BIN_EXE_signal-plugin-sandbox"),
+        &[],
+        &SandboxBrokerSpawnConfig::default(),
+    )
+    .expect("broker child should spawn");
+    client
+        .read_startup_receipts()
+        .expect("startup receipts should arrive");
+    let result = client.load_plugin("/tmp/some-plugin.dll", "any-key");
+    let error = format!("{:?}", result.expect_err("unknown extension must fail"));
+    assert!(
+        error.contains("unsupported_library_extension"),
+        "typed token expected, got: {error}",
+    );
+    let _ = client.shutdown();
 }
 
 /// The e2e proof: the fixture audibly processes a chain insert through the

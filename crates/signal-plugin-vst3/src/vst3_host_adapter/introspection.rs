@@ -1,7 +1,6 @@
 use super::Vst3HostPlatform;
 use signal_plugin::{
     PluginDescriptor, PluginFeature, PluginFormat, PluginIoLayout, PluginLifecycleContract,
-    PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags,
     PluginProcessingContract, PluginStateContract,
 };
 use std::{
@@ -219,28 +218,9 @@ pub(crate) fn metadata_descriptor(metadata: &Vst3ModuleMetadata) -> PluginDescri
     )
     .with_version(metadata.version.as_str())
     .with_audio_buses(io_layout.main_audio_buses())
-    .with_parameters(vec![
-        PluginParameterDescriptor {
-            parameter_id: 1,
-            name: "Output Trim".into(),
-            unit: Some("dB".into()),
-            domain: PluginParameterDomain::Decibels,
-            default_normalized: 0.5,
-            min_plain: -24.0,
-            max_plain: 24.0,
-            flags: PluginParameterFlags::automatable(),
-        },
-        PluginParameterDescriptor {
-            parameter_id: 2,
-            name: "Bypass".into(),
-            unit: None,
-            domain: PluginParameterDomain::Bypass,
-            default_normalized: 0.0,
-            min_plain: 0.0,
-            max_plain: 1.0,
-            flags: PluginParameterFlags::bypass(),
-        },
-    ])
+    // Scan-time parameter inventory is intentionally EMPTY: real inventories
+    // arrive at load time via IEditController (g11.031, mirrors CLAP).
+    .with_parameters(Vec::new())
     .with_state_contract(PluginStateContract {
         supports_snapshot: true,
         supports_reset: true,
@@ -501,7 +481,7 @@ fn candidate_moduleinfo_paths(bundle_root: &Path) -> Vec<PathBuf> {
     ]
 }
 
-fn resolve_module_binary_path(
+pub(crate) fn resolve_module_binary_path(
     bundle_root: &Path,
     platform: Vst3HostPlatform,
 ) -> io::Result<PathBuf> {

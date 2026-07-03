@@ -974,9 +974,11 @@ dependencies = [
 name = "signal-plugin-bridge"
 version = "0.1.0"
 dependencies = [
+ "signal-hardware",
  "signal-ipc",
  "signal-plugin",
  "signal-plugin-clap",
+ "signal-plugin-vst3",
  "signal-render-plane",
 ]
 
@@ -1012,6 +1014,7 @@ dependencies = [
  "signal-plugin",
  "signal-plugin-bridge",
  "signal-plugin-clap",
+ "signal-plugin-vst3",
  "signal-render-plane",
  "signal-runtime",
 ]

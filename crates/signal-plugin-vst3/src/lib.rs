@@ -1,7 +1,11 @@
-//! VST3 plugin format adapter for Signal.
+//! VST3 plugin format adapter for Signal: bundle discovery, handwritten COM
+//! hosting FFI ([`Vst3HostedInstance`] / [`Vst3ProcessSession`]), and the
+//! compile-on-demand test fixture.
 
 #![warn(missing_docs)]
 
+#[doc(hidden)]
+pub mod fixture;
 mod vst3_host_adapter;
 
 pub use vst3_host_adapter::*;
