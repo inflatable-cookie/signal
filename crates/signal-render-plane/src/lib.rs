@@ -557,6 +557,67 @@ const CLIP_EDGE_FADE_FRAMES: u64 = 32;
 /// render hash stays valid).
 const LOOP_WRAP_FADE_FRAMES: usize = 64;
 
+// ── Plugin processors (g11.012) ────────────────────────────────────────────
+
+/// Placement-agnostic per-block plugin processing backend.
+///
+/// The engine sees only this trait: a backend may run the plugin in-process
+/// (direct FFI call — no wait, no crash isolation) or across a sandbox
+/// process boundary (shared-memory round trip with a bounded wait). The
+/// isolation tier is host configuration, never engine architecture.
+///
+/// # Contract
+///
+/// `process` transforms `scratch` (interleaved, `frame_count × channels`
+/// samples) IN PLACE and returns `true`. When it returns `false` — deadline
+/// miss, dead backend, unsupported channel count — `scratch` must be left
+/// EXACTLY as it was (bypass semantics: consumers read the dry signal).
+/// Implementations must be audio-thread safe: no allocation, no locks that
+/// block, no unbounded waits.
+pub trait PluginBlockProcessor: Send + Sync {
+    /// Process one block in place; `false` = bypass, scratch untouched.
+    fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool;
+}
+
+/// Arc handle to a plugin processing backend, carried by
+/// [`RenderStageSpec::processor`] on Sum stages.
+///
+/// Pointer-equal (like [`RenderStreamHandle`] / [`RenderLiveInputHandle`]):
+/// hosts create one per live plugin instance and reuse it across plan
+/// recompiles so specs stay idempotent — swapping the handle is a structural
+/// plan change; keeping it is not.
+#[derive(Clone)]
+pub struct RenderPluginProcessor {
+    inner: Arc<dyn PluginBlockProcessor>,
+}
+
+impl RenderPluginProcessor {
+    /// Wrap a processing backend.
+    pub fn new(backend: Arc<dyn PluginBlockProcessor>) -> Self {
+        Self { inner: backend }
+    }
+
+    /// Process one block in place; `false` = bypass (scratch untouched).
+    #[inline]
+    pub fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        self.inner.process(scratch, frame_count, channels)
+    }
+}
+
+impl std::fmt::Debug for RenderPluginProcessor {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RenderPluginProcessor")
+            .finish_non_exhaustive()
+    }
+}
+
+impl PartialEq for RenderPluginProcessor {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
 // ── Spec vocabulary (control-side description of a plan) ───────────────────
 
 /// Channel layout semantics carried alongside a channel count.
@@ -712,6 +773,12 @@ pub struct RenderStageSpec {
     pub kind: RenderStageKind,
     /// Edges feeding this stage.
     pub inputs: Vec<RenderEdgeSpec>,
+    /// Optional plugin processor applied to this stage's summed scratch
+    /// before consumers read it (g11.012). Valid on [`RenderStageKind::Sum`]
+    /// stages only — compile rejects it elsewhere. Bypass (backend returns
+    /// `false`) leaves the scratch untouched, so absent/bypassed processors
+    /// keep the golden render hash unchanged.
+    pub processor: Option<RenderPluginProcessor>,
 }
 
 /// Optional soft limiter guarding the hardware boundary. Mechanism only —
@@ -763,6 +830,7 @@ impl RenderPlanSpec {
                 || old.gain_automation != new.gain_automation
                 || old.kind != new.kind
                 || old.inputs != new.inputs
+                || old.processor != new.processor
             {
                 return None;
             }
@@ -811,6 +879,8 @@ pub enum RenderPlanCompileError {
         /// Clip whose notes are unsorted.
         clip_id: u64,
     },
+    /// A plugin processor was attached to a non-Sum stage.
+    ProcessorOnNonSumStage(u64),
     /// An explicit edge matrix has the wrong number of coefficients.
     MatrixDimensions {
         /// Stage owning the edge.
@@ -850,6 +920,10 @@ impl std::fmt::Display for RenderPlanCompileError {
             RenderPlanCompileError::UnsortedAutomation(stage_id) => write!(
                 formatter,
                 "stage {stage_id} gain automation breakpoints are not sorted by frame",
+            ),
+            RenderPlanCompileError::ProcessorOnNonSumStage(stage_id) => write!(
+                formatter,
+                "stage {stage_id} attaches a plugin processor but is not a Sum stage",
             ),
             RenderPlanCompileError::UnsortedNotes { stage_id, clip_id } => write!(
                 formatter,
@@ -967,6 +1041,8 @@ struct CompiledNode {
     /// Clip content (Source stages; empty for Sum/Output).
     clips: Vec<CompiledClip>,
     inputs: Vec<CompiledInput>,
+    /// Plugin processor applied to the summed scratch (Sum stages only).
+    processor: Option<RenderPluginProcessor>,
     /// Interleaved scratch at the stage's format: `MAX_BLOCK_FRAMES × channels`.
     scratch: Vec<f32>,
 }
@@ -1031,6 +1107,13 @@ impl RenderPlan {
             .count();
         if master_count != 1 {
             return Err(RenderPlanCompileError::MasterCount(master_count));
+        }
+        for stage in &spec.stages {
+            if stage.processor.is_some() && !matches!(stage.kind, RenderStageKind::Sum) {
+                return Err(RenderPlanCompileError::ProcessorOnNonSumStage(
+                    stage.stage_id,
+                ));
+            }
         }
         let position_of = |stage_id: u64| -> Option<usize> {
             spec.stages
@@ -1263,6 +1346,7 @@ impl RenderPlan {
                 gain_envelope,
                 clips,
                 inputs,
+                processor: stage.processor.clone(),
                 scratch: vec![0.0f32; MAX_BLOCK_FRAMES * dest_channels],
             });
         }
@@ -2526,6 +2610,7 @@ impl RenderPlaneExecutor {
                 channels,
                 clips,
                 inputs,
+                processor,
                 scratch,
                 ..
             } = stage;
@@ -2574,6 +2659,15 @@ impl RenderPlaneExecutor {
                         }
                     }
                 }
+            }
+
+            // Plugin processor (g11.012): transforms the stage's summed
+            // scratch in place before consumers read it. Bypass (`false` —
+            // deadline miss, dead sandbox, unsupported layout) leaves the
+            // scratch untouched by the backend contract, so the dry signal
+            // flows on and plans without processors render bit-identically.
+            if let Some(processor) = processor {
+                let _ = processor.process(scratch, frame_count, channels);
             }
         }
 
@@ -2730,6 +2824,7 @@ mod tests {
 
     fn lane_node(stage_id: u64, gain: f32, clips: Vec<RenderClipSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            processor: None,
             stage_id,
             format: ChannelFormat::stereo(),
             gain,
@@ -2741,6 +2836,7 @@ mod tests {
 
     fn master_node(inputs: Vec<RenderEdgeSpec>) -> RenderStageSpec {
         RenderStageSpec {
+            processor: None,
             stage_id: MASTER_ID,
             format: ChannelFormat::stereo(),
             gain: 1.0,
@@ -3546,6 +3642,183 @@ mod tests {
         assert!(snr > 60.0, "rate-converted playback SNR {snr:.1} dB");
     }
 
+    // ── Plugin processors (g11.012) ─────────────────────────────────────
+
+    /// Fake in-process backend: multiplies every sample by `gain` and counts
+    /// calls. Stands in for a live plugin without any child process.
+    struct FakeGainProcessor {
+        gain: f32,
+        calls: AtomicU64,
+    }
+
+    impl PluginBlockProcessor for FakeGainProcessor {
+        fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+            self.calls.fetch_add(1, Ordering::Relaxed);
+            for sample in &mut scratch[..frame_count * channels] {
+                *sample *= self.gain;
+            }
+            true
+        }
+    }
+
+    /// Fake backend that always misses: returns `false` and must leave the
+    /// scratch untouched (the bypass contract under test).
+    struct AlwaysMissProcessor {
+        misses: AtomicU64,
+    }
+
+    impl PluginBlockProcessor for AlwaysMissProcessor {
+        fn process(&self, _scratch: &mut [f32], _frames: usize, _channels: usize) -> bool {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            false
+        }
+    }
+
+    /// Constant-content plan with a Sum insert stage carrying `processor`.
+    fn processor_spec(processor: Option<RenderPluginProcessor>) -> RenderPlanSpec {
+        let values = vec![0.5f32; 480];
+        let mut data = Vec::new();
+        for value in &values {
+            data.push(*value);
+            data.push(*value);
+        }
+        RenderPlanSpec {
+            sample_rate_hz: 48_000,
+            master_gain: 1.0,
+            master_limiter: None,
+            stages: vec![
+                lane_node(
+                    LANE_ID,
+                    1.0,
+                    vec![RenderClipSpec {
+                        clip_id: 2001,
+                        start_frames: 0,
+                        end_frames: u64::MAX,
+                        source: RenderSource::Samples(RenderSampleBuffer {
+                            sample_rate_hz: 48_000,
+                            frames: data.into(),
+                        }),
+                        loop_source: true,
+                    }],
+                ),
+                RenderStageSpec {
+                    processor,
+                    stage_id: 77,
+                    format: ChannelFormat::stereo(),
+                    gain: 1.0,
+                    gain_automation: None,
+                    kind: RenderStageKind::Sum,
+                    inputs: vec![identity_edge(LANE_ID)],
+                },
+                master_node(vec![identity_edge(77)]),
+            ],
+        }
+    }
+
+    #[test]
+    fn sum_stage_processor_transforms_the_summed_scratch() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = Arc::new(FakeGainProcessor {
+            gain: 0.5,
+            calls: AtomicU64::new(0),
+        });
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        controller
+            .install_plan(&processor_spec(Some(handle)))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 4);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        // Past the edge ramp and clip fade: 0.5 content × 0.5 plugin gain.
+        assert!(
+            (frames[100 * 2] - 0.25).abs() < 1e-5,
+            "processed sample read {}",
+            frames[100 * 2],
+        );
+        assert!(backend.calls.load(Ordering::Relaxed) > 0);
+    }
+
+    #[test]
+    fn processor_miss_bypasses_and_counts_without_touching_scratch() {
+        let (mut controller, mut executor) = render_plane();
+        let backend = Arc::new(AlwaysMissProcessor {
+            misses: AtomicU64::new(0),
+        });
+        let handle = RenderPluginProcessor::new(Arc::clone(&backend) as Arc<_>);
+        controller
+            .install_plan(&processor_spec(Some(handle)))
+            .unwrap();
+        controller.set_playing(true).unwrap();
+        warm_up(&mut executor, 4);
+
+        let mut frames = [0.0f32; 512];
+        executor.render_block(&mut frames);
+        // Bypass: dry content flows through the insert untouched.
+        assert!(
+            (frames[100 * 2] - 0.5).abs() < 1e-5,
+            "bypassed sample read {}",
+            frames[100 * 2],
+        );
+        assert!(backend.misses.load(Ordering::Relaxed) > 0);
+    }
+
+    #[test]
+    fn processor_absent_and_bypassed_render_identically() {
+        let render = |processor: Option<RenderPluginProcessor>| -> Vec<f32> {
+            let (mut controller, mut executor) = render_plane();
+            controller.install_plan(&processor_spec(processor)).unwrap();
+            controller.set_playing(true).unwrap();
+            let mut collected = Vec::new();
+            let mut frames = [0.0f32; 512];
+            for _ in 0..8 {
+                executor.render_block(&mut frames);
+                collected.extend_from_slice(&frames);
+            }
+            collected
+        };
+        let dry = render(None);
+        let bypassed = render(Some(RenderPluginProcessor::new(Arc::new(
+            AlwaysMissProcessor {
+                misses: AtomicU64::new(0),
+            },
+        ))));
+        assert_eq!(dry, bypassed, "bypass must be bit-identical to absent");
+    }
+
+    #[test]
+    fn compile_rejects_processors_on_non_sum_stages() {
+        let handle = RenderPluginProcessor::new(Arc::new(AlwaysMissProcessor {
+            misses: AtomicU64::new(0),
+        }));
+        let mut spec = tone_spec(440.0);
+        spec.stages[0].processor = Some(handle);
+        let (mut controller, _executor) = render_plane();
+        let error = controller.install_plan(&spec).unwrap_err();
+        assert!(error.message.contains("not a Sum stage"), "{error}");
+    }
+
+    #[test]
+    fn processor_swap_is_structural_not_a_gain_fast_path() {
+        let handle_a = RenderPluginProcessor::new(Arc::new(AlwaysMissProcessor {
+            misses: AtomicU64::new(0),
+        }));
+        let handle_b = RenderPluginProcessor::new(Arc::new(AlwaysMissProcessor {
+            misses: AtomicU64::new(0),
+        }));
+        let with_a = processor_spec(Some(handle_a.clone()));
+        // Clone (same sample-buffer Arc) so only the processor may differ.
+        let with_a_again = with_a.clone();
+        let mut with_b = with_a.clone();
+        with_b.stages[1].processor = Some(handle_b);
+        let _ = handle_a;
+        // Same handle: gain-only diff logic sees no change.
+        assert_eq!(with_a.differs_only_in_gains(&with_a_again), Some(vec![]));
+        // Different handle (same everything else): structural.
+        assert_eq!(with_a.differs_only_in_gains(&with_b), None);
+    }
+
     #[test]
     fn sample_buffers_compare_by_pointer_for_cheap_spec_equality() {
         let data: Arc<[f32]> = vec![0.0f32; 8].into();
@@ -4258,6 +4531,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 1,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -4266,6 +4540,7 @@ mod tests {
                     inputs: vec![identity_edge(2)],
                 },
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 2,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -4376,6 +4651,7 @@ mod tests {
             stages: vec![
                 master_node(vec![identity_edge(20)]),
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 20,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
@@ -4384,6 +4660,7 @@ mod tests {
                     inputs: vec![identity_edge(10)],
                 },
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.5,
@@ -4479,6 +4756,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    processor: None,
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -4517,6 +4795,7 @@ mod tests {
         // output must be exactly double the single-path render.
         let (mut controller, mut executor) = render_plane();
         let sum_stage = |stage_id: u64| RenderStageSpec {
+            processor: None,
             stage_id,
             format: ChannelFormat::stereo(),
             gain: 1.0,
@@ -4571,6 +4850,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    processor: None,
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -4581,6 +4861,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    processor: None,
                     stage_id: MASTER_ID,
                     format: ChannelFormat {
                         channels: 4,
@@ -4637,6 +4918,7 @@ mod tests {
             master_limiter: None,
             stages: vec![
                 RenderStageSpec {
+                    processor: None,
                     stage_id: LANE_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -4647,6 +4929,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    processor: None,
                     stage_id: MASTER_ID,
                     format: ChannelFormat::mono(),
                     gain: 1.0,
@@ -4755,6 +5038,7 @@ mod tests {
                 lane_node(1, 0.5, vec![tone_clip(440.0)]),
                 lane_node(2, 0.4, vec![tone_clip(660.0)]),
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 3,
                     format: ChannelFormat::mono(),
                     gain: 0.3,
@@ -4765,6 +5049,7 @@ mod tests {
                     inputs: Vec::new(),
                 },
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 10,
                     format: ChannelFormat::stereo(),
                     gain: 0.9,

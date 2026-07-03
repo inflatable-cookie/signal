@@ -1,0 +1,329 @@
+//! Sandboxed (DedicatedSandbox tier) backend: the parent half of the
+//! shared-memory audio block bridge.
+//!
+//! The child (sandbox broker) created the region at plugin activation and
+//! runs its audio thread against it; this side attaches the same mapping,
+//! posts input blocks, and bounded-spin-waits for the child's response. A
+//! miss (budget exhausted) or a dead child bypasses: the caller's scratch is
+//! left untouched and a miss counter increments — the engine callback never
+//! blocks past the budget.
+
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::time::{Duration, Instant};
+
+use signal_ipc::{
+    MappedSharedMemoryRegion, PluginAudioBlockLayout, PluginAudioBlockView, SharedMemoryBroker,
+    SharedMemoryTransportKind, SharedMemoryTransportPayload,
+};
+use signal_render_plane::PluginBlockProcessor;
+
+/// Hard ceiling of the per-block wait budget, in microseconds.
+///
+/// The effective budget is `min(1 ms, 50 % of the block duration at the
+/// plan rate)` — see [`plugin_process_wait_budget`]. Rationale: at typical
+/// block sizes (128–1024 frames at 44.1–96 kHz, ~1.3–23 ms) half a block
+/// leaves the rest of the callback comfortably inside its deadline even if
+/// EVERY insert misses, and 1 ms caps the damage on very large blocks where
+/// half a block would be a pointless long stall.
+pub const PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS: u64 = 1_000;
+
+/// Effective bounded wait for one block: `min(1 ms, 50 % of the block
+/// duration at `sample_rate_hz`)`.
+pub fn plugin_process_wait_budget(frame_count: usize, sample_rate_hz: u32) -> Duration {
+    let half_block_micros =
+        (frame_count as u64).saturating_mul(500_000) / u64::from(sample_rate_hz.max(1));
+    Duration::from_micros(half_block_micros.min(PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS))
+}
+
+/// Parent-side shared-memory plugin processor (DedicatedSandbox tier).
+///
+/// `process` is alloc-free and lock-free: it copies the scratch into the
+/// region's input area, publishes a request stamp, spin-waits within the
+/// bounded budget for the child's response stamp, and copies the output
+/// back on success. On a miss or a dead child it leaves the scratch
+/// untouched (bypass) and increments [`Self::miss_count`].
+///
+/// One caller at a time: exactly one render executor may call `process` on
+/// a given handle (the request/response protocol is single-flight). The
+/// owning host service marks the handle dead ([`Self::mark_dead`]) when the
+/// child process dies, so subsequent blocks bypass immediately without
+/// burning their wait budget.
+pub struct ShmPluginProcessor {
+    /// Keeps the mapping alive for the view's lifetime. Never read directly.
+    _region: MappedSharedMemoryRegion,
+    view: PluginAudioBlockView,
+    layout: PluginAudioBlockLayout,
+    sample_rate_hz: u32,
+    /// Last request stamp published by this side.
+    request_counter: AtomicU32,
+    /// Blocks bypassed on budget miss or dead child.
+    misses: AtomicU64,
+    /// Cleared by the owning service on child death.
+    alive: AtomicBool,
+}
+
+impl ShmPluginProcessor {
+    /// Attach the audio block region the sandbox child leased at plugin
+    /// activation. `sample_rate_hz` is the rate the plugin was activated at
+    /// (it scales the wait budget).
+    pub fn attach(
+        region_id: &str,
+        shm_path: &str,
+        shm_bytes: u32,
+        max_frames: u32,
+        channels: u32,
+        sample_rate_hz: u32,
+    ) -> Result<Self, String> {
+        let layout = PluginAudioBlockLayout {
+            max_frames,
+            channels,
+        };
+        if layout.region_bytes() != shm_bytes {
+            return Err(format!(
+                "audio block region size mismatch: lease says {shm_bytes} bytes, layout needs {}",
+                layout.region_bytes(),
+            ));
+        }
+        let transport = SharedMemoryTransportPayload {
+            region_id: region_id.to_string(),
+            transport_kind: SharedMemoryTransportKind::MappedFile,
+            backing_path: shm_path.to_string(),
+            total_bytes: shm_bytes,
+        };
+        let broker = SharedMemoryBroker::default();
+        let mut region = broker
+            .attach_region(&transport)
+            .map_err(|error| error.to_string())?;
+        // Safety: the mapping lives in `_region` for the processor's whole
+        // lifetime and is exactly `layout.region_bytes()` long (validated
+        // by the attach path).
+        let view = unsafe { PluginAudioBlockView::new(region.as_mut_slice().as_mut_ptr(), layout) };
+        let request_counter = AtomicU32::new(view.request_seq().load(Ordering::Acquire));
+        Ok(Self {
+            _region: region,
+            view,
+            layout,
+            sample_rate_hz,
+            request_counter,
+            misses: AtomicU64::new(0),
+            alive: AtomicBool::new(true),
+        })
+    }
+
+    /// Blocks bypassed so far (budget miss or dead child), cumulative.
+    pub fn miss_count(&self) -> u64 {
+        self.misses.load(Ordering::Relaxed)
+    }
+
+    /// Mark the backend dead (child process gone): every subsequent block
+    /// bypasses immediately without waiting.
+    pub fn mark_dead(&self) {
+        self.alive.store(false, Ordering::Relaxed);
+    }
+
+    /// Whether the backend still considers its child alive.
+    pub fn is_alive(&self) -> bool {
+        self.alive.load(Ordering::Relaxed)
+    }
+}
+
+impl PluginBlockProcessor for ShmPluginProcessor {
+    fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        if !self.alive.load(Ordering::Relaxed) {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        }
+        // v1 hosts stereo blocks only; anything else bypasses (the plan
+        // compiled a format the bridge does not carry).
+        if channels != self.layout.channels as usize
+            || frame_count > self.layout.max_frames as usize
+        {
+            self.misses.fetch_add(1, Ordering::Relaxed);
+            return false;
+        }
+        let samples = frame_count * channels;
+        // Safety: single-flight — the previous request has completed or
+        // timed out; the child only reads input after a fresh request stamp.
+        unsafe { self.view.write_input(&scratch[..samples]) };
+        self.view
+            .frame_count()
+            .store(frame_count as u32, Ordering::Relaxed);
+        let request = self.request_counter.fetch_add(1, Ordering::Relaxed) + 1;
+        self.view.request_seq().store(request, Ordering::Release);
+
+        let budget = plugin_process_wait_budget(frame_count, self.sample_rate_hz);
+        let deadline = Instant::now() + budget;
+        loop {
+            if self.view.response_seq().load(Ordering::Acquire) == request {
+                // Safety: response observed with acquire ordering — the
+                // child's output write happened-before this read.
+                unsafe { self.view.read_output(&mut scratch[..samples]) };
+                return true;
+            }
+            if Instant::now() >= deadline {
+                self.misses.fetch_add(1, Ordering::Relaxed);
+                return false;
+            }
+            std::hint::spin_loop();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use signal_render_plane::RenderPluginProcessor;
+    use std::sync::Arc;
+
+    fn test_region(
+        layout: PluginAudioBlockLayout,
+    ) -> (SharedMemoryBroker, MappedSharedMemoryRegion) {
+        let broker = SharedMemoryBroker::default();
+        let region = broker
+            .create_region("bridge-test", layout.region_bytes())
+            .expect("test region should create");
+        (broker, region)
+    }
+
+    #[test]
+    fn wait_budget_is_half_a_block_capped_at_one_millisecond() {
+        // 128 frames at 48 kHz ≈ 2.67 ms block → half = ~1333 µs → capped.
+        assert_eq!(
+            plugin_process_wait_budget(128, 48_000),
+            Duration::from_micros(1_000)
+        );
+        // 64 frames at 48 kHz ≈ 1.33 ms block → half ≈ 666 µs.
+        assert_eq!(
+            plugin_process_wait_budget(64, 48_000),
+            Duration::from_micros(666)
+        );
+        // Tiny blocks: budget shrinks with the block.
+        assert!(plugin_process_wait_budget(16, 96_000) < Duration::from_micros(100));
+    }
+
+    #[test]
+    fn unanswered_request_misses_within_budget_and_leaves_scratch_untouched() {
+        let layout = PluginAudioBlockLayout {
+            max_frames: 256,
+            channels: 2,
+        };
+        let (broker, mut region) = test_region(layout);
+        let metadata = region.metadata().clone();
+        // Child-side init, then nobody serves requests (a fake handle that
+        // never responds).
+        let child_view =
+            unsafe { PluginAudioBlockView::new(region.as_mut_slice().as_mut_ptr(), layout) };
+        child_view.initialize();
+
+        let processor = ShmPluginProcessor::attach(
+            &metadata.region_id,
+            &metadata.backing_path,
+            metadata.total_bytes,
+            256,
+            2,
+            48_000,
+        )
+        .expect("attach should succeed");
+
+        let mut scratch: Vec<f32> = (0..256).map(|index| index as f32).collect();
+        let reference = scratch.clone();
+        let budget = plugin_process_wait_budget(128, 48_000);
+        let start = Instant::now();
+        let processed = processor.process(&mut scratch, 128, 2);
+        let elapsed = start.elapsed();
+        assert!(!processed, "no child: the block must miss");
+        assert_eq!(
+            scratch, reference,
+            "missed block must leave scratch untouched"
+        );
+        assert_eq!(processor.miss_count(), 1);
+        // The wait respected its budget (generous ceiling for CI jitter).
+        assert!(
+            elapsed < budget + Duration::from_millis(10),
+            "bounded wait overran: {elapsed:?} vs budget {budget:?}",
+        );
+
+        // Dead child: bypass is immediate.
+        processor.mark_dead();
+        let start = Instant::now();
+        assert!(!processor.process(&mut scratch, 128, 2));
+        assert!(start.elapsed() < Duration::from_millis(2));
+        assert_eq!(processor.miss_count(), 2);
+
+        drop(processor);
+        drop(region);
+        let _ = broker.destroy_region(&metadata);
+    }
+
+    #[test]
+    fn served_request_round_trips_through_the_region() {
+        let layout = PluginAudioBlockLayout {
+            max_frames: 64,
+            channels: 2,
+        };
+        let (broker, mut region) = test_region(layout);
+        let metadata = region.metadata().clone();
+        let child_view =
+            unsafe { PluginAudioBlockView::new(region.as_mut_slice().as_mut_ptr(), layout) };
+        child_view.initialize();
+
+        let processor = Arc::new(
+            ShmPluginProcessor::attach(
+                &metadata.region_id,
+                &metadata.backing_path,
+                metadata.total_bytes,
+                64,
+                2,
+                48_000,
+            )
+            .expect("attach should succeed"),
+        );
+        let handle = RenderPluginProcessor::new(Arc::clone(&processor) as Arc<_>);
+
+        // Fake child thread: serve exactly one request by doubling samples.
+        let server = std::thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(2);
+            loop {
+                let request = child_view.request_seq().load(Ordering::Acquire);
+                if request != child_view.response_seq().load(Ordering::Relaxed) {
+                    let frames = child_view.frame_count().load(Ordering::Relaxed) as usize;
+                    let mut samples = vec![0.0f32; frames * 2];
+                    unsafe { child_view.read_input(&mut samples) };
+                    for sample in &mut samples {
+                        *sample *= 2.0;
+                    }
+                    unsafe { child_view.write_output(&samples) };
+                    child_view.response_seq().store(request, Ordering::Release);
+                    return;
+                }
+                assert!(Instant::now() < deadline, "server never saw a request");
+                std::thread::yield_now();
+            }
+        });
+
+        let mut scratch: Vec<f32> = (0..64).map(|index| index as f32 / 64.0).collect();
+        let reference = scratch.clone();
+        // The server may take a scheduler quantum to see the request; retry
+        // a few blocks like the engine would (each miss bypasses cleanly).
+        let mut processed = false;
+        for _ in 0..200 {
+            if handle.process(&mut scratch, 32, 2) {
+                processed = true;
+                break;
+            }
+        }
+        assert!(processed, "server should have answered within retries");
+        for (index, (output, input)) in scratch.iter().zip(reference.iter()).enumerate() {
+            assert!(
+                (output - input * 2.0).abs() < 1e-7,
+                "sample {index}: {output} vs {input} * 2",
+            );
+        }
+        server.join().expect("server thread joins");
+
+        drop(handle);
+        drop(processor);
+        drop(region);
+        let _ = broker.destroy_region(&metadata);
+    }
+}

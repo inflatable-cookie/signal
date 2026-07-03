@@ -43,6 +43,7 @@ fn tone_plan() -> RenderPlanSpec {
         master_limiter: None,
         stages: vec![
             RenderStageSpec {
+                processor: None,
                 stage_id: LANE_ID,
                 format: ChannelFormat::stereo(),
                 gain: 0.5,
@@ -61,6 +62,7 @@ fn tone_plan() -> RenderPlanSpec {
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                processor: None,
                 stage_id: NOTES_LANE_ID,
                 format: ChannelFormat::stereo(),
                 gain: 0.3,
@@ -79,6 +81,7 @@ fn tone_plan() -> RenderPlanSpec {
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                processor: None,
                 stage_id: MASTER_ID,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,

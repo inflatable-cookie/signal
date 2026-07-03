@@ -16,6 +16,7 @@
 
 #![warn(missing_docs)]
 
+mod plugin_audio_block;
 mod plugin_protocol;
 mod runtime_message;
 mod shared_memory;
@@ -23,6 +24,9 @@ mod shared_memory;
 #[cfg(test)]
 mod tests;
 
+pub use plugin_audio_block::{
+    PluginAudioBlockLayout, PluginAudioBlockView, PLUGIN_AUDIO_BLOCK_HEADER_BYTES,
+};
 pub use plugin_protocol::{
     PluginDescriptorPayload, PluginFaultPayload, PluginInstanceStatePayload, PluginIoLayoutPayload,
     PluginMessageEnvelope, PluginMessageName, PluginMessagePayload,

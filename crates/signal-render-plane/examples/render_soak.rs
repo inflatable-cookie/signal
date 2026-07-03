@@ -19,10 +19,29 @@ use signal_dsp::equal_power_pan_matrix;
 use signal_hardware::{OutputStreamBackend, OutputStreamSpec};
 use signal_hardware_cpal::CpalOutputBackend;
 use signal_render_plane::{
-    render_live_input, render_plane, ChannelFormat, RenderClipSpec, RenderEdgeSpec, RenderNote,
-    RenderNoteBuffer, RenderPlanSpec, RenderSource, RenderStageKind, RenderStageSpec,
-    LIVE_INPUT_DEFAULT_CAPACITY_FRAMES,
+    render_live_input, render_plane, ChannelFormat, PluginBlockProcessor, RenderClipSpec,
+    RenderEdgeSpec, RenderNote, RenderNoteBuffer, RenderPlanSpec, RenderPluginProcessor,
+    RenderSource, RenderStageKind, RenderStageSpec, LIVE_INPUT_DEFAULT_CAPACITY_FRAMES,
 };
+
+/// Fake plugin backend for the soak (g11.012): an in-process gain transform
+/// with the exact call shape of a live plugin handle. Runs inside the
+/// measured callback, so the processor-attached path is covered by the
+/// zero-alloc proof without needing a child process.
+struct SoakGainProcessor {
+    gain: f32,
+    calls: AtomicU64,
+}
+
+impl PluginBlockProcessor for SoakGainProcessor {
+    fn process(&self, scratch: &mut [f32], frame_count: usize, channels: usize) -> bool {
+        self.calls.fetch_add(1, Ordering::Relaxed);
+        for sample in &mut scratch[..frame_count * channels] {
+            *sample *= self.gain;
+        }
+        true
+    }
+}
 
 static IN_CALLBACK: AtomicBool = AtomicBool::new(false);
 static CALLBACK_ALLOCS: AtomicU64 = AtomicU64::new(0);
@@ -51,6 +70,7 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 fn tone_lane(stage_id: u64, gain: f32, frequency_hz: f32) -> RenderStageSpec {
     RenderStageSpec {
+        processor: None,
         stage_id,
         format: ChannelFormat::stereo(),
         gain,
@@ -81,6 +101,7 @@ fn notes_lane(stage_id: u64, gain: f32) -> RenderStageSpec {
         })
         .collect();
     RenderStageSpec {
+        processor: None,
         stage_id,
         format: ChannelFormat::stereo(),
         gain,
@@ -153,6 +174,15 @@ fn main() {
         .set_stream_channels(stream.channels())
         .expect("record stream channels");
 
+    // Plugin insert on the Sum stage: the fake gain backend runs inside the
+    // measured callback (zero-alloc proof covers the processor path).
+    let soak_processor = std::sync::Arc::new(SoakGainProcessor {
+        gain: 0.8,
+        calls: AtomicU64::new(0),
+    });
+    let soak_processor_handle =
+        RenderPluginProcessor::new(std::sync::Arc::clone(&soak_processor) as std::sync::Arc<_>);
+
     // Bussed plan: lanes a (440 Hz, panned hard left) and b (660 Hz, hard
     // right) feed a Sum stage through equal-power pan matrices; it feeds the
     // master through an identity edge.
@@ -169,6 +199,7 @@ fn main() {
             // Live monitor lane: drains the input feeder's ring inside the
             // measured callback (must stay alloc-free like every source).
             RenderStageSpec {
+                processor: None,
                 stage_id: 4,
                 format: ChannelFormat::stereo(),
                 gain: 0.3,
@@ -185,6 +216,7 @@ fn main() {
                 inputs: Vec::new(),
             },
             RenderStageSpec {
+                processor: Some(soak_processor_handle),
                 stage_id: 10,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -204,6 +236,7 @@ fn main() {
                 ],
             },
             RenderStageSpec {
+                processor: None,
                 stage_id: 100,
                 format: ChannelFormat::stereo(),
                 gain: 1.0,
@@ -254,6 +287,7 @@ fn main() {
             stages: vec![
                 tone_lane(3, 0.5, 220.0),
                 RenderStageSpec {
+                    processor: None,
                     stage_id: 100,
                     format: ChannelFormat::stereo(),
                     gain: 1.0,
@@ -300,5 +334,11 @@ fn main() {
     println!("callback allocations: {allocs}, deallocations: {deallocs}");
     assert_eq!(allocs, 0, "render path must not allocate");
     assert_eq!(deallocs, 0, "render path must not deallocate");
-    println!("soak passed: audible, summed, transport-gated, zero-alloc callback");
+    let processor_calls = soak_processor.calls.load(Ordering::Relaxed);
+    println!("plugin processor calls inside the callback: {processor_calls}");
+    assert!(
+        processor_calls > 0,
+        "processor-attached Sum stage must have run in the soak",
+    );
+    println!("soak passed: audible, summed, plugin-inserted, transport-gated, zero-alloc callback");
 }

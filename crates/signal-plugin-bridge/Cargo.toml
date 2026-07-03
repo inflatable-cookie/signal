@@ -1,11 +1,11 @@
 [package]
-name = "signal-plugin-sandbox"
+name = "signal-plugin-bridge"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 publish = false
-description = "Out-of-process plugin container shell for Signal."
+description = "Host-side plugin processing backends: sandboxed shared-memory bridge and in-process FFI, behind the render plane's placement-agnostic processor handle."
 
 [lints]
 workspace = true
@@ -14,8 +14,4 @@ workspace = true
 signal-ipc = { workspace = true }
 signal-plugin = { workspace = true }
 signal-plugin-clap = { workspace = true }
-
-[dev-dependencies]
-signal-plugin-bridge = { workspace = true }
 signal-render-plane = { workspace = true }
-signal-runtime = { workspace = true }

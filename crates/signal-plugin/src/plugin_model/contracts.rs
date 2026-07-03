@@ -26,6 +26,27 @@ pub enum SandboxPolicy {
     Disabled,
 }
 
+/// User-chosen isolation tier for a hosted plugin instance (g11.012).
+///
+/// Isolation is configuration, not architecture: a global host preference
+/// with per-plugin overrides selects how much process isolation a plugin
+/// gets, trading crash protection against per-block transport overhead.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PluginIsolationTier {
+    /// Plugin code runs in the host process; `process()` is a direct FFI
+    /// call on the audio thread. No crash isolation — a plugin crash takes
+    /// the host down. Lowest overhead.
+    InProcess,
+    /// One shared sandbox process hosts many plugin instances. Crash
+    /// isolation from the host, shared blast radius between plugins.
+    /// Modeled now, unimplemented in v1: instantiation returns a typed
+    /// rejection.
+    SharedSandbox,
+    /// One sandbox process per plugin instance (v1 default): full crash
+    /// isolation, one shm round-trip of overhead per block.
+    DedicatedSandbox,
+}
+
 /// Format-specific string identifier for a plugin type (e.g. a CLAP plugin ID).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PluginTypeId(pub String);

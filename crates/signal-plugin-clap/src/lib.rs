@@ -1,9 +1,10 @@
-//! CLAP plugin discovery for Signal.
+//! CLAP plugin discovery and child-side hosting for Signal.
 //!
 //! Performs real `clap-sys`/`libloading` FFI against CLAP shared libraries on
 //! disk: factory enumeration by default, with explicitly opt-in in-process
-//! capability probing. No hosting, lifecycle, or processing surfaces live
-//! here — those belong to the future sandboxed hosting program.
+//! capability probing. The hosting surfaces ([`ClapHostedInstance`]:
+//! instance lifecycle + processing) are for the sandbox CHILD process only —
+//! the parent host never loads plugin code in-process.
 
 #![warn(missing_docs)]
 // The discovery module is dense FFI where nearly every line is an unsafe
@@ -13,8 +14,14 @@
 
 mod adapter;
 mod discovery;
+#[doc(hidden)]
+pub mod fixture;
+mod hosting;
 
 pub use adapter::{ClapDiscoveredPluginType, ClapHostExtension, ClapPluginHostAdapter};
+pub use hosting::{
+    ClapHostedInstance, ClapHostedPortLayout, ClapHostingError, ClapProcessSession, LoadedClapEntry,
+};
 
 #[cfg(test)]
 #[path = "tests.rs"]

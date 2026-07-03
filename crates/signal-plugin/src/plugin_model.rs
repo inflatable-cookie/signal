@@ -3,8 +3,8 @@ mod runtime_state;
 
 pub use contracts::{
     PluginAudioBusDescriptor, PluginAudioBusDirection, PluginDescriptor, PluginFeature,
-    PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginLifecycleState,
-    PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags,
+    PluginFormat, PluginIoLayout, PluginIsolationTier, PluginLifecycleContract,
+    PluginLifecycleState, PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags,
     PluginProcessConfiguration, PluginProcessingContract, PluginStateContract, PluginTypeId,
     SandboxPolicy,
 };

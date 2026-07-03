@@ -55,6 +55,21 @@ pub enum SandboxBrokerReceiptState {
     TimedOut,
     /// A teardown sequence completed.
     TeardownComplete,
+    /// A CLAP plugin was loaded and its inventory enumerated (g11.012).
+    PluginLoaded,
+    /// The loaded plugin activated and leased its audio block region.
+    PluginActivated,
+    /// The plugin's main-port layout is outside the supported v1 shape
+    /// (stereo in + stereo out); the chain compiles passthrough.
+    LayoutUnsupported,
+    /// The child's audio thread is live and serving process requests.
+    ProcessingStarted,
+    /// The child's audio thread stopped.
+    ProcessingStopped,
+    /// The plugin deactivated and its audio block region was destroyed.
+    PluginDeactivated,
+    /// The plugin instance was destroyed and its library closed.
+    PluginUnloaded,
     /// Any state token this client does not recognise.
     Other(String),
 }
@@ -69,6 +84,13 @@ impl SandboxBrokerReceiptState {
             "crashed" => Self::Crashed,
             "timed_out" => Self::TimedOut,
             "teardown_complete" => Self::TeardownComplete,
+            "plugin_loaded" => Self::PluginLoaded,
+            "plugin_activated" => Self::PluginActivated,
+            "layout_unsupported" => Self::LayoutUnsupported,
+            "processing_started" => Self::ProcessingStarted,
+            "processing_stopped" => Self::ProcessingStopped,
+            "plugin_deactivated" => Self::PluginDeactivated,
+            "plugin_unloaded" => Self::PluginUnloaded,
             other => Self::Other(other.to_string()),
         }
     }
@@ -84,6 +106,13 @@ impl std::fmt::Display for SandboxBrokerReceiptState {
             Self::Crashed => "crashed",
             Self::TimedOut => "timed_out",
             Self::TeardownComplete => "teardown_complete",
+            Self::PluginLoaded => "plugin_loaded",
+            Self::PluginActivated => "plugin_activated",
+            Self::LayoutUnsupported => "layout_unsupported",
+            Self::ProcessingStarted => "processing_started",
+            Self::ProcessingStopped => "processing_stopped",
+            Self::PluginDeactivated => "plugin_deactivated",
+            Self::PluginUnloaded => "plugin_unloaded",
             Self::Other(other) => other.as_str(),
         };
         f.write_str(token)
@@ -98,7 +127,120 @@ struct SandboxBrokerReceiptLine {
     processing_epoch: Option<u64>,
     lease_id: Option<String>,
     region_id: Option<String>,
+    /// Extra `key=value` tokens (plugin inventory, shm coordinates);
+    /// values remain wire-encoded until interpreted.
+    extra: Vec<(String, String)>,
     detail: String,
+}
+
+impl SandboxBrokerReceiptLine {
+    fn extra_value(&self, key: &str) -> Option<&str> {
+        self.extra
+            .iter()
+            .find(|(extra_key, _)| extra_key == key)
+            .map(|(_, value)| value.as_str())
+    }
+}
+
+/// One plugin parameter from the child's load-time inventory (read-only
+/// phase 1).
+#[derive(Clone, Debug, PartialEq)]
+pub struct SandboxPluginParameter {
+    /// Stable CLAP parameter id.
+    pub parameter_id: u32,
+    /// Human-readable parameter name.
+    pub name: String,
+    /// Minimum plain value.
+    pub min_value: f32,
+    /// Maximum plain value.
+    pub max_value: f32,
+    /// Default value (normalized).
+    pub default_value: f32,
+}
+
+/// Receipt of a successful `load-plugin`: the child's parameter inventory
+/// and port summary.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SandboxPluginInventory {
+    /// Parameters enumerated by the child at load.
+    pub parameters: Vec<SandboxPluginParameter>,
+    /// Human-readable detail from the receipt.
+    pub detail: String,
+}
+
+/// Receipt of a successful `activate`: everything the parent needs to attach
+/// the shared-memory audio block region.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SandboxPluginAudioLease {
+    /// Region identifier assigned by the child's shared-memory broker.
+    pub region_id: String,
+    /// Lease identifier for the audio block region.
+    pub lease_id: String,
+    /// Filesystem path of the region's backing file.
+    pub shm_path: String,
+    /// Total region size in bytes.
+    pub shm_bytes: u32,
+    /// Largest block the region carries.
+    pub max_frames: u32,
+    /// Interleaved channel count (2 in v1).
+    pub channels: u32,
+    /// Human-readable detail from the receipt.
+    pub detail: String,
+}
+
+/// Outcome of an `activate` request.
+#[derive(Clone, Debug, PartialEq)]
+pub enum SandboxPluginActivateOutcome {
+    /// The plugin activated; the audio block region is ready to attach.
+    Activated(SandboxPluginAudioLease),
+    /// The plugin's main-port layout is unsupported in phase 1; the caller
+    /// should compile the chain as passthrough.
+    LayoutUnsupported {
+        /// Human-readable detail from the receipt.
+        detail: String,
+    },
+}
+
+/// Decode a wire-encoded token value (see the broker's `encode_wire_token`).
+fn decode_wire_token(value: &str) -> String {
+    let mut decoded = Vec::with_capacity(value.len());
+    let bytes = value.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 3 <= bytes.len() {
+            let hex = value.get(index + 1..index + 3);
+            if let Some(byte) = hex.and_then(|hex| u8::from_str_radix(hex, 16).ok()) {
+                decoded.push(byte);
+                index += 3;
+                continue;
+            }
+        }
+        decoded.push(bytes[index]);
+        index += 1;
+    }
+    String::from_utf8_lossy(&decoded).into_owned()
+}
+
+/// Parse the `params=` inventory blob: `id:name:min:max:default;...`.
+fn parse_parameter_inventory(blob: &str) -> Vec<SandboxPluginParameter> {
+    blob.split(';')
+        .filter(|entry| !entry.is_empty())
+        .filter_map(|entry| {
+            let mut fields = entry.split(':');
+            let parameter_id = fields.next()?.parse::<u32>().ok()?;
+            let name = decode_wire_token(fields.next()?);
+            let min_value = fields.next()?.parse::<f32>().ok()?;
+            let max_value = fields.next()?.parse::<f32>().ok()?;
+            let default_value = fields.next()?.parse::<f32>().ok()?;
+            Some(SandboxPluginParameter {
+                parameter_id,
+                name,
+                min_value,
+                max_value,
+                default_value,
+            })
+        })
+        .collect()
 }
 
 /// Receipt returned by a broker teardown request.
@@ -254,6 +396,18 @@ impl SandboxBrokerClientSession {
             .ok()
             .map(|value| split_broker_args(&value))
             .unwrap_or_default();
+        Self::spawn_command(&command, &args, config)
+    }
+
+    /// Spawns a sandbox broker child process from an explicit command line
+    /// (hosts that know their broker binary path use this instead of the
+    /// environment-variable configuration; the same env fallbacks apply for
+    /// workdir and read timeout).
+    pub fn spawn_command(
+        command: &str,
+        args: &[String],
+        config: &SandboxBrokerSpawnConfig,
+    ) -> Result<Self, RuntimeError> {
         let read_timeout = config
             .read_timeout_ms
             .or_else(|| {
@@ -264,7 +418,7 @@ impl SandboxBrokerClientSession {
             .map(Duration::from_millis)
             .unwrap_or(DEFAULT_BROKER_READ_TIMEOUT);
 
-        let mut process = Command::new(&command);
+        let mut process = Command::new(command);
         process
             .args(args)
             .stdin(Stdio::piped())
@@ -500,6 +654,169 @@ impl SandboxBrokerClientSession {
                 other, reattached.detail
             ))),
         }
+    }
+
+    /// Kill the child broker process and mark the session failed. The
+    /// crash-isolation escape hatch for a wedged or misbehaving child;
+    /// subsequent commands fail fast.
+    pub fn kill(&mut self) {
+        self.mark_failed();
+    }
+
+    /// Whether the child broker process is still alive. `false` after the
+    /// session failed (timeout/torn pipe kills the child) or the child
+    /// exited on its own — the crash-isolation signal callers key bypass on.
+    pub fn is_alive(&mut self) -> bool {
+        if self.failed {
+            return false;
+        }
+        match self.child.try_wait() {
+            Ok(None) => true,
+            Ok(Some(_)) | Err(_) => false,
+        }
+    }
+
+    /// Sends `load-plugin` and returns the child's parameter inventory.
+    ///
+    /// The v1 wire format is whitespace-separated: library paths containing
+    /// whitespace are rejected here rather than corrupting the command line.
+    pub fn load_plugin(
+        &mut self,
+        library_path: &str,
+        plugin_id: &str,
+    ) -> std::io::Result<SandboxPluginInventory> {
+        if library_path.chars().any(char::is_whitespace)
+            || plugin_id.chars().any(char::is_whitespace)
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "plugin library paths and ids with whitespace are unsupported by the v1 broker wire format",
+            ));
+        }
+        self.write_command(&format!("load-plugin {library_path} {plugin_id}"))?;
+        let receipt = self.read_receipt()?;
+        if receipt.state != SandboxBrokerReceiptState::PluginLoaded {
+            return Err(std::io::Error::other(format!(
+                "unexpected broker load-plugin state: {} ({})",
+                receipt.state, receipt.detail
+            )));
+        }
+        let parameters = receipt
+            .extra_value("params")
+            .map(parse_parameter_inventory)
+            .unwrap_or_default();
+        Ok(SandboxPluginInventory {
+            parameters,
+            detail: receipt.detail,
+        })
+    }
+
+    /// Sends `activate` and returns either the audio block lease or the
+    /// typed layout rejection.
+    pub fn activate_plugin(
+        &mut self,
+        sample_rate_hz: u32,
+        min_frames: u32,
+        max_frames: u32,
+    ) -> std::io::Result<SandboxPluginActivateOutcome> {
+        self.write_command(&format!(
+            "activate {sample_rate_hz} {min_frames} {max_frames}"
+        ))?;
+        let receipt = self.read_receipt()?;
+        match receipt.state {
+            SandboxBrokerReceiptState::PluginActivated => {
+                let shm_path = receipt
+                    .extra_value("shm_path")
+                    .map(decode_wire_token)
+                    .ok_or_else(|| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "plugin_activated receipt missing shm_path",
+                        )
+                    })?;
+                let shm_bytes = receipt
+                    .extra_value("shm_bytes")
+                    .and_then(|value| value.parse::<u32>().ok())
+                    .ok_or_else(|| {
+                        std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "plugin_activated receipt missing shm_bytes",
+                        )
+                    })?;
+                let lease_max_frames = receipt
+                    .extra_value("max_frames")
+                    .and_then(|value| value.parse::<u32>().ok())
+                    .unwrap_or(max_frames);
+                let channels = receipt
+                    .extra_value("channels")
+                    .and_then(|value| value.parse::<u32>().ok())
+                    .unwrap_or(2);
+                Ok(SandboxPluginActivateOutcome::Activated(
+                    SandboxPluginAudioLease {
+                        region_id: receipt.region_id.unwrap_or_default(),
+                        lease_id: receipt.lease_id.unwrap_or_default(),
+                        shm_path,
+                        shm_bytes,
+                        max_frames: lease_max_frames,
+                        channels,
+                        detail: receipt.detail,
+                    },
+                ))
+            }
+            SandboxBrokerReceiptState::LayoutUnsupported => {
+                Ok(SandboxPluginActivateOutcome::LayoutUnsupported {
+                    detail: receipt.detail,
+                })
+            }
+            other => Err(std::io::Error::other(format!(
+                "unexpected broker activate state: {} ({})",
+                other, receipt.detail
+            ))),
+        }
+    }
+
+    fn simple_plugin_command(
+        &mut self,
+        command: &str,
+        expected: SandboxBrokerReceiptState,
+    ) -> std::io::Result<String> {
+        self.write_command(command)?;
+        let receipt = self.read_receipt()?;
+        if receipt.state != expected {
+            return Err(std::io::Error::other(format!(
+                "unexpected broker {command} state: {} ({})",
+                receipt.state, receipt.detail
+            )));
+        }
+        Ok(receipt.detail)
+    }
+
+    /// Sends `start-processing`: the child spawns its audio thread.
+    pub fn start_processing(&mut self) -> std::io::Result<String> {
+        self.simple_plugin_command(
+            "start-processing",
+            SandboxBrokerReceiptState::ProcessingStarted,
+        )
+    }
+
+    /// Sends `stop-processing`: the child stops and joins its audio thread.
+    pub fn stop_processing(&mut self) -> std::io::Result<String> {
+        self.simple_plugin_command(
+            "stop-processing",
+            SandboxBrokerReceiptState::ProcessingStopped,
+        )
+    }
+
+    /// Sends `deactivate`: the child deactivates the plugin and destroys the
+    /// audio block region (any parent mapping goes stale first — detach
+    /// before calling this).
+    pub fn deactivate_plugin(&mut self) -> std::io::Result<String> {
+        self.simple_plugin_command("deactivate", SandboxBrokerReceiptState::PluginDeactivated)
+    }
+
+    /// Sends `unload-plugin`: full plugin teardown in the child.
+    pub fn unload_plugin(&mut self) -> std::io::Result<String> {
+        self.simple_plugin_command("unload-plugin", SandboxBrokerReceiptState::PluginUnloaded)
     }
 
     /// Sends a shutdown command, reads the final receipt, and waits for the child process to exit.
@@ -978,6 +1295,7 @@ fn parse_broker_receipt_line(line: &str) -> std::io::Result<SandboxBrokerReceipt
     let mut processing_epoch = None;
     let mut lease_id = None;
     let mut region_id = None;
+    let mut extra = Vec::new();
     let mut detail = None;
 
     for token in line.split_whitespace().skip(1) {
@@ -992,7 +1310,7 @@ fn parse_broker_receipt_line(line: &str) -> std::io::Result<SandboxBrokerReceipt
             "lease_id" if value != "-" => lease_id = Some(value.to_string()),
             "region_id" if value != "-" => region_id = Some(value.to_string()),
             "detail" => detail = Some(value.to_string()),
-            _ => {}
+            other => extra.push((other.to_string(), value.to_string())),
         }
     }
 
@@ -1013,6 +1331,7 @@ fn parse_broker_receipt_line(line: &str) -> std::io::Result<SandboxBrokerReceipt
         processing_epoch,
         lease_id,
         region_id,
+        extra,
         detail: detail.ok_or_else(|| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,

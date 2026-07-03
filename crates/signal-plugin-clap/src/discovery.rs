@@ -5,6 +5,8 @@ use std::{
     ptr,
 };
 
+use crate::hosting::LoadedClapEntry;
+
 use clap_sys::{
     entry::clap_plugin_entry,
     ext::{
@@ -32,7 +34,6 @@ use clap_sys::{
     },
     version::clap_version,
 };
-use libloading::Library;
 use signal_plugin::{
     PluginAudioBusDescriptor, PluginAudioBusDirection, PluginDescriptor, PluginFeature,
     PluginFormat, PluginIoLayout, PluginLifecycleContract, PluginParameterDescriptor,
@@ -138,28 +139,11 @@ fn discover_from_clap_library(
     library_path: &Path,
     probe_capabilities: bool,
 ) -> Option<Vec<ClapDiscoveredPluginType>> {
-    let library = unsafe { Library::new(library_path).ok()? };
-    let entry_symbol = unsafe {
-        library
-            .get::<*const clap_plugin_entry>(b"clap_entry\0")
-            .ok()?
-    };
-    let entry = unsafe { &**entry_symbol };
-    let plugin_path = CString::new(library_path.to_string_lossy().to_string()).ok()?;
-
-    if let Some(init) = entry.init {
-        if !unsafe { init(plugin_path.as_ptr()) } {
-            return None;
-        }
-    }
-
-    let discovered = unsafe { discover_from_entry(*entry, library_path, probe_capabilities) };
-
-    if let Some(deinit) = entry.deinit {
-        unsafe { deinit() };
-    }
-
-    Some(discovered)
+    // Entry loading is shared with hosting (`hosting::LoadedClapEntry`):
+    // discovery and the sandbox child dlopen and initialize CLAP entries
+    // through the same path. The entry deinitializes on drop.
+    let entry = LoadedClapEntry::load(library_path).ok()?;
+    Some(unsafe { discover_from_entry(entry.entry(), library_path, probe_capabilities) })
 }
 
 unsafe fn discover_from_entry(
@@ -359,10 +343,13 @@ unsafe fn plugin_io_and_parameter_summary(
     summary
 }
 
-unsafe fn audio_buses_from_extension(
+/// Audio bus list alias shared with the hosting module.
+pub(crate) type PluginAudioBusDescriptorList = Vec<PluginAudioBusDescriptor>;
+
+pub(crate) unsafe fn audio_buses_from_extension(
     plugin: *const clap_sys::plugin::clap_plugin,
     extension: *const clap_plugin_audio_ports,
-) -> Vec<PluginAudioBusDescriptor> {
+) -> PluginAudioBusDescriptorList {
     let Some(count) = (*extension).count else {
         return Vec::new();
     };
@@ -416,7 +403,7 @@ unsafe fn note_port_count(
     discovered
 }
 
-unsafe fn parameter_descriptors_from_extension(
+pub(crate) unsafe fn parameter_descriptors_from_extension(
     plugin: *const clap_sys::plugin::clap_plugin,
     extension: *const clap_plugin_params,
 ) -> Vec<PluginParameterDescriptor> {

@@ -46,10 +46,10 @@ pub use plugin_event_reports::{EventPacketSummary, ParameterAutomationSummary};
 pub use plugin_model::{
     PluginAudioBusDescriptor, PluginAudioBusDirection, PluginDegradedReason, PluginDescriptor,
     PluginFault, PluginFaultKind, PluginFaultSeverity, PluginFeature, PluginFormat,
-    PluginInstanceId, PluginInstanceSnapshot, PluginIoLayout, PluginLifecycleContract,
-    PluginLifecycleState, PluginParameterDescriptor, PluginParameterDomain, PluginParameterFlags,
-    PluginProcessConfiguration, PluginProcessingContract, PluginReadiness, PluginStateContract,
-    PluginTypeId, SandboxPolicy,
+    PluginInstanceId, PluginInstanceSnapshot, PluginIoLayout, PluginIsolationTier,
+    PluginLifecycleContract, PluginLifecycleState, PluginParameterDescriptor,
+    PluginParameterDomain, PluginParameterFlags, PluginProcessConfiguration,
+    PluginProcessingContract, PluginReadiness, PluginStateContract, PluginTypeId, SandboxPolicy,
 };
 pub use sandbox_protocol::{
     LoopRange, PluginRenderContext, PluginSandboxCapabilities, PluginSandboxError,

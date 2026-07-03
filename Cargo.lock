@@ -971,6 +971,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "signal-plugin-bridge"
+version = "0.1.0"
+dependencies = [
+ "signal-ipc",
+ "signal-plugin",
+ "signal-plugin-clap",
+ "signal-render-plane",
+]
+
+[[package]]
 name = "signal-plugin-clap"
 version = "0.1.0"
 dependencies = [
@@ -999,6 +1009,11 @@ name = "signal-plugin-sandbox"
 version = "0.1.0"
 dependencies = [
  "signal-ipc",
+ "signal-plugin",
+ "signal-plugin-bridge",
+ "signal-plugin-clap",
+ "signal-render-plane",
+ "signal-runtime",
 ]
 
 [[package]]

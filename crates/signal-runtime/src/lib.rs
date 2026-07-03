@@ -75,5 +75,7 @@ pub use sandbox_broker_support::{
     ensure_prepared_sandbox_session, record_broker_attached_execution_summary,
     record_broker_sandbox_prepared, record_protocol_violation_prepare_failure,
     teardown_broker_sandbox_session, PreparedBrokerSandboxSpec, PreparedSandboxSessionRecord,
-    SandboxBrokerSession, SandboxBrokerSpawnConfig,
+    SandboxBrokerAttachedSession, SandboxBrokerClientSession, SandboxBrokerReceiptState,
+    SandboxBrokerSession, SandboxBrokerSpawnConfig, SandboxPluginActivateOutcome,
+    SandboxPluginAudioLease, SandboxPluginInventory, SandboxPluginParameter,
 };
