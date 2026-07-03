@@ -979,6 +979,7 @@ dependencies = [
  "signal-plugin",
  "signal-plugin-au",
  "signal-plugin-clap",
+ "signal-plugin-lv2",
  "signal-plugin-vst3",
  "signal-render-plane",
 ]
@@ -1004,6 +1005,7 @@ dependencies = [
 name = "signal-plugin-lv2"
 version = "0.1.0"
 dependencies = [
+ "libloading",
  "signal-plugin",
 ]
 
@@ -1016,6 +1018,7 @@ dependencies = [
  "signal-plugin-au",
  "signal-plugin-bridge",
  "signal-plugin-clap",
+ "signal-plugin-lv2",
  "signal-plugin-vst3",
  "signal-render-plane",
  "signal-runtime",

@@ -11,10 +11,11 @@
 //!   bypass-on-miss. Full crash isolation: a dead child reads as misses,
 //!   never as a blocked callback.
 //! - [`InProcessClapProcessor`] / [`InProcessVst3Processor`] /
-//!   [`InProcessAuProcessor`] — the **InProcess** tier: the plugin's
-//!   `process()` (or `AudioUnitRender` pull) is a direct FFI call on
-//!   the audio thread. No wait, no round-trip — and honestly NO crash
-//!   isolation; that is the documented tradeoff of the tier.
+//!   [`InProcessAuProcessor`] / [`InProcessLv2Processor`] — the
+//!   **InProcess** tier: the plugin's `process()` (or `AudioUnitRender`
+//!   pull, or LV2 `run`) is a direct FFI call on the audio thread. No
+//!   wait, no round-trip — and honestly NO crash isolation; that is the
+//!   documented tradeoff of the tier.
 //!
 //! The **SharedSandbox** tier (one broker process, many plugins) is modeled
 //! in the tier enum but unimplemented in v1; hosts reject it at
@@ -25,7 +26,9 @@
 mod in_process;
 mod shm;
 
-pub use in_process::{InProcessAuProcessor, InProcessClapProcessor, InProcessVst3Processor};
+pub use in_process::{
+    InProcessAuProcessor, InProcessClapProcessor, InProcessLv2Processor, InProcessVst3Processor,
+};
 pub use shm::{
     plugin_process_wait_budget, ShmPluginProcessor, PLUGIN_PROCESS_WAIT_BUDGET_MAX_MICROS,
 };

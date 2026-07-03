@@ -1,7 +1,18 @@
-//! LV2 plugin format adapter for Signal.
+//! LV2 plugin format adapter for Signal: real Turtle-manifest discovery
+//! and dlopen-based hosting (g11.033).
+//!
+//! Discovery is pure file parsing over a handwritten Turtle subset
+//! ([`turtle`]) — no lilv/serd/RDF dependencies and no plugin binary is
+//! opened at scan time. Hosting ([`Lv2HostedInstance`]) re-parses the
+//! bundle TTL at load (library path = the `.lv2` bundle directory, load
+//! key = the bare plugin URI) and drives the plain LV2 C ABI: dlopen +
+//! `lv2_descriptor(index)` walk, instantiate at activate, connected ports,
+//! `run(n)` per block.
 
 #![warn(missing_docs)]
 
+#[doc(hidden)]
+pub mod fixture;
 mod lv2_host_adapter;
 
 pub use lv2_host_adapter::*;
@@ -9,7 +20,7 @@ pub use lv2_host_adapter::*;
 #[cfg(test)]
 mod tests {
     use super::{Lv2DiscoveryDiagnosticKind, Lv2HostAdapter, Lv2HostPlatform};
-    use signal_plugin::PluginFormat;
+    use signal_plugin::{PluginFeature, PluginFormat};
     use std::{
         fs,
         time::{SystemTime, UNIX_EPOCH},
@@ -25,38 +36,19 @@ mod tests {
         root
     }
 
-    fn write_lv2_bundle(root: &std::path::Path, bundle: &str, plugin_type_id: &str) {
+    fn write_bundle(root: &std::path::Path, bundle: &str, files: &[(&str, &str)]) {
         let bundle_root = root.join(bundle);
         fs::create_dir_all(&bundle_root).expect("lv2 bundle should be created");
-        fs::write(
-            bundle_root.join("manifest.ttl"),
-            lv2_manifest_contents(plugin_type_id),
-        )
-        .expect("manifest should be written");
-    }
-
-    fn write_manifest_bundle(root: &std::path::Path, bundle: &str, manifest: &str) {
-        let bundle_root = root.join(bundle);
-        fs::create_dir_all(&bundle_root).expect("lv2 bundle should be created");
-        fs::write(bundle_root.join("manifest.ttl"), manifest).expect("manifest should be written");
-    }
-
-    fn lv2_manifest_contents(plugin_type_id: &str) -> &'static str {
-        match plugin_type_id {
-            "plugin:lv2:linux-synth" => {
-                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:linux-synth\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/linux-synth\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Linux Synth LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"0\" .\nsignal:audio_outputs \"2\" .\nsignal:midi_inputs \"1\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/urid#map\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/worker#schedule\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/patch#Message\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/state#state\" .\nsignal:feature \"Instrument\" .\nsignal:feature \"Analyzer\" .\n"
-            }
-            "plugin:lv2:multiout-instrument" => {
-                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:multiout-instrument\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/multiout-instrument\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Multi Output Instrument LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"0\" .\nsignal:audio_outputs \"6\" .\nsignal:midi_inputs \"1\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/urid#map\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/worker#schedule\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/patch#Message\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/state#state\" .\nsignal:feature \"Instrument\" .\nsignal:feature \"Analyzer\" .\n"
-            }
-            "plugin:lv2:utility" => {
-                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:utility\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/utility\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Utility LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"2\" .\nsignal:audio_outputs \"2\" .\nsignal:midi_inputs \"0\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/options#options\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/options#options\" .\nsignal:feature \"AudioEffect\" .\nsignal:feature \"Utility\" .\n"
-            }
-            "plugin:lv2:bus-fx" => {
-                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:bus-fx\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/bus-fx\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Signal Bus FX LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"4\" .\nsignal:audio_outputs \"4\" .\nsignal:midi_inputs \"0\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/urid#map\" .\nsignal:supported_extension \"http://lv2plug.in/ns/ext/patch#Message\" .\nsignal:feature \"AudioEffect\" .\nsignal:feature \"Utility\" .\n"
-            }
-            other => panic!("unknown LV2 test plugin type: {other}"),
+        for (name, contents) in files {
+            fs::write(bundle_root.join(name), contents).expect("bundle file should be written");
         }
+    }
+
+    fn scan(adapter: &Lv2HostAdapter, root: &std::path::Path) -> super::Lv2DiscoveryBatch {
+        adapter.discover_plugins_for_roots_with_diagnostics(
+            super::current_lv2_platform(),
+            &[root.display().to_string()],
+        )
     }
 
     #[test]
@@ -69,87 +61,387 @@ mod tests {
     }
 
     #[test]
-    fn lv2_adapter_discovers_linux_scan_roots_and_plugin_types() {
+    fn default_scan_roots_cover_macos_and_linux() {
         let adapter = Lv2HostAdapter::default();
-        let linux_roots = adapter
+        let macos: Vec<_> = adapter
+            .default_scan_roots(Lv2HostPlatform::MacOs)
+            .into_iter()
+            .map(|root| root.root)
+            .collect();
+        assert!(macos.contains(&"~/Library/Audio/Plug-Ins/LV2".to_string()));
+        assert!(macos.contains(&"/Library/Audio/Plug-Ins/LV2".to_string()));
+        let linux: Vec<_> = adapter
             .default_scan_roots(Lv2HostPlatform::Linux)
             .into_iter()
             .map(|root| root.root)
-            .collect::<Vec<_>>();
-        assert!(linux_roots.iter().any(|root| root == "~/.lv2"));
-        assert!(linux_roots.iter().any(|root| root == "/usr/lib/lv2"));
+            .collect();
+        assert!(linux.contains(&"~/.lv2".to_string()));
+        assert!(linux.contains(&"/usr/lib/lv2".to_string()));
+        assert!(linux.contains(&"/usr/local/lib/lv2".to_string()));
+    }
 
-        let root = temp_plugin_root("discovery");
-        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
-        write_lv2_bundle(
+    /// Multi-plugin manifest: one manifest.ttl declares two plugins (one
+    /// with a full `<>` URI reference, one via a prefixed name) whose port
+    /// models live in separate rdfs:seeAlso files.
+    #[test]
+    fn multi_plugin_manifest_with_split_see_also_files_discovers_both() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("multi");
+        write_bundle(
             &root,
-            "Signal Multi Output Instrument.lv2",
-            "plugin:lv2:multiout-instrument",
+            "duo.lv2",
+            &[
+                (
+                    "manifest.ttl",
+                    "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
+                     @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\
+                     @prefix ex:   <https://example.com/plugins/> .\n\
+                     <https://example.com/plugins/alpha>\n\
+                     \ta lv2:Plugin ;\n\
+                     \tlv2:binary <duo.so> ;\n\
+                     \trdfs:seeAlso <alpha.ttl> .\n\
+                     ex:beta\n\
+                     \ta lv2:Plugin ;\n\
+                     \tlv2:binary <duo.so> ;\n\
+                     \trdfs:seeAlso <beta.ttl> .\n",
+                ),
+                (
+                    "alpha.ttl",
+                    "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
+                     @prefix doap: <http://usefulinc.com/ns/doap#> .\n\
+                     <https://example.com/plugins/alpha>\n\
+                     \tdoap:name \"Alpha Gain\" ;\n\
+                     \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"in_l\" ]\n\
+                     \t\t, [ a lv2:AudioPort , lv2:InputPort ; lv2:index 1 ; lv2:symbol \"in_r\" ]\n\
+                     \t\t, [ a lv2:AudioPort , lv2:OutputPort ; lv2:index 2 ; lv2:symbol \"out_l\" ]\n\
+                     \t\t, [ a lv2:AudioPort , lv2:OutputPort ; lv2:index 3 ; lv2:symbol \"out_r\" ]\n\
+                     \t\t, [ a lv2:ControlPort , lv2:InputPort ; lv2:index 4 ; lv2:symbol \"gain\" ;\n\
+                     \t\t    lv2:name \"Gain\" ; lv2:default 0.5 ; lv2:minimum 0.0 ; lv2:maximum 1.0 ] .\n",
+                ),
+                (
+                    "beta.ttl",
+                    "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
+                     @prefix doap: <http://usefulinc.com/ns/doap#> .\n\
+                     <https://example.com/plugins/beta>\n\
+                     \tdoap:name \"Beta Meter\" ;\n\
+                     \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"in\" ]\n\
+                     \t\t, [ a lv2:ControlPort , lv2:OutputPort ; lv2:index 1 ; lv2:symbol \"level\" ] .\n",
+                ),
+            ],
         );
-        write_lv2_bundle(&root, "Signal Bus FX.lv2", "plugin:lv2:bus-fx");
-        let discovered = adapter
-            .discover_plugins_for_roots(Lv2HostPlatform::Linux, &[root.display().to_string()]);
-        assert_eq!(discovered.len(), 3);
-        assert_eq!(discovered[0].descriptor.format, PluginFormat::Lv2);
-        assert!(discovered
+
+        let batch = scan(&adapter, &root);
+        assert_eq!(batch.diagnostics, vec![]);
+        assert_eq!(batch.discovered.len(), 2);
+
+        let alpha = batch
+            .discovered
             .iter()
-            .any(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:linux-synth"));
-        assert!(discovered
+            .find(|plugin| plugin.plugin_uri == "https://example.com/plugins/alpha")
+            .expect("alpha discovered");
+        assert_eq!(
+            alpha.plugin_type_id.0,
+            "plugin:lv2:https://example.com/plugins/alpha",
+        );
+        assert_eq!(alpha.descriptor.name, "Alpha Gain");
+        assert_eq!(alpha.descriptor.format, PluginFormat::Lv2);
+        assert_eq!(alpha.default_io_layout.audio_inputs, 2);
+        assert_eq!(alpha.default_io_layout.audio_outputs, 2);
+        assert!(alpha.binary_path.ends_with("duo.so"));
+        assert_eq!(alpha.descriptor.parameters.len(), 1);
+        let gain = &alpha.descriptor.parameters[0];
+        assert_eq!(gain.parameter_id, 4, "parameter_id = control port index");
+        assert_eq!(gain.name, "Gain");
+        assert!((gain.min_plain - 0.0).abs() < 1e-6);
+        assert!((gain.max_plain - 1.0).abs() < 1e-6);
+        assert!((gain.default_normalized - 0.5).abs() < 1e-6);
+
+        let beta = batch
+            .discovered
             .iter()
-            .any(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:multiout-instrument"));
-        assert!(discovered
+            .find(|plugin| plugin.plugin_uri == "https://example.com/plugins/beta")
+            .expect("beta discovered via prefixed-name subject");
+        assert_eq!(beta.descriptor.name, "Beta Meter");
+        // Control OUTPUT ports are not parameters.
+        assert!(beta.descriptor.parameters.is_empty());
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    /// Ports declared out of `lv2:index` order sort by index; control-port
+    /// defaults follow the documented rule (absent default → midpoint of
+    /// min/max, or 0.0 when unbounded).
+    #[test]
+    fn ports_sort_by_index_and_defaults_follow_the_documented_rule() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("ports");
+        write_bundle(
+            &root,
+            "shuffled.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/shuffled>\n\
+                 \ta lv2:Plugin ;\n\
+                 \tlv2:binary <shuffled.so> ;\n\
+                 \tlv2:port [ a lv2:ControlPort , lv2:InputPort ; lv2:index 2 ;\n\
+                 \t           lv2:symbol \"midpointed\" ; lv2:minimum 10.0 ; lv2:maximum 30.0 ]\n\
+                 \t\t, [ a lv2:ControlPort , lv2:InputPort ; lv2:index 1 ;\n\
+                 \t\t    lv2:symbol \"unbounded\" ]\n\
+                 \t\t, [ a lv2:ControlPort , lv2:InputPort ; lv2:index 0 ;\n\
+                 \t\t    lv2:symbol \"explicit\" ; lv2:default 0.25 ;\n\
+                 \t\t    lv2:minimum 0.0 ; lv2:maximum 1.0 ] .\n",
+            )],
+        );
+
+        let batch = scan(&adapter, &root);
+        assert_eq!(batch.diagnostics, vec![]);
+        assert_eq!(batch.discovered.len(), 1);
+        let plugin = &batch.discovered[0];
+        let indices: Vec<u32> = plugin.ports.iter().map(|port| port.index).collect();
+        assert_eq!(indices, vec![0, 1, 2], "ports sorted by lv2:index");
+        assert!((plugin.ports[0].effective_default() - 0.25).abs() < 1e-6);
+        assert!(
+            (plugin.ports[1].effective_default() - 0.0).abs() < 1e-6,
+            "unbounded control port defaults to 0.0",
+        );
+        assert!(
+            (plugin.ports[2].effective_default() - 20.0).abs() < 1e-6,
+            "absent default falls back to the min/max midpoint",
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    /// An atom-input instrument is still DISCOVERED (with the Instrument
+    /// feature and its event input in the io layout) — the stereo gate
+    /// rejects it at hosting, not at scan.
+    #[test]
+    fn atom_input_instrument_is_discovered_but_flagged_as_instrument() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("instrument");
+        write_bundle(
+            &root,
+            "synth.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
+                 @prefix atom: <http://lv2plug.in/ns/ext/atom#> .\n\
+                 <https://example.com/synth>\n\
+                 \ta lv2:Plugin ;\n\
+                 \tlv2:binary <synth.so> ;\n\
+                 \tlv2:port [ a atom:AtomPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"events\" ]\n\
+                 \t\t, [ a lv2:AudioPort , lv2:OutputPort ; lv2:index 1 ; lv2:symbol \"out_l\" ]\n\
+                 \t\t, [ a lv2:AudioPort , lv2:OutputPort ; lv2:index 2 ; lv2:symbol \"out_r\" ] .\n",
+            )],
+        );
+
+        let batch = scan(&adapter, &root);
+        assert_eq!(batch.diagnostics, vec![]);
+        assert_eq!(batch.discovered.len(), 1);
+        let synth = &batch.discovered[0];
+        assert_eq!(synth.default_io_layout.midi_inputs, 1);
+        assert_eq!(synth.default_io_layout.audio_inputs, 0);
+        assert_eq!(synth.default_io_layout.audio_outputs, 2);
+        assert!(synth
+            .descriptor
+            .features
+            .contains(&PluginFeature::Instrument));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    /// The scan pre-filter allowlist is urid#map ONLY: any other required
+    /// feature yields a typed UnsupportedRequiredFeature diagnostic, while
+    /// urid:map itself (and any optionalFeature) passes.
+    #[test]
+    fn required_features_beyond_urid_map_are_rejected_at_scan() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("features");
+        write_bundle(
+            &root,
+            "workered.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/workered>\n\
+                 \ta lv2:Plugin ;\n\
+                 \tlv2:binary <workered.so> ;\n\
+                 \tlv2:requiredFeature <http://lv2plug.in/ns/ext/urid#map> ,\n\
+                 \t\t<http://lv2plug.in/ns/ext/worker#schedule> ;\n\
+                 \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"in\" ] .\n",
+            )],
+        );
+        write_bundle(
+            &root,
+            "urid-only.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/urid-only>\n\
+                 \ta lv2:Plugin ;\n\
+                 \tlv2:binary <urid-only.so> ;\n\
+                 \tlv2:requiredFeature <http://lv2plug.in/ns/ext/urid#map> ;\n\
+                 \tlv2:optionalFeature <http://lv2plug.in/ns/ext/worker#schedule> ;\n\
+                 \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"in\" ] .\n",
+            )],
+        );
+
+        let batch = scan(&adapter, &root);
+        assert_eq!(batch.discovered.len(), 1);
+        assert_eq!(
+            batch.discovered[0].plugin_uri,
+            "https://example.com/urid-only",
+        );
+        assert_eq!(batch.diagnostics.len(), 1);
+        let diagnostic = &batch.diagnostics[0];
+        assert_eq!(
+            diagnostic.kind,
+            Lv2DiscoveryDiagnosticKind::UnsupportedRequiredFeature,
+        );
+        assert_eq!(
+            diagnostic.plugin_type_id.as_deref(),
+            Some("plugin:lv2:https://example.com/workered"),
+        );
+        assert!(diagnostic
+            .detail
+            .contains("http://lv2plug.in/ns/ext/worker#schedule"));
+        assert!(!diagnostic.detail.contains("urid#map"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    /// Malformed inputs produce MalformedManifest diagnostics — never a
+    /// panic, never a silent misparse. Per-plugin failures in a
+    /// multi-plugin bundle leave the healthy sibling discoverable.
+    #[test]
+    fn malformed_manifests_yield_diagnostics_not_panics() {
+        let adapter = Lv2HostAdapter::default();
+        let root = temp_plugin_root("malformed");
+        // Bundle-level: unparseable manifest (missing '.').
+        write_bundle(
+            &root,
+            "syntax.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/broken> a lv2:Plugin\n",
+            )],
+        );
+        // Bundle-level: exotic syntax outside the subset (collection).
+        write_bundle(
+            &root,
+            "exotic.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/exotic> a lv2:Plugin ;\n\
+                 \tlv2:binary <exotic.so> ;\n\
+                 \tlv2:port ( 1 2 ) .\n",
+            )],
+        );
+        // Per-plugin: no lv2:binary.
+        write_bundle(
+            &root,
+            "binaryless.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/binaryless> a lv2:Plugin .\n",
+            )],
+        );
+        // Per-plugin: port without lv2:index, and a duplicate-index pair.
+        write_bundle(
+            &root,
+            "portless.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n\
+                 <https://example.com/no-index> a lv2:Plugin ;\n\
+                 \tlv2:binary <a.so> ;\n\
+                 \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:symbol \"in\" ] .\n\
+                 <https://example.com/dup-index> a lv2:Plugin ;\n\
+                 \tlv2:binary <a.so> ;\n\
+                 \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ]\n\
+                 \t\t, [ a lv2:AudioPort , lv2:OutputPort ; lv2:index 0 ] .\n",
+            )],
+        );
+        // Multi-plugin: one plugin's seeAlso file is broken, its sibling
+        // stays discoverable.
+        write_bundle(
+            &root,
+            "sibling.lv2",
+            &[
+                (
+                    "manifest.ttl",
+                    "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
+                     @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\
+                     <https://example.com/healthy> a lv2:Plugin ;\n\
+                     \tlv2:binary <s.so> ;\n\
+                     \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"in\" ] .\n\
+                     <https://example.com/sick> a lv2:Plugin ;\n\
+                     \tlv2:binary <s.so> ;\n\
+                     \trdfs:seeAlso <sick.ttl> .\n",
+                ),
+                ("sick.ttl", "this is not turtle at all {"),
+            ],
+        );
+
+        let batch = scan(&adapter, &root);
+        assert_eq!(
+            batch.discovered.len(),
+            1,
+            "only the healthy sibling survives: {:?}",
+            batch.discovered,
+        );
+        assert_eq!(
+            batch.discovered[0].plugin_uri,
+            "https://example.com/healthy"
+        );
+        assert_eq!(batch.diagnostics.len(), 6, "{:?}", batch.diagnostics);
+        assert!(batch
+            .diagnostics
             .iter()
-            .any(|plugin| plugin.plugin_type_id.0 == "plugin:lv2:bus-fx"));
-        assert!(discovered
+            .all(|d| d.kind == Lv2DiscoveryDiagnosticKind::MalformedManifest));
+        assert!(batch.diagnostics.iter().any(|d| {
+            d.bundle_root.ends_with("sibling.lv2")
+                && d.plugin_type_id.as_deref() == Some("plugin:lv2:https://example.com/sick")
+        }));
+        assert!(batch
+            .diagnostics
             .iter()
-            .all(|plugin| plugin.bundle_root.starts_with(&root.display().to_string())));
-        assert!(discovered
-            .iter()
-            .all(|plugin| plugin.manifest_path.ends_with("/manifest.ttl")));
-        assert!(discovered
-            .iter()
-            .all(|plugin| plugin.prepare_fault.is_none()));
-        assert!(discovered.iter().any(|plugin| {
-            plugin.plugin_type_id.0 == "plugin:lv2:linux-synth"
-                && plugin.plugin_uri == "https://signal.dev/plugins/lv2/linux-synth"
+            .any(|d| d.plugin_type_id.as_deref()
+                == Some("plugin:lv2:https://example.com/binaryless")));
+        assert!(batch.diagnostics.iter().any(|d| {
+            d.plugin_type_id.as_deref() == Some("plugin:lv2:https://example.com/no-index")
+                && d.detail.contains("lv2:index")
+        }));
+        assert!(batch.diagnostics.iter().any(|d| {
+            d.plugin_type_id.as_deref() == Some("plugin:lv2:https://example.com/dup-index")
+                && d.detail.contains("duplicate")
         }));
         let _ = fs::remove_dir_all(root);
     }
 
+    /// rdfs:seeAlso references escaping the bundle directory are never
+    /// chased (packet: seeAlso resolves WITHIN the bundle only).
     #[test]
-    fn lv2_adapter_reports_malformed_and_unsupported_required_feature_diagnostics() {
+    fn see_also_outside_the_bundle_is_ignored() {
         let adapter = Lv2HostAdapter::default();
-        let root = temp_plugin_root("diagnostics");
-        write_lv2_bundle(&root, "Signal Linux Synth.lv2", "plugin:lv2:linux-synth");
-        write_manifest_bundle(
+        let root = temp_plugin_root("escape");
+        write_bundle(
             &root,
-            "Broken Manifest.lv2",
-            "@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:broken\"\n",
+            "escapist.lv2",
+            &[(
+                "manifest.ttl",
+                "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n\
+                 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\
+                 <https://example.com/escapist> a lv2:Plugin ;\n\
+                 \tlv2:binary <e.so> ;\n\
+                 \trdfs:seeAlso <../../../etc/passwd> , <https://example.com/remote.ttl> ;\n\
+                 \tlv2:port [ a lv2:AudioPort , lv2:InputPort ; lv2:index 0 ; lv2:symbol \"in\" ] .\n",
+            )],
         );
-        write_manifest_bundle(
-            &root,
-            "Unsupported Feature.lv2",
-            "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n@prefix signal: <https://signal.dev/ns/lv2#> .\nsignal:plugin_type_id \"plugin:lv2:unsupported-feature\" .\nsignal:plugin_uri \"https://signal.dev/plugins/lv2/unsupported-feature\" .\nsignal:vendor \"Signal\" .\nsignal:name \"Unsupported Feature LV2 Plugin\" .\nsignal:version \"0.1.0\" .\nsignal:audio_inputs \"2\" .\nsignal:audio_outputs \"2\" .\nsignal:midi_inputs \"0\" .\nsignal:midi_outputs \"0\" .\nsignal:required_feature \"http://lv2plug.in/ns/ext/atom#sequence\" .\nsignal:feature \"AudioEffect\" .\n",
-        );
-
-        let batch = adapter.discover_plugins_for_roots_with_diagnostics(
-            Lv2HostPlatform::Linux,
-            &[root.display().to_string()],
-        );
-
+        let batch = scan(&adapter, &root);
+        assert_eq!(batch.diagnostics, vec![]);
         assert_eq!(batch.discovered.len(), 1);
-        assert_eq!(batch.diagnostics.len(), 2);
-        assert!(batch.diagnostics.iter().any(|diagnostic| {
-            diagnostic.kind == Lv2DiscoveryDiagnosticKind::MalformedManifest
-                && diagnostic.bundle_root.ends_with("Broken Manifest.lv2")
-        }));
-        assert!(batch.diagnostics.iter().any(|diagnostic| {
-            diagnostic.kind == Lv2DiscoveryDiagnosticKind::UnsupportedRequiredFeature
-                && diagnostic.plugin_type_id.as_deref() == Some("plugin:lv2:unsupported-feature")
-                && diagnostic
-                    .detail
-                    .contains("http://lv2plug.in/ns/ext/atom#sequence")
-        }));
         let _ = fs::remove_dir_all(root);
     }
 }

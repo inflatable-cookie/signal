@@ -11,4 +11,5 @@ description = "LV2 plugin adapter surfaces for Signal."
 workspace = true
 
 [dependencies]
+libloading = { workspace = true }
 signal-plugin = { workspace = true }

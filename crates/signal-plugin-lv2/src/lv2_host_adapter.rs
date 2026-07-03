@@ -4,12 +4,18 @@ use signal_plugin::{
 };
 
 mod discovery;
+pub mod hosting;
 mod introspection;
 mod model;
+pub mod turtle;
 
+pub use hosting::{Lv2HostedInstance, Lv2HostedPortLayout, Lv2HostingError, Lv2ProcessSession};
+pub use introspection::{parse_lv2_bundle, Lv2BundleModel, Lv2PluginModel};
 pub use model::*;
 
-/// Host-side adapter for LV2 plugins. Performs manifest (`manifest.ttl`) bundle scanning only; no hosting surfaces exist yet.
+/// Host-side adapter for LV2 plugins: `.lv2` bundle scanning over real
+/// Turtle manifests (discovery) plus the in-child hosting surfaces
+/// ([`Lv2HostedInstance`] / [`Lv2ProcessSession`]).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Lv2HostAdapter {
     strict_sandbox_default: bool,
