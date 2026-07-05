@@ -5,8 +5,8 @@ pub enum RuntimeWarpMode {
     Off,
     /// Pitch is shifted without time-stretching.
     Repitch,
-    /// Elastique Draft time-stretch algorithm.
-    ElastiqueDraft,
+    /// Signal-owned pitch-preserving time-stretch path.
+    Stretch,
 }
 
 /// Interpolation mode between tempo map segments.

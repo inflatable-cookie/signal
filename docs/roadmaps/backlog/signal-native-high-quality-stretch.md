@@ -1,0 +1,196 @@
+# Signal-Native High-Quality Stretch Program
+
+Status: backlog
+Created: 2026-07-05
+Effort estimate: XL
+Promotion trigger: Loophole g13 or another consumer needs Rubber Band-class
+warp/stretch without adopting a GPL/commercial third-party engine.
+Governing contract: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`
+
+## Decision
+
+Pursue a first-party Signal-native time-stretch and pitch-shift engine. The
+target is Rubber Band-class operation from the start, not a toy fallback.
+
+Rubber Band may be used as a behavioral and listening benchmark only. Do not
+use or translate its GPL source. Signalsmith Stretch may be studied as a
+permissive comparator, not as the default answer.
+
+## Current Inventory
+
+Implemented Signal surfaces:
+
+- `signal-render-plane` has RT-safe repitch/varispeed playback through
+  `RenderSource::Warped`, implemented as a source-rate multiplier over the
+  existing polyphase windowed-sinc media path.
+- `signal-render-plane` offline render drives the same executor and render plan
+  as realtime playback. Export parity is already the right integration shape.
+- `signal-dsp-stretch` contains `TimeStretcher` plus
+  `PhaseVocoderStretcher`, an offline whole-buffer draft phase vocoder.
+- `signal-runtime` owns tempo-map projection, warp readiness, clip-processing
+  snapshots, and media/cache readiness. It now uses Signal-owned `Stretch`
+  vocabulary instead of a vendor-shaped draft mode name.
+- Chorus ADR-001 makes musical ticks canonical for authoring, while media stays
+  sample-addressed and render plans consume deterministic tick-to-sample
+  projections.
+
+Known gaps:
+
+- no realtime pitch-preserving streaming stretcher
+- no transient detector/reset path in the stretch crate
+- no phase locking or vertical phase-coherence strategy
+- no independent pitch API above stretch+resample composition
+- no dynamic ratio automation path inside the stretcher
+- no benchmark corpus, metric harness, or listening-evidence protocol
+- no cache identity contract for high-quality offline stretch artifacts
+
+## Target Backend Architecture
+
+### Repitch
+
+Owner: `signal-render-plane`.
+
+Purpose: RT-safe varispeed. Tempo changes alter pitch. This is the existing
+source-rate multiplier over `Samples` and `Stream`.
+
+Constraints:
+
+- no allocation, blocking, or frees on the audio thread
+- deterministic sample indexing from compiled tick/sample projection
+- source-rate conversion stays inside the existing render source path
+
+### RealtimePreview
+
+Owner: `signal-dsp-stretch` DSP, integrated through render-plane prework or a
+bounded streaming state object only after RT safety is proven.
+
+Purpose: pitch-preserving preview playback with bounded latency and dynamic
+ratio changes. This tier may trade some fidelity for latency, but must still
+preserve transients, stereo image, and musical timing well enough for editing.
+
+Initial DSP shape:
+
+- phase-vocoder foundation
+- transient-aware phase reset or local time-domain splice strategy
+- identity phase locking around spectral peaks
+- latency reported as input and output halves for PDC/automation alignment
+- ratio automation sampled against the same projected stream timeline that
+  render plans use
+
+### OfflineHighQuality
+
+Owner: `signal-dsp-stretch`, consumed by render/export/cache services.
+
+Purpose: deterministic high-quality stretch and pitch shift for export, freeze,
+and post-warp artifacts.
+
+Initial DSP shape:
+
+- multiresolution STFT or hybrid STFT/time-domain engine
+- transient detection and transient-preserving synthesis
+- phase locking for vertical coherence
+- shared stereo/multichannel analysis so image stability is measured and owned
+- stretch+resample pitch-shift composition for accurate independent pitch
+- deterministic dynamic-ratio rendering across tempo ramps and warp markers
+- cache keys include engine version, tier, ratio curve, pitch curve, channel
+  layout, source content hash, and tick/sample projection epoch
+
+## Benchmark Corpus
+
+Every tier must run a fixed corpus with both objective metrics and listening
+notes:
+
+- drums/percussion: close-mic loops, cymbals, kicks, dense transients
+- bass: sustained electric bass, synth bass, plucked attacks
+- vocals: dry speech, sung legato, breathy consonants, vibrato
+- pads/sustains: dense harmonic pads, piano tails, reverb tails
+- full mixes: mastered stereo, sparse acoustic, dense electronic
+- tempo ramps: 90 to 140 BPM and 140 to 90 BPM over short and long spans
+- loop seams: one-bar and two-bar loops, cross-boundary warp markers
+- extreme ratios: 0.5x, 0.75x, 1.5x, 2.0x, plus out-of-support degradation
+
+## Measurable Acceptance
+
+Timing and alignment:
+
+- offline fixed-ratio output length is exact to the promised sample count
+- offline dynamic-ratio cumulative drift is no more than 1 sample per rendered
+  segment boundary
+- preview reports latency and keeps automation/ratio changes centered within
+  the reported tolerance
+
+Transient behavior:
+
+- detected transient peaks remain within the tier tolerance after stretch
+- transient smear is tracked by attack-time widening and peak-energy loss
+
+Spectral and phase behavior:
+
+- phasiness is tracked by spectral-modulation and inter-bin phase-coherence
+  metrics across sustained material
+- stereo image drift is tracked by inter-channel correlation and mid/side
+  energy deltas
+
+Boundary behavior:
+
+- loop-boundary clicks stay below the fixed dBFS threshold for the corpus
+- warp-marker seams are click-free or explicitly crossfaded by policy
+
+Resource budgets:
+
+- Repitch: current render-plane RT budget, no allocation on audio thread
+- RealtimePreview: bounded latency, bounded memory, no unbounded per-block work
+- OfflineHighQuality: deterministic output, bounded peak memory per channel
+  and predictable CPU scaling by duration/channel count
+
+## First Implementable DSP Path
+
+Start in `signal-dsp-stretch`:
+
+1. Split the current draft phase vocoder into explicit analysis, phase, and
+   synthesis modules.
+2. Add a mono offline high-quality prototype behind a new
+   `OfflineHighQuality` constructor, still marked experimental until corpus
+   acceptance passes.
+3. Add spectral peak tracking and identity phase locking.
+4. Add transient detection using energy/spectral-flux features, then reset or
+   splice transients without copying Rubber Band implementation details.
+5. Add linked stereo processing before this tier is promoted beyond prototype.
+6. Add pitch shift as stretch+resample composition, not a separate hidden
+   algorithm.
+7. Add the benchmark harness before tuning thresholds, so improvement is
+   measured against corpus evidence instead of ad hoc listening only.
+
+## Integration Plan
+
+- Keep Signal as DSP owner. Pulse/Aura only need mode, ratio/pitch, marker, and
+  render-cache contract additions when product workflow requires them.
+- Keep render-plane realtime safety: preview stretch runs only through a proven
+  bounded state object or through anticipative pre-rendered buffers.
+- Offline export uses render plans plus cacheable post-warp artifacts. It must
+  not fork an unrelated render path.
+- Warp markers resolve through ADR-001 tick/sample projection. Engine inputs
+  receive sample-domain source spans plus deterministic ratio/pitch curves
+  derived from canonical ticks.
+- Cache invalidation is owned by media identity, engine tier/version, marker
+  map, ratio/pitch curves, source tempo, project tempo projection, and channel
+  layout.
+
+## Success Criteria
+
+- Signal exposes `Repitch`, `RealtimePreview`, and `OfflineHighQuality` as
+  first-party tiers with documented readiness and degradation.
+- OfflineHighQuality beats the current draft phase vocoder across the corpus
+  before any product-facing promotion.
+- Rubber Band CLI/output can be used in the comparison harness as an external
+  benchmark, with no source dependency or copied implementation.
+- Exports, freezes, previews, and warp-marker renders share one engine
+  vocabulary and cache identity model.
+- g13 planning has ready cards for DSP prototype, corpus harness, render/cache
+  integration, and Loophole-facing contract updates.
+
+## Next Task
+
+Promote this backlog item into the next Signal/Loophole planning lane by
+creating ready cards for the corpus harness and the first offline
+phase-locking prototype.

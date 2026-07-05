@@ -1,19 +1,26 @@
-//! Time-stretching backends for the Signal workspace (memo 013).
+//! Time-stretching backends for the Signal workspace.
 //!
 //! The crate defines the abstract [`TimeStretcher`] contract — stretch audio
 //! in time without shifting pitch — and ships ONE backend this round:
 //! [`PhaseVocoderStretcher`], a dependency-light draft-quality phase vocoder.
 //!
-//! ## Quality tiers (memo 013)
+//! ## Signal-owned backend tiers
 //!
-//! Memo 013 mandates dual quality tiers (real-time bounded-latency and
-//! offline max-quality). This crate currently provides a single
-//! [`StretchQuality::Draft`] tier: a plain Hann-windowed phase vocoder with
-//! NO phase locking and NO transient preservation. Sustained/tonal material
-//! stretches cleanly; percussive transients smear audibly at larger ratios.
-//! That is the honest state of the tier — the Rubber Band (or elastique)
-//! evaluation for the production tiers is recorded as open work (P-TS-001),
-//! gated on an operator licensing call before distribution.
+//! Signal owns three execution tiers:
+//!
+//! - [`StretchBackendTier::Repitch`]: render-plane rate conversion, pitch
+//!   changes with tempo, realtime-safe today.
+//! - [`StretchBackendTier::RealtimePreview`]: bounded-latency pitch-preserving
+//!   preview stretch, planned.
+//! - [`StretchBackendTier::OfflineHighQuality`]: deterministic
+//!   export/cache/freeze stretch, planned as the quality reference tier.
+//!
+//! The current [`PhaseVocoderStretcher`] remains [`StretchQuality::Draft`]: a
+//! plain Hann-windowed phase vocoder with NO phase locking and NO transient
+//! preservation. Sustained/tonal material stretches cleanly; percussive
+//! transients smear audibly at larger ratios. Rubber Band-class quality is the
+//! target for the planned Signal-native tiers, but Rubber Band source is not
+//! an implementation input.
 //!
 //! ## Real-time posture
 //!
@@ -37,6 +44,106 @@ pub enum StretchQuality {
     /// Draft-quality phase vocoder: pitch-preserving, but transients smear
     /// and no formant handling. Offline use only.
     Draft,
+    /// Bounded-latency preview quality. Planned; not implemented by the
+    /// current backend.
+    RealtimePreview,
+    /// Highest-quality deterministic offline/export quality. Planned; not
+    /// implemented by the current backend.
+    OfflineHighQuality,
+}
+
+/// Signal-owned stretch execution tier.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchBackendTier {
+    /// Existing render-plane varispeed path. Tempo changes also shift pitch.
+    Repitch,
+    /// Planned bounded-latency preview tier for live audition and playback.
+    RealtimePreview,
+    /// Planned deterministic high-quality tier for exports, freeze, and
+    /// cached post-warp artifacts.
+    OfflineHighQuality,
+}
+
+/// Implementation status for one tier in the Signal-native stretch program.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StretchBackendStatus {
+    /// The tier is implemented in Signal today.
+    Implemented,
+    /// The tier is designed but not implemented.
+    Planned,
+}
+
+/// Clean-room architecture contract for one Signal-owned tier.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StretchBackendPlan {
+    /// Signal-owned execution tier.
+    pub tier: StretchBackendTier,
+    /// Current implementation status.
+    pub status: StretchBackendStatus,
+    /// Whether tempo and pitch can be controlled independently.
+    pub independent_tempo_and_pitch: bool,
+    /// Whether stretch ratio may change within one render.
+    pub dynamic_ratio: bool,
+    /// Whether transient preservation is part of the tier contract.
+    pub transient_preservation: bool,
+    /// Whether stereo or multichannel vertical coherence is part of the tier
+    /// contract.
+    pub vertical_phase_coherence: bool,
+    /// Whether the tier promises sample-accurate or near-sample-accurate
+    /// timeline alignment.
+    pub alignment_promised: bool,
+    /// Whether processing may run on the realtime audio thread.
+    pub audio_thread_safe: bool,
+    /// Whether rendered output is deterministic enough for cache identity,
+    /// export reuse, and regression comparison.
+    pub deterministic_output: bool,
+}
+
+/// Signal-owned tier plan. This is a code-level mirror of the roadmap
+/// contract so callers can gate behavior without vendor-specific names.
+pub const SIGNAL_STRETCH_BACKEND_PLAN: [StretchBackendPlan; 3] = [
+    StretchBackendPlan {
+        tier: StretchBackendTier::Repitch,
+        status: StretchBackendStatus::Implemented,
+        independent_tempo_and_pitch: false,
+        dynamic_ratio: true,
+        transient_preservation: true,
+        vertical_phase_coherence: true,
+        alignment_promised: true,
+        audio_thread_safe: true,
+        deterministic_output: true,
+    },
+    StretchBackendPlan {
+        tier: StretchBackendTier::RealtimePreview,
+        status: StretchBackendStatus::Planned,
+        independent_tempo_and_pitch: true,
+        dynamic_ratio: true,
+        transient_preservation: true,
+        vertical_phase_coherence: true,
+        alignment_promised: true,
+        audio_thread_safe: false,
+        deterministic_output: true,
+    },
+    StretchBackendPlan {
+        tier: StretchBackendTier::OfflineHighQuality,
+        status: StretchBackendStatus::Planned,
+        independent_tempo_and_pitch: true,
+        dynamic_ratio: true,
+        transient_preservation: true,
+        vertical_phase_coherence: true,
+        alignment_promised: true,
+        audio_thread_safe: false,
+        deterministic_output: true,
+    },
+];
+
+/// Returns the Signal-owned plan for `tier`.
+pub fn stretch_backend_plan(tier: StretchBackendTier) -> StretchBackendPlan {
+    SIGNAL_STRETCH_BACKEND_PLAN
+        .iter()
+        .copied()
+        .find(|plan| plan.tier == tier)
+        .expect("all StretchBackendTier variants are represented")
 }
 
 /// Abstract time-stretcher contract (memo 013): stretch audio in time while
@@ -389,5 +496,25 @@ mod tests {
         let out_right: Vec<f32> = output.iter().skip(1).step_by(2).copied().collect();
         assert!((dominant_frequency_hz(&out_left, sample_rate) - 440.0).abs() < 15.0);
         assert!((dominant_frequency_hz(&out_right, sample_rate) - 220.0).abs() < 10.0);
+    }
+
+    #[test]
+    fn backend_plan_tracks_signal_owned_tiers() {
+        assert_eq!(SIGNAL_STRETCH_BACKEND_PLAN.len(), 3);
+        assert_eq!(
+            stretch_backend_plan(StretchBackendTier::Repitch).status,
+            StretchBackendStatus::Implemented
+        );
+        let preview = stretch_backend_plan(StretchBackendTier::RealtimePreview);
+        assert_eq!(preview.status, StretchBackendStatus::Planned);
+        assert!(preview.independent_tempo_and_pitch);
+        assert!(preview.dynamic_ratio);
+        assert!(!preview.audio_thread_safe);
+
+        let offline = stretch_backend_plan(StretchBackendTier::OfflineHighQuality);
+        assert_eq!(offline.status, StretchBackendStatus::Planned);
+        assert!(offline.transient_preservation);
+        assert!(offline.vertical_phase_coherence);
+        assert!(offline.deterministic_output);
     }
 }

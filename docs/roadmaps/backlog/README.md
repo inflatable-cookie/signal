@@ -13,6 +13,11 @@ Promote a backlog item when at least one applies:
 
 Each backlog item should include effort estimate, promotion trigger, and success criteria.
 
+## Current Items
+
+- `signal-native-high-quality-stretch.md` — first-party Rubber Band-class
+  stretch/pitch program for a future Loophole/Signal lane
+
 ## Next task
 
 Create a backlog item from `backlog-item-template.md` for the next deferred candidate.

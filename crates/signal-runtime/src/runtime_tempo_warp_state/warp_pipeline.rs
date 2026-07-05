@@ -64,7 +64,7 @@ impl RuntimeWarpPipelineStateModel {
         let mut realized_ratio = 1.0;
         let (readiness, last_error) = match registration.mode {
             RuntimeWarpMode::Off => (RuntimeWarpReadiness::Bypassed, None),
-            RuntimeWarpMode::Repitch | RuntimeWarpMode::ElastiqueDraft => {
+            RuntimeWarpMode::Repitch | RuntimeWarpMode::Stretch => {
                 match registration.source_tempo_bpm {
                     Some(source_tempo_bpm)
                         if source_tempo_bpm.is_finite() && source_tempo_bpm > 0.0 =>
@@ -79,13 +79,13 @@ impl RuntimeWarpPipelineStateModel {
                         {
                             match media_assets.get(media_asset_id) {
                                 Some(asset) if asset.state == RuntimeMediaAssetState::Ready => {
-                                    if registration.mode == RuntimeWarpMode::ElastiqueDraft
+                                    if registration.mode == RuntimeWarpMode::Stretch
                                         && !(0.5..=2.0).contains(&realized_ratio)
                                     {
                                         (
                                             RuntimeWarpReadiness::Degraded,
                                             Some(format!(
-                                                "elastique draft ratio {realized_ratio:.3} outside baseline support"
+                                                "stretch ratio {realized_ratio:.3} outside baseline support"
                                             )),
                                         )
                                     } else {

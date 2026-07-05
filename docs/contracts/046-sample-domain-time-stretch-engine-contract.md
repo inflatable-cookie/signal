@@ -1,8 +1,8 @@
 # 046 Sample-Domain Time-Stretch Engine Contract
 
-Status: complete
+Status: complete; amended for first-party quality-depth program
 Owner: core-product
-Updated: 2026-03-18
+Updated: 2026-07-05
 Related contracts: `docs/contracts/028-media-indexing-waveform-analysis-and-preview-service-contract.md`, `docs/contracts/029-analysis-metadata-extraction-and-library-service-contract.md`, `docs/contracts/034-multi-bus-graph-execution-and-auxiliary-topology-contract.md`
 Related architecture: `docs/architecture/graph-runtime-feature-reference.md`
 
@@ -180,6 +180,41 @@ Batch 15.1 intentionally does not claim:
 - product-local warp editing UX or transform workflow policy
 
 Those belong to later `g07.015` batches and follow-on milestones.
+
+## 2026-07-05 Quality-Depth Addendum
+
+Operator decision: pursue a first-party Signal-native high-quality stretch and
+pitch engine. The goal is Rubber Band-class behavior from the outset, while
+preserving clean-room implementation boundaries.
+
+This addendum does not reopen the closed `g07.015` ownership baseline. It
+deepens the quality target for the next active lane:
+
+- Signal owns the DSP engine and tier vocabulary.
+- Rubber Band is a behavioral/listening benchmark only, not source material.
+- Signalsmith Stretch may inform comparison because it is permissively
+  licensed, but it is not the default implementation answer.
+- The tier vocabulary is `Repitch`, `RealtimePreview`, and
+  `OfflineHighQuality`.
+- `Repitch` remains render-plane varispeed and may run on the audio thread.
+- `RealtimePreview` must prove bounded latency, dynamic-ratio behavior,
+  transient preservation, image stability, and reported latency before it can
+  enter realtime playback.
+- `OfflineHighQuality` must be deterministic and cache/export safe, with
+  sample-accurate or near-sample-accurate alignment where promised.
+
+Required evidence before promotion:
+
+- benchmark corpus covering drums/percussion, bass, vocals, pads/sustains,
+  full mixes, tempo ramps, loop seams, and extreme ratios
+- measurable timing drift, transient smear, phasiness, vertical coherence,
+  stereo image stability, loop-click, CPU, latency, and memory metrics
+- explicit cache identity for engine version, tier, content hash, ratio/pitch
+  curves, warp markers, channel layout, and tick/sample projection epoch
+- focused tests for DSP length/alignment contracts before render/export
+  integration widens
+
+Planning authority: `docs/roadmaps/backlog/signal-native-high-quality-stretch.md`.
 
 ## Batch 15.1 outcome
 
